@@ -1,4 +1,4 @@
-package scopes_sync
+package scopes
 
 import (
 	"context"
@@ -18,7 +18,6 @@ import (
 )
 
 func TestSyncService_UpdateClientScopes(t *testing.T) {
-
 	const clientID = "client-id"
 	selectCondition := repo.Conditions{
 		repo.NewNotEqualCondition("(value -> 'Credential' -> 'Oauth')", "null"),

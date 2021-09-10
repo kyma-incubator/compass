@@ -1,5 +1,6 @@
 package model
 
+// Tombstone missing godoc
 type Tombstone struct {
 	ID            string
 	OrdID         string
@@ -8,11 +9,13 @@ type Tombstone struct {
 	RemovalDate   string
 }
 
+// TombstoneInput missing godoc
 type TombstoneInput struct {
 	OrdID       string `json:"ordId"`
 	RemovalDate string `json:"removalDate"`
 }
 
+// ToTombstone missing godoc
 func (i *TombstoneInput) ToTombstone(id, tenantID, appID string) *Tombstone {
 	if i == nil {
 		return nil
@@ -27,6 +30,7 @@ func (i *TombstoneInput) ToTombstone(id, tenantID, appID string) *Tombstone {
 	}
 }
 
+// SetFromUpdateInput missing godoc
 func (p *Tombstone) SetFromUpdateInput(update TombstoneInput) {
 	p.RemovalDate = update.RemovalDate
 }

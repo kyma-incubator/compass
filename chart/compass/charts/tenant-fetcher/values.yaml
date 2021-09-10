@@ -22,6 +22,3 @@ database:
     maxOpenConnections: 2
     maxIdleConnections: 1
 
-server:
-  handlerEndpoint: "/v1/callback/{tenantId}"
-  tenantPathParam: "tenantId"

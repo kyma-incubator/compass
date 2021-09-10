@@ -9,12 +9,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// KubeClient missing godoc
 //go:generate mockery --name=KubeClient --output=automock --outpkg=automock --case=underscore
 type KubeClient interface {
 	GetTenantFetcherConfigMapData(ctx context.Context) (string, string, error)
 	UpdateTenantFetcherConfigMapData(ctx context.Context, lastRunTimestamp, lastResyncTimestamp string) error
 }
 
+// NewKubernetesClient missing godoc
 func NewKubernetesClient(ctx context.Context, cfg KubeConfig) (KubeClient, error) {
 	shouldUseKubernetes, err := strconv.ParseBool(cfg.UseKubernetes)
 	if err != nil {
@@ -41,14 +43,17 @@ func newNoopKubernetesClient() KubeClient {
 	}
 }
 
+// GetTenantFetcherConfigMapData missing godoc
 func (k *noopKubernetesClient) GetTenantFetcherConfigMapData(_ context.Context) (string, string, error) {
 	return "1", "1", nil
 }
 
+// UpdateTenantFetcherConfigMapData missing godoc
 func (k *noopKubernetesClient) UpdateTenantFetcherConfigMapData(_ context.Context, _, _ string) error {
 	return nil
 }
 
+// KubeConfig missing godoc
 type KubeConfig struct {
 	UseKubernetes string `envconfig:"default=true,APP_USE_KUBERNETES"`
 
@@ -77,6 +82,7 @@ func newKubernetesClient(ctx context.Context, cfg KubeConfig) (KubeClient, error
 	}, nil
 }
 
+// GetTenantFetcherConfigMapData missing godoc
 func (k *kubernetesClient) GetTenantFetcherConfigMapData(ctx context.Context) (string, string, error) {
 	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(ctx, k.cfg.ConfigMapName, metav1.GetOptions{})
 	if err != nil {
@@ -95,6 +101,7 @@ func (k *kubernetesClient) GetTenantFetcherConfigMapData(ctx context.Context) (s
 	return lastRunTimestamp, lastResyncTimestamp, nil
 }
 
+// UpdateTenantFetcherConfigMapData missing godoc
 func (k *kubernetesClient) UpdateTenantFetcherConfigMapData(ctx context.Context, lastRunTimestamp, lastResyncTimestamp string) error {
 	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(ctx, k.cfg.ConfigMapName, metav1.GetOptions{})
 	if err != nil {

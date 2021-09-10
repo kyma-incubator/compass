@@ -60,7 +60,6 @@ func TestHasScope(t *testing.T) {
 		_, err := sut.VerifyScopes(context.TODO(), nil, nil, fixScopesDefinition())
 		// THEN
 		assert.EqualError(t, err, "cannot read scopes from context")
-
 	})
 
 	t.Run("returns error on getting required scopes", func(t *testing.T) {

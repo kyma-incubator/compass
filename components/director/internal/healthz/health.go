@@ -9,10 +9,13 @@ import (
 )
 
 const (
-	UP   = "UP"
+	// UP missing godoc
+	UP = "UP"
+	// DOWN missing godoc
 	DOWN = "DOWN"
 )
 
+// Health missing godoc
 type Health struct {
 	ctx        context.Context
 	indicators []Indicator

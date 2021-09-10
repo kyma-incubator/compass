@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// QueryBuilder missing godoc
 type QueryBuilder interface {
 	BuildQuery(tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
 }
@@ -24,6 +25,7 @@ type universalQueryBuilder struct {
 	resourceType    resource.Type
 }
 
+// NewQueryBuilder missing godoc
 func NewQueryBuilder(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) QueryBuilder {
 	return &universalQueryBuilder{
 		tableName:       tableName,
@@ -33,6 +35,7 @@ func NewQueryBuilder(resourceType resource.Type, tableName string, tenantColumn 
 	}
 }
 
+// BuildQuery missing godoc
 func (b *universalQueryBuilder) BuildQuery(tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error) {
 	if tenantID == "" {
 		return "", nil, apperrors.NewTenantRequiredError()
@@ -69,9 +72,9 @@ func buildSelectQuery(tableName string, selectedColumns string, conditions Condi
 	return stmtBuilder.String(), allArgs, nil
 }
 
-func buildUnionQuery(queries []string) (string, error) {
+func buildUnionQuery(queries []string) string {
 	if len(queries) == 0 {
-		return "", nil
+		return ""
 	}
 
 	for i := range queries {
@@ -82,7 +85,7 @@ func buildUnionQuery(queries []string) (string, error) {
 	var stmtBuilder strings.Builder
 	stmtBuilder.WriteString(unionQuery)
 
-	return getQueryFromBuilder(stmtBuilder), nil
+	return getQueryFromBuilder(stmtBuilder)
 }
 
 func buildCountQuery(tableName string, idColumn string, conditions Conditions, groupByParams GroupByParams, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
@@ -92,7 +95,7 @@ func buildCountQuery(tableName string, idColumn string, conditions Conditions, g
 			isGroupByParam = true
 		}
 	}
-	if isGroupByParam == false {
+	if !isGroupByParam {
 		return "", nil, errors.New("id column is not in group by params")
 	}
 
@@ -168,7 +171,7 @@ func writeEnumeratedConditions(builder *strings.Builder, conditions Conditions) 
 		return apperrors.NewInternalError("builder cannot be nil")
 	}
 
-	var conditionsToJoin []string
+	conditionsToJoin := make([]string, 0, len(conditions))
 	for _, cond := range conditions {
 		conditionsToJoin = append(conditionsToJoin, cond.GetQueryPart())
 	}
@@ -229,6 +232,7 @@ func writeOrderByPart(builder *strings.Builder, orderByParams OrderByParams) err
 	return nil
 }
 
+// GroupByParams missing godoc
 type GroupByParams []string
 
 func writeGroupByPart(builder *strings.Builder, groupByParams GroupByParams) error {

@@ -10,17 +10,20 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TokenService missing godoc
 //go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore
 type TokenService interface {
 	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error)
 }
 
+// TokenConverter missing godoc
 //go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore
 type TokenConverter interface {
 	ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTimeTokenForRuntime
 	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact              persistence.Transactioner
 	svc                   TokenService
@@ -28,10 +31,12 @@ type Resolver struct {
 	suggestTokenHeaderKey string
 }
 
+// NewTokenResolver missing godoc
 func NewTokenResolver(transact persistence.Transactioner, svc TokenService, conv TokenConverter, suggestTokenHeaderKey string) *Resolver {
 	return &Resolver{transact: transact, svc: svc, conv: conv, suggestTokenHeaderKey: suggestTokenHeaderKey}
 }
 
+// RequestOneTimeTokenForRuntime missing godoc
 func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeTokenForRuntime, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -52,6 +57,7 @@ func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string)
 	return &gqlToken, nil
 }
 
+// RequestOneTimeTokenForApplication missing godoc
 func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeTokenForApplication, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -75,6 +81,7 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 	return &gqlToken, nil
 }
 
+// RawEncoded missing godoc
 func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*string, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Token was nil")
@@ -90,6 +97,7 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*
 	})
 }
 
+// Raw missing godoc
 func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Token was nil")

@@ -12,7 +12,6 @@ import (
 )
 
 func TestKibanaFormatter(t *testing.T) {
-
 	buffer := &bytes.Buffer{}
 	ctx, err := Configure(context.TODO(), &Config{
 		Level:                  "debug",

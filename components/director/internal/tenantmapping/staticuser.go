@@ -9,12 +9,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+// StaticUser missing godoc
 type StaticUser struct {
 	Username string   `json:"username"`
 	Tenants  []string `json:"tenants"`
 	Scopes   []string `json:"scopes"`
 }
 
+// StaticUserRepository missing godoc
 //go:generate mockery --name=StaticUserRepository --output=automock --outpkg=automock --case=underscore
 type StaticUserRepository interface {
 	Get(username string) (StaticUser, error)
@@ -24,6 +26,7 @@ type staticUserRepository struct {
 	data map[string]StaticUser
 }
 
+// NewStaticUserRepository missing godoc
 func NewStaticUserRepository(srcPath string) (*staticUserRepository, error) {
 	staticUsersBytes, err := ioutil.ReadFile(srcPath)
 	if err != nil {
@@ -46,6 +49,7 @@ func NewStaticUserRepository(srcPath string) (*staticUserRepository, error) {
 	}, nil
 }
 
+// Get missing godoc
 func (r *staticUserRepository) Get(username string) (StaticUser, error) {
 	if staticUser, ok := r.data[username]; ok {
 		return staticUser, nil

@@ -21,6 +21,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// TenantFieldMapping missing godoc
 type TenantFieldMapping struct {
 	TotalPagesField   string `envconfig:"APP_TENANT_TOTAL_PAGES_FIELD"`
 	TotalResultsField string `envconfig:"APP_TENANT_TOTAL_RESULTS_FIELD"`
@@ -35,6 +36,7 @@ type TenantFieldMapping struct {
 	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
 }
 
+// MovedRuntimeByLabelFieldMapping missing godoc
 type MovedRuntimeByLabelFieldMapping struct {
 	LabelValue   string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
 	SourceTenant string `envconfig:"default=sourceTenant,APP_MOVED_RUNTIME_BY_LABEL_SOURCE_TENANT_FIELD"`
@@ -50,6 +52,7 @@ type QueryConfig struct {
 	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
 }
 
+// TenantService missing godoc
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False
 type TenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
@@ -58,16 +61,19 @@ type TenantService interface {
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
+// LabelDefinitionService missing godoc
 //go:generate mockery --name=LabelDefinitionService --output=automock --outpkg=automock --case=underscore
 type LabelDefinitionService interface {
 	Upsert(ctx context.Context, def model.LabelDefinition) error
 }
 
+// EventAPIClient missing godoc
 //go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore
 type EventAPIClient interface {
 	FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error)
 }
 
+// RuntimeService missing godoc
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
@@ -80,6 +86,7 @@ const (
 	retryDelayMilliseconds = 100
 )
 
+// Service missing godoc
 type Service struct {
 	queryConfig                     QueryConfig
 	transact                        persistence.Transactioner
@@ -88,6 +95,7 @@ type Service struct {
 	tenantStorageService            TenantService
 	runtimeStorageService           RuntimeService
 	providerName                    string
+	tenantsRegion                   string
 	fieldMapping                    TenantFieldMapping
 	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
 	labelDefService                 LabelDefinitionService
@@ -96,12 +104,13 @@ type Service struct {
 	fullResyncInterval              time.Duration
 }
 
+// NewService missing godoc
 func NewService(queryConfig QueryConfig,
 	transact persistence.Transactioner,
 	kubeClient KubeClient,
 	fieldMapping TenantFieldMapping,
 	movRuntime MovedRuntimeByLabelFieldMapping,
-	providerName string, client EventAPIClient,
+	providerName string, regionName string, client EventAPIClient,
 	tenantStorageService TenantService,
 	runtimeStorageService RuntimeService,
 	labelDefService LabelDefinitionService,
@@ -112,6 +121,7 @@ func NewService(queryConfig QueryConfig,
 		kubeClient:                      kubeClient,
 		fieldMapping:                    fieldMapping,
 		providerName:                    providerName,
+		tenantsRegion:                   regionName,
 		eventAPIClient:                  client,
 		tenantStorageService:            tenantStorageService,
 		runtimeStorageService:           runtimeStorageService,
@@ -124,6 +134,7 @@ func NewService(queryConfig QueryConfig,
 	}
 }
 
+// SyncTenants missing godoc
 func (s Service) SyncTenants() error {
 	ctx := context.Background()
 	startTime := time.Now()
@@ -184,7 +195,7 @@ func (s Service) SyncTenants() error {
 		}
 	}
 
-	//Order of event processing matters
+	// Order of event processing matters
 	if len(tenantsToCreate) > 0 {
 		if err := s.createParents(ctx, currentTenants, tenantsToCreate); err != nil {
 			return errors.Wrap(err, "while storing parents")
@@ -220,7 +231,6 @@ func (s Service) SyncTenants() error {
 
 func (s Service) createTenants(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToCreate := make([]model.BusinessTenantMappingInput, 0)
-	subdomainMapping := make(map[string]string, 0)
 	for _, eventTenant := range eventsTenants {
 		if _, ok := currTenants[eventTenant.ExternalTenant]; ok {
 			continue
@@ -228,8 +238,8 @@ func (s Service) createTenants(ctx context.Context, currTenants map[string]strin
 		if len(eventTenant.Parent) > 0 {
 			eventTenant.Parent = currTenants[eventTenant.Parent]
 		}
+		eventTenant.Region = s.tenantsRegion
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
-		subdomainMapping[eventTenant.ExternalTenant] = eventTenant.Subdomain
 	}
 	if len(tenantsToCreate) > 0 {
 		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate...); err != nil {
@@ -397,10 +407,7 @@ func (s Service) fetchTenants(eventsType EventsType, fromTimestamp string) ([]mo
 	tenants := make([]model.BusinessTenantMappingInput, 0)
 
 	err := s.walkThroughPages(eventsType, fromTimestamp, func(page *eventsPage) error {
-		mappings, err := page.getTenantMappings(eventsType)
-		if err != nil {
-			return err
-		}
+		mappings := page.getTenantMappings(eventsType)
 		tenants = append(tenants, mappings...)
 		return nil
 	})
@@ -416,10 +423,7 @@ func (s Service) fetchMovedRuntimes(eventsType EventsType, fromTimestamp string)
 	allMappings := make([]model.MovedRuntimeByLabelMappingInput, 0)
 
 	err := s.walkThroughPages(eventsType, fromTimestamp, func(page *eventsPage) error {
-		mappings, err := page.getMovedRuntimes()
-		if err != nil {
-			return err
-		}
+		mappings := page.getMovedRuntimes()
 		allMappings = append(allMappings, mappings...)
 		return nil
 	})

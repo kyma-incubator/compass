@@ -8933,9 +8933,9 @@ func (ec *executionContext) _Auth_additionalHeaders(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(HttpHeaders)
+	res := resTmp.(HTTPHeaders)
 	fc.Result = res
-	return ec.marshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, field.Selections, res)
+	return ec.marshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeaders(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_additionalHeadersSerialized(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -8964,9 +8964,9 @@ func (ec *executionContext) _Auth_additionalHeadersSerialized(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*HttpHeadersSerialized)
+	res := resTmp.(*HTTPHeadersSerialized)
 	fc.Result = res
-	return ec.marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, field.Selections, res)
+	return ec.marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeadersSerialized(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_additionalQueryParams(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -10537,9 +10537,9 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalHeaders(ct
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(HttpHeaders)
+	res := resTmp.(HTTPHeaders)
 	fc.Result = res
-	return ec.marshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, field.Selections, res)
+	return ec.marshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeaders(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalHeadersSerialized(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
@@ -10568,9 +10568,9 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalHeadersSer
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*HttpHeadersSerialized)
+	res := resTmp.(*HTTPHeadersSerialized)
 	fc.Result = res
-	return ec.marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, field.Selections, res)
+	return ec.marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeadersSerialized(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalQueryParams(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
@@ -21653,13 +21653,13 @@ func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj int
 			}
 		case "additionalHeaders":
 			var err error
-			it.AdditionalHeaders, err = ec.unmarshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, v)
+			it.AdditionalHeaders, err = ec.unmarshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeaders(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "additionalHeadersSerialized":
 			var err error
-			it.AdditionalHeadersSerialized, err = ec.unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
+			it.AdditionalHeadersSerialized, err = ec.unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeadersSerialized(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -21933,13 +21933,13 @@ func (ec *executionContext) unmarshalInputCSRFTokenCredentialRequestAuthInput(ct
 			}
 		case "additionalHeaders":
 			var err error
-			it.AdditionalHeaders, err = ec.unmarshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, v)
+			it.AdditionalHeaders, err = ec.unmarshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeaders(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "additionalHeadersSerialized":
 			var err error
-			it.AdditionalHeadersSerialized, err = ec.unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
+			it.AdditionalHeadersSerialized, err = ec.unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeadersSerialized(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -28131,43 +28131,43 @@ func (ec *executionContext) marshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑinc
 	return ret
 }
 
-func (ec *executionContext) unmarshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx context.Context, v interface{}) (HttpHeaders, error) {
+func (ec *executionContext) unmarshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeaders(ctx context.Context, v interface{}) (HTTPHeaders, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res HttpHeaders
+	var res HTTPHeaders
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx context.Context, sel ast.SelectionSet, v HttpHeaders) graphql.Marshaler {
+func (ec *executionContext) marshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeaders(ctx context.Context, sel ast.SelectionSet, v HTTPHeaders) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, v interface{}) (HttpHeadersSerialized, error) {
+func (ec *executionContext) unmarshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeadersSerialized(ctx context.Context, v interface{}) (HTTPHeadersSerialized, error) {
 	tmp, err := graphql.UnmarshalString(v)
-	return HttpHeadersSerialized(tmp), err
+	return HTTPHeadersSerialized(tmp), err
 }
 
-func (ec *executionContext) marshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, sel ast.SelectionSet, v HttpHeadersSerialized) graphql.Marshaler {
+func (ec *executionContext) marshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeadersSerialized(ctx context.Context, sel ast.SelectionSet, v HTTPHeadersSerialized) graphql.Marshaler {
 	return graphql.MarshalString(string(v))
 }
 
-func (ec *executionContext) unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, v interface{}) (*HttpHeadersSerialized, error) {
+func (ec *executionContext) unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeadersSerialized(ctx context.Context, v interface{}) (*HTTPHeadersSerialized, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
+	res, err := ec.unmarshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeadersSerialized(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, sel ast.SelectionSet, v *HttpHeadersSerialized) graphql.Marshaler {
+func (ec *executionContext) marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeadersSerialized(ctx context.Context, sel ast.SelectionSet, v *HTTPHeadersSerialized) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, sel, *v)
+	return ec.marshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHTTPHeadersSerialized(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {

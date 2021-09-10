@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
+// Runtime missing godoc
 type Runtime struct {
 	ID                string
 	Name              string
@@ -15,20 +16,27 @@ type Runtime struct {
 	CreationTimestamp time.Time
 }
 
+// RuntimeStatus missing godoc
 type RuntimeStatus struct {
 	Condition RuntimeStatusCondition
 	Timestamp time.Time
 }
 
+// RuntimeStatusCondition missing godoc
 type RuntimeStatusCondition string
 
 const (
-	RuntimeStatusConditionInitial      RuntimeStatusCondition = "INITIAL"
+	// RuntimeStatusConditionInitial missing godoc
+	RuntimeStatusConditionInitial RuntimeStatusCondition = "INITIAL"
+	// RuntimeStatusConditionProvisioning missing godoc
 	RuntimeStatusConditionProvisioning RuntimeStatusCondition = "PROVISIONING"
-	RuntimeStatusConditionConnected    RuntimeStatusCondition = "CONNECTED"
-	RuntimeStatusConditionFailed       RuntimeStatusCondition = "FAILED"
+	// RuntimeStatusConditionConnected missing godoc
+	RuntimeStatusConditionConnected RuntimeStatusCondition = "CONNECTED"
+	// RuntimeStatusConditionFailed missing godoc
+	RuntimeStatusConditionFailed RuntimeStatusCondition = "FAILED"
 )
 
+// RuntimeInput missing godoc
 type RuntimeInput struct {
 	Name            string
 	Description     *string
@@ -36,6 +44,7 @@ type RuntimeInput struct {
 	StatusCondition *RuntimeStatusCondition
 }
 
+// ToRuntime missing godoc
 func (i *RuntimeInput) ToRuntime(id string, tenant string, creationTimestamp, conditionTimestamp time.Time) *Runtime {
 	if i == nil {
 		return nil
@@ -63,6 +72,7 @@ func getRuntimeStatusConditionOrDefault(in *RuntimeStatusCondition) RuntimeStatu
 	return statusCondition
 }
 
+// RuntimePage missing godoc
 type RuntimePage struct {
 	Data       []*Runtime
 	PageInfo   *pagination.Page

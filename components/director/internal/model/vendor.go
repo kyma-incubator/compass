@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 )
 
+// Vendor missing godoc
 type Vendor struct {
 	ID            string
 	OrdID         string
@@ -14,6 +15,7 @@ type Vendor struct {
 	Labels        json.RawMessage
 }
 
+// VendorInput missing godoc
 type VendorInput struct {
 	OrdID    string          `json:"ordId"`
 	Title    string          `json:"title"`
@@ -21,6 +23,7 @@ type VendorInput struct {
 	Labels   json.RawMessage `json:"labels"`
 }
 
+// ToVendor missing godoc
 func (i *VendorInput) ToVendor(id, tenantID, appID string) *Vendor {
 	if i == nil {
 		return nil
@@ -37,6 +40,7 @@ func (i *VendorInput) ToVendor(id, tenantID, appID string) *Vendor {
 	}
 }
 
+// SetFromUpdateInput missing godoc
 func (p *Vendor) SetFromUpdateInput(update VendorInput) {
 	p.Title = update.Title
 	p.Partners = update.Partners

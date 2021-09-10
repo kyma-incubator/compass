@@ -481,7 +481,7 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
@@ -693,7 +693,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
@@ -766,7 +766,7 @@ func TestService_Delete(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
@@ -922,7 +922,7 @@ func TestService_RefetchSpec(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			frRepo := testCase.FetchRequestRepoFn()

@@ -1,4 +1,4 @@
-package runtime_context
+package runtimectx
 
 import (
 	"context"
@@ -18,6 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// RuntimeContextService missing godoc
 //go:generate mockery --name=RuntimeContextService --output=automock --outpkg=automock --case=underscore
 type RuntimeContextService interface {
 	Create(ctx context.Context, in model.RuntimeContextInput) (string, error)
@@ -28,6 +29,7 @@ type RuntimeContextService interface {
 	ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error)
 }
 
+// RuntimeContextConverter missing godoc
 //go:generate mockery --name=RuntimeContextConverter --output=automock --outpkg=automock --case=underscore
 type RuntimeContextConverter interface {
 	ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext
@@ -35,12 +37,14 @@ type RuntimeContextConverter interface {
 	InputFromGraphQL(in graphql.RuntimeContextInput, runtimeID string) model.RuntimeContextInput
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact              persistence.Transactioner
 	runtimeContextService RuntimeContextService
 	converter             RuntimeContextConverter
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, runtimeContextService RuntimeContextService, conv RuntimeContextConverter) *Resolver {
 	return &Resolver{
 		transact:              transact,
@@ -49,6 +53,7 @@ func NewResolver(transact persistence.Transactioner, runtimeContextService Runti
 	}
 }
 
+// RuntimeContexts missing godoc
 func (r *Resolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
 	runtimeID, err := r.getRuntimeID(ctx)
 	if err != nil {
@@ -97,6 +102,7 @@ func (r *Resolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelF
 	}, nil
 }
 
+// RuntimeContext missing godoc
 func (r *Resolver) RuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
 	runtimeID, err := r.getRuntimeID(ctx)
 	if err != nil {
@@ -132,6 +138,7 @@ func (r *Resolver) RuntimeContext(ctx context.Context, id string) (*graphql.Runt
 	return r.converter.ToGraphQL(runtimeContext), nil
 }
 
+// RegisterRuntimeContext missing godoc
 func (r *Resolver) RegisterRuntimeContext(ctx context.Context, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
 	runtimeID, err := r.getRuntimeID(ctx)
 	if err != nil {
@@ -168,6 +175,7 @@ func (r *Resolver) RegisterRuntimeContext(ctx context.Context, in graphql.Runtim
 	return gqlRuntimeContext, nil
 }
 
+// UpdateRuntimeContext missing godoc
 func (r *Resolver) UpdateRuntimeContext(ctx context.Context, id string, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
 	runtimeID, err := r.getRuntimeID(ctx)
 	if err != nil {
@@ -209,6 +217,7 @@ func (r *Resolver) UpdateRuntimeContext(ctx context.Context, id string, in graph
 	return gqlRuntimeContext, nil
 }
 
+// DeleteRuntimeContext missing godoc
 func (r *Resolver) DeleteRuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
 	runtimeID, err := r.getRuntimeID(ctx)
 	if err != nil {
@@ -264,6 +273,7 @@ func (r *Resolver) DeleteRuntimeContext(ctx context.Context, id string) (*graphq
 	return deletedRuntimeContext, nil
 }
 
+// Labels missing godoc
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key *string) (graphql.Labels, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Runtime Context cannot be empty")

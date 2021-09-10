@@ -181,7 +181,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo)
+	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
@@ -225,7 +225,6 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 			}
 		}
 		log.C(ctx).Infof("Successfully reloaded configuration file.")
-
 	}).Run(ctx)
 
 	return provider

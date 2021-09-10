@@ -97,6 +97,37 @@ func FixAddEventAPIToBundleRequest(bndlID, eventAPIInputGQL string) *gcli.Reques
 		`, bndlID, eventAPIInputGQL, testctx.Tc.GQLFieldsProvider.ForEventDefinition()))
 }
 
+func FixBundleWithOnlyOdataAPIs() *graphql.BundleCreateInput {
+	return &graphql.BundleCreateInput{
+		Name:        "test-bndl",
+		Description: ptr.String("foo-descr"),
+		APIDefinitions: []*graphql.APIDefinitionInput{
+			{
+				Name:        "reviews-v1",
+				Description: ptr.String("api for adding reviews"),
+				TargetURL:   "http://mywordpress.com/reviews",
+				Version:     FixActiveVersion(),
+				Spec: &graphql.APISpecInput{
+					Type:   graphql.APISpecTypeOdata,
+					Format: graphql.SpecFormatJSON,
+					Data:   ptr.CLOB(`{"openapi":"3.0.1"}`),
+				},
+			},
+			{
+				Name:        "xml",
+				Description: ptr.String("xml api"),
+				Version:     FixDecommissionedVersion(),
+				TargetURL:   "http://mywordpress.com/xml",
+				Spec: &graphql.APISpecInput{
+					Type:   graphql.APISpecTypeOdata,
+					Format: graphql.SpecFormatXML,
+					Data:   ptr.CLOB("odata"),
+				},
+			},
+		},
+	}
+}
+
 func FixBundleCreateInputWithRelatedObjects(t require.TestingT, name string) graphql.BundleCreateInput {
 	desc := "Foo bar"
 	return graphql.BundleCreateInput{

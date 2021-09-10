@@ -92,7 +92,7 @@ endef
 #
 #   verify:: errcheck
 #
-verify:: test check-imports check-fmt errcheck
+verify:: test check-imports check-fmt errcheck lint
 format:: imports fmt
 
 release: verify build-image push-image
@@ -107,7 +107,7 @@ docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 
 # Targets mounting sources to buildpack
-MOUNT_TARGETS = build check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
+MOUNT_TARGETS = build check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen lint
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
 # Builds new Docker image into Minikube's Docker Registry
@@ -138,11 +138,18 @@ check-fmt-local:
 fmt-local:
 	go fmt $$($(DIRS_TO_CHECK))
 
+format-local: imports-local fmt-local
+
+verify-local: test-local check-imports-local check-fmt-local errcheck-local lint-local
+
 errcheck-local:
 	errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
 
 vet-local:
 	go vet $$($(DIRS_TO_CHECK))
+
+lint-local:
+	golangci-lint run
 
 generate-local:
 	go generate ./...

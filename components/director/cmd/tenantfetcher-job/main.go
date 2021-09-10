@@ -35,6 +35,7 @@ type config struct {
 	Features features.Config
 
 	TenantProvider       string        `envconfig:"APP_TENANT_PROVIDER"`
+	TenantsRegion        string        `envconfig:"default=central,APP_TENANTS_REGION"`
 	MetricsPushEndpoint  string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 	MovedRuntimeLabelKey string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
 	ClientTimeout        time.Duration `envconfig:"default=60s"`
@@ -47,6 +48,7 @@ func main() {
 	exitOnError(err, "Error while loading app config")
 
 	ctx, err := log.Configure(context.Background(), &cfg.Log)
+	exitOnError(err, "Error while configuring logger")
 
 	var metricsPusher *metrics.Pusher
 	if cfg.MetricsPushEndpoint != "" {
@@ -116,5 +118,5 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
+	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.TenantsRegion, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
 }

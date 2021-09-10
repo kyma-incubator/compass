@@ -19,9 +19,8 @@ import (
 )
 
 func TestTokenResolver_GenerateCSRToken(t *testing.T) {
-
 	const (
-		authId     = "authID"
+		authID     = "authID"
 		tokenValue = "tokenValue"
 	)
 
@@ -33,7 +32,7 @@ func TestTokenResolver_GenerateCSRToken(t *testing.T) {
 		tokenService := &apiMocks.TokenService{}
 		tokenResolver := NewTokenResolver(transactioner, tokenService)
 		// WHEN
-		token, err := tokenResolver.GenerateCSRToken(context.Background(), authId)
+		token, err := tokenResolver.GenerateCSRToken(context.Background(), authID)
 		// THEN
 		assert.Error(t, err, "error while transaction begin")
 		assert.Nil(t, token)
@@ -45,27 +44,27 @@ func TestTokenResolver_GenerateCSRToken(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
 		tokenService := &apiMocks.TokenService{}
-		tokenService.On("RegenerateOneTimeToken", mock.Anything, authId, tokens.CSRToken).
+		tokenService.On("RegenerateOneTimeToken", mock.Anything, authID, tokens.CSRToken).
 			Return(model.OneTimeToken{}, errors.New("error while regenerating"))
 		tokenResolver := NewTokenResolver(transactioner, tokenService)
 		// WHEN
-		token, err := tokenResolver.GenerateCSRToken(context.TODO(), authId)
+		token, err := tokenResolver.GenerateCSRToken(context.TODO(), authID)
 		// THEN
 		assert.Error(t, err)
 		assert.Nil(t, token)
 	})
 
-	t.Run("fails when transaction cannot be commited", func(t *testing.T) {
+	t.Run("fails when transaction cannot be committed", func(t *testing.T) {
 		// GIVEN
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error during commit")).ThatFailsOnCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
 		tokenService := &apiMocks.TokenService{}
-		tokenService.On("RegenerateOneTimeToken", mock.Anything, authId, tokens.CSRToken).
+		tokenService.On("RegenerateOneTimeToken", mock.Anything, authID, tokens.CSRToken).
 			Return(model.OneTimeToken{}, nil)
 		tokenResolver := NewTokenResolver(transactioner, tokenService)
 		// WHEN
-		token, err := tokenResolver.GenerateCSRToken(context.Background(), authId)
+		token, err := tokenResolver.GenerateCSRToken(context.Background(), authID)
 		// THEN
 		assert.Error(t, err)
 		assert.Nil(t, token)
@@ -77,14 +76,13 @@ func TestTokenResolver_GenerateCSRToken(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer transactioner.AssertExpectations(t)
 		tokenService := &apiMocks.TokenService{}
-		tokenService.On("RegenerateOneTimeToken", mock.Anything, authId, tokens.CSRToken).
+		tokenService.On("RegenerateOneTimeToken", mock.Anything, authID, tokens.CSRToken).
 			Return(model.OneTimeToken{Token: tokenValue}, nil)
 		tokenResolver := NewTokenResolver(transactioner, tokenService)
 		// WHEN
-		token, err := tokenResolver.GenerateCSRToken(context.Background(), authId)
+		token, err := tokenResolver.GenerateCSRToken(context.Background(), authID)
 		// THEN
 		assert.NoError(t, err)
 		assert.Equal(t, tokenValue, token.Token)
 	})
-
 }

@@ -58,6 +58,15 @@ type config struct {
 	Handler tenantfetcher.HandlerConfig
 
 	Database persistence.DatabaseConfig
+
+	SecurityConfig securityConfig
+}
+
+type securityConfig struct {
+	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
+	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
+	JwksEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT"`
+	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }
 
 func main() {
@@ -107,7 +116,7 @@ func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transa
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
-	configureAuthMiddleware(ctx, router, cfg.Handler)
+	configureAuthMiddleware(ctx, router, cfg.SecurityConfig)
 
 	registerHandler(ctx, router, cfg.Handler, transact)
 
@@ -159,7 +168,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func configureAuthMiddleware(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
+func configureAuthMiddleware(ctx context.Context, router *mux.Router, cfg securityConfig) {
 	scopeValidator := claims.NewScopesValidator([]string{cfg.SubscriptionCallbackScope})
 	middleware := auth.New(cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
@@ -186,7 +195,7 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	tenantRepo := tenant.NewRepository(converter)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc)
+	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc, cfg.TenantProvider)
 	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(provisioner, transact, cfg)
 
 	log.C(ctx).Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
@@ -194,6 +203,15 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 
 	log.C(ctx).Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
 	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.DeleteByExternalID).Methods(http.MethodDelete)
+
+	log.C(ctx).Infof("Registering Regional Tenant Onboarding endpoint on %s...", cfg.RegionalHandlerEndpoint)
+	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.CreateRegional).Methods(http.MethodPut)
+
+	log.C(ctx).Infof("Registering Regional Tenant Decommissioning endpoint on %s...", cfg.RegionalHandlerEndpoint)
+	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.DeleteByExternalID).Methods(http.MethodDelete)
+
+	log.C(ctx).Infof("Registering service dependencies endpoint on %s...", cfg.DependenciesEndpoint)
+	router.HandleFunc(cfg.DependenciesEndpoint, tenantHandler.Dependencies).Methods(http.MethodGet)
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {

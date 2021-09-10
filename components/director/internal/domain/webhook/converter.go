@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// AuthConverter missing godoc
 //go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
 	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
@@ -23,10 +24,12 @@ type converter struct {
 	authConverter AuthConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(authConverter AuthConverter) *converter {
 	return &converter{authConverter: authConverter}
 }
 
+// ToGraphQL missing godoc
 func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 	if in == nil {
 		return nil, nil
@@ -64,8 +67,9 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 	}, nil
 }
 
+// MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error) {
-	var webhooks []*graphql.Webhook
+	webhooks := make([]*graphql.Webhook, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -82,6 +86,7 @@ func (c *converter) MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, 
 	return webhooks, nil
 }
 
+// InputFromGraphQL missing godoc
 func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error) {
 	if in == nil {
 		return nil, nil
@@ -114,8 +119,9 @@ func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookIn
 	}, nil
 }
 
+// MultipleInputFromGraphQL missing godoc
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error) {
-	var inputs []*model.WebhookInput
+	inputs := make([]*model.WebhookInput, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -131,6 +137,7 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*mod
 	return inputs, nil
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 	optionalAuth, err := c.toAuthEntity(in)
 	if err != nil {
@@ -182,6 +189,7 @@ func (c *converter) toAuthEntity(in model.Webhook) (sql.NullString, error) {
 	return optionalAuth, nil
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 	auth, err := c.fromEntityAuth(in)
 	if err != nil {
@@ -236,11 +244,4 @@ func (c *converter) fromEntityAuth(in Entity) (*model.Auth, error) {
 	}
 
 	return auth, nil
-}
-
-func nullableInt(n *int) int {
-	if n != nil {
-		return *n
-	}
-	return 0
 }

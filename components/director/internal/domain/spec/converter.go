@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// FetchRequestConverter missing godoc
 //go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
@@ -20,12 +21,14 @@ type converter struct {
 	fr FetchRequestConverter
 }
 
+// NewConverter missing godoc
 func NewConverter(fr FetchRequestConverter) *converter {
 	return &converter{
 		fr: fr,
 	}
 }
 
+// ToGraphQLAPISpec missing godoc
 func (c *converter) ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error) {
 	if in == nil {
 		return nil, nil
@@ -50,6 +53,7 @@ func (c *converter) ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error) {
 	}, nil
 }
 
+// ToGraphQLEventSpec missing godoc
 func (c *converter) ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec, error) {
 	if in == nil {
 		return nil, nil
@@ -74,6 +78,7 @@ func (c *converter) ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec, erro
 	}, nil
 }
 
+// InputFromGraphQLAPISpec missing godoc
 func (c *converter) InputFromGraphQLAPISpec(in *graphql.APISpecInput) (*model.SpecInput, error) {
 	if in == nil {
 		return nil, nil
@@ -94,6 +99,7 @@ func (c *converter) InputFromGraphQLAPISpec(in *graphql.APISpecInput) (*model.Sp
 	}, nil
 }
 
+// InputFromGraphQLEventSpec missing godoc
 func (c *converter) InputFromGraphQLEventSpec(in *graphql.EventSpecInput) (*model.SpecInput, error) {
 	if in == nil {
 		return nil, nil
@@ -114,6 +120,7 @@ func (c *converter) InputFromGraphQLEventSpec(in *graphql.EventSpecInput) (*mode
 	}, nil
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in model.Spec) Entity {
 	refID := repo.NewValidNullableString(in.ObjectID)
 
@@ -150,6 +157,7 @@ func (c *converter) ToEntity(in model.Spec) Entity {
 	}
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) (model.Spec, error) {
 	objectID, objectType, err := c.objectReferenceFromEntity(in)
 	if err != nil {

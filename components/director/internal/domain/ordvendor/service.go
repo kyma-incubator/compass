@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// VendorRepository missing godoc
 //go:generate mockery --name=VendorRepository --output=automock --outpkg=automock --case=underscore
 type VendorRepository interface {
 	Create(ctx context.Context, item *model.Vendor) error
@@ -19,6 +20,7 @@ type VendorRepository interface {
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Vendor, error)
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -29,6 +31,7 @@ type service struct {
 	uidService UIDService
 }
 
+// NewService missing godoc
 func NewService(vendorRepo VendorRepository, uidService UIDService) *service {
 	return &service{
 		vendorRepo: vendorRepo,
@@ -36,6 +39,7 @@ func NewService(vendorRepo VendorRepository, uidService UIDService) *service {
 	}
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, applicationID string, in model.VendorInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -54,6 +58,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Ven
 	return vendor.OrdID, nil
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.VendorInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -74,6 +79,7 @@ func (s *service) Update(ctx context.Context, id string, in model.VendorInput) e
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -88,6 +94,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// Exist missing godoc
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -102,6 +109,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.Vendor, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -116,6 +124,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Vendor, error) {
 	return vendor, nil
 }
 
+// ListByApplicationID missing godoc
 func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.Vendor, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

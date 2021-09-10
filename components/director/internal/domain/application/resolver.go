@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ApplicationService missing godoc
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
@@ -41,6 +42,7 @@ type ApplicationService interface {
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
 }
 
+// ApplicationConverter missing godoc
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
@@ -50,12 +52,14 @@ type ApplicationConverter interface {
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
 }
 
+// EventingService missing godoc
 //go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore
 type EventingService interface {
 	CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 	GetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error)
 }
 
+// WebhookService missing godoc
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
 type WebhookService interface {
 	Get(ctx context.Context, id string) (*model.Webhook, error)
@@ -65,11 +69,13 @@ type WebhookService interface {
 	Delete(ctx context.Context, id string) error
 }
 
+// SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 }
 
+// WebhookConverter missing godoc
 //go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
 type WebhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
@@ -78,22 +84,26 @@ type WebhookConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
+// SystemAuthConverter missing godoc
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
 	ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
+// OAuth20Service missing godoc
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
 }
 
+// RuntimeService missing godoc
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 }
 
+// BundleService missing godoc
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
@@ -101,6 +111,7 @@ type BundleService interface {
 	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
 }
 
+// BundleConverter missing godoc
 //go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
@@ -118,6 +129,7 @@ type OneTimeTokenService interface {
 	IsTokenValid(systemAuth *model.SystemAuth) (bool, error)
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -138,6 +150,7 @@ type Resolver struct {
 	oneTimeTokenSvc OneTimeTokenService
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner,
 	svc ApplicationService,
 	webhookSvc WebhookService,
@@ -168,6 +181,7 @@ func NewResolver(transact persistence.Transactioner,
 	}
 }
 
+// Applications missing godoc
 func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	labelFilter := labelfilter.MultipleFromGraphQL(filter)
 
@@ -210,6 +224,7 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	}, nil
 }
 
+// Application missing godoc
 func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -235,6 +250,7 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 	return r.appConverter.ToGraphQL(app), nil
 }
 
+// ApplicationsForRuntime missing godoc
 func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	var cursor string
 	if after != nil {
@@ -281,6 +297,7 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 	}, nil
 }
 
+// RegisterApplication missing godoc
 func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.ApplicationRegisterInput) (*graphql.Application, error) {
 	log.C(ctx).Infof("Registering Application with name %s", in.Name)
 
@@ -310,6 +327,7 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 	return gqlApp, nil
 }
 
+// UpdateApplication missing godoc
 func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationUpdateInput) (*graphql.Application, error) {
 	log.C(ctx).Infof("Updating Application with id %s", id)
 
@@ -331,6 +349,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 	return gqlApp, nil
 }
 
+// UnregisterApplication missing godoc
 func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graphql.Application, error) {
 	log.C(ctx).Infof("Unregistering Application with id %s", id)
 
@@ -367,6 +386,8 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 	log.C(ctx).Infof("Successfully unregistered Application with id %s", id)
 	return deletedApp, nil
 }
+
+// SetApplicationLabel missing godoc
 func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Label, error) {
 	// TODO: Use @validation directive on input type instead, after resolving https://github.com/kyma-incubator/compass/issues/515
 	gqlLabel := graphql.LabelInput{Key: key, Value: value}
@@ -403,6 +424,7 @@ func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string
 	}, nil
 }
 
+// DeleteApplicationLabel missing godoc
 func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID string, key string) (*graphql.Label, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -433,6 +455,7 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 	}, nil
 }
 
+// Webhooks missing godoc
 // TODO: Proper error handling
 func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*graphql.Webhook, error) {
 	tx, err := r.transact.Begin()
@@ -463,6 +486,7 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	return gqlWebhooks, nil
 }
 
+// Labels missing godoc
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (graphql.Labels, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application cannot be empty")
@@ -501,6 +525,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 	return gqlLabels, nil
 }
 
+// Auths missing godoc
 func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.AppSystemAuth, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application cannot be empty")
@@ -549,6 +574,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 	return out, nil
 }
 
+// EventingConfiguration missing godoc
 func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application cannot be empty")
@@ -577,37 +603,36 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "while commiting the transaction")
+		return nil, errors.Wrap(err, "while committing the transaction")
 	}
 
 	return eventing.ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
+// Bundles missing godoc
 func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.BundlePage, error) {
 	param := dataloader.ParamBundle{ID: obj.ID, Ctx: ctx, First: first, After: after}
-	return dataloader.BundleFor(ctx).BundleById.Load(param)
+	return dataloader.BundleFor(ctx).BundleByID.Load(param)
 }
 
+// BundlesDataLoader missing godoc
 func (r *Resolver) BundlesDataLoader(keys []dataloader.ParamBundle) ([]*graphql.BundlePage, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Applications found")}
 	}
 
 	ctx := keys[0].Ctx
-	first := keys[0].First
-	after := keys[0].After
-
 	applicationIDs := make([]string, 0, len(keys))
 	for _, key := range keys {
 		applicationIDs = append(applicationIDs, key.ID)
 	}
 
 	var cursor string
-	if after != nil {
-		cursor = string(*after)
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
 	}
 
-	if first == nil {
+	if keys[0].First == nil {
 		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
 	}
 
@@ -620,7 +645,7 @@ func (r *Resolver) BundlesDataLoader(keys []dataloader.ParamBundle) ([]*graphql.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	bndlPages, err := r.bndlSvc.ListByApplicationIDs(ctx, applicationIDs, *first, cursor)
+	bndlPages, err := r.bndlSvc.ListByApplicationIDs(ctx, applicationIDs, *keys[0].First, cursor)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -647,6 +672,7 @@ func (r *Resolver) BundlesDataLoader(keys []dataloader.ParamBundle) ([]*graphql.
 	return gqlBndls, nil
 }
 
+// Bundle missing godoc
 func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id string) (*graphql.Bundle, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application cannot be empty")

@@ -20,7 +20,10 @@ import (
 	"errors"
 )
 
+// CoordinatesKey missing godoc
 const CoordinatesKey = "authenticator_coordinates"
+
+// HeaderName missing godoc
 const HeaderName = "X-Authenticator-Name"
 
 // Config holds all configuration related to an additional authenticator provided to the Director
@@ -30,12 +33,14 @@ type Config struct {
 	Attributes     Attributes      `json:"attributes"`
 }
 
+// TrustedIssuer missing godoc
 type TrustedIssuer struct {
 	Protocol    string `json:"protocol"`
 	DomainURL   string `json:"domain_url"`
 	ScopePrefix string `json:"scope_prefix"`
 }
 
+// Coordinates missing godoc
 type Coordinates struct {
 	Name  string `json:"name"`
 	Index int    `json:"index"`

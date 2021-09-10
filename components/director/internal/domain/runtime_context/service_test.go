@@ -1,11 +1,11 @@
-package runtime_context_test
+package runtimectx_test
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -147,7 +147,7 @@ func TestService_Create(t *testing.T) {
 			repo := testCase.RuntimeContextRepositoryFn()
 			idSvc := testCase.UIDServiceFn()
 			labelSvc := testCase.LabelUpsertServiceFn()
-			svc := runtime_context.NewService(repo, nil, labelSvc, idSvc)
+			svc := runtimectx.NewService(repo, nil, labelSvc, idSvc)
 
 			// when
 			result, err := svc.Create(ctx, testCase.Input)
@@ -169,7 +169,7 @@ func TestService_Create(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime_context.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.RuntimeContextInput{})
 		// then
@@ -358,7 +358,7 @@ func TestService_Update(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
 			labelSvc := testCase.LabelUpsertServiceFn()
-			svc := runtime_context.NewService(repo, labelRepo, labelSvc, nil)
+			svc := runtimectx.NewService(repo, labelRepo, labelSvc, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -378,7 +378,7 @@ func TestService_Update(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime_context.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil)
 		// when
 		err := svc.Update(context.TODO(), "id", model.RuntimeContextInput{})
 		// then
@@ -439,7 +439,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := runtime_context.NewService(repo, nil, nil, nil)
+			svc := runtimectx.NewService(repo, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -457,7 +457,7 @@ func TestService_Delete(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime_context.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil)
 		// when
 		err := svc.Delete(context.TODO(), "id")
 		// then
@@ -523,7 +523,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime_context.NewService(repo, nil, nil, nil)
+			svc := runtimectx.NewService(repo, nil, nil, nil)
 
 			// when
 			rtmCtx, err := svc.Get(ctx, testCase.InputID)
@@ -542,7 +542,7 @@ func TestService_Get(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime_context.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil)
 		// when
 		_, err := svc.Get(context.TODO(), "id")
 		// then
@@ -606,7 +606,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			rtmCtxRepo := testCase.RepositoryFn()
-			svc := runtime_context.NewService(rtmCtxRepo, nil, nil, nil)
+			svc := runtimectx.NewService(rtmCtxRepo, nil, nil, nil)
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputRuntimeContextID)
@@ -625,7 +625,7 @@ func TestService_Exist(t *testing.T) {
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime_context.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil)
 		// when
 		_, err := svc.Exist(context.TODO(), "id")
 		// then
@@ -747,7 +747,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime_context.NewService(repo, nil, nil, nil)
+			svc := runtimectx.NewService(repo, nil, nil, nil)
 
 			// when
 			rtmCtx, err := svc.List(ctx, runtimeID, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -766,7 +766,7 @@ func TestService_List(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime_context.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil)
 		// when
 		_, err := svc.List(context.TODO(), "", nil, 1, "")
 		// then
@@ -888,7 +888,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime_context.NewService(repo, labelRepo, nil, nil)
+			svc := runtimectx.NewService(repo, labelRepo, nil, nil)
 
 			// when
 			l, err := svc.ListLabels(ctx, testCase.InputRuntimeContextID)
@@ -908,7 +908,7 @@ func TestService_ListLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime_context.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil)
 		// when
 		_, err := svc.ListLabels(context.TODO(), "id")
 		// then

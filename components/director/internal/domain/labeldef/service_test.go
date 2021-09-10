@@ -20,7 +20,6 @@ import (
 )
 
 func TestServiceCreate(t *testing.T) {
-
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		mockRepository := &automock.Repository{}
@@ -64,7 +63,6 @@ func TestServiceCreate(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while storing Label Definition: some error")
 	})
-
 }
 
 func TestServiceGet(t *testing.T) {
@@ -850,8 +848,7 @@ func fixBasicSchema(t *testing.T) *interface{} {
 
 	err := json.Unmarshal([]byte(*sch), &obj)
 	require.NoError(t, err)
-	var objTemp interface{}
-	objTemp = obj
+	var objTemp interface{} = obj
 	return &objTemp
 }
 
@@ -873,8 +870,7 @@ func fixSchema(t *testing.T, propertyName, propertyType, propertyDescription, re
 
 	err := json.Unmarshal([]byte(sch), &obj)
 	require.NoError(t, err)
-	var objTemp interface{}
-	objTemp = obj
+	var objTemp interface{} = obj
 	return &objTemp
 }
 

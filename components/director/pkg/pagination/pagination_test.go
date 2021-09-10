@@ -27,7 +27,7 @@ func TestComputeOffset(t *testing.T) {
 		},
 		{
 			Name:            "Success with easter egg",
-			InputCursor:     string(base64.StdEncoding.EncodeToString([]byte("DpKtJ4j9jDq" + strconv.Itoa(offset)))),
+			InputCursor:     base64.StdEncoding.EncodeToString([]byte("DpKtJ4j9jDq" + strconv.Itoa(offset))),
 			ExptectedOffset: offset,
 			ExpectedErr:     nil,
 		},
@@ -45,7 +45,7 @@ func TestComputeOffset(t *testing.T) {
 		},
 		{
 			Name:            "Return error when input is not integer",
-			InputCursor:     string(base64.StdEncoding.EncodeToString([]byte("foo-bar"))),
+			InputCursor:     base64.StdEncoding.EncodeToString([]byte("foo-bar")),
 			ExptectedOffset: 0,
 			ExpectedErr:     errors.New("cursor is not correct"),
 		},
@@ -179,5 +179,5 @@ func TestDecodeAndEncodeCursorTogether(t *testing.T) {
 }
 
 func convertIntToBase64String(number int) string {
-	return string(base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number))))
+	return base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number)))
 }

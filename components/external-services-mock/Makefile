@@ -23,5 +23,8 @@ ensure-local:
 dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
+lint-local:
+	@echo ${SKIP_STEP_MESSAGE}
+
 build-local:
 	env go build -o bin/external-services-mock ./cmd/main.go

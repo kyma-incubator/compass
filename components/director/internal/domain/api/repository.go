@@ -30,6 +30,7 @@ var (
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash"}
 )
 
+// APIDefinitionConverter missing godoc
 //go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type APIDefinitionConverter interface {
 	FromEntity(entity Entity) model.APIDefinition
@@ -48,6 +49,7 @@ type pgRepository struct {
 	conv            APIDefinitionConverter
 }
 
+// NewRepository missing godoc
 func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:    repo.NewSingleGetter(resource.API, apiDefTable, tenantColumn, apiDefColumns),
@@ -62,22 +64,25 @@ func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	}
 }
 
+// APIDefCollection missing godoc
 type APIDefCollection []Entity
 
+// Len missing godoc
 func (r APIDefCollection) Len() int {
 	return len(r)
 }
 
+// ListByBundleIDs missing godoc
 func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
-	apiDefIds := make([]string, 0, len(bundleRefs))
+	apiDefIDs := make([]string, 0, len(bundleRefs))
 	for _, ref := range bundleRefs {
-		apiDefIds = append(apiDefIds, *ref.ObjectID)
+		apiDefIDs = append(apiDefIDs, *ref.ObjectID)
 	}
 
 	var conditions repo.Conditions
-	if len(apiDefIds) > 0 {
+	if len(apiDefIDs) > 0 {
 		conditions = repo.Conditions{
-			repo.NewInConditionForStringValues("id", apiDefIds),
+			repo.NewInConditionForStringValues("id", apiDefIDs),
 		}
 	}
 
@@ -87,7 +92,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 		return nil, err
 	}
 
-	refsByBundleId, apiDefsByApiDefId := r.groupEntitiesByID(bundleRefs, apiDefCollection)
+	refsByBundleID, apiDefsByAPIDefID := r.groupEntitiesByID(bundleRefs, apiDefCollection)
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
 	if err != nil {
@@ -96,8 +101,8 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 
 	apiDefPages := make([]*model.APIDefinitionPage, 0, len(bundleIDs))
 	for _, bundleID := range bundleIDs {
-		ids := getApiDefIDsForBundle(refsByBundleId[bundleID])
-		apiDefs := getApiDefsForBundle(ids, apiDefsByApiDefId)
+		ids := getAPIDefIDsForBundle(refsByBundleID[bundleID])
+		apiDefs := getAPIDefsForBundle(ids, apiDefsByAPIDefID)
 
 		hasNextPage := false
 		endCursor := ""
@@ -118,6 +123,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	return apiDefPages, nil
 }
 
+// ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error) {
 	apiCollection := APIDefCollection{}
 	if err := r.lister.List(ctx, tenantID, &apiCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
@@ -131,6 +137,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 	return apis, nil
 }
 
+// GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
 	var apiDefEntity Entity
 	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
@@ -143,11 +150,13 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return &apiDefModel, nil
 }
 
+// GetForBundle missing godoc
 // the bundleID remains for backwards compatibility above in the layers; we are sure that the correct API will be fetched because there can't be two records with the same ID
 func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error) {
 	return r.GetByID(ctx, tenant, id)
 }
 
+// Create missing godoc
 func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -162,6 +171,7 @@ func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) er
 	return nil
 }
 
+// CreateMany missing godoc
 func (r *pgRepository) CreateMany(ctx context.Context, items []*model.APIDefinition) error {
 	for index, item := range items {
 		entity := r.conv.ToEntity(*item)
@@ -175,6 +185,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, items []*model.APIDefinit
 	return nil
 }
 
+// Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, item *model.APIDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -185,14 +196,17 @@ func (r *pgRepository) Update(ctx context.Context, item *model.APIDefinition) er
 	return r.updater.UpdateSingle(ctx, entity)
 }
 
+// Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// DeleteAllByBundleID missing godoc
 func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
 	subqueryConditions := repo.Conditions{
 		repo.NewEqualCondition(bundleColumn, bundleID),
@@ -210,7 +224,7 @@ func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundle
 	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
 }
 
-func getApiDefIDsForBundle(refs []*model.BundleReference) []string {
+func getAPIDefIDsForBundle(refs []*model.BundleReference) []string {
 	result := make([]string, 0, len(refs))
 	for _, ref := range refs {
 		result = append(result, *ref.ObjectID)
@@ -218,7 +232,7 @@ func getApiDefIDsForBundle(refs []*model.BundleReference) []string {
 	return result
 }
 
-func getApiDefsForBundle(ids []string, defs map[string]*model.APIDefinition) []*model.APIDefinition {
+func getAPIDefsForBundle(ids []string, defs map[string]*model.APIDefinition) []*model.APIDefinition {
 	result := make([]*model.APIDefinition, 0, len(ids))
 	if len(defs) > 0 {
 		for _, id := range ids {
@@ -229,16 +243,16 @@ func getApiDefsForBundle(ids []string, defs map[string]*model.APIDefinition) []*
 }
 
 func (r *pgRepository) groupEntitiesByID(bundleRefs []*model.BundleReference, apiDefCollection APIDefCollection) (map[string][]*model.BundleReference, map[string]*model.APIDefinition) {
-	refsByBundleId := map[string][]*model.BundleReference{}
+	refsByBundleID := map[string][]*model.BundleReference{}
 	for _, ref := range bundleRefs {
-		refsByBundleId[*ref.BundleID] = append(refsByBundleId[*ref.BundleID], ref)
+		refsByBundleID[*ref.BundleID] = append(refsByBundleID[*ref.BundleID], ref)
 	}
 
-	apiDefsByApiDefId := map[string]*model.APIDefinition{}
+	apiDefsByAPIDefID := map[string]*model.APIDefinition{}
 	for _, apiDefEnt := range apiDefCollection {
 		m := r.conv.FromEntity(apiDefEnt)
-		apiDefsByApiDefId[apiDefEnt.ID] = &m
+		apiDefsByAPIDefID[apiDefEnt.ID] = &m
 	}
 
-	return refsByBundleId, apiDefsByApiDefId
+	return refsByBundleID, apiDefsByAPIDefID
 }

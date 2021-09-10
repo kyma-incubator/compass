@@ -115,8 +115,8 @@ To install Compass as central Management Plane on a cluster, follow these steps:
 
    | Installation option     	| Value to use with the installation command   	| Example value          	|
    |-------------------------	|-------------------	|-------------------------	|
-   | From the Compass `master` branch 	| `master`          	| `master`                	|
-   | From a specific commit on the Compass `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
+   | From the Compass `main` branch 	| `main`          	| `main`                	|
+   | From a specific commit on the Compass `main` branch 	| `main-{COMMIT_HASH}` 	| `main-34edf09a` 	|
    | From a specific PR on the Compass repository       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
 
    The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
@@ -157,7 +157,7 @@ To install Compass as central Management Plane on a cluster, follow these steps:
 
 ### Local Minikube installation
 
-For local development, install Compass with the minimal Kyma installation on Minikube from the `master` branch. To do so, run this script:
+For local development, install Compass with the minimal Kyma installation on Minikube from the `main` branch. To do so, run this script:
 
 ```bash
 ./installation/cmd/run.sh
@@ -182,7 +182,7 @@ You can install Compass on a single cluster with all Kyma components, including 
 
 To install Compass and Runtime components on a single cluster, follow these steps:
 
-1. [Install Kyma with the Runtime Agent](https://kyma-project.io/docs/master/components/runtime-agent#installation-installation).
+1. [Install Kyma with the Runtime Agent](https://kyma-project.io/docs/main/components/runtime-agent#installation-installation).
 1. Apply the required overrides using the following command:
 
     ```bash
@@ -219,8 +219,8 @@ To install Compass and Runtime components on a single cluster, follow these step
 
    | Installation option     	| Value to use with the installation command   	| Example value          	|
        |-------------------------	|-------------------	|-------------------------	|
-   | From the `master` branch 	| `master`          	| `master`                	|
-   | From a specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
+   | From the `main` branch 	| `main`          	| `main`                	|
+   | From a specific commit on the `main` branch 	| `main-{COMMIT_HASH}` 	| `main-34edf09a` 	|
    | From a specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
 
    Once you decide on the installation option, use these commands:

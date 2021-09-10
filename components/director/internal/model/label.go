@@ -2,6 +2,7 @@ package model
 
 import "github.com/google/uuid"
 
+// Label missing godoc
 type Label struct {
 	ID         string
 	Tenant     string
@@ -11,6 +12,7 @@ type Label struct {
 	ObjectType LabelableObject
 }
 
+// LabelInput missing godoc
 type LabelInput struct {
 	Key        string
 	Value      interface{}
@@ -18,6 +20,7 @@ type LabelInput struct {
 	ObjectType LabelableObject
 }
 
+// ToLabel missing godoc
 func (i *LabelInput) ToLabel(id, tenant string) *Label {
 	return &Label{
 		ID:         id,
@@ -29,15 +32,21 @@ func (i *LabelInput) ToLabel(id, tenant string) *Label {
 	}
 }
 
+// LabelableObject missing godoc
 type LabelableObject string
 
 const (
-	RuntimeLabelableObject        LabelableObject = "Runtime"
+	// RuntimeLabelableObject missing godoc
+	RuntimeLabelableObject LabelableObject = "Runtime"
+	// RuntimeContextLabelableObject missing godoc
 	RuntimeContextLabelableObject LabelableObject = "Runtime Context"
-	ApplicationLabelableObject    LabelableObject = "Application"
-	TenantLabelableObject         LabelableObject = "Tenant"
+	// ApplicationLabelableObject missing godoc
+	ApplicationLabelableObject LabelableObject = "Application"
+	// TenantLabelableObject missing godoc
+	TenantLabelableObject LabelableObject = "Tenant"
 )
 
+// NewLabelForRuntimeContext missing godoc
 func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value interface{}) *Label {
 	return &Label{
 		ID:         uuid.New().String(),
@@ -49,6 +58,7 @@ func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value inte
 	}
 }
 
+// NewLabelForRuntime missing godoc
 func NewLabelForRuntime(runtime Runtime, key string, value interface{}) *Label {
 	return &Label{
 		ID:         uuid.New().String(),
@@ -60,6 +70,7 @@ func NewLabelForRuntime(runtime Runtime, key string, value interface{}) *Label {
 	}
 }
 
+// NewLabelForApplication missing godoc
 func NewLabelForApplication(app Application, key string, value interface{}) *Label {
 	return &Label{
 		ID:         uuid.New().String(),

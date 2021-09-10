@@ -2,7 +2,9 @@ package model
 
 import "github.com/pkg/errors"
 
+// BundleReference missing godoc
 type BundleReference struct {
+	ID                  string
 	Tenant              string
 	BundleID            *string
 	ObjectType          BundleReferenceObjectType
@@ -10,18 +12,23 @@ type BundleReference struct {
 	APIDefaultTargetURL *string
 }
 
+// BundleReferenceObjectType missing godoc
 type BundleReferenceObjectType string
 
 const (
-	BundleAPIReference   BundleReferenceObjectType = "API"
+	// BundleAPIReference missing godoc
+	BundleAPIReference BundleReferenceObjectType = "API"
+	// BundleEventReference missing godoc
 	BundleEventReference BundleReferenceObjectType = "Event"
 )
 
+// BundleReferenceInput missing godoc
 type BundleReferenceInput struct {
 	APIDefaultTargetURL *string
 }
 
-func (b *BundleReferenceInput) ToBundleReference(tenant string, objectType BundleReferenceObjectType, bundleID, objectID *string) (*BundleReference, error) {
+// ToBundleReference missing godoc
+func (b *BundleReferenceInput) ToBundleReference(id, tenant string, objectType BundleReferenceObjectType, bundleID, objectID *string) (*BundleReference, error) {
 	if b == nil {
 		return nil, nil
 	}
@@ -31,6 +38,7 @@ func (b *BundleReferenceInput) ToBundleReference(tenant string, objectType Bundl
 	}
 
 	return &BundleReference{
+		ID:                  id,
 		Tenant:              tenant,
 		BundleID:            bundleID,
 		ObjectType:          objectType,

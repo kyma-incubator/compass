@@ -37,7 +37,7 @@ var fixedTimestamp = time.Now()
 func fixAPIDefinitionModel(id string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
 		Name:       name,
-		TargetURLs: api.ConvertTargetUrlToJsonArray(targetURL),
+		TargetURLs: api.ConvertTargetURLToJSONArray(targetURL),
 		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
@@ -78,12 +78,12 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 		Tenant:                                  tenantID,
 		Name:                                    placeholder,
 		Description:                             str.Ptr("desc_" + placeholder),
-		TargetURLs:                              api.ConvertTargetUrlToJsonArray(fmt.Sprintf("https://%s.com", placeholder)),
+		TargetURLs:                              api.ConvertTargetURLToJSONArray(fmt.Sprintf("https://%s.com", placeholder)),
 		Group:                                   str.Ptr("group_" + placeholder),
 		OrdID:                                   str.Ptr(ordID),
 		ShortDescription:                        str.Ptr("shortDescription"),
 		SystemInstanceAware:                     &boolVar,
-		ApiProtocol:                             str.Ptr("apiProtocol"),
+		APIProtocol:                             str.Ptr("apiProtocol"),
 		Tags:                                    json.RawMessage("[]"),
 		Countries:                               json.RawMessage("[]"),
 		Links:                                   json.RawMessage("[]"),
@@ -179,7 +179,7 @@ func fixModelAPIDefinitionInput(name, description string, group string) (*model.
 	return &model.APIDefinitionInput{
 		Name:         name,
 		Description:  &description,
-		TargetURLs:   api.ConvertTargetUrlToJsonArray("https://test-url.com"),
+		TargetURLs:   api.ConvertTargetURLToJSONArray("https://test-url.com"),
 		Group:        &group,
 		VersionInput: v,
 	}, spec
@@ -216,10 +216,10 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	}
 }
 
-func fixEntityAPIDefinition(id string, name, targetUrl string) *api.Entity {
+func fixEntityAPIDefinition(id string, name, targetURL string) *api.Entity {
 	return &api.Entity{
 		Name:       name,
-		TargetURLs: repo.NewValidNullableString(`["` + targetUrl + `"]`),
+		TargetURLs: repo.NewValidNullableString(`["` + targetURL + `"]`),
 		BaseEntity: &repo.BaseEntity{ID: id},
 	}
 }
@@ -236,7 +236,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		OrdID:                                   repo.NewValidNullableString(ordID),
 		ShortDescription:                        repo.NewValidNullableString("shortDescription"),
 		SystemInstanceAware:                     repo.NewValidNullableBool(false),
-		ApiProtocol:                             repo.NewValidNullableString("apiProtocol"),
+		APIProtocol:                             repo.NewValidNullableString("apiProtocol"),
 		Tags:                                    repo.NewValidNullableString("[]"),
 		Countries:                               repo.NewValidNullableString("[]"),
 		Links:                                   repo.NewValidNullableString("[]"),
@@ -302,7 +302,7 @@ func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 
 func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
 	return []driver.Value{id, tenantID, appID, packageID, apiDef.Name, apiDef.Description, apiDef.Group,
-		apiDef.OrdID, apiDef.ShortDescription, apiDef.SystemInstanceAware, apiDef.ApiProtocol, repo.NewNullableStringFromJSONRawMessage(apiDef.Tags), repo.NewNullableStringFromJSONRawMessage(apiDef.Countries),
+		apiDef.OrdID, apiDef.ShortDescription, apiDef.SystemInstanceAware, apiDef.APIProtocol, repo.NewNullableStringFromJSONRawMessage(apiDef.Tags), repo.NewNullableStringFromJSONRawMessage(apiDef.Countries),
 		repo.NewNullableStringFromJSONRawMessage(apiDef.Links), repo.NewNullableStringFromJSONRawMessage(apiDef.APIResourceLinks),
 		apiDef.ReleaseStatus, apiDef.SunsetDate, repo.NewNullableStringFromJSONRawMessage(apiDef.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(apiDef.Labels), apiDef.Visibility,
 		apiDef.Disabled, repo.NewNullableStringFromJSONRawMessage(apiDef.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(apiDef.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(apiDef.Industry),

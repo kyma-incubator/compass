@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var validGroupsNameFileContent string = `
+var validGroupsNameFileContent = `
 - groupname: "admin"
   scopes:
   - "application:write"
@@ -19,7 +19,7 @@ var validGroupsNameFileContent string = `
   - "application:read"
 `
 
-var unknownGroupsNameFieldsFileContent string = `
+var unknownGroupsNameFieldsFileContent = `
 - groupname: "admin"
   notascope:
   - "application:write"

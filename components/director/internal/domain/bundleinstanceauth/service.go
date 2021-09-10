@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Repository missing godoc
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, item *model.BundleInstanceAuth) error
@@ -26,6 +27,7 @@ type Repository interface {
 	Delete(ctx context.Context, tenantID string, id string) error
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -37,14 +39,16 @@ type service struct {
 	timestampGen timestamp.Generator
 }
 
+// NewService missing godoc
 func NewService(repo Repository, uidService UIDService) *service {
 	return &service{
 		repo:         repo,
 		uidService:   uidService,
-		timestampGen: timestamp.DefaultGenerator(),
+		timestampGen: timestamp.DefaultGenerator,
 	}
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -84,6 +88,7 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 	return id, nil
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.BundleInstanceAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -98,6 +103,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.BundleInstanceAuth
 	return instanceAuth, nil
 }
 
+// GetForBundle missing godoc
 func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) (*model.BundleInstanceAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -112,6 +118,7 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return bndl, nil
 }
 
+// List missing godoc
 func (s *service) List(ctx context.Context, bundleID string) ([]*model.BundleInstanceAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -126,6 +133,7 @@ func (s *service) List(ctx context.Context, bundleID string) ([]*model.BundleIns
 	return bndlInstanceAuths, nil
 }
 
+// ListByRuntimeID missing godoc
 func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -140,6 +148,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string) ([]*mod
 	return bndlInstanceAuths, nil
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error {
 	err := s.repo.Update(ctx, instanceAuth)
 	if err != nil {
@@ -149,6 +158,7 @@ func (s *service) Update(ctx context.Context, instanceAuth *model.BundleInstance
 	return nil
 }
 
+// SetAuth missing godoc
 func (s *service) SetAuth(ctx context.Context, id string, in model.BundleInstanceAuthSetInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -179,6 +189,7 @@ func (s *service) SetAuth(ctx context.Context, id string, in model.BundleInstanc
 	return nil
 }
 
+// RequestDeletion missing godoc
 func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error) {
 	if instanceAuth == nil {
 		return false, apperrors.NewInternalError("BundleInstanceAuth is required to request its deletion")
@@ -210,6 +221,7 @@ func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.Bundl
 	return true, nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
+// ApplicationTemplate missing godoc
 type ApplicationTemplate struct {
 	ID                   string
 	Name                 string
@@ -18,12 +19,14 @@ type ApplicationTemplate struct {
 	Webhooks             []Webhook
 }
 
+// ApplicationTemplatePage missing godoc
 type ApplicationTemplatePage struct {
 	Data       []*ApplicationTemplate
 	PageInfo   *pagination.Page
 	TotalCount int
 }
 
+// ApplicationTemplateInput missing godoc
 type ApplicationTemplateInput struct {
 	Name                 string
 	Description          *string
@@ -33,19 +36,24 @@ type ApplicationTemplateInput struct {
 	Webhooks             []*WebhookInput
 }
 
+// ApplicationTemplateAccessLevel missing godoc
 type ApplicationTemplateAccessLevel string
 
+// GlobalApplicationTemplateAccessLevel missing godoc
 const (
 	GlobalApplicationTemplateAccessLevel ApplicationTemplateAccessLevel = "GLOBAL"
 )
 
+// ApplicationFromTemplateInput missing godoc
 type ApplicationFromTemplateInput struct {
 	TemplateName string
 	Values       ApplicationFromTemplateInputValues
 }
 
+// ApplicationFromTemplateInputValues missing godoc
 type ApplicationFromTemplateInputValues []*ApplicationTemplateValueInput
 
+// FindPlaceholderValue missing godoc
 func (in ApplicationFromTemplateInputValues) FindPlaceholderValue(name string) (string, error) {
 	for _, value := range in {
 		if value.Placeholder == name {
@@ -55,23 +63,26 @@ func (in ApplicationFromTemplateInputValues) FindPlaceholderValue(name string) (
 	return "", fmt.Errorf("value for placeholder name '%s' not found", name)
 }
 
+// ApplicationTemplatePlaceholder missing godoc
 type ApplicationTemplatePlaceholder struct {
 	Name        string
 	Description *string
 }
 
+// ApplicationTemplateValueInput missing godoc
 type ApplicationTemplateValueInput struct {
 	Placeholder string
 	Value       string
 }
 
+// ToApplicationTemplate missing godoc
 func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationTemplate {
 	if a == nil {
 		return ApplicationTemplate{}
 	}
 
 	uidService := uid.NewService()
-	webhooks := make([]Webhook, 0, 0)
+	webhooks := make([]Webhook, 0)
 	for _, webhookInput := range a.Webhooks {
 		webhook := webhookInput.ToApplicationTemplateWebhook(uidService.Generate(), nil, id)
 		webhooks = append(webhooks, *webhook)
@@ -88,6 +99,7 @@ func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationT
 	}
 }
 
+// ApplicationTemplateUpdateInput missing godoc
 type ApplicationTemplateUpdateInput struct {
 	Name                 string
 	Description          *string
@@ -96,6 +108,7 @@ type ApplicationTemplateUpdateInput struct {
 	AccessLevel          ApplicationTemplateAccessLevel
 }
 
+// ToApplicationTemplate missing godoc
 func (a *ApplicationTemplateUpdateInput) ToApplicationTemplate(id string) ApplicationTemplate {
 	if a == nil {
 		return ApplicationTemplate{}

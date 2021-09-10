@@ -2,7 +2,9 @@ package bundlereferences
 
 import "database/sql"
 
+// Entity represents a Compass BundleReference
 type Entity struct {
+	ID                  string         `db:"id"`
 	TenantID            string         `db:"tenant_id"`
 	BundleID            sql.NullString `db:"bundle_id"`
 	APIDefID            sql.NullString `db:"api_def_id"`

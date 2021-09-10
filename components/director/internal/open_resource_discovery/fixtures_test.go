@@ -1,4 +1,4 @@
-package open_resource_discovery_test
+package ord_test
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
@@ -36,8 +36,8 @@ const (
 	vendorID2   = "testVendor2"
 	productID   = "testProduct"
 	bundleID    = "testBndl"
-	api1ID      = "testApi1"
-	api2ID      = "testApi2"
+	api1ID      = "testAPI1"
+	api2ID      = "testAPI2"
 	event1ID    = "testEvent1"
 	event2ID    = "testEvent2"
 	tombstoneID = "testTs"
@@ -53,7 +53,7 @@ const (
 	cursor                    = "cursor"
 	policyLevel               = "sap:core:v1"
 	apiImplementationStandard = "cff:open-service-broker:v2"
-	correlationIds            = `["foo.bar.baz:123456","foo.bar.baz:654321"]`
+	correlationIDs            = `["foo.bar.baz:123456","foo.bar.baz:654321"]`
 	partners                  = `["microsoft:vendor:Microsoft:"]`
 )
 
@@ -159,36 +159,36 @@ var (
 		packageORDID: fixPackagesWithHash()[0],
 	}
 
-	hashApi1, _    = open_resource_discovery.HashObject(fixORDDocument().APIResources[0])
-	hashApi2, _    = open_resource_discovery.HashObject(fixORDDocument().APIResources[1])
-	hashEvent1, _  = open_resource_discovery.HashObject(fixORDDocument().EventResources[0])
-	hashEvent2, _  = open_resource_discovery.HashObject(fixORDDocument().EventResources[1])
-	hashPackage, _ = open_resource_discovery.HashObject(fixORDDocument().Packages[0])
+	hashAPI1, _    = ord.HashObject(fixORDDocument().APIResources[0])
+	hashAPI2, _    = ord.HashObject(fixORDDocument().APIResources[1])
+	hashEvent1, _  = ord.HashObject(fixORDDocument().EventResources[0])
+	hashEvent2, _  = ord.HashObject(fixORDDocument().EventResources[1])
+	hashPackage, _ = ord.HashObject(fixORDDocument().Packages[0])
 
 	resourceHashes = fixResourceHashes()
 )
 
 func fixResourceHashes() map[string]uint64 {
 	return map[string]uint64{
-		api1ORDID:    hashApi1,
-		api2ORDID:    hashApi2,
+		api1ORDID:    hashAPI1,
+		api2ORDID:    hashAPI2,
 		event1ORDID:  hashEvent1,
 		event2ORDID:  hashEvent2,
 		packageORDID: hashPackage,
 	}
 }
 
-func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
-	return &open_resource_discovery.WellKnownConfig{
+func fixWellKnownConfig() *ord.WellKnownConfig {
+	return &ord.WellKnownConfig{
 		Schema: "../spec/v1/generated/Configuration.schema.json",
-		OpenResourceDiscoveryV1: open_resource_discovery.OpenResourceDiscoveryV1{
-			Documents: []open_resource_discovery.DocumentDetails{
+		OpenResourceDiscoveryV1: ord.OpenResourceDiscoveryV1{
+			Documents: []ord.DocumentDetails{
 				{
 					URL:                 ordDocURI,
 					SystemInstanceAware: true,
-					AccessStrategies: []open_resource_discovery.AccessStrategy{
+					AccessStrategies: []ord.AccessStrategy{
 						{
-							Type: open_resource_discovery.OpenAccessStrategy,
+							Type: ord.OpenAccessStrategy,
 						},
 					},
 				},
@@ -197,11 +197,11 @@ func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
 	}
 }
 
-func fixORDDocument() *open_resource_discovery.Document {
+func fixORDDocument() *ord.Document {
 	return fixORDDocumentWithBaseURL("")
 }
 
-func fixSanitizedORDDocument() *open_resource_discovery.Document {
+func fixSanitizedORDDocument() *ord.Document {
 	sanitizedDoc := fixORDDocumentWithBaseURL(baseURL)
 
 	sanitizedDoc.APIResources[0].Tags = json.RawMessage(`["testTag","apiTestTag"]`)
@@ -231,8 +231,8 @@ func fixSanitizedORDDocument() *open_resource_discovery.Document {
 	return sanitizedDoc
 }
 
-func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document {
-	return &open_resource_discovery.Document{
+func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
+	return &ord.Document{
 		Schema:                "./spec/v1/generated/Document.schema.json",
 		OpenResourceDiscovery: "1.0",
 		Description:           "Test Document",
@@ -248,8 +248,8 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				ShortDescription: "lorem ipsum",
 				Description:      "lorem ipsum dolor set",
 				Version:          "1.1.2",
-				PackageLinks:     json.RawMessage(fmt.Sprintf(packageLinksFormat, baseUrl)),
-				Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
+				PackageLinks:     json.RawMessage(fmt.Sprintf(packageLinksFormat, providedBaseURL)),
+				Links:            json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				LicenseType:      str.Ptr("licence"),
 				Tags:             json.RawMessage(`["testTag"]`),
 				Countries:        json.RawMessage(`["BG","EN"]`),
@@ -266,9 +266,9 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Description:                  str.Ptr("lorem ipsum dolor nsq sme"),
 				OrdID:                        str.Ptr(bundleORDID),
 				ShortDescription:             str.Ptr("lorem ipsum"),
-				Links:                        json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
+				Links:                        json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				Labels:                       json.RawMessage(labels),
-				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, baseUrl)),
+				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, providedBaseURL)),
 			},
 		},
 		Products: []*model.ProductInput{
@@ -278,7 +278,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				ShortDescription: "lorem ipsum",
 				Vendor:           vendorORDID,
 				Parent:           str.Ptr(product2ORDID),
-				CorrelationIds:   json.RawMessage(correlationIds),
+				CorrelationIDs:   json.RawMessage(correlationIDs),
 				Labels:           json.RawMessage(labels),
 			},
 		},
@@ -291,11 +291,11 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				TargetURLs:                              json.RawMessage(`["https://exmaple.com/test/v1","https://exmaple.com/test/v2"]`),
 				ShortDescription:                        str.Ptr("lorem ipsum"),
 				SystemInstanceAware:                     &boolPtr,
-				ApiProtocol:                             str.Ptr("odata-v2"),
+				APIProtocol:                             str.Ptr("odata-v2"),
 				Tags:                                    json.RawMessage(`["apiTestTag"]`),
 				Countries:                               json.RawMessage(`["BG","US"]`),
-				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
-				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseUrl)),
+				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, providedBaseURL)),
 				ReleaseStatus:                           str.Ptr("active"),
 				SunsetDate:                              nil,
 				Successors:                              nil,
@@ -314,7 +314,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 					{
 						Type:      "openapi-v3",
 						MediaType: "application/json",
-						URL:       fmt.Sprintf("%s/external-api/unsecured/spec/flapping", baseUrl),
+						URL:       fmt.Sprintf("%s/external-api/unsecured/spec/flapping", providedBaseURL),
 						AccessStrategy: []model.AccessStrategy{
 							{
 								Type: "open",
@@ -361,11 +361,11 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				TargetURLs:                              json.RawMessage(`["http://localhost:8080/some-api/v1"]`),
 				ShortDescription:                        str.Ptr("lorem ipsum"),
 				SystemInstanceAware:                     &boolPtr,
-				ApiProtocol:                             str.Ptr("odata-v2"),
+				APIProtocol:                             str.Ptr("odata-v2"),
 				Tags:                                    json.RawMessage(`["ZGWSAMPLE"]`),
 				Countries:                               json.RawMessage(`["BR"]`),
-				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
-				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, baseUrl)),
+				Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				APIResourceLinks:                        json.RawMessage(fmt.Sprintf(apiResourceLinksFormat, providedBaseURL)),
 				ReleaseStatus:                           str.Ptr("deprecated"),
 				SunsetDate:                              str.Ptr("2020-12-08T15:47:04+0000"),
 				Successors:                              json.RawMessage(fmt.Sprintf(`["%s"]`, api1ORDID)),
@@ -393,7 +393,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 					{
 						Type:      "openapi-v3",
 						MediaType: "application/json",
-						URL:       fmt.Sprintf("%s/odata/1.0/catalog.svc/$value?type=json", baseUrl),
+						URL:       fmt.Sprintf("%s/odata/1.0/catalog.svc/$value?type=json", providedBaseURL),
 						AccessStrategy: []model.AccessStrategy{
 							{
 								Type: "open",
@@ -420,7 +420,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				ShortDescription:    str.Ptr("lorem ipsum"),
 				SystemInstanceAware: &boolPtr,
 				ChangeLogEntries:    json.RawMessage(changeLogEntries),
-				Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				Tags:                json.RawMessage(`["eventTestTag"]`),
 				Countries:           json.RawMessage(`["BG","US"]`),
 				ReleaseStatus:       str.Ptr("active"),
@@ -462,7 +462,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				ShortDescription:    str.Ptr("lorem ipsum"),
 				SystemInstanceAware: &boolPtr,
 				ChangeLogEntries:    json.RawMessage(changeLogEntries),
-				Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseUrl)),
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				Tags:                json.RawMessage(`["eventTestTag2"]`),
 				Countries:           json.RawMessage(`["BR"]`),
 				ReleaseStatus:       str.Ptr("deprecated"),
@@ -479,7 +479,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 					{
 						Type:      "asyncapi-v2",
 						MediaType: "application/json",
-						URL:       fmt.Sprintf("%s/api/eventCatalog.json", baseUrl),
+						URL:       fmt.Sprintf("%s/api/eventCatalog.json", providedBaseURL),
 						AccessStrategy: []model.AccessStrategy{
 							{
 								Type: "open",
@@ -585,7 +585,7 @@ func fixProducts() []*model.Product {
 			ShortDescription: "lorem ipsum",
 			Vendor:           vendorORDID,
 			Parent:           str.Ptr(product2ORDID),
-			CorrelationIds:   json.RawMessage(`["foo.bar.baz:123456"]`),
+			CorrelationIDs:   json.RawMessage(`["foo.bar.baz:123456"]`),
 			Labels:           json.RawMessage(labels),
 		},
 	}
@@ -705,7 +705,7 @@ func fixAPIs() []*model.APIDefinition {
 			TargetURLs:                              json.RawMessage(`["/test/v1"]`),
 			OrdID:                                   str.Ptr(api1ORDID),
 			ShortDescription:                        str.Ptr("lorem ipsum"),
-			ApiProtocol:                             str.Ptr("odata-v2"),
+			APIProtocol:                             str.Ptr("odata-v2"),
 			Tags:                                    json.RawMessage(`["testTag","apiTestTag"]`),
 			Countries:                               json.RawMessage(`["BG","EN","US"]`),
 			Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
@@ -738,7 +738,7 @@ func fixAPIs() []*model.APIDefinition {
 			TargetURLs:                              json.RawMessage(`["/some-api/v1"]`),
 			OrdID:                                   str.Ptr(api2ORDID),
 			ShortDescription:                        str.Ptr("lorem ipsum"),
-			ApiProtocol:                             str.Ptr("odata-v2"),
+			APIProtocol:                             str.Ptr("odata-v2"),
 			Tags:                                    json.RawMessage(`["testTag","ZGWSAMPLE"]`),
 			Countries:                               json.RawMessage(`["BG","EN","BR"]`),
 			Links:                                   json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
@@ -868,13 +868,13 @@ func fixEventsNoVersionBump() []*model.EventDefinition {
 	return events
 }
 
-func fixApi1SpecInputs() []*model.SpecInput {
-	openApiType := model.APISpecTypeOpenAPIV3
+func fixAPI1SpecInputs() []*model.SpecInput {
+	openAPIType := model.APISpecTypeOpenAPIV3
 	edmxAPIType := model.APISpecTypeEDMX
 	return []*model.SpecInput{
 		{
 			Format:     "application/json",
-			APIType:    &openApiType,
+			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL: baseURL + "/external-api/unsecured/spec/flapping",
@@ -882,7 +882,7 @@ func fixApi1SpecInputs() []*model.SpecInput {
 		},
 		{
 			Format:     "text/yaml",
-			APIType:    &openApiType,
+			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL: "https://test.com/odata/1.0/catalog",
@@ -899,14 +899,14 @@ func fixApi1SpecInputs() []*model.SpecInput {
 	}
 }
 
-func fixApi1Specs() []*model.Spec {
-	openApiType := model.APISpecTypeOpenAPIV3
+func fixAPI1Specs() []*model.Spec {
+	openAPIType := model.APISpecTypeOpenAPIV3
 	edmxAPIType := model.APISpecTypeEDMX
 	return []*model.Spec{
 		{
 			ID:         api1spec1ID,
 			Format:     "application/json",
-			APIType:    &openApiType,
+			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			ObjectType: model.APISpecReference,
 			ObjectID:   api1ID,
@@ -915,7 +915,7 @@ func fixApi1Specs() []*model.Spec {
 		{
 			ID:         api1spec2ID,
 			Format:     "text/yaml",
-			APIType:    &openApiType,
+			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			ObjectType: model.APISpecReference,
 			ObjectID:   api1ID,
@@ -933,9 +933,9 @@ func fixApi1Specs() []*model.Spec {
 	}
 }
 
-func fixApi2SpecInputs() []*model.SpecInput {
+func fixAPI2SpecInputs() []*model.SpecInput {
 	edmxAPIType := model.APISpecTypeEDMX
-	openApiType := model.APISpecTypeOpenAPIV3
+	openAPIType := model.APISpecTypeOpenAPIV3
 	return []*model.SpecInput{
 		{
 			Format:     "application/xml",
@@ -947,7 +947,7 @@ func fixApi2SpecInputs() []*model.SpecInput {
 		},
 		{
 			Format:     "application/json",
-			APIType:    &openApiType,
+			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL: baseURL + "/odata/1.0/catalog.svc/$value?type=json",
@@ -956,9 +956,9 @@ func fixApi2SpecInputs() []*model.SpecInput {
 	}
 }
 
-func fixApi2Specs() []*model.Spec {
+func fixAPI2Specs() []*model.Spec {
 	edmxAPIType := model.APISpecTypeEDMX
-	openApiType := model.APISpecTypeOpenAPIV3
+	openAPIType := model.APISpecTypeOpenAPIV3
 	return []*model.Spec{
 		{
 			ID:         api2spec1ID,
@@ -972,7 +972,7 @@ func fixApi2Specs() []*model.Spec {
 		{
 			ID:         api2spec2ID,
 			Format:     "application/json",
-			APIType:    &openApiType,
+			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			ObjectType: model.APISpecReference,
 			ObjectID:   api2ID,

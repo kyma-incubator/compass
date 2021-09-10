@@ -32,7 +32,6 @@ func TestUnique(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-
 			// when
 			result := str.Unique(testCase.Input)
 
@@ -71,7 +70,6 @@ func TestSliceToMap(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-
 			// when
 			result := str.SliceToMap(testCase.Input)
 
@@ -110,7 +108,6 @@ func TestMapToSlice(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-
 			// when
 			result := str.MapToSlice(testCase.Input)
 

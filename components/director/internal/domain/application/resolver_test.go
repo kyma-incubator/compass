@@ -1845,10 +1845,10 @@ func TestResolver_Bundles(t *testing.T) {
 func TestResolver_Bundle(t *testing.T) {
 	// given
 	id := "foo"
-	appId := "bar"
+	appID := "bar"
 	tenantID := "baz"
-	modelBundle := fixModelBundle(id, tenantID, appId, "name", "bar")
-	gqlBundle := fixGQLBundle(id, appId, "name", "bar")
+	modelBundle := fixModelBundle(id, tenantID, appID, "name", "bar")
+	gqlBundle := fixGQLBundle(id, appID, "name", "bar")
 	app := fixGQLApplication("foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -2003,7 +2003,6 @@ func TestResolver_Bundle(t *testing.T) {
 		require.Error(t, err)
 		assert.EqualError(t, err, apperrors.NewInternalError("Application cannot be empty").Error())
 	})
-
 }
 
 func fixOAuths() []model.SystemAuth {

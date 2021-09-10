@@ -1,11 +1,10 @@
-package mp_package_test
+package ordpackage_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -65,12 +64,12 @@ func TestService_Create(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 			upackageIDService := testCase.UIDServiceFn()
 
-			svc := mp_package.NewService(repo, upackageIDService)
+			svc := ordpackage.NewService(repo, upackageIDService)
 
 			// when
 			result, err := svc.Create(ctx, appID, testCase.Input, uint64(123456))
@@ -87,7 +86,7 @@ func TestService_Create(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil)
+		svc := ordpackage.NewService(nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), "", model.PackageInput{}, 0)
 		// THEN
@@ -155,11 +154,11 @@ func TestService_Update(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := mp_package.NewService(repo, nil)
+			svc := ordpackage.NewService(repo, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input, 0)
@@ -176,7 +175,7 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil)
+		svc := ordpackage.NewService(nil, nil)
 		// WHEN
 		err := svc.Update(context.TODO(), "", model.PackageInput{}, 0)
 		// THEN
@@ -222,11 +221,11 @@ func TestService_Delete(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := mp_package.NewService(repo, nil)
+			svc := ordpackage.NewService(repo, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -243,7 +242,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil)
+		svc := ordpackage.NewService(nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -288,7 +287,7 @@ func TestService_Exist(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			pkgRepo := testCase.RepoFn()
-			svc := mp_package.NewService(pkgRepo, nil)
+			svc := ordpackage.NewService(pkgRepo, nil)
 
 			// WHEN
 			result, err := svc.Exist(ctx, packageID)
@@ -307,7 +306,7 @@ func TestService_Exist(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil)
+		svc := ordpackage.NewService(nil, nil)
 		// WHEN
 		_, err := svc.Exist(context.TODO(), "")
 		// THEN
@@ -360,7 +359,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := mp_package.NewService(repo, nil)
+			svc := ordpackage.NewService(repo, nil)
 
 			// when
 			pkg, err := svc.Get(ctx, testCase.InputID)
@@ -378,7 +377,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil)
+		svc := ordpackage.NewService(nil, nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
@@ -435,7 +434,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := mp_package.NewService(repo, nil)
+			svc := ordpackage.NewService(repo, nil)
 
 			// when
 			docs, err := svc.ListByApplicationID(ctx, appID)
@@ -453,7 +452,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil)
+		svc := ordpackage.NewService(nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationID(context.TODO(), "")
 		// THEN

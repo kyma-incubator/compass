@@ -3,7 +3,7 @@
 package automock
 
 import (
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -14,11 +14,11 @@ type EntityConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: entity
-func (_m *EntityConverter) FromEntity(entity *mp_package.Entity) (*model.Package, error) {
+func (_m *EntityConverter) FromEntity(entity *ordpackage.Entity) (*model.Package, error) {
 	ret := _m.Called(entity)
 
 	var r0 *model.Package
-	if rf, ok := ret.Get(0).(func(*mp_package.Entity) *model.Package); ok {
+	if rf, ok := ret.Get(0).(func(*ordpackage.Entity) *model.Package); ok {
 		r0 = rf(entity)
 	} else {
 		if ret.Get(0) != nil {
@@ -27,7 +27,7 @@ func (_m *EntityConverter) FromEntity(entity *mp_package.Entity) (*model.Package
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*mp_package.Entity) error); ok {
+	if rf, ok := ret.Get(1).(func(*ordpackage.Entity) error); ok {
 		r1 = rf(entity)
 	} else {
 		r1 = ret.Error(1)
@@ -37,15 +37,15 @@ func (_m *EntityConverter) FromEntity(entity *mp_package.Entity) (*model.Package
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *EntityConverter) ToEntity(in *model.Package) *mp_package.Entity {
+func (_m *EntityConverter) ToEntity(in *model.Package) *ordpackage.Entity {
 	ret := _m.Called(in)
 
-	var r0 *mp_package.Entity
-	if rf, ok := ret.Get(0).(func(*model.Package) *mp_package.Entity); ok {
+	var r0 *ordpackage.Entity
+	if rf, ok := ret.Get(0).(func(*model.Package) *ordpackage.Entity); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*mp_package.Entity)
+			r0 = ret.Get(0).(*ordpackage.Entity)
 		}
 	}
 

@@ -12,10 +12,12 @@ import (
 	"net/http"
 )
 
+// ValidationHydrator missing godoc
 type ValidationHydrator interface {
 	ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request)
 }
 
+// SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	GetByToken(ctx context.Context, token string) (*model.SystemAuth, error)
@@ -33,6 +35,7 @@ type validationHydrator struct {
 	oneTimeTokenService OneTimeTokenService
 }
 
+// NewValidationHydrator missing godoc
 func NewValidationHydrator(systemAuthService SystemAuthService, transact persistence.Transactioner, oneTimeTokenService OneTimeTokenService) ValidationHydrator {
 	return &validationHydrator{
 		systemAuthService:   systemAuthService,
@@ -41,13 +44,14 @@ func NewValidationHydrator(systemAuthService SystemAuthService, transact persist
 	}
 }
 
+// ResolveConnectorTokenHeader missing godoc
 func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	tx, err := vh.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to open db transaction: %v", err)
-		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occured while resolving one time token"))
+		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occurred while resolving one time token"))
 		return
 	}
 	defer vh.transact.RollbackUnlessCommitted(ctx, tx)
@@ -101,7 +105,7 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 
 	if err = tx.Commit(); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to commit db transaction: %v", err)
-		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occured while resolving one time token"))
+		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("unexpected error occurred while resolving one time token"))
 		return
 	}
 

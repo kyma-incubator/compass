@@ -11,10 +11,12 @@ import (
 
 type converter struct{}
 
+// NewConverter returns a new Converter that can later be used to make the conversions between the GraphQL, service, and repository layer representations of a Compass BundleReference
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToEntity converts the provided service-layer representation of a BundleReference to the repository-layer one.
 func (c *converter) ToEntity(in model.BundleReference) Entity {
 	var apiDefID sql.NullString
 	var eventDefID sql.NullString
@@ -29,6 +31,7 @@ func (c *converter) ToEntity(in model.BundleReference) Entity {
 	}
 
 	return Entity{
+		ID:                  in.ID,
 		TenantID:            in.Tenant,
 		BundleID:            repo.NewNullableString(in.BundleID),
 		APIDefID:            apiDefID,
@@ -37,6 +40,7 @@ func (c *converter) ToEntity(in model.BundleReference) Entity {
 	}
 }
 
+// FromEntity converts the provided Entity repo-layer representation of a BundleReference to the service-layer representation model.BundleReference.
 func (c *converter) FromEntity(in Entity) (model.BundleReference, error) {
 	objectID, objectType, err := c.objectReferenceFromEntity(in)
 	if err != nil {
@@ -44,6 +48,7 @@ func (c *converter) FromEntity(in Entity) (model.BundleReference, error) {
 	}
 
 	return model.BundleReference{
+		ID:                  in.ID,
 		Tenant:              in.TenantID,
 		BundleID:            repo.StringPtrFromNullableString(in.BundleID),
 		ObjectType:          objectType,

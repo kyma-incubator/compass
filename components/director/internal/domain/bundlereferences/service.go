@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// BundleReferenceRepository is responsible for the repo-layer BundleReference operations.
 //go:generate mockery --name=BundleReferenceRepository --output=automock --outpkg=automock --case=underscore
 type BundleReferenceRepository interface {
 	Create(ctx context.Context, item *model.BundleReference) error
@@ -19,16 +20,26 @@ type BundleReferenceRepository interface {
 	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
-type service struct {
-	repo BundleReferenceRepository
+// UIDService is responsible for generating GUIDs, which will be used as internal bundleReference IDs when they are created.
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+type UIDService interface {
+	Generate() string
 }
 
-func NewService(repo BundleReferenceRepository) *service {
+type service struct {
+	repo       BundleReferenceRepository
+	uidService UIDService
+}
+
+// NewService returns a new object responsible for service-layer BundleReference operations.
+func NewService(repo BundleReferenceRepository, uidService UIDService) *service {
 	return &service{
-		repo: repo,
+		repo:       repo,
+		uidService: uidService,
 	}
 }
 
+// GetForBundle returns the BundleReference that is related to a specific Bundle.
 func (s *service) GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -43,6 +54,7 @@ func (s *service) GetForBundle(ctx context.Context, objectType model.BundleRefer
 	return bundleRef, nil
 }
 
+// GetBundleIDsForObject returns all bundle IDs that are related for a specific object(APIDefinition/EventDefinition).
 func (s *service) GetBundleIDsForObject(ctx context.Context, objectType model.BundleReferenceObjectType, objectID *string) ([]string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -57,13 +69,15 @@ func (s *service) GetBundleIDsForObject(ctx context.Context, objectType model.Bu
 	return ids, nil
 }
 
+// CreateByReferenceObjectID creates a BundleReference between a Bundle and object(APIDefinition/EventDefinition).
 func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	bundleReference, err := in.ToBundleReference(tnt, objectType, bundleID, objectID)
+	id := s.uidService.Generate()
+	bundleReference, err := in.ToBundleReference(id, tnt, objectType, bundleID, objectID)
 	if err != nil {
 		return err
 	}
@@ -76,6 +90,7 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.Bundle
 	return nil
 }
 
+// UpdateByReferenceObjectID updates a BundleReference for a specific object(APIDefinition/EventDefinition).
 func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -87,7 +102,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.Bundle
 		return err
 	}
 
-	bundleReference, err = in.ToBundleReference(tnt, objectType, bundleID, objectID)
+	bundleReference, err = in.ToBundleReference(bundleReference.ID, tnt, objectType, bundleID, objectID)
 	if err != nil {
 		return err
 	}
@@ -100,6 +115,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.Bundle
 	return nil
 }
 
+// DeleteByReferenceObjectID deletes a BundleReference for a specific object(APIDefinition/EventDefinition).
 func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -109,6 +125,7 @@ func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType mode
 	return s.repo.DeleteByReferenceObjectID(ctx, tnt, *bundleID, objectType, *objectID)
 }
 
+// ListByBundleIDs lists all BundleReferences for given array of bundle IDs. In addition, the number of records for each BundleReference is returned.
 func (s *service) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

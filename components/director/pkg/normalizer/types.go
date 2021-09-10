@@ -16,7 +16,7 @@
 
 package normalizer
 
-// Normalizer represents the interface of a normalization function used to sanitize a given name string
+// Normalizator represents the interface of a normalization function used to sanitize a given name string
 type Normalizator interface {
 	Normalize(name string) string
 }

@@ -10,10 +10,12 @@ import (
 type converter struct {
 }
 
+// NewConverter missing godoc
 func NewConverter() *converter {
 	return &converter{}
 }
 
+// ToEntity missing godoc
 func (c *converter) ToEntity(in *model.Product) *Entity {
 	if in == nil {
 		return nil
@@ -28,13 +30,14 @@ func (c *converter) ToEntity(in *model.Product) *Entity {
 		ShortDescription: in.ShortDescription,
 		Vendor:           in.Vendor,
 		Parent:           repo.NewNullableString(in.Parent),
-		CorrelationIds:   repo.NewNullableStringFromJSONRawMessage(in.CorrelationIds),
+		CorrelationIDs:   repo.NewNullableStringFromJSONRawMessage(in.CorrelationIDs),
 		Labels:           repo.NewNullableStringFromJSONRawMessage(in.Labels),
 	}
 
 	return output
 }
 
+// FromEntity missing godoc
 func (c *converter) FromEntity(entity *Entity) (*model.Product, error) {
 	if entity == nil {
 		return nil, apperrors.NewInternalError("the Product entity is nil")
@@ -49,7 +52,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Product, error) {
 		ShortDescription: entity.ShortDescription,
 		Vendor:           entity.Vendor,
 		Parent:           repo.StringPtrFromNullableString(entity.Parent),
-		CorrelationIds:   repo.JSONRawMessageFromNullableString(entity.CorrelationIds),
+		CorrelationIDs:   repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		Labels:           repo.JSONRawMessageFromNullableString(entity.Labels),
 	}
 

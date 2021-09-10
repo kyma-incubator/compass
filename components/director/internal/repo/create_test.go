@@ -62,7 +62,9 @@ func TestCreate(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		givenUser := User{}
 
-		ctx, _ := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		defer cancel()
+
 		ctx = persistence.SaveToContext(ctx, db)
 		err := sut.Create(ctx, givenUser)
 		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")

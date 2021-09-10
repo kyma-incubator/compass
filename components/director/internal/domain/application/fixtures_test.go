@@ -116,7 +116,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		IntegrationSystemID: &intSysID,
 		BaseURL:             str.Ptr("base_url"),
 		Labels:              json.RawMessage("[]"),
-		CorrelationIds:      json.RawMessage("[]"),
+		CorrelationIDs:      json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -168,7 +168,7 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
 		BaseURL:             repo.NewValidNullableString("base_url"),
 		Labels:              repo.NewValidNullableString("[]"),
-		CorrelationIds:      repo.NewValidNullableString("[]"),
+		CorrelationIDs:      repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -200,8 +200,8 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 			{
 				Name: "foo",
 				APIDefinitions: []*model.APIDefinitionInput{
-					{Name: "api1", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar")},
-					{Name: "api2", TargetURLs: api.ConvertTargetUrlToJsonArray("foo.bar2")},
+					{Name: "api1", TargetURLs: api.ConvertTargetURLToJSONArray("foo.bar")},
+					{Name: "api2", TargetURLs: api.ConvertTargetURLToJSONArray("foo.bar2")},
 				},
 				EventDefinitions: []*model.EventDefinitionInput{
 					{Name: "event1", Description: &desc},
@@ -376,7 +376,7 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 	}
 }
 
-func fixModelEventAPIDefinition(id string, appId, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, appID, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
 		Name:        name,
 		Description: &description,
@@ -388,7 +388,7 @@ func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinitio
 	return &model.EventDefinition{Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
 		Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
 }
-func fixGQLEventDefinition(id string, appId, bundleID string, name, description string, group string) *graphql.EventDefinition {
+func fixGQLEventDefinition(id string, appID, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		BaseEntity: &graphql.BaseEntity{
 			ID: id,
@@ -443,10 +443,10 @@ func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEven
 	}
 }
 
-func fixModelBundle(id, tenantID, appId, name, description string) *model.Bundle {
+func fixModelBundle(id, tenantID, appID, name, description string) *model.Bundle {
 	return &model.Bundle{
 		TenantID:                       tenantID,
-		ApplicationID:                  appId,
+		ApplicationID:                  appID,
 		Name:                           name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: nil,
@@ -455,7 +455,7 @@ func fixModelBundle(id, tenantID, appId, name, description string) *model.Bundle
 	}
 }
 
-func fixGQLBundle(id, appId, name, description string) *graphql.Bundle {
+func fixGQLBundle(id, appID, name, description string) *graphql.Bundle {
 	return &graphql.Bundle{
 		BaseEntity: &graphql.BaseEntity{
 			ID: id,

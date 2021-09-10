@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var validUserNameFileContent string = `
+var validUserNameFileContent = `
 - username: "admin"
   scopes:
   - "application:write"
@@ -23,7 +23,7 @@ var validUserNameFileContent string = `
   - "555d9157-a1bf-4aa2-9a22-f5d6f9730aaf"
 `
 
-var unknownUserNameFieldsFileContent string = `
+var unknownUserNameFieldsFileContent = `
 - username: "admin"
   scope:
   - "application:write"

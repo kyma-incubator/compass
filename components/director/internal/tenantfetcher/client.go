@@ -22,12 +22,14 @@ const (
 	maxErrMessageLength = 50
 )
 
+// OAuth2Config missing godoc
 type OAuth2Config struct {
 	ClientID           string `envconfig:"APP_CLIENT_ID"`
 	ClientSecret       string `envconfig:"APP_CLIENT_SECRET"`
 	OAuthTokenEndpoint string `envconfig:"APP_OAUTH_TOKEN_ENDPOINT"`
 }
 
+// APIConfig missing godoc
 type APIConfig struct {
 	EndpointTenantCreated       string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
 	EndpointTenantDeleted       string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
@@ -42,6 +44,7 @@ func (c APIConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {
 	return false
 }
 
+// MetricsPusher missing godoc
 //go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore
 type MetricsPusher interface {
 	RecordEventingRequest(method string, statusCode int, desc string)
@@ -58,6 +61,7 @@ type Client struct {
 	apiConfig APIConfig
 }
 
+// NewClient missing godoc
 func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig, timeout time.Duration) *Client {
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
@@ -74,10 +78,12 @@ func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig, timeout time.Dura
 	}
 }
 
+// SetMetricsPusher missing godoc
 func (c *Client) SetMetricsPusher(metricsPusher MetricsPusher) {
 	c.metricsPusher = metricsPusher
 }
 
+// FetchTenantEventsPage missing godoc
 func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error) {
 	if c.apiConfig.isUnassignedOptionalProperty(eventsType) {
 		log.D().Warnf("Optional property for event type %s was not set", eventsType)

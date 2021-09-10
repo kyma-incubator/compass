@@ -2,7 +2,6 @@ package bundlereferences_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -61,10 +60,10 @@ func TestService_GetForBundle(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
-			svc := bundlereferences.NewService(repo)
+			svc := bundlereferences.NewService(repo, nil)
 
 			// when
 			bndlRef, err := svc.GetForBundle(ctx, model.BundleAPIReference, &objectID, &bundleID)
@@ -120,10 +119,10 @@ func TestService_GetBundleIDsForObject(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
-			svc := bundlereferences.NewService(repo)
+			svc := bundlereferences.NewService(repo, nil)
 
 			// when
 			bndlIDs, err := svc.GetBundleIDsForObject(ctx, model.BundleAPIReference, &objectID)
@@ -143,6 +142,7 @@ func TestService_GetBundleIDsForObject(t *testing.T) {
 func TestService_CreateByReferenceObjectID(t *testing.T) {
 	testErr := errors.New("test err")
 
+	bundleRefID := "foo"
 	objectID := "id"
 	bundleID := "bundleID"
 	targetURL := "http://test.com"
@@ -155,6 +155,7 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 	}
 
 	bundleReferenceModel := &model.BundleReference{
+		ID:                  bundleRefID,
 		Tenant:              tenantID,
 		BundleID:            &bundleID,
 		ObjectType:          model.BundleAPIReference,
@@ -165,6 +166,7 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.BundleReferenceRepository
+		UIDServiceFn func() *automock.UIDService
 		Input        model.BundleReferenceInput
 		ExpectedErr  error
 	}{
@@ -175,6 +177,11 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 				repo.On("Create", ctx, bundleReferenceModel).Return(nil).Once()
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(bundleRefID).Once()
+				return svc
+			},
 			Input: *bundleReferenceInput,
 		},
 		{
@@ -184,16 +191,22 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 				repo.On("Create", ctx, bundleReferenceModel).Return(testErr).Once()
 				return repo
 			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(bundleRefID).Once()
+				return svc
+			},
 			Input:       *bundleReferenceInput,
 			ExpectedErr: testErr,
 		},
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
-			svc := bundlereferences.NewService(repo)
+			uidSvc := testCase.UIDServiceFn()
+			svc := bundlereferences.NewService(repo, uidSvc)
 
 			// when
 			err := svc.CreateByReferenceObjectID(ctx, testCase.Input, model.BundleAPIReference, &objectID, &bundleID)
@@ -280,10 +293,10 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
-			svc := bundlereferences.NewService(repo)
+			svc := bundlereferences.NewService(repo, nil)
 
 			// when
 			err := svc.UpdateByReferenceObjectID(ctx, testCase.Input, model.BundleAPIReference, &objectID, &bundleID)
@@ -333,10 +346,10 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
-			svc := bundlereferences.NewService(repo)
+			svc := bundlereferences.NewService(repo, nil)
 
 			// when
 			err := svc.DeleteByReferenceObjectID(ctx, model.BundleAPIReference, &objectID, &bundleID)
@@ -355,24 +368,24 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 func TestService_ListByBundleIDs(t *testing.T) {
 	testErr := errors.New("test err")
 
-	firstApiDefID := "apiID"
-	secondApiDefID := "apiID2"
+	firstAPIDefID := "apiID"
+	secondAPIDefID := "apiID2"
 	firstBundleID := "bundleID"
 	secondBundleID := "bundleID2"
 	bundleIDs := []string{firstBundleID, secondBundleID}
 
-	firstApiDefBundleRef := fixAPIBundleReferenceModel()
-	firstApiDefBundleRef.BundleID = str.Ptr(firstBundleID)
-	firstApiDefBundleRef.ObjectID = str.Ptr(firstApiDefID)
+	firstAPIDefBundleRef := fixAPIBundleReferenceModel()
+	firstAPIDefBundleRef.BundleID = str.Ptr(firstBundleID)
+	firstAPIDefBundleRef.ObjectID = str.Ptr(firstAPIDefID)
 
-	secondApiDefBundleRef := fixAPIBundleReferenceModel()
-	secondApiDefBundleRef.BundleID = str.Ptr(secondBundleID)
-	secondApiDefBundleRef.ObjectID = str.Ptr(secondApiDefID)
-	bundleRefs := []*model.BundleReference{&firstApiDefBundleRef, &secondApiDefBundleRef}
+	secondAPIDefBundleRef := fixAPIBundleReferenceModel()
+	secondAPIDefBundleRef.BundleID = str.Ptr(secondBundleID)
+	secondAPIDefBundleRef.ObjectID = str.Ptr(secondAPIDefID)
+	bundleRefs := []*model.BundleReference{&firstAPIDefBundleRef, &secondAPIDefBundleRef}
 
-	numberOfApisInFirstBundle := 1
-	numberOfApisInSecondBundle := 1
-	totalCounts := map[string]int{firstBundleID: numberOfApisInFirstBundle, secondBundleID: numberOfApisInSecondBundle}
+	numberOfAPIsInFirstBundle := 1
+	numberOfAPIsInSecondBundle := 1
+	totalCounts := map[string]int{firstBundleID: numberOfAPIsInFirstBundle, secondBundleID: numberOfAPIsInSecondBundle}
 
 	after := "test"
 
@@ -431,10 +444,10 @@ func TestService_ListByBundleIDs(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
-			svc := bundlereferences.NewService(repo)
+			svc := bundlereferences.NewService(repo, nil)
 
 			// when
 			bndlRefs, counts, err := svc.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, testCase.PageSize, after)
@@ -454,7 +467,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundlereferences.NewService(nil)
+		svc := bundlereferences.NewService(nil, nil)
 		// WHEN
 		_, _, err := svc.ListByBundleIDs(context.TODO(), model.BundleAPIReference, nil, 2, "")
 		// THEN

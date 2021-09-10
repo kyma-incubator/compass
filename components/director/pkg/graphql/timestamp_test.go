@@ -37,7 +37,6 @@ func TestTimestamp_UnmarshalGQL_Error(t *testing.T) {
 		//then
 		require.Error(t, err)
 		assert.Empty(t, timestamp)
-
 	})
 
 	t.Run("can't parse time", func(t *testing.T) {
@@ -51,7 +50,6 @@ func TestTimestamp_UnmarshalGQL_Error(t *testing.T) {
 		//then
 		require.Error(t, err)
 		assert.Empty(t, timestamp)
-
 	})
 }
 

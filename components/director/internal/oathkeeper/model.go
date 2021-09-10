@@ -19,23 +19,38 @@ import (
 )
 
 const (
-	CertificateFlow  AuthFlow = "Certificate"
+	// CertificateFlow missing godoc
+	CertificateFlow AuthFlow = "Certificate"
+	// OneTimeTokenFlow missing godoc
 	OneTimeTokenFlow AuthFlow = "OneTimeToken"
-	OAuth2Flow       AuthFlow = "OAuth2"
-	JWTAuthFlow      AuthFlow = "JWT"
+	// OAuth2Flow missing godoc
+	OAuth2Flow AuthFlow = "OAuth2"
+	// JWTAuthFlow missing godoc
+	JWTAuthFlow AuthFlow = "JWT"
 
-	ClientIDKey        = "client_id"
-	EmailKey           = "email"
-	UsernameKey        = "name"
-	GroupsKey          = "groups"
-	ClientIDCertKey    = "client-id-from-certificate"
+	// ClientIDKey missing godoc
+	ClientIDKey = "client_id"
+	// EmailKey missing godoc
+	EmailKey = "email"
+	// UsernameKey missing godoc
+	UsernameKey = "name"
+	// GroupsKey missing godoc
+	GroupsKey = "groups"
+	// ClientIDCertKey missing godoc
+	ClientIDCertKey = "client-id-from-certificate"
+	// ClientIDCertIssuer missing godoc
 	ClientIDCertIssuer = "client-certificate-issuer"
-	ClientIDTokenKey   = "client-id-from-token"
-	ExternalTenantKey  = "tenant"
-	ScopesKey          = "scope"
+	// ClientIDTokenKey missing godoc
+	ClientIDTokenKey = "client-id-from-token"
+	// ExternalTenantKey missing godoc
+	ExternalTenantKey = "tenant"
+	// ScopesKey missing godoc
+	ScopesKey = "scope"
 
+	// ConnectorIssuer missing godoc
 	ConnectorIssuer = "connector"
-	ExternalIssuer  = "certificate-service"
+	// ExternalIssuer missing godoc
+	ExternalIssuer = "certificate-service"
 )
 
 // AuthDetails contains information about the currently authenticated client - AuthID, AuthFlow and Authenticator to use for further processing
@@ -50,18 +65,22 @@ type AuthDetails struct {
 // AuthFlow wraps possible flows of auth like OAuth2, JWT and certificate
 type AuthFlow string
 
+// IsCertFlow missing godoc
 func (f AuthFlow) IsCertFlow() bool {
 	return f == CertificateFlow
 }
 
+// IsOneTimeTokenFlow missing godoc
 func (f AuthFlow) IsOneTimeTokenFlow() bool {
 	return f == OneTimeTokenFlow
 }
 
+// IsOAuth2Flow missing godoc
 func (f AuthFlow) IsOAuth2Flow() bool {
 	return f == OAuth2Flow
 }
 
+// IsJWTFlow missing godoc
 func (f AuthFlow) IsJWTFlow() bool {
 	return f == JWTAuthFlow
 }
@@ -80,6 +99,7 @@ type ReqData struct {
 	ctx    context.Context
 }
 
+// NewReqData missing godoc
 func NewReqData(ctx context.Context, reqBody ReqBody, reqHeader http.Header) ReqData {
 	if reqBody.Extra == nil {
 		reqBody.Extra = make(map[string]interface{})

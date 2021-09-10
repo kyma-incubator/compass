@@ -63,7 +63,7 @@ func TestSyncSystems(t *testing.T) {
 			},
 		},
 		{
-			name: "Sucess with one tenant and multiple systems",
+			name: "Success with one tenant and multiple systems",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(2)
 				return mockedTx, transactioner
@@ -108,7 +108,7 @@ func TestSyncSystems(t *testing.T) {
 			},
 		},
 		{
-			name: "Sucess with multiple tenants with one system",
+			name: "Success with multiple tenants with one system",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(3)
 				return mockedTx, transactioner

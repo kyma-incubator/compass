@@ -1,4 +1,4 @@
-package mp_bundle
+package bundle
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// BundleRepository missing godoc
 //go:generate mockery --name=BundleRepository --output=automock --outpkg=automock --case=underscore
 type BundleRepository interface {
 	Create(ctx context.Context, item *model.Bundle) error
@@ -24,6 +25,7 @@ type BundleRepository interface {
 	ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
 }
 
+// UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -38,6 +40,7 @@ type service struct {
 	uidService UIDService
 }
 
+// NewService missing godoc
 func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventService, documentSvc DocumentService, uidService UIDService) *service {
 	return &service{
 		bndlRepo:    bndlRepo,
@@ -48,6 +51,7 @@ func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventServ
 	}
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -72,6 +76,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Bun
 	return id, nil
 }
 
+// CreateMultiple missing godoc
 func (s *service) CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error {
 	if in == nil {
 		return nil
@@ -91,6 +96,7 @@ func (s *service) CreateMultiple(ctx context.Context, applicationID string, in [
 	return nil
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.BundleUpdateInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -111,6 +117,7 @@ func (s *service) Update(ctx context.Context, id string, in model.BundleUpdateIn
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -125,6 +132,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// Exist missing godoc
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -139,6 +147,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.Bundle, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -153,6 +162,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Bundle, error) {
 	return bndl, nil
 }
 
+// GetForApplication missing godoc
 func (s *service) GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -167,6 +177,7 @@ func (s *service) GetForApplication(ctx context.Context, id string, applicationI
 	return bndl, nil
 }
 
+// ListByApplicationIDNoPaging missing godoc
 func (s *service) ListByApplicationIDNoPaging(ctx context.Context, appID string) ([]*model.Bundle, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -176,6 +187,7 @@ func (s *service) ListByApplicationIDNoPaging(ctx context.Context, appID string)
 	return s.bndlRepo.ListByApplicationIDNoPaging(ctx, tnt, appID)
 }
 
+// ListByApplicationIDs missing godoc
 func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

@@ -36,10 +36,12 @@ const (
 type ErrorLocationHook struct {
 }
 
+// Levels missing godoc
 func (h *ErrorLocationHook) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
 
+// Fire missing godoc
 func (h *ErrorLocationHook) Fire(entry *logrus.Entry) error {
 	var (
 		errObj interface{}

@@ -1,5 +1,5 @@
 /**
-Copied from https://github.com/kyma-project/kyma/tree/master/components/application-registry
+Copied from https://github.com/kyma-project/kyma/tree/main/components/application-registry
 */
 package validation
 

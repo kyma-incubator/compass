@@ -99,7 +99,6 @@ func TestJSON_MarshalSchema(t *testing.T) {
 				require.NoError(t, err)
 			}
 			assert.Equal(t, testCase.Expected, json)
-
 		})
 	}
 }
@@ -107,7 +106,7 @@ func TestJSON_MarshalSchema(t *testing.T) {
 func TestJSON_UnmarshalSchema(t *testing.T) {
 	t.Run("Success nil JSON", func(t *testing.T) {
 		//GIVEN
-		var json *JSONSchema = nil
+		var json *JSONSchema
 		var expected *interface{}
 		//WHEN
 		output, err := json.Unmarshal()
@@ -142,7 +141,7 @@ func TestJSON_UnmarshalSchema(t *testing.T) {
 }
 
 func interfacePtr(input interface{}) *interface{} {
-	var tmp interface{} = input
+	var tmp = input
 	return &tmp
 }
 

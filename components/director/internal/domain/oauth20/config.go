@@ -2,6 +2,7 @@ package oauth20
 
 import "time"
 
+// Config missing godoc
 type Config struct {
 	URL                       string        `envconfig:"APP_OAUTH20_URL"`
 	PublicAccessTokenEndpoint string        `envconfig:"APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT"`

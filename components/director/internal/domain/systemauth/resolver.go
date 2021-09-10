@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error)
@@ -16,16 +17,19 @@ type SystemAuthService interface {
 	DeleteByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) error
 }
 
+// OAuth20Service missing godoc
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
 	DeleteClientCredentials(ctx context.Context, clientID string) error
 }
 
+// SystemAuthConverter missing godoc
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
 	ToGraphQL(model *model.SystemAuth) (graphql.SystemAuth, error)
 }
 
+// Resolver missing godoc
 type Resolver struct {
 	transact   persistence.Transactioner
 	svc        SystemAuthService
@@ -33,10 +37,12 @@ type Resolver struct {
 	conv       SystemAuthConverter
 }
 
+// NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, svc SystemAuthService, oAuth20Svc OAuth20Service, conv SystemAuthConverter) *Resolver {
 	return &Resolver{transact: transact, svc: svc, oAuth20Svc: oAuth20Svc, conv: conv}
 }
 
+// GenericDeleteSystemAuth missing godoc
 func (r *Resolver) GenericDeleteSystemAuth(objectType model.SystemAuthReferenceObjectType) func(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return func(ctx context.Context, id string) (graphql.SystemAuth, error) {
 		tx, err := r.transact.Begin()

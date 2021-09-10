@@ -39,6 +39,7 @@ func EachKey(rules ...validation.Rule) *eachKeyRule {
 	return &mr
 }
 
+// Validate missing godoc
 func (v eachKeyRule) Validate(value interface{}) error {
 	errs := validation.Errors{}
 	t := reflect.ValueOf(value)

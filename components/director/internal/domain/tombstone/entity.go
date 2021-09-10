@@ -1,5 +1,6 @@
 package tombstone
 
+// Entity missing godoc
 type Entity struct {
 	ID            string `db:"id"`
 	OrdID         string `db:"ord_id"`

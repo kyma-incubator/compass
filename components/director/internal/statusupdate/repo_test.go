@@ -24,7 +24,6 @@ func TestRepository_IsConnected(t *testing.T) {
 	testError := errors.New("test")
 
 	t.Run("Success for applications", func(t *testing.T) {
-
 		//GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -43,7 +42,6 @@ func TestRepository_IsConnected(t *testing.T) {
 	})
 
 	t.Run("Success for runtimes", func(t *testing.T) {
-
 		//GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -62,7 +60,6 @@ func TestRepository_IsConnected(t *testing.T) {
 	})
 
 	t.Run("Error for applications", func(t *testing.T) {
-
 		//GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -81,7 +78,6 @@ func TestRepository_IsConnected(t *testing.T) {
 	})
 
 	t.Run("Error for runtimes", func(t *testing.T) {
-
 		//GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -98,7 +94,6 @@ func TestRepository_IsConnected(t *testing.T) {
 		require.EqualError(t, err, fmt.Sprintf("while getting object from DB: %s", testError))
 		assert.False(t, res)
 	})
-
 }
 
 func TestRepository_UpdateStatus(t *testing.T) {
@@ -108,7 +103,6 @@ func TestRepository_UpdateStatus(t *testing.T) {
 	testError := errors.New("test")
 
 	t.Run("Success for applications", func(t *testing.T) {
-
 		//GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -124,7 +118,6 @@ func TestRepository_UpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("Success for runtimes", func(t *testing.T) {
-
 		//GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -140,7 +133,6 @@ func TestRepository_UpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("Error for applications", func(t *testing.T) {
-
 		//GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -157,7 +149,6 @@ func TestRepository_UpdateStatus(t *testing.T) {
 	})
 
 	t.Run("Error for runtimes", func(t *testing.T) {
-
 		//GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)

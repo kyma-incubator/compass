@@ -49,7 +49,7 @@ func TestHandlerWithTimeout_ReturnsTimeoutMessage(t *testing.T) {
 	require.Contains(t, actualError, "timed out")
 }
 
-func TestHandlerWithTimeout_LogCorrelationId(t *testing.T) {
+func TestHandlerWithTimeout_LogCorrelationID(t *testing.T) {
 	timeout := time.Millisecond * 100
 	h, wait := getStubHandleFunc(t, timeout)
 	defer wait()
@@ -67,10 +67,10 @@ func TestHandlerWithTimeout_LogCorrelationId(t *testing.T) {
 
 	handlerWithTimeout.ServeHTTP(w, req)
 
-	reqId, ok := hook.LastEntry().Data[correlation.RequestIDHeaderKey]
+	reqID, ok := hook.LastEntry().Data[correlation.RequestIDHeaderKey]
 	require.True(t, ok)
 
-	assert.NotEqual(t, log.Configuration().BootstrapCorrelationID, reqId)
+	assert.NotEqual(t, log.Configuration().BootstrapCorrelationID, reqID)
 }
 
 func getStubHandleFunc(t *testing.T, timeout time.Duration) (http.HandlerFunc, func()) {

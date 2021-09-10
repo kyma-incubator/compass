@@ -28,6 +28,7 @@ import (
 func TestService_SyncTenants(t *testing.T) {
 	// GIVEN
 	provider := "default"
+	region := "eu-1"
 
 	tenantFieldMapping := tenantfetcher.TenantFieldMapping{
 		NameField:       "name",
@@ -50,9 +51,9 @@ func TestService_SyncTenants(t *testing.T) {
 	parent2GUID := fixID()
 	parent3GUID := fixID()
 
-	parentTenant1 := fixBusinessTenantMappingInput(parent1, parent1, provider, "", "", tenant.Customer)
-	parentTenant2 := fixBusinessTenantMappingInput(parent2, parent2, provider, "", "", tenant.Customer)
-	parentTenant3 := fixBusinessTenantMappingInput(parent3, parent3, provider, "", "", tenant.Customer)
+	parentTenant1 := fixBusinessTenantMappingInput(parent1, parent1, provider, "", "", "", tenant.Customer)
+	parentTenant2 := fixBusinessTenantMappingInput(parent2, parent2, provider, "", "", "", tenant.Customer)
+	parentTenant3 := fixBusinessTenantMappingInput(parent3, parent3, provider, "", "", "", tenant.Customer)
 	parentTenants := []model.BusinessTenantMappingInput{parentTenant1, parentTenant2, parentTenant3}
 
 	parentTenant1BusinessMapping := parentTenant1.ToBusinessTenantMapping(parent1GUID)
@@ -64,14 +65,18 @@ func TestService_SyncTenants(t *testing.T) {
 	busTenant2GUID := "49af7161-7dc7-472b-a969-d2f0430fc41d"
 	busTenant3GUID := "72409a54-2b1a-4cbb-803b-515315c74d02"
 
-	busTenant1 := fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", parent1, tenant.Account)
-	busTenant2 := fixBusinessTenantMappingInput("bar", "2", provider, "subdomain-2", parent2, tenant.Account)
-	busTenant3 := fixBusinessTenantMappingInput("baz", "3", provider, "subdomain-3", parent3, tenant.Account)
-	businessTenants := []model.BusinessTenantMappingInput{busTenant1, busTenant2, busTenant3}
+	busTenant1 := fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", region, parent1, tenant.Account)
+	busTenant2 := fixBusinessTenantMappingInput("bar", "2", provider, "subdomain-2", region, parent2, tenant.Account)
+	busTenant3 := fixBusinessTenantMappingInput("baz", "3", provider, "subdomain-3", region, parent3, tenant.Account)
 
-	busTenant1WithParentGUID := fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", parent1GUID, tenant.Account)
-	busTenant2WithParentGUID := fixBusinessTenantMappingInput("bar", "2", provider, "subdomain-2", parent2GUID, tenant.Account)
-	busTenant3WithParentGUID := fixBusinessTenantMappingInput("baz", "3", provider, "subdomain-3", parent3GUID, tenant.Account)
+	busTenantForDeletion1 := fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", "", parent1, tenant.Account)
+	busTenantForDeletion2 := fixBusinessTenantMappingInput("bar", "2", provider, "subdomain-2", "", parent2, tenant.Account)
+	busTenantForDeletion3 := fixBusinessTenantMappingInput("baz", "3", provider, "subdomain-3", "", parent3, tenant.Account)
+	businessTenantsForDeletion := []model.BusinessTenantMappingInput{busTenantForDeletion1, busTenantForDeletion2, busTenantForDeletion3}
+
+	busTenant1WithParentGUID := fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", region, parent1GUID, tenant.Account)
+	busTenant2WithParentGUID := fixBusinessTenantMappingInput("bar", "2", provider, "subdomain-2", region, parent2GUID, tenant.Account)
+	busTenant3WithParentGUID := fixBusinessTenantMappingInput("baz", "3", provider, "subdomain-3", region, parent3GUID, tenant.Account)
 	businessTenantsWithParentGUID := []model.BusinessTenantMappingInput{busTenant1WithParentGUID, busTenant2WithParentGUID, busTenant3WithParentGUID}
 
 	businessTenant1BusinessMapping := busTenant1.ToBusinessTenantMapping(busTenant1GUID)
@@ -102,26 +107,26 @@ func TestService_SyncTenants(t *testing.T) {
 	event2 := fixEvent(t, event2Fields)
 	event3 := fixEvent(t, event3Fields)
 
-	eventsToJsonArray := func(events ...[]byte) []byte {
+	eventsToJSONArray := func(events ...[]byte) []byte {
 		return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
 	}
-	tenantEvents := eventsToJsonArray(event1, event2, event3)
+	tenantEvents := eventsToJSONArray(event1, event2, event3)
 
-	emptyEvents := eventsToJsonArray()
+	emptyEvents := eventsToJSONArray()
 
-	sourceExtAccId := "sourceExternalId"
-	targetExtAccId := "targetExternalId"
+	sourceExtAccID := "sourceExternalId"
+	targetExtAccID := "targetExternalId"
 	targetIntTenant := "targetIntTenant"
 	movedRuntimeLabelKey := "moved_runtime_key"
 	movedRuntimeLabelValue := "sample_runtime_label_value"
 
 	successfullyGettingInternalTenant := func() *automock.TenantService {
 		svc := &automock.TenantService{}
-		svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
+		svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccID).Return(targetIntTenant, nil).Once()
 		return svc
 	}
 
-	movedRuntimeByLabelEvent := eventsToJsonArray(fixMovedRuntimeByLabelEvent(movedRuntimeLabelValue, sourceExtAccId, targetExtAccId, movedRuntimeFieldMapping))
+	movedRuntimeByLabelEvent := eventsToJSONArray(fixMovedRuntimeByLabelEvent(movedRuntimeLabelValue, sourceExtAccID, targetExtAccID, movedRuntimeFieldMapping))
 
 	pageOneQueryParams := tenantfetcher.QueryParams{
 		"pageSize":  "1",
@@ -141,10 +146,6 @@ func TestService_SyncTenants(t *testing.T) {
 		"timestamp": "1",
 	}
 
-	multiTenantEvents := append(tenantEvents, tenantEvents...)
-	multiTenantEvents = append(multiTenantEvents, tenantEvents...)
-	multiBusinessTenants := append(businessTenants, businessTenants...)
-	multiBusinessTenants = append(multiBusinessTenants, businessTenants...)
 	emptySlice := []model.BusinessTenantMappingInput{}
 
 	testErr := errors.New("test error")
@@ -168,9 +169,9 @@ func TestService_SyncTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event2), 1, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event3), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event3), 1, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(movedRuntimeByLabelEvent, 1, 1), nil).Once()
 				return client
 			},
@@ -187,7 +188,7 @@ func TestService_SyncTenants(t *testing.T) {
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
 
 				// moved tenants
-				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
+				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccID).Return(targetIntTenant, nil).Once()
 
 				return svc
 			},
@@ -317,7 +318,7 @@ func TestService_SyncTenants(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(businessTenantsBusinessMappingPointers, nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(businessTenants)).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(businessTenantsForDeletion)).Return(nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -351,7 +352,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return(targetIntTenant, nil).Once()
+				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccID).Return(targetIntTenant, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -375,8 +376,8 @@ func TestService_SyncTenants(t *testing.T) {
 				}
 
 				updatedTenant := fixEvent(t, updatedEventFields)
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(updatedTenant), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(updatedTenant), 1, 1), nil).Once()
 
 				return client
 			},
@@ -459,7 +460,7 @@ func TestService_SyncTenants(t *testing.T) {
 				}, nil).Once()
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(businessTenantsWithParentGUID[1:])).Return(nil).Once()
 
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenants[0:1]).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenantsForDeletion[0:1]).Return(nil).Once()
 
 				return svc
 			},
@@ -526,7 +527,7 @@ func TestService_SyncTenants(t *testing.T) {
 
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(businessTenantsWithParentGUID[1:])).Return(nil).Once()
 
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenants[0:1]).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenantsForDeletion[0:1]).Return(nil).Once()
 
 				return svc
 			},
@@ -570,7 +571,7 @@ func TestService_SyncTenants(t *testing.T) {
 				}, nil).Once()
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(businessTenantsWithParentGUID[1:])).Return(nil).Once()
 
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenants[0:1]).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenantsForDeletion[0:1]).Return(nil).Once()
 
 				return svc
 			},
@@ -733,7 +734,7 @@ func TestService_SyncTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnBegin,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
 				attachNoResponseOnFirstPage(client, tenantfetcher.UpdatedEventsType, tenantfetcher.DeletedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
 
 				return client
@@ -754,7 +755,7 @@ func TestService_SyncTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
 				attachNoResponseOnFirstPage(client, tenantfetcher.UpdatedEventsType, tenantfetcher.DeletedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
 				return client
 			},
@@ -783,7 +784,7 @@ func TestService_SyncTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
 				attachNoResponseOnFirstPage(client, tenantfetcher.UpdatedEventsType, tenantfetcher.DeletedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
 
 				return client
@@ -820,7 +821,7 @@ func TestService_SyncTenants(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(businessTenantsBusinessMappingPointers, nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(businessTenants)).Return(testErr).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(businessTenantsForDeletion)).Return(testErr).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -902,7 +903,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccId).Return("", testErr).Once()
+				svc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), targetExtAccID).Return("", testErr).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -986,7 +987,7 @@ func TestService_SyncTenants(t *testing.T) {
 					wrongFieldMapping.NameField: "qux",
 				}
 
-				wrongTenantEvents := eventsToJsonArray(fixEvent(t, wrongTenantEventFields))
+				wrongTenantEvents := eventsToJSONArray(fixEvent(t, wrongTenantEventFields))
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
 				attachNoResponseOnFirstPage(client, tenantfetcher.UpdatedEventsType, tenantfetcher.DeletedEventsType, tenantfetcher.MovedRuntimeByLabelEventsType)
 				return client
@@ -1032,7 +1033,7 @@ func TestService_SyncTenants(t *testing.T) {
 				LabelValue:   "id",
 				SourceTenant: "source_tenant",
 				TargetTenant: "target_tenant",
-			}, provider, apiClient, tenantStorageSvc, runtimeStorageSvc, labelDefSvc, movedRuntimeLabelKey, time.Hour)
+			}, provider, region, apiClient, tenantStorageSvc, runtimeStorageSvc, labelDefSvc, movedRuntimeLabelKey, time.Hour)
 			svc.SetRetryAttempts(1)
 
 			// WHEN
@@ -1056,7 +1057,7 @@ func TestService_SyncTenants(t *testing.T) {
 		apiClient := &automock.EventAPIClient{}
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, testErr).Once()
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(nil, testErr).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event1), 1, 1), nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(nil, nil).Once()
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.MovedRuntimeByLabelEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(emptyEvents, 0, 0), nil).Once()
@@ -1091,7 +1092,7 @@ func TestService_SyncTenants(t *testing.T) {
 			LabelValue:   "id",
 			SourceTenant: "source_tenant",
 			TargetTenant: "target_tenant",
-		}, provider, apiClient, tenantStorageSvc, nil, nil, movedRuntimeLabelKey, time.Hour)
+		}, provider, region, apiClient, tenantStorageSvc, nil, nil, movedRuntimeLabelKey, time.Hour)
 
 		// WHEN
 		err := svc.SyncTenants()
