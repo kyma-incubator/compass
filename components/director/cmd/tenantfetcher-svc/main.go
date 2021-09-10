@@ -59,10 +59,10 @@ type config struct {
 
 	Database persistence.DatabaseConfig
 
-	securityConfig
+	SecurityConfig
 }
 
-type securityConfig struct {
+type SecurityConfig struct {
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
 	JwksEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT"`
