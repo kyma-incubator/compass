@@ -17,8 +17,8 @@ push-image:
 .PHONY: ci-pr
 ci-pr: build-image push-image
 
-.PHONY: ci-master
-ci-master: build-image push-image
+.PHONY: ci-main
+ci-main: build-image push-image
 
 .PHONY: ci-release
 ci-release: build-image push-image
