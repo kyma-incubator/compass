@@ -165,18 +165,19 @@ func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs
 }
 
 func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region string) (string, error) {
-	tenantID := tenant.ID
-	if err := s.tenantMappingRepo.Create(ctx, tenant); err != nil && !apperrors.IsNotUniqueError(err) {
-		return "", errors.Wrapf(err, "while creating tenant with ID %s and external ID %s", tenant.ID, tenant.ExternalTenant)
-	} else if apperrors.IsNotUniqueError(err) {
-		tenantFromDB, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenant.ExternalTenant)
-		if err != nil {
-			return "", errors.Wrapf(err, "while getting internal ID of tenant %s", tenant.ExternalTenant)
-		}
-		tenantID = tenantFromDB.ID
+	tenantFromDB, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenant.ExternalTenant)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return "", errors.Wrapf(err, "while checking the existence of tenant with external ID %s", tenant.ExternalTenant)
+	}
+	if tenantFromDB != nil {
+		return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region)
 	}
 
-	return tenantID, s.upsertLabels(ctx, tenantID, subdomain, region)
+	if err = s.tenantMappingRepo.Create(ctx, tenant); err != nil {
+		return "", errors.Wrapf(err, "while creating tenant with ID %s and external ID %s", tenant.ID, tenant.ExternalTenant)
+	}
+
+	return tenant.ID, s.upsertLabels(ctx, tenant.ID, subdomain, region)
 }
 
 func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region string) error {

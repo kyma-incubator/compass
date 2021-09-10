@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/mock"
 
@@ -239,8 +238,6 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 	//GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 
-	tenantNotUniqueErr := apperrors.NewNotUniqueError(resource.Tenant)
-
 	tenantInputs := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", "", ""),
 		newModelBusinessTenantMappingInput("test2", "", "").WithExternalTenant("external2")}
 	tenantInputsWithSubdomains := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", testSubdomain, ""),
@@ -280,8 +277,9 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			tenantInputs: tenantInputs,
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantModels[1].ExternalTenant).Return(&tenantModels[1], nil).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(nil, nil).Once()
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
-				tenantMappingRepo.On("Create", ctx, tenantModels[1]).Return(nil).Once()
 				return tenantMappingRepo
 			},
 			UIDSvcFn:         uidSvcFn,
@@ -294,7 +292,6 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			tenantInputs: []model.BusinessTenantMappingInput{tenantWithSubdomainAndRegion},
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("Create", ctx, *tenantWithSubdomainAndRegion.ToBusinessTenantMapping(testID)).Return(tenantNotUniqueErr).Once()
 				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantWithSubdomainAndRegion.ExternalTenant).Return(tenantWithSubdomainAndRegion.ToBusinessTenantMapping(testParentID), nil)
 				return tenantMappingRepo
 			},
@@ -329,8 +326,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				modifiedTenant.Parent = testInternalParentID
 
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("Create", ctx, *parent.ToBusinessTenantMapping(testTemporaryInternalParentID)).Return(apperrors.NewNotUniqueError(resource.Tenant)).Once()
 				tenantMappingRepo.On("GetByExternalTenant", ctx, parent.ExternalTenant).Return(parent.ToBusinessTenantMapping(testInternalParentID), nil).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, modifiedTenant.ExternalTenant).Return(nil, nil).Once()
 				tenantMappingRepo.On("Create", ctx, *modifiedTenant.ToBusinessTenantMapping(testID)).Return(nil).Once()
 				return tenantMappingRepo
 			},
@@ -349,10 +346,9 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			tenantInputs: tenantInputsWithSubdomains,
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("Create", ctx, *tenantInputsWithSubdomains[0].ToBusinessTenantMapping(testID)).Return(nil).Once()
-				tenantMappingRepo.On("Create", ctx, *tenantInputsWithSubdomains[1].ToBusinessTenantMapping(testID)).Return(tenantNotUniqueErr).Once()
-				existingTenant := tenantInputsWithSubdomains[1].ToBusinessTenantMapping(testParentID)
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInputsWithSubdomains[1].ExternalTenant).Return(existingTenant, nil).Once()
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInputsWithSubdomains[0].ExternalTenant).Return(nil, nil)
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInputsWithSubdomains[1].ExternalTenant).Return(&tenantModels[1], nil)
+				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
 				return tenantMappingRepo
 			},
 			UIDSvcFn:    uidSvcFn,
@@ -375,10 +371,9 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			tenantInputs: tenantInputsWithRegions,
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("Create", ctx, *tenantInputsWithRegions[0].ToBusinessTenantMapping(testID)).Return(nil).Once()
-				tenantMappingRepo.On("Create", ctx, *tenantInputsWithRegions[1].ToBusinessTenantMapping(testID)).Return(tenantNotUniqueErr).Once()
-				existingTenant := tenantInputsWithRegions[1].ToBusinessTenantMapping(testID)
-				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInputsWithRegions[1].ExternalTenant).Return(existingTenant, nil)
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInputsWithRegions[0].ExternalTenant).Return(nil, nil)
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInputsWithRegions[1].ExternalTenant).Return(&tenantModels[1], nil)
+				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
 				return tenantMappingRepo
 			},
 			UIDSvcFn:    uidSvcFn,
@@ -401,7 +396,6 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			tenantInputs: []model.BusinessTenantMappingInput{tenantWithSubdomainAndRegion},
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("Create", ctx, *tenantWithSubdomainAndRegion.ToBusinessTenantMapping(testID)).Return(tenantNotUniqueErr).Once()
 				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantWithSubdomainAndRegion.ExternalTenant).Return(nil, testErr)
 				return tenantMappingRepo
 			},
@@ -411,33 +405,11 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			ExpectedOutput:   testErr,
 		},
 		{
-			Name:         "Error when parent tenant exists with another ID and ID cannot be retrieved",
-			tenantInputs: tenantModelInputsWithParent,
-			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
-				parent := tenantModelInputsWithParent[1]
-				modifiedTenant := tenantModelInputsWithParent[0]
-				modifiedTenant.Parent = testInternalParentID
-
-				tenantMappingRepo := &automock.TenantMappingRepository{}
-				tenantMappingRepo.On("Create", ctx, *parent.ToBusinessTenantMapping(testTemporaryInternalParentID)).Return(tenantNotUniqueErr).Once()
-				tenantMappingRepo.On("GetByExternalTenant", ctx, parent.ExternalTenant).Return(nil, testError).Once()
-				return tenantMappingRepo
-			},
-			UIDSvcFn: func() *automock.UIDService {
-				uidSvc := &automock.UIDService{}
-				uidSvc.On("Generate").Return(testID).Once()
-				uidSvc.On("Generate").Return(testTemporaryInternalParentID).Once()
-				return uidSvc
-			},
-			LabelRepoFn:      noopLabelRepo,
-			LabelUpsertSvcFn: noopLabelUpsertSvc,
-			ExpectedOutput:   fmt.Errorf("while getting internal ID of tenant %s", testParentID),
-		},
-		{
 			Name:         "Error when subdomain label setting fails",
 			tenantInputs: tenantInputsWithSubdomains,
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInputsWithSubdomains[0].ExternalTenant).Return(nil, nil)
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
 				return tenantMappingRepo
 			},
@@ -461,6 +433,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			tenantInputs: tenantInputsWithRegions,
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantInputsWithRegions[0].ExternalTenant).Return(nil, nil)
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(nil).Once()
 				return tenantMappingRepo
 			},
@@ -484,6 +457,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			tenantInputs: tenantInputs,
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("GetByExternalTenant", ctx, tenantModels[0].ExternalTenant).Return(nil, nil)
 				tenantMappingRepo.On("Create", ctx, tenantModels[0]).Return(testErr).Once()
 				return tenantMappingRepo
 			},
