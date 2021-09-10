@@ -3,13 +3,14 @@ package oathkeeper
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 // ValidationHydrator missing godoc
