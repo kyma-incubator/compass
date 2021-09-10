@@ -3,9 +3,7 @@ package application
 import (
 	"context"
 	"strings"
-	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -115,9 +113,9 @@ type TokenConverter interface {
 	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)
 }
 
-//go:generate mockery --name=TimeService --output=automock --outpkg=automock --case=underscore
-type TimeService interface {
-	Now() time.Time
+//go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore
+type OneTimeTokenService interface {
+	IsTokenValid(systemAuth *model.SystemAuth) (bool, error)
 }
 
 type Resolver struct {
@@ -137,9 +135,7 @@ type Resolver struct {
 	bndlConv         BundleConverter
 	oneTimeTokenConv TokenConverter
 
-	oneTimeTokenCfg onetimetoken.Config
-
-	timeService TimeService
+	oneTimeTokenSvc OneTimeTokenService
 }
 
 func NewResolver(transact persistence.Transactioner,
@@ -154,8 +150,7 @@ func NewResolver(transact persistence.Transactioner,
 	bndlSvc BundleService,
 	bndlConverter BundleConverter,
 	oneTimeTokenConv TokenConverter,
-	oneTimeTokenCfg onetimetoken.Config,
-	timeService TimeService) *Resolver {
+	oneTimeTokenSvc OneTimeTokenService) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		appSvc:           svc,
@@ -169,8 +164,7 @@ func NewResolver(transact persistence.Transactioner,
 		bndlSvc:          bndlSvc,
 		bndlConv:         bndlConverter,
 		oneTimeTokenConv: oneTimeTokenConv,
-		oneTimeTokenCfg:  oneTimeTokenCfg,
-		timeService:      timeService,
+		oneTimeTokenSvc:  oneTimeTokenSvc,
 	}
 }
 
@@ -524,10 +518,15 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 		return nil, err
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	var out []*graphql.AppSystemAuth
 	for _, sa := range sysAuths {
-		if shouldSkip := r.checkApplicationOneTimeTokenIsInvalid(sa.Value, r.oneTimeTokenCfg); shouldSkip {
-			log.C(ctx).Debug("skipping one-time token due to its expiration or usage")
+		if _, err := r.oneTimeTokenSvc.IsTokenValid(&sa); err != nil {
+			log.C(ctx).WithError(err).Errorf("skipping one-time token due to its expiration or usage")
 			continue
 		}
 
@@ -547,28 +546,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 		out = append(out, c.(*graphql.AppSystemAuth))
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
 	return out, nil
-}
-
-func (r *Resolver) checkApplicationOneTimeTokenIsInvalid(auth *model.Auth, config onetimetoken.Config) bool {
-	if auth == nil || auth.OneTimeToken == nil || auth.OneTimeToken.Type != tokens.ApplicationToken {
-		return false
-	}
-
-	if auth.OneTimeToken.Used {
-		return true
-	}
-
-	isExpired := auth.OneTimeToken.CreatedAt.Add(config.ApplicationExpiration).Before(r.timeService.Now())
-	if isExpired {
-		return true
-	}
-
-	return false
 }
 
 func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {

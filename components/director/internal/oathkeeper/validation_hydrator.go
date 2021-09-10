@@ -3,46 +3,41 @@ package oathkeeper
 import (
 	"context"
 	"encoding/json"
-	"net/http"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"github.com/pkg/errors"
+	"net/http"
 )
 
 type ValidationHydrator interface {
 	ResolveConnectorTokenHeader(w http.ResponseWriter, r *http.Request)
 }
 
-//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
-type Service interface {
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
+type SystemAuthService interface {
 	GetByToken(ctx context.Context, token string) (*model.SystemAuth, error)
 	InvalidateToken(ctx context.Context, item *model.SystemAuth) error
 }
 
-type validationHydrator struct {
-	tokenService           Service
-	transact               persistence.Transactioner
-	csrTokenExpiration     time.Duration
-	appTokenExpiration     time.Duration
-	runtimeTokenExpiration time.Duration
-	timeService            directorTime.Service
+//go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore
+type OneTimeTokenService interface {
+	IsTokenValid(systemAuth *model.SystemAuth) (bool, error)
 }
 
-func NewValidationHydrator(tokenService Service, transact persistence.Transactioner, timeService directorTime.Service, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration time.Duration) ValidationHydrator {
+type validationHydrator struct {
+	systemAuthService   SystemAuthService
+	transact            persistence.Transactioner
+	oneTimeTokenService OneTimeTokenService
+}
+
+func NewValidationHydrator(systemAuthService SystemAuthService, transact persistence.Transactioner, oneTimeTokenService OneTimeTokenService) ValidationHydrator {
 	return &validationHydrator{
-		csrTokenExpiration:     csrTokenExpiration,
-		appTokenExpiration:     appTokenExpiration,
-		runtimeTokenExpiration: runtimeTokenExpiration,
-		tokenService:           tokenService,
-		transact:               transact,
-		timeService:            timeService,
+		systemAuthService:   systemAuthService,
+		transact:            transact,
+		oneTimeTokenService: oneTimeTokenService,
 	}
 }
 
@@ -79,28 +74,15 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 
 	log.C(ctx).Info("Trying to resolve token...")
 
-	systemAuth, err := vh.tokenService.GetByToken(ctx, connectorToken)
+	systemAuth, err := vh.systemAuthService.GetByToken(ctx, connectorToken)
 	if err != nil {
 		log.C(ctx).Infof("Invalid token provided: %s", err.Error())
 		respondWithAuthSession(ctx, w, authSession)
 		return
 	}
 
-	if systemAuth.Value == nil || systemAuth.Value.OneTimeToken == nil {
-		log.C(ctx).Infof("Cannot get OneTimeToken from systemAuth with ID: %s", systemAuth.ID)
-		respondWithAuthSession(ctx, w, authSession)
-		return
-	}
-
-	expirationTime, err := vh.getExpirationTimeForToken(systemAuth)
-	if err != nil {
+	if _, err := vh.oneTimeTokenService.IsTokenValid(systemAuth); err != nil {
 		log.C(ctx).Error(err)
-		respondWithAuthSession(ctx, w, authSession)
-		return
-	}
-
-	if systemAuth.Value.OneTimeToken.CreatedAt.Add(expirationTime).Before(vh.timeService.Now()) {
-		log.C(ctx).Infof("One Time Token with validity %s for system auth with ID %q has expired", expirationTime.String(), systemAuth.ID)
 		respondWithAuthSession(ctx, w, authSession)
 		return
 	}
@@ -111,7 +93,7 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 
 	authSession.Header.Add(oathkeeper.ClientIdFromTokenHeader, systemAuth.ID)
 
-	if err := vh.tokenService.InvalidateToken(ctx, systemAuth); err != nil {
+	if err := vh.systemAuthService.InvalidateToken(ctx, systemAuth); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to invalidate token: %v", err)
 		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("could not invalidate token"))
 		return
@@ -127,18 +109,6 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 	respondWithAuthSession(ctx, w, authSession)
 }
 
-func (vh *validationHydrator) getExpirationTimeForToken(systemAuth *model.SystemAuth) (time.Duration, error) {
-	switch systemAuth.Value.OneTimeToken.Type {
-	case tokens.ApplicationToken:
-		return vh.appTokenExpiration, nil
-	case tokens.RuntimeToken:
-		return vh.runtimeTokenExpiration, nil
-	case tokens.CSRToken:
-		return vh.csrTokenExpiration, nil
-	default:
-		return time.Duration(0), errors.Errorf("One Time Token for system auth id %s has no valid type", systemAuth.ID)
-	}
-}
 func respondWithAuthSession(ctx context.Context, w http.ResponseWriter, authSession oathkeeper.AuthenticationSession) {
 	httputils.RespondWithBody(ctx, w, http.StatusOK, authSession)
 }

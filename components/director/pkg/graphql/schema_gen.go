@@ -4158,7 +4158,7 @@ type Auth {
 	additionalQueryParams: QueryParams
 	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuth
-	oneTimeToken: OneTimeTokenForApplication
+	oneTimeToken: OneTimeToken
 }
 
 type AutomaticScenarioAssignment {
@@ -9088,9 +9088,9 @@ func (ec *executionContext) _Auth_oneTimeToken(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*OneTimeTokenForApplication)
+	res := resTmp.(OneTimeToken)
 	fc.Result = res
-	return ec.marshalOOneTimeTokenForApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenForApplication(ctx, field.Selections, res)
+	return ec.marshalOOneTimeToken2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AutomaticScenarioAssignment_scenarioName(ctx context.Context, field graphql.CollectedField, obj *AutomaticScenarioAssignment) (ret graphql.Marshaler) {
@@ -28373,15 +28373,11 @@ func (ec *executionContext) unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcom�
 	return &res, err
 }
 
-func (ec *executionContext) marshalOOneTimeTokenForApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenForApplication(ctx context.Context, sel ast.SelectionSet, v OneTimeTokenForApplication) graphql.Marshaler {
-	return ec._OneTimeTokenForApplication(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOOneTimeTokenForApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenForApplication(ctx context.Context, sel ast.SelectionSet, v *OneTimeTokenForApplication) graphql.Marshaler {
+func (ec *executionContext) marshalOOneTimeToken2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx context.Context, sel ast.SelectionSet, v OneTimeToken) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._OneTimeTokenForApplication(ctx, sel, v)
+	return ec._OneTimeToken(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOOperationMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx context.Context, v interface{}) (OperationMode, error) {

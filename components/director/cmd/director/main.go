@@ -310,11 +310,11 @@ func main() {
 	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationPath).Subrouter()
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
-	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, cfgProvider, httpClient, internalHttpClient, pairingAdapters)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	oneTimeTokenService := tokenService(cfg, cfgProvider, httpClient, internalHttpClient, pairingAdapters)
+	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, oneTimeTokenService), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
-	timeService := directorTime.NewService()
-	hydratorHandler, err := PrepareHydratorHandler(cfg, systemAuthSvc(), transact, timeService, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	hydratorHandler, err := PrepareHydratorHandler(cfg, systemAuthSvc(), transact, oneTimeTokenService, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	logger.Infof("Registering readiness endpoint...")
@@ -628,7 +628,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHttpClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken, pairingAdapters, timeService)
 }
 
-func systemAuthSvc() oathkeeper.Service {
+func systemAuthSvc() oathkeeper.SystemAuthService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -636,8 +636,8 @@ func systemAuthSvc() oathkeeper.Service {
 	return systemauth.NewService(systemAuthRepo, uidSvc)
 }
 
-func PrepareHydratorHandler(cfg config, tokenService oathkeeper.Service, transact persistence.Transactioner, timeService directorTime.Service, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
-	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, timeService, cfg.OneTimeToken.CSRExpiration, cfg.OneTimeToken.ApplicationExpiration, cfg.OneTimeToken.RuntimeExpiration)
+func PrepareHydratorHandler(cfg config, tokenService oathkeeper.SystemAuthService, transact persistence.Transactioner, oneTimeTokenService graphqlAPI.TokenService, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
+	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, oneTimeTokenService)
 
 	router := mux.NewRouter()
 	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

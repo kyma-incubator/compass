@@ -883,3 +883,177 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestIsTokenValid(t *testing.T) {
+	const (
+		csrTokenExpiration     = time.Duration(time.Minute * 5)
+		appTokenExpiration     = time.Duration(time.Minute * 5)
+		runtimeTokenExpiration = time.Duration(time.Minute * 5)
+		connectorURL           = "connector.url"
+
+		suggestedTokenHeaderKey = "suggest_token"
+	)
+
+	ottConfig := onetimetoken.Config{
+		ConnectorURL:          connectorURL,
+		LegacyConnectorURL:    connectorURL,
+		SuggestTokenHeaderKey: suggestedTokenHeaderKey,
+		CSRExpiration:         csrTokenExpiration,
+		ApplicationExpiration: appTokenExpiration,
+		RuntimeExpiration:     runtimeTokenExpiration,
+	}
+
+	timeService := directorTime.NewService()
+	intSystemToAdapterMapping := map[string]string{}
+	appSvc := &automock.ApplicationService{}
+	appConverter := &automock.ApplicationConverter{}
+	tenantSvc := &automock.ExternalTenantsService{}
+	httpClient := &automock.HTTPDoer{}
+	tokenGenerator := &automock.TokenGenerator{}
+	systemAuthSvc := &automock.SystemAuthService{}
+
+	validOTTSystemAuth := &model.SystemAuth{
+		ID:                  "id",
+		TenantID:            nil,
+		AppID:               nil,
+		RuntimeID:           nil,
+		IntegrationSystemID: nil,
+		Value: &model.Auth{
+			Credential:            model.CredentialData{},
+			AdditionalHeaders:     nil,
+			AdditionalQueryParams: nil,
+			RequestAuth:           nil,
+			OneTimeToken: &model.OneTimeToken{
+				Token:        "token",
+				ConnectorURL: "url",
+				Type:         tokens.ApplicationToken,
+				CreatedAt:    time.Now(),
+				Used:         false,
+				UsedAt:       time.Time{},
+			},
+		},
+	}
+
+	testCases := []struct {
+		description string
+		systemAuth  *model.SystemAuth
+
+		shouldHaveError bool
+		errorMsg        string
+	}{
+		{
+			description:     "Should return true when system auth token is valid",
+			systemAuth:      validOTTSystemAuth,
+			shouldHaveError: false,
+		},
+		{
+			description: "Should return false with error when the system auth value is nil",
+			systemAuth: &model.SystemAuth{
+				ID:                  "123",
+				TenantID:            nil,
+				AppID:               nil,
+				RuntimeID:           nil,
+				IntegrationSystemID: nil,
+				Value:               nil,
+			},
+			shouldHaveError: true,
+			errorMsg:        "System Auth value for auth id 123 is missing",
+		},
+		{
+			description: "Should return false with error when the system auth value is nil",
+			systemAuth: &model.SystemAuth{
+				ID: "123",
+			},
+			shouldHaveError: true,
+			errorMsg:        "System Auth value for auth id 123 is missing",
+		},
+		{
+			description: "Should return false with error when the system auth OTT is nil",
+			systemAuth: &model.SystemAuth{
+				ID:    "123",
+				Value: &model.Auth{},
+			},
+			shouldHaveError: true,
+			errorMsg:        "One Time Token for system auth id 123 is missing",
+		},
+		{
+			description: "Should return true when the system auth is not OTT",
+			systemAuth: &model.SystemAuth{
+				ID: "123",
+				Value: &model.Auth{
+					Credential: model.CredentialData{
+						Basic: &model.BasicCredentialData{
+							Username: "",
+							Password: "",
+						},
+					},
+					OneTimeToken: nil,
+				},
+			},
+			shouldHaveError: false,
+		},
+		{
+			description: "Should return false when the system auth OTT is used",
+			systemAuth: &model.SystemAuth{
+				ID: "234",
+				Value: &model.Auth{
+					OneTimeToken: &model.OneTimeToken{
+						CreatedAt: time.Time{},
+						Used:      true,
+					},
+				},
+			},
+			shouldHaveError: true,
+			errorMsg:        "One Time Token for system auth id 234 has been used",
+		},
+		{
+			description: "Should return false when the system auth OTT is expired",
+			systemAuth: &model.SystemAuth{
+				ID: "234",
+				Value: &model.Auth{
+					OneTimeToken: &model.OneTimeToken{
+						Type:      tokens.ApplicationToken,
+						CreatedAt: time.Now().Add(-10 * time.Minute),
+						Used:      false,
+					},
+				},
+			},
+			shouldHaveError: true,
+			errorMsg:        "One Time Token with validity 5m0s for system auth with ID 234 has expired",
+		},
+		{
+			description: "Should return false when the system auth OTT has no OTT type",
+			systemAuth: &model.SystemAuth{
+				ID: "234",
+				Value: &model.Auth{
+					OneTimeToken: &model.OneTimeToken{
+						Used: false,
+					},
+				},
+			},
+			shouldHaveError: true,
+			errorMsg:        "One Time Token for system auth id 234 has no valid type",
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.description, func(t *testing.T) {
+			// GIVEN
+			tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator, ottConfig, intSystemToAdapterMapping, timeService)
+
+			//WHEN
+			isValid, err := tokenSvc.IsTokenValid(test.systemAuth)
+
+			//THEN
+			if test.shouldHaveError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), test.errorMsg)
+				assert.False(t, isValid)
+			} else {
+				assert.NoError(t, err)
+				assert.True(t, isValid)
+			}
+			mock.AssertExpectationsForObjects(t, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator)
+		})
+	}
+}

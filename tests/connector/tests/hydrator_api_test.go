@@ -15,6 +15,14 @@ import (
 )
 
 func TestHydrators(t *testing.T) {
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
+		Name: "test-hydrators-app",
+	})
+	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
+	require.NoError(t, err)
+	require.NotEmpty(t, app.ID)
+	appID := app.ID
+
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
 		Name: "test-hydrators-runtime",
 	})
@@ -48,17 +56,11 @@ func TestHydrators(t *testing.T) {
 		t.Run("should resolve one-time token for "+testCase.clientType, func(t *testing.T) {
 			//given
 			var err error
-			app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
-				Name: "test-hydrators-app",
-			})
-			defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
-			require.NoError(t, err)
-			require.NotEmpty(t, app.ID)
 
 			var token externalschema.Token
 
 			if testCase.clientType == "Application" {
-				token, err = testCase.tokenGenerationFunc(t, app.ID)
+				token, err = testCase.tokenGenerationFunc(t, appID)
 			} else {
 				token, err = testCase.tokenGenerationFunc(t, runtimeID)
 			}
@@ -73,7 +75,7 @@ func TestHydrators(t *testing.T) {
 			var runtimeSystemAuths []*graphql.RuntimeSystemAuth
 
 			if testCase.clientType == "Application" {
-				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, app.ID).Auths
+				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID).Auths
 			} else {
 				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, runtimeID).Auths
 			}
@@ -100,7 +102,7 @@ func TestHydrators(t *testing.T) {
 
 			// check if the gql resolver is not sending used/expired auths
 			if testCase.clientType == "Application" {
-				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, app.ID).Auths
+				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID).Auths
 				assert.Len(t, appSystemAuths, 0)
 			}
 		})
@@ -110,15 +112,8 @@ func TestHydrators(t *testing.T) {
 			var err error
 			var token externalschema.Token
 
-			app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
-				Name: "test-hydrators-app",
-			})
-			defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
-			require.NoError(t, err)
-			require.NotEmpty(t, app.ID)
-
 			if testCase.clientType == "Application" {
-				token, err = testCase.tokenGenerationFunc(t, app.ID)
+				token, err = testCase.tokenGenerationFunc(t, appID)
 			} else {
 				token, err = testCase.tokenGenerationFunc(t, runtimeID)
 			}
@@ -142,7 +137,7 @@ func TestHydrators(t *testing.T) {
 			var runtimeSystemAuths []*graphql.RuntimeSystemAuth
 
 			if testCase.clientType == "Application" {
-				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, app.ID).Auths
+				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID).Auths
 			} else {
 				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, runtimeID).Auths
 			}
@@ -172,14 +167,7 @@ func TestHydrators(t *testing.T) {
 
 			var token externalschema.Token
 			if testCase.clientType == "Application" {
-				app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
-					Name: "test-hydrators-app",
-				})
-				defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
-				require.NoError(t, err)
-				require.NotEmpty(t, app.ID)
-
-				token, err = testCase.tokenGenerationFunc(t, app.ID)
+				token, err = testCase.tokenGenerationFunc(t, appID)
 			} else {
 				token, err = testCase.tokenGenerationFunc(t, runtimeID)
 			}
