@@ -75,7 +75,7 @@ func TestORDService(stdT *testing.T) {
 	appInput2 := fixtures.CreateApp("tenant2")
 	appInputInScenario := fixtures.CreateApp("tenant3-in-scenario")
 	appInputNotInScenario := fixtures.CreateApp("tenant3-no-scenario")
-	appInputAPIProtocolFiltering := fixtures.CreateApp("tenant3")
+	appInputAPIProtocolFiltering := fixtures.CreateApp("tenant4")
 	appInputAPIProtocolFiltering.Bundles = append(appInputAPIProtocolFiltering.Bundles, fixtures.FixBundleWithOnlyOdataAPIs())
 
 	apisMap := make(map[string]directorSchema.APIDefinitionInput, 0)

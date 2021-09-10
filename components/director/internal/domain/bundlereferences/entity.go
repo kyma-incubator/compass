@@ -2,7 +2,7 @@ package bundlereferences
 
 import "database/sql"
 
-// Entity missing godoc
+// Entity represents a Compass BundleReference
 type Entity struct {
 	ID                  string         `db:"id"`
 	TenantID            string         `db:"tenant_id"`

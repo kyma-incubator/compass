@@ -11,12 +11,12 @@ import (
 
 type converter struct{}
 
-// NewConverter missing godoc
+// NewConverter returns a new Converter that can later be used to make the conversions between the GraphQL, service, and repository layer representations of a Compass BundleReference
 func NewConverter() *converter {
 	return &converter{}
 }
 
-// ToEntity missing godoc
+// ToEntity converts the provided service-layer representation of a BundleReference to the repository-layer one.
 func (c *converter) ToEntity(in model.BundleReference) Entity {
 	var apiDefID sql.NullString
 	var eventDefID sql.NullString
@@ -40,7 +40,7 @@ func (c *converter) ToEntity(in model.BundleReference) Entity {
 	}
 }
 
-// FromEntity missing godoc
+// FromEntity converts the provided Entity repo-layer representation of a BundleReference to the service-layer representation model.BundleReference.
 func (c *converter) FromEntity(in Entity) (model.BundleReference, error) {
 	objectID, objectType, err := c.objectReferenceFromEntity(in)
 	if err != nil {
