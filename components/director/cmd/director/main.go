@@ -616,7 +616,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	specRepo := spec.NewRepository(specConverter)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
-	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo)
+	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	documentSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)

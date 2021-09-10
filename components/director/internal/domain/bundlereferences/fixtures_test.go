@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	bundleRefID      = "qqqqqqqqq-qqqq-qqqq-qqqq-qqqqqqqqqqqq"
 	apiDefID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
 	eventDefID       = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
@@ -25,6 +26,7 @@ const (
 
 func fixAPIBundleReferenceModel() model.BundleReference {
 	return model.BundleReference{
+		ID:                  bundleRefID,
 		Tenant:              tenantID,
 		BundleID:            str.Ptr(bundleID),
 		ObjectType:          model.BundleAPIReference,
@@ -35,6 +37,7 @@ func fixAPIBundleReferenceModel() model.BundleReference {
 
 func fixAPIBundleReferenceEntity() bundlereferences.Entity {
 	return bundlereferences.Entity{
+		ID:                  bundleRefID,
 		TenantID:            tenantID,
 		BundleID:            repo.NewValidNullableString(bundleID),
 		APIDefID:            repo.NewValidNullableString(apiDefID),
@@ -45,6 +48,7 @@ func fixAPIBundleReferenceEntity() bundlereferences.Entity {
 
 func fixAPIBundleReferenceEntityWithArgs(bndlID, apiID, targetURL string) bundlereferences.Entity {
 	return bundlereferences.Entity{
+		ID:                  bundleRefID,
 		TenantID:            tenantID,
 		BundleID:            repo.NewValidNullableString(bndlID),
 		APIDefID:            repo.NewValidNullableString(apiID),
@@ -55,6 +59,7 @@ func fixAPIBundleReferenceEntityWithArgs(bndlID, apiID, targetURL string) bundle
 
 func fixInvalidAPIBundleReferenceEntity() bundlereferences.Entity {
 	return bundlereferences.Entity{
+		ID:                  bundleRefID,
 		TenantID:            tenantID,
 		BundleID:            repo.NewValidNullableString(bundleID),
 		APIDefID:            sql.NullString{},
@@ -65,6 +70,7 @@ func fixInvalidAPIBundleReferenceEntity() bundlereferences.Entity {
 
 func fixEventBundleReferenceModel() model.BundleReference {
 	return model.BundleReference{
+		ID:         bundleRefID,
 		Tenant:     tenantID,
 		BundleID:   str.Ptr(bundleID),
 		ObjectType: model.BundleEventReference,
@@ -74,6 +80,7 @@ func fixEventBundleReferenceModel() model.BundleReference {
 
 func fixEventBundleReferenceEntity() bundlereferences.Entity {
 	return bundlereferences.Entity{
+		ID:                  bundleRefID,
 		TenantID:            tenantID,
 		BundleID:            repo.NewValidNullableString(bundleID),
 		APIDefID:            sql.NullString{},
@@ -84,6 +91,7 @@ func fixEventBundleReferenceEntity() bundlereferences.Entity {
 
 func fixEventBundleReferenceEntityWithArgs(bndlID, eventID string) bundlereferences.Entity {
 	return bundlereferences.Entity{
+		ID:         bundleRefID,
 		TenantID:   tenantID,
 		BundleID:   repo.NewValidNullableString(bndlID),
 		EventDefID: repo.NewValidNullableString(eventID),
@@ -92,6 +100,7 @@ func fixEventBundleReferenceEntityWithArgs(bndlID, eventID string) bundlereferen
 
 func fixInvalidEventBundleReferenceEntity() bundlereferences.Entity {
 	return bundlereferences.Entity{
+		ID:                  bundleRefID,
 		TenantID:            tenantID,
 		BundleID:            repo.NewValidNullableString(bundleID),
 		APIDefID:            sql.NullString{},
@@ -101,19 +110,19 @@ func fixInvalidEventBundleReferenceEntity() bundlereferences.Entity {
 }
 
 func fixBundleReferenceColumns() []string {
-	return []string{"tenant_id", "api_def_id", "event_def_id", "bundle_id", "api_def_url"}
+	return []string{"tenant_id", "api_def_id", "event_def_id", "bundle_id", "api_def_url", "id"}
 }
 
 func fixBundleReferenceRowWithoutEventID() []driver.Value {
-	return []driver.Value{tenantID, repo.NewValidNullableString(apiDefID), sql.NullString{}, repo.NewValidNullableString(bundleID), repo.NewValidNullableString(apiDefTargetURL)}
+	return []driver.Value{tenantID, repo.NewValidNullableString(apiDefID), sql.NullString{}, repo.NewValidNullableString(bundleID), repo.NewValidNullableString(apiDefTargetURL), bundleRefID}
 }
 
 func fixBundleReferenceRowWithoutEventIDWithArgs(bndlID, apiID, targetURL string) []driver.Value {
-	return []driver.Value{tenantID, repo.NewValidNullableString(apiID), sql.NullString{}, repo.NewValidNullableString(bndlID), repo.NewValidNullableString(targetURL)}
+	return []driver.Value{tenantID, repo.NewValidNullableString(apiID), sql.NullString{}, repo.NewValidNullableString(bndlID), repo.NewValidNullableString(targetURL), bundleRefID}
 }
 
 func fixBundleReferenceRowWithoutAPIIDWithArgs(bndlID, eventID string) []driver.Value {
-	return []driver.Value{tenantID, sql.NullString{}, repo.NewValidNullableString(eventID), repo.NewValidNullableString(bndlID), sql.NullString{}}
+	return []driver.Value{tenantID, sql.NullString{}, repo.NewValidNullableString(eventID), repo.NewValidNullableString(bndlID), sql.NullString{}, bundleRefID}
 }
 
 func fixBundleIDs(id string) []driver.Value {
@@ -121,7 +130,7 @@ func fixBundleIDs(id string) []driver.Value {
 }
 
 func fixBundleReferenceCreateArgs(bRef *model.BundleReference) []driver.Value {
-	return []driver.Value{bRef.Tenant, repo.NewValidNullableString(*bRef.ObjectID), sql.NullString{}, repo.NewValidNullableString(*bRef.BundleID), repo.NewValidNullableString(*bRef.APIDefaultTargetURL)}
+	return []driver.Value{bRef.Tenant, repo.NewValidNullableString(*bRef.ObjectID), sql.NullString{}, repo.NewValidNullableString(*bRef.BundleID), repo.NewValidNullableString(*bRef.APIDefaultTargetURL), bRef.ID}
 }
 
 func fixUpdateTenantIsolationSubquery() string {
