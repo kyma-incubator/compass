@@ -58,6 +58,15 @@ type config struct {
 	Handler tenantfetcher.HandlerConfig
 
 	Database persistence.DatabaseConfig
+
+	securityConfig
+}
+
+type securityConfig struct {
+	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
+	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
+	JwksEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT"`
+	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }
 
 func main() {
@@ -107,7 +116,7 @@ func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transa
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
-	configureAuthMiddleware(ctx, router, cfg.Handler)
+	configureAuthMiddleware(ctx, router, cfg.securityConfig)
 
 	registerHandler(ctx, router, cfg.Handler, transact)
 
@@ -159,7 +168,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func configureAuthMiddleware(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
+func configureAuthMiddleware(ctx context.Context, router *mux.Router, cfg securityConfig) {
 	scopeValidator := claims.NewScopesValidator([]string{cfg.SubscriptionCallbackScope})
 	middleware := auth.New(cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())

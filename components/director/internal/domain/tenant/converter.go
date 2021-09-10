@@ -9,12 +9,12 @@ import (
 
 type converter struct{}
 
-// NewConverter missing godoc
+// NewConverter returns a new Converter that can later be used to make the conversions between the GraphQL, service, and repository layer representations of a Compass tenant.
 func NewConverter() *converter {
 	return &converter{}
 }
 
-// ToEntity missing godoc
+// ToEntity converts the provided service-layer representation of a tenant to the repository-layer one tenant.Entity.
 func (c *converter) ToEntity(in *model.BusinessTenantMapping) *tenant.Entity {
 	if in == nil {
 		return nil
@@ -30,7 +30,7 @@ func (c *converter) ToEntity(in *model.BusinessTenantMapping) *tenant.Entity {
 	}
 }
 
-// FromEntity missing godoc
+// FromEntity converts the provided tenant.Entity repo-layer representation of a tenant to the service-layer representation model.BusinessTenantMapping.
 func (c *converter) FromEntity(in *tenant.Entity) *model.BusinessTenantMapping {
 	if in == nil {
 		return nil
@@ -47,7 +47,7 @@ func (c *converter) FromEntity(in *tenant.Entity) *model.BusinessTenantMapping {
 	}
 }
 
-// ToGraphQL missing godoc
+// ToGraphQL converts the provided model.BusinessTenantMapping service-layer representation of a tenant to the GraphQL-layer representation graphql.Tenant.
 func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 	if in == nil {
 		return nil
@@ -61,7 +61,7 @@ func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 	}
 }
 
-// MultipleToGraphQL missing godoc
+// MultipleToGraphQL converts all the provided model.BusinessTenantMapping service-layer representations of a tenant to the GraphQL-layer representations graphql.Tenant.
 func (c *converter) MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant {
 	tenants := make([]*graphql.Tenant, 0, len(in))
 	for _, r := range in {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -21,30 +20,25 @@ const (
 	tenantCreationFailureMsgFmt = "Failed to create tenant with ID %s"
 )
 
-// TenantProvisioner missing godoc
+// TenantProvisioner is used to create all related to the incoming request tenants, and build their hierarchy;
 //go:generate mockery --name=TenantProvisioner --output=automock --outpkg=automock --case=underscore
 type TenantProvisioner interface {
 	ProvisionTenants(context.Context, TenantProvisioningRequest) error
 	ProvisionRegionalTenants(context.Context, TenantProvisioningRequest) error
 }
 
-// HandlerConfig missing godoc
+// HandlerConfig is the configuration required by the tenant handler.
+// It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
 	HandlerEndpoint         string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
 	RegionalHandlerEndpoint string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
 	DependenciesEndpoint    string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
 	TenantPathParam         string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
 	RegionPathParam         string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
-
 	TenantProviderConfig
-
-	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
-	JwksEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT"`
-	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }
 
-// TenantProviderConfig missing godoc
+// TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
 type TenantProviderConfig struct {
 	TenantIDProperty           string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
 	SubaccountTenantIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY,default=subaccountTenantId"`
@@ -59,7 +53,7 @@ type handler struct {
 	config      HandlerConfig
 }
 
-// NewTenantsHTTPHandler missing godoc
+// NewTenantsHTTPHandler returns a new HTTP handler, responsible for creation and deletion of regional and non-regional tenants.
 func NewTenantsHTTPHandler(provisioner TenantProvisioner, transact persistence.Transactioner, config HandlerConfig) *handler {
 	return &handler{
 		provisioner: provisioner,
@@ -68,11 +62,12 @@ func NewTenantsHTTPHandler(provisioner TenantProvisioner, transact persistence.T
 	}
 }
 
-// Create missing godoc
+// Create handles creation of non-regional tenants.
 func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 	h.handleTenantCreationRequest(writer, request, "")
 }
 
+// CreateRegional handles creation of regional tenants.
 func (h *handler) CreateRegional(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
@@ -87,7 +82,7 @@ func (h *handler) CreateRegional(writer http.ResponseWriter, request *http.Reque
 	h.handleTenantCreationRequest(writer, request, region)
 }
 
-// DeleteByExternalID missing godoc
+// DeleteByExternalID handles both regional and non-regional tenant deletion requests.
 func (h *handler) DeleteByExternalID(writer http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	body, err := ioutil.ReadAll(req.Body)
@@ -106,6 +101,7 @@ func (h *handler) DeleteByExternalID(writer http.ResponseWriter, req *http.Reque
 	writer.WriteHeader(http.StatusOK)
 }
 
+// Dependencies handler returns all external services where once created in Compass, the tenant should be created as well.
 func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	if _, err := writer.Write([]byte("{}")); err != nil {
