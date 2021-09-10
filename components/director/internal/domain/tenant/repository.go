@@ -36,7 +36,7 @@ var (
 	initializedComputedColumn = "initialized"
 )
 
-// Converter missing godoc
+// Converter converts tenants between the model.BusinessTenantMapping service-layer representation of a tenant and the repo-layer representation tenant.Entity.
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in *model.BusinessTenantMapping) *tenant.Entity
@@ -54,7 +54,7 @@ type pgRepository struct {
 	conv Converter
 }
 
-// NewRepository missing godoc
+// NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
 		creator:            repo.NewCreator(resource.Tenant, tableName, tableColumns),
@@ -67,12 +67,12 @@ func NewRepository(conv Converter) *pgRepository {
 	}
 }
 
-// Create missing godoc
+// Create adds the provided tenant into the Compass storage.
 func (r *pgRepository) Create(ctx context.Context, item model.BusinessTenantMapping) error {
 	return r.creator.Create(ctx, r.conv.ToEntity(&item))
 }
 
-// Get missing godoc
+// Get retrieves the active tenant with matching internal ID from the Compass storage.
 func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	var entity tenant.Entity
 	conditions := repo.Conditions{
@@ -85,7 +85,7 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenan
 	return r.conv.FromEntity(&entity), nil
 }
 
-// GetByExternalTenant missing godoc
+// GetByExternalTenant retrieves the active tenant with matching external ID from the Compass storage.
 func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
 	var entity tenant.Entity
 	conditions := repo.Conditions{
@@ -97,17 +97,17 @@ func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenant s
 	return r.conv.FromEntity(&entity), nil
 }
 
-// Exists missing godoc
+// Exists checks if tenant with the provided internal ID exists in the Compass storage.
 func (r *pgRepository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
-// ExistsByExternalTenant missing godoc
+// ExistsByExternalTenant checks if tenant with the provided external ID exists in the Compass storage.
 func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(externalTenantColumn, externalTenant)})
 }
 
-// List missing godoc
+// List retrieves all tenants from the Compass storage.
 func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection tenant.EntityCollection
 
@@ -136,7 +136,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 	return items, nil
 }
 
-// Update missing godoc
+// Update updates the values of tenant with matching internal, and external IDs.
 func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMapping) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
@@ -147,7 +147,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
 
-// DeleteByExternalTenant missing godoc
+// DeleteByExternalTenant removes a tenant with matching external ID from the Compass storage.
 func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenant string) error {
 	conditions := repo.Conditions{
 		repo.NewEqualCondition(externalTenantColumn, externalTenant),

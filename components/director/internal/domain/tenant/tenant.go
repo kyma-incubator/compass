@@ -8,16 +8,16 @@ import (
 
 type key int
 
-// TenantContextKey missing godoc
+// TenantContextKey is the key under which the TenantCtx is saved in a given context.Context.
 const TenantContextKey key = iota
 
-// TenantCtx missing godoc
+// TenantCtx is the structure can be saved in a request context. It is used to determine the tenant context in which the request is being executed.
 type TenantCtx struct {
 	InternalID string
 	ExternalID string
 }
 
-// LoadFromContext missing godoc
+// LoadFromContext retrieves the internal tenant ID from the provided context. It returns error if such ID cannot be found.
 func LoadFromContext(ctx context.Context) (string, error) {
 	tenant, ok := ctx.Value(TenantContextKey).(TenantCtx)
 
@@ -32,7 +32,8 @@ func LoadFromContext(ctx context.Context) (string, error) {
 	return tenant.InternalID, nil
 }
 
-// SaveToContext missing godoc
+// SaveToContext returns a child context of the provided context, including the provided tenant information.
+// The internal tenant ID can be later retrieved from the context by calling LoadFromContext.
 func SaveToContext(ctx context.Context, internalID, externalID string) context.Context {
 	tenantCtx := TenantCtx{InternalID: internalID, ExternalID: externalID}
 	return context.WithValue(ctx, TenantContextKey, tenantCtx)

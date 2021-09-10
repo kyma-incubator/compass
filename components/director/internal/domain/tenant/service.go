@@ -10,9 +10,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-const subdomainLabelKey = "subdomain"
+const (
+	// SubdomainLabelKey is the key of the tenant label for subdomain.
+	SubdomainLabelKey = "subdomain"
+	// RegionLabelKey is the key of the tenant label for region.
+	RegionLabelKey = "region"
+)
 
-// TenantMappingRepository missing godoc
+// TenantMappingRepository is responsible for the repo-layer tenant operations.
 //go:generate mockery --name=TenantMappingRepository --output=automock --outpkg=automock --case=underscore
 type TenantMappingRepository interface {
 	Create(ctx context.Context, item model.BusinessTenantMapping) error
@@ -21,23 +26,22 @@ type TenantMappingRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error)
-	Update(ctx context.Context, model *model.BusinessTenantMapping) error
 	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
 }
 
-// LabelUpsertService missing godoc
+// LabelUpsertService is responsible for creating, or updating already existing labels, and their label definitions.
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
-// LabelRepository missing godoc
+// LabelRepository is responsible for the repo-layer label operations.
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
-// UIDService missing godoc
+// UIDService is responsible for generating GUIDs, which will be used as internal tenant IDs when tenants are created.
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
 	Generate() string
@@ -54,7 +58,7 @@ type service struct {
 	tenantMappingRepo TenantMappingRepository
 }
 
-// NewService missing godoc
+// NewService returns a new object responsible for service-layer tenant operations.
 func NewService(tenantMapping TenantMappingRepository, uidService UIDService) *service {
 	return &service{
 		uidService:        uidService,
@@ -62,7 +66,7 @@ func NewService(tenantMapping TenantMappingRepository, uidService UIDService) *s
 	}
 }
 
-// NewServiceWithLabels missing godoc
+// NewServiceWithLabels returns a new entity responsible for service-layer tenant operations, including operations with labels like listing all labels related to the given tenant.
 func NewServiceWithLabels(tenantMapping TenantMappingRepository, uidService UIDService, labelRepo LabelRepository, labelUpsertSvc LabelUpsertService) *labeledService {
 	return &labeledService{
 		service: service{
@@ -74,7 +78,7 @@ func NewServiceWithLabels(tenantMapping TenantMappingRepository, uidService UIDS
 	}
 }
 
-// GetExternalTenant missing godoc
+// GetExternalTenant returns the external tenant ID of the tenant with the corresponding internal tenant ID.
 func (s *service) GetExternalTenant(ctx context.Context, id string) (string, error) {
 	mapping, err := s.tenantMappingRepo.Get(ctx, id)
 	if err != nil {
@@ -84,7 +88,7 @@ func (s *service) GetExternalTenant(ctx context.Context, id string) (string, err
 	return mapping.ExternalTenant, nil
 }
 
-// GetInternalTenant missing godoc
+// GetInternalTenant returns the internal tenant ID of the tenant with the corresponding external tenant ID.
 func (s *service) GetInternalTenant(ctx context.Context, externalTenant string) (string, error) {
 	mapping, err := s.tenantMappingRepo.GetByExternalTenant(ctx, externalTenant)
 	if err != nil {
@@ -94,17 +98,17 @@ func (s *service) GetInternalTenant(ctx context.Context, externalTenant string) 
 	return mapping.ID, nil
 }
 
-// List missing godoc
+// List returns all tenants present in the Compass storage.
 func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.List(ctx)
 }
 
-// GetTenantByExternalID missing godoc
+// GetTenantByExternalID returns the tenant with the provided external ID.
 func (s *service) GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.GetByExternalTenant(ctx, id)
 }
 
-// MultipleToTenantMapping missing godoc
+// MultipleToTenantMapping assigns a new internal ID to all the provided tenants, and returns the BusinessTenantMappingInputs as BusinessTenantMappings.
 func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
 	tenants := make([]model.BusinessTenantMapping, 0, len(tenantInputs))
 	tenantIDs := make(map[string]string, len(tenantInputs))
@@ -129,57 +133,83 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 	return tenants
 }
 
-// CreateManyIfNotExists missing godoc
+// CreateManyIfNotExists creates all provided tenants if they do not exist.
+// It creates or updates the subdomain and region labels of the provided tenants, no matter if they are pre-existing or not.
 func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
 	tenants := s.MultipleToTenantMapping(tenantInputs)
-	subdomains := tenantSubdomains(tenantInputs)
-	for _, tenant := range tenants {
+	subdomains, regions := tenantLocality(tenantInputs)
+	for tenantIdx, tenant := range tenants {
 		subdomain := ""
+		region := ""
 		if s, ok := subdomains[tenant.ExternalTenant]; ok {
 			subdomain = s
 		}
-		if err := s.createIfNotExists(ctx, tenant, subdomain); err != nil {
+		if r, ok := regions[tenant.ExternalTenant]; ok {
+			region = r
+		}
+		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region)
+		if err != nil {
 			return errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
+		}
+		// the tenant already exists in our DB with a different ID, and we should update all child resources to use the correct internal ID
+		if tenantID != tenant.ID {
+			for i := tenantIdx; i < len(tenants); i++ {
+				if tenants[i].Parent == tenant.ID {
+					tenants[i].Parent = tenantID
+				}
+			}
 		}
 	}
 
 	return nil
 }
 
-func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain string) error {
-	exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, tenant.ExternalTenant)
-	if err != nil {
-		return errors.Wrapf(err, "while checking the existence of tenant with external ID %s", tenant.ExternalTenant)
+func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region string) (string, error) {
+	tenantFromDB, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenant.ExternalTenant)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return "", errors.Wrapf(err, "while checking the existence of tenant with external ID %s", tenant.ExternalTenant)
 	}
-	if exists {
-		return nil
+	if tenantFromDB != nil {
+		return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region)
 	}
 
 	if err = s.tenantMappingRepo.Create(ctx, tenant); err != nil {
-		return errors.Wrapf(err, "while creating tenant with ID %s and external ID %s", tenant.ID, tenant.ExternalTenant)
+		return "", errors.Wrapf(err, "while creating tenant with ID %s and external ID %s", tenant.ID, tenant.ExternalTenant)
 	}
 
+	return tenant.ID, s.upsertLabels(ctx, tenant.ID, subdomain, region)
+}
+
+func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region string) error {
 	if len(subdomain) > 0 {
-		if err := s.addSubdomainLabel(ctx, tenant.ID, subdomain); err != nil {
-			return errors.Wrapf(err, "while setting subdomain label for tenant with external ID %s", tenant.ExternalTenant)
+		if err := s.upsertSubdomainLabel(ctx, tenantID, subdomain); err != nil {
+			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
 		}
 	}
-
+	if len(region) > 0 {
+		if err := s.upsertRegionLabel(ctx, tenantID, region); err != nil {
+			return errors.Wrapf(err, "while setting subdomain label for tenant with ID %s", tenantID)
+		}
+	}
 	return nil
 }
 
-func tenantSubdomains(tenants []model.BusinessTenantMappingInput) map[string]string {
+func tenantLocality(tenants []model.BusinessTenantMappingInput) (map[string]string, map[string]string) {
 	subdomains := make(map[string]string)
+	regions := make(map[string]string)
 	for _, t := range tenants {
 		if len(t.Subdomain) > 0 {
 			subdomains[t.ExternalTenant] = t.Subdomain
 		}
+		if len(t.Region) > 0 {
+			regions[t.ExternalTenant] = t.Region
+		}
 	}
 
-	return subdomains
+	return subdomains, regions
 }
 
-// DeleteMany missing godoc
+// DeleteMany removes all provided tenants from the Compass storage.
 func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
 	for _, tenantInput := range tenantInputs {
 		err := s.tenantMappingRepo.DeleteByExternalTenant(ctx, tenantInput.ExternalTenant)
@@ -191,7 +221,8 @@ func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessT
 	return nil
 }
 
-// ListLabels missing godoc
+// ListLabels returns all labels directly linked to the given tenant, like subdomain or region.
+// That excludes labels of other resource types in the context of the given tenant, for example labels of an application in the given tenant - those labels are not returned.
 func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error) {
 	log.C(ctx).Infof("getting labels for tenant with ID %s", tenantID)
 	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
@@ -206,10 +237,20 @@ func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[s
 	return labels, nil
 }
 
-func (s *labeledService) addSubdomainLabel(ctx context.Context, tenantID, subdomain string) error {
+func (s *labeledService) upsertSubdomainLabel(ctx context.Context, tenantID, subdomain string) error {
 	label := &model.LabelInput{
-		Key:        subdomainLabelKey,
+		Key:        SubdomainLabelKey,
 		Value:      subdomain,
+		ObjectID:   tenantID,
+		ObjectType: model.TenantLabelableObject,
+	}
+	return s.labelUpsertSvc.UpsertLabel(ctx, tenantID, label)
+}
+
+func (s *labeledService) upsertRegionLabel(ctx context.Context, tenantID, region string) error {
+	label := &model.LabelInput{
+		Key:        RegionLabelKey,
+		Value:      region,
 		ObjectID:   tenantID,
 		ObjectType: model.TenantLabelableObject,
 	}

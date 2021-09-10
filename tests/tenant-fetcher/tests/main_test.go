@@ -24,7 +24,10 @@ type testConfig struct {
 	TenantFetcherURL          string
 	RootAPI                   string
 	HandlerEndpoint           string
+	RegionalHandlerEndpoint   string
+	DependenciesEndpoint      string
 	TenantPathParam           string
+	RegionPathParam           string
 	DbUser                    string
 	DbPassword                string
 	DbHost                    string
@@ -35,10 +38,18 @@ type testConfig struct {
 	DbMaxOpenConnections      string
 	Tenant                    string
 	SubscriptionCallbackScope string
-	TenantProvider            string
-	ExternalServicesMockURL   string
+	TenantProviderConfig
+	ExternalServicesMockURL          string
+	TenantFetcherFullURL             string `envconfig:"-"`
+	TenantFetcherFullRegionalURL     string `envconfig:"-"`
+	TenantFetcherFullDependenciesURL string `envconfig:"-"`
+}
 
-	TenantFetcherFullURL string `envconfig:"-"`
+type TenantProviderConfig struct {
+	TenantIDProperty           string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
+	SubaccountTenantIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"`
+	CustomerIDProperty         string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
+	SubdomainProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
 }
 
 var config testConfig
@@ -61,6 +72,12 @@ func TestMain(m *testing.M) {
 
 	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
 	config.TenantFetcherFullURL = config.TenantFetcherURL + config.RootAPI + endpoint
+
+	regionalEndpoint := strings.Replace(config.RegionalHandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
+	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", config.RegionPathParam), regionPathParamValue, 1)
+	config.TenantFetcherFullRegionalURL = config.TenantFetcherURL + config.RootAPI + regionalEndpoint
+
+	config.TenantFetcherFullDependenciesURL = config.TenantFetcherURL + config.RootAPI + config.DependenciesEndpoint
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
