@@ -10,26 +10,26 @@ import (
 )
 
 const (
-	// BundleReferenceTable missing godoc
+	// BundleReferenceTable represents the db name of the BundleReference table
 	BundleReferenceTable string = `public.bundle_references`
 
-	// APIDefIDColumn missing godoc
+	// APIDefIDColumn represents the db column of the APIDefinition ID
 	APIDefIDColumn string = "api_def_id"
-	// APIDefURLColumn missing godoc
+	// APIDefURLColumn represents the db column of the APIDefinition default url
 	APIDefURLColumn string = "api_def_url"
-	// EventDefIDColumn missing godoc
+	// EventDefIDColumn represents the db column of the EventDefinition ID
 	EventDefIDColumn string = "event_def_id"
 	bundleIDColumn   string = "bundle_id"
 )
 
 var (
 	tenantColumn                    = "tenant_id"
-	bundleReferencesColumns         = []string{"tenant_id", "api_def_id", "event_def_id", "bundle_id", "api_def_url"}
+	bundleReferencesColumns         = []string{"tenant_id", "api_def_id", "event_def_id", "bundle_id", "api_def_url", "id"}
 	updatableColumns                = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url"}
 	updatableColumnsWithoutBundleID = []string{"api_def_id", "event_def_id", "api_def_url"}
 )
 
-// BundleReferenceConverter missing godoc
+// BundleReferenceConverter converts BundleReferences between the model.BundleReference service-layer representation and the repo-layer representation Entity.
 //go:generate mockery --name=BundleReferenceConverter --output=automock --outpkg=automock --case=underscore
 type BundleReferenceConverter interface {
 	ToEntity(in model.BundleReference) Entity
@@ -46,7 +46,7 @@ type repository struct {
 	conv        BundleReferenceConverter
 }
 
-// NewRepository missing godoc
+// NewRepository returns a new entity responsible for repo-layer BundleReference operations.
 func NewRepository(conv BundleReferenceConverter) *repository {
 	return &repository{
 		creator:     repo.NewCreator(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
@@ -59,15 +59,15 @@ func NewRepository(conv BundleReferenceConverter) *repository {
 	}
 }
 
-// BundleReferencesCollection missing godoc
+// BundleReferencesCollection is an array of Entities
 type BundleReferencesCollection []Entity
 
-// Len missing godoc
+// Len returns the length of the collection
 func (r BundleReferencesCollection) Len() int {
 	return len(r)
 }
 
-// GetByID missing godoc
+// GetByID retrieves the BundleReference with matching objectID/objectID and bundleID from the Compass storage.
 func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, objectID, bundleID *string) (*model.BundleReference, error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
@@ -98,7 +98,7 @@ func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferen
 	return &bundleReferenceModel, nil
 }
 
-// GetBundleIDsForObject missing godoc
+// GetBundleIDsForObject retrieves all BundleReference IDs for matching objectID from the Compass storage.
 func (r *repository) GetBundleIDsForObject(ctx context.Context, tenantID string, objectType model.BundleReferenceObjectType, objectID *string) (ids []string, err error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
@@ -122,7 +122,7 @@ func (r *repository) GetBundleIDsForObject(ctx context.Context, tenantID string,
 	return objectBundleIDs, nil
 }
 
-// Create missing godoc
+// Create adds the provided BundleReference into the Compass storage.
 func (r *repository) Create(ctx context.Context, item *model.BundleReference) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
@@ -133,7 +133,7 @@ func (r *repository) Create(ctx context.Context, item *model.BundleReference) er
 	return r.creator.Create(ctx, entity)
 }
 
-// Update missing godoc
+// Update updates the provided BundleReference.
 func (r *repository) Update(ctx context.Context, item *model.BundleReference) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -161,7 +161,7 @@ func (r *repository) Update(ctx context.Context, item *model.BundleReference) er
 	return updater.UpdateSingle(ctx, entity)
 }
 
-// DeleteByReferenceObjectID missing godoc
+// DeleteByReferenceObjectID removes a BundleReference with matching objectID and bundleID from the Compass storage.
 func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
@@ -176,7 +176,7 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant, bund
 	return r.deleter.DeleteOne(ctx, tenant, conditions)
 }
 
-// ListByBundleIDs missing godoc
+// ListByBundleIDs retrieves all BundleReferences matching an array of bundleIDs from the Compass storage.
 func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
 	columns, err := getSelectedColumnsByObjectType(objectType)
 	if err != nil {
@@ -248,10 +248,10 @@ func getOrderByColumnsByObjectType(objectType model.BundleReferenceObjectType) (
 	return nil, apperrors.NewInternalError("Invalid type of the BundleReference object")
 }
 
-// IDs missing godoc
+// IDs keeps IDs retrieved from the Compass storage.
 type IDs []string
 
-// Len missing godoc
+// Len returns the length of the IDs
 func (i IDs) Len() int {
 	return len(i)
 }
