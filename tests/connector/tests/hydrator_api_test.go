@@ -35,11 +35,13 @@ func TestHydrators(t *testing.T) {
 
 	for _, testCase := range []struct {
 		clientType           string
+		clientId             string
 		tokenGenerationFunc  func(t *testing.T, id string) (externalschema.Token, error)
 		expectedCertsHeaders http.Header
 	}{
 		{
 			clientType:          "Application",
+			clientId:            appID,
 			tokenGenerationFunc: directorClient.GenerateApplicationToken,
 			expectedCertsHeaders: http.Header{
 				oathkeeper.ClientCertificateHashHeader: []string{hash},
@@ -47,6 +49,7 @@ func TestHydrators(t *testing.T) {
 		},
 		{
 			clientType:          "Runtime",
+			clientId:            runtimeID,
 			tokenGenerationFunc: directorClient.GenerateRuntimeToken,
 			expectedCertsHeaders: http.Header{
 				oathkeeper.ClientCertificateHashHeader: []string{hash},
@@ -55,15 +58,7 @@ func TestHydrators(t *testing.T) {
 	} {
 		t.Run("should resolve one-time token for "+testCase.clientType, func(t *testing.T) {
 			//given
-			var err error
-
-			var token externalschema.Token
-
-			if testCase.clientType == "Application" {
-				token, err = testCase.tokenGenerationFunc(t, appID)
-			} else {
-				token, err = testCase.tokenGenerationFunc(t, runtimeID)
-			}
+			token, err := testCase.tokenGenerationFunc(t, testCase.clientId)
 			require.NoError(t, err)
 			require.NotEmpty(t, token.Token)
 
@@ -75,9 +70,9 @@ func TestHydrators(t *testing.T) {
 			var runtimeSystemAuths []*graphql.RuntimeSystemAuth
 
 			if testCase.clientType == "Application" {
-				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID).Auths
+				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			} else {
-				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, runtimeID).Auths
+				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			}
 
 			//when
@@ -109,15 +104,7 @@ func TestHydrators(t *testing.T) {
 
 		t.Run("should resolve certificate for "+testCase.clientType, func(t *testing.T) {
 			//given
-			var err error
-			var token externalschema.Token
-
-			if testCase.clientType == "Application" {
-				token, err = testCase.tokenGenerationFunc(t, appID)
-			} else {
-				token, err = testCase.tokenGenerationFunc(t, runtimeID)
-			}
-
+			token, err := testCase.tokenGenerationFunc(t, testCase.clientId)
 			require.NoError(t, err)
 			require.NotEmpty(t, token.Token)
 
@@ -137,9 +124,9 @@ func TestHydrators(t *testing.T) {
 			var runtimeSystemAuths []*graphql.RuntimeSystemAuth
 
 			if testCase.clientType == "Application" {
-				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID).Auths
+				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			} else {
-				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, runtimeID).Auths
+				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			}
 
 			hasAuth := false
@@ -163,15 +150,7 @@ func TestHydrators(t *testing.T) {
 
 		t.Run("should return empty Authentication Session when no valid headers found", func(t *testing.T) {
 			//given
-			var err error
-
-			var token externalschema.Token
-			if testCase.clientType == "Application" {
-				token, err = testCase.tokenGenerationFunc(t, appID)
-			} else {
-				token, err = testCase.tokenGenerationFunc(t, runtimeID)
-			}
-
+			token, err := testCase.tokenGenerationFunc(t, testCase.clientId)
 			require.NoError(t, err)
 			require.NotEmpty(t, token.Token)
 
