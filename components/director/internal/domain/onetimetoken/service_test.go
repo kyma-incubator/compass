@@ -885,9 +885,9 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 
 func TestIsTokenValid(t *testing.T) {
 	const (
-		csrTokenExpiration     = time.Duration(time.Minute * 5)
-		appTokenExpiration     = time.Duration(time.Minute * 5)
-		runtimeTokenExpiration = time.Duration(time.Minute * 5)
+		csrTokenExpiration     = time.Minute * 5
+		appTokenExpiration     = time.Minute * 5
+		runtimeTokenExpiration = time.Minute * 5
 		connectorURL           = "connector.url"
 
 		suggestedTokenHeaderKey = "suggest_token"

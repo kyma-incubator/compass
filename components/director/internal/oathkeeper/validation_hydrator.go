@@ -25,6 +25,7 @@ type SystemAuthService interface {
 	InvalidateToken(ctx context.Context, item *model.SystemAuth) error
 }
 
+// OneTimeTokenService missing godoc
 //go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore
 type OneTimeTokenService interface {
 	IsTokenValid(systemAuth *model.SystemAuth) (bool, error)

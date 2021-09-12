@@ -119,11 +119,13 @@ type BundleConverter interface {
 	MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error)
 }
 
+// TokenConverter missing godoc
 //go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore
 type TokenConverter interface {
 	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)
 }
 
+// OneTimeTokenService missing godoc
 //go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore
 type OneTimeTokenService interface {
 	IsTokenValid(systemAuth *model.SystemAuth) (bool, error)
@@ -548,7 +550,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 		return nil, err
 	}
 
-	var out []*graphql.AppSystemAuth
+	out := make([]*graphql.AppSystemAuth, 0, len(sysAuths))
 	for _, sa := range sysAuths {
 		if _, err := r.oneTimeTokenSvc.IsTokenValid(&sa); err != nil {
 			log.C(ctx).WithError(err).Errorf("skipping one-time token due to its expiration or usage")
