@@ -1332,7 +1332,7 @@ func TestResolver_Auths(t *testing.T) {
 	sysAuthModels := []model.SystemAuth{{ID: "id1", AppID: &id, Value: &auth}, {ID: "id2", AppID: &id, Value: &auth}}
 	sysAuthGQL := []*graphql.AppSystemAuth{{ID: "id1", Auth: &graphql.Auth{}}, {ID: "id2", Auth: &graphql.Auth{}}}
 	sysAuthExpected := []*graphql.AppSystemAuth{{ID: "id1", Auth: &graphql.Auth{OneTimeToken: &gqlAuth}}, {ID: "id2", Auth: &graphql.Auth{OneTimeToken: &gqlAuth}}}
-	var emptySysAuth []*graphql.AppSystemAuth
+	emptySysAuth := make([]*graphql.AppSystemAuth, 0)
 	testCases := []struct {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
