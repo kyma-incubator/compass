@@ -89,6 +89,7 @@ spec:
         - operation:
             hosts:
               - oauth2.{{ .Values.global.ingress.domainName }}
+              - oauth2.{{ .Values.global.ingress.domainName }}:443
             paths:
               - /oauth2/token*
     - from: # or anything other only if the request is authenticated via RequestAuthentication
