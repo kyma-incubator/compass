@@ -1350,6 +1350,8 @@ func TestResolver_Auths(t *testing.T) {
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
+				svc.On("IsSystemAuthOneTimeTokenType", &sysAuthModels[0]).Return(true).Once()
+				svc.On("IsSystemAuthOneTimeTokenType", &sysAuthModels[1]).Return(true).Once()
 				return svc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -1379,6 +1381,8 @@ func TestResolver_Auths(t *testing.T) {
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
+				svc.On("IsSystemAuthOneTimeTokenType", &sysAuthModels[0]).Return(true).Once()
+				svc.On("IsSystemAuthOneTimeTokenType", &sysAuthModels[1]).Return(true).Once()
 				return svc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -1407,6 +1411,7 @@ func TestResolver_Auths(t *testing.T) {
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
+				svc.AssertNotCalled(t, "IsSystemAuthOneTimeTokenType")
 				return svc
 			},
 			TokenSvcFn: func() *automock.OneTimeTokenService {
@@ -1434,10 +1439,12 @@ func TestResolver_Auths(t *testing.T) {
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return([]model.SystemAuth{}, testError).Once()
+				svc.AssertNotCalled(t, "IsSystemAuthOneTimeTokenType")
 				return svc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
 				sysAuthConv := &automock.SystemAuthConverter{}
+				sysAuthConv.AssertNotCalled(t, "IsSystemAuthOneTimeTokenType")
 				return sysAuthConv
 			},
 			TokenSvcFn: func() *automock.OneTimeTokenService {
@@ -1459,6 +1466,7 @@ func TestResolver_Auths(t *testing.T) {
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
+				svc.On("IsSystemAuthOneTimeTokenType", &sysAuthModels[0]).Return(true).Once()
 				return svc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -1484,6 +1492,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnBegin,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
+				svc.AssertNotCalled(t, "IsSystemAuthOneTimeTokenType")
 				return svc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {

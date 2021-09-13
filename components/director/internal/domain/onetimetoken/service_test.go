@@ -976,22 +976,6 @@ func TestIsTokenValid(t *testing.T) {
 			errorMsg:        "One Time Token for system auth id 123 is missing",
 		},
 		{
-			description: "Should return true when the system auth is not OTT",
-			systemAuth: &model.SystemAuth{
-				ID: "123",
-				Value: &model.Auth{
-					Credential: model.CredentialData{
-						Basic: &model.BasicCredentialData{
-							Username: "",
-							Password: "",
-						},
-					},
-					OneTimeToken: nil,
-				},
-			},
-			shouldHaveError: false,
-		},
-		{
 			description: "Should return false when the system auth OTT is used",
 			systemAuth: &model.SystemAuth{
 				ID: "234",

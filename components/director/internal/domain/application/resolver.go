@@ -73,6 +73,7 @@ type WebhookService interface {
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
+	IsSystemAuthOneTimeTokenType(systemAuth *model.SystemAuth) bool
 }
 
 // WebhookConverter missing godoc
@@ -552,7 +553,8 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 
 	out := make([]*graphql.AppSystemAuth, 0, len(sysAuths))
 	for _, sa := range sysAuths {
-		if _, err := r.oneTimeTokenSvc.IsTokenValid(&sa); err != nil {
+		isTokenType := r.sysAuthSvc.IsSystemAuthOneTimeTokenType(&sa)
+		if _, err := r.oneTimeTokenSvc.IsTokenValid(&sa); isTokenType && err != nil {
 			log.C(ctx).WithError(err).Errorf("skipping one-time token due to its expiration or usage")
 			continue
 		}

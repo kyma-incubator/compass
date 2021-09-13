@@ -322,10 +322,6 @@ func (s *service) IsTokenValid(systemAuth *model.SystemAuth) (bool, error) {
 		return false, errors.Errorf("System Auth value for auth id %s is missing", systemAuth.ID)
 	}
 
-	if !s.isAuthOneTimeTokenType(systemAuth) {
-		return true, nil
-	}
-
 	if systemAuth.Value.OneTimeToken == nil {
 		return false, errors.Errorf("One Time Token for system auth id %s is missing", systemAuth.ID)
 	}
@@ -345,12 +341,4 @@ func (s *service) IsTokenValid(systemAuth *model.SystemAuth) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func (s *service) isAuthOneTimeTokenType(systemAuth *model.SystemAuth) bool {
-	if systemAuth.Value.Credential.Basic != nil || systemAuth.Value.Credential.Oauth != nil || systemAuth.Value.RequestAuth != nil {
-		return false
-	}
-
-	return true
 }

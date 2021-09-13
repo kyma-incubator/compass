@@ -180,7 +180,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		oneTimeTokenService.On("IsTokenValid", systemAuth).Return(true, nil)
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
 		tokenService.On("InvalidateToken", mock.Anything, mock.Anything).Return(errors.New("error when invalidating the token"))
-		//timeService.On("Now").Return(beforeOneDay)
+
 		// WHEN
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		//THEN
@@ -210,7 +210,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		oneTimeTokenService.On("IsTokenValid", systemAuth).Return(true, nil)
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
 		tokenService.On("InvalidateToken", mock.Anything, mock.Anything).Return(nil)
-		//timeService.On("Now").Return(beforeOneDay)
+
 		// WHEN
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
@@ -241,7 +241,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		oneTimeTokenService.On("IsTokenValid", systemAuth).Return(true, nil)
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
 		tokenService.On("InvalidateToken", mock.Anything, mock.Anything).Return(nil)
-		//timeService.On("Now").Return(beforeOneDay)
+
 		// WHEN
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
