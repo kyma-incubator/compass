@@ -90,7 +90,7 @@ spec:
             hosts:
               - oauth2.{{ .Values.global.ingress.domainName }}
             paths:
-              - /oauth2/token
+              - /oauth2/token*
     - from: # or anything other only if the request is authenticated via RequestAuthentication
         - source:
             requestPrincipals: ['*']
