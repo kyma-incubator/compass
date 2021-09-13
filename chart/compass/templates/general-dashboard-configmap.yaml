@@ -28,7 +28,7 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 0,
-      "id": 45,
+      "id": 48,
       "links": [],
       "panels": [
         {
@@ -61,7 +61,7 @@ data:
           "fill": 1,
           "fillGradient": 0,
           "gridPos": {
-            "h": 8,
+            "h": 10,
             "w": 24,
             "x": 0,
             "y": 1
@@ -69,14 +69,17 @@ data:
           "hiddenSeries": false,
           "id": 38,
           "legend": {
+            "alignAsTable": true,
             "avg": false,
-            "current": false,
-            "max": false,
+            "current": true,
+            "hideEmpty": false,
+            "hideZero": true,
+            "max": true,
             "min": false,
             "rightSide": true,
             "show": true,
             "total": false,
-            "values": false
+            "values": true
           },
           "lines": true,
           "linewidth": 1,
@@ -91,17 +94,21 @@ data:
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
-          "seriesOverrides": [],
+          "seriesOverrides": [
+            {
+              "$$hashKey": "object:115"
+            }
+          ],
           "spaceLength": 10,
           "stack": false,
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum by (client_id) (rate(compass_director_total_requests_per_client[2m]) * 60)",
+              "expr": "sum by (client_id, auth_flow, details) (rate(compass_director_total_requests_per_client[2m]) * 60)",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{`{{ client_id }}`}}",
+              "legendFormat": "{{ client_id }} ( {{ auth_flow }} {{ details }} )",
               "refId": "A"
             }
           ],
@@ -112,7 +119,7 @@ data:
           "title": "Incoming requests rate by client ID [req/min]",
           "tooltip": {
             "shared": true,
-            "sort": 0,
+            "sort": 2,
             "value_type": "individual"
           },
           "type": "graph",
@@ -130,7 +137,7 @@ data:
               "label": null,
               "logBase": 1,
               "max": null,
-              "min": "0",
+              "min": null,
               "show": true
             },
             {
@@ -157,7 +164,7 @@ data:
         "list": []
       },
       "time": {
-        "from": "now-30m",
+        "from": "now-3h",
         "to": "now"
       },
       "timepicker": {
