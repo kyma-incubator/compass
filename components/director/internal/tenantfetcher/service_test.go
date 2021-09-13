@@ -499,11 +499,6 @@ func TestService_SyncTenants(t *testing.T) {
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				//svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
-				//	businessTenant1BusinessMapping,
-				//	parentTenant1BusinessMapping,
-				//}, nil).Once()
-				//svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(parentTenants[1:])).Return(nil).Once()
 				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
 					businessTenant1BusinessMapping,
 					parentTenant1BusinessMapping,
@@ -543,12 +538,6 @@ func TestService_SyncTenants(t *testing.T) {
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				//svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
-				//	businessTenant1BusinessMapping,
-				//	parentTenant1BusinessMapping,
-				//}, nil).Once()
-				//svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(parentTenants[1:])).Return(nil).Once()
-
 				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
 					businessTenant1BusinessMapping,
 					parentTenant1BusinessMapping,
