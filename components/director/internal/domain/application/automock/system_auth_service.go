@@ -14,6 +14,20 @@ type SystemAuthService struct {
 	mock.Mock
 }
 
+// IsSystemAuthOneTimeTokenType provides a mock function with given fields: systemAuth
+func (_m *SystemAuthService) IsSystemAuthOneTimeTokenType(systemAuth *model.SystemAuth) bool {
+	ret := _m.Called(systemAuth)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(*model.SystemAuth) bool); ok {
+		r0 = rf(systemAuth)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // ListForObject provides a mock function with given fields: ctx, objectType, objectID
 func (_m *SystemAuthService) ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
 	ret := _m.Called(ctx, objectType, objectID)

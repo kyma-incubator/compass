@@ -155,6 +155,7 @@ type Auth struct {
 	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
 	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
 	RequestAuth                     *CredentialRequestAuth `json:"requestAuth"`
+	OneTimeToken                    OneTimeToken           `json:"oneTimeToken"`
 }
 
 type AuthInput struct {

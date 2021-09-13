@@ -152,6 +152,7 @@ type ComplexityRoot struct {
 		AdditionalQueryParams           func(childComplexity int) int
 		AdditionalQueryParamsSerialized func(childComplexity int) int
 		Credential                      func(childComplexity int) int
+		OneTimeToken                    func(childComplexity int) int
 		RequestAuth                     func(childComplexity int) int
 	}
 
@@ -1131,6 +1132,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Auth.Credential(childComplexity), true
+
+	case "Auth.oneTimeToken":
+		if e.complexity.Auth.OneTimeToken == nil {
+			break
+		}
+
+		return e.complexity.Auth.OneTimeToken(childComplexity), true
 
 	case "Auth.requestAuth":
 		if e.complexity.Auth.RequestAuth == nil {
@@ -4150,6 +4158,7 @@ type Auth {
 	additionalQueryParams: QueryParams
 	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuth
+	oneTimeToken: OneTimeToken
 }
 
 type AutomaticScenarioAssignment {
@@ -9051,6 +9060,37 @@ func (ec *executionContext) _Auth_requestAuth(ctx context.Context, field graphql
 	res := resTmp.(*CredentialRequestAuth)
 	fc.Result = res
 	return ec.marshalOCredentialRequestAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialRequestAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Auth_oneTimeToken(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Auth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OneTimeToken, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(OneTimeToken)
+	fc.Result = res
+	return ec.marshalOOneTimeToken2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AutomaticScenarioAssignment_scenarioName(ctx context.Context, field graphql.CollectedField, obj *AutomaticScenarioAssignment) (ret graphql.Marshaler) {
@@ -22550,6 +22590,8 @@ func (ec *executionContext) _OneTimeToken(ctx context.Context, sel ast.Selection
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
+	case OneTimeTokenForApplication:
+		return ec._OneTimeTokenForApplication(ctx, sel, &obj)
 	case *OneTimeTokenForApplication:
 		if obj == nil {
 			return graphql.Null
@@ -23193,6 +23235,8 @@ func (ec *executionContext) _Auth(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Auth_additionalQueryParamsSerialized(ctx, field, obj)
 		case "requestAuth":
 			out.Values[i] = ec._Auth_requestAuth(ctx, field, obj)
+		case "oneTimeToken":
+			out.Values[i] = ec._Auth_oneTimeToken(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -28327,6 +28371,13 @@ func (ec *executionContext) unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcom�
 	}
 	res, err := ec.unmarshalOOAuthCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOAuthCredentialDataInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalOOneTimeToken2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeToken(ctx context.Context, sel ast.SelectionSet, v OneTimeToken) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._OneTimeToken(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOOperationMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx context.Context, v interface{}) (OperationMode, error) {
