@@ -108,7 +108,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{ client_id }} ( {{ auth_flow }} {{ details }} )",
+              "legendFormat": "{{`{{ client_id }} ( {{ auth_flow }} {{ details }} )`}}",
               "refId": "A"
             }
           ],
