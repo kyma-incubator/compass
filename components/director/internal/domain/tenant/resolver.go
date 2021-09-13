@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-// BusinessTenantMappingService missing godoc
+// BusinessTenantMappingService is responsible for the service-layer tenant operations.
 //go:generate mockery --name=BusinessTenantMappingService --output=automock --outpkg=automock --case=underscore
 type BusinessTenantMappingService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
@@ -19,13 +19,14 @@ type BusinessTenantMappingService interface {
 	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
 }
 
-// BusinessTenantMappingConverter missing godoc
+// BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
+// into the external GraphQL representation graphql.Tenant.
 //go:generate mockery --name=BusinessTenantMappingConverter --output=automock --outpkg=automock --case=underscore
 type BusinessTenantMappingConverter interface {
 	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
 }
 
-// Resolver missing godoc
+// Resolver is the resolver responsible for tenant-related GraphQL requests.
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -33,7 +34,7 @@ type Resolver struct {
 	conv BusinessTenantMappingConverter
 }
 
-// Tenants missing godoc
+// Tenants transactionally retrieves all tenants present in the Compass storage.
 func (r *Resolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -56,7 +57,7 @@ func (r *Resolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
 	return gqlTenants, nil
 }
 
-// Tenant missing godoc
+// Tenant retrieves a tenant with the provided external ID from the Compass storage.
 func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tenant, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -78,7 +79,7 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 	return gqlTenant[0], nil
 }
 
-// Labels missing godoc
+// Labels transactionally retrieves all existing labels of the given tenant if it exists.
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.Tenant, key *string) (graphql.Labels, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Tenant cannot be empty")
@@ -115,7 +116,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Tenant, key *string)
 	return resultLabels, nil
 }
 
-// NewResolver missing godoc
+// NewResolver returns the GraphQL resolver for tenants.
 func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter) *Resolver {
 	return &Resolver{
 		transact: transact,

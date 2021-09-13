@@ -84,10 +84,10 @@ global:
       version: "PR-1996"
     ord_service:
       dir:
-      version: "PR-40"
+      version: "PR-41"
     schema_migrator:
       dir:
-      version: "PR-2004"
+      version: "PR-1998"
     system_broker:
       dir:
       version: "PR-2003"
@@ -104,7 +104,7 @@ global:
       version: "PR-42"
     e2e_tests:
       dir:
-      version: "PR-2004"
+      version: "PR-1998"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -349,8 +349,15 @@ global:
     tenantProvider:
       tenantIdProperty: "tenantId"
       customerIdProperty: "customerId"
+      subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       name: "provider"
+    server:
+      handlerEndpoint: "/v1/callback/{tenantId}"
+      regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
+      dependenciesEndpoint: "/v1/dependencies"
+      tenantPathParam: "tenantId"
+      regionPathParam: "region"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local

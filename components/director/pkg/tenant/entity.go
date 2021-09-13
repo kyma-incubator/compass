@@ -4,7 +4,7 @@ import (
 	"database/sql"
 )
 
-// Entity missing godoc
+// Entity represents a Compass tenant.
 type Entity struct {
 	ID             string         `db:"id"`
 	Name           string         `db:"external_name"`
@@ -20,57 +20,63 @@ type Entity struct {
 type Type string
 
 const (
-	// Unknown missing godoc
+	// Unknown tenant type is used when the tenant type cannot be determined when the tenant's being created.
 	Unknown Type = "unknown"
-	// Account missing godoc
-	Account Type = "account"
-	// Customer missing godoc
+	// Customer tenants can be parents of account tenants.
 	Customer Type = "customer"
+	// Account tenant type may have a parent with type Customer.
+	Account Type = "account"
+	// Subaccount tenants must have a parent of type Account.
+	Subaccount Type = "subaccount"
 )
 
-// Status missing godoc
+// Status is used to determine if a tenant is currently being used or not.
 type Status string
 
 const (
-	// Active missing godoc
+	// Active status represents tenants, which are currently active and their resources can be operated.
 	Active Status = "Active"
-	// Inactive missing godoc
+	// Inactive status represents tenants, whose resources cannot be operated.
 	Inactive Status = "Inactive"
 )
 
-// EntityCollection missing godoc
+// EntityCollection is a wrapper type for slice of entities.
 type EntityCollection []Entity
 
-// Len missing godoc
+// Len returns the current number of entities in the collection.
 func (a EntityCollection) Len() int {
 	return len(a)
 }
 
-// WithStatus missing godoc
+// WithStatus sets the provided status to the entity.
 func (e Entity) WithStatus(status Status) Entity {
 	e.Status = status
 	return e
 }
 
-// StrToType missing godoc
+// StrToType returns the tenant Type value of the provided string or "Unknown" if there's no type matching the string.
 func StrToType(value string) Type {
 	switch value {
 	case string(Account):
 		return Account
 	case string(Customer):
 		return Customer
+	case string(Subaccount):
+		return Subaccount
 	default:
 		return Unknown
 	}
 }
 
-// TypeToStr missing godoc
+// TypeToStr returns the string value of the provided tenant Type.
 func TypeToStr(value Type) string {
 	switch value {
 	case Account:
 		return string(Account)
 	case Customer:
 		return string(Customer)
+	case Subaccount:
+		return string(Subaccount)
 	default:
 		return string(Unknown)
 	}

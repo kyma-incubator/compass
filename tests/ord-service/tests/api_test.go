@@ -50,12 +50,14 @@ import (
 )
 
 const (
-	acceptHeader   = "Accept"
-	tenantHeader   = "Tenant"
-	scenarioName   = "formation-filtering"
-	scenariosLabel = "scenarios"
-	selectorKey    = "global_subaccount_id"
-	subTenantID    = "123e4567-e89b-12d3-a456-426614174001"
+	acceptHeader       = "Accept"
+	tenantHeader       = "Tenant"
+	scenarioName       = "formation-filtering"
+	scenariosLabel     = "scenarios"
+	selectorKey        = "global_subaccount_id"
+	subTenantID        = "123e4567-e89b-12d3-a456-426614174001"
+	restAPIProtocol    = "rest"
+	odataV2APIProtocol = "odata-v2"
 )
 
 func TestORDService(stdT *testing.T) {
@@ -66,12 +68,15 @@ func TestORDService(stdT *testing.T) {
 	defaultTestTenant := tenant.TestTenants.GetDefaultTenantID()
 	secondaryTenant := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
 	tenantFilteringTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
+	tenantAPIProtocolFiltering := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 
 	// Cannot use tenant constants as the names become too long and cannot be inserted
 	appInput := fixtures.CreateApp("tenant1")
 	appInput2 := fixtures.CreateApp("tenant2")
 	appInputInScenario := fixtures.CreateApp("tenant3-in-scenario")
 	appInputNotInScenario := fixtures.CreateApp("tenant3-no-scenario")
+	appInputAPIProtocolFiltering := fixtures.CreateApp("tenant4")
+	appInputAPIProtocolFiltering.Bundles = append(appInputAPIProtocolFiltering.Bundles, fixtures.FixBundleWithOnlyOdataAPIs())
 
 	apisMap := make(map[string]directorSchema.APIDefinitionInput, 0)
 	for _, apiDefinition := range appInput.Bundles[0].APIDefinitions {
@@ -117,6 +122,10 @@ func TestORDService(stdT *testing.T) {
 
 	appNotInScenario, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantFilteringTenant, appInputNotInScenario)
 	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantFilteringTenant, &appNotInScenario)
+	require.NoError(t, err)
+
+	appAPIProtocolFiltering, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantAPIProtocolFiltering, appInputAPIProtocolFiltering)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantAPIProtocolFiltering, &appAPIProtocolFiltering)
 	require.NoError(t, err)
 
 	t.Log("Create integration system")
@@ -205,6 +214,54 @@ func TestORDService(stdT *testing.T) {
 	t.Run("Requesting Packages returns empty", func(t *testing.T) {
 		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/packages?$expand=apis,events&$format=json", testConfig.ORDServiceURL), map[string][]string{tenantHeader: {defaultTestTenant}})
 		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
+	})
+
+	t.Run("Requesting filtering of Bundles that do not have only ODATA APIs", func(t *testing.T) {
+		escapedFilterValue := urlpkg.PathEscape("apis/any(d:d/apiProtocol ne 'odata-v2')")
+
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/consumptionBundles?$filter=%s&$expand=apis&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {tenantAPIProtocolFiltering}})
+
+		require.Equal(t, len(appInputAPIProtocolFiltering.Bundles)-1, len(gjson.Get(respBody, "value").Array()))
+		require.Equal(t, appInputAPIProtocolFiltering.Bundles[0].Name, gjson.Get(respBody, "value.0.title").String())
+		require.Equal(t, *appInputAPIProtocolFiltering.Bundles[0].Description, gjson.Get(respBody, "value.0.description").String())
+
+		// validate that among the returned APIs there is one with apiProtocol == rest
+		require.Equal(t, len(appInputAPIProtocolFiltering.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value.0.apis").Array()))
+
+		isRestAPIFound := false
+		for i := range appInputAPIProtocolFiltering.Bundles[0].APIDefinitions {
+			apiProtocol := gjson.Get(respBody, fmt.Sprintf("value.0.apis.%d.apiProtocol", i)).String()
+			require.NotEmpty(t, apiProtocol)
+
+			if apiProtocol == restAPIProtocol {
+				isRestAPIFound = true
+			}
+		}
+		require.Equal(t, true, isRestAPIFound)
+	})
+
+	t.Run("Requesting filtering of Bundles that have only ODATA APIs", func(t *testing.T) {
+		escapedFilterValue := urlpkg.PathEscape("apis/all(d:d/apiProtocol eq 'odata-v2')")
+
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/consumptionBundles?$filter=%s&$expand=apis&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {tenantAPIProtocolFiltering}})
+
+		require.Equal(t, len(appInputAPIProtocolFiltering.Bundles)-1, len(gjson.Get(respBody, "value").Array()))
+		require.Equal(t, appInputAPIProtocolFiltering.Bundles[1].Name, gjson.Get(respBody, "value.0.title").String())
+		require.Equal(t, *appInputAPIProtocolFiltering.Bundles[1].Description, gjson.Get(respBody, "value.0.description").String())
+
+		// validate that among the returned APIs all are with apiProtocol == odata-v2
+		require.Equal(t, len(appInputAPIProtocolFiltering.Bundles[1].APIDefinitions), len(gjson.Get(respBody, "value.0.apis").Array()))
+
+		areAllAPIsODATA := true
+		for i := range appInputAPIProtocolFiltering.Bundles[1].APIDefinitions {
+			apiProtocol := gjson.Get(respBody, fmt.Sprintf("value.0.apis.%d.apiProtocol", i)).String()
+			require.NotEmpty(t, apiProtocol)
+
+			if apiProtocol != odataV2APIProtocol {
+				areAllAPIsODATA = false
+			}
+		}
+		require.Equal(t, true, areAllAPIsODATA)
 	})
 
 	for _, resource := range []string{"vendors", "tombstones", "products"} { // This tests assert integrity between ORD Service JPA model and our Database model

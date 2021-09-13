@@ -95,6 +95,7 @@ type Service struct {
 	tenantStorageService            TenantService
 	runtimeStorageService           RuntimeService
 	providerName                    string
+	tenantsRegion                   string
 	fieldMapping                    TenantFieldMapping
 	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
 	labelDefService                 LabelDefinitionService
@@ -109,7 +110,7 @@ func NewService(queryConfig QueryConfig,
 	kubeClient KubeClient,
 	fieldMapping TenantFieldMapping,
 	movRuntime MovedRuntimeByLabelFieldMapping,
-	providerName string, client EventAPIClient,
+	providerName string, regionName string, client EventAPIClient,
 	tenantStorageService TenantService,
 	runtimeStorageService RuntimeService,
 	labelDefService LabelDefinitionService,
@@ -120,6 +121,7 @@ func NewService(queryConfig QueryConfig,
 		kubeClient:                      kubeClient,
 		fieldMapping:                    fieldMapping,
 		providerName:                    providerName,
+		tenantsRegion:                   regionName,
 		eventAPIClient:                  client,
 		tenantStorageService:            tenantStorageService,
 		runtimeStorageService:           runtimeStorageService,
@@ -229,7 +231,6 @@ func (s Service) SyncTenants() error {
 
 func (s Service) createTenants(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToCreate := make([]model.BusinessTenantMappingInput, 0)
-	subdomainMapping := make(map[string]string)
 	for _, eventTenant := range eventsTenants {
 		if _, ok := currTenants[eventTenant.ExternalTenant]; ok {
 			continue
@@ -237,8 +238,8 @@ func (s Service) createTenants(ctx context.Context, currTenants map[string]strin
 		if len(eventTenant.Parent) > 0 {
 			eventTenant.Parent = currTenants[eventTenant.Parent]
 		}
+		eventTenant.Region = s.tenantsRegion
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
-		subdomainMapping[eventTenant.ExternalTenant] = eventTenant.Subdomain
 	}
 	if len(tenantsToCreate) > 0 {
 		if err := s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate...); err != nil {
