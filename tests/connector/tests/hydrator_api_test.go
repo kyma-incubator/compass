@@ -15,14 +15,6 @@ import (
 )
 
 func TestHydrators(t *testing.T) {
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
-		Name: "test-hydrators-runtime",
-	})
-	defer fixtures.CleanupRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &runtime)
-	require.NoError(t, err)
-	require.NotEmpty(t, runtime.ID)
-	runtimeID := runtime.ID
-
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
 		Name: "test-hydrators-app",
 	})
@@ -30,6 +22,14 @@ func TestHydrators(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 	appID := app.ID
+
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
+		Name: "test-hydrators-runtime",
+	})
+	defer fixtures.CleanupRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
+	runtimeID := runtime.ID
 
 	hash := "df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a"
 
@@ -66,9 +66,6 @@ func TestHydrators(t *testing.T) {
 				oathkeeper.ConnectorTokenHeader: {token.Token},
 			}
 
-			//when
-			authSession := directorHydratorClient.ResolveToken(t, headers)
-
 			var appSystemAuths []*graphql.AppSystemAuth
 			var runtimeSystemAuths []*graphql.RuntimeSystemAuth
 
@@ -77,6 +74,9 @@ func TestHydrators(t *testing.T) {
 			} else {
 				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			}
+
+			//when
+			authSession := directorHydratorClient.ResolveToken(t, headers)
 
 			hasAuth := false
 			for _, auth := range appSystemAuths {
@@ -93,8 +93,13 @@ func TestHydrators(t *testing.T) {
 				}
 			}
 
-			//then
 			assert.Equal(t, true, hasAuth)
+
+			// check if the gql resolver is not sending used/expired auths
+			if testCase.clientType == "Application" {
+				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID).Auths
+				assert.Len(t, appSystemAuths, 0)
+			}
 		})
 
 		t.Run("should resolve certificate for "+testCase.clientType, func(t *testing.T) {
