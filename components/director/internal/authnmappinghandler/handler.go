@@ -111,7 +111,7 @@ func NewHandler(reqDataParser tenantmapping.ReqDataParser, httpClient *http.Clie
 // ServeHTTP missing godoc
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
-		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusBadRequest)
+		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusOK)
 		return
 	}
 
@@ -120,20 +120,20 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while parsing the request.")
-		http.Error(writer, "Unable to parse request data", http.StatusUnauthorized)
+		http.Error(writer, "Unable to parse request data", http.StatusOK)
 		return
 	}
 
 	claims, authCoordinates, err := h.verifyToken(ctx, reqData)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while processing the request.")
-		http.Error(writer, "Token validation failed", http.StatusUnauthorized)
+		http.Error(writer, "Token validation failed", http.StatusOK)
 		return
 	}
 
 	if err := claims.Claims(&reqData.Body.Extra); err != nil {
 		h.logError(ctx, err, "An error has occurred while extracting claims to request body.extra")
-		http.Error(writer, "Token claims extraction failed", http.StatusUnauthorized)
+		http.Error(writer, "Token claims extraction failed", http.StatusOK)
 		return
 	}
 	reqData.Body.Extra[authenticator.CoordinatesKey] = authCoordinates
