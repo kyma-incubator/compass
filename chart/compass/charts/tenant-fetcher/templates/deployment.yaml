@@ -65,8 +65,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
             - name: APP_TENANT_PROVIDER
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
-            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_CONSUMER_ID
-              value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionConsumerId }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_CONSUMER_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionConsumerIdProperty }}
             - name: APP_REGION_LABEL_KEY
               value: {{ .Values.global.tenantFetcher.server.regionLabelKey }}
             - name: APP_SUBSCRIPTION_CONSUMER_LABEL_KEY

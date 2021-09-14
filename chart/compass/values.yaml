@@ -352,7 +352,7 @@ global:
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       name: "provider"
-      subscriptionConsumerId: "subscriptionConsumerId"
+      subscriptionConsumerIdProperty: "subscriptionConsumerId"
 
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"

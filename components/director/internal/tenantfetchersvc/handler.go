@@ -21,7 +21,7 @@ import (
 const (
 	compassURL                  = "https://github.com/kyma-incubator/compass"
 	tenantCreationFailureMsgFmt = "Failed to create tenant with ID %s"
-	internalServerError         = "Internal Server Error"
+	InternalServerError         = "Internal Server Error"
 )
 
 // TenantProvisioner is used to create all related to the incoming request tenants, and build their hierarchy;
@@ -56,12 +56,12 @@ type HandlerConfig struct {
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
 type TenantProviderConfig struct {
-	TenantIDProperty           string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
-	SubaccountTenantIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY,default=subaccountTenantId"`
-	CustomerIDProperty         string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
-	SubdomainProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
-	TenantProvider             string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
-	SubscriptionConsumerID     string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_CONSUMER_ID,default=subscriptionConsumerId"`
+	TenantIDProperty               string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
+	SubaccountTenantIDProperty     string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY,default=subaccountTenantId"`
+	CustomerIDProperty             string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
+	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
+	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
+	SubscriptionConsumerIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_CONSUMER_ID_PROPERTY,default=subscriptionConsumerId"`
 }
 
 type handler struct {
@@ -88,7 +88,7 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to read tenant information from request body: %v", err)
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -104,7 +104,7 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 	tx, err := h.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction: %v", err)
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
@@ -113,13 +113,13 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 	err = h.provisionTenants(ctx, subscriptionRequest, "")
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to provision tenant with ID %s: %v", mainTenantID, err)
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while commiting db transaction: %v", err)
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -141,7 +141,7 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to read tenant information from request body")
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -157,7 +157,7 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 	tx, err := h.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while opening db transaction")
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
@@ -166,7 +166,7 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 	err = h.provisionTenants(ctx, subscriptionRequest, region)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to provision tenant with ID %s", mainTenantID)
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -180,7 +180,7 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 		if apperrors.IsNotFoundError(err) {
 			if err = tx.Commit(); err != nil {
 				log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
-				http.Error(writer, internalServerError, http.StatusInternalServerError)
+				http.Error(writer, InternalServerError, http.StatusInternalServerError)
 				return
 			}
 			log.C(ctx).Debugf("No runtime found for labels %s: %s and %s: %s", h.config.RegionLabelKey, region, h.config.SubscriptionConsumerLabelKey, subscriptionRequest.SubscriptionConsumerID)
@@ -189,7 +189,7 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 		}
 
 		log.C(ctx).WithError(err).Errorf("Failed to get runtime for labels %s: %s and %s: %s", h.config.RegionLabelKey, region, h.config.SubscriptionConsumerLabelKey, subscriptionRequest.SubscriptionConsumerID)
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	ctx = tenant.SaveToContext(ctx, runtime.Tenant, "")
@@ -199,7 +199,7 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			log.C(ctx).WithError(err).Errorf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
-			http.Error(writer, internalServerError, http.StatusInternalServerError)
+			http.Error(writer, InternalServerError, http.StatusInternalServerError)
 			return
 		}
 		// if the error is not found, do nothing
@@ -207,7 +207,7 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 		labelNewValue, err = labelutils.ValueToStringsSlice(label.Value)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("Failed to parse label values for label with id: %s", label.ID)
-			http.Error(writer, internalServerError, http.StatusInternalServerError)
+			http.Error(writer, InternalServerError, http.StatusInternalServerError)
 			return
 		}
 	}
@@ -219,13 +219,13 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 		ObjectID:   runtime.ID,
 	}); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to set label for runtime with id: %s", runtime.ID)
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -247,7 +247,7 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to read tenant information from request body")
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -263,7 +263,7 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 	tx, err := h.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while opening db transaction")
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
@@ -279,7 +279,7 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 		if apperrors.IsNotFoundError(err) {
 			if err = tx.Commit(); err != nil {
 				log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
-				http.Error(writer, internalServerError, http.StatusInternalServerError)
+				http.Error(writer, InternalServerError, http.StatusInternalServerError)
 				return
 			}
 			log.C(ctx).Debugf("No runtime found for labels %s: %s and %s: %s", h.config.RegionLabelKey, region, h.config.SubscriptionConsumerLabelKey, subscriptionRequest.SubscriptionConsumerID)
@@ -288,7 +288,7 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 		}
 
 		log.C(ctx).WithError(err).Errorf("Failed to get runtime for labels %s: %s and %s: %s", h.config.RegionLabelKey, region, h.config.SubscriptionConsumerLabelKey, subscriptionRequest.SubscriptionConsumerID)
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	ctx = tenant.SaveToContext(ctx, runtime.Tenant, "")
@@ -298,7 +298,7 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			log.C(ctx).WithError(err).Errorf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
-			http.Error(writer, internalServerError, http.StatusInternalServerError)
+			http.Error(writer, InternalServerError, http.StatusInternalServerError)
 			return
 		}
 		// if the error is not found, do nothing
@@ -306,7 +306,7 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 		labelOldValue, err = labelutils.ValueToStringsSlice(label.Value)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("Failed to parse label values for label with id: %s", label.ID)
-			http.Error(writer, internalServerError, http.StatusInternalServerError)
+			http.Error(writer, InternalServerError, http.StatusInternalServerError)
 			return
 		}
 	}
@@ -324,13 +324,13 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 		ObjectID:   runtime.ID,
 	}); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to set label for runtime with id: %s", runtime.ID)
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
-		http.Error(writer, internalServerError, http.StatusInternalServerError)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -367,11 +367,11 @@ func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request
 
 func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSubscriptionRequest, error) {
 	properties, err := getProperties(body, map[string]bool{
-		h.config.TenantIDProperty:           true,
-		h.config.SubaccountTenantIDProperty: false,
-		h.config.SubdomainProperty:          true,
-		h.config.CustomerIDProperty:         false,
-		h.config.SubscriptionConsumerID:     true,
+		h.config.TenantIDProperty:               true,
+		h.config.SubaccountTenantIDProperty:     false,
+		h.config.SubdomainProperty:              true,
+		h.config.CustomerIDProperty:             false,
+		h.config.SubscriptionConsumerIDProperty: true,
 	})
 	if err != nil {
 		return nil, err
@@ -382,7 +382,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		SubaccountTenantID:     properties[h.config.SubaccountTenantIDProperty],
 		CustomerTenantID:       properties[h.config.CustomerIDProperty],
 		Subdomain:              properties[h.config.SubdomainProperty],
-		SubscriptionConsumerID: properties[h.config.SubscriptionConsumerID],
+		SubscriptionConsumerID: properties[h.config.SubscriptionConsumerIDProperty],
 		Region:                 region,
 	}, nil
 }
