@@ -42,14 +42,14 @@ type RuntimeService interface {
 // HandlerConfig is the configuration required by the tenant handler.
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
-	HandlerEndpoint                   string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
-	RegionalHandlerEndpoint           string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
-	DependenciesEndpoint              string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
-	TenantPathParam                   string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
-	RegionPathParam                   string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
-	RegionLabelKey                    string `envconfig:"APP_REGION_LABEL_KEY,default=region_key"`
-	SubscriptionConsumerLabelKey      string `envconfig:"APP_SUBSCRIPTION_CONSUMER_LABEL_KEY,default=subscription_consumer_id"`
-	SubscriptionSubaccountIDsLabelKey string `envconfig:"APP_SUBSCRIPTION_SUBACCOUNT_IDS_LABEL_KEY,default=consumer_subaccount_ids"`
+	HandlerEndpoint               string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
+	RegionalHandlerEndpoint       string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
+	DependenciesEndpoint          string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
+	TenantPathParam               string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
+	RegionLabelKey                string `envconfig:"APP_REGION_LABEL_KEY,default=region_key"`
+	SubscriptionConsumerLabelKey  string `envconfig:"APP_SUBSCRIPTION_CONSUMER_LABEL_KEY,default=subscription_consumer_id"`
+	ConsumerSubaccountIDsLabelKey string `envconfig:"APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY,default=consumer_subaccount_ids"`
 	TenantProviderConfig
 	features.Config
 }
@@ -195,10 +195,10 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 	ctx = tenant.SaveToContext(ctx, runtime.Tenant, "")
 
 	labelNewValue := make([]string, 0)
-	label, err := h.runtimeService.GetLabel(ctx, runtime.ID, h.config.SubscriptionSubaccountIDsLabelKey)
+	label, err := h.runtimeService.GetLabel(ctx, runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			log.C(ctx).WithError(err).Errorf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, h.config.SubscriptionSubaccountIDsLabelKey)
+			log.C(ctx).WithError(err).Errorf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
 			http.Error(writer, internalServerError, http.StatusInternalServerError)
 			return
 		}
@@ -213,7 +213,7 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 	}
 
 	if err := h.runtimeService.SetLabel(ctx, &model.LabelInput{
-		Key:        h.config.SubscriptionSubaccountIDsLabelKey,
+		Key:        h.config.ConsumerSubaccountIDsLabelKey,
 		Value:      append(labelNewValue, subscriptionRequest.SubaccountTenantID),
 		ObjectType: model.RuntimeLabelableObject,
 		ObjectID:   runtime.ID,
@@ -294,10 +294,10 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 	ctx = tenant.SaveToContext(ctx, runtime.Tenant, "")
 
 	labelOldValue := make([]string, 0)
-	label, err := h.runtimeService.GetLabel(ctx, runtime.ID, h.config.SubscriptionSubaccountIDsLabelKey)
+	label, err := h.runtimeService.GetLabel(ctx, runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			log.C(ctx).WithError(err).Errorf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, h.config.SubscriptionSubaccountIDsLabelKey)
+			log.C(ctx).WithError(err).Errorf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
 			http.Error(writer, internalServerError, http.StatusInternalServerError)
 			return
 		}
@@ -318,7 +318,7 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 	}
 
 	if err := h.runtimeService.SetLabel(ctx, &model.LabelInput{
-		Key:        h.config.SubscriptionSubaccountIDsLabelKey,
+		Key:        h.config.ConsumerSubaccountIDsLabelKey,
 		Value:      labelNewValue,
 		ObjectType: model.RuntimeLabelableObject,
 		ObjectID:   runtime.ID,

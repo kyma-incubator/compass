@@ -362,7 +362,7 @@ global:
       regionPathParam: "region"
       regionLabelKey: "region"
       subscriptionConsumerLabelKey: "subscriptionConsumerId"
-      subscriptionSubaccountIdsLabelKey: "consumerSubaccountIds"
+      consumerSubaccountIdsLabelKey: "consumerSubaccountIds"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
