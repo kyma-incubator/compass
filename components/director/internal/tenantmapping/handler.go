@@ -49,7 +49,7 @@ type TenantRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
-// ClientInstrumenter describes instrumentation tools that support client instrumentation.
+// ClientInstrumenter collects metrics for different client and auth flows.
 //go:generate mockery --name=ClientInstrumenter --output=automock --outpkg=automock --case=underscore
 type ClientInstrumenter interface {
 	InstrumentClient(clientID string, authFlow string, details string)
