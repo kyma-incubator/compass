@@ -61,20 +61,20 @@ var (
 		Region:         tenantRegion,
 	}
 
-	requestWithAccountTenant = tenantfetchersvc.TenantProvisioningRequest{
+	requestWithAccountTenant = tenantfetchersvc.TenantSubscriptionRequest{
 		AccountTenantID:  tenantExtID,
 		CustomerTenantID: parentTenantExtID,
 		Subdomain:        tenantSubdomain,
 		Region:           tenantRegion,
 	}
 
-	requestWithAccountTenantWithoutParent = tenantfetchersvc.TenantProvisioningRequest{
+	requestWithAccountTenantWithoutParent = tenantfetchersvc.TenantSubscriptionRequest{
 		AccountTenantID: tenantExtID,
 		Subdomain:       tenantSubdomain,
 		Region:          tenantRegion,
 	}
 
-	requestWithSubaccountTenant = tenantfetchersvc.TenantProvisioningRequest{
+	requestWithSubaccountTenant = tenantfetchersvc.TenantSubscriptionRequest{
 		SubaccountTenantID: subaccountTenantExtID,
 		AccountTenantID:    tenantExtID,
 		CustomerTenantID:   parentTenantExtID,
@@ -90,7 +90,7 @@ func TestProvisioner_CreateTenant(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		TenantSvcFn         func() *automock.TenantService
-		Request             tenantfetchersvc.TenantProvisioningRequest
+		Request             tenantfetchersvc.TenantSubscriptionRequest
 		ExpectedErrorOutput string
 	}{
 		{
@@ -162,7 +162,7 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		TenantSvcFn         func() *automock.TenantService
-		Request             tenantfetchersvc.TenantProvisioningRequest
+		Request             tenantfetchersvc.TenantSubscriptionRequest
 		ExpectedErrorOutput string
 	}{
 		{

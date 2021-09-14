@@ -26,6 +26,7 @@ const (
 
 	subaccountTenantSubdomain = "myregionaltenant"
 	subaccountTenantExtID     = "regional-tenant-external-id"
+	subscriptionConsumerID    = "123"
 
 	parentTenantExtID = "parent-tenant-external-id"
 
@@ -98,12 +99,13 @@ func TestService_Create(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	accountProvisioningRequest := tenantfetchersvc.TenantProvisioningRequest{
-		AccountTenantID:  tenantExtID,
-		CustomerTenantID: parentTenantExtID,
-		Subdomain:        tenantSubdomain,
+	accountProvisioningRequest := tenantfetchersvc.TenantSubscriptionRequest{
+		AccountTenantID:        tenantExtID,
+		CustomerTenantID:       parentTenantExtID,
+		Subdomain:              tenantSubdomain,
+		SubscriptionConsumerID: subscriptionConsumerID,
 	}
-	accountWithoutParentProvisioningRequest := tenantfetchersvc.TenantProvisioningRequest{
+	accountWithoutParentProvisioningRequest := tenantfetchersvc.TenantSubscriptionRequest{
 		AccountTenantID: tenantExtID,
 		Subdomain:       tenantSubdomain,
 	}
@@ -205,7 +207,7 @@ func TestService_Create(t *testing.T) {
 			provisioner := testCase.TenantProvisionerFn()
 			defer mock.AssertExpectationsForObjects(t, transact, provisioner)
 
-			handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, transact, validHandlerConfig)
+			handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, &automock.RuntimeService{}, transact, validHandlerConfig)
 			req := testCase.Request
 			w := httptest.NewRecorder()
 
@@ -269,7 +271,7 @@ func TestService_CreateRegional(t *testing.T) {
 			SubdomainProperty:          tenantProviderSubdomainProperty,
 		},
 	}
-	regionalTenant := tenantfetchersvc.TenantProvisioningRequest{
+	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
 		SubaccountTenantID: subaccountTenantExtID,
 		AccountTenantID:    tenantExtID,
 		Subdomain:          subaccountTenantSubdomain,
@@ -377,7 +379,7 @@ func TestService_CreateRegional(t *testing.T) {
 			provisioner := testCase.provisionerFn()
 			defer mock.AssertExpectationsForObjects(t, transact, provisioner)
 
-			handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, transact, validHandlerConfig)
+			handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, &automock.RuntimeService{}, transact, validHandlerConfig)
 			req := testCase.Request
 
 			if len(testCase.Region) > 0 {
@@ -390,7 +392,7 @@ func TestService_CreateRegional(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			//WHEN
-			handler.CreateRegional(w, req)
+			handler.SubscribeTenant(w, req)
 
 			// THEN
 			resp := w.Result()
@@ -430,7 +432,7 @@ func TestService_Delete(t *testing.T) {
 		provisioner := &automock.TenantProvisioner{}
 		defer mock.AssertExpectationsForObjects(t, transact, provisioner)
 
-		handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, transact, validHandlerConfig)
+		handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, &automock.RuntimeService{}, transact, validHandlerConfig)
 		req := httptest.NewRequest(http.MethodDelete, target, bytes.NewBuffer(requestBody))
 		w := httptest.NewRecorder()
 
@@ -445,7 +447,7 @@ func TestService_Delete(t *testing.T) {
 		provisioner := &automock.TenantProvisioner{}
 		defer mock.AssertExpectationsForObjects(t, transact, provisioner)
 
-		handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, transact, validHandlerConfig)
+		handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, &automock.RuntimeService{}, transact, validHandlerConfig)
 		req := httptest.NewRequest(http.MethodDelete, target, errReader(0))
 		w := httptest.NewRecorder()
 
@@ -467,7 +469,7 @@ func TestService_Delete(t *testing.T) {
 		provisioner := &automock.TenantProvisioner{}
 		defer mock.AssertExpectationsForObjects(t, transact, provisioner)
 
-		handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, transact, validHandlerConfig)
+		handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, &automock.RuntimeService{}, transact, validHandlerConfig)
 		req := httptest.NewRequest(http.MethodDelete, target, bytes.NewBuffer(requestBody))
 		w := httptest.NewRecorder()
 

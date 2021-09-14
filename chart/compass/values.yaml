@@ -352,12 +352,17 @@ global:
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       name: "provider"
+      subscriptionConsumerId: "subscriptionConsumerId"
+
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
+      regionLabelKey: "region"
+      subscriptionConsumerLabelKey: "subscriptionConsumerId"
+      subscriptionSubaccountIdsLabelKey: "consumerSubaccountIds"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local

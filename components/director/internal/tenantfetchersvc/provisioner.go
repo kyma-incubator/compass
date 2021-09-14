@@ -17,18 +17,19 @@ type TenantService interface {
 	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 }
 
-// TenantProvisioningRequest represents the information provided during tenant provisioning request in Compass, which includes tenant IDs, subdomain, and region of the tenant.
+// TenantSubscriptionRequest represents the information provided during tenant provisioning request in Compass, which includes tenant IDs, subdomain, and region of the tenant.
 // The tenant which triggered the provisioning request is only one, and one of the tenant IDs in the request is its external ID, where the other tenant IDs are external IDs from its parents hierarchy.
-type TenantProvisioningRequest struct {
-	AccountTenantID    string
-	SubaccountTenantID string
-	CustomerTenantID   string
-	Subdomain          string
-	Region             string
+type TenantSubscriptionRequest struct {
+	AccountTenantID        string
+	SubaccountTenantID     string
+	CustomerTenantID       string
+	Subdomain              string
+	Region                 string
+	SubscriptionConsumerID string
 }
 
 // MainTenantID is used to determine the external tenant ID of the tenant for which the provisioning request was triggered.
-func (r *TenantProvisioningRequest) MainTenantID() string {
+func (r *TenantSubscriptionRequest) MainTenantID() string {
 	if len(r.SubaccountTenantID) > 0 {
 		return r.SubaccountTenantID
 	}
@@ -51,7 +52,7 @@ func NewTenantProvisioner(tenantSvc TenantService, tenantProvider string) *provi
 }
 
 // ProvisionTenants creates all non-existing tenants from the provided request. with the information present in the request.
-func (p *provisioner) ProvisionTenants(ctx context.Context, request TenantProvisioningRequest) error {
+func (p *provisioner) ProvisionTenants(ctx context.Context, request TenantSubscriptionRequest) error {
 	if len(request.SubaccountTenantID) > 0 {
 		return fmt.Errorf("tenant with ID %s is of type %s and supports only regional provisioning", request.SubaccountTenantID, tenantEntity.Subaccount)
 	}
@@ -60,11 +61,11 @@ func (p *provisioner) ProvisionTenants(ctx context.Context, request TenantProvis
 }
 
 // ProvisionRegionalTenants creates all non-existing tenants from the provided request with the information present in the request, in the provided region..
-func (p *provisioner) ProvisionRegionalTenants(ctx context.Context, request TenantProvisioningRequest) error {
+func (p *provisioner) ProvisionRegionalTenants(ctx context.Context, request TenantSubscriptionRequest) error {
 	return p.tenantSvc.CreateManyIfNotExists(ctx, p.tenantsFromRequest(request)...)
 }
 
-func (p *provisioner) tenantsFromRequest(request TenantProvisioningRequest) []model.BusinessTenantMappingInput {
+func (p *provisioner) tenantsFromRequest(request TenantSubscriptionRequest) []model.BusinessTenantMappingInput {
 	tenants := make([]model.BusinessTenantMappingInput, 0, 3)
 	customerID := request.CustomerTenantID
 	accountID := request.AccountTenantID

@@ -15,11 +15,11 @@ type TenantProvisioner struct {
 }
 
 // ProvisionRegionalTenants provides a mock function with given fields: _a0, _a1
-func (_m *TenantProvisioner) ProvisionRegionalTenants(_a0 context.Context, _a1 tenantfetchersvc.TenantProvisioningRequest) error {
+func (_m *TenantProvisioner) ProvisionRegionalTenants(_a0 context.Context, _a1 tenantfetchersvc.TenantSubscriptionRequest) error {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, tenantfetchersvc.TenantProvisioningRequest) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, tenantfetchersvc.TenantSubscriptionRequest) error); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)
@@ -29,11 +29,11 @@ func (_m *TenantProvisioner) ProvisionRegionalTenants(_a0 context.Context, _a1 t
 }
 
 // ProvisionTenants provides a mock function with given fields: _a0, _a1
-func (_m *TenantProvisioner) ProvisionTenants(_a0 context.Context, _a1 tenantfetchersvc.TenantProvisioningRequest) error {
+func (_m *TenantProvisioner) ProvisionTenants(_a0 context.Context, _a1 tenantfetchersvc.TenantSubscriptionRequest) error {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, tenantfetchersvc.TenantProvisioningRequest) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, tenantfetchersvc.TenantSubscriptionRequest) error); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)

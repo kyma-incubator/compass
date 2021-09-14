@@ -65,6 +65,16 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
             - name: APP_TENANT_PROVIDER
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_CONSUMER_ID
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionConsumerId }}
+            - name: APP_REGION_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.regionLabelKey }}
+            - name: APP_SUBSCRIPTION_CONSUMER_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionConsumerLabelKey }}
+            - name: APP_SUBSCRIPTION_SUBACCOUNT_IDS_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionSubaccountIdsLabelKey }}
+            - name: APP_DEFAULT_SCENARIO_ENABLED
+              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_LOG_FORMAT
               value: {{.Values.global.log.format | quote }}
             - name: APP_ADDRESS
