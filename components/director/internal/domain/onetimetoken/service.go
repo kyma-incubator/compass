@@ -57,6 +57,9 @@ type service struct {
 	connectorURL              string
 	legacyConnectorURL        string
 	suggestTokenHeaderKey     string
+	csrTokenExpiration        time.Duration
+	appTokenExpiration        time.Duration
+	runtimeTokenExpiration    time.Duration
 	sysAuthSvc                SystemAuthService
 	intSystemToAdapterMapping map[string]string
 	appSvc                    ApplicationService
@@ -73,6 +76,9 @@ func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, ap
 		connectorURL:              config.ConnectorURL,
 		legacyConnectorURL:        config.LegacyConnectorURL,
 		suggestTokenHeaderKey:     config.SuggestTokenHeaderKey,
+		csrTokenExpiration:        config.CSRExpiration,
+		appTokenExpiration:        config.ApplicationExpiration,
+		runtimeTokenExpiration:    config.RuntimeExpiration,
 		sysAuthSvc:                sysAuthSvc,
 		intSystemToAdapterMapping: intSystemToAdapterMapping,
 		appSvc:                    appSvc,
@@ -297,4 +303,43 @@ func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Applic
 	}
 
 	return *rawEnc
+}
+
+func (s *service) getExpirationTimeForToken(systemAuth *model.SystemAuth) (time.Duration, error) {
+	switch systemAuth.Value.OneTimeToken.Type {
+	case tokens.ApplicationToken:
+		return s.appTokenExpiration, nil
+	case tokens.RuntimeToken:
+		return s.runtimeTokenExpiration, nil
+	case tokens.CSRToken:
+		return s.csrTokenExpiration, nil
+	default:
+		return time.Duration(0), errors.Errorf("One Time Token for system auth id %s has no valid type", systemAuth.ID)
+	}
+}
+
+func (s *service) IsTokenValid(systemAuth *model.SystemAuth) (bool, error) {
+	if systemAuth.Value == nil {
+		return false, errors.Errorf("System Auth value for auth id %s is missing", systemAuth.ID)
+	}
+
+	if systemAuth.Value.OneTimeToken == nil {
+		return false, errors.Errorf("One Time Token for system auth id %s is missing", systemAuth.ID)
+	}
+
+	if systemAuth.Value.OneTimeToken.Used {
+		return false, errors.Errorf("One Time Token for system auth id %s has been used", systemAuth.ID)
+	}
+
+	expirationTime, err := s.getExpirationTimeForToken(systemAuth)
+	if err != nil {
+		return false, err
+	}
+
+	isExpired := systemAuth.Value.OneTimeToken.CreatedAt.Add(expirationTime).Before(s.timeService.Now())
+	if isExpired {
+		return false, errors.Errorf("One Time Token with validity %s for system auth with ID %s has expired", expirationTime.String(), systemAuth.ID)
+	}
+
+	return true, nil
 }

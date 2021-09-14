@@ -21,6 +21,7 @@ type TokenResolver interface {
 //go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore
 type TokenService interface {
 	RegenerateOneTimeToken(ctx context.Context, authID string, token tokens.TokenType) (model.OneTimeToken, error)
+	IsTokenValid(systemAuth *model.SystemAuth) (bool, error)
 }
 
 type tokenResolver struct {

@@ -608,6 +608,8 @@ github.com/kr/text v0.0.0-20160504234017-7cafcd837844/go.mod h1:sjUstKUATFIcff4q
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
+github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210902144934-a10f826db614 h1:aQki6Nq8z2BTCL5c5+rhWaJlh2zX8gZlHeC/GjcgLvQ=
+github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210902144934-a10f826db614/go.mod h1:0Jjhj4c1Vgun1gPZmYxouU8FlqOWtHC40w1KNpoz7ek=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210315172259-e186b4cac80b/go.mod h1:bPwjvhAV9q4N70h30Ow745LRQftp0JhnLa7bJK5cEKs=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210526113340-87c6e3c6f049/go.mod h1:731AhoiZoq+xZrya3XO48PHWGQwxkkG9lJdaq84rubg=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20210623072749-c159dfdd6510/go.mod h1:z1vSKaBY7eBcbaScaqsyzB8n/f9OQGA+vdmKsvFdU3U=
@@ -626,6 +628,7 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210802140320-1670
 github.com/kyma-incubator/compass/components/director v0.0.0-20210816091934-c8f38c361ff5/go.mod h1:XgAhkmzZYsX1kxPrHYQLjKyqTSUgetMlBVhod2Fji9I=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210820085625-1e07ac4da895/go.mod h1:FfOaPtdUKtsWr8ZfsQgVMgbx7taHvylaSf/89URNUMs=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210826104628-68f99175389f/go.mod h1:6zHJhwgy3GRX/FdyC97gHr+qFIw6pQtM29VIvzT7hw4=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210831121533-7e4208095db0/go.mod h1:6zHJhwgy3GRX/FdyC97gHr+qFIw6pQtM29VIvzT7hw4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b/go.mod h1:201wjhJxyaSA4pVp33VKOp91oNC+PQR591haj1t7KhA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892/go.mod h1:oBe0oA/3Z7UvkFaZi2YJpgljC2MIbsCljIQbonWEMl4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210526113340-87c6e3c6f049/go.mod h1:RZyHP04D4gDIJtPhbQK4PT2loFvYKtXOmT7RMraNNik=
@@ -1515,6 +1518,7 @@ google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp0
 google.golang.org/protobuf v1.26.0 h1:bxAC2xTBsZGibn2RTntX0oH50xLsqy1OxA9tTL3p/lk=
 google.golang.org/protobuf v1.26.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
 gopkg.in/alecthomas/kingpin.v2 v2.2.6/go.mod h1:FMv+mEhP44yOT+4EoQTLFTRgOQ1FBLkstjWtayDeSgw=
+gopkg.in/asaskevich/govalidator.v9 v9.0.0-20180315120708-ccb8e960c48f/go.mod h1:+MTrBL6wlsxv1uFXT6b9LWG7PJdrvUJEjl8tXOlk9OU=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=

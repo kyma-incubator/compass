@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	mocks "github.com/kyma-incubator/compass/components/director/internal/oathkeeper/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/tokens"
-	timeMock "github.com/kyma-incubator/compass/components/director/pkg/time/automock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -22,11 +21,8 @@ import (
 )
 
 const (
-	clientID               = "id"
-	token                  = "YWJj"
-	csrTokenExpiration     = time.Duration(100)
-	appTokenExpiration     = time.Duration(100)
-	runtimeTokenExpiration = time.Duration(100)
+	clientID = "id"
+	token    = "YWJj"
 )
 
 func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
@@ -49,13 +45,13 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should fail when db transaction open fails", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
-		timeService := &timeMock.Service{}
+		tokenService := &mocks.SystemAuthService{}
+		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatFailsOnBegin()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
 		// WHEN
-		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
+		validationHydrator := NewValidationHydrator(tokenService, transact, oneTimeTokenService)
 		req := createAuthRequestWithTokenHeader(t, "", token)
 		w := httptest.NewRecorder()
 		// THEN
@@ -66,12 +62,12 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should fail when session cannot be decoded", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
-		timeService := &timeMock.Service{}
+		tokenService := &mocks.SystemAuthService{}
+		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
-		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
+		validationHydrator := NewValidationHydrator(tokenService, transact, oneTimeTokenService)
 		req := createAuthRequestWithTokenHeader(t, "", token)
 		w := httptest.NewRecorder()
 		// WHEN
@@ -83,12 +79,12 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should resolve token from query params and add header to response", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
-		timeService := &timeMock.Service{}
+		tokenService := &mocks.SystemAuthService{}
+		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
-		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
+		validationHydrator := NewValidationHydrator(tokenService, transact, oneTimeTokenService)
 		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, "")
 		w := httptest.NewRecorder()
@@ -106,12 +102,12 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should resolve token from query params and add header to response", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
-		timeService := &timeMock.Service{}
+		tokenService := &mocks.SystemAuthService{}
+		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
-		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
+		validationHydrator := NewValidationHydrator(tokenService, transact, oneTimeTokenService)
 		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
@@ -128,77 +124,13 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		assert.Equal(t, emptyAuthSession(), authSession)
 	})
 
-	t.Run("should fail when can't get OneTimeToken from systemAuth", func(t *testing.T) {
+	t.Run("should fail when the token is invalid", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
-		timeService := &timeMock.Service{}
+		tokenService := &mocks.SystemAuthService{}
+		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
-		afterOneDay := time.Now().AddDate(0, 0, +1)
-		systemAuth := &model.SystemAuth{
-			Value: nil,
-		}
-		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
-		authenticationSession := connector.AuthenticationSession{}
-		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
-		w := httptest.NewRecorder()
-		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
-		timeService.On("Now").Return(afterOneDay)
-		// WHEN
-		validationHydrator.ResolveConnectorTokenHeader(w, req)
-		// THEN
-		assert.Equal(t, http.StatusOK, w.Code)
-
-		var authSession connector.AuthenticationSession
-		err := json.NewDecoder(w.Body).Decode(&authSession)
-		require.NoError(t, err)
-
-		assert.Equal(t, emptyAuthSession(), authSession)
-	})
-
-	t.Run("should fail when can't compute expiration time", func(t *testing.T) {
-		// GIVEN
-		tokenService := &mocks.Service{}
-		timeService := &timeMock.Service{}
-		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
-		defer mockedTx.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
-		afterOneDay := time.Now().AddDate(0, 0, +1)
-		systemAuth := &model.SystemAuth{
-			Value: &model.Auth{
-				OneTimeToken: &model.OneTimeToken{
-					Type: "InvalidType",
-				},
-			},
-		}
-		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
-		authenticationSession := connector.AuthenticationSession{}
-		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
-		w := httptest.NewRecorder()
-		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
-		timeService.On("Now").Return(afterOneDay)
-		// WHEN
-		validationHydrator.ResolveConnectorTokenHeader(w, req)
-		// THEN
-		assert.Equal(t, http.StatusOK, w.Code)
-
-		var authSession connector.AuthenticationSession
-		err := json.NewDecoder(w.Body).Decode(&authSession)
-		require.NoError(t, err)
-
-		assert.Equal(t, emptyAuthSession(), authSession)
-	})
-
-	t.Run("should fail when the token is expired", func(t *testing.T) {
-		// GIVEN
-		tokenService := &mocks.Service{}
-		timeService := &timeMock.Service{}
-		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
-		defer mockedTx.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
-		now := time.Now()
-		afterOneDay := now.AddDate(0, 0, +1)
 		systemAuth := &model.SystemAuth{
 			Value: &model.Auth{
 				OneTimeToken: &model.OneTimeToken{
@@ -207,12 +139,12 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 				},
 			},
 		}
-		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
+		validationHydrator := NewValidationHydrator(tokenService, transact, oneTimeTokenService)
 		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
-		timeService.On("Now").Return(afterOneDay)
+		oneTimeTokenService.On("IsTokenValid", systemAuth).Return(false, errors.New("Token invalid"))
 		// WHEN
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
@@ -227,12 +159,11 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should fail when invalidating token fails", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
-		timeService := &timeMock.Service{}
+		tokenService := &mocks.SystemAuthService{}
+		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
-		beforeOneDay := time.Now().AddDate(0, 0, -1)
 		systemAuth := &model.SystemAuth{
 			ID: clientID,
 			Value: &model.Auth{
@@ -242,13 +173,14 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 				},
 			},
 		}
-		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
+		validationHydrator := NewValidationHydrator(tokenService, transact, oneTimeTokenService)
 		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
+		oneTimeTokenService.On("IsTokenValid", systemAuth).Return(true, nil)
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
 		tokenService.On("InvalidateToken", mock.Anything, mock.Anything).Return(errors.New("error when invalidating the token"))
-		timeService.On("Now").Return(beforeOneDay)
+
 		// WHEN
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		//THEN
@@ -257,12 +189,11 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should fail when db transaction commit fails", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
-		timeService := &timeMock.Service{}
+		tokenService := &mocks.SystemAuthService{}
+		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatFailsOnCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
-		beforeOneDay := time.Now().AddDate(0, 0, -1)
 		systemAuth := &model.SystemAuth{
 			ID: clientID,
 			Value: &model.Auth{
@@ -272,13 +203,14 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 				},
 			},
 		}
-		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
+		validationHydrator := NewValidationHydrator(tokenService, transact, oneTimeTokenService)
 		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
+		oneTimeTokenService.On("IsTokenValid", systemAuth).Return(true, nil)
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
 		tokenService.On("InvalidateToken", mock.Anything, mock.Anything).Return(nil)
-		timeService.On("Now").Return(beforeOneDay)
+
 		// WHEN
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
@@ -287,12 +219,11 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 	t.Run("should succeed when token is resolved successfully", func(t *testing.T) {
 		// GIVEN
-		tokenService := &mocks.Service{}
-		timeService := &timeMock.Service{}
+		tokenService := &mocks.SystemAuthService{}
+		oneTimeTokenService := &mocks.OneTimeTokenService{}
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
-		beforeOneDay := time.Now().AddDate(0, 0, -1)
 		systemAuth := &model.SystemAuth{
 			ID: clientID,
 			Value: &model.Auth{
@@ -302,14 +233,15 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 				},
 			},
 		}
-		validationHydrator := NewValidationHydrator(tokenService, transact, timeService, csrTokenExpiration, appTokenExpiration, runtimeTokenExpiration)
+		validationHydrator := NewValidationHydrator(tokenService, transact, oneTimeTokenService)
 
 		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
 		w := httptest.NewRecorder()
+		oneTimeTokenService.On("IsTokenValid", systemAuth).Return(true, nil)
 		tokenService.On("GetByToken", mock.Anything, token).Return(systemAuth, nil)
 		tokenService.On("InvalidateToken", mock.Anything, mock.Anything).Return(nil)
-		timeService.On("Now").Return(beforeOneDay)
+
 		// WHEN
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
 		// THEN
