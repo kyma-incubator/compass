@@ -468,7 +468,7 @@ global:
       gatewayHost: "compass-gateway"
       trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
       attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
-      path: tenants/<.*>
+      path: /tenants/<.*>
       upstreamComponent: "compass-tenant-fetcher"
 
   externalServicesMock:
