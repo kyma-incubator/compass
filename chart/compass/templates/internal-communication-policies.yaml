@@ -41,6 +41,11 @@ spec:
               - GET
             paths:
               - /metrics*
+        - operation:
+            methods:
+              - GET
+            paths:
+              - /open-resource-discovery-docs*
     - to: # db communication
         - operation:
             ports:
