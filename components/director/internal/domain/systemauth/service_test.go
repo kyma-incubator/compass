@@ -523,7 +523,7 @@ func TestService_GetGlobal(t *testing.T) {
 }
 
 func TestService_GetByToken(t *testing.T) {
-	token := "tokenValue"
+	token := "YWJj"
 	input := map[string]interface{}{
 		"OneTimeToken": map[string]interface{}{
 			"Token": token,
