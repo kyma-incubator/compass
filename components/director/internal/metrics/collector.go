@@ -7,8 +7,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+// Config configures the behaviour of the metrics collector.
+type Config struct {
+	EnableClientIDInstrumentation bool `envconfig:"default=true,APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION"`
+}
+
 // Collector missing godoc
 type Collector struct {
+	config Config
+
 	graphQLRequestTotal    *prometheus.CounterVec
 	graphQLRequestDuration *prometheus.HistogramVec
 	hydraRequestTotal      *prometheus.CounterVec
@@ -17,8 +24,10 @@ type Collector struct {
 }
 
 // NewCollector missing godoc
-func NewCollector() *Collector {
+func NewCollector(config Config) *Collector {
 	return &Collector{
+		config: config,
+
 		graphQLRequestTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: Namespace,
 			Subsystem: DirectorSubsystem,
@@ -86,6 +95,10 @@ func (c *Collector) InstrumentOAuth20HTTPClient(client *http.Client) {
 
 // InstrumentClient instruments a given client caller.
 func (c *Collector) InstrumentClient(clientID, authFlow, details string) {
+	if !c.config.EnableClientIDInstrumentation {
+		return
+	}
+
 	c.clientTotal.With(prometheus.Labels{
 		"client_id": clientID,
 		"auth_flow": authFlow,
