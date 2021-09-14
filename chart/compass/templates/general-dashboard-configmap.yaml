@@ -28,7 +28,6 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 0,
-      "id": 48,
       "links": [],
       "panels": [
         {
@@ -78,6 +77,8 @@ data:
             "min": false,
             "rightSide": true,
             "show": true,
+            "sort": "max",
+            "sortDesc": true,
             "total": false,
             "values": true
           },
@@ -104,10 +105,10 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum by (client_id, auth_flow, details) (rate(compass_director_total_requests_per_client[2m]) * 60)",
+              "expr": "sum by (client_id, auth_flow, details) (increase(compass_director_total_requests_per_client[2m])/2)",
               "format": "time_series",
               "interval": "",
-              "intervalFactor": 2,
+              "intervalFactor": 1,
               "legendFormat": "{{`{{ client_id }} ( {{ auth_flow }} {{ details }} )`}}",
               "refId": "A"
             }
@@ -137,7 +138,7 @@ data:
               "label": null,
               "logBase": 1,
               "max": null,
-              "min": null,
+              "min": "0",
               "show": true
             },
             {
@@ -164,7 +165,7 @@ data:
         "list": []
       },
       "time": {
-        "from": "now-3h",
+        "from": "now-1h",
         "to": "now"
       },
       "timepicker": {
