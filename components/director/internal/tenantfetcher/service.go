@@ -197,9 +197,6 @@ func (s Service) SyncTenants() error {
 
 	// Order of event processing matters
 	if len(tenantsToCreate) > 0 {
-		if err != nil {
-			return err
-		}
 		if err := s.createTenants(ctx, currentTenants, tenantsToCreate); err != nil {
 			return errors.Wrap(err, "while storing tenant")
 		}
@@ -228,6 +225,9 @@ func (s Service) SyncTenants() error {
 func (s Service) createTenants(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToCreate := s.parents(currTenants, eventsTenants)
 	for _, eventTenant := range eventsTenants {
+		if parentGUID, ok := currTenants[eventTenant.Parent]; ok {
+			eventTenant.Parent = parentGUID
+		}
 		eventTenant.Region = s.tenantsRegion
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
