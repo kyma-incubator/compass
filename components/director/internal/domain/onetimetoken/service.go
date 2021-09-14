@@ -131,13 +131,12 @@ func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, 
 }
 
 func (s *service) createToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) (*model.OneTimeToken, error) {
+	var err error
 	if oneTimeToken == nil {
-		ott, err := s.getNewToken()
+		oneTimeToken, err = s.getNewToken()
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating onetime token for %s", tokenType)
 		}
-
-		oneTimeToken = ott
 	}
 
 	switch tokenType {
