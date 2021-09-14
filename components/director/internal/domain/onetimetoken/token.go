@@ -50,7 +50,9 @@ func legacyConnectorURLWithToken(legacyConnectorURL, token string) (string, erro
 	if url.RawQuery != "" {
 		url.RawQuery += "&"
 	}
+
 	token = extractToken(token)
+
 	url.RawQuery += fmt.Sprintf("token=%s", token)
 	return url.String(), nil
 }

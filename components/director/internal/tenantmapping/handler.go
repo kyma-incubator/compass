@@ -6,15 +6,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -52,12 +49,19 @@ type TenantRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
+// ClientInstrumenter collects metrics for different client and auth flows.
+//go:generate mockery --name=ClientInstrumenter --output=automock --outpkg=automock --case=underscore
+type ClientInstrumenter interface {
+	InstrumentClient(clientID string, authFlow string, details string)
+}
+
 // Handler missing godoc
 type Handler struct {
 	authenticators         []authenticator.Config
 	reqDataParser          ReqDataParser
 	transact               persistence.Transactioner
 	objectContextProviders map[string]ObjectContextProvider
+	clientInstrumenter     ClientInstrumenter
 }
 
 // NewHandler missing godoc
@@ -65,12 +69,14 @@ func NewHandler(
 	authenticators []authenticator.Config,
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
-	objectContextProviders map[string]ObjectContextProvider) *Handler {
+	objectContextProviders map[string]ObjectContextProvider,
+	clientInstrumenter ClientInstrumenter) *Handler {
 	return &Handler{
 		authenticators:         authenticators,
 		reqDataParser:          reqDataParser,
 		transact:               transact,
 		objectContextProviders: objectContextProviders,
+		clientInstrumenter:     clientInstrumenter,
 	}
 }
 
@@ -98,6 +104,12 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		respond(ctx, writer, reqData.Body)
 		return
 	}
+
+	flowDetails := authDetails.CertIssuer
+	if authDetails.Authenticator != nil {
+		flowDetails = authDetails.Authenticator.Name
+	}
+	h.clientInstrumenter.InstrumentClient(authDetails.AuthID, string(authDetails.AuthFlow), flowDetails)
 
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"authID":        authDetails.AuthID,
