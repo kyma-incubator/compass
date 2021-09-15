@@ -150,13 +150,19 @@ func (h *handler) getProvisioningRequest(body []byte, region string) (*TenantPro
 		return nil, err
 	}
 
-	return &TenantProvisioningRequest{
+	req := &TenantProvisioningRequest{
 		AccountTenantID:    properties[h.config.TenantIDProperty],
 		SubaccountTenantID: properties[h.config.SubaccountTenantIDProperty],
 		CustomerTenantID:   properties[h.config.CustomerIDProperty],
 		Subdomain:          properties[h.config.SubdomainProperty],
 		Region:             region,
-	}, nil
+	}
+
+	if req.AccountTenantID == req.SubaccountTenantID {
+		req.SubaccountTenantID = ""
+	}
+
+	return req, nil
 }
 
 func (h *handler) provisionTenants(ctx context.Context, request *TenantProvisioningRequest, region string) error {
