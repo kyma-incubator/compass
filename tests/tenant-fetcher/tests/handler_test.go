@@ -85,6 +85,23 @@ func TestOnboardingHandler(t *testing.T) {
 		assertTenant(t, tnt, tenant.TenantID, tenant.Subdomain)
 	})
 
+	t.Run("Successful account tenant creation with matching account and subaccount tenant IDs", func(t *testing.T) {
+		id := uuid.New().String()
+		tenant := Tenant{
+			TenantID:     id,
+			SubaccountID: id,
+			Subdomain:    defaultSubdomain,
+		}
+
+		addTenantExpectStatusCode(t, tenant, http.StatusOK)
+
+		tnt, err := fixtures.GetTenantByExternalID(dexGraphQLClient, tenant.TenantID)
+		require.NoError(t, err)
+
+		// THEN
+		assertTenant(t, tnt, tenant.TenantID, tenant.Subdomain)
+	})
+
 	t.Run("Should not add already existing tenants", func(t *testing.T) {
 		tenantWithCustomer := Tenant{
 			TenantID:   uuid.New().String(),
