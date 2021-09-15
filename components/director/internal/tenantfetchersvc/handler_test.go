@@ -8,6 +8,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/gorilla/mux"
 
@@ -43,7 +51,11 @@ const (
 
 var (
 	testError          = errors.New("test error")
+	notFoundErr        = apperrors.NewNotFoundErrorWithType(resource.Runtime)
 	validHandlerConfig = tenantfetchersvc.HandlerConfig{
+		RegionLabelKey:                "regionKey",
+		SubscriptionConsumerLabelKey:  "SubscriptionConsumerLabelKey",
+		ConsumerSubaccountIDsLabelKey: "ConsumerSubaccountIDsLabelKey",
 		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
 			TenantProvider:                 testProviderName,
 			TenantIDProperty:               tenantProviderTenantIDProperty,
@@ -51,6 +63,54 @@ var (
 			SubdomainProperty:              tenantProviderSubdomainProperty,
 			SubscriptionConsumerIDProperty: subscriptionConsumerIDProperty,
 		},
+	}
+	testRuntime = model.Runtime{
+		ID:                "321",
+		Name:              "test",
+		Description:       nil,
+		Tenant:            "test-tenant",
+		Status:            nil,
+		CreationTimestamp: time.Time{},
+	}
+	invalidTestLabel = model.Label{
+		ID:         "456",
+		Tenant:     "test-tenant",
+		Key:        validHandlerConfig.ConsumerSubaccountIDsLabelKey,
+		Value:      "",
+		ObjectID:   testRuntime.ID,
+		ObjectType: model.RuntimeLabelableObject,
+	}
+	testLabel = model.Label{
+		ID:         "456",
+		Tenant:     "test-tenant",
+		Key:        validHandlerConfig.ConsumerSubaccountIDsLabelKey,
+		Value:      []interface{}{"789"},
+		ObjectID:   testRuntime.ID,
+		ObjectType: model.RuntimeLabelableObject,
+	}
+	updateLabelInput = model.LabelInput{
+		Key:        validHandlerConfig.ConsumerSubaccountIDsLabelKey,
+		Value:      []string{"789", subaccountTenantExtID},
+		ObjectType: model.RuntimeLabelableObject,
+		ObjectID:   testRuntime.ID,
+	}
+	createLabelInput = model.LabelInput{
+		Key:        validHandlerConfig.ConsumerSubaccountIDsLabelKey,
+		Value:      []string{subaccountTenantExtID},
+		ObjectType: model.RuntimeLabelableObject,
+		ObjectID:   testRuntime.ID,
+	}
+	removeLabelInput = model.LabelInput{
+		Key:        validHandlerConfig.ConsumerSubaccountIDsLabelKey,
+		Value:      []string{"789"},
+		ObjectType: model.RuntimeLabelableObject,
+		ObjectID:   testRuntime.ID,
+	}
+	emptyLabelInput = model.LabelInput{
+		Key:        validHandlerConfig.ConsumerSubaccountIDsLabelKey,
+		Value:      []string{},
+		ObjectType: model.RuntimeLabelableObject,
+		ObjectID:   testRuntime.ID,
 	}
 )
 
@@ -259,7 +319,7 @@ func TestService_Create(t *testing.T) {
 	}
 }
 
-func TestService_CreateRegional(t *testing.T) {
+func TestService_SubscriptionFlows(t *testing.T) {
 	//GIVEN
 	region := "eu-1"
 
@@ -289,8 +349,18 @@ func TestService_CreateRegional(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	bodyWithMissingSubscriptionConsumerID, err := json.Marshal(regionalTenantCreationRequest{
+		TenantID:  subaccountTenantExtID,
+		ParentID:  tenantExtID,
+		Subdomain: tenantSubdomain,
+	})
+	assert.NoError(t, err)
+
 	validHandlerConfig := tenantfetchersvc.HandlerConfig{
-		RegionPathParam: "region",
+		RegionPathParam:               "region",
+		RegionLabelKey:                "regionKey",
+		SubscriptionConsumerLabelKey:  "SubscriptionConsumerLabelKey",
+		ConsumerSubaccountIDsLabelKey: "ConsumerSubaccountIDsLabelKey",
 		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
 			TenantProvider:                 testProviderName,
 			TenantIDProperty:               tenantProviderTenantIDProperty,
@@ -308,6 +378,12 @@ func TestService_CreateRegional(t *testing.T) {
 		SubscriptionConsumerID: subscriptionConsumerID,
 	}
 
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(validHandlerConfig.SubscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionConsumerID)),
+		labelfilter.NewForKeyWithQuery(validHandlerConfig.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
+	}
+
+	// Subscribe flow
 	testCases := []struct {
 		Name                  string
 		provisionerFn         func() *automock.TenantProvisioner
@@ -329,7 +405,7 @@ func TestService_CreateRegional(t *testing.T) {
 			},
 			runtimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher()).Return(nil).Once()
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{}, nil).Once()
 				return provisioner
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
@@ -341,6 +417,7 @@ func TestService_CreateRegional(t *testing.T) {
 			Name:                "Returns error when region path parameter is missing",
 			TxFn:                txGen.ThatDoesntStartTransaction,
 			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
 			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
 			ExpectedStatusCode:  http.StatusBadRequest,
 			ExpectedErrorOutput: "Region path parameter is missing from request",
@@ -349,36 +426,50 @@ func TestService_CreateRegional(t *testing.T) {
 			Name:                "Returns error when parent tenant is not found in body",
 			TxFn:                txGen.ThatDoesntStartTransaction,
 			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
 			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingParent)),
 			Region:              region,
 			ExpectedStatusCode:  http.StatusBadRequest,
 			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderTenantIDProperty),
 		},
 		{
-			Name:                "Returns error when reading request body fails",
+			Name:                "Returns error when SubscriptionConsumerID is not found in body",
 			TxFn:                txGen.ThatDoesntStartTransaction,
 			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
-			Request:             httptest.NewRequest(http.MethodPut, target, errReader(0)),
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingSubscriptionConsumerID)),
 			Region:              region,
-			ExpectedErrorOutput: "Failed to read tenant information from request body",
-			ExpectedStatusCode:  http.StatusInternalServerError,
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionConsumerIDProperty),
 		},
 		{
 			Name:                "Returns error when request body doesn't contain tenant subdomain",
 			TxFn:                txGen.ThatDoesntStartTransaction,
 			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
 			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingTenantSubdomain)),
 			Region:              region,
 			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderSubdomainProperty),
 			ExpectedStatusCode:  http.StatusBadRequest,
 		},
 		{
+			Name:                "Returns error when reading request body fails",
+			TxFn:                txGen.ThatDoesntStartTransaction,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, errReader(0)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
 			Name:                "Returns error when beginning transaction fails",
 			TxFn:                txGen.ThatFailsOnBegin,
 			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
 			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
 			Region:              region,
-			ExpectedErrorOutput: fmt.Sprintf(tenantCreationFailureMsgFmt, regionalTenant.SubaccountTenantID),
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
 			ExpectedStatusCode:  http.StatusInternalServerError,
 		},
 		{
@@ -389,10 +480,145 @@ func TestService_CreateRegional(t *testing.T) {
 				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(testError).Once()
 				return provisioner
 			},
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
 			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
 			Region:              region,
 			ExpectedStatusCode:  http.StatusInternalServerError,
-			ExpectedErrorOutput: fmt.Sprintf(tenantCreationFailureMsgFmt, subaccountTenantExtID),
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+		},
+		{
+			Name: "Succeeds when can't find runtimes",
+			TxFn: txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
+				return provisioner
+			},
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return(nil, notFoundErr).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: compassURL,
+			ExpectedStatusCode:  http.StatusOK,
+		},
+		{
+			Name: "Returns error when could not list runtimes",
+			TxFn: txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
+				return provisioner
+			},
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return(nil, testError).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name: "Returns error when could not get label for runtime",
+			TxFn: txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
+				return provisioner
+			},
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(nil, testError).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name: "Returns error when could not parse label value",
+			TxFn: txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
+				return provisioner
+			},
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(&invalidTestLabel, nil).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name: "Returns error when could not set label for runtime",
+			TxFn: txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
+				return provisioner
+			},
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(&testLabel, nil).Once()
+				provisioner.On("SetLabel", txtest.CtxWithDBMatcher(), &updateLabelInput).Return(testError).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name: "Succeeds and creates label",
+			TxFn: txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
+				return provisioner
+			},
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(nil, notFoundErr).Once()
+				provisioner.On("SetLabel", txtest.CtxWithDBMatcher(), &createLabelInput).Return(nil).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: compassURL,
+			ExpectedStatusCode:  http.StatusOK,
+		},
+		{
+			Name: "Succeeds and updates label",
+			TxFn: txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
+				return provisioner
+			},
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(&testLabel, nil).Once()
+				provisioner.On("SetLabel", txtest.CtxWithDBMatcher(), &updateLabelInput).Return(nil).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: compassURL,
+			ExpectedStatusCode:  http.StatusOK,
 		},
 		{
 			Name: "Returns error when transaction commit fails",
@@ -402,9 +628,16 @@ func TestService_CreateRegional(t *testing.T) {
 				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
 				return provisioner
 			},
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(&testLabel, nil).Once()
+				provisioner.On("SetLabel", txtest.CtxWithDBMatcher(), &updateLabelInput).Return(nil).Once()
+				return provisioner
+			},
 			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
 			Region:              region,
-			ExpectedErrorOutput: fmt.Sprintf(tenantCreationFailureMsgFmt, regionalTenant.SubaccountTenantID),
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
 			ExpectedStatusCode:  http.StatusInternalServerError,
 		},
 	}
@@ -413,9 +646,10 @@ func TestService_CreateRegional(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			_, transact := testCase.TxFn()
 			provisioner := testCase.provisionerFn()
-			defer mock.AssertExpectationsForObjects(t, transact, provisioner)
+			runtimeService := testCase.runtimeServiceFn()
+			defer mock.AssertExpectationsForObjects(t, transact, provisioner, runtimeService)
 
-			handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, &automock.RuntimeService{}, transact, validHandlerConfig)
+			handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, runtimeService, transact, validHandlerConfig)
 			req := testCase.Request
 
 			if len(testCase.Region) > 0 {
@@ -429,6 +663,256 @@ func TestService_CreateRegional(t *testing.T) {
 
 			//WHEN
 			handler.SubscribeTenant(w, req)
+
+			// THEN
+			resp := w.Result()
+			body, err := ioutil.ReadAll(resp.Body)
+			assert.NoError(t, err)
+
+			if len(testCase.ExpectedErrorOutput) > 0 {
+				assert.Contains(t, string(body), testCase.ExpectedErrorOutput)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			if testCase.ExpectedSuccessOutput != "" {
+				assert.Equal(t, testCase.ExpectedSuccessOutput, string(body))
+			}
+
+			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
+		})
+	}
+
+	// Unsubscribe flow
+	testCases = []struct {
+		Name                  string
+		provisionerFn         func() *automock.TenantProvisioner
+		runtimeServiceFn      func() *automock.RuntimeService
+		TxFn                  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		Request               *http.Request
+		Region                string
+		ExpectedErrorOutput   string
+		ExpectedSuccessOutput string
+		ExpectedStatusCode    int
+	}{
+		{
+			Name:          "Succeeds",
+			TxFn:          txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{}, nil).Once()
+				return provisioner
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:                region,
+			ExpectedSuccessOutput: compassURL,
+			ExpectedStatusCode:    http.StatusOK,
+		},
+		{
+			Name:                "Returns error when region path parameter is missing",
+			TxFn:                txGen.ThatDoesntStartTransaction,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: "Region path parameter is missing from request",
+		},
+		{
+			Name:                "Returns error when parent tenant is not found in body",
+			TxFn:                txGen.ThatDoesntStartTransaction,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingParent)),
+			Region:              region,
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderTenantIDProperty),
+		},
+		{
+			Name:                "Returns error when SubscriptionConsumerID is not found in body",
+			TxFn:                txGen.ThatDoesntStartTransaction,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingSubscriptionConsumerID)),
+			Region:              region,
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionConsumerIDProperty),
+		},
+		{
+			Name:                "Returns error when request body doesn't contain tenant subdomain",
+			TxFn:                txGen.ThatDoesntStartTransaction,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingTenantSubdomain)),
+			Region:              region,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderSubdomainProperty),
+			ExpectedStatusCode:  http.StatusBadRequest,
+		},
+		{
+			Name:                "Returns error when reading request body fails",
+			TxFn:                txGen.ThatDoesntStartTransaction,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, errReader(0)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name:                "Returns error when beginning transaction fails",
+			TxFn:                txGen.ThatFailsOnBegin,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn:    func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name:          "Succeeds when can't find runtimes",
+			TxFn:          txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return(nil, notFoundErr).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: compassURL,
+			ExpectedStatusCode:  http.StatusOK,
+		},
+		{
+			Name:          "Returns error when could not list runtimes",
+			TxFn:          txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return(nil, testError).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name:          "Returns error when could not get label for runtime",
+			TxFn:          txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(nil, testError).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name:          "Returns error when could not parse label value",
+			TxFn:          txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(&invalidTestLabel, nil).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name:          "Returns error when could not set label for runtime",
+			TxFn:          txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(&testLabel, nil).Once()
+				provisioner.On("SetLabel", txtest.CtxWithDBMatcher(), &removeLabelInput).Return(testError).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name:          "Succeeds and creates label",
+			TxFn:          txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(nil, notFoundErr).Once()
+				provisioner.On("SetLabel", txtest.CtxWithDBMatcher(), &emptyLabelInput).Return(nil).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: compassURL,
+			ExpectedStatusCode:  http.StatusOK,
+		},
+		{
+			Name:          "Succeeds and updates label",
+			TxFn:          txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(&testLabel, nil).Once()
+				provisioner.On("SetLabel", txtest.CtxWithDBMatcher(), &removeLabelInput).Return(nil).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: compassURL,
+			ExpectedStatusCode:  http.StatusOK,
+		},
+		{
+			Name:          "Returns error when transaction commit fails",
+			TxFn:          txGen.ThatFailsOnCommit,
+			provisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("GetLabel", txtest.CtxWithDBMatcher(), testRuntime.ID, validHandlerConfig.ConsumerSubaccountIDsLabelKey).Return(&testLabel, nil).Once()
+				provisioner.On("SetLabel", txtest.CtxWithDBMatcher(), &removeLabelInput).Return(nil).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: tenantfetchersvc.InternalServerError,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			_, transact := testCase.TxFn()
+			provisioner := testCase.provisionerFn()
+			runtimeService := testCase.runtimeServiceFn()
+			defer mock.AssertExpectationsForObjects(t, transact, provisioner, runtimeService)
+
+			handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, runtimeService, transact, validHandlerConfig)
+			req := testCase.Request
+
+			if len(testCase.Region) > 0 {
+				vars := map[string]string{
+					"region": testCase.Region,
+				}
+				req = mux.SetURLVars(req, vars)
+			}
+
+			w := httptest.NewRecorder()
+
+			//WHEN
+			handler.UnSubscribeTenant(w, req)
 
 			// THEN
 			resp := w.Result()

@@ -141,7 +141,7 @@ func (r *pgRepository) ListByFiltersGlobal(ctx context.Context, filter []*labelf
 	}
 
 	var entities RuntimeCollection
-	if err := r.listerGlobal.ListGlobal(ctx, entities, additionalConditions...); err != nil {
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, additionalConditions...); err != nil {
 		return nil, err
 	}
 

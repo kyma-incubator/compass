@@ -208,7 +208,7 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 	}
 
 	if err = h.applyRuntimesSubscriptionChange(ctx, subscriptionRequest.SubscriptionConsumerID, subscriptionRequest.SubaccountTenantID, region, isSubscriptionFlow); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while subscribing tenant: %s for %s", mainTenantID, subscriptionRequest.SubscriptionConsumerID)
+		log.C(ctx).WithError(err).Errorf("An error occurred while subscribing tenant with id %q for runtimes with labels: %q and %q", mainTenantID, subscriptionRequest.SubscriptionConsumerID, region)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
