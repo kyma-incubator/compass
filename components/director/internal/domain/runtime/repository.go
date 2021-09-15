@@ -35,6 +35,7 @@ type pgRepository struct {
 	deleter            repo.Deleter
 	pageableQuerier    repo.PageableQuerier
 	lister             repo.Lister
+	listerGlobal       repo.ListerGlobal
 	creator            repo.Creator
 	updater            repo.Updater
 	conv               EntityConverter
@@ -49,6 +50,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		deleter:            repo.NewDeleter(resource.Runtime, runtimeTable, tenantColumn),
 		pageableQuerier:    repo.NewPageableQuerier(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
 		lister:             repo.NewLister(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
+		listerGlobal:       repo.NewListerGlobal(resource.Runtime, runtimeTable, runtimeColumns),
 		creator:            repo.NewCreator(resource.Runtime, runtimeTable, runtimeColumns),
 		updater:            repo.NewUpdater(resource.Runtime, runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
 		conv:               conv,
@@ -124,6 +126,26 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 	runtimeModel := runtimeEnt.ToModel()
 
 	return runtimeModel, nil
+}
+
+// GetByFiltersGlobal missing godoc
+func (r *pgRepository) ListByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
+	filterSubquery, args, err := label.FilterQueryGlobal(model.RuntimeLabelableObject, label.IntersectSet, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var additionalConditions repo.Conditions
+	if filterSubquery != "" {
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	var entities RuntimeCollection
+	if err := r.listerGlobal.ListGlobal(ctx, entities, additionalConditions...); err != nil {
+		return nil, err
+	}
+
+	return r.conv.MultipleFromEntities(entities), nil
 }
 
 // ListAll missing godoc

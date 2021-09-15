@@ -15,13 +15,13 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
 
 const (
-	compassURL                  = "https://github.com/kyma-incubator/compass"
-	tenantCreationFailureMsgFmt = "Failed to create tenant with ID %s"
-	InternalServerError         = "Internal Server Error"
+	compassURL          = "https://github.com/kyma-incubator/compass"
+	InternalServerError = "Internal Server Error"
 )
 
 // TenantProvisioner is used to create all related to the incoming request tenants, and build their hierarchy;
@@ -36,7 +36,7 @@ type TenantProvisioner interface {
 type RuntimeService interface {
 	SetLabel(context.Context, *model.LabelInput) error
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
-	GetByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) (*model.Runtime, error)
+	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // HandlerConfig is the configuration required by the tenant handler.
@@ -87,14 +87,14 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to read tenant information from request body: %v", err)
+		log.C(ctx).WithError(err).Error("Failed to read tenant information from request body")
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
 	subscriptionRequest, err := h.getSubscriptionRequest(body, "")
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to extract tenant information from request body: %v", err)
+		log.C(ctx).WithError(err).Error("Failed to extract tenant information from request body")
 		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %s", err.Error()), http.StatusBadRequest)
 		return
 	}
@@ -103,22 +103,21 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction: %v", err)
+		log.C(ctx).WithError(err).Error("An error occurred while opening db transaction")
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = h.provisionTenants(ctx, subscriptionRequest, "")
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to provision tenant with ID %s: %v", mainTenantID, err)
+	if err = h.provisionTenants(ctx, subscriptionRequest, ""); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to provision tenant with ID %s", mainTenantID)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while commiting db transaction: %v", err)
+		log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
@@ -128,213 +127,12 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 
 // SubscribeTenant handles subscription for tenant. If tenant does not exist, will create it first.
 func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Request) {
-	ctx := request.Context()
-
-	vars := mux.Vars(request)
-	region, ok := vars[h.config.RegionPathParam]
-	if !ok {
-		log.C(ctx).Error("Region path parameter is missing from request")
-		http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
-		return
-	}
-
-	body, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to read tenant information from request body")
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-
-	subscriptionRequest, err := h.getSubscriptionRequest(body, region)
-	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to extract tenant information from request body")
-		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %s", err.Error()), http.StatusBadRequest)
-		return
-	}
-
-	mainTenantID := subscriptionRequest.MainTenantID()
-
-	tx, err := h.transact.Begin()
-	if err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while opening db transaction")
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-	defer h.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	err = h.provisionTenants(ctx, subscriptionRequest, region)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to provision tenant with ID %s", mainTenantID)
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-
-	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(h.config.SubscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionRequest.SubscriptionConsumerID)),
-		labelfilter.NewForKeyWithQuery(h.config.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
-	}
-
-	runtime, err := h.runtimeService.GetByFiltersGlobal(ctx, filters)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			if err = tx.Commit(); err != nil {
-				log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
-				http.Error(writer, InternalServerError, http.StatusInternalServerError)
-				return
-			}
-			log.C(ctx).Debugf("No runtime found for labels %s: %s and %s: %s", h.config.RegionLabelKey, region, h.config.SubscriptionConsumerLabelKey, subscriptionRequest.SubscriptionConsumerID)
-			respondSuccess(ctx, writer, mainTenantID)
-			return
-		}
-
-		log.C(ctx).WithError(err).Errorf("Failed to get runtime for labels %s: %s and %s: %s", h.config.RegionLabelKey, region, h.config.SubscriptionConsumerLabelKey, subscriptionRequest.SubscriptionConsumerID)
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-	ctx = tenant.SaveToContext(ctx, runtime.Tenant, "")
-
-	labelNewValue := make([]string, 0)
-	label, err := h.runtimeService.GetLabel(ctx, runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
-	if err != nil {
-		if !apperrors.IsNotFoundError(err) {
-			log.C(ctx).WithError(err).Errorf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
-			http.Error(writer, InternalServerError, http.StatusInternalServerError)
-			return
-		}
-		// if the error is not found, do nothing
-	} else {
-		labelNewValue, err = labelutils.ValueToStringsSlice(label.Value)
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Failed to parse label values for label with id: %s", label.ID)
-			http.Error(writer, InternalServerError, http.StatusInternalServerError)
-			return
-		}
-	}
-
-	if err := h.runtimeService.SetLabel(ctx, &model.LabelInput{
-		Key:        h.config.ConsumerSubaccountIDsLabelKey,
-		Value:      append(labelNewValue, subscriptionRequest.SubaccountTenantID),
-		ObjectType: model.RuntimeLabelableObject,
-		ObjectID:   runtime.ID,
-	}); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to set label for runtime with id: %s", runtime.ID)
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-
-	if err = tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-
-	respondSuccess(ctx, writer, mainTenantID)
+	h.applySubscriptionChange(writer, request, true)
 }
 
 // SubscribeTenant handles subscription for tenant. If tenant does not exist, will create it first.
 func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Request) {
-	ctx := request.Context()
-
-	vars := mux.Vars(request)
-	region, ok := vars[h.config.RegionPathParam]
-	if !ok {
-		log.C(ctx).Error("Region path parameter is missing from request")
-		http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
-		return
-	}
-
-	body, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to read tenant information from request body")
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-
-	subscriptionRequest, err := h.getSubscriptionRequest(body, region)
-	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to extract tenant information from request body")
-		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %s", err.Error()), http.StatusBadRequest)
-		return
-	}
-
-	mainTenantID := subscriptionRequest.MainTenantID()
-
-	tx, err := h.transact.Begin()
-	if err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while opening db transaction")
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-	defer h.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(h.config.SubscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionRequest.SubscriptionConsumerID)),
-		labelfilter.NewForKeyWithQuery(h.config.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
-	}
-
-	runtime, err := h.runtimeService.GetByFiltersGlobal(ctx, filters)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			if err = tx.Commit(); err != nil {
-				log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
-				http.Error(writer, InternalServerError, http.StatusInternalServerError)
-				return
-			}
-			log.C(ctx).Debugf("No runtime found for labels %s: %s and %s: %s", h.config.RegionLabelKey, region, h.config.SubscriptionConsumerLabelKey, subscriptionRequest.SubscriptionConsumerID)
-			respondSuccess(ctx, writer, mainTenantID)
-			return
-		}
-
-		log.C(ctx).WithError(err).Errorf("Failed to get runtime for labels %s: %s and %s: %s", h.config.RegionLabelKey, region, h.config.SubscriptionConsumerLabelKey, subscriptionRequest.SubscriptionConsumerID)
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-	ctx = tenant.SaveToContext(ctx, runtime.Tenant, "")
-
-	labelOldValue := make([]string, 0)
-	label, err := h.runtimeService.GetLabel(ctx, runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
-	if err != nil {
-		if !apperrors.IsNotFoundError(err) {
-			log.C(ctx).WithError(err).Errorf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
-			http.Error(writer, InternalServerError, http.StatusInternalServerError)
-			return
-		}
-		// if the error is not found, do nothing
-	} else {
-		labelOldValue, err = labelutils.ValueToStringsSlice(label.Value)
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Failed to parse label values for label with id: %s", label.ID)
-			http.Error(writer, InternalServerError, http.StatusInternalServerError)
-			return
-		}
-	}
-	labelNewValue := make([]string, 0)
-	for _, id := range labelOldValue {
-		if id != subscriptionRequest.SubaccountTenantID {
-			labelNewValue = append(labelNewValue, id)
-		}
-	}
-
-	if err := h.runtimeService.SetLabel(ctx, &model.LabelInput{
-		Key:        h.config.ConsumerSubaccountIDsLabelKey,
-		Value:      labelNewValue,
-		ObjectType: model.RuntimeLabelableObject,
-		ObjectID:   runtime.ID,
-	}); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to set label for runtime with id: %s", runtime.ID)
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-
-	if err = tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-
-	respondSuccess(ctx, writer, mainTenantID)
+	h.applySubscriptionChange(writer, request, false)
 }
 
 // DeleteByExternalID handles both regional and non-regional tenant deletion requests.
@@ -363,6 +161,116 @@ func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request
 		log.C(request.Context()).WithError(err).Errorf("Failed to write response body for dependencies request")
 		return
 	}
+}
+
+func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *http.Request, isSubscriptionFlow bool) {
+	ctx := request.Context()
+
+	vars := mux.Vars(request)
+	region, ok := vars[h.config.RegionPathParam]
+	if !ok {
+		log.C(ctx).Error("Region path parameter is missing from request")
+		http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
+		return
+	}
+
+	body, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		log.C(ctx).WithError(err).Error("Failed to read tenant information from request body")
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	subscriptionRequest, err := h.getSubscriptionRequest(body, region)
+	if err != nil {
+		log.C(ctx).WithError(err).Error("Failed to extract tenant information from request body")
+		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %s", err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	mainTenantID := subscriptionRequest.MainTenantID()
+
+	tx, err := h.transact.Begin()
+	if err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while opening db transaction")
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
+		return
+	}
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if isSubscriptionFlow {
+		if err = h.provisionTenants(ctx, subscriptionRequest, region); err != nil {
+			log.C(ctx).WithError(err).Errorf("Failed to provision tenant with ID %s", mainTenantID)
+			http.Error(writer, InternalServerError, http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if err = h.applyRuntimesSubscriptionChange(ctx, subscriptionRequest.SubscriptionConsumerID, subscriptionRequest.SubaccountTenantID, region, isSubscriptionFlow); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while subscribing tenant: %s for %s", mainTenantID, subscriptionRequest.SubscriptionConsumerID)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	respondSuccess(ctx, writer, mainTenantID)
+}
+
+func (h *handler) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionConsumerID, subaccountTenantID, region string, isSubscriptionFlow bool) error {
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(h.config.SubscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionConsumerID)),
+		labelfilter.NewForKeyWithQuery(h.config.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
+	}
+
+	runtimes, err := h.runtimeService.ListByFiltersGlobal(ctx, filters)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil
+		}
+
+		return errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", h.config.RegionLabelKey, region, h.config.SubscriptionConsumerLabelKey, subscriptionConsumerID))
+	}
+
+	for _, runtime := range runtimes {
+		ctx = tenant.SaveToContext(ctx, runtime.Tenant, "")
+
+		labelOldValue := make([]string, 0)
+		label, err := h.runtimeService.GetLabel(ctx, runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
+		if err != nil {
+			if !apperrors.IsNotFoundError(err) {
+				return errors.Wrap(err, fmt.Sprintf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, h.config.ConsumerSubaccountIDsLabelKey))
+			}
+			// if the error is not found, do nothing and continue
+		} else {
+			if labelOldValue, err = labelutils.ValueToStringsSlice(label.Value); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Failed to parse label values for label with id: %s", label.ID))
+			}
+		}
+
+		labelNewValue := make([]string, 0)
+		if isSubscriptionFlow {
+			labelNewValue = append(labelOldValue, subaccountTenantID)
+		} else {
+			labelNewValue = removeElement(labelOldValue, subaccountTenantID)
+		}
+
+		if err := h.runtimeService.SetLabel(ctx, &model.LabelInput{
+			Key:        h.config.ConsumerSubaccountIDsLabelKey,
+			Value:      labelNewValue,
+			ObjectType: model.RuntimeLabelableObject,
+			ObjectID:   runtime.ID,
+		}); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", runtime.ID))
+		}
+	}
+
+	return nil
 }
 
 func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSubscriptionRequest, error) {
@@ -421,4 +329,14 @@ func respondSuccess(ctx context.Context, writer http.ResponseWriter, mainTenantI
 	if _, err := writer.Write([]byte(compassURL)); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write response body for tenant request creation for tenant %s: %v", mainTenantID, err)
 	}
+}
+
+func removeElement(slice []string, elem string) []string {
+	result := make([]string, 0)
+	for _, e := range slice {
+		if e != elem {
+			result = append(result, e)
+		}
+	}
+	return result
 }

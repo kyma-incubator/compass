@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/automock"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
@@ -106,6 +108,13 @@ func TestService_Create(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	bodyWithMissingSubscriptionConsumerID, err := json.Marshal(tenantCreationRequest{
+		TenantID:   tenantExtID,
+		Subdomain:  tenantSubdomain,
+		CustomerID: parentTenantExtID,
+	})
+	assert.NoError(t, err)
+
 	accountProvisioningRequest := tenantfetchersvc.TenantSubscriptionRequest{
 		AccountTenantID:        tenantExtID,
 		CustomerTenantID:       parentTenantExtID,
@@ -176,6 +185,14 @@ func TestService_Create(t *testing.T) {
 			ExpectedStatusCode:  http.StatusBadRequest,
 		},
 		{
+			Name:                "Returns error when request body doesn't contain SubscriptionConsumerID",
+			TxFn:                txGen.ThatDoesntStartTransaction,
+			TenantProvisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingSubscriptionConsumerID)),
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionConsumerIDProperty),
+			ExpectedStatusCode:  http.StatusBadRequest,
+		},
+		{
 			Name:                "Returns error when beginning transaction fails",
 			TxFn:                txGen.ThatFailsOnBegin,
 			TenantProvisionerFn: func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
@@ -242,196 +259,196 @@ func TestService_Create(t *testing.T) {
 	}
 }
 
-//func TestService_CreateRegional(t *testing.T) {
-//	//GIVEN
-//	region := "eu-1"
-//
-//	txGen := txtest.NewTransactionContextGenerator(errors.New("err"))
-//	target := "http://example.com/foo/:region"
-//	txtest.CtxWithDBMatcher()
-//
-//	validRequestBody, err := json.Marshal(regionalTenantCreationRequest{
-//		TenantID:               subaccountTenantExtID,
-//		ParentID:               tenantExtID,
-//		Subdomain:              subaccountTenantSubdomain,
-//		SubscriptionConsumerID: subscriptionConsumerID,
-//	})
-//	assert.NoError(t, err)
-//
-//	bodyWithMissingParent, err := json.Marshal(regionalTenantCreationRequest{
-//		TenantID:               subaccountTenantExtID,
-//		Subdomain:              tenantSubdomain,
-//		SubscriptionConsumerID: subscriptionConsumerID,
-//	})
-//	assert.NoError(t, err)
-//
-//	bodyWithMissingTenantSubdomain, err := json.Marshal(regionalTenantCreationRequest{
-//		TenantID:               subaccountTenantExtID,
-//		ParentID:               tenantExtID,
-//		SubscriptionConsumerID: subscriptionConsumerID,
-//	})
-//	assert.NoError(t, err)
-//
-//	validHandlerConfig := tenantfetchersvc.HandlerConfig{
-//		RegionPathParam: "region",
-//		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
-//			TenantProvider:                 testProviderName,
-//			TenantIDProperty:               tenantProviderTenantIDProperty,
-//			SubaccountTenantIDProperty:     tenantProviderSubaccountTenantIDProperty,
-//			CustomerIDProperty:             tenantProviderCustomerIDProperty,
-//			SubdomainProperty:              tenantProviderSubdomainProperty,
-//			SubscriptionConsumerIDProperty: subscriptionConsumerIDProperty,
-//		},
-//	}
-//	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
-//		SubaccountTenantID:     subaccountTenantExtID,
-//		AccountTenantID:        tenantExtID,
-//		Subdomain:              subaccountTenantSubdomain,
-//		Region:                 region,
-//		SubscriptionConsumerID: subscriptionConsumerID,
-//	}
-//
-//	testCases := []struct {
-//		Name                  string
-//		provisionerFn         func() *automock.TenantProvisioner
-//		runtimeServiceFn      func() *automock.RuntimeService
-//		TxFn                  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-//		Request               *http.Request
-//		Region                string
-//		ExpectedErrorOutput   string
-//		ExpectedSuccessOutput string
-//		ExpectedStatusCode    int
-//	}{
-//		{
-//			Name: "Succeeds",
-//			TxFn: txGen.ThatSucceeds,
-//			provisionerFn: func() *automock.TenantProvisioner {
-//				provisioner := &automock.TenantProvisioner{}
-//				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
-//				return provisioner
-//			},
-//			runtimeServiceFn: func() *automock.RuntimeService {
-//				provisioner := &automock.RuntimeService{}
-//				provisioner.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher(), ).Return(nil).Once()
-//				return provisioner
-//			},
-//			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
-//			Region:                region,
-//			ExpectedSuccessOutput: compassURL,
-//			ExpectedStatusCode:    http.StatusOK,
-//		},
-//		{
-//			Name:                "Returns error when region path parameter is missing",
-//			TxFn:                txGen.ThatDoesntStartTransaction,
-//			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
-//			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
-//			ExpectedStatusCode:  http.StatusBadRequest,
-//			ExpectedErrorOutput: "Region path parameter is missing from request",
-//		},
-//		{
-//			Name:                "Returns error when parent tenant is not found in body",
-//			TxFn:                txGen.ThatDoesntStartTransaction,
-//			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
-//			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingParent)),
-//			Region:              region,
-//			ExpectedStatusCode:  http.StatusBadRequest,
-//			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderTenantIDProperty),
-//		},
-//		{
-//			Name:                "Returns error when reading request body fails",
-//			TxFn:                txGen.ThatDoesntStartTransaction,
-//			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
-//			Request:             httptest.NewRequest(http.MethodPut, target, errReader(0)),
-//			Region:              region,
-//			ExpectedErrorOutput: "Failed to read tenant information from request body",
-//			ExpectedStatusCode:  http.StatusInternalServerError,
-//		},
-//		{
-//			Name:                "Returns error when request body doesn't contain tenant subdomain",
-//			TxFn:                txGen.ThatDoesntStartTransaction,
-//			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
-//			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingTenantSubdomain)),
-//			Region:              region,
-//			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderSubdomainProperty),
-//			ExpectedStatusCode:  http.StatusBadRequest,
-//		},
-//		{
-//			Name:                "Returns error when beginning transaction fails",
-//			TxFn:                txGen.ThatFailsOnBegin,
-//			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
-//			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
-//			Region:              region,
-//			ExpectedErrorOutput: fmt.Sprintf(tenantCreationFailureMsgFmt, regionalTenant.SubaccountTenantID),
-//			ExpectedStatusCode:  http.StatusInternalServerError,
-//		},
-//		{
-//			Name: "Returns error when tenant creation fails",
-//			TxFn: txGen.ThatDoesntExpectCommit,
-//			provisionerFn: func() *automock.TenantProvisioner {
-//				provisioner := &automock.TenantProvisioner{}
-//				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(testError).Once()
-//				return provisioner
-//			},
-//			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
-//			Region:              region,
-//			ExpectedStatusCode:  http.StatusInternalServerError,
-//			ExpectedErrorOutput: fmt.Sprintf(tenantCreationFailureMsgFmt, subaccountTenantExtID),
-//		},
-//		{
-//			Name: "Returns error when transaction commit fails",
-//			TxFn: txGen.ThatFailsOnCommit,
-//			provisionerFn: func() *automock.TenantProvisioner {
-//				provisioner := &automock.TenantProvisioner{}
-//				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
-//				return provisioner
-//			},
-//			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
-//			Region:              region,
-//			ExpectedErrorOutput: fmt.Sprintf(tenantCreationFailureMsgFmt, regionalTenant.SubaccountTenantID),
-//			ExpectedStatusCode:  http.StatusInternalServerError,
-//		},
-//	}
-//
-//	for _, testCase := range testCases {
-//		t.Run(testCase.Name, func(t *testing.T) {
-//			_, transact := testCase.TxFn()
-//			provisioner := testCase.provisionerFn()
-//			defer mock.AssertExpectationsForObjects(t, transact, provisioner)
-//
-//			handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, &automock.RuntimeService{}, transact, validHandlerConfig)
-//			req := testCase.Request
-//
-//			if len(testCase.Region) > 0 {
-//				vars := map[string]string{
-//					"region": testCase.Region,
-//				}
-//				req = mux.SetURLVars(req, vars)
-//			}
-//
-//			w := httptest.NewRecorder()
-//
-//			//WHEN
-//			handler.SubscribeTenant(w, req)
-//
-//			// THEN
-//			resp := w.Result()
-//			body, err := ioutil.ReadAll(resp.Body)
-//			assert.NoError(t, err)
-//
-//			if len(testCase.ExpectedErrorOutput) > 0 {
-//				assert.Contains(t, string(body), testCase.ExpectedErrorOutput)
-//			} else {
-//				assert.NoError(t, err)
-//			}
-//
-//			if testCase.ExpectedSuccessOutput != "" {
-//				assert.Equal(t, testCase.ExpectedSuccessOutput, string(body))
-//			}
-//
-//			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
-//		})
-//	}
-//}
+func TestService_CreateRegional(t *testing.T) {
+	//GIVEN
+	region := "eu-1"
+
+	txGen := txtest.NewTransactionContextGenerator(errors.New("err"))
+	target := "http://example.com/foo/:region"
+	txtest.CtxWithDBMatcher()
+
+	validRequestBody, err := json.Marshal(regionalTenantCreationRequest{
+		TenantID:               subaccountTenantExtID,
+		ParentID:               tenantExtID,
+		Subdomain:              subaccountTenantSubdomain,
+		SubscriptionConsumerID: subscriptionConsumerID,
+	})
+	assert.NoError(t, err)
+
+	bodyWithMissingParent, err := json.Marshal(regionalTenantCreationRequest{
+		TenantID:               subaccountTenantExtID,
+		Subdomain:              tenantSubdomain,
+		SubscriptionConsumerID: subscriptionConsumerID,
+	})
+	assert.NoError(t, err)
+
+	bodyWithMissingTenantSubdomain, err := json.Marshal(regionalTenantCreationRequest{
+		TenantID:               subaccountTenantExtID,
+		ParentID:               tenantExtID,
+		SubscriptionConsumerID: subscriptionConsumerID,
+	})
+	assert.NoError(t, err)
+
+	validHandlerConfig := tenantfetchersvc.HandlerConfig{
+		RegionPathParam: "region",
+		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
+			TenantProvider:                 testProviderName,
+			TenantIDProperty:               tenantProviderTenantIDProperty,
+			SubaccountTenantIDProperty:     tenantProviderSubaccountTenantIDProperty,
+			CustomerIDProperty:             tenantProviderCustomerIDProperty,
+			SubdomainProperty:              tenantProviderSubdomainProperty,
+			SubscriptionConsumerIDProperty: subscriptionConsumerIDProperty,
+		},
+	}
+	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
+		SubaccountTenantID:     subaccountTenantExtID,
+		AccountTenantID:        tenantExtID,
+		Subdomain:              subaccountTenantSubdomain,
+		Region:                 region,
+		SubscriptionConsumerID: subscriptionConsumerID,
+	}
+
+	testCases := []struct {
+		Name                  string
+		provisionerFn         func() *automock.TenantProvisioner
+		runtimeServiceFn      func() *automock.RuntimeService
+		TxFn                  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		Request               *http.Request
+		Region                string
+		ExpectedErrorOutput   string
+		ExpectedSuccessOutput string
+		ExpectedStatusCode    int
+	}{
+		{
+			Name: "Succeeds",
+			TxFn: txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
+				return provisioner
+			},
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("GetByFiltersGlobal", txtest.CtxWithDBMatcher()).Return(nil).Once()
+				return provisioner
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:                region,
+			ExpectedSuccessOutput: compassURL,
+			ExpectedStatusCode:    http.StatusOK,
+		},
+		{
+			Name:                "Returns error when region path parameter is missing",
+			TxFn:                txGen.ThatDoesntStartTransaction,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: "Region path parameter is missing from request",
+		},
+		{
+			Name:                "Returns error when parent tenant is not found in body",
+			TxFn:                txGen.ThatDoesntStartTransaction,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingParent)),
+			Region:              region,
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderTenantIDProperty),
+		},
+		{
+			Name:                "Returns error when reading request body fails",
+			TxFn:                txGen.ThatDoesntStartTransaction,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, errReader(0)),
+			Region:              region,
+			ExpectedErrorOutput: "Failed to read tenant information from request body",
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name:                "Returns error when request body doesn't contain tenant subdomain",
+			TxFn:                txGen.ThatDoesntStartTransaction,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingTenantSubdomain)),
+			Region:              region,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderSubdomainProperty),
+			ExpectedStatusCode:  http.StatusBadRequest,
+		},
+		{
+			Name:                "Returns error when beginning transaction fails",
+			TxFn:                txGen.ThatFailsOnBegin,
+			provisionerFn:       func() *automock.TenantProvisioner { return &automock.TenantProvisioner{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: fmt.Sprintf(tenantCreationFailureMsgFmt, regionalTenant.SubaccountTenantID),
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+		{
+			Name: "Returns error when tenant creation fails",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			provisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(testError).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedStatusCode:  http.StatusInternalServerError,
+			ExpectedErrorOutput: fmt.Sprintf(tenantCreationFailureMsgFmt, subaccountTenantExtID),
+		},
+		{
+			Name: "Returns error when transaction commit fails",
+			TxFn: txGen.ThatFailsOnCommit,
+			provisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), regionalTenant).Return(nil).Once()
+				return provisioner
+			},
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:              region,
+			ExpectedErrorOutput: fmt.Sprintf(tenantCreationFailureMsgFmt, regionalTenant.SubaccountTenantID),
+			ExpectedStatusCode:  http.StatusInternalServerError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			_, transact := testCase.TxFn()
+			provisioner := testCase.provisionerFn()
+			defer mock.AssertExpectationsForObjects(t, transact, provisioner)
+
+			handler := tenantfetchersvc.NewTenantsHTTPHandler(provisioner, &automock.RuntimeService{}, transact, validHandlerConfig)
+			req := testCase.Request
+
+			if len(testCase.Region) > 0 {
+				vars := map[string]string{
+					"region": testCase.Region,
+				}
+				req = mux.SetURLVars(req, vars)
+			}
+
+			w := httptest.NewRecorder()
+
+			//WHEN
+			handler.SubscribeTenant(w, req)
+
+			// THEN
+			resp := w.Result()
+			body, err := ioutil.ReadAll(resp.Body)
+			assert.NoError(t, err)
+
+			if len(testCase.ExpectedErrorOutput) > 0 {
+				assert.Contains(t, string(body), testCase.ExpectedErrorOutput)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			if testCase.ExpectedSuccessOutput != "" {
+				assert.Equal(t, testCase.ExpectedSuccessOutput, string(body))
+			}
+
+			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
+		})
+	}
+}
 
 func TestService_Delete(t *testing.T) {
 	//GIVEN
