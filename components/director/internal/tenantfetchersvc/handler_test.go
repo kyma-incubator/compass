@@ -10,19 +10,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-
 	"github.com/gorilla/mux"
-
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
