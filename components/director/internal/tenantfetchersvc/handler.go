@@ -20,8 +20,10 @@ import (
 )
 
 const (
-	compassURL          = "https://github.com/kyma-incubator/compass"
+	// InternalServerError message
 	InternalServerError = "Internal Server Error"
+
+	compassURL = "https://github.com/kyma-incubator/compass"
 )
 
 // TenantProvisioner is used to create all related to the incoming request tenants, and build their hierarchy;
@@ -253,7 +255,7 @@ func (h *handler) applyRuntimesSubscriptionChange(ctx context.Context, subscript
 			}
 		}
 
-		labelNewValue := make([]string, 0)
+		var labelNewValue []string
 		if isSubscriptionFlow {
 			labelNewValue = append(labelOldValue, subaccountTenantID)
 		} else {

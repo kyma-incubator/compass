@@ -41,8 +41,7 @@ const (
 	tenantProviderSubaccountTenantIDProperty = "subaccountTenantId"
 	subscriptionConsumerIDProperty           = "subscriptionConsumerId"
 
-	tenantCreationFailureMsgFmt = "Failed to create tenant with ID %s"
-	compassURL                  = "https://github.com/kyma-incubator/compass"
+	compassURL = "https://github.com/kyma-incubator/compass"
 )
 
 var (
