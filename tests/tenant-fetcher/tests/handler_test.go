@@ -43,18 +43,20 @@ const (
 )
 
 type Tenant struct {
-	TenantID     string
-	SubaccountID string
-	CustomerID   string
-	Subdomain    string
+	TenantID               string
+	SubaccountID           string
+	CustomerID             string
+	Subdomain              string
+	SubscriptionConsumerID string
 }
 
 func TestOnboardingHandler(t *testing.T) {
 	t.Run("Success with tenant and customerID", func(t *testing.T) {
 		tenantWithCustomer := Tenant{
-			TenantID:   uuid.New().String(),
-			CustomerID: uuid.New().String(),
-			Subdomain:  defaultSubdomain,
+			TenantID:               uuid.New().String(),
+			CustomerID:             uuid.New().String(),
+			Subdomain:              defaultSubdomain,
+			SubscriptionConsumerID: uuid.New().String(),
 		}
 		// WHEN
 		addTenantExpectStatusCode(t, tenantWithCustomer, http.StatusOK)
@@ -72,8 +74,9 @@ func TestOnboardingHandler(t *testing.T) {
 
 	t.Run("Success with only tenant", func(t *testing.T) {
 		tenant := Tenant{
-			TenantID:  uuid.New().String(),
-			Subdomain: defaultSubdomain,
+			TenantID:               uuid.New().String(),
+			Subdomain:              defaultSubdomain,
+			SubscriptionConsumerID: uuid.New().String(),
 		}
 
 		addTenantExpectStatusCode(t, tenant, http.StatusOK)
@@ -88,9 +91,10 @@ func TestOnboardingHandler(t *testing.T) {
 	t.Run("Successful account tenant creation with matching account and subaccount tenant IDs", func(t *testing.T) {
 		id := uuid.New().String()
 		tenant := Tenant{
-			TenantID:     id,
-			SubaccountID: id,
-			Subdomain:    defaultSubdomain,
+			TenantID:               id,
+			SubaccountID:           id,
+			Subdomain:              defaultSubdomain,
+			SubscriptionConsumerID: uuid.New().String(),
 		}
 
 		addTenantExpectStatusCode(t, tenant, http.StatusOK)
@@ -104,9 +108,10 @@ func TestOnboardingHandler(t *testing.T) {
 
 	t.Run("Should not add already existing tenants", func(t *testing.T) {
 		tenantWithCustomer := Tenant{
-			TenantID:   uuid.New().String(),
-			CustomerID: uuid.New().String(),
-			Subdomain:  defaultSubdomain,
+			TenantID:               uuid.New().String(),
+			CustomerID:             uuid.New().String(),
+			Subdomain:              defaultSubdomain,
+			SubscriptionConsumerID: uuid.New().String(),
 		}
 		//GIVEN
 		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
@@ -128,7 +133,8 @@ func TestOnboardingHandler(t *testing.T) {
 
 	t.Run("Should fail when no tenantID is provided", func(t *testing.T) {
 		providedTenant := Tenant{
-			CustomerID: uuid.New().String(),
+			CustomerID:             uuid.New().String(),
+			SubscriptionConsumerID: uuid.New().String(),
 		}
 
 		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
@@ -144,6 +150,25 @@ func TestOnboardingHandler(t *testing.T) {
 	})
 
 	t.Run("Should fail when no subdomain is provided", func(t *testing.T) {
+		providedTenant := Tenant{
+			TenantID:               uuid.New().String(),
+			CustomerID:             uuid.New().String(),
+			SubscriptionConsumerID: uuid.New().String(),
+		}
+
+		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+		require.NoError(t, err)
+
+		addTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
+
+		tenants, err := fixtures.GetTenants(dexGraphQLClient)
+		require.NoError(t, err)
+
+		// THEN
+		assert.Equal(t, len(oldTenantState), len(tenants))
+	})
+
+	t.Run("Should fail when no SubscriptionConsumerID is provided", func(t *testing.T) {
 		providedTenant := Tenant{
 			TenantID:   uuid.New().String(),
 			CustomerID: uuid.New().String(),
@@ -168,9 +193,10 @@ func TestOnboardingHandler(t *testing.T) {
 			Subdomain: defaultSubdomain,
 		}
 		childTenant := Tenant{
-			SubaccountID: uuid.New().String(),
-			TenantID:     parentTenant.TenantID,
-			Subdomain:    defaultSubdomain,
+			SubaccountID:           uuid.New().String(),
+			TenantID:               parentTenant.TenantID,
+			Subdomain:              defaultSubdomain,
+			SubscriptionConsumerID: uuid.New().String(),
 		}
 
 		addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
@@ -187,8 +213,9 @@ func TestOnboardingHandler(t *testing.T) {
 func TestDecommissioningHandler(t *testing.T) {
 	t.Run("Success noop", func(t *testing.T) {
 		providedTenant := Tenant{
-			TenantID:  uuid.New().String(),
-			Subdomain: defaultSubdomain,
+			TenantID:               uuid.New().String(),
+			Subdomain:              defaultSubdomain,
+			SubscriptionConsumerID: uuid.New().String(),
 		}
 
 		addTenantExpectStatusCode(t, providedTenant, http.StatusOK)
@@ -211,8 +238,9 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			// GIVEN
 			providedTenant := Tenant{
-				TenantID:  uuid.New().String(),
-				Subdomain: defaultSubdomain,
+				TenantID:               uuid.New().String(),
+				Subdomain:              defaultSubdomain,
+				SubscriptionConsumerID: uuid.New().String(),
 			}
 
 			// WHEN
@@ -234,9 +262,10 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain: defaultSubdomain,
 			}
 			childTenant := Tenant{
-				SubaccountID: uuid.New().String(),
-				TenantID:     parentTenant.TenantID,
-				Subdomain:    defaultSubaccountSubdomain,
+				SubaccountID:           uuid.New().String(),
+				TenantID:               parentTenant.TenantID,
+				Subdomain:              defaultSubaccountSubdomain,
+				SubscriptionConsumerID: uuid.New().String(),
 			}
 
 			addRegionalTenantExpectStatusCode(t, parentTenant, http.StatusOK)
@@ -264,10 +293,11 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 		t.Run("Success when parent account tenant does not exist", func(t *testing.T) {
 			// GIVEN
 			providedTenant := Tenant{
-				TenantID:     uuid.New().String(),
-				CustomerID:   uuid.New().String(),
-				SubaccountID: uuid.New().String(),
-				Subdomain:    defaultSubaccountSubdomain,
+				TenantID:               uuid.New().String(),
+				CustomerID:             uuid.New().String(),
+				SubaccountID:           uuid.New().String(),
+				Subdomain:              defaultSubaccountSubdomain,
+				SubscriptionConsumerID: uuid.New().String(),
 			}
 
 			// THEN
@@ -298,9 +328,10 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain: defaultSubaccountSubdomain,
 			}
 			childTenant := Tenant{
-				TenantID:     parentTenantId,
-				SubaccountID: uuid.New().String(),
-				Subdomain:    defaultSubaccountSubdomain,
+				TenantID:               parentTenantId,
+				SubaccountID:           uuid.New().String(),
+				Subdomain:              defaultSubaccountSubdomain,
+				SubscriptionConsumerID: uuid.New().String(),
 			}
 			oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 			require.NoError(t, err)
@@ -329,9 +360,10 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 		t.Run("Should fail when parent tenantID is not provided", func(t *testing.T) {
 			// GIVEN
 			providedTenant := Tenant{
-				CustomerID:   uuid.New().String(),
-				SubaccountID: uuid.New().String(),
-				Subdomain:    defaultSubaccountSubdomain,
+				CustomerID:             uuid.New().String(),
+				SubaccountID:           uuid.New().String(),
+				Subdomain:              defaultSubaccountSubdomain,
+				SubscriptionConsumerID: uuid.New().String(),
 			}
 			oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
 			require.NoError(t, err)
@@ -346,6 +378,26 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 		})
 
 		t.Run("Should fail when subdomain is not provided", func(t *testing.T) {
+			// GIVEN
+			providedTenant := Tenant{
+				TenantID:               uuid.New().String(),
+				SubaccountID:           uuid.New().String(),
+				CustomerID:             uuid.New().String(),
+				SubscriptionConsumerID: uuid.New().String(),
+			}
+			oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+			require.NoError(t, err)
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
+
+			// THEN
+			tenants, err := fixtures.GetTenants(dexGraphQLClient)
+			require.NoError(t, err)
+			assert.Equal(t, len(oldTenantState), len(tenants))
+		})
+
+		t.Run("Should fail when SubscriptionConsumerID is not provided", func(t *testing.T) {
 			// GIVEN
 			providedTenant := Tenant{
 				TenantID:     uuid.New().String(),
@@ -369,8 +421,9 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 func TestRegionalDecommissioningHandler(t *testing.T) {
 	t.Run("Success noop", func(t *testing.T) {
 		providedTenant := Tenant{
-			TenantID:  uuid.New().String(),
-			Subdomain: defaultSubdomain,
+			TenantID:               uuid.New().String(),
+			Subdomain:              defaultSubdomain,
+			SubscriptionConsumerID: uuid.New().String(),
 		}
 
 		addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
