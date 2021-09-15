@@ -48,16 +48,6 @@ spec:
               value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
-            - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
-            - name: CA_SECRET_NAME
-              value: "{{ .Values.global.connector.secrets.ca.name }}"
-            - name: CA_SECRET_NAMESPACE
-              value: "{{ .Values.global.connector.secrets.ca.namespace }}"
-            - name: CA_SECRET_CERTIFICATE_KEY
-              value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
-            - name: CA_SECRET_KEY_KEY
-              value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -98,13 +88,9 @@ spec:
                 secretKeyRef:
                   name: admin-user
                   key: password
-            - name: APP_DEFAULT_SCENARIO_ENABLED
-              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_IS_WITH_TOKEN
               value: "{{.Values.global.tests.token.server.enabled}}"
             - name: APP_ADDRESS
               value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
-            - name: SKIP_TESTS_REGEX
-              value: {{ .Values.global.tests.ordService.skipPattern }}

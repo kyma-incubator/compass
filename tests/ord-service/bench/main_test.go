@@ -35,7 +35,6 @@ func TestMain(m *testing.M) {
 	defer tenant.TestTenants.Cleanup()
 
 	dexToken := server.Token()
-
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 
 	exitVal := m.Run()
