@@ -1,5 +1,50 @@
 BEGIN;
 
+CREATE OR REPLACE FUNCTION apps_subaccounts_func()
+    RETURNS TABLE
+            (
+                id                 uuid,
+                tenant_id          uuid,
+                provider_tenant_id uuid
+            )
+    LANGUAGE plpgsql
+AS
+$$
+BEGIN
+    RETURN QUERY
+        SELECT l.app_id                 AS id,
+               asa.selector_value::uuid AS tenant_id,
+               asa.selector_value::uuid AS provider_tenant_id
+        FROM labels l
+                 -- 2) Get subaccounts in those scenarios (Putting a subaccount in a
+                 -- scenario will reflect on creating an ASA for the subaccount.
+                 JOIN automatic_scenario_assignments asa
+                      ON asa.tenant_id = l.tenant_id AND l.value ? asa.scenario::text AND
+                         asa.selector_key::text = 'global_subaccount_id'::text
+             -- 1) Get all scenario labels for applications
+        WHERE l.app_id IS NOT NULL
+          AND l.key::text = 'scenarios'::text;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION consumers_provider_for_runtimes_func()
+    RETURNS TABLE
+            (
+                provider_tenant  jsonb,
+                consumer_tenants jsonb
+            )
+    LANGUAGE plpgsql
+AS
+$$
+BEGIN
+    RETURN QUERY
+        SELECT l1.value AS provider_tenant, l2.value AS consumer_tenants
+        FROM (SELECT * FROM labels WHERE key::text = 'global_subaccount_id') l1 -- Get the subaccount for each runtime
+                 JOIN (SELECT * FROM labels WHERE key::text = 'consumer_subaccount_ids') l2 -- Get all the consumer subaccounts for each runtime
+                      ON l1.runtime_id = l2.runtime_id AND l1.runtime_id IS NOT NULL;
+END
+$$;
+
 DROP VIEW IF EXISTS tenants_apps;
 
 CREATE OR REPLACE VIEW tenants_apps
@@ -7,23 +52,8 @@ CREATE OR REPLACE VIEW tenants_apps
              integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error,
              app_template_id, correlation_ids, system_number, product_type)
 AS
-WITH apps_subaccounts AS (SELECT l.app_id                 AS id,
-                                 asa.selector_value::uuid AS tenant_id,
-                                 asa.selector_value::uuid AS provider_tenant_id
-                          FROM labels l
-                                   -- 2) Get subaccounts in those scenarios (Putting a subaccount in a
-                                   -- scenario will reflect on creating an ASA for the subaccount.
-                                   JOIN automatic_scenario_assignments asa
-                                        ON asa.tenant_id = l.tenant_id AND l.value ? asa.scenario::text AND
-                                           asa.selector_key::text = 'global_subaccount_id'::text
-                               -- 1) Get all scenario labels for applications
-                          WHERE l.app_id IS NOT NULL
-                            AND l.key::text = 'scenarios'::text),
-     consumers_provider_for_runtimes AS (
-         SELECT l1.value AS provider_tenant, l2.value AS consumer_tenants
-         FROM (SELECT * FROM labels WHERE key::text = 'global_subaccount_id') l1 -- Get the subaccount for each runtime
-                  JOIN (SELECT * FROM labels WHERE key::text = 'consumer_subaccount_ids') l2 -- Get all the consumer subaccounts for each runtime
-                       ON l1.runtime_id = l2.runtime_id AND l1.runtime_id IS NOT NULL)
+WITH apps_subaccounts AS (SELECT * FROM apps_subaccounts_func()),
+     consumers_provider_for_runtimes AS (SELECT * FROM consumers_provider_for_runtimes_func())
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.provider_tenant_id,
                 apps.id,
