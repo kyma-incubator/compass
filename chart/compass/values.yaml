@@ -75,7 +75,7 @@ global:
       version: "PR-2003"
     director:
       dir:
-      version: "PR-2007"
+      version: "PR-2019"
     gateway:
       dir:
       version: "PR-2003"
@@ -104,7 +104,7 @@ global:
       version: "PR-42"
     e2e_tests:
       dir:
-      version: "PR-2007"
+      version: "PR-2019"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -130,6 +130,7 @@ global:
       port: 8080
     metrics:
       port: 3003
+      enableClientInstrumentation: true
     operations:
       port: 3002
       path: "/operation"
@@ -473,7 +474,7 @@ global:
       gatewayHost: "compass-gateway"
       trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
       attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
-      path: tenants/<.*>
+      path: /tenants/<.*>
       upstreamComponent: "compass-tenant-fetcher"
 
   externalServicesMock:

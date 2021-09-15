@@ -33,9 +33,9 @@ const (
 	tenantSubdomain = "mytenant"
 	tenantRegion    = "myregion"
 
-	subaccountTenantSubdomain = "myregionaltenant"
-	subaccountTenantExtID     = "regional-tenant-external-id"
-	subscriptionConsumerID    = "123"
+	regionalTenantSubdomain = "myregionaltenant"
+	subaccountTenantExtID   = "subaccount-tenant-external-id"
+	subscriptionConsumerID  = "123"
 
 	parentTenantExtID = "parent-tenant-external-id"
 
@@ -53,6 +53,7 @@ var (
 	testError          = errors.New("test error")
 	notFoundErr        = apperrors.NewNotFoundErrorWithType(resource.Runtime)
 	validHandlerConfig = tenantfetchersvc.HandlerConfig{
+		RegionPathParam:               "region",
 		RegionLabelKey:                "regionKey",
 		SubscriptionConsumerLabelKey:  "SubscriptionConsumerLabelKey",
 		ConsumerSubaccountIDsLabelKey: "ConsumerSubaccountIDsLabelKey",
@@ -62,6 +63,7 @@ var (
 			CustomerIDProperty:             tenantProviderCustomerIDProperty,
 			SubdomainProperty:              tenantProviderSubdomainProperty,
 			SubscriptionConsumerIDProperty: subscriptionConsumerIDProperty,
+			SubaccountTenantIDProperty:     tenantProviderSubaccountTenantIDProperty,
 		},
 	}
 	testRuntime = model.Runtime{
@@ -119,11 +121,12 @@ type tenantCreationRequest struct {
 	CustomerID             string `json:"customerId"`
 	Subdomain              string `json:"subdomain"`
 	SubscriptionConsumerID string `json:"subscriptionConsumerId"`
+	SubaccountID           string `json:"subaccountTenantId"`
 }
 
 type regionalTenantCreationRequest struct {
-	TenantID               string `json:"subaccountTenantId"`
-	ParentID               string `json:"tenantId"`
+	SubaccountID           string `json:"subaccountTenantId"`
+	TenantID               string `json:"tenantId"`
 	Subdomain              string `json:"subdomain"`
 	SubscriptionConsumerID string `json:"subscriptionConsumerId"`
 }
@@ -156,6 +159,14 @@ func TestService_Create(t *testing.T) {
 
 	bodyWithMissingParent, err := json.Marshal(tenantCreationRequest{
 		TenantID:               tenantExtID,
+		Subdomain:              tenantSubdomain,
+		SubscriptionConsumerID: subscriptionConsumerID,
+	})
+	assert.NoError(t, err)
+	bodyWithMathcingChild, err := json.Marshal(tenantCreationRequest{
+		TenantID:               tenantExtID,
+		SubaccountID:           tenantExtID,
+		CustomerID:             parentTenantExtID,
 		Subdomain:              tenantSubdomain,
 		SubscriptionConsumerID: subscriptionConsumerID,
 	})
@@ -217,6 +228,18 @@ func TestService_Create(t *testing.T) {
 				return provisioner
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingParent)),
+			ExpectedSuccessOutput: compassURL,
+			ExpectedStatusCode:    http.StatusOK,
+		},
+		{
+			Name: "Succeeds when matching child tenant ID is provided",
+			TxFn: txGen.ThatSucceeds,
+			TenantProvisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionTenants", txtest.CtxWithDBMatcher(), accountProvisioningRequest).Return(nil).Once()
+				return provisioner
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMathcingChild)),
 			ExpectedSuccessOutput: compassURL,
 			ExpectedStatusCode:    http.StatusOK,
 		},
@@ -328,31 +351,39 @@ func TestService_SubscriptionFlows(t *testing.T) {
 	txtest.CtxWithDBMatcher()
 
 	validRequestBody, err := json.Marshal(regionalTenantCreationRequest{
-		TenantID:               subaccountTenantExtID,
-		ParentID:               tenantExtID,
-		Subdomain:              subaccountTenantSubdomain,
+		SubaccountID:           subaccountTenantExtID,
+		TenantID:               tenantExtID,
+		Subdomain:              regionalTenantSubdomain,
 		SubscriptionConsumerID: subscriptionConsumerID,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingParent, err := json.Marshal(regionalTenantCreationRequest{
-		TenantID:               subaccountTenantExtID,
+		SubaccountID:           subaccountTenantExtID,
 		Subdomain:              tenantSubdomain,
 		SubscriptionConsumerID: subscriptionConsumerID,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingTenantSubdomain, err := json.Marshal(regionalTenantCreationRequest{
-		TenantID:               subaccountTenantExtID,
-		ParentID:               tenantExtID,
+		SubaccountID:           subaccountTenantExtID,
+		TenantID:               tenantExtID,
 		SubscriptionConsumerID: subscriptionConsumerID,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingSubscriptionConsumerID, err := json.Marshal(regionalTenantCreationRequest{
-		TenantID:  subaccountTenantExtID,
-		ParentID:  tenantExtID,
-		Subdomain: tenantSubdomain,
+		SubaccountID: subaccountTenantExtID,
+		TenantID:     tenantExtID,
+		Subdomain:    regionalTenantSubdomain,
+	})
+	assert.NoError(t, err)
+
+	bodyWithMatchingAccountAndSubaccountIDs, err := json.Marshal(regionalTenantCreationRequest{
+		TenantID:               tenantExtID,
+		SubaccountID:           tenantExtID,
+		Subdomain:              regionalTenantSubdomain,
+		SubscriptionConsumerID: subscriptionConsumerID,
 	})
 	assert.NoError(t, err)
 
@@ -373,7 +404,14 @@ func TestService_SubscriptionFlows(t *testing.T) {
 	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
 		SubaccountTenantID:     subaccountTenantExtID,
 		AccountTenantID:        tenantExtID,
-		Subdomain:              subaccountTenantSubdomain,
+		Subdomain:              regionalTenantSubdomain,
+		Region:                 region,
+		SubscriptionConsumerID: subscriptionConsumerID,
+	}
+
+	accountTenantReq := tenantfetchersvc.TenantSubscriptionRequest{
+		AccountTenantID:        tenantExtID,
+		Subdomain:              regionalTenantSubdomain,
 		Region:                 region,
 		SubscriptionConsumerID: subscriptionConsumerID,
 	}
@@ -409,6 +447,24 @@ func TestService_SubscriptionFlows(t *testing.T) {
 				return provisioner
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
+			Region:                region,
+			ExpectedSuccessOutput: compassURL,
+			ExpectedStatusCode:    http.StatusOK,
+		},
+		{
+			Name: "Succeeds to create account tenant when account ID and subaccount IDs are matching",
+			TxFn: txGen.ThatSucceeds,
+			provisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionRegionalTenants", txtest.CtxWithDBMatcher(), accountTenantReq).Return(nil).Once()
+				return provisioner
+			},
+			runtimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", txtest.CtxWithDBMatcher(), filters).Return([]*model.Runtime{}, nil).Once()
+				return provisioner
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMatchingAccountAndSubaccountIDs)),
 			Region:                region,
 			ExpectedSuccessOutput: compassURL,
 			ExpectedStatusCode:    http.StatusOK,

@@ -727,10 +727,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 func TestRegenerateOneTimeToken(t *testing.T) {
 	const (
-		systemAuthID       = "sysAuthID"
+		systemAuthID       = "123"
 		connectorURL       = "http://connector.url"
 		legacyConnectorURL = "http://connector.url"
-		token              = "tokenValue"
+		token              = "YWJj"
 	)
 
 	ottConfig := onetimetoken.Config{

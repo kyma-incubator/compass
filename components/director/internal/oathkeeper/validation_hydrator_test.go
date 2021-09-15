@@ -22,7 +22,7 @@ import (
 
 const (
 	clientID = "id"
-	token    = "tokenValue"
+	token    = "YWJj"
 )
 
 func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {

@@ -285,14 +285,20 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		return nil, err
 	}
 
-	return &TenantSubscriptionRequest{
+	req := &TenantSubscriptionRequest{
 		AccountTenantID:        properties[h.config.TenantIDProperty],
 		SubaccountTenantID:     properties[h.config.SubaccountTenantIDProperty],
 		CustomerTenantID:       properties[h.config.CustomerIDProperty],
 		Subdomain:              properties[h.config.SubdomainProperty],
 		SubscriptionConsumerID: properties[h.config.SubscriptionConsumerIDProperty],
 		Region:                 region,
-	}, nil
+	}
+
+	if req.AccountTenantID == req.SubaccountTenantID {
+		req.SubaccountTenantID = ""
+	}
+
+	return req, nil
 }
 
 func (h *handler) provisionTenants(ctx context.Context, request *TenantSubscriptionRequest, region string) error {

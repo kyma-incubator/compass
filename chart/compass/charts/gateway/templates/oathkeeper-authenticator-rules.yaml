@@ -11,7 +11,7 @@ spec:
     url: "http://{{ $config.upstreamComponent }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.global.gateway.port }}"
   match:
     methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"]
-    url: <http|https>://{{ $config.gatewayHost }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>/{{ $config.path }}
+    url: <http|https>://{{ $config.gatewayHost }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>{{ $config.path }}
   authenticators:
   - handler: noop
   authorizer:
