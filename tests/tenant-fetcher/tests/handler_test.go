@@ -189,8 +189,9 @@ func TestOnboardingHandler(t *testing.T) {
 	t.Run("Should fail with subaccount tenant", func(t *testing.T) {
 		// GIVEN
 		parentTenant := Tenant{
-			TenantID:  uuid.New().String(),
-			Subdomain: defaultSubdomain,
+			TenantID:               uuid.New().String(),
+			Subdomain:              defaultSubdomain,
+			SubscriptionConsumerID: uuid.New().String(),
 		}
 		childTenant := Tenant{
 			SubaccountID:           uuid.New().String(),
@@ -258,8 +259,9 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 		t.Run("Success when parent account tenant is pre-existing", func(t *testing.T) {
 			// GIVEN
 			parentTenant := Tenant{
-				TenantID:  uuid.New().String(),
-				Subdomain: defaultSubdomain,
+				TenantID:               uuid.New().String(),
+				Subdomain:              defaultSubdomain,
+				SubscriptionConsumerID: uuid.New().String(),
 			}
 			childTenant := Tenant{
 				SubaccountID:           uuid.New().String(),
@@ -324,8 +326,9 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// GIVEN
 			parentTenantId := uuid.New().String()
 			parentTenant := Tenant{
-				TenantID:  parentTenantId,
-				Subdomain: defaultSubaccountSubdomain,
+				TenantID:               parentTenantId,
+				Subdomain:              defaultSubaccountSubdomain,
+				SubscriptionConsumerID: uuid.New().String(),
 			}
 			childTenant := Tenant{
 				TenantID:               parentTenantId,
