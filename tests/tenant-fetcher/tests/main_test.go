@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/machinebox/graphql"
@@ -43,6 +45,7 @@ type testConfig struct {
 	TenantFetcherFullURL             string `envconfig:"-"`
 	TenantFetcherFullRegionalURL     string `envconfig:"-"`
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`
+	ConsumerSubaccountIDsLabelKey    string `envconfig:"APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY"`
 }
 
 type TenantProviderConfig struct {
@@ -60,6 +63,9 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
+
+	tenant.TestTenants.Init()
+	defer tenant.TestTenants.Cleanup()
 
 	dexToken := server.Token()
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)

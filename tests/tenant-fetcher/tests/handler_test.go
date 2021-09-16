@@ -18,6 +18,7 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -25,14 +26,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tidwall/gjson"
-	"github.com/tidwall/sjson"
-
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+	tenant_utils "github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 const (
@@ -417,6 +420,55 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			tenants, err := fixtures.GetTenants(dexGraphQLClient)
 			require.NoError(t, err)
 			assert.Equal(t, len(oldTenantState), len(tenants))
+		})
+	})
+
+	t.Run("Regional subaccount tenant subscription", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			// GIVEN
+			ctx := context.Background()
+			subscriptionConsumerID := uuid.New().String()
+			subaccountID := uuid.New().String()
+
+			tenantId := tenant_utils.TestTenants.GetDefaultTenantID()
+
+			givenInput := graphql.RuntimeInput{
+				Name:        "runtime-subscription-consumer",
+				Description: ptr.String("runtime-subscription-consumer"),
+				Labels:      graphql.Labels{"region_key": []interface{}{regionPathParamValue}, "subscription_consumer_id": []interface{}{subscriptionConsumerID}},
+			}
+			runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
+			require.NoError(t, err)
+			actualRuntime := graphql.RuntimeExt{}
+
+			registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
+			err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &actualRuntime)
+			defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &actualRuntime)
+
+			providedTenant := Tenant{
+				TenantID:               uuid.New().String(),
+				SubaccountID:           subaccountID,
+				Subdomain:              defaultSubdomain,
+				SubscriptionConsumerID: subscriptionConsumerID,
+			}
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
+
+			// THEN
+			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain)
+			require.Equal(t, regionPathParamValue, tenant.Labels["region"])
+
+			subscribedRuntime := graphql.RuntimeExt{}
+			getReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)
+			err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getReq, &subscribedRuntime)
+			require.NoError(t, err)
+			consumerSubaccountIDsLabel, ok := subscribedRuntime.Labels[config.ConsumerSubaccountIDsLabelKey].([]string)
+			require.Equal(t, true, ok)
+			assert.Len(t, consumerSubaccountIDsLabel, 1)
+			require.Equal(t, subaccountID, consumerSubaccountIDsLabel[0])
 		})
 	})
 }
