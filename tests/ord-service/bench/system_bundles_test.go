@@ -65,8 +65,9 @@ func BenchmarkSystemBundles(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		respBody := makeRequestWithHeaders(b, intSystemHttpClient, fmt.Sprintf("%s/systemInstances?$expand=consumptionBundles($expand=apis,events)&$format=json", testConfig.ORDServiceURL), map[string][]string{tenantHeader: {defaultTestTenant}})
 
+		b.Log(respBody)
 		//THEN
-		require.Len(b, appsCount, len(gjson.Get(respBody, "value").Array()))
+		require.Len(b, len((gjson.Get(respBody, "value")).Array()), appsCount)
 	}
 
 	b.StopTimer() // Stop timer in order to exclude defers from the time
