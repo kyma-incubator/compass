@@ -65,7 +65,7 @@ type config struct {
 type securityConfig struct {
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
-	JwksEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT"`
+	JwksEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT,default=file://hack/default-jwks.json"`
 	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }
 
