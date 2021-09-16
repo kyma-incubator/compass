@@ -258,4 +258,8 @@ FROM specifications spec
                FROM tenants_events e) t_api_event_def
               ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
 
+DROP FUNCTION IF EXISTS apps_subaccounts_func();
+
+DROP FUNCTION IF EXISTS consumers_provider_for_runtimes_func();
+
 COMMIT;

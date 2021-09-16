@@ -45,6 +45,87 @@ BEGIN
 END
 $$;
 
+DROP VIEW IF EXISTS tenants_specifications;
+DROP VIEW IF EXISTS tenants_apis;
+
+CREATE OR REPLACE VIEW tenants_apis
+            (tenant_id, provider_tenant_id, id, app_id, name, description, group_name, default_auth, version_value, version_deprecated,
+             version_deprecated_since, version_for_removal, ord_id, short_description, system_instance_aware,
+             api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries,
+             labels, package_id, visibility, disabled, part_of_products, line_of_business, industry, ready, created_at,
+             updated_at, deleted_at, error, implementation_standard, custom_implementation_standard,
+             custom_implementation_standard_description, target_urls, extensible, successors, resource_hash)
+AS
+WITH apps_subaccounts AS (SELECT * FROM apps_subaccounts_func()),
+     consumers_provider_for_runtimes AS (SELECT * FROM consumers_provider_for_runtimes_func())
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.provider_tenant_id,
+                apis.id,
+                apis.app_id,
+                apis.name,
+                apis.description,
+                apis.group_name,
+                apis.default_auth,
+                apis.version_value,
+                apis.version_deprecated,
+                apis.version_deprecated_since,
+                apis.version_for_removal,
+                apis.ord_id,
+                apis.short_description,
+                apis.system_instance_aware,
+                CASE
+                    WHEN apis.api_protocol IS NULL AND specs.api_spec_type::text = 'ODATA'::text THEN 'odata-v2'::text
+                    WHEN apis.api_protocol IS NULL AND specs.api_spec_type::text = 'OPEN_API'::text THEN 'rest'::text
+                    ELSE apis.api_protocol::text
+                    END AS api_protocol,
+                apis.tags,
+                apis.countries,
+                apis.links,
+                apis.api_resource_links,
+                apis.release_status,
+                apis.sunset_date,
+                apis.changelog_entries,
+                apis.labels,
+                apis.package_id,
+                apis.visibility,
+                apis.disabled,
+                apis.part_of_products,
+                apis.line_of_business,
+                apis.industry,
+                apis.ready,
+                apis.created_at,
+                apis.updated_at,
+                apis.deleted_at,
+                apis.error,
+                apis.implementation_standard,
+                apis.custom_implementation_standard,
+                apis.custom_implementation_standard_description,
+                apis.target_urls,
+                apis.extensible,
+                apis.successors,
+                apis.resource_hash
+FROM api_definitions apis
+         JOIN (SELECT a1.id,
+                      a1.tenant_id,
+                      a1.tenant_id AS provider_tenant_id
+               FROM applications a1
+               UNION ALL
+               SELECT a.id,
+                      t.parent AS tenant_id,
+                      t.parent AS provider_tenant_id
+               FROM applications a
+                        JOIN business_tenant_mappings t ON t.id = a.tenant_id
+               WHERE t.parent IS NOT NULL
+               UNION ALL
+               SELECT *
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT a_s.id, a_s.tenant_id, (cpr.provider_tenant #>> '{}')::uuid AS provider_tenant_id
+               FROM apps_subaccounts a_s
+                        JOIN consumers_provider_for_runtimes cpr
+                             ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON apis.app_id = t_apps.id
+         LEFT JOIN specifications specs ON apis.id = specs.api_def_id;
+
 DROP VIEW IF EXISTS tenants_apps;
 
 CREATE OR REPLACE VIEW tenants_apps
@@ -97,5 +178,120 @@ FROM applications apps
                         JOIN consumers_provider_for_runtimes cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps
               ON apps.id = t_apps.id;
+
+DROP VIEW IF EXISTS tenants_bundles;
+
+CREATE OR REPLACE VIEW tenants_bundles
+            (tenant_id, provider_tenant_id, id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id,
+             short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at,
+             deleted_at, error)
+AS
+WITH apps_subaccounts AS (SELECT * FROM apps_subaccounts_func()),
+     consumers_provider_for_runtimes AS (SELECT * FROM consumers_provider_for_runtimes_func())
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.provider_tenant_id,
+                b.id,
+                b.app_id,
+                b.name,
+                b.description,
+                b.instance_auth_request_json_schema,
+                b.default_instance_auth,
+                b.ord_id,
+                b.short_description,
+                b.links,
+                b.labels,
+                b.credential_exchange_strategies,
+                b.ready,
+                b.created_at,
+                b.updated_at,
+                b.deleted_at,
+                b.error
+FROM bundles b
+         JOIN (SELECT a1.id,
+                      a1.tenant_id,
+                      a1.tenant_id AS provider_tenant_id
+               FROM applications a1
+               UNION ALL
+               SELECT a.id,
+                      t.parent AS tenant_id,
+                      t.parent AS provider_tenant_id
+               FROM applications a
+                        JOIN business_tenant_mappings t ON t.id = a.tenant_id
+               WHERE t.parent IS NOT NULL
+               UNION ALL
+               SELECT *
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT a_s.id, a_s.tenant_id, (cpr.provider_tenant #>> '{}')::uuid AS provider_tenant_id
+               FROM apps_subaccounts a_s
+                        JOIN consumers_provider_for_runtimes cpr
+                             ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON b.app_id = t_apps.id;
+
+DROP VIEW IF EXISTS tenants_events;
+
+CREATE OR REPLACE VIEW tenants_events
+            (tenant_id, provider_tenant_id, id, app_id, name, description, group_name, version_value, version_deprecated,
+             version_deprecated_since, version_for_removal, ord_id, short_description, system_instance_aware,
+             changelog_entries, links, tags, countries, release_status, sunset_date, labels, package_id, visibility,
+             disabled, part_of_products, line_of_business, industry, ready, created_at, updated_at, deleted_at, error,
+             extensible, successors, resource_hash)
+AS
+WITH apps_subaccounts AS (SELECT * FROM apps_subaccounts_func()),
+     consumers_provider_for_runtimes AS (SELECT * FROM consumers_provider_for_runtimes_func())
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.provider_tenant_id,
+                events.id,
+                events.app_id,
+                events.name,
+                events.description,
+                events.group_name,
+                events.version_value,
+                events.version_deprecated,
+                events.version_deprecated_since,
+                events.version_for_removal,
+                events.ord_id,
+                events.short_description,
+                events.system_instance_aware,
+                events.changelog_entries,
+                events.links,
+                events.tags,
+                events.countries,
+                events.release_status,
+                events.sunset_date,
+                events.labels,
+                events.package_id,
+                events.visibility,
+                events.disabled,
+                events.part_of_products,
+                events.line_of_business,
+                events.industry,
+                events.ready,
+                events.created_at,
+                events.updated_at,
+                events.deleted_at,
+                events.error,
+                events.extensible,
+                events.successors,
+                events.resource_hash
+FROM event_api_definitions events
+         JOIN (SELECT a1.id,
+                      a1.tenant_id,
+                      a1.tenant_id AS provider_tenant_id
+               FROM applications a1
+               UNION ALL
+               SELECT a.id,
+                      t.parent AS tenant_id,
+                      t.parent AS provider_tenant_id
+               FROM applications a
+                        JOIN business_tenant_mappings t ON t.id = a.tenant_id
+               WHERE t.parent IS NOT NULL
+               UNION ALL
+               SELECT *
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT a_s.id, a_s.tenant_id, (cpr.provider_tenant #>> '{}')::uuid AS provider_tenant_id
+               FROM apps_subaccounts a_s
+                        JOIN consumers_provider_for_runtimes cpr
+                             ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON events.app_id = t_apps.id;
 
 COMMIT;
