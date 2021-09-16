@@ -19,6 +19,7 @@ var (
 )
 
 type config struct {
+	DirectorURL                   string
 	ORDServiceURL                 string
 	ORDServiceDefaultResponseType string
 }
