@@ -20,11 +20,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
-const tableName string = `public.business_tenant_mappings`
-const labelDefinitionsTableName string = `public.label_definitions`
-const labelDefinitionsTenantIDColumn string = `tenant_id`
+const (
+	tableName                      string = `public.business_tenant_mappings`
+	labelDefinitionsTableName      string = `public.label_definitions`
+	labelDefinitionsTenantIDColumn string = `tenant_id`
+)
 
-var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}
 var (
 	idColumn                  = "id"
 	externalNameColumn        = "external_name"
@@ -34,6 +35,10 @@ var (
 	providerNameColumn        = "provider_name"
 	statusColumn              = "status"
 	initializedComputedColumn = "initialized"
+
+	insertColumns      = []string{idColumn, externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}
+	conflictingColumns = []string{externalTenantColumn}
+	updateColumns      = []string{externalNameColumn}
 )
 
 // Converter converts tenants between the model.BusinessTenantMapping service-layer representation of a tenant and the repo-layer representation tenant.Entity.
@@ -45,6 +50,8 @@ type Converter interface {
 
 type pgRepository struct {
 	creator            repo.Creator
+	upserter           repo.Upserter
+	unsafeCreator      repo.UnsafeCreator
 	existQuerierGlobal repo.ExistQuerierGlobal
 	singleGetterGlobal repo.SingleGetterGlobal
 	listerGlobal       repo.ListerGlobal
@@ -57,19 +64,26 @@ type pgRepository struct {
 // NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		creator:            repo.NewCreator(resource.Tenant, tableName, tableColumns),
+		creator:            repo.NewCreator(resource.Tenant, tableName, insertColumns),
+		upserter:           repo.NewUpserter(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
+		unsafeCreator:      repo.NewUnsafeCreator(resource.Tenant, tableName, insertColumns, conflictingColumns),
 		existQuerierGlobal: repo.NewExistQuerierGlobal(resource.Tenant, tableName),
-		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Tenant, tableName, tableColumns),
-		listerGlobal:       repo.NewListerGlobal(resource.Tenant, tableName, tableColumns),
+		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
+		listerGlobal:       repo.NewListerGlobal(resource.Tenant, tableName, insertColumns),
 		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Tenant, tableName),
 		conv:               conv,
 	}
 }
 
-// Create adds the provided tenant into the Compass storage.
-func (r *pgRepository) Create(ctx context.Context, item model.BusinessTenantMapping) error {
-	return r.creator.Create(ctx, r.conv.ToEntity(&item))
+// UnsafeCreate adds the provided tenant into the Compass storage.
+func (r *pgRepository) UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error {
+	return r.unsafeCreator.UnsafeCreate(ctx, r.conv.ToEntity(&item))
+}
+
+// Upsert adds the provided tenant into the Compass storage if it does not exist, or updates it if it does.
+func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) error {
+	return r.upserter.Upsert(ctx, r.conv.ToEntity(&item))
 }
 
 // Get retrieves the active tenant with matching internal ID from the Compass storage.
@@ -116,7 +130,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 		return nil, errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	prefixedFields := strings.Join(str.PrefixStrings(tableColumns, "t."), ", ")
+	prefixedFields := strings.Join(str.PrefixStrings(insertColumns, "t."), ", ")
 	query := fmt.Sprintf(`SELECT DISTINCT %s, ld.%s IS NOT NULL AS %s
 			FROM %s t LEFT JOIN %s ld ON t.%s=ld.%s
 			WHERE t.%s = $1

@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPgRepository_Create(t *testing.T) {
+func TestPgRepository_Upsert(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
@@ -29,15 +29,15 @@ func TestPgRepository_Create(t *testing.T) {
 		mockConverter.On("ToEntity", tenantMappingModel).Return(tenantMappingEntity).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ?, ? )`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ON CONFLICT ( external_tenant ) DO UPDATE SET external_name=EXCLUDED.external_name`)).
 			WithArgs(fixTenantMappingCreateArgs(*tenantMappingEntity)...).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
+			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingrepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		err := tenantMappingrepo.Create(ctx, *tenantMappingModel)
+		err := tenantMappingrepo.Upsert(ctx, *tenantMappingModel)
 
 		// THEN
 		require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestPgRepository_Create(t *testing.T) {
 		mockConverter.On("ToEntity", tenantModel).Return(tenantEntity).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ?, ? )`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ON CONFLICT ( external_tenant ) DO UPDATE SET external_name=EXCLUDED.external_name`)).
 			WithArgs(fixTenantMappingCreateArgs(*tenantEntity)...).
 			WillReturnError(testError)
 
@@ -61,7 +61,58 @@ func TestPgRepository_Create(t *testing.T) {
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		err := tenantMappingRepo.Create(ctx, *tenantModel)
+		err := tenantMappingRepo.Upsert(ctx, *tenantModel)
+
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+}
+
+func TestPgRepository_UnsafeCreate(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		tenantMappingModel := newModelBusinessTenantMapping(testID, testName)
+		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName)
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", tenantMappingModel).Return(tenantMappingEntity).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ?, ? )  ON CONFLICT ( external_tenant ) DO NOTHING`)).
+			WithArgs(fixTenantMappingCreateArgs(*tenantMappingEntity)...).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingrepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		err := tenantMappingrepo.UnsafeCreate(ctx, *tenantMappingModel)
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error when creating", func(t *testing.T) {
+		// GIVEN
+		tenantModel := newModelBusinessTenantMapping(testID, testName)
+		tenantEntity := newEntityBusinessTenantMapping(testID, testName)
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", tenantModel).Return(tenantEntity).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, parent, type, provider_name, status ) VALUES ( ?, ?, ?, ?, ?, ?, ? )  ON CONFLICT ( external_tenant ) DO NOTHING`)).
+			WithArgs(fixTenantMappingCreateArgs(*tenantEntity)...).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		err := tenantMappingRepo.UnsafeCreate(ctx, *tenantModel)
 
 		// THEN
 		require.Error(t, err)
