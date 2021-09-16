@@ -197,13 +197,6 @@ func (s Service) SyncTenants() error {
 
 	// Order of event processing matters
 	if len(tenantsToCreate) > 0 {
-		if err := s.createParents(ctx, currentTenants, tenantsToCreate); err != nil {
-			return errors.Wrap(err, "while storing parents")
-		}
-		currentTenants, err = s.getCurrentTenants(ctx)
-		if err != nil {
-			return err
-		}
 		if err := s.createTenants(ctx, currentTenants, tenantsToCreate); err != nil {
 			return errors.Wrap(err, "while storing tenant")
 		}
@@ -230,13 +223,10 @@ func (s Service) SyncTenants() error {
 }
 
 func (s Service) createTenants(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
-	tenantsToCreate := make([]model.BusinessTenantMappingInput, 0)
+	tenantsToCreate := s.parents(currTenants, eventsTenants)
 	for _, eventTenant := range eventsTenants {
-		if _, ok := currTenants[eventTenant.ExternalTenant]; ok {
-			continue
-		}
-		if len(eventTenant.Parent) > 0 {
-			eventTenant.Parent = currTenants[eventTenant.Parent]
+		if parentGUID, ok := currTenants[eventTenant.Parent]; ok {
+			eventTenant.Parent = parentGUID
 		}
 		eventTenant.Region = s.tenantsRegion
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
@@ -249,7 +239,7 @@ func (s Service) createTenants(ctx context.Context, currTenants map[string]strin
 	return nil
 }
 
-func (s Service) createParents(ctx context.Context, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
+func (s Service) parents(currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {
 	parentsToCreate := make([]model.BusinessTenantMappingInput, 0)
 	for _, eventTenant := range eventsTenants {
 		if len(eventTenant.Parent) > 0 {
@@ -265,13 +255,8 @@ func (s Service) createParents(ctx context.Context, currTenants map[string]strin
 			}
 		}
 	}
-	parentsToCreate = s.dedupeTenants(parentsToCreate)
-	if len(parentsToCreate) > 0 {
-		if err := s.tenantStorageService.UpsertManyIfNotExists(ctx, parentsToCreate...); err != nil {
-			return errors.Wrap(err, "while storing new parents")
-		}
-	}
-	return nil
+
+	return s.dedupeTenants(parentsToCreate)
 }
 
 func (s Service) moveRuntimesByLabel(ctx context.Context, movedRuntimeMappings []model.MovedRuntimeByLabelMappingInput) error {
