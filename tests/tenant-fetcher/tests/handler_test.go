@@ -175,6 +175,7 @@ func TestOnboardingHandler(t *testing.T) {
 		providedTenant := Tenant{
 			TenantID:   uuid.New().String(),
 			CustomerID: uuid.New().String(),
+			Subdomain:  defaultSubdomain,
 		}
 
 		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
@@ -423,76 +424,79 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 		})
 	})
 
-	t.Run("Regional subaccount tenant subscription", func(t *testing.T) {
-		t.Run("Success", func(t *testing.T) {
+	t.Run("Regional subaccount tenant subscription flows", func(t *testing.T) {
+		t.Run("Subscribe tenant for correct consumer", func(t *testing.T) {
 			// GIVEN
 			ctx := context.Background()
 			subscriptionConsumerID := uuid.New().String()
 			subaccountID := uuid.New().String()
+			accountID := uuid.New().String()
 
 			tenantId := tenant_utils.TestTenants.GetDefaultTenantID()
 
-			givenInput := graphql.RuntimeInput{
-				Name:        "runtime-subscription-consumer",
-				Description: ptr.String("runtime-subscription-consumer"),
-				Labels:      graphql.Labels{"region_key": []interface{}{regionPathParamValue}, "subscription_consumer_id": []interface{}{subscriptionConsumerID}},
-			}
-			runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
-			require.NoError(t, err)
-			actualRuntime := graphql.RuntimeExt{}
+			subscribedRuntime := registerRuntime(t, ctx, "subscribed-runtime", subscriptionConsumerID)
+			defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &subscribedRuntime)
 
-			registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-			err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &actualRuntime)
-			defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &actualRuntime)
+			notSubscribedRuntime := registerRuntime(t, ctx, "not-subscribed-runtime", "fake_subscrioption_id")
+			defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &notSubscribedRuntime)
 
-			providedTenant := Tenant{
-				TenantID:               uuid.New().String(),
+			// WHEN
+			tenant := Tenant{
+				TenantID:               accountID,
 				SubaccountID:           subaccountID,
 				Subdomain:              defaultSubdomain,
 				SubscriptionConsumerID: subscriptionConsumerID,
 			}
 
-			// WHEN
-			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
+			addRegionalTenantExpectStatusCode(t, tenant, http.StatusOK)
 
 			// THEN
-			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenant.TenantID)
-			require.NoError(t, err)
-			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain)
-			require.Equal(t, regionPathParamValue, tenant.Labels["region"])
+			assertRuntimeSubscription(t, ctx, subscribedRuntime.ID, tenant)
 
-			subscribedRuntime := graphql.RuntimeExt{}
-			getReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)
-			err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getReq, &subscribedRuntime)
-			require.NoError(t, err)
-			consumerSubaccountIDsLabel, ok := subscribedRuntime.Labels[config.ConsumerSubaccountIDsLabelKey].([]string)
-			require.Equal(t, true, ok)
-			assert.Len(t, consumerSubaccountIDsLabel, 1)
-			require.Equal(t, subaccountID, consumerSubaccountIDsLabel[0])
+			assertNoRuntimeSubscription(t, ctx, notSubscribedRuntime.ID)
 		})
-	})
-}
 
-func TestRegionalDecommissioningHandler(t *testing.T) {
-	t.Run("Success noop", func(t *testing.T) {
-		providedTenant := Tenant{
-			TenantID:               uuid.New().String(),
-			Subdomain:              defaultSubdomain,
-			SubscriptionConsumerID: uuid.New().String(),
-		}
+		t.Run("Unsubscribe tenant from correct consumer", func(t *testing.T) {
+			// GIVEN
+			ctx := context.Background()
+			subscriptionConsumerID := uuid.New().String()
+			secondSubscriptionConsumerID := uuid.New().String()
+			subaccountID := uuid.New().String()
+			accountID := uuid.New().String()
 
-		addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
+			tenantId := tenant_utils.TestTenants.GetDefaultTenantID()
 
-		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
-		require.NoError(t, err)
+			subscribedRuntime := registerRuntime(t, ctx, "subscribed-runtime", subscriptionConsumerID)
+			defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &subscribedRuntime)
 
-		removeRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
+			secondSubscribedRuntime := registerRuntime(t, ctx, "second-subscribed-runtime", secondSubscriptionConsumerID)
+			defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &secondSubscribedRuntime)
 
-		newTenantState, err := fixtures.GetTenants(dexGraphQLClient)
-		require.NoError(t, err)
+			tenant := Tenant{
+				TenantID:               accountID,
+				SubaccountID:           subaccountID,
+				Subdomain:              defaultSubdomain,
+				SubscriptionConsumerID: subscriptionConsumerID,
+			}
+			addRegionalTenantExpectStatusCode(t, tenant, http.StatusOK)
+			assertRuntimeSubscription(t, ctx, subscribedRuntime.ID, tenant)
 
-		// THEN
-		assert.Equal(t, len(oldTenantState), len(newTenantState))
+			tenantSecondSubscription := Tenant{
+				TenantID:               accountID,
+				SubaccountID:           subaccountID,
+				Subdomain:              defaultSubdomain,
+				SubscriptionConsumerID: secondSubscriptionConsumerID,
+			}
+			addRegionalTenantExpectStatusCode(t, tenantSecondSubscription, http.StatusOK)
+			assertRuntimeSubscription(t, ctx, secondSubscribedRuntime.ID, tenantSecondSubscription)
+
+			// WHEN
+			removeRegionalTenantExpectStatusCode(t, tenant, http.StatusOK)
+
+			// THEN
+			assertNoRuntimeSubscription(t, ctx, subscribedRuntime.ID)
+			assertRuntimeSubscription(t, ctx, secondSubscribedRuntime.ID, tenantSecondSubscription)
+		})
 	})
 }
 
@@ -635,4 +639,50 @@ func assertTenantExists(t *testing.T, tenants []*graphql.Tenant, tenantID string
 	}
 
 	require.Fail(t, fmt.Sprintf("Tenant with ID %q not found in %v", tenantID, tenants))
+}
+
+func registerRuntime(t *testing.T, ctx context.Context, name, subscriptionConsumerID string) graphql.RuntimeExt {
+	runtimeInput := graphql.RuntimeInput{
+		Name:        name,
+		Description: ptr.String(name),
+		Labels:      graphql.Labels{config.RegionLabelKey: regionPathParamValue, config.SubscriptionConsumerLabelKey: subscriptionConsumerID},
+	}
+	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
+	require.NoError(t, err)
+	actualRuntime := graphql.RuntimeExt{}
+
+	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &actualRuntime)
+	require.NoError(t, err)
+	return actualRuntime
+}
+
+func assertRuntimeSubscription(t *testing.T, ctx context.Context, runtimeID string, tenant Tenant) {
+	actualTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, tenant.SubaccountID)
+	require.NoError(t, err)
+	assertTenant(t, actualTenant, tenant.SubaccountID, tenant.Subdomain)
+	require.Equal(t, regionPathParamValue, actualTenant.Labels["region"])
+
+	subscribedRuntime := graphql.RuntimeExt{}
+	getSubscribedReq := fixtures.FixGetRuntimeRequest(runtimeID)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getSubscribedReq, &subscribedRuntime)
+	require.NoError(t, err)
+	consumerSubaccountIDsLabel, ok := subscribedRuntime.Labels[config.ConsumerSubaccountIDsLabelKey].([]interface{})
+	require.Equal(t, true, ok)
+	assert.Len(t, consumerSubaccountIDsLabel, 1)
+	labelValue, ok := consumerSubaccountIDsLabel[0].(string)
+	require.Equal(t, true, ok)
+	require.Equal(t, tenant.SubaccountID, labelValue)
+}
+
+func assertNoRuntimeSubscription(t *testing.T, ctx context.Context, runtimeID string) {
+	notSubscribedRuntime := graphql.RuntimeExt{}
+	getNotSubscribedReq := fixtures.FixGetRuntimeRequest(runtimeID)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getNotSubscribedReq, &notSubscribedRuntime)
+	require.NoError(t, err)
+
+	if _, ok := notSubscribedRuntime.Labels[config.ConsumerSubaccountIDsLabelKey]; !ok {
+		return
+	}
+	require.Len(t, notSubscribedRuntime.Labels[config.ConsumerSubaccountIDsLabelKey], 0)
 }
