@@ -26,9 +26,9 @@ type RuntimeService interface {
 	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
-type SubscriptionFunc func(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest, region string) error
+type subscriptionFunc func(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest, region string) error
 
-type SliceMutationFunc func([]string, string) []string
+type sliceMutationFunc func([]string, string) []string
 
 type subscriber struct {
 	provisioner TenantProvisioner
@@ -38,6 +38,7 @@ type subscriber struct {
 	ConsumerSubaccountIDsLabelKey string
 }
 
+// NewSubscriber creates new subscriber
 func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, regionLabelKey, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey string) *subscriber {
 	return &subscriber{
 		provisioner:                   provisioner,
@@ -48,6 +49,7 @@ func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, region
 	}
 }
 
+// Subscribe subscribes tenant to runtime. If the tenant does not exist it will be created
 func (s *subscriber) Subscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest, region string) error {
 	if err := s.provisioner.ProvisionTenants(ctx, tenantSubscriptionRequest, region); err != nil {
 		return err
@@ -56,11 +58,12 @@ func (s *subscriber) Subscribe(ctx context.Context, tenantSubscriptionRequest *T
 	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionConsumerID, tenantSubscriptionRequest.SubaccountTenantID, region, addElement)
 }
 
+// Unsubscribe unsubscribes tenant from runtime.
 func (s *subscriber) Unsubscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest, region string) error {
 	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionConsumerID, tenantSubscriptionRequest.SubaccountTenantID, region, removeElement)
 }
 
-func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionConsumerID, subaccountTenantID, region string, mutateSliceFunc SliceMutationFunc) error {
+func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionConsumerID, subaccountTenantID, region string, mutateSliceFunc sliceMutationFunc) error {
 	filters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(s.SubscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionConsumerID)),
 		labelfilter.NewForKeyWithQuery(s.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),

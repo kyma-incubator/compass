@@ -522,7 +522,6 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		assert.Contains(t, string(body), tenantfetchersvc.InternalServerError)
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	})
-
 }
 
 func TestService_Delete(t *testing.T) {
