@@ -76,7 +76,8 @@ func NewRepository(conv Converter) *pgRepository {
 	}
 }
 
-// UnsafeCreate adds the provided tenant into the Compass storage.
+// UnsafeCreate adds a new tenant in the Compass DB in case it does not exist. If it already exists, no action is taken.
+// It is not guaranteed that the provided tenant ID is the same as the tenant ID in the database.
 func (r *pgRepository) UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error {
 	return r.unsafeCreator.UnsafeCreate(ctx, r.conv.ToEntity(&item))
 }
