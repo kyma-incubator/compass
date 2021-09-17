@@ -2,23 +2,16 @@ package bench
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
 
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
-
-	"github.com/kyma-incubator/compass/tests/pkg/request"
-	"github.com/tidwall/gjson"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 const (
@@ -31,12 +24,8 @@ func BenchmarkSystemBundles(b *testing.B) {
 	defaultTestTenant := tenant.TestTenants.GetDefaultTenantID()
 
 	appsCount := 5
-	apps := make([]graphql.ApplicationRegisterInput, 0, appsCount)
 	for i := 0; i < appsCount; i++ {
-		apps = append(apps, fixtures.CreateApp(fmt.Sprintf("%d", i)))
-	}
-
-	for _, app := range apps {
+		app := fixtures.CreateApp(fmt.Sprintf("%d", i))
 		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, dexGraphQLClient, defaultTestTenant, app)
 		require.NoError(b, err)
 		defer fixtures.UnregisterApplication(b, ctx, dexGraphQLClient, defaultTestTenant, appResp.ID)
@@ -51,14 +40,8 @@ func BenchmarkSystemBundles(b *testing.B) {
 	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(b, ctx, dexGraphQLClient, "", intSys.ID)
 	defer fixtures.DeleteSystemAuthForIntegrationSystem(b, ctx, dexGraphQLClient, intSystemCredentials.ID)
 
-	unsecuredHttpClient := http.DefaultClient
-	unsecuredHttpClient.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
-
-	intSystemHttpClient := integrationSystemClient(b, ctx, unsecuredHttpClient, intSystemCredentials)
+	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
+	require.NoError(b, err)
 
 	b.ResetTimer() // Reset timer after the initialization
 
@@ -75,21 +58,4 @@ func BenchmarkSystemBundles(b *testing.B) {
 
 func makeRequestWithHeaders(b *testing.B, httpClient *http.Client, url string, headers map[string][]string) string {
 	return request.MakeRequestWithHeadersAndStatusExpect(b, httpClient, url, headers, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
-}
-
-func integrationSystemClient(b *testing.B, ctx context.Context, base *http.Client, intSystemCredentials *directorSchema.IntSysSystemAuth) *http.Client {
-	oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
-	require.True(b, ok)
-
-	conf := &clientcredentials.Config{
-		ClientID:     oauthCredentialData.ClientID,
-		ClientSecret: oauthCredentialData.ClientSecret,
-		TokenURL:     oauthCredentialData.URL,
-	}
-
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, base)
-	httpClient := conf.Client(ctx)
-	httpClient.Timeout = 10 * time.Second
-
-	return httpClient
 }
