@@ -53,12 +53,12 @@ func (s *subscriber) Subscribe(ctx context.Context, tenantSubscriptionRequest *T
 		return err
 	}
 
-	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionConsumerID, tenantSubscriptionRequest.SubaccountTenantID, region, addElement)
+	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.SubaccountTenantID, region, addElement)
 }
 
 // Unsubscribe unsubscribes tenant from runtime.
 func (s *subscriber) Unsubscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest, region string) error {
-	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionConsumerID, tenantSubscriptionRequest.SubaccountTenantID, region, removeElement)
+	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.SubaccountTenantID, region, removeElement)
 }
 
 func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionConsumerID, subaccountTenantID, region string, mutateLabelsFunc sliceMutationFunc) error {

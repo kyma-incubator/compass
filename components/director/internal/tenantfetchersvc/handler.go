@@ -148,8 +148,9 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	mainTenantID := subscriptionRequest.MainTenantID()
 	if err := subscriptionFunc(ctx, subscriptionRequest, region); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to apply subscription change: %v", err)
+		log.C(ctx).WithError(err).Errorf("Failed to apply subscription change for tenant %s: %v", mainTenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
@@ -160,7 +161,7 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 		return
 	}
 
-	respondSuccess(ctx, writer, subscriptionRequest.MainTenantID())
+	respondSuccess(ctx, writer, mainTenantID)
 }
 
 func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSubscriptionRequest, error) {
@@ -180,7 +181,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		SubaccountTenantID:     properties[h.config.SubaccountTenantIDProperty],
 		CustomerTenantID:       properties[h.config.CustomerIDProperty],
 		Subdomain:              properties[h.config.SubdomainProperty],
-		SubscriptionConsumerID: properties[h.config.SubscriptionProviderIDProperty],
+		SubscriptionProviderID: properties[h.config.SubscriptionProviderIDProperty],
 		Region:                 region,
 	}
 

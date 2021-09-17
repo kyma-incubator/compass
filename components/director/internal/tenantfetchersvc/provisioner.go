@@ -26,7 +26,7 @@ type TenantSubscriptionRequest struct {
 	CustomerTenantID       string
 	Subdomain              string
 	Region                 string
-	SubscriptionConsumerID string
+	SubscriptionProviderID string
 }
 
 // MainTenantID is used to determine the external tenant ID of the tenant for which the provisioning request was triggered.

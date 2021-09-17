@@ -110,7 +110,7 @@ func TestSubscribeGlobalTenant(t *testing.T) {
 		AccountTenantID:        tenantExtID,
 		CustomerTenantID:       parentTenantExtID,
 		Subdomain:              tenantSubdomain,
-		SubscriptionConsumerID: subscriptionProviderID,
+		SubscriptionProviderID: subscriptionProviderID,
 	}
 
 	testCases := []struct {
@@ -196,7 +196,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 		AccountTenantID:        tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 tenantRegion,
-		SubscriptionConsumerID: subscriptionProviderID,
+		SubscriptionProviderID: subscriptionProviderID,
 	}
 
 	// Subscribe flow
@@ -384,7 +384,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 		AccountTenantID:        tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 tenantRegion,
-		SubscriptionConsumerID: subscriptionProviderID,
+		SubscriptionProviderID: subscriptionProviderID,
 	}
 
 	testCases := []struct {

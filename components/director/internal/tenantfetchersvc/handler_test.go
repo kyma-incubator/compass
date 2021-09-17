@@ -109,12 +109,12 @@ func TestService_Create(t *testing.T) {
 		AccountTenantID:        tenantExtID,
 		CustomerTenantID:       parentTenantExtID,
 		Subdomain:              tenantSubdomain,
-		SubscriptionConsumerID: subscriptionProviderID,
+		SubscriptionProviderID: subscriptionProviderID,
 	}
 	accountWithoutParentProvisioningRequest := tenantfetchersvc.TenantSubscriptionRequest{
 		AccountTenantID:        tenantExtID,
 		Subdomain:              tenantSubdomain,
-		SubscriptionConsumerID: subscriptionProviderID,
+		SubscriptionProviderID: subscriptionProviderID,
 	}
 
 	testCases := []struct {
@@ -324,14 +324,14 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		AccountTenantID:        tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 region,
-		SubscriptionConsumerID: subscriptionProviderID,
+		SubscriptionProviderID: subscriptionProviderID,
 	}
 	regionalTenantWithMatchingParentID := tenantfetchersvc.TenantSubscriptionRequest{
 		SubaccountTenantID:     "",
 		AccountTenantID:        tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 region,
-		SubscriptionConsumerID: subscriptionProviderID,
+		SubscriptionProviderID: subscriptionProviderID,
 	}
 
 	// Subscribe flow
