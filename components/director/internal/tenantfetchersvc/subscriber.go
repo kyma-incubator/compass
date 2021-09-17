@@ -33,16 +33,16 @@ type sliceMutationFunc func([]string, string) []string
 type subscriber struct {
 	provisioner TenantProvisioner
 	RuntimeService
-	SubscriptionConsumerLabelKey  string
+	SubscriptionProviderLabelKey  string
 	ConsumerSubaccountIDsLabelKey string
 }
 
 // NewSubscriber creates new subscriber
-func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey string) *subscriber {
+func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, subscriptionProviderLabelKey, consumerSubaccountIDsLabelKey string) *subscriber {
 	return &subscriber{
 		provisioner:                   provisioner,
 		RuntimeService:                service,
-		SubscriptionConsumerLabelKey:  subscriptionConsumerLabelKey,
+		SubscriptionProviderLabelKey:  subscriptionProviderLabelKey,
 		ConsumerSubaccountIDsLabelKey: consumerSubaccountIDsLabelKey,
 	}
 }
@@ -63,7 +63,7 @@ func (s *subscriber) Unsubscribe(ctx context.Context, tenantSubscriptionRequest 
 
 func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionConsumerID, subaccountTenantID, region string, mutateLabelsFunc sliceMutationFunc) error {
 	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(s.SubscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionConsumerID)),
+		labelfilter.NewForKeyWithQuery(s.SubscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", subscriptionConsumerID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
@@ -73,7 +73,7 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 			return nil
 		}
 
-		return errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.SubscriptionConsumerLabelKey, subscriptionConsumerID))
+		return errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.SubscriptionProviderLabelKey, subscriptionConsumerID))
 	}
 
 	for _, runtime := range runtimes {
