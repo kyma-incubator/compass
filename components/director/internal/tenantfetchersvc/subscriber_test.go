@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
@@ -26,7 +25,7 @@ const (
 
 	regionalTenantSubdomain = "myregionaltenant"
 	subaccountTenantExtID   = "subaccount-tenant-external-id"
-	subscriptionConsumerID  = "123"
+	subscriptionProviderID  = "123"
 
 	parentTenantExtID = "parent-tenant-external-id"
 
@@ -34,7 +33,7 @@ const (
 	tenantProviderCustomerIDProperty         = "customerId"
 	tenantProviderSubdomainProperty          = "subdomain"
 	tenantProviderSubaccountTenantIDProperty = "subaccountTenantId"
-	subscriptionConsumerIDProperty           = "subscriptionConsumerId"
+	subscriptionProviderIDProperty           = "subscriptionProviderId"
 
 	compassURL = "https://github.com/kyma-incubator/compass"
 )
@@ -42,18 +41,17 @@ const (
 var (
 	testError                     = errors.New("test error")
 	notFoundErr                   = apperrors.NewNotFoundErrorWithType(resource.Runtime)
-	regionLabelKey                = "regionKey"
-	subscriptionConsumerLabelKey  = "SubscriptionConsumerLabelKey"
+	subscriptionConsumerLabelKey  = "SubscriptionProviderLabelKey"
 	consumerSubaccountIDsLabelKey = "ConsumerSubaccountIDsLabelKey"
 	ctxWithTenant                 = tenant.SaveToContext(context.TODO(), testRuntime.Tenant, "")
 
 	globalFilters = []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(subscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionConsumerID)),
-		labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", "")),
+		labelfilter.NewForKeyWithQuery(subscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionProviderID)),
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", "")),
 	}
 	regionalFilters = []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(subscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionConsumerID)),
-		labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", tenantRegion)),
+		labelfilter.NewForKeyWithQuery(subscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionProviderID)),
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", tenantRegion)),
 	}
 	testRuntime = model.Runtime{
 		ID:                "321",
@@ -112,7 +110,7 @@ func TestSubscribeGlobalTenant(t *testing.T) {
 		AccountTenantID:        tenantExtID,
 		CustomerTenantID:       parentTenantExtID,
 		Subdomain:              tenantSubdomain,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionConsumerID: subscriptionProviderID,
 	}
 
 	testCases := []struct {
@@ -174,7 +172,7 @@ func TestSubscribeGlobalTenant(t *testing.T) {
 			runtimeSvc := testCase.RuntimeServiceFn()
 			defer mock.AssertExpectationsForObjects(t, provisioner, runtimeSvc)
 
-			subscriber := tenantfetchersvc.NewSubscriber(provisioner, runtimeSvc, regionLabelKey, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
+			subscriber := tenantfetchersvc.NewSubscriber(provisioner, runtimeSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
 			//WHEN
 			err := subscriber.Subscribe(context.TODO(), &testCase.TenantSubscriptionRequest, testCase.Region)
@@ -198,7 +196,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 		AccountTenantID:        tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 tenantRegion,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionConsumerID: subscriptionProviderID,
 	}
 
 	// Subscribe flow
@@ -362,7 +360,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			runtimeSvc := testCase.RuntimeServiceFn()
 			defer mock.AssertExpectationsForObjects(t, provisioner, runtimeSvc)
 
-			subscriber := tenantfetchersvc.NewSubscriber(provisioner, runtimeSvc, regionLabelKey, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
+			subscriber := tenantfetchersvc.NewSubscriber(provisioner, runtimeSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
 			//WHEN
 			err := subscriber.Subscribe(context.TODO(), &testCase.TenantSubscriptionRequest, testCase.Region)
@@ -386,7 +384,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 		AccountTenantID:        tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 tenantRegion,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionConsumerID: subscriptionProviderID,
 	}
 
 	testCases := []struct {
@@ -495,7 +493,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			runtimeSvc := testCase.RuntimeServiceFn()
 			defer mock.AssertExpectationsForObjects(t, runtimeSvc)
 
-			subscriber := tenantfetchersvc.NewSubscriber(&automock.TenantProvisioner{}, runtimeSvc, regionLabelKey, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
+			subscriber := tenantfetchersvc.NewSubscriber(&automock.TenantProvisioner{}, runtimeSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
 			//WHEN
 			err := subscriber.Unsubscribe(context.TODO(), &testCase.TenantSubscriptionRequest, testCase.Region)

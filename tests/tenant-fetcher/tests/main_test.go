@@ -45,8 +45,7 @@ type testConfig struct {
 	TenantFetcherFullURL             string `envconfig:"-"`
 	TenantFetcherFullRegionalURL     string `envconfig:"-"`
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`
-	RegionLabelKey                   string `envconfig:"APP_REGION_LABEL_KEY`
-	SubscriptionConsumerLabelKey     string `envconfig:"APP_SUBSCRIPTION_CONSUMER_LABEL_KEY"`
+	SubscriptionProviderLabelKey     string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY"`
 	ConsumerSubaccountIDsLabelKey    string `envconfig:"APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY"`
 }
 
@@ -55,7 +54,7 @@ type TenantProviderConfig struct {
 	SubaccountTenantIDProperty     string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"`
 	CustomerIDProperty             string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
 	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
-	SubscriptionConsumerIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_CONSUMER_ID_PROPERTY"`
+	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"`
 }
 
 var config testConfig

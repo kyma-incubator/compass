@@ -65,12 +65,10 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
             - name: APP_TENANT_PROVIDER
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
-            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_CONSUMER_ID_PROPERTY
-              value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionConsumerIdProperty }}
-            - name: APP_REGION_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.regionLabelKey }}
-            - name: APP_SUBSCRIPTION_CONSUMER_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionConsumerLabelKey }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
+            - name: APP_SUBSCRIPTION_PROVIDER_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
               value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
             - name: APP_DEFAULT_SCENARIO_ENABLED

@@ -22,15 +22,14 @@ import (
 var (
 	validHandlerConfig = tenantfetchersvc.HandlerConfig{
 		RegionPathParam:               "region",
-		RegionLabelKey:                "regionKey",
-		SubscriptionConsumerLabelKey:  "SubscriptionConsumerLabelKey",
+		SubscriptionProviderLabelKey:  "SubscriptionProviderLabelKey",
 		ConsumerSubaccountIDsLabelKey: "ConsumerSubaccountIDsLabelKey",
 		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
 			TenantProvider:                 testProviderName,
 			TenantIDProperty:               tenantProviderTenantIDProperty,
 			CustomerIDProperty:             tenantProviderCustomerIDProperty,
 			SubdomainProperty:              tenantProviderSubdomainProperty,
-			SubscriptionConsumerIDProperty: subscriptionConsumerIDProperty,
+			SubscriptionProviderIDProperty: subscriptionProviderIDProperty,
 			SubaccountTenantIDProperty:     tenantProviderSubaccountTenantIDProperty,
 		},
 	}
@@ -40,7 +39,7 @@ type tenantCreationRequest struct {
 	TenantID               string `json:"tenantId"`
 	CustomerID             string `json:"customerId"`
 	Subdomain              string `json:"subdomain"`
-	SubscriptionConsumerID string `json:"subscriptionConsumerId"`
+	SubscriptionProviderID string `json:"subscriptionProviderId"`
 	SubaccountID           string `json:"subaccountTenantId"`
 }
 
@@ -48,7 +47,7 @@ type regionalTenantCreationRequest struct {
 	SubaccountID           string `json:"subaccountTenantId"`
 	TenantID               string `json:"tenantId"`
 	Subdomain              string `json:"subdomain"`
-	SubscriptionConsumerID string `json:"subscriptionConsumerId"`
+	SubscriptionProviderID string `json:"subscriptionProviderId"`
 }
 
 type errReader int
@@ -66,21 +65,21 @@ func TestService_Create(t *testing.T) {
 		TenantID:               tenantExtID,
 		CustomerID:             parentTenantExtID,
 		Subdomain:              tenantSubdomain,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionProviderID: subscriptionProviderID,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingTenant, err := json.Marshal(tenantCreationRequest{
 		CustomerID:             parentTenantExtID,
 		Subdomain:              tenantSubdomain,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionProviderID: subscriptionProviderID,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingParent, err := json.Marshal(tenantCreationRequest{
 		TenantID:               tenantExtID,
 		Subdomain:              tenantSubdomain,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionProviderID: subscriptionProviderID,
 	})
 	assert.NoError(t, err)
 	bodyWithMathcingChild, err := json.Marshal(tenantCreationRequest{
@@ -88,14 +87,14 @@ func TestService_Create(t *testing.T) {
 		SubaccountID:           tenantExtID,
 		CustomerID:             parentTenantExtID,
 		Subdomain:              tenantSubdomain,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionProviderID: subscriptionProviderID,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingTenantSubdomain, err := json.Marshal(tenantCreationRequest{
 		TenantID:               tenantExtID,
 		CustomerID:             parentTenantExtID,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionProviderID: subscriptionProviderID,
 	})
 	assert.NoError(t, err)
 
@@ -110,12 +109,12 @@ func TestService_Create(t *testing.T) {
 		AccountTenantID:        tenantExtID,
 		CustomerTenantID:       parentTenantExtID,
 		Subdomain:              tenantSubdomain,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionConsumerID: subscriptionProviderID,
 	}
 	accountWithoutParentProvisioningRequest := tenantfetchersvc.TenantSubscriptionRequest{
 		AccountTenantID:        tenantExtID,
 		Subdomain:              tenantSubdomain,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionConsumerID: subscriptionProviderID,
 	}
 
 	testCases := []struct {
@@ -188,11 +187,11 @@ func TestService_Create(t *testing.T) {
 			ExpectedStatusCode:  http.StatusBadRequest,
 		},
 		{
-			Name:                "Returns error when request body doesn't contain SubscriptionConsumerID",
+			Name:                "Returns error when request body doesn't contain SubscriptionProviderID",
 			TxFn:                txGen.ThatDoesntStartTransaction,
 			TenantSubscriberFn:  func() *automock.TenantSubscriber { return &automock.TenantSubscriber{} },
 			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingSubscriptionConsumerID)),
-			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionConsumerIDProperty),
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionProviderIDProperty),
 			ExpectedStatusCode:  http.StatusBadRequest,
 		},
 		{
@@ -274,21 +273,21 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		SubaccountID:           subaccountTenantExtID,
 		TenantID:               tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionProviderID: subscriptionProviderID,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingParent, err := json.Marshal(regionalTenantCreationRequest{
 		SubaccountID:           subaccountTenantExtID,
 		Subdomain:              tenantSubdomain,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionProviderID: subscriptionProviderID,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingTenantSubdomain, err := json.Marshal(regionalTenantCreationRequest{
 		SubaccountID:           subaccountTenantExtID,
 		TenantID:               tenantExtID,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionProviderID: subscriptionProviderID,
 	})
 	assert.NoError(t, err)
 
@@ -303,14 +302,13 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		TenantID:               tenantExtID,
 		SubaccountID:           tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionProviderID: subscriptionProviderID,
 	})
 	assert.NoError(t, err)
 
 	validHandlerConfig := tenantfetchersvc.HandlerConfig{
 		RegionPathParam:               "region",
-		RegionLabelKey:                "regionKey",
-		SubscriptionConsumerLabelKey:  "SubscriptionConsumerLabelKey",
+		SubscriptionProviderLabelKey:  "SubscriptionProviderLabelKey",
 		ConsumerSubaccountIDsLabelKey: "ConsumerSubaccountIDsLabelKey",
 		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
 			TenantProvider:                 testProviderName,
@@ -318,7 +316,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			SubaccountTenantIDProperty:     tenantProviderSubaccountTenantIDProperty,
 			CustomerIDProperty:             tenantProviderCustomerIDProperty,
 			SubdomainProperty:              tenantProviderSubdomainProperty,
-			SubscriptionConsumerIDProperty: subscriptionConsumerIDProperty,
+			SubscriptionProviderIDProperty: subscriptionProviderIDProperty,
 		},
 	}
 	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
@@ -326,14 +324,14 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		AccountTenantID:        tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 region,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionConsumerID: subscriptionProviderID,
 	}
 	regionalTenantWithMatchingParentID := tenantfetchersvc.TenantSubscriptionRequest{
 		SubaccountTenantID:     "",
 		AccountTenantID:        tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 region,
-		SubscriptionConsumerID: subscriptionConsumerID,
+		SubscriptionConsumerID: subscriptionProviderID,
 	}
 
 	// Subscribe flow
@@ -391,13 +389,13 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", tenantProviderTenantIDProperty),
 		},
 		{
-			Name:                "Returns error when SubscriptionConsumerID is not found in body",
+			Name:                "Returns error when SubscriptionProviderID is not found in body",
 			TenantSubscriberFn:  func() *automock.TenantSubscriber { return &automock.TenantSubscriber{} },
 			TxFn:                txGen.ThatDoesntStartTransaction,
 			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingSubscriptionConsumerID)),
 			Region:              region,
 			ExpectedStatusCode:  http.StatusBadRequest,
-			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionConsumerIDProperty),
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionProviderIDProperty),
 		},
 		{
 			Name:                "Returns error when request body doesn't contain tenant subdomain",
@@ -535,7 +533,7 @@ func TestService_Delete(t *testing.T) {
 			TenantID:               tenantExtID,
 			CustomerID:             parentTenantExtID,
 			Subdomain:              tenantSubdomain,
-			SubscriptionConsumerID: subscriptionConsumerID,
+			SubscriptionProviderID: subscriptionProviderID,
 		})
 		assert.NoError(t, err)
 
@@ -573,7 +571,7 @@ func TestService_Delete(t *testing.T) {
 		requestBody, err := json.Marshal(tenantCreationRequest{
 			CustomerID:             parentTenantExtID,
 			Subdomain:              tenantSubdomain,
-			SubscriptionConsumerID: subscriptionConsumerID,
+			SubscriptionProviderID: subscriptionProviderID,
 		})
 		assert.NoError(t, err)
 

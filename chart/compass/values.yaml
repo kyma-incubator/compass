@@ -353,7 +353,7 @@ global:
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       name: "provider"
-      subscriptionConsumerIdProperty: "subscriptionConsumerId"
+      subscriptionProviderIdProperty: "subscriptionProviderId"
 
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
@@ -361,8 +361,7 @@ global:
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
-      regionLabelKey: "region"
-      subscriptionConsumerLabelKey: "subscriptionConsumerId"
+      subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountIdsLabelKey: "consumerSubaccountIds"
 
   ordService:

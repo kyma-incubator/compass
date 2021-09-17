@@ -34,8 +34,7 @@ type HandlerConfig struct {
 	DependenciesEndpoint          string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
 	TenantPathParam               string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
 	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
-	RegionLabelKey                string `envconfig:"APP_REGION_LABEL_KEY,default=region_key"`
-	SubscriptionConsumerLabelKey  string `envconfig:"APP_SUBSCRIPTION_CONSUMER_LABEL_KEY,default=subscription_consumer_id"`
+	SubscriptionProviderLabelKey  string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY,default=subscriptionProviderId"`
 	ConsumerSubaccountIDsLabelKey string `envconfig:"APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY,default=consumer_subaccount_ids"`
 	TenantProviderConfig
 	features.Config
@@ -48,7 +47,7 @@ type TenantProviderConfig struct {
 	CustomerIDProperty             string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
 	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
 	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
-	SubscriptionConsumerIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_CONSUMER_ID_PROPERTY,default=subscriptionConsumerId"`
+	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderId"`
 }
 
 type handler struct {
@@ -68,56 +67,17 @@ func NewTenantsHTTPHandler(subscriber TenantSubscriber, transact persistence.Tra
 
 // Create handles creation of non-regional tenants.
 func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
-	ctx := request.Context()
-
-	body, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to read tenant information from request body: %v", err)
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-
-	subscriptionRequest, err := h.getSubscriptionRequest(body, "")
-	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to extract tenant information from request body")
-		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	mainTenantID := subscriptionRequest.MainTenantID()
-
-	tx, err := h.transact.Begin()
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction: %v", err)
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-	defer h.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	if err := h.subscriber.Subscribe(ctx, subscriptionRequest, ""); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to apply subscription change: %v", err)
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-
-	if err = tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while committing db transaction: %v", err)
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-
-	respondSuccess(ctx, writer, mainTenantID)
+	h.applySubscriptionChange(writer, request, h.subscriber.Subscribe, false)
 }
 
 // SubscribeTenant handles subscription for tenant. If tenant does not exist, will create it first.
 func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Request) {
-	h.applySubscriptionChange(writer, request, h.subscriber.Subscribe)
+	h.applySubscriptionChange(writer, request, h.subscriber.Subscribe, true)
 }
 
 // SubscribeTenant handles subscription for tenant. If tenant does not exist, will create it first.
 func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Request) {
-	h.applySubscriptionChange(writer, request, h.subscriber.Unsubscribe)
+	h.applySubscriptionChange(writer, request, h.subscriber.Unsubscribe, true)
 }
 
 // DeleteByExternalID handles both regional and non-regional tenant deletion requests.
@@ -148,15 +108,21 @@ func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request
 	}
 }
 
-func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *http.Request, subscriptionFunc subscriptionFunc) {
-	ctx := request.Context()
+func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *http.Request, subscriptionFunc subscriptionFunc, shouldExtractRegion bool) {
+	var (
+		ok     bool
+		region string
+		ctx    = request.Context()
+	)
 
-	vars := mux.Vars(request)
-	region, ok := vars[h.config.RegionPathParam]
-	if !ok {
-		log.C(ctx).Error("Region path parameter is missing from request")
-		http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
-		return
+	if shouldExtractRegion {
+		vars := mux.Vars(request)
+		region, ok = vars[h.config.RegionPathParam]
+		if !ok {
+			log.C(ctx).Error("Region path parameter is missing from request")
+			http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
+			return
+		}
 	}
 
 	body, err := ioutil.ReadAll(request.Body)
@@ -172,8 +138,6 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %v", err), http.StatusBadRequest)
 		return
 	}
-
-	mainTenantID := subscriptionRequest.MainTenantID()
 
 	tx, err := h.transact.Begin()
 	if err != nil {
@@ -196,7 +160,7 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 		return
 	}
 
-	respondSuccess(ctx, writer, mainTenantID)
+	respondSuccess(ctx, writer, subscriptionRequest.MainTenantID())
 }
 
 func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSubscriptionRequest, error) {
@@ -205,7 +169,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		h.config.SubaccountTenantIDProperty:     false,
 		h.config.SubdomainProperty:              true,
 		h.config.CustomerIDProperty:             false,
-		h.config.SubscriptionConsumerIDProperty: true,
+		h.config.SubscriptionProviderIDProperty: true,
 	})
 	if err != nil {
 		return nil, err
@@ -216,7 +180,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		SubaccountTenantID:     properties[h.config.SubaccountTenantIDProperty],
 		CustomerTenantID:       properties[h.config.CustomerIDProperty],
 		Subdomain:              properties[h.config.SubdomainProperty],
-		SubscriptionConsumerID: properties[h.config.SubscriptionConsumerIDProperty],
+		SubscriptionConsumerID: properties[h.config.SubscriptionProviderIDProperty],
 		Region:                 region,
 	}
 

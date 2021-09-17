@@ -33,17 +33,15 @@ type sliceMutationFunc func([]string, string) []string
 type subscriber struct {
 	provisioner TenantProvisioner
 	RuntimeService
-	RegionLabelKey                string
 	SubscriptionConsumerLabelKey  string
 	ConsumerSubaccountIDsLabelKey string
 }
 
 // NewSubscriber creates new subscriber
-func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, regionLabelKey, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey string) *subscriber {
+func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey string) *subscriber {
 	return &subscriber{
 		provisioner:                   provisioner,
 		RuntimeService:                service,
-		RegionLabelKey:                regionLabelKey,
 		SubscriptionConsumerLabelKey:  subscriptionConsumerLabelKey,
 		ConsumerSubaccountIDsLabelKey: consumerSubaccountIDsLabelKey,
 	}
@@ -63,10 +61,10 @@ func (s *subscriber) Unsubscribe(ctx context.Context, tenantSubscriptionRequest 
 	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionConsumerID, tenantSubscriptionRequest.SubaccountTenantID, region, removeElement)
 }
 
-func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionConsumerID, subaccountTenantID, region string, mutateSliceFunc sliceMutationFunc) error {
+func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionConsumerID, subaccountTenantID, region string, mutateLabelsFunc sliceMutationFunc) error {
 	filters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(s.SubscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionConsumerID)),
-		labelfilter.NewForKeyWithQuery(s.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
 	runtimes, err := s.ListByFiltersGlobal(ctx, filters)
@@ -75,7 +73,7 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 			return nil
 		}
 
-		return errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", s.RegionLabelKey, region, s.SubscriptionConsumerLabelKey, subscriptionConsumerID))
+		return errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.SubscriptionConsumerLabelKey, subscriptionConsumerID))
 	}
 
 	for _, runtime := range runtimes {
@@ -94,7 +92,7 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 			}
 		}
 
-		var labelNewValue = mutateSliceFunc(labelOldValue, subaccountTenantID)
+		var labelNewValue = mutateLabelsFunc(labelOldValue, subaccountTenantID)
 
 		if err := s.SetLabel(ctx, &model.LabelInput{
 			Key:        s.ConsumerSubaccountIDsLabelKey,

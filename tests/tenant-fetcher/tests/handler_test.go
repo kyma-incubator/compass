@@ -579,7 +579,7 @@ func createTenantRequest(t *testing.T, tenant Tenant, httpMethod string, url str
 		require.NoError(t, err)
 	}
 	if len(tenant.SubscriptionConsumerID) > 0 {
-		body, err = sjson.Set(body, config.SubscriptionConsumerIDProperty, tenant.SubscriptionConsumerID)
+		body, err = sjson.Set(body, config.SubscriptionProviderIDProperty, tenant.SubscriptionConsumerID)
 		require.NoError(t, err)
 	}
 
@@ -645,7 +645,7 @@ func registerRuntime(t *testing.T, ctx context.Context, name, subscriptionConsum
 	runtimeInput := graphql.RuntimeInput{
 		Name:        name,
 		Description: ptr.String(name),
-		Labels:      graphql.Labels{config.RegionLabelKey: regionPathParamValue, config.SubscriptionConsumerLabelKey: subscriptionConsumerID},
+		Labels:      graphql.Labels{"region": regionPathParamValue, config.SubscriptionProviderLabelKey: subscriptionConsumerID},
 	}
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
 	require.NoError(t, err)

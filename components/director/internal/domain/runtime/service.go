@@ -157,7 +157,7 @@ func (s *service) GetByTokenIssuer(ctx context.Context, issuer string) (*model.R
 func (s *service) GetByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	runtimes, err := s.repo.GetByFiltersGlobal(ctx, filters)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo: ")
+		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo")
 	}
 	return runtimes, nil
 }
@@ -166,7 +166,7 @@ func (s *service) GetByFiltersGlobal(ctx context.Context, filters []*labelfilter
 func (s *service) ListByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
 	runtimes, err := s.repo.ListByFiltersGlobal(ctx, filters)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo: ")
+		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo")
 	}
 	return runtimes, nil
 }
