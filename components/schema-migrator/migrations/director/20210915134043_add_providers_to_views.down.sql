@@ -1,5 +1,6 @@
 BEGIN;
 
+DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;
 
 CREATE OR REPLACE VIEW tenants_apis
@@ -230,8 +231,6 @@ FROM event_api_definitions events
                                 asa.selector_key::text = 'global_subaccount_id'::text
                WHERE l.app_id IS NOT NULL
                  AND l.key::text = 'scenarios'::text) t_apps ON events.app_id = t_apps.id;
-
-DROP VIEW IF EXISTS tenants_specifications;
 
 CREATE OR REPLACE VIEW tenants_specifications
             (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format,
