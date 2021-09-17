@@ -23,7 +23,7 @@ func BenchmarkSystemBundles(b *testing.B) {
 	ctx := context.Background()
 	defaultTestTenant := tenant.TestTenants.GetDefaultTenantID()
 
-	appsCount := 5
+	appsCount := 15
 	for i := 0; i < appsCount; i++ {
 		app := fixtures.CreateApp(fmt.Sprintf("%d", i))
 		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, dexGraphQLClient, defaultTestTenant, app)
