@@ -63,6 +63,7 @@ func BenchmarkSystemBundles(b *testing.B) {
 	b.ResetTimer() // Reset timer after the initialization
 
 	for i := 0; i < b.N; i++ {
+		//WHEN
 		respBody := makeRequestWithHeaders(b, intSystemHttpClient, fmt.Sprintf("%s/systemInstances?$expand=consumptionBundles($expand=apis,events)&$format=json", testConfig.ORDServiceURL), map[string][]string{tenantHeader: {defaultTestTenant}})
 
 		//THEN
