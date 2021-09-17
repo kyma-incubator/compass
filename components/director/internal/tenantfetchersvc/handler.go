@@ -7,38 +7,23 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	labelutils "github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
 
 const (
 	// InternalServerError message
 	InternalServerError = "Internal Server Error"
-
-	compassURL = "https://github.com/kyma-incubator/compass"
+	compassURL          = "https://github.com/kyma-incubator/compass"
 )
 
-// TenantProvisioner is used to create all related to the incoming request tenants, and build their hierarchy;
-//go:generate mockery --name=TenantProvisioner --output=automock --outpkg=automock --case=underscore
-type TenantProvisioner interface {
-	ProvisionTenants(context.Context, TenantSubscriptionRequest) error
-	ProvisionRegionalTenants(context.Context, TenantSubscriptionRequest) error
-}
-
-// RuntimeService is used to interact with runtimes
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
-type RuntimeService interface {
-	SetLabel(context.Context, *model.LabelInput) error
-	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
-	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+// TenantSubscriber is used to apply subscription changes for tenants;
+//go:generate mockery --name=TenantSubscriber --output=automock --outpkg=automock --case=underscore
+type TenantSubscriber interface {
+	Subscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest, region string) error
+	Unsubscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest, region string) error
 }
 
 // HandlerConfig is the configuration required by the tenant handler.
@@ -67,19 +52,17 @@ type TenantProviderConfig struct {
 }
 
 type handler struct {
-	provisioner    TenantProvisioner
-	runtimeService RuntimeService
-	transact       persistence.Transactioner
-	config         HandlerConfig
+	subscriber TenantSubscriber
+	transact   persistence.Transactioner
+	config     HandlerConfig
 }
 
 // NewTenantsHTTPHandler returns a new HTTP handler, responsible for creation and deletion of regional and non-regional tenants.
-func NewTenantsHTTPHandler(provisioner TenantProvisioner, runtimeService RuntimeService, transact persistence.Transactioner, config HandlerConfig) *handler {
+func NewTenantsHTTPHandler(subscriber TenantSubscriber, transact persistence.Transactioner, config HandlerConfig) *handler {
 	return &handler{
-		provisioner:    provisioner,
-		runtimeService: runtimeService,
-		transact:       transact,
-		config:         config,
+		subscriber: subscriber,
+		transact:   transact,
+		config:     config,
 	}
 }
 
@@ -89,7 +72,7 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to read tenant information from request body")
+		log.C(ctx).WithError(err).Errorf("Failed to read tenant information from request body: %v", err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
@@ -97,7 +80,7 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 	subscriptionRequest, err := h.getSubscriptionRequest(body, "")
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to extract tenant information from request body")
-		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %s", err.Error()), http.StatusBadRequest)
+		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -105,21 +88,21 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while opening db transaction")
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction: %v", err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err = h.provisionTenants(ctx, subscriptionRequest, ""); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to provision tenant with ID %s", mainTenantID)
+	if err := h.subscriber.Subscribe(ctx, subscriptionRequest, ""); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to apply subscription change: %v", err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
+		log.C(ctx).WithError(err).Errorf("An error occurred while committing db transaction: %v", err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
@@ -129,12 +112,12 @@ func (h *handler) Create(writer http.ResponseWriter, request *http.Request) {
 
 // SubscribeTenant handles subscription for tenant. If tenant does not exist, will create it first.
 func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Request) {
-	h.applySubscriptionChange(writer, request, true)
+	h.applySubscriptionChange(writer, request, h.subscriber.Subscribe)
 }
 
 // SubscribeTenant handles subscription for tenant. If tenant does not exist, will create it first.
 func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Request) {
-	h.applySubscriptionChange(writer, request, false)
+	h.applySubscriptionChange(writer, request, h.subscriber.Unsubscribe)
 }
 
 // DeleteByExternalID handles both regional and non-regional tenant deletion requests.
@@ -165,7 +148,7 @@ func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request
 	}
 }
 
-func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *http.Request, isSubscriptionFlow bool) {
+func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *http.Request, subscriptionFunc SubscriptionFunc) {
 	ctx := request.Context()
 
 	vars := mux.Vars(request)
@@ -178,15 +161,15 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to read tenant information from request body")
+		log.C(ctx).WithError(err).Errorf("Failed to read tenant information from request body: %v", err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
 	subscriptionRequest, err := h.getSubscriptionRequest(body, region)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to extract tenant information from request body")
-		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %s", err.Error()), http.StatusBadRequest)
+		log.C(ctx).WithError(err).Errorf("Failed to extract tenant information from request body: %v", err)
+		http.Error(writer, fmt.Sprintf("Failed to extract tenant information from request body: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -194,85 +177,26 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while opening db transaction")
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction: %v", err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if isSubscriptionFlow {
-		if err = h.provisionTenants(ctx, subscriptionRequest, region); err != nil {
-			log.C(ctx).WithError(err).Errorf("Failed to provision tenant with ID %s", mainTenantID)
-			http.Error(writer, InternalServerError, http.StatusInternalServerError)
-			return
-		}
-	}
-
-	if err = h.applyRuntimesSubscriptionChange(ctx, subscriptionRequest.SubscriptionConsumerID, subscriptionRequest.SubaccountTenantID, region, isSubscriptionFlow); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while subscribing tenant with id %q for runtimes with labels: %q and %q", mainTenantID, subscriptionRequest.SubscriptionConsumerID, region)
+	if err := subscriptionFunc(ctx, subscriptionRequest, region); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to apply subscription change: %v", err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while committing db transaction")
+		log.C(ctx).WithError(err).Errorf("An error occurred while committing db transaction: %v", err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
 	respondSuccess(ctx, writer, mainTenantID)
-}
-
-func (h *handler) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionConsumerID, subaccountTenantID, region string, isSubscriptionFlow bool) error {
-	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(h.config.SubscriptionConsumerLabelKey, fmt.Sprintf("\"%s\"", subscriptionConsumerID)),
-		labelfilter.NewForKeyWithQuery(h.config.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
-	}
-
-	runtimes, err := h.runtimeService.ListByFiltersGlobal(ctx, filters)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil
-		}
-
-		return errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", h.config.RegionLabelKey, region, h.config.SubscriptionConsumerLabelKey, subscriptionConsumerID))
-	}
-
-	for _, runtime := range runtimes {
-		ctx = tenant.SaveToContext(ctx, runtime.Tenant, "")
-
-		labelOldValue := make([]string, 0)
-		label, err := h.runtimeService.GetLabel(ctx, runtime.ID, h.config.ConsumerSubaccountIDsLabelKey)
-		if err != nil {
-			if !apperrors.IsNotFoundError(err) {
-				return errors.Wrap(err, fmt.Sprintf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, h.config.ConsumerSubaccountIDsLabelKey))
-			}
-			// if the error is not found, do nothing and continue
-		} else {
-			if labelOldValue, err = labelutils.ValueToStringsSlice(label.Value); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Failed to parse label values for label with id: %s", label.ID))
-			}
-		}
-
-		var labelNewValue []string
-		if isSubscriptionFlow {
-			labelNewValue = append(labelOldValue, subaccountTenantID)
-		} else {
-			labelNewValue = removeElement(labelOldValue, subaccountTenantID)
-		}
-
-		if err := h.runtimeService.SetLabel(ctx, &model.LabelInput{
-			Key:        h.config.ConsumerSubaccountIDsLabelKey,
-			Value:      labelNewValue,
-			ObjectType: model.RuntimeLabelableObject,
-			ObjectID:   runtime.ID,
-		}); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", runtime.ID))
-		}
-	}
-
-	return nil
 }
 
 func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSubscriptionRequest, error) {
@@ -303,21 +227,6 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 	return req, nil
 }
 
-func (h *handler) provisionTenants(ctx context.Context, request *TenantSubscriptionRequest, region string) error {
-	var err error
-
-	if len(region) > 0 {
-		err = h.provisioner.ProvisionRegionalTenants(ctx, *request)
-	} else {
-		err = h.provisioner.ProvisionTenants(ctx, *request)
-	}
-	if err != nil && !apperrors.IsNotUniqueError(err) {
-		return err
-	}
-
-	return nil
-}
-
 func getProperties(body []byte, props map[string]bool) (map[string]string, error) {
 	resultProps := map[string]string{}
 	for propName, mandatory := range props {
@@ -337,14 +246,4 @@ func respondSuccess(ctx context.Context, writer http.ResponseWriter, mainTenantI
 	if _, err := writer.Write([]byte(compassURL)); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write response body for tenant request creation for tenant %s: %v", mainTenantID, err)
 	}
-}
-
-func removeElement(slice []string, elem string) []string {
-	result := make([]string, 0)
-	for _, e := range slice {
-		if e != elem {
-			result = append(result, e)
-		}
-	}
-	return result
 }

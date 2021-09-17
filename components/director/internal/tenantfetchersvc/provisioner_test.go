@@ -61,20 +61,20 @@ var (
 		Region:         tenantRegion,
 	}
 
-	requestWithAccountTenant = tenantfetchersvc.TenantSubscriptionRequest{
+	requestWithAccountTenant = &tenantfetchersvc.TenantSubscriptionRequest{
 		AccountTenantID:  tenantExtID,
 		CustomerTenantID: parentTenantExtID,
 		Subdomain:        tenantSubdomain,
 		Region:           tenantRegion,
 	}
 
-	requestWithAccountTenantWithoutParent = tenantfetchersvc.TenantSubscriptionRequest{
+	requestWithAccountTenantWithoutParent = &tenantfetchersvc.TenantSubscriptionRequest{
 		AccountTenantID: tenantExtID,
 		Subdomain:       tenantSubdomain,
 		Region:          tenantRegion,
 	}
 
-	requestWithSubaccountTenant = tenantfetchersvc.TenantSubscriptionRequest{
+	requestWithSubaccountTenant = &tenantfetchersvc.TenantSubscriptionRequest{
 		SubaccountTenantID: subaccountTenantExtID,
 		AccountTenantID:    tenantExtID,
 		CustomerTenantID:   parentTenantExtID,
@@ -90,7 +90,7 @@ func TestProvisioner_CreateTenant(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		TenantSvcFn         func() *automock.TenantService
-		Request             tenantfetchersvc.TenantSubscriptionRequest
+		Request             *tenantfetchersvc.TenantSubscriptionRequest
 		ExpectedErrorOutput string
 	}{
 		{
@@ -142,7 +142,7 @@ func TestProvisioner_CreateTenant(t *testing.T) {
 			provisioner := tenantfetchersvc.NewTenantProvisioner(tenantSvc, testProviderName)
 
 			//WHEN
-			err := provisioner.ProvisionTenants(ctx, testCase.Request)
+			err := provisioner.ProvisionTenants(ctx, testCase.Request, "")
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {
@@ -162,7 +162,7 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		TenantSvcFn         func() *automock.TenantService
-		Request             tenantfetchersvc.TenantSubscriptionRequest
+		Request             *tenantfetchersvc.TenantSubscriptionRequest
 		ExpectedErrorOutput string
 	}{
 		{
@@ -196,7 +196,7 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 			provisioner := tenantfetchersvc.NewTenantProvisioner(tenantSvc, testProviderName)
 
 			//WHEN
-			err := provisioner.ProvisionRegionalTenants(ctx, testCase.Request)
+			err := provisioner.ProvisionTenants(ctx, testCase.Request, "asd")
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {

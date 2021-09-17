@@ -207,7 +207,8 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, cfg.ProtectedLabelPattern)
 
 	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc, cfg.TenantProvider)
-	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(provisioner, runtimeSvc, transact, cfg)
+	subscriber := tenantfetcher.NewSubscriber(provisioner, runtimeSvc, cfg.RegionLabelKey, cfg.SubscriptionConsumerLabelKey, cfg.ConsumerSubaccountIDsLabelKey)
+	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, transact, cfg)
 
 	log.C(ctx).Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
 	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.Create).Methods(http.MethodPut)

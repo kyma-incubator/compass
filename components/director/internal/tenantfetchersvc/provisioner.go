@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 )
 
@@ -51,8 +52,24 @@ func NewTenantProvisioner(tenantSvc TenantService, tenantProvider string) *provi
 	}
 }
 
-// ProvisionTenants creates all non-existing tenants from the provided request. with the information present in the request.
-func (p *provisioner) ProvisionTenants(ctx context.Context, request TenantSubscriptionRequest) error {
+// ProvisionTenants provisions tenants according to their type
+func (p *provisioner) ProvisionTenants(ctx context.Context, request *TenantSubscriptionRequest, region string) error {
+	var err error
+
+	if len(region) > 0 {
+		err = p.provisionRegionalTenants(ctx, *request)
+	} else {
+		err = p.provisionGlobalTenants(ctx, *request)
+	}
+	if err != nil && !apperrors.IsNotUniqueError(err) {
+		return err
+	}
+
+	return nil
+}
+
+// provisionGlobalTenants creates all non-existing tenants from the provided request. with the information present in the request.
+func (p *provisioner) provisionGlobalTenants(ctx context.Context, request TenantSubscriptionRequest) error {
 	if len(request.SubaccountTenantID) > 0 {
 		return fmt.Errorf("tenant with ID %s is of type %s and supports only regional provisioning", request.SubaccountTenantID, tenantEntity.Subaccount)
 	}
@@ -60,8 +77,8 @@ func (p *provisioner) ProvisionTenants(ctx context.Context, request TenantSubscr
 	return p.tenantSvc.CreateManyIfNotExists(ctx, p.tenantsFromRequest(request)...)
 }
 
-// ProvisionRegionalTenants creates all non-existing tenants from the provided request with the information present in the request, in the provided region..
-func (p *provisioner) ProvisionRegionalTenants(ctx context.Context, request TenantSubscriptionRequest) error {
+// provisionRegionalTenants creates all non-existing tenants from the provided request with the information present in the request, in the provided region..
+func (p *provisioner) provisionRegionalTenants(ctx context.Context, request TenantSubscriptionRequest) error {
 	return p.tenantSvc.CreateManyIfNotExists(ctx, p.tenantsFromRequest(request)...)
 }
 
