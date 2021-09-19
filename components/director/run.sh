@@ -205,5 +205,5 @@ if [[  ${DEBUG} ]]; then
     CGO_ENABLED=0 go build -gcflags="all=-N -l" ./cmd/${COMPONENT}
     dlv --listen=:$DEBUG_PORT --headless=true --api-version=2 exec ./${COMPONENT}
 else
-    go run ${ROOT_PATH}/cmd/director/main.go
+    go run ${ROOT_PATH}/cmd/${COMPONENT}/main.go
 fi

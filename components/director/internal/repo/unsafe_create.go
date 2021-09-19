@@ -12,7 +12,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
-// UnsafeCreator missing godoc
+// UnsafeCreator is used to create new entities in case they do not exist.
+// In case they do already exist, no action is taken, hence the provided entity ID is not guaranteed to match the ID in the Compass DB.
 type UnsafeCreator interface {
 	UnsafeCreate(ctx context.Context, dbEntity interface{}) error
 }
@@ -50,10 +51,10 @@ func (u *unsafeCreator) UnsafeCreate(ctx context.Context, dbEntity interface{}) 
 		values = append(values, fmt.Sprintf(":%s", c))
 	}
 
-	stmtWithoutUpsert := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", u.tableName, strings.Join(u.insertColumns, ", "), strings.Join(values, ", "))
-	stmtWithUpsert := fmt.Sprintf("%s ON CONFLICT ( %s ) DO NOTHING", stmtWithoutUpsert, strings.Join(u.conflictingColumns, ", "))
+	insertStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", u.tableName, strings.Join(u.insertColumns, ", "), strings.Join(values, ", "))
+	stmt := fmt.Sprintf("%s ON CONFLICT ( %s ) DO NOTHING", insertStmt, strings.Join(u.conflictingColumns, ", "))
 
-	log.C(ctx).Debugf("Executing DB query: %s", stmtWithUpsert)
-	_, err = persist.NamedExecContext(ctx, stmtWithUpsert, dbEntity)
-	return persistence.MapSQLError(ctx, err, u.resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName)
+	log.C(ctx).Debugf("Executing DB query: %s", stmt)
+	_, err = persist.NamedExecContext(ctx, stmt, dbEntity)
+	return persistence.MapSQLError(ctx, err, u.resourceType, resource.Upsert, "while unsafe inserting row to '%s' table", u.tableName)
 }

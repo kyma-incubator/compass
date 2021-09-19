@@ -140,9 +140,9 @@ func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs
 	return s.upsertTenants(ctx, tenantInputs, s.tenantMappingRepo.UnsafeCreate)
 }
 
-// UpsertManyIfNotExists creates all provided tenants if they do not exist. If they do exist, they are internally updated.
+// UpsertMany creates all provided tenants if they do not exist. If they do exist, they are internally updated.
 // It creates or updates the subdomain and region labels of the provided tenants, no matter if they are pre-existing or not.
-func (s *labeledService) UpsertManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
+func (s *labeledService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
 	return s.upsertTenants(ctx, tenantInputs, s.tenantMappingRepo.Upsert)
 }
 
@@ -181,7 +181,7 @@ func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.Bus
 	}
 
 	tenantFromDB, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenant.ExternalTenant)
-	if err != nil && !apperrors.IsNotFoundError(err) {
+	if err != nil {
 		return "", errors.Wrapf(err, "while retrieving the internal tenant ID of tenant with external ID %s", tenant.ExternalTenant)
 	}
 

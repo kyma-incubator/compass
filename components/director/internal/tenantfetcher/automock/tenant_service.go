@@ -73,7 +73,7 @@ func (_m *TenantService) List(ctx context.Context) ([]*model.BusinessTenantMappi
 }
 
 // UpsertManyIfNotExists provides a mock function with given fields: ctx, tenantInputs
-func (_m *TenantService) UpsertManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
+func (_m *TenantService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
 	ret := _m.Called(ctx, tenantInputs)
 
 	var r0 error

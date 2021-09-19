@@ -57,7 +57,7 @@ type QueryConfig struct {
 type TenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-	UpsertManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
+	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
@@ -232,7 +232,7 @@ func (s Service) createTenants(ctx context.Context, currTenants map[string]strin
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
 	if len(tenantsToCreate) > 0 {
-		if err := s.tenantStorageService.UpsertManyIfNotExists(ctx, tenantsToCreate...); err != nil {
+		if err := s.tenantStorageService.UpsertMany(ctx, tenantsToCreate...); err != nil {
 			return errors.Wrap(err, "while storing new tenants")
 		}
 	}

@@ -454,7 +454,7 @@ func TestService_CreateAndUpsert(t *testing.T) {
 		}
 	})
 
-	t.Run("UpsertManyIfNotExists", func(t *testing.T) {
+	t.Run("UpsertMany", func(t *testing.T) {
 		for _, testCase := range testCases {
 			t.Run(testCase.Name, func(t *testing.T) {
 				uidSvc := testCase.UIDSvcFn()
@@ -466,7 +466,7 @@ func TestService_CreateAndUpsert(t *testing.T) {
 				svc := tenant.NewServiceWithLabels(tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
 
 				// WHEN
-				err := svc.UpsertManyIfNotExists(ctx, testCase.tenantInputs...)
+				err := svc.UpsertMany(ctx, testCase.tenantInputs...)
 
 				// THEN
 				if testCase.ExpectedOutput != nil {
