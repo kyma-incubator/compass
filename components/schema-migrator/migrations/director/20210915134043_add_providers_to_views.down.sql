@@ -261,4 +261,6 @@ DROP FUNCTION IF EXISTS apps_subaccounts_func();
 
 DROP FUNCTION IF EXISTS consumers_provider_for_runtimes_func();
 
+DROP FUNCTION IF EXISTS uuid_or_null();
+
 COMMIT;

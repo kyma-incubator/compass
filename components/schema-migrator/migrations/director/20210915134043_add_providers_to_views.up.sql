@@ -30,7 +30,7 @@ $$;
 CREATE OR REPLACE FUNCTION consumers_provider_for_runtimes_func()
     RETURNS TABLE
             (
-                provider_tenant  jsonb,
+                provider_tenant  text,
                 consumer_tenants jsonb
             )
     LANGUAGE plpgsql
@@ -38,12 +38,21 @@ AS
 $$
 BEGIN
     RETURN QUERY
-        SELECT l1.value -> 0 AS provider_tenant, l2.value AS consumer_tenants
+        SELECT l1.value ->> 0 AS provider_tenant, l2.value AS consumer_tenants
         FROM (SELECT * FROM labels WHERE key::text = 'global_subaccount_id') l1 -- Get the subaccount for each runtime
                  JOIN (SELECT * FROM labels WHERE key::text = 'consumer_subaccount_ids') l2 -- Get all the consumer subaccounts for each runtime
                       ON l1.runtime_id = l2.runtime_id AND l1.runtime_id IS NOT NULL;
 END
 $$;
+
+CREATE OR REPLACE FUNCTION uuid_or_null(str text)
+    RETURNS uuid AS $$
+BEGIN
+    RETURN str::uuid;
+EXCEPTION WHEN invalid_text_representation THEN
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
 
 DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;
@@ -118,7 +127,7 @@ FROM api_definitions apis
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id, a_s.tenant_id, (cpr.provider_tenant #>> '{}')::uuid AS provider_tenant_id
+               SELECT a_s.id, a_s.tenant_id, uuid_or_null(cpr.provider_tenant) AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON apis.app_id = t_apps.id
@@ -169,7 +178,7 @@ FROM applications apps
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id, a_s.tenant_id, (cpr.provider_tenant #>> '{}')::uuid AS provider_tenant_id
+               SELECT a_s.id, a_s.tenant_id, uuid_or_null(cpr.provider_tenant) AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps
@@ -216,7 +225,7 @@ FROM bundles b
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id, a_s.tenant_id, (cpr.provider_tenant #>> '{}')::uuid AS provider_tenant_id
+               SELECT a_s.id, a_s.tenant_id, uuid_or_null(cpr.provider_tenant) AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON b.app_id = t_apps.id;
@@ -281,7 +290,7 @@ FROM event_api_definitions events
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id, a_s.tenant_id, (cpr.provider_tenant #>> '{}')::uuid AS provider_tenant_id
+               SELECT a_s.id, a_s.tenant_id, uuid_or_null(cpr.provider_tenant) AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON events.app_id = t_apps.id;
