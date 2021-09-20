@@ -39,18 +39,23 @@ $$
 BEGIN
     RETURN QUERY
         SELECT l1.value ->> 0 AS provider_tenant, l2.value AS consumer_tenants
-        FROM (SELECT * FROM labels WHERE key::text = 'global_subaccount_id') l1 -- Get the subaccount for each runtime
+        FROM (SELECT *
+              FROM labels
+              WHERE key::text = 'global_subaccount_id'
+                AND uuid_or_null(value ->> 0) IS NOT NULL) l1 -- Get the subaccount for each runtime
                  JOIN (SELECT * FROM labels WHERE key::text = 'consumer_subaccount_ids') l2 -- Get all the consumer subaccounts for each runtime
                       ON l1.runtime_id = l2.runtime_id AND l1.runtime_id IS NOT NULL;
 END
 $$;
 
 CREATE OR REPLACE FUNCTION uuid_or_null(str text)
-    RETURNS uuid AS $$
+    RETURNS uuid AS
+$$
 BEGIN
     RETURN str::uuid;
-EXCEPTION WHEN invalid_text_representation THEN
-    RETURN NULL;
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -58,7 +63,8 @@ DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;
 
 CREATE OR REPLACE VIEW tenants_apis
-            (tenant_id, provider_tenant_id, id, app_id, name, description, group_name, default_auth, version_value, version_deprecated,
+            (tenant_id, provider_tenant_id, id, app_id, name, description, group_name, default_auth, version_value,
+             version_deprecated,
              version_deprecated_since, version_for_removal, ord_id, short_description, system_instance_aware,
              api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries,
              labels, package_id, visibility, disabled, part_of_products, line_of_business, industry, ready, created_at,
@@ -127,7 +133,7 @@ FROM api_definitions apis
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id, a_s.tenant_id, uuid_or_null(cpr.provider_tenant) AS provider_tenant_id
+               SELECT a_s.id, a_s.tenant_id, cpr.provider_tenant::uuid AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON apis.app_id = t_apps.id
@@ -178,7 +184,7 @@ FROM applications apps
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id, a_s.tenant_id, uuid_or_null(cpr.provider_tenant) AS provider_tenant_id
+               SELECT a_s.id, a_s.tenant_id, cpr.provider_tenant::uuid AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps
@@ -187,7 +193,8 @@ FROM applications apps
 DROP VIEW IF EXISTS tenants_bundles;
 
 CREATE OR REPLACE VIEW tenants_bundles
-            (tenant_id, provider_tenant_id, id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id,
+            (tenant_id, provider_tenant_id, id, app_id, name, description, instance_auth_request_json_schema,
+             default_instance_auth, ord_id,
              short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at,
              deleted_at, error)
 AS
@@ -225,7 +232,7 @@ FROM bundles b
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id, a_s.tenant_id, uuid_or_null(cpr.provider_tenant) AS provider_tenant_id
+               SELECT a_s.id, a_s.tenant_id, cpr.provider_tenant::uuid AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON b.app_id = t_apps.id;
@@ -233,7 +240,8 @@ FROM bundles b
 DROP VIEW IF EXISTS tenants_events;
 
 CREATE OR REPLACE VIEW tenants_events
-            (tenant_id, provider_tenant_id, id, app_id, name, description, group_name, version_value, version_deprecated,
+            (tenant_id, provider_tenant_id, id, app_id, name, description, group_name, version_value,
+             version_deprecated,
              version_deprecated_since, version_for_removal, ord_id, short_description, system_instance_aware,
              changelog_entries, links, tags, countries, release_status, sunset_date, labels, package_id, visibility,
              disabled, part_of_products, line_of_business, industry, ready, created_at, updated_at, deleted_at, error,
@@ -290,13 +298,14 @@ FROM event_api_definitions events
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id, a_s.tenant_id, uuid_or_null(cpr.provider_tenant) AS provider_tenant_id
+               SELECT a_s.id, a_s.tenant_id, cpr.provider_tenant::uuid AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON events.app_id = t_apps.id;
 
 CREATE OR REPLACE VIEW tenants_specifications
-            (tenant_id, provider_tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format,
+            (tenant_id, provider_tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type,
+             event_spec_format,
              event_spec_type, custom_type, created_at)
 AS
 SELECT DISTINCT t_api_event_def.tenant_id,
@@ -314,12 +323,12 @@ SELECT DISTINCT t_api_event_def.tenant_id,
 FROM specifications spec
          JOIN (SELECT a.id,
                       a.tenant_id,
-                    a.provider_tenant_id
+                      a.provider_tenant_id
                FROM tenants_apis a
                UNION ALL
                SELECT e.id,
                       e.tenant_id,
-                        e.provider_tenant_id
+                      e.provider_tenant_id
                FROM tenants_events e) t_api_event_def
               ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
 
