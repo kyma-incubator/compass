@@ -75,7 +75,7 @@ global:
       version: "PR-2003"
     director:
       dir:
-      version: "PR-2013"
+      version: "PR-2023"
     gateway:
       dir:
       version: "PR-2003"
@@ -104,7 +104,7 @@ global:
       version: "PR-42"
     e2e_tests:
       dir:
-      version: "PR-2022"
+      version: "PR-2023"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -353,12 +353,16 @@ global:
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       name: "provider"
+      subscriptionProviderIdProperty: "subscriptionProviderId"
+
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
+      subscriptionProviderLabelKey: "subscriptionProviderId"
+      consumerSubaccountIdsLabelKey: "consumerSubaccountIds"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local

@@ -237,6 +237,56 @@ func TestPgRepository_GetOldestForFilters_WithAdditionalFilers_ShouldReturnRunti
 	assert.Equal(t, tenantID, modelRuntime.Tenant)
 }
 
+func TestPgRepository_ListByFiltersGlobal(t *testing.T) {
+	// GIVEN
+	runtime1ID := uuid.New().String()
+	runtime2ID := uuid.New().String()
+	tenantID := uuid.New().String()
+
+	runtimes := []*model.Runtime{
+		fixModelRuntime(t, runtime1ID, tenantID, "Runtime ABC", "Description for runtime ABC"),
+		fixModelRuntime(t, runtime2ID, tenantID, "Runtime XYZ", "Description for runtime XYZ"),
+	}
+
+	mockConverter := &automock.EntityConverter{}
+	mockConverter.On("MultipleFromEntities", mock.Anything).Return(runtimes)
+
+	sqlxDB, sqlMock := testdb.MockDatabase(t)
+	defer sqlMock.AssertExpectations(t)
+
+	rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}).
+		AddRow(runtime1ID, tenantID, runtimes[0].Name, runtimes[0].Description, runtimes[0].Status.Condition, runtimes[0].CreationTimestamp, runtimes[0].CreationTimestamp).
+		AddRow(runtime2ID, tenantID, runtimes[1].Name, runtimes[1].Description, runtimes[1].Status.Condition, runtimes[1].CreationTimestamp, runtimes[1].CreationTimestamp)
+
+	sqlMock.ExpectQuery(`^SELECT (.+) FROM public.runtimes WHERE id IN \(SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "key" = \$1 AND "value" \@\> \$2\ INTERSECT SELECT "runtime_id" FROM public\.labels WHERE "runtime_id" IS NOT NULL AND "key" = \$3 AND "value" \@\> \$4\)$`).
+		WithArgs("someKey", "someValue", "someKey2", "someValue2").
+		WillReturnRows(rows)
+
+	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+	pgRepository := runtime.NewRepository(mockConverter)
+
+	filters := []*labelfilter.LabelFilter{
+		{
+			Key:   "someKey",
+			Query: str.Ptr(`someValue`),
+		},
+		{
+			Key:   "someKey2",
+			Query: str.Ptr(`someValue2`),
+		},
+	}
+	// WHEN
+	modelRuntimes, err := pgRepository.ListByFiltersGlobal(ctx, filters)
+
+	// THEN
+	assert.NoError(t, err)
+	require.NotNil(t, modelRuntimes)
+	require.NoError(t, sqlMock.ExpectationsWereMet())
+
+	assert.Equal(t, runtimes, modelRuntimes)
+}
+
 func TestPgRepository_List(t *testing.T) {
 	//GIVEN
 	tenantID := uuid.New().String()

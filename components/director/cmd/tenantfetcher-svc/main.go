@@ -22,6 +22,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+
 	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -195,8 +198,17 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	tenantRepo := tenant.NewRepository(converter)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
 
+	runtimeConverter := runtime.NewConverter()
+	runtimeRepo := runtime.NewRepository(runtimeConverter)
+	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.DefaultScenarioEnabled)
+	assignmentConv := scenarioassignment.NewConverter()
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, cfg.ProtectedLabelPattern)
+
 	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc, cfg.TenantProvider)
-	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(provisioner, transact, cfg)
+	subscriber := tenantfetcher.NewSubscriber(provisioner, runtimeSvc, cfg.SubscriptionProviderLabelKey, cfg.ConsumerSubaccountIDsLabelKey)
+	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, transact, cfg)
 
 	log.C(ctx).Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
 	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.Create).Methods(http.MethodPut)
@@ -205,10 +217,10 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.DeleteByExternalID).Methods(http.MethodDelete)
 
 	log.C(ctx).Infof("Registering Regional Tenant Onboarding endpoint on %s...", cfg.RegionalHandlerEndpoint)
-	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.CreateRegional).Methods(http.MethodPut)
+	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.SubscribeTenant).Methods(http.MethodPut)
 
 	log.C(ctx).Infof("Registering Regional Tenant Decommissioning endpoint on %s...", cfg.RegionalHandlerEndpoint)
-	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.DeleteByExternalID).Methods(http.MethodDelete)
+	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.UnSubscribeTenant).Methods(http.MethodDelete)
 
 	log.C(ctx).Infof("Registering service dependencies endpoint on %s...", cfg.DependenciesEndpoint)
 	router.HandleFunc(cfg.DependenciesEndpoint, tenantHandler.Dependencies).Methods(http.MethodGet)
