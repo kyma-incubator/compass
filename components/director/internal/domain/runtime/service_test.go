@@ -1191,7 +1191,7 @@ func TestService_GetLabel(t *testing.T) {
 	})
 }
 
-func TestService_ListLabel(t *testing.T) {
+func TestService_ListLabels(t *testing.T) {
 	// given
 	tnt := "tenant"
 	externalTnt := "external-tnt"
@@ -2404,16 +2404,6 @@ func TestService_UpdateTenantID(t *testing.T) {
 			uidSvc.AssertExpectations(t)
 		})
 	}
-
-	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
-		// when
-		err := svc.Update(context.TODO(), "id", model.RuntimeInput{})
-		// then
-		require.Error(t, err)
-		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
-	})
 }
 
 func TestService_GetByFiltersGlobal(t *testing.T) {
@@ -2484,16 +2474,76 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 			uidSvc.AssertExpectations(t)
 		})
 	}
+}
 
-	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, "")
-		// when
-		err := svc.Update(context.TODO(), "id", model.RuntimeInput{})
-		// then
-		require.Error(t, err)
-		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
-	})
+func TestService_ListByFiltersGlobal(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+	filters := []*labelfilter.LabelFilter{
+		{Key: "test-key", Query: str.Ptr("test-filter")},
+	}
+	modelRuntimes := []*model.Runtime{
+		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem Ipsum"),
+		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Lorem Ipsum"),
+	}
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeRepository
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByFiltersGlobal", ctx, filters).Return(modelRuntimes, nil).Once()
+				return repo
+			},
+
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Fails on repository error",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByFiltersGlobal", ctx, filters).Return(nil, testErr).Once()
+				return repo
+			},
+
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			labelRepository := &automock.LabelRepository{}
+			labelUpsertService := &automock.LabelUpsertService{}
+			scenariosService := &automock.ScenariosService{}
+			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
+			uidSvc := &automock.UIDService{}
+			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$")
+
+			// when
+			actualRuntimes, err := svc.ListByFiltersGlobal(ctx, filters)
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				require.Equal(t, modelRuntimes, actualRuntimes)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+			labelRepository.AssertExpectations(t)
+			labelUpsertService.AssertExpectations(t)
+			scenariosService.AssertExpectations(t)
+			scenarioAssignmentEngine.AssertExpectations(t)
+			uidSvc.AssertExpectations(t)
+		})
+	}
 }
 
 func contextThatHasTenant(expectedTenant string) interface{} {
