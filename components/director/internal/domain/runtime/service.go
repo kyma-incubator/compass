@@ -27,6 +27,7 @@ type RuntimeRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
+	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Create(ctx context.Context, item *model.Runtime) error
 	Update(ctx context.Context, item *model.Runtime) error
 	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
@@ -156,7 +157,16 @@ func (s *service) GetByTokenIssuer(ctx context.Context, issuer string) (*model.R
 func (s *service) GetByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	runtimes, err := s.repo.GetByFiltersGlobal(ctx, filters)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo: ")
+		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo")
+	}
+	return runtimes, nil
+}
+
+// ListByFiltersGlobal missing godoc
+func (s *service) ListByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
+	runtimes, err := s.repo.ListByFiltersGlobal(ctx, filters)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo")
 	}
 	return runtimes, nil
 }
