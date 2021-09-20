@@ -129,8 +129,8 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 }
 
 // ListByFiltersGlobal missing godoc
-func (r *pgRepository) ListByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
-	filterSubquery, args, err := label.FilterQueryGlobal(model.RuntimeLabelableObject, label.IntersectSet, filter)
+func (r *pgRepository) ListByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
+	filterSubquery, args, err := label.FilterQueryGlobal(model.RuntimeLabelableObject, label.IntersectSet, filters)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}

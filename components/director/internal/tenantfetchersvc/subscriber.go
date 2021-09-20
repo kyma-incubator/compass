@@ -61,9 +61,9 @@ func (s *subscriber) Unsubscribe(ctx context.Context, tenantSubscriptionRequest 
 	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.SubaccountTenantID, region, removeElement)
 }
 
-func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionConsumerID, subaccountTenantID, region string, mutateLabelsFunc sliceMutationFunc) error {
+func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionProviderID, subaccountTenantID, region string, mutateLabelsFunc sliceMutationFunc) error {
 	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(s.SubscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", subscriptionConsumerID)),
+		labelfilter.NewForKeyWithQuery(s.SubscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", subscriptionProviderID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
@@ -73,7 +73,7 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 			return nil
 		}
 
-		return errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.SubscriptionProviderLabelKey, subscriptionConsumerID))
+		return errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.SubscriptionProviderLabelKey, subscriptionProviderID))
 	}
 
 	for _, runtime := range runtimes {
