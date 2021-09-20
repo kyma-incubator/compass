@@ -11,8 +11,11 @@ The tenant might exist, if the tenant-fetcher job has fetched the creation event
 
 It also creates all of its parent tenants, in case they also do not exist. At last, it labels the tenant with its subdomain.
 
-#### Create regional tenant
-This endpoint is responsible for creating the new tenant, its relative tenants, and labeling it with its subdomain. Besides that, it also adds an additional label - the region where the tenant belongs.
+#### Subscribe regional tenant
+This endpoint is responsible for subscribing tenants to runtimes with the given labels. In case the tenant does not exist it will be created as well as its relative tenants. Regional tenants are labeled with their subdomains and regions. Subscribed runtimes are labeled with subscriber tenant ids.
+
+#### Unsubscribe regional tenant
+This endpoint is responsible for unsubscribing tenants from runtimes with the given labels. Unsubscribing tenant id is removed from subscribed runtimes label.
 
 #### Deprovision regional or non-regional tenant
 This endpoint is currently no-op. The tenants should be deleted by the tenant-fetcher job.
@@ -44,6 +47,9 @@ The Tenant Fetcher binary allows you to override some configuration parameters. 
 | **APP_ADDRESS**                                       | `127.0.0.1:8080`                            | The address and port for the service to listen on |
 | **APP_ROOT_API**                                      | `/tenants`                                  | The root API where the server will listen to. All following APIs should be accessed through the root API |
 | **APP_TENANT_PROVIDER**                               | `external-provider`                         | Tenant provider name |
+| **APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY**  | `subscriptionProviderId`               |  |
+| **APP_SUBSCRIPTION_PROVIDER_LABEL_KEY**                    | `subscriptionProviderId`               |  |
+| **APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY**                  | `consumer_subaccount_ids`              |  |
 | **APP_HANDLER_ENDPOINT**                              | `/v1/callback/{tenantID}`                   | The endpoint used for tenant management |
 | **APP_REGIONAL_HANDLER_ENDPOINT**                     | `/v1/regional/{region}/callback/{tenantID}` | The endpoint used for management of regional tenants |
 | **APP_DEPENDENCIES_ENDPOINT**                         | `/v1/dependencies`                          | The endpoint used for declaring external dependencies |
