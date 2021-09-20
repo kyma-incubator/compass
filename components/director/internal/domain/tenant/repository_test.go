@@ -43,7 +43,7 @@ func TestPgRepository_Upsert(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Error when creating", func(t *testing.T) {
+	t.Run("Error when upserting", func(t *testing.T) {
 		// GIVEN
 		tenantModel := newModelBusinessTenantMapping(testID, testName)
 		tenantEntity := newEntityBusinessTenantMapping(testID, testName)
