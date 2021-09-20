@@ -56,8 +56,6 @@ CREATE OR REPLACE VIEW tenants_apis
              updated_at, deleted_at, error, implementation_standard, custom_implementation_standard,
              custom_implementation_standard_description, target_urls, extensible, successors, resource_hash)
 AS
-WITH apps_subaccounts AS (SELECT * FROM apps_subaccounts_func()),
-     consumers_provider_for_runtimes AS (SELECT * FROM consumers_provider_for_runtimes_func())
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.provider_tenant_id,
                 apis.id,
@@ -118,11 +116,11 @@ FROM api_definitions apis
                WHERE t.parent IS NOT NULL
                UNION ALL
                SELECT *
-               FROM apps_subaccounts
+               FROM apps_subaccounts_func()
                UNION ALL
                SELECT a_s.id, a_s.tenant_id, (cpr.provider_tenant #>> '{}')::uuid AS provider_tenant_id
-               FROM apps_subaccounts a_s
-                        JOIN consumers_provider_for_runtimes cpr
+               FROM apps_subaccounts_func() a_s
+                        JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON apis.app_id = t_apps.id
          LEFT JOIN specifications specs ON apis.id = specs.api_def_id;
 
@@ -133,8 +131,6 @@ CREATE OR REPLACE VIEW tenants_apps
              integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error,
              app_template_id, correlation_ids, system_number, product_type)
 AS
-WITH apps_subaccounts AS (SELECT * FROM apps_subaccounts_func()),
-     consumers_provider_for_runtimes AS (SELECT * FROM consumers_provider_for_runtimes_func())
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.provider_tenant_id,
                 apps.id,
@@ -171,11 +167,11 @@ FROM applications apps
                WHERE t.parent IS NOT NULL
                UNION ALL
                SELECT *
-               FROM apps_subaccounts
+               FROM apps_subaccounts_func()
                UNION ALL
                SELECT a_s.id, a_s.tenant_id, (cpr.provider_tenant #>> '{}')::uuid AS provider_tenant_id
-               FROM apps_subaccounts a_s
-                        JOIN consumers_provider_for_runtimes cpr
+               FROM apps_subaccounts_func() a_s
+                        JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps
               ON apps.id = t_apps.id;
 
@@ -186,8 +182,6 @@ CREATE OR REPLACE VIEW tenants_bundles
              short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at,
              deleted_at, error)
 AS
-WITH apps_subaccounts AS (SELECT * FROM apps_subaccounts_func()),
-     consumers_provider_for_runtimes AS (SELECT * FROM consumers_provider_for_runtimes_func())
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.provider_tenant_id,
                 b.id,
@@ -220,11 +214,11 @@ FROM bundles b
                WHERE t.parent IS NOT NULL
                UNION ALL
                SELECT *
-               FROM apps_subaccounts
+               FROM apps_subaccounts_func()
                UNION ALL
                SELECT a_s.id, a_s.tenant_id, (cpr.provider_tenant #>> '{}')::uuid AS provider_tenant_id
-               FROM apps_subaccounts a_s
-                        JOIN consumers_provider_for_runtimes cpr
+               FROM apps_subaccounts_func() a_s
+                        JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON b.app_id = t_apps.id;
 
 DROP VIEW IF EXISTS tenants_events;
@@ -236,8 +230,6 @@ CREATE OR REPLACE VIEW tenants_events
              disabled, part_of_products, line_of_business, industry, ready, created_at, updated_at, deleted_at, error,
              extensible, successors, resource_hash)
 AS
-WITH apps_subaccounts AS (SELECT * FROM apps_subaccounts_func()),
-     consumers_provider_for_runtimes AS (SELECT * FROM consumers_provider_for_runtimes_func())
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.provider_tenant_id,
                 events.id,
@@ -287,11 +279,11 @@ FROM event_api_definitions events
                WHERE t.parent IS NOT NULL
                UNION ALL
                SELECT *
-               FROM apps_subaccounts
+               FROM apps_subaccounts_func()
                UNION ALL
                SELECT a_s.id, a_s.tenant_id, (cpr.provider_tenant #>> '{}')::uuid AS provider_tenant_id
-               FROM apps_subaccounts a_s
-                        JOIN consumers_provider_for_runtimes cpr
+               FROM apps_subaccounts_func() a_s
+                        JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON events.app_id = t_apps.id;
 
 CREATE OR REPLACE VIEW tenants_specifications
