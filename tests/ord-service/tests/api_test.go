@@ -32,17 +32,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/ptr"
-
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
-
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
-
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"golang.org/x/oauth2"
@@ -144,7 +142,8 @@ func TestORDService(stdT *testing.T) {
 		},
 	}
 
-	intSystemHttpClient := integrationSystemClient(t, ctx, unsecuredHttpClient, intSystemCredentials)
+	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
+	require.NoError(t, err)
 	extIssuerCertHttpClient := extIssuerCertClient(t)
 
 	t.Run("401 when requests to ORD Service are unsecured", func(t *testing.T) {
