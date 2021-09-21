@@ -54,7 +54,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210831121533-7e4208095db0
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20210921091803-b9256ad07b6b
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210831121533-7e4208095db0
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210831121533-7e4208095db0
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
