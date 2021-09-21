@@ -55,6 +55,12 @@ spec:
               value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
             - name: CA_SECRET_KEY_KEY
               value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
+            - name: EXTERNAL_SERVICES_MOCK_URL
+              value: {{ .Values.global.tests.externalServicesMockFQDN }}:8080
+            - name: SUBSCRIPTION_PROVIDER_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:

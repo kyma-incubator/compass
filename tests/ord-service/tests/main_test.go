@@ -56,6 +56,9 @@ type config struct {
 	ORDServiceStaticPrefix           string
 	ORDServiceDefaultResponseType    string
 	DefaultScenarioEnabled           bool `envconfig:"default=true"`
+	ExternalServicesMockURL          string
+	SubscriptionProviderLabelKey     string
+	ConsumerSubaccountIdsLabelKey    string
 }
 
 var testConfig config

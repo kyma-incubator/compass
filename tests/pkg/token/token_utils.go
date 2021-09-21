@@ -1,6 +1,7 @@
 package token
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -11,6 +12,9 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
@@ -75,4 +79,34 @@ func GetAccessToken(t *testing.T, oauthCredentialData *graphql.OAuthCredentialDa
 func HttpRequestBodyCloser(t *testing.T, resp *http.Response) {
 	err := resp.Body.Close()
 	require.NoError(t, err)
+}
+
+func FetchTokenFromExternalServicesMock(t *testing.T, externalServicesMockURL string, claims map[string]interface{}) string {
+	data, err := json.Marshal(claims)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest(http.MethodPost, externalServicesMockURL+"/oauth/token", bytes.NewBuffer(data))
+	require.NoError(t, err)
+
+	httpClient := &http.Client{
+		Timeout: 15 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
+	resp, err := httpClient.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, resp.Body.Close())
+	}()
+
+	token := gjson.GetBytes(body, "access_token")
+	require.True(t, token.Exists())
+
+	return token.String()
 }

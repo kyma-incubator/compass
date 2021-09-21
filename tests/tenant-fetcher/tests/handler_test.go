@@ -32,9 +32,9 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	tenant_utils "github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
 
@@ -505,7 +505,17 @@ func TestGetDependenciesHandler(t *testing.T) {
 		// GIVEN
 		request, err := http.NewRequest(http.MethodGet, config.TenantFetcherFullDependenciesURL, nil)
 		require.NoError(t, err)
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", fetchToken(t)))
+		claims := map[string]interface{}{
+			"test": "tenant-fetcher",
+			"scope": []string{
+				"prefix.Callback",
+			},
+			"tenant":   "tenant",
+			"identity": "tenant-fetcher-tests",
+			"iss":      config.ExternalServicesMockURL,
+			"exp":      time.Now().Unix() + int64(time.Minute.Seconds()),
+		}
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FetchTokenFromExternalServicesMock(t, config.ExternalServicesMockURL, claims)))
 
 		// WHEN
 		response, err := httpClient.Do(request)
@@ -585,12 +595,6 @@ func createTenantRequest(t *testing.T, tenant Tenant, httpMethod string, url str
 
 	request, err := http.NewRequest(httpMethod, url, bytes.NewBuffer([]byte(body)))
 	require.NoError(t, err)
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", fetchToken(t)))
-
-	return request
-}
-
-func fetchToken(t *testing.T) string {
 	claims := map[string]interface{}{
 		"test": "tenant-fetcher",
 		"scope": []string{
@@ -601,27 +605,9 @@ func fetchToken(t *testing.T) string {
 		"iss":      config.ExternalServicesMockURL,
 		"exp":      time.Now().Unix() + int64(time.Minute.Seconds()),
 	}
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FetchTokenFromExternalServicesMock(t, config.ExternalServicesMockURL, claims)))
 
-	data, err := json.Marshal(claims)
-	require.NoError(t, err)
-
-	req, err := http.NewRequest(http.MethodPost, config.ExternalServicesMockURL+"/oauth/token", bytes.NewBuffer(data))
-	require.NoError(t, err)
-
-	resp, err := httpClient.Do(req)
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-	defer func() {
-		require.NoError(t, resp.Body.Close())
-	}()
-
-	token := gjson.GetBytes(body, "access_token")
-	require.True(t, token.Exists())
-
-	return token.String()
+	return request
 }
 
 func assertTenant(t *testing.T, tenant *graphql.Tenant, tenantID, subdomain string) {
