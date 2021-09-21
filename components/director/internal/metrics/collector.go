@@ -102,10 +102,12 @@ func (c *Collector) InstrumentClient(clientID, authFlow, details string) {
 		return
 	}
 
-	for _, censoredFlow := range c.config.CensoredFlows {
-		if authFlow == censoredFlow {
-			clientIDHash := sha256.Sum256([]byte(authFlow))
-			clientID = fmt.Sprintf("%x", clientIDHash)
+	if len(c.config.CensoredFlows) > 0 {
+		for _, censoredFlow := range c.config.CensoredFlows {
+			if authFlow == censoredFlow {
+				clientIDHash := sha256.Sum256([]byte(authFlow))
+				clientID = fmt.Sprintf("%x", clientIDHash)
+			}
 		}
 	}
 
