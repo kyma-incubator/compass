@@ -2,28 +2,35 @@
 
 ## Overview
 
-This application provides an API for managing tenants.
+This application provides an API for managing tenant subscriptions.
+
+A subscription binds a provider runtime to a tenant. We call a runtime a provider runtime when it has a specific `APP_SUBSCRIPTION_PROVIDER_LABEL_KEY` label.
+Creating a subscription means that a provider runtime with matching provider label will be able to access tenant resources on behalf of the subscribed tenant. 
+If the tenants from the subscription requests do not exist in the Compass DB, they will be are created automatically.
 
 ### Exposed API endpoints
-#### Create tenant
-This endpoint takes care of tenant creation, in case the tenant does not exist. It gracefully handles already existing tenants.
-The tenant might exist, if the tenant-fetcher job has fetched the creation event.
 
-It also creates all of its parent tenants, in case they also do not exist. At last, it labels the tenant with its subdomain.
+| API | Description |
+|-----|-------------|
+| `PUT <APP_ROOT_API>/<APP_HANDLER_ENDPOINT>` | This endpoint takes care of tenant creation, in case the tenant does not exist. It gracefully handles already existing tenants. The tenant might exist, if the tenant-fetcher job has fetched the creation event. It also creates all of its parent tenants, in case they also do not exist. At last, it labels the tenant with its subdomain. |
+| `PUT <APP_ROOT_API>/<APP_REGIONAL_HANDLER_ENDPOINT>` | This endpoint is responsible for subscribing tenants to runtimes with the given labels. In case the tenant does not exist it will be created as well as its relative tenants. Regional tenants are labeled with their subdomains and regions. Subscribed runtimes are labeled with subscriber tenant ids.
+| `DELETE <APP_ROOT_API>/<APP_HANDLER_ENDPOINT>` | This endpoint is responsible for unsubscribing tenants from runtimes with the given labels. Unsubscribing tenant id is removed from subscribed runtimes label. |
+| `DELETE <APP_ROOT_API>/<APP_REGIONAL_HANDLER_ENDPOINT>` | This endpoint is responsible for unsubscribing tenants from runtimes with the given labels. Unsubscribing tenant id is removed from subscribed runtimes label. |
+| `GET <APP_ROOT_API>/<APP_DEPENDENCIES_ENDPOINT>` | This endpoint returns all external applications, which should be informed for the tenant creation before Compass. The idea behind this is if Compass communicates with a multi-tenant application, and they share the same tenants, then if a new tenant is created in Compass, the multi-tenant application should also create that tenant if it does not exist. An empty json is returned currently. |
 
-#### Subscribe regional tenant
-This endpoint is responsible for subscribing tenants to runtimes with the given labels. In case the tenant does not exist it will be created as well as its relative tenants. Regional tenants are labeled with their subdomains and regions. Subscribed runtimes are labeled with subscriber tenant ids.
+All endpoints expect the same body:
 
-#### Unsubscribe regional tenant
-This endpoint is responsible for unsubscribing tenants from runtimes with the given labels. Unsubscribing tenant id is removed from subscribed runtimes label.
+```
+{
+    "<APP_TENANT_PROVIDER_TENANT_ID_PROPERTY>": "accountTenantID",
+    "<APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY>": "customerTenantID",
+    "<APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY>": "subaccountTenantID",
+    "<APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY>": "my-subdomain",
+    "<APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY>": "subscriptionProviderID",
 
-#### Deprovision regional or non-regional tenant
-This endpoint is currently no-op. The tenants should be deleted by the tenant-fetcher job.
-
-#### Get dependent external applications
-This endpoint returns all external applications, which should be informed for the tenant creation before Compass. The idea behind this is if Compass communicates with a multitenant application, and they share the same tenants, then if a new tenant is created in Compass, the multitenant application should also create that tenant if it does not exist.
-
-An empty json is returned currently.
+}
+```
+`<APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY>` is not mandatory.
 
 ## Installation Prerequisites
 
@@ -57,7 +64,7 @@ The Tenant Fetcher binary allows you to override some configuration parameters. 
 | **APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY**      | `subaccountTenantId`                        | Name of the json field containing the subaccount tenant ID |
 | **APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY**                 | `subdomain`                                 | Name of the json field containing the tenant subdomain |
 | **APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY**  | `subscriptionProviderId`                    | Name of the json field containing the subscription provider ID which should be mapped to a runtime |
-| **APP_SUBSCRIPTION_PROVIDER_LABEL_KEY**                    | `subscriptionProviderId`                    | The runtime label key used for mapping subscription provider IDs and runtimes |
+| **APP_SUBSCRIPTION_PROVIDER_LABEL_KEY**                    | `subscriptionProviderIdLabel`                    | The runtime label key used for mapping subscription provider IDs and runtimes |
 | **APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY**                  | `consumer_subaccount_ids`                   | The runtime label key used for mapping the subaccount IDs to which the runtime has access |
 | **APP_JWKS_ENDPOINT**                                      | `file://hack/default-jwks.json`              | The path for JWKS |
 | **APP_SUBSCRIPTION_CALLBACK_SCOPE**                        | `Callback`                                  | The JWT scope required for accessing the APIs |
