@@ -1041,6 +1041,8 @@ type Tenant {
 	id: ID!
 	internalID: ID!
 	name: String
+	type: String
+	parentID: ID
 	initialized: Boolean
 	labels(key: String): Labels
 }
