@@ -260,12 +260,12 @@ global:
       requestPayloadSizeLimit: 2097152 # 2 MB
       correlationHeaderRewriteFilter:
         expectedHeaders:
-          - "x-request-id"
-          - "x-correlation-id"
-          - "x-correlationid"
-          - "x-forrequest-id"
-          - "x-vcap-request-id"
-          - "x-broker-api-request-identity"
+        - "x-request-id"
+        - "x-correlation-id"
+        - "x-correlationid"
+        - "x-forrequest-id"
+        - "x-vcap-request-id"
+        - "x-broker-api-request-identity"
 
   kubernetes:
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
