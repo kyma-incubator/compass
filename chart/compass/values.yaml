@@ -75,7 +75,7 @@ global:
       version: "PR-2003"
     director:
       dir:
-      version: "PR-2023"
+      version: "PR-2029"
     gateway:
       dir:
       version: "PR-2003"
