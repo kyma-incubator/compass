@@ -131,6 +131,7 @@ global:
     metrics:
       port: 3003
       enableClientInstrumentation: true
+      censoredFlows: ["JWT"]
     operations:
       port: 3002
       path: "/operation"

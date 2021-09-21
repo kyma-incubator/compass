@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -9,7 +11,8 @@ import (
 
 // Config configures the behaviour of the metrics collector.
 type Config struct {
-	EnableClientIDInstrumentation bool `envconfig:"default=true,APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION"`
+	EnableClientIDInstrumentation bool     `envconfig:"default=true,APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION"`
+	CensoredFlows                 []string `envconfig:"APP_METRICS_CENSORED_FLOWS"`
 }
 
 // Collector missing godoc
@@ -97,6 +100,13 @@ func (c *Collector) InstrumentOAuth20HTTPClient(client *http.Client) {
 func (c *Collector) InstrumentClient(clientID, authFlow, details string) {
 	if !c.config.EnableClientIDInstrumentation {
 		return
+	}
+
+	for _, censoredFlow := range c.config.CensoredFlows {
+		if authFlow == censoredFlow {
+			clientIDHash := sha256.Sum256([]byte(authFlow))
+			clientID = fmt.Sprintf("%x", clientIDHash)
+		}
 	}
 
 	c.clientTotal.With(prometheus.Labels{
