@@ -48,17 +48,3 @@ func (_m *TenantService) GetInternalTenant(ctx context.Context, externalTenant s
 
 	return r0, r1
 }
-
-// SetLabel provides a mock function with given fields: ctx, labelInput
-func (_m *TenantService) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
-	ret := _m.Called(ctx, labelInput)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.LabelInput) error); ok {
-		r0 = rf(ctx, labelInput)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
