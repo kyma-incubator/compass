@@ -434,7 +434,7 @@ func AssertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant)
 	}
 }
 
-func AssertHttpHeaders(t *testing.T, in *graphql.HttpHeadersSerialized, actual *graphql.HttpHeaders) {
+func AssertHttpHeaders(t *testing.T, in *graphql.HTTPHeadersSerialized, actual *graphql.HTTPHeaders) {
 	if in == nil && actual == nil {
 		return
 	}
@@ -445,7 +445,7 @@ func AssertHttpHeaders(t *testing.T, in *graphql.HttpHeadersSerialized, actual *
 	unquoted, err := strconv.Unquote(string(*in))
 	require.NoError(t, err)
 
-	var headersIn graphql.HttpHeaders
+	var headersIn graphql.HTTPHeaders
 	err = json.Unmarshal([]byte(unquoted), &headersIn)
 	require.NoError(t, err)
 
