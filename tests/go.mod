@@ -26,7 +26,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/json-iterator/go v1.1.11 // indirect
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210831121533-7e4208095db0
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210922143733-cb93bcfd3cd6
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210922113925-7ff5909fa72b
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210831121533-7e4208095db0
