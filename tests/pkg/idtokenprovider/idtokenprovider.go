@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strings"
 
-	retry "github.com/avast/retry-go"
+	"github.com/avast/retry-go"
 	"github.com/pkg/errors"
 	"golang.org/x/net/html"
 )
