@@ -25,7 +25,6 @@ require (
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210922113925-7ff5909fa72b
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
-	github.com/matryer/is v1.4.0 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -49,7 +48,6 @@ require (
 	golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/asaskevich/govalidator.v9 v9.0.0-20180315120708-ccb8e960c48f
-	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
