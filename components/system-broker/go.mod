@@ -39,7 +39,7 @@ require (
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/klauspost/compress v1.12.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210921091803-b9256ad07b6b
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210922113925-7ff5909fa72b
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/matryer/is v1.4.0 // indirect
