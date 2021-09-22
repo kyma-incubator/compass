@@ -81,3 +81,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.0.2 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
+
+require golang.org/x/perf v0.0.0-20210220033136-40a54f11e909 // indirect
