@@ -75,7 +75,7 @@ global:
       version: "PR-2003"
     director:
       dir:
-      version: "PR-2026"
+      version: "PR-2029"
     gateway:
       dir:
       version: "PR-2003"
@@ -131,6 +131,7 @@ global:
     metrics:
       port: 3003
       enableClientInstrumentation: true
+      censoredFlows: "JWT"
     operations:
       port: 3002
       path: "/operation"
