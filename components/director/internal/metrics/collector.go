@@ -107,6 +107,7 @@ func (c *Collector) InstrumentClient(clientID, authFlow, details string) {
 			if authFlow == censoredFlow {
 				clientIDHash := sha256.Sum256([]byte(authFlow))
 				clientID = fmt.Sprintf("%x", clientIDHash)
+				break
 			}
 		}
 	}
