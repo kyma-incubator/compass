@@ -18,7 +18,11 @@ package tests
 
 import (
 	"context"
+	"crypto/tls"
+	"fmt"
+	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -36,7 +40,22 @@ import (
 
 var (
 	dexGraphQLClient *graphql.Client
+	httpClient *http.Client
 )
+
+type TenantConfig struct {
+	TenantIDProperty               string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
+	SubaccountTenantIDProperty     string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"`
+	CustomerIDProperty             string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
+	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
+	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"`
+	TenantFetcherURL          	   string `envconfig:"APP_TENANT_FETCHER_URL"`
+	RootAPI                   	   string `envconfig:"APP_ROOT_API"`
+	RegionalHandlerEndpoint   	   string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT"`
+	TenantPathParam           	   string `envconfig:"APP_TENANT_PATH_PARAM"`
+	RegionPathParam				   string `envconfig:"APP_REGION_PATH_PARAM"`
+	TenantFetcherFullRegionalURL   string
+}
 
 type ConnectorCAConfig struct {
 	Certificate          []byte `envconfig:"-"`
@@ -48,6 +67,7 @@ type ConnectorCAConfig struct {
 }
 
 type config struct {
+	TenantConfig
 	CA ConnectorCAConfig
 
 	DirectorURL                      string
@@ -72,6 +92,13 @@ func TestMain(m *testing.M) {
 	tenant.TestTenants.Init()
 	defer tenant.TestTenants.Cleanup()
 
+	httpClient = &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
 	k8sClientSet, err := clients.NewK8SClientSet(context.Background(), time.Second, time.Minute, time.Minute)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
@@ -84,6 +111,10 @@ func TestMain(m *testing.M) {
 
 	testConfig.CA.Certificate = secret.Data[testConfig.CA.SecretCertificateKey]
 	testConfig.CA.Key = secret.Data[testConfig.CA.SecretKeyKey]
+
+	regionalEndpoint := strings.Replace(testConfig.RegionalHandlerEndpoint, fmt.Sprintf("{%s}", testConfig.TenantPathParam), tenantPathParamValue, 1)
+	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", testConfig.RegionPathParam), regionPathParamValue, 1)
+	testConfig.TenantFetcherFullRegionalURL = testConfig.TenantFetcherURL + testConfig.RootAPI + regionalEndpoint
 
 	dexToken := server.Token()
 

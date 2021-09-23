@@ -811,7 +811,7 @@ func extIssuerCertClient(t require.TestingT, OUTenantID string) *http.Client {
 	clientCrtRaw, err := x509.CreateCertificate(rand.Reader, &clientCert, caCRT, &clientKey.PublicKey, caPrivateKey)
 	require.NoError(t, err)
 
-	return &http.Client{
+	httpClient = &http.Client{
 		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -826,4 +826,6 @@ func extIssuerCertClient(t require.TestingT, OUTenantID string) *http.Client {
 			},
 		},
 	}
+
+	return httpClient
 }
