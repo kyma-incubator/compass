@@ -78,17 +78,17 @@ func TestSubscriptionFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, consumerApp.ID)
 
-	// create label definition
+	// Create label definition
 	scenarios := []string{"DEFAULT", "consumer-test-scenario"}
 	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios)
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[:1])
 
-	// create automatic scenario assigment for consumer subaccount
+	// Create automatic scenario assigment for consumer subaccount
 	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenariosLabel, selectorKey, subscriptionConsumerID)
 	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
 	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarioName)
 
-	// set application scenarios label
+	// Set application scenarios label
 	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, consumerApp.ID, scenariosLabel, scenarios[1:])
 	defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, consumerApp.ID, scenariosLabel, scenarios[:1])
 
@@ -103,6 +103,7 @@ func TestSubscriptionFlow(t *testing.T) {
 		SubscriptionProviderID: subscriptionProviderID,
 	}
 
+	// Build a request for consumer subscription
 	request := createTenantRequest(t, providedTenant, http.MethodPut, testConfig.TenantFetcherFullRegionalURL)
 
 	t.Log(fmt.Sprintf("Provisioning tenant with ID %s", actualTenantID(providedTenant)))
@@ -110,8 +111,10 @@ func TestSubscriptionFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, response.StatusCode)
 
+	// HTTP client configured with manually signed client certificate
 	extIssuerCertHttpClient := extIssuerCertClient(t, defaultTenantId)
 
+	// Create a token with the necessary consumer claims and add it in authorization header
 	claims := map[string]interface{}{
 		"test": "bas-flow",
 		"scope": []string{
@@ -123,12 +126,14 @@ func TestSubscriptionFlow(t *testing.T) {
 		"exp":      time.Now().Unix() + int64(time.Minute.Seconds()),
 	}
 	headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", token.FetchTokenFromExternalServicesMock(t, testConfig.ExternalServicesMockURL, claims))}}
+
+	// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 	respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 
 	require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 }
 
-// createTenantRequest returns a prepared tenant request with token in the header with the necessary claims
+// createTenantRequest returns a prepared tenant request with token in the header with the necessary claims for tenant-fetcher
 func createTenantRequest(t *testing.T, tenant Tenant, httpMethod string, url string) *http.Request {
 	var (
 		body = "{}"

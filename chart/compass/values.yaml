@@ -362,7 +362,7 @@ global:
       tenantPathParam: "tenantId"
       regionPathParam: "region"
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountIdsLabelKey: "consumerSubaccountIds"
+      consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
