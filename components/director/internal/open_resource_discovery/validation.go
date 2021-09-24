@@ -1035,12 +1035,12 @@ func areThereEntryPointDuplicates(entryPoints []gjson.Result) bool {
 		return false
 	}
 
-	seen := make(map[gjson.Result]bool)
+	seen := make(map[string]bool)
 	for _, val := range entryPoints {
-		if seen[val] {
+		if seen[val.String()] {
 			return true
 		}
-		seen[val] = true
+		seen[val.String()] = true
 	}
 	return false
 }

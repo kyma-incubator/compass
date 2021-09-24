@@ -17,6 +17,7 @@ SKIP_DB_CLEANUP=false
 REUSE_DB=false
 DUMP_DB=false
 DISABLE_ASYNC_MODE=true
+COMPONENT='director'
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -48,6 +49,10 @@ do
         ;;
         --async-enabled)
           DISABLE_ASYNC_MODE=false
+          shift
+        ;;
+        --tenant-fetcher)
+          COMPONENT='tenantfetcher-svc'
           shift
         ;;
         --debug-port)
@@ -191,11 +196,14 @@ export APP_SUGGEST_TOKEN_HTTP_HEADER=suggest_token
 export APP_SCHEMA_MIGRATION_VERSION=$(ls -lr ${ROOT_PATH}/../schema-migrator/migrations/director | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f9 | cut -d '_' -f1)
 export APP_ALLOW_JWT_SIGNING_NONE=true
 
+# Tenant Fetcher properties
+export APP_SUBSCRIPTION_CALLBACK_SCOPE=Callback
+
 if [[  ${DEBUG} ]]; then
     echo -e "${GREEN}Debug mode activated on port $DEBUG_PORT${NC}"
     cd $GOPATH/src/github.com/kyma-incubator/compass/components/director
-    CGO_ENABLED=0 go build -gcflags="all=-N -l" ./cmd/director
-    dlv --listen=:$DEBUG_PORT --headless=true --api-version=2 exec ./director
+    CGO_ENABLED=0 go build -gcflags="all=-N -l" ./cmd/${COMPONENT}
+    dlv --listen=:$DEBUG_PORT --headless=true --api-version=2 exec ./${COMPONENT}
 else
-    go run ${ROOT_PATH}/cmd/director/main.go
+    go run ${ROOT_PATH}/cmd/${COMPONENT}/main.go
 fi
