@@ -100,9 +100,14 @@ release: verify build-image push-image
 .PHONY: build-image push-image
 build-image: pull-licenses
 	docker build -t $(IMG_NAME) .
+
 push-image:
 	docker tag $(IMG_NAME) $(IMG_NAME):$(TAG)
 	docker push $(IMG_NAME):$(TAG)
+	@echo "Sign image with Cosign"
+	cosign version
+	cosign sign -key ${KMS_KEY_URL} $(IMG_NAME):$(TAG)
+
 docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 
