@@ -20,7 +20,8 @@ const (
 // TenantMappingRepository is responsible for the repo-layer tenant operations.
 //go:generate mockery --name=TenantMappingRepository --output=automock --outpkg=automock --case=underscore
 type TenantMappingRepository interface {
-	Create(ctx context.Context, item model.BusinessTenantMapping) error
+	UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error
+	Upsert(ctx context.Context, item model.BusinessTenantMapping) error
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 	Exists(ctx context.Context, id string) (bool, error)
@@ -136,6 +137,16 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 // CreateManyIfNotExists creates all provided tenants if they do not exist.
 // It creates or updates the subdomain and region labels of the provided tenants, no matter if they are pre-existing or not.
 func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
+	return s.upsertTenants(ctx, tenantInputs, s.tenantMappingRepo.UnsafeCreate)
+}
+
+// UpsertMany creates all provided tenants if they do not exist. If they do exist, they are internally updated.
+// It creates or updates the subdomain and region labels of the provided tenants, no matter if they are pre-existing or not.
+func (s *labeledService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
+	return s.upsertTenants(ctx, tenantInputs, s.tenantMappingRepo.Upsert)
+}
+
+func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) error) error {
 	tenants := s.MultipleToTenantMapping(tenantInputs)
 	subdomains, regions := tenantLocality(tenantInputs)
 	for tenantIdx, tenant := range tenants {
@@ -147,7 +158,7 @@ func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs
 		if r, ok := regions[tenant.ExternalTenant]; ok {
 			region = r
 		}
-		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region)
+		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, upsertFunc)
 		if err != nil {
 			return errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 		}
@@ -164,20 +175,17 @@ func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs
 	return nil
 }
 
-func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region string) (string, error) {
+func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region string, action func(context.Context, model.BusinessTenantMapping) error) (string, error) {
+	if err := action(ctx, tenant); err != nil {
+		return "", err
+	}
+
 	tenantFromDB, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenant.ExternalTenant)
-	if err != nil && !apperrors.IsNotFoundError(err) {
-		return "", errors.Wrapf(err, "while checking the existence of tenant with external ID %s", tenant.ExternalTenant)
-	}
-	if tenantFromDB != nil {
-		return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region)
+	if err != nil {
+		return "", errors.Wrapf(err, "while retrieving the internal tenant ID of tenant with external ID %s", tenant.ExternalTenant)
 	}
 
-	if err = s.tenantMappingRepo.Create(ctx, tenant); err != nil {
-		return "", errors.Wrapf(err, "while creating tenant with ID %s and external ID %s", tenant.ID, tenant.ExternalTenant)
-	}
-
-	return tenant.ID, s.upsertLabels(ctx, tenant.ID, subdomain, region)
+	return tenantFromDB.ID, s.upsertLabels(ctx, tenantFromDB.ID, subdomain, region)
 }
 
 func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region string) error {

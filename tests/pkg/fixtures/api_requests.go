@@ -52,5 +52,5 @@ func FixRefetchAPISpecRequest(id string) *gcli.Request {
 						%s
 					}
 				}`,
-			id, testctx.Tc.GQLFieldsProvider.ForApiSpec()))
+			id, testctx.Tc.GQLFieldsProvider.ForAPISpec()))
 }
