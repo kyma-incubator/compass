@@ -67,7 +67,7 @@ The Director binary allows to override some configuration parameters. You can sp
 | **APP_CONFIGURATION_FILE_RELOAD**            | `1m`                            | The period after which the configuration file is reloaded          |
 | **APP_JWKS_ENDPOINT**                        | `file://hack/default-jwks.json`  | The path for JWKS                                                  |
 | **APP_JWKS_SYNC_PERIOD**                     | `5m`                            | The period when the JWKS is synced                                 |
-| **APP_ALLOW_JWT_SIGNING_NONE**                        | `false`                | Trust tokens signed with the `none` algorithm. Should be used for test purposes only |
+| **APP_ALLOW_JWT_SIGNING_NONE**                        | `false`                | Enable trust to tokens signed with the `none` algorithm. Must be used for test purposes only. |
 | **APP_ONE_TIME_TOKEN_URL**                   | None                            | The endpoint for fetching a one-time token                         |
 | **APP_URL**                                  | None                            | The endpoint of the application (Director)                         |
 | **APP_CONNECTOR_URL**                        | None                            | The endpoint of Connector                                          |
