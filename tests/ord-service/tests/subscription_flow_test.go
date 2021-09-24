@@ -92,10 +92,6 @@ func TestSubscriptionFlow(t *testing.T) {
 	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, consumerApp.ID, scenariosLabel, scenarios[1:])
 	defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, consumerApp.ID, scenariosLabel, scenarios[:1])
 
-	//// TODO: Adjust once the subscription labeling task is done;
-	//fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, defaultTenantId, runtime.ID, testConfig.ConsumerSubaccountIdsLabelKey, []string{subscriptionConsumerID})
-	//defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, defaultTenantId, runtime.ID, testConfig.ConsumerSubaccountIdsLabelKey, []string{""})
-
 	providedTenant := Tenant{
 		TenantID:               accountID,
 		SubaccountID:           subscriptionConsumerID,
@@ -131,6 +127,7 @@ func TestSubscriptionFlow(t *testing.T) {
 	respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 
 	require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
+	require.Equal(t, "consumerApp", len(gjson.Get(respBody, "value.0.title").String()))
 }
 
 // createTenantRequest returns a prepared tenant request with token in the header with the necessary claims for tenant-fetcher
