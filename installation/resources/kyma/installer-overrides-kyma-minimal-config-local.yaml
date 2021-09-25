@@ -97,6 +97,19 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: logging-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: logging
+    kyma-project.io/installation: ""
+data:
+  logui.resources.limits.cpu: 80m
+  logui.resources.limits.memory: 32Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: disable-legacy-connectivity-override
   namespace: kyma-installer
   labels:
