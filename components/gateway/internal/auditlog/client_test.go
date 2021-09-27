@@ -75,7 +75,7 @@ func TestClient_LogConfigurationChange(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Write to auditlog failed with status code: 403")
+		assert.EqualError(t, err, "Write to auditlog failed with status code: 403: Write to auditlog failed with status code: 403")
 	})
 }
 
@@ -148,7 +148,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Write to auditlog failed with status code: 403")
+		assert.EqualError(t, err, "Write to auditlog failed with status code: 403: Write to auditlog failed with status code: 403")
 	})
 
 	t.Run("http client return error", func(t *testing.T) {
@@ -167,7 +167,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, fmt.Sprintf("while sending auditlog to: %s: %s", "localhost:8080", testErr.Error()))
+		assert.EqualError(t, err, fmt.Sprintf("Write to auditlog failed with status code: 0: while sending auditlog to: %s: %s", "localhost:8080", testErr.Error()))
 	})
 }
 
