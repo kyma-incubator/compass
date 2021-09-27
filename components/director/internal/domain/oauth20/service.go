@@ -34,10 +34,10 @@ type UIDService interface {
 // OryHydraService missing godoc
 //go:generate mockery --name=OryHydraService --output=automock --outpkg=automock --case=underscore
 type OryHydraService interface {
-	ListOAuth2Clients(params *admin.ListOAuth2ClientsParams) (*admin.ListOAuth2ClientsOK, error)
-	CreateOAuth2Client(params *admin.CreateOAuth2ClientParams) (*admin.CreateOAuth2ClientCreated, error)
-	UpdateOAuth2Client(params *admin.UpdateOAuth2ClientParams) (*admin.UpdateOAuth2ClientOK, error)
-	DeleteOAuth2Client(params *admin.DeleteOAuth2ClientParams) (*admin.DeleteOAuth2ClientNoContent, error)
+	ListOAuth2Clients(params *admin.ListOAuth2ClientsParams, opts ...admin.ClientOption) (*admin.ListOAuth2ClientsOK, error)
+	CreateOAuth2Client(params *admin.CreateOAuth2ClientParams, opts ...admin.ClientOption) (*admin.CreateOAuth2ClientCreated, error)
+	UpdateOAuth2Client(params *admin.UpdateOAuth2ClientParams, opts ...admin.ClientOption) (*admin.UpdateOAuth2ClientOK, error)
+	DeleteOAuth2Client(params *admin.DeleteOAuth2ClientParams, opts ...admin.ClientOption) (*admin.DeleteOAuth2ClientNoContent, error)
 }
 
 // ClientDetails missing godoc

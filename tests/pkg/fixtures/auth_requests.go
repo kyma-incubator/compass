@@ -7,7 +7,7 @@ import (
 )
 
 func FixBasicAuth(t require.TestingT) *graphql.AuthInput {
-	additionalHeaders, err := graphql.NewHttpHeadersSerialized(map[string][]string{
+	additionalHeaders, err := graphql.NewHTTPHeadersSerialized(map[string][]string{
 		"header-A": []string{"ha1", "ha2"},
 		"header-B": []string{"hb1", "hb2"},
 	})
@@ -27,7 +27,7 @@ func FixBasicAuth(t require.TestingT) *graphql.AuthInput {
 }
 
 func FixOauthAuth(t require.TestingT) *graphql.AuthInput {
-	additionalHeaders, err := graphql.NewHttpHeadersSerialized(map[string][]string{
+	additionalHeaders, err := graphql.NewHTTPHeadersSerialized(map[string][]string{
 		"header-A": []string{"ha1", "ha2"},
 		"header-B": []string{"hb1", "hb2"},
 	})
