@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -63,9 +63,9 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 
 	var resp *http.Response
 	if fr.Auth != nil {
-		resp, err = s.requestWithCredentials(ctx, fr)
+		resp, err = httputil.RequestWithCredentials(ctx, s.client, fr.URL, fr.Auth)
 	} else {
-		resp, err = s.requestWithoutCredentials(fr)
+		resp, err = httputil.RequestWithoutCredentials(s.client, fr.URL)
 	}
 
 	if err != nil {
@@ -107,56 +107,6 @@ func (s *service) validateFetchRequest(fr *model.FetchRequest) error {
 	}
 
 	return nil
-}
-
-func (s *service) requestWithCredentials(ctx context.Context, fr *model.FetchRequest) (*http.Response, error) {
-	if fr.Auth.Credential.Basic == nil && fr.Auth.Credential.Oauth == nil {
-		return nil, apperrors.NewInvalidDataError("Credentials not provided")
-	}
-
-	req, err := http.NewRequest(http.MethodGet, fr.URL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var resp *http.Response
-	if fr.Auth.Credential.Basic != nil {
-		req.SetBasicAuth(fr.Auth.Credential.Basic.Username, fr.Auth.Credential.Basic.Password)
-
-		resp, err = s.client.Do(req)
-
-		if err == nil && resp.StatusCode == http.StatusOK {
-			return resp, nil
-		}
-	}
-
-	if fr.Auth.Credential.Oauth != nil {
-		resp, err = s.secureClient(ctx, fr).Do(req)
-	}
-
-	return resp, err
-}
-
-func (s *service) secureClient(ctx context.Context, fr *model.FetchRequest) *http.Client {
-	conf := &clientcredentials.Config{
-		ClientID:     fr.Auth.Credential.Oauth.ClientID,
-		ClientSecret: fr.Auth.Credential.Oauth.ClientSecret,
-		TokenURL:     fr.Auth.Credential.Oauth.URL,
-	}
-
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, s.client)
-	securedClient := conf.Client(ctx)
-	securedClient.Timeout = s.client.Timeout
-	return securedClient
-}
-
-func (s *service) requestWithoutCredentials(fr *model.FetchRequest) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, fr.URL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.client.Do(req)
 }
 
 // FixStatus missing godoc

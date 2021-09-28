@@ -1,0 +1,62 @@
+package http
+
+import (
+	"context"
+	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
+)
+
+func RequestWithCredentials(ctx context.Context, client *http.Client, url string, auth *model.Auth) (*http.Response, error) {
+	if auth == nil || (auth.Credential.Basic == nil && auth.Credential.Oauth == nil) {
+		return nil, apperrors.NewInvalidDataError("Credentials not provided")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp *http.Response
+	if auth.Credential.Basic != nil {
+		req.SetBasicAuth(auth.Credential.Basic.Username, auth.Credential.Basic.Password)
+
+		resp, err = client.Do(req)
+
+		if err == nil && resp.StatusCode == http.StatusOK {
+			return resp, nil
+		}
+	}
+
+	if auth.Credential.Oauth != nil {
+		resp, err = secureClient(ctx, client, auth).Do(req)
+	}
+
+	return resp, err
+}
+
+func secureClient(ctx context.Context, client *http.Client, auth *model.Auth) *http.Client {
+	conf := &clientcredentials.Config{
+		ClientID:     auth.Credential.Oauth.ClientID,
+		ClientSecret: auth.Credential.Oauth.ClientSecret,
+		TokenURL:     auth.Credential.Oauth.URL,
+	}
+
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
+	securedClient := conf.Client(ctx)
+	securedClient.Timeout = client.Timeout
+	return securedClient
+}
+
+func RequestWithoutCredentials(client *http.Client, url string) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.Do(req)
+}

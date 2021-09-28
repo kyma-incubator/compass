@@ -30,6 +30,7 @@ type Converter interface {
 type repository struct {
 	upserter     repo.Upserter
 	lister       repo.Lister
+	listerGlobal repo.ListerGlobal
 	deleter      repo.Deleter
 	getter       repo.SingleGetter
 	queryBuilder repo.QueryBuilder
@@ -41,6 +42,7 @@ func NewRepository(conv Converter) *repository {
 	return &repository{
 		upserter:     repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_context_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
 		lister:       repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
+		listerGlobal: repo.NewListerGlobal(resource.Label, tableName, tableColumns),
 		deleter:      repo.NewDeleter(resource.Label, tableName, tenantColumn),
 		getter:       repo.NewSingleGetter(resource.Label, tableName, tenantColumn, tableColumns),
 		queryBuilder: repo.NewQueryBuilder(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
@@ -110,6 +112,27 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error) {
 	var entities Collection
 	if err := r.lister.List(ctx, tenant, &entities, repo.NewEqualCondition("key", key)); err != nil {
+		return nil, err
+	}
+
+	labels := make([]*model.Label, 0, len(entities))
+
+	for _, entity := range entities {
+		m, err := r.conv.FromEntity(entity)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Label entity to model")
+		}
+
+		labels = append(labels, &m)
+	}
+
+	return labels, nil
+}
+
+// ListGlobalByKeyAndObjects missing godoc
+func (r *repository) ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error) {
+	var entities Collection
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.NewEqualCondition("key", key), repo.NewInConditionForStringValues(labelableObjectField(objectType), objectIDs)); err != nil {
 		return nil, err
 	}
 
