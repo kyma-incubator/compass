@@ -11,3 +11,4 @@ dependencies:
   condition: global.system_broker.enabled
 - name: operations-controller
   condition: global.operations_controller.enabled
+
