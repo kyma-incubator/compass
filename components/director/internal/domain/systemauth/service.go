@@ -192,7 +192,8 @@ func (s *service) DeleteByIDForObject(ctx context.Context, objectType model.Syst
 
 // IsSystemAuthOneTimeTokenType missing godoc
 func (s *service) IsSystemAuthOneTimeTokenType(systemAuth *model.SystemAuth) bool {
-	if systemAuth.Value.Credential.Basic != nil || systemAuth.Value.Credential.Oauth != nil || systemAuth.Value.RequestAuth != nil {
+	if (systemAuth != nil && systemAuth.Value != nil) &&
+		(systemAuth.Value.Credential.Basic != nil || systemAuth.Value.Credential.Oauth != nil || systemAuth.Value.RequestAuth != nil) {
 		return false
 	}
 
