@@ -2133,6 +2133,33 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid field `customType` when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomType = invalidCustomType
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Field `type` is not `custom` when `customType` is valid for `accessStrategies` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "open"
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomType = "sap:custom-definition-format:v1"
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `customType` value when field `type` has value `custom` for `accessStrategies` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].Type = "custom"
+				doc.APIResources[0].ResourceDefinitions[0].CustomType = invalidCustomType
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid field `customDescription` when field `type` is not `custom` for `accessStrategies` of `resourceDefinitions` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -3492,6 +3519,24 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid field `customType` when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
+				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomType = invalidCustomType
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Field `type` is not `custom` when `customType` is valid for `accessStrategies` of `resourceDefinitions` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "open"
+				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomType = "sap:custom-definition-format:v1"
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid field `customDescription` when field `type` is not `custom` for `accessStrategies` of `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -4003,7 +4048,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Products = append(doc.Products, &model.ProductInput{
-					OrdID:            "sap.product-valid_value:product:id:",
+					OrdID:            "sap:product:test:",
 					Title:            "title",
 					ShortDescription: "Description",
 					Vendor:           ord.SapVendor,
