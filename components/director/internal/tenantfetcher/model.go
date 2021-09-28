@@ -4,27 +4,39 @@ package tenantfetcher
 type EventsType int
 
 const (
-	// CreatedEventsType missing godoc
-	CreatedEventsType EventsType = iota
-	// DeletedEventsType missing godoc
-	DeletedEventsType
-	// UpdatedEventsType missing godoc
-	UpdatedEventsType
-	// MovedRuntimeByLabelEventsType missing godoc
-	MovedRuntimeByLabelEventsType
+	// CreatedAccountType missing godoc
+	CreatedAccountType EventsType = iota
+	// DeletedAccountType missing godoc
+	DeletedAccountType
+	// UpdatedAccountType missing godoc
+	UpdatedAccountType
+	// CreatedSubaccountType missing godoc
+	CreatedSubaccountType
+	// DeletedSubaccountType missing godoc
+	DeletedSubaccountType
+	// UpdatedSubaccountType missing godoc
+	UpdatedSubaccountType
+	// MovedSubaccountType missing godoc
+	MovedSubaccountType
 )
 
 // String missing godoc
 func (e EventsType) String() string {
 	switch e {
-	case CreatedEventsType:
+	case CreatedAccountType:
 		return "CreatedEventsType"
-	case DeletedEventsType:
+	case DeletedAccountType:
 		return "DeletedEventsType"
-	case UpdatedEventsType:
+	case UpdatedAccountType:
 		return "UpdatedEventsType"
-	case MovedRuntimeByLabelEventsType:
-		return "MovedRuntimeByLabelEventsType"
+	case CreatedSubaccountType:
+		return "CreatedSubaccountType"
+	case DeletedSubaccountType:
+		return "DeletedSubaccountType"
+	case UpdatedSubaccountType:
+		return "UpdatedSubaccountType"
+	case MovedSubaccountType:
+		return "MovedSubaccountType"
 	default:
 		return ""
 	}

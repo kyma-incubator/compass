@@ -35,11 +35,13 @@ type config struct {
 	Features features.Config
 
 	TenantProvider       string        `envconfig:"APP_TENANT_PROVIDER"`
-	TenantsRegion        string        `envconfig:"default=central,APP_TENANTS_REGION"`
+	TenantsRegion        []string      `envconfig:"default=central,APP_TENANTS_REGION"`
 	MetricsPushEndpoint  string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 	MovedRuntimeLabelKey string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
 	ClientTimeout        time.Duration `envconfig:"default=60s"`
 	FullResyncInterval   time.Duration `envconfig:"default=12h"`
+
+	ShouldSyncSubaccounts bool `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
 }
 
 func main() {
@@ -85,8 +87,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kubeClient tenantfetcher.KubeClient,
-	metricsPusher *metrics.Pusher) *tenantfetcher.Service {
+func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kubeClient tenantfetcher.KubeClient, metricsPusher *metrics.Pusher) tenantfetcher.TenantSyncService {
 	uidSvc := uid.NewService()
 
 	labelDefConverter := labeldef.NewConverter()
@@ -118,5 +119,8 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.TenantsRegion, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
+	if cfg.ShouldSyncSubaccounts {
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.TenantsRegion, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
+	}
+	return tenantfetcher.NewGAService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.TenantsRegion[0], eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval)
 }

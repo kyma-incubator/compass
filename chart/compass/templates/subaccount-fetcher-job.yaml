@@ -6,7 +6,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: "{{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}"
+  name: "{{ $.Chart.Name }}-subaccount-fetcher-{{ $tenantFetcherName }}"
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}
@@ -22,12 +22,12 @@ spec:
   jobTemplate:
     metadata:
       labels:
-        cronjob: tenant-fetcher
+        cronjob: subaccount-fetcher
     spec:
       template:
         metadata:
           labels:
-            cronjob: tenant-fetcher
+            cronjob: subaccount-fetcher
         spec:
           serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
           containers:
@@ -91,8 +91,8 @@ spec:
                 value: {{ $config.endpoints.subaccountDeleted }}
               - name: APP_ENDPOINT_SUBACCOUNT_UPDATED
                 value: {{ $config.endpoints.subaccountUpdated }}
-              - name: APP_ENDPOINT_SUBACCOUNT_MOVED
-                value: {{ $config.endpoints.subaccountMoved }}
+              - name: APP_ENDPOINT_RUNTIME_MOVED_BY_LABEL
+                value: {{ $config.endpoints.movedRuntimeByLabel }}
               - name: APP_TENANT_PROVIDER
                 value: {{ $config.providerName }}
               - name: APP_TENANTS_REGION
@@ -139,7 +139,7 @@ spec:
               - name: APP_MAPPING_FIELD_DETAILS
                 value: {{ $config.fieldMapping.detailsField}}
               - name: APP_SYNC_SUBACCOUNTS
-                value: "false"
+                value: "true"
               - name: APP_TENANT_TOTAL_PAGES_FIELD
                 value: {{ $config.fieldMapping.totalPagesField}}
               - name: APP_TENANT_TOTAL_RESULTS_FIELD
@@ -150,8 +150,6 @@ spec:
                 value: {{ $config.queryMapping.pageNumField}}
               - name: APP_QUERY_PAGE_SIZE_FIELD
                 value: {{ $config.queryMapping.pageSizeField}}
-              - name: APP_QUERY_REGION__REGION
-                value: {{ $config.fieldMapping.regionField }}
               - name: APP_QUERY_TIMESTAMP_FIELD
                 value: {{ $config.queryMapping.timestampField}}
               - name: APP_QUERY_PAGE_START

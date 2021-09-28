@@ -31,14 +31,17 @@ type OAuth2Config struct {
 
 // APIConfig missing godoc
 type APIConfig struct {
-	EndpointTenantCreated       string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
-	EndpointTenantDeleted       string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
-	EndpointTenantUpdated       string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
-	EndpointRuntimeMovedByLabel string `envconfig:"optional,APP_ENDPOINT_RUNTIME_MOVED_BY_LABEL"`
+	EndpointTenantCreated     string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
+	EndpointTenantDeleted     string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
+	EndpointTenantUpdated     string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
+	EndpointSubaccountCreated string `envconfig:"APP_ENDPOINT_SUBACCOUNT_CREATED"`
+	EndpointSubaccountDeleted string `envconfig:"APP_ENDPOINT_SUBACCOUNT_DELETED"`
+	EndpointSubaccountUpdated string `envconfig:"APP_ENDPOINT_SUBACCOUNT_UPDATED"`
+	EndpointSubaccountMoved   string `envconfig:"APP_ENDPOINT_SUBACCOUNT_MOVED"`
 }
 
 func (c APIConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {
-	if eventsType == MovedRuntimeByLabelEventsType && len(c.EndpointRuntimeMovedByLabel) == 0 {
+	if eventsType == MovedSubaccountType && len(c.EndpointSubaccountMoved) == 0 {
 		return true
 	}
 	return false
@@ -133,14 +136,20 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 
 func (c *Client) getEndpointForEventsType(eventsType EventsType) (string, error) {
 	switch eventsType {
-	case CreatedEventsType:
+	case CreatedAccountType:
 		return c.apiConfig.EndpointTenantCreated, nil
-	case DeletedEventsType:
+	case DeletedAccountType:
 		return c.apiConfig.EndpointTenantDeleted, nil
-	case UpdatedEventsType:
+	case UpdatedAccountType:
 		return c.apiConfig.EndpointTenantUpdated, nil
-	case MovedRuntimeByLabelEventsType:
-		return c.apiConfig.EndpointRuntimeMovedByLabel, nil
+	case CreatedSubaccountType:
+		return c.apiConfig.EndpointSubaccountCreated, nil
+	case DeletedSubaccountType:
+		return c.apiConfig.EndpointSubaccountDeleted, nil
+	case UpdatedSubaccountType:
+		return c.apiConfig.EndpointSubaccountUpdated, nil
+	case MovedSubaccountType:
+		return c.apiConfig.EndpointSubaccountUpdated, nil
 	default:
 		return "", apperrors.NewInternalError("unknown events type")
 	}

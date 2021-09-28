@@ -95,10 +95,10 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 	if !gjson.Valid(jsonPayload) {
 		return nil, errors.Errorf("invalid json payload")
 	}
-	if eventType == CreatedEventsType && ep.fieldMapping.DiscriminatorField != "" {
+	if eventType == CreatedAccountType && ep.fieldMapping.DiscriminatorField != "" {
 		discriminatorResult := gjson.Get(jsonPayload, ep.fieldMapping.DiscriminatorField)
 		if !discriminatorResult.Exists() {
-			return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.DiscriminatorField)
+			return nil, invalidFieldFormatError(ep.fieldMapping.DiscriminatorField)
 		}
 		if discriminatorResult.String() != ep.fieldMapping.DiscriminatorValue {
 			return nil, nil
@@ -106,30 +106,59 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 	}
 	idResult := gjson.Get(jsonPayload, ep.fieldMapping.IDField)
 	if !idResult.Exists() {
-		return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.IDField)
+		return nil, invalidFieldFormatError(ep.fieldMapping.IDField)
 	}
 
 	nameResult := gjson.Get(jsonPayload, ep.fieldMapping.NameField)
 	if !nameResult.Exists() {
-		return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.NameField)
-	}
-
-	customerIDResult := gjson.Get(jsonPayload, ep.fieldMapping.CustomerIDField)
-	if !customerIDResult.Exists() {
-		log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.CustomerIDField, idResult.String())
+		return nil, invalidFieldFormatError(ep.fieldMapping.NameField)
 	}
 
 	subdomain := gjson.Get(jsonPayload, ep.fieldMapping.SubdomainField)
 	if !subdomain.Exists() {
-		return nil, errors.Errorf("invalid format of %s field", ep.fieldMapping.SubdomainField)
+		return nil, invalidFieldFormatError(ep.fieldMapping.SubdomainField)
+	}
+
+	entityType := gjson.Get(jsonPayload, ep.fieldMapping.EntityTypeField)
+	if !entityType.Exists() {
+		return nil, invalidFieldFormatError(ep.fieldMapping.EntityTypeField)
+	}
+
+	region := ""
+	parentID := ""
+	tenantType := tenant.TypeToStr(tenant.Account)
+	if entityType.String() == "Subaccount" { /// TODO refactor
+		regionField := gjson.Get(jsonPayload, ep.fieldMapping.RegionField)
+		if !regionField.Exists() {
+			return nil, invalidFieldFormatError(ep.fieldMapping.RegionField)
+		}
+		region = regionField.String()
+		parentIDField := gjson.Get(jsonPayload, ep.fieldMapping.ParentIDField)
+		if !parentIDField.Exists() {
+			return nil, invalidFieldFormatError(ep.fieldMapping.ParentIDField)
+		}
+		parentID = parentIDField.String()
+		tenantType = tenant.TypeToStr(tenant.Subaccount)
+	} else {
+		customerIDResult := gjson.Get(jsonPayload, ep.fieldMapping.CustomerIDField)
+		if !customerIDResult.Exists() {
+			log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.CustomerIDField, idResult.String())
+		} else {
+			parentID = customerIDResult.String()
+		}
 	}
 
 	return &model.BusinessTenantMappingInput{
 		Name:           nameResult.String(),
 		ExternalTenant: idResult.String(),
-		Parent:         customerIDResult.String(),
+		Parent:         parentID,
 		Subdomain:      subdomain.String(),
-		Type:           tenant.TypeToStr(tenant.Account),
+		Region:         region,
+		Type:           tenantType,
 		Provider:       ep.providerName,
 	}, nil
+}
+
+func invalidFieldFormatError(fieldName string) error {
+	return errors.Errorf("invalid format of %s field", fieldName)
 }

@@ -990,7 +990,7 @@ func TestService_SyncTenants(t *testing.T) {
 			runtimeStorageSvc := testCase.RuntimeStorageSvcFn()
 			labelDefSvc := testCase.LabelDefSvcFn()
 			kubeClient := testCase.KubeClientFn()
-			svc := tenantfetcher.NewService(tenantfetcher.QueryConfig{
+			svc := tenantfetcher.NewGAService(tenantfetcher.QueryConfig{
 				PageNumField:   "pageNum",
 				PageSizeField:  "pageSize",
 				TimestampField: "timestamp",
@@ -1049,7 +1049,7 @@ func TestService_SyncTenants(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, persist, transact, apiClient, tenantStorageSvc, kubeClient)
 
-		svc := tenantfetcher.NewService(tenantfetcher.QueryConfig{
+		svc := tenantfetcher.NewGAService(tenantfetcher.QueryConfig{
 			PageNumField:   "pageNum",
 			PageSizeField:  "pageSize",
 			TimestampField: "timestamp",
