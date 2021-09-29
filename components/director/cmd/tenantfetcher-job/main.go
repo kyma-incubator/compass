@@ -35,7 +35,8 @@ type config struct {
 	Features features.Config
 
 	TenantProvider       string        `envconfig:"APP_TENANT_PROVIDER"`
-	TenantsRegion        []string      `envconfig:"default=central,APP_TENANTS_REGION"`
+	AccountsRegion       string        `envconfig:"default=central,APP_ACCOUNT_REGION"`
+	SubaccountRegions    []string      `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
 	MetricsPushEndpoint  string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 	MovedRuntimeLabelKey string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
 	ClientTimeout        time.Duration `envconfig:"default=60s"`
@@ -120,7 +121,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	}
 
 	if cfg.ShouldSyncSubaccounts {
-		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.TenantsRegion, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
 	}
-	return tenantfetcher.NewGAService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.TenantsRegion[0], eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval)
+	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval)
 }

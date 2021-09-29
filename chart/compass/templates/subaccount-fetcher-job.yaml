@@ -29,7 +29,7 @@ spec:
           labels:
             cronjob: subaccount-fetcher
         spec:
-          serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
+          serviceAccountName: {{ $.Chart.Name }}-subaccount-fetcher-job-{{ $tenantFetcherName }}
           containers:
           - name: fetcher
             image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
@@ -91,12 +91,14 @@ spec:
                 value: {{ $config.endpoints.subaccountDeleted }}
               - name: APP_ENDPOINT_SUBACCOUNT_UPDATED
                 value: {{ $config.endpoints.subaccountUpdated }}
-              - name: APP_ENDPOINT_RUNTIME_MOVED_BY_LABEL
-                value: {{ $config.endpoints.movedRuntimeByLabel }}
+              - name: APP_ENDPOINT_SUBACCOUNT_MOVED
+                value: {{ $config.endpoints.subaccountMoved }}
               - name: APP_TENANT_PROVIDER
                 value: {{ $config.providerName }}
-              - name: APP_TENANTS_REGION
-                value: {{ $config.tenantsRegion }}
+              - name: APP_ACCOUNT_REGION
+                value: {{ $config.accountRegion }}
+              - name: APP_SUBACCOUNT_REGIONS
+                value: {{ $config.subaccountRegions }}
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
@@ -150,6 +152,8 @@ spec:
                 value: {{ $config.queryMapping.pageNumField}}
               - name: APP_QUERY_PAGE_SIZE_FIELD
                 value: {{ $config.queryMapping.pageSizeField}}
+              - name: APP_QUERY_REGION__REGION
+                value: {{ $config.fieldMapping.regionField }}
               - name: APP_QUERY_TIMESTAMP_FIELD
                 value: {{ $config.queryMapping.timestampField}}
               - name: APP_QUERY_PAGE_START
@@ -220,7 +224,7 @@ data:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
+  name: {{ $.Chart.Name }}-subaccount-fetcher-job-{{ $tenantFetcherName }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -251,7 +255,7 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}-config
+  name: {{ $.Chart.Name }}-subaccount-fetcher-{{ $tenantFetcherName }}-config
   namespace: {{ $config.kubernetes.configMapNamespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -262,7 +266,7 @@ metadata:
     app.kubernetes.io/instance: {{ $.Release.Name }}
 subjects:
   - kind: ServiceAccount
-    name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
+    name: {{ $.Chart.Name }}-subaccount-fetcher-job-{{ $tenantFetcherName }}
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: Role

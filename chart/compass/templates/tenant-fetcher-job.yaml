@@ -95,8 +95,10 @@ spec:
                 value: {{ $config.endpoints.subaccountMoved }}
               - name: APP_TENANT_PROVIDER
                 value: {{ $config.providerName }}
-              - name: APP_TENANTS_REGION
-                value: {{ $config.tenantsRegion }}
+              - name: APP_ACCOUNT_REGION
+                value: {{ $config.accountRegion }}
+              - name: APP_SUBACCOUNT_REGIONS
+                value: {{ $config.subaccountRegions }}
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:

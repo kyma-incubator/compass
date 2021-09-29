@@ -146,8 +146,8 @@ type SubaccountService struct {
 	toEventsPage                    func([]byte) *eventsPage
 }
 
-// NewGAService missing godoc
-func NewGAService(queryConfig QueryConfig,
+// NewGlobalAccountService missing godoc
+func NewGlobalAccountService(queryConfig QueryConfig,
 	transact persistence.Transactioner,
 	kubeClient KubeClient,
 	fieldMapping TenantFieldMapping,
@@ -175,7 +175,7 @@ func NewGAService(queryConfig QueryConfig,
 	}
 }
 
-// NewGAService missing godoc
+// NewGlobalAccountService missing godoc
 func NewSubaccountService(queryConfig QueryConfig,
 	transact persistence.Transactioner,
 	kubeClient KubeClient,
