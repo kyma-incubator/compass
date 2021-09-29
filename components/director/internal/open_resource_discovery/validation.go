@@ -57,6 +57,10 @@ const (
 	VendorPartnersRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(vendor):([a-zA-Z0-9._\\-]+):()$"
 	// CustomPolicyLevelRegex represents the valid structure of the field
 	CustomPolicyLevelRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	// CustomTypeCredentialExchangeStrategyRegex represents the valid structure of the field
+	CustomTypeCredentialExchangeStrategyRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	// SAPProductOrdIDNamespaceRegex represents the valid structure of a SAP Product OrdID Namespace part
+	SAPProductOrdIDNamespaceRegex = "^(sap)((\\.)([a-z0-9-]+(?:[.][a-z0-9-]+)*))*$"
 )
 
 const (
@@ -392,7 +396,7 @@ func validateProductInput(product *model.ProductInput) error {
 		validation.Field(&product.ShortDescription, shortDescriptionRules...),
 		validation.Field(&product.Vendor, validation.Required,
 			validation.Match(regexp.MustCompile(VendorOrdIDRegex)),
-			validation.When(regexp.MustCompile(`^(sap)((\.)([a-zA-Z0-9._\-])+)*$`).MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
+			validation.When(regexp.MustCompile(SAPProductOrdIDNamespaceRegex).MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
 		),
 		validation.Field(&product.Parent, validation.When(product.Parent != nil, validation.Match(regexp.MustCompile(ProductOrdIDRegex)))),
 		validation.Field(&product.CorrelationIDs, validation.By(func(value interface{}) error {
@@ -932,7 +936,7 @@ func validateCustomType(el gjson.Result) error {
 	if el.Get("customType").Exists() && el.Get("type").String() != custom {
 		return errors.New("if customType is provided, type should be set to 'custom'")
 	}
-	return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile(`^([a-z0-9.]+):([a-zA-Z0-9._\-]+):v([0-9]+)$`)))
+	return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile(CustomTypeCredentialExchangeStrategyRegex)))
 }
 
 func validateCustomDescription(el gjson.Result) error {
