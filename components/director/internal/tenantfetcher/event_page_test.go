@@ -302,7 +302,7 @@ func Test_getTenantMappings(t *testing.T) {
 				providerName: providerName,
 				payload:      []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
-			tenantMappings := page.getTenantMappings(CreatedEventsType)
+			tenantMappings := page.getTenantMappings(CreatedAccountType)
 			test.assertTenantMappingFunc(t, tenantMappings)
 		})
 	}

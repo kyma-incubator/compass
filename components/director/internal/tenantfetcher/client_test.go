@@ -32,10 +32,10 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	}
 
 	apiCfg := tenantfetcher.APIConfig{
-		EndpointTenantCreated:       endpoint + "/created",
-		EndpointTenantDeleted:       endpoint + "/deleted",
-		EndpointTenantUpdated:       endpoint + "/updated",
-		EndpointRuntimeMovedByLabel: endpoint + "/moved",
+		EndpointTenantCreated:     endpoint + "/created",
+		EndpointTenantDeleted:     endpoint + "/deleted",
+		EndpointTenantUpdated:     endpoint + "/updated",
+		EndpointSubaccountUpdated: endpoint + "/moved",
 	}
 	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
 	client.SetMetricsPusher(metricsPusherMock)
@@ -43,7 +43,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching creation events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -51,7 +51,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching update events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -59,7 +59,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching deletion events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -67,7 +67,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching moved runtime events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedRuntimeByLabelEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedSubaccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -93,7 +93,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success when no content", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		require.Empty(t, res)
@@ -101,7 +101,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when endpoint not parsable", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, "parse \"___ :// ___ \": first path segment in URL cannot contain colon")
 		assert.Empty(t, res)
@@ -109,7 +109,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when bad path", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, "while sending get request: Get \"http://127.0.0.1:8111/badpath?pageNum=1&pageSize=1&timestamp=1\": dial tcp 127.0.0.1:8111: connect: connection refused")
 		assert.Empty(t, res)
@@ -127,7 +127,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when status code not equal to 200 OK and 204 No Content is returned", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("request to \"%s/badRequest?pageNum=1&pageSize=1&timestamp=1\" returned status code 400 and body \"\"", endpoint))
 		assert.Empty(t, res)
@@ -135,7 +135,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	// GIVEN
 	apiCfg = tenantfetcher.APIConfig{
-		EndpointRuntimeMovedByLabel: "",
+		EndpointSubaccountMoved: "",
 	}
 	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
 	client.SetMetricsPusher(metricsPusherMock)
@@ -143,7 +143,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Skip fetching moved runtime events when endpoint is not provided", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedRuntimeByLabelEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedSubaccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		require.Nil(t, res)

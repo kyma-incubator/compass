@@ -60,7 +60,7 @@ type QueryConfig struct {
 type PageConfig struct {
 	TotalPagesField   string
 	TotalResultsField string
-	PageStartValue    string
+	PageStartValue    string // todo duplicated
 	PageNumField      string
 }
 
@@ -380,7 +380,7 @@ func createTenants(ctx context.Context, tenantStorageService TenantStorageServic
 		if parentGUID, ok := currTenants[eventTenant.Parent]; ok {
 			eventTenant.Parent = parentGUID
 		}
-		eventTenant.Region = getTenantRegion(eventTenant, region)
+		eventTenant.Region = region
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
 	if len(tenantsToCreate) > 0 {
@@ -389,13 +389,6 @@ func createTenants(ctx context.Context, tenantStorageService TenantStorageServic
 		}
 	}
 	return nil
-}
-
-func getTenantRegion(eventTenant model.BusinessTenantMappingInput, region string) string {
-	if eventTenant.Type == "GlobalAccount" && len(eventTenant.Region) == 0 {
-		return region
-	}
-	return eventTenant.Region
 }
 
 func parents(currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, providerName string) []model.BusinessTenantMappingInput {
@@ -419,7 +412,7 @@ func parents(currTenants map[string]string, eventsTenants []model.BusinessTenant
 }
 
 func getTenantParentType(tenantType string) string {
-	if tenantType == tenant.Subaccount { // TODO tova sqkash e greshno, poneje pri sub_move tipa e drug + ima razlika v malka/golqma bukva
+	if tenantType == "Subaccount" {
 		return tenant.TypeToStr(tenant.Account)
 	}
 	return tenant.TypeToStr(tenant.Customer)
@@ -429,8 +422,8 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 	for _, mapping := range movedRuntimeMappings {
 		filters := []*labelfilter.LabelFilter{
 			{
-				Key:   s.movedRuntimeLabelKey,
-				Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)),
+				Key:   s.movedRuntimeLabelKey,                             //global_subaccount_id
+				Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)), // guid value
 			},
 		}
 
@@ -443,7 +436,7 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 			return errors.Wrapf(err, "while listing runtimes for label key %s", s.movedRuntimeLabelKey)
 		}
 
-		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, mapping.TargetTenant)
+		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, mapping.TargetTenant) // should move runtime here
 		if err != nil {
 			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
 		}
