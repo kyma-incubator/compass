@@ -18,9 +18,7 @@ package tests
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -40,7 +38,6 @@ import (
 
 var (
 	dexGraphQLClient *graphql.Client
-	httpClient *http.Client
 )
 
 type TenantConfig struct {
@@ -49,11 +46,11 @@ type TenantConfig struct {
 	CustomerIDProperty             string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
 	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
 	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"`
-	TenantFetcherURL          	   string `envconfig:"APP_TENANT_FETCHER_URL"`
-	RootAPI                   	   string `envconfig:"APP_ROOT_API"`
-	RegionalHandlerEndpoint   	   string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT"`
-	TenantPathParam           	   string `envconfig:"APP_TENANT_PATH_PARAM"`
-	RegionPathParam				   string `envconfig:"APP_REGION_PATH_PARAM"`
+	TenantFetcherURL               string `envconfig:"APP_TENANT_FETCHER_URL"`
+	RootAPI                        string `envconfig:"APP_ROOT_API"`
+	RegionalHandlerEndpoint        string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT"`
+	TenantPathParam                string `envconfig:"APP_TENANT_PATH_PARAM"`
+	RegionPathParam                string `envconfig:"APP_REGION_PATH_PARAM"`
 	TenantFetcherFullRegionalURL   string
 }
 
@@ -91,13 +88,6 @@ func TestMain(m *testing.M) {
 
 	tenant.TestTenants.Init()
 	defer tenant.TestTenants.Cleanup()
-
-	httpClient = &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
 
 	k8sClientSet, err := clients.NewK8SClientSet(context.Background(), time.Second, time.Minute, time.Minute)
 	if err != nil {

@@ -1,8 +1,15 @@
 package tenant
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+	"github.com/tidwall/sjson"
 	"log"
+	"net/http"
+	"testing"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -51,6 +58,22 @@ type Tenant struct {
 	Type           TenantType   `db:"type"`
 	Parent         string       `db:"parent"`
 	Status         TenantStatus `db:"status"`
+}
+
+type TenantIDs struct {
+	TenantID               string
+	SubaccountID           string
+	CustomerID             string
+	Subdomain              string
+	SubscriptionProviderID string
+}
+
+type TenantIDProperties struct {
+	TenantIDProperty               string
+	SubaccountTenantIDProperty     string
+	CustomerIDProperty             string
+	SubdomainProperty              string
+	SubscriptionProviderIDProperty string
 }
 
 var TestTenants TestTenantsManager
@@ -247,4 +270,57 @@ func (mgr TestTenantsManager) List() []Tenant {
 	}
 
 	return toReturn
+}
+
+// CreateTenantRequest returns a prepared tenant request with token in the header with the necessary tenant-fetcher claims
+func CreateTenantRequest(t *testing.T, tenantIDs TenantIDs, tenantProperties TenantIDProperties, httpMethod, tenantFetcherUrl, externalServicesMockURL string) *http.Request {
+	var (
+		body = "{}"
+		err  error
+	)
+
+	if len(tenantIDs.TenantID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.TenantIDProperty, tenantIDs.TenantID)
+		require.NoError(t, err)
+	}
+	if len(tenantIDs.SubaccountID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.SubaccountTenantIDProperty, tenantIDs.SubaccountID)
+		require.NoError(t, err)
+	}
+	if len(tenantIDs.CustomerID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.CustomerIDProperty, tenantIDs.CustomerID)
+		require.NoError(t, err)
+	}
+	if len(tenantIDs.Subdomain) > 0 {
+		body, err = sjson.Set(body, tenantProperties.SubdomainProperty, tenantIDs.Subdomain)
+		require.NoError(t, err)
+	}
+	if len(tenantIDs.SubscriptionProviderID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.SubscriptionProviderIDProperty, tenantIDs.SubscriptionProviderID)
+		require.NoError(t, err)
+	}
+
+	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
+	require.NoError(t, err)
+	claims := map[string]interface{}{
+		"test": "tenant-fetcher",
+		"scope": []string{
+			"prefix.Callback",
+		},
+		"tenant":   "tenant",
+		"identity": "tenant-fetcher-tests",
+		"iss":      externalServicesMockURL,
+		"exp":      time.Now().Unix() + int64(time.Minute.Seconds()),
+	}
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FetchTokenFromExternalServicesMock(t, externalServicesMockURL, claims)))
+
+	return request
+}
+
+func ActualTenantID(tenantIDs TenantIDs) string {
+	if len(tenantIDs.SubaccountID) > 0 {
+		return tenantIDs.SubaccountID
+	}
+
+	return tenantIDs.TenantID
 }

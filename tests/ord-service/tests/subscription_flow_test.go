@@ -17,14 +17,14 @@
 package tests
 
 import (
-	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/tidwall/sjson"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -36,18 +36,10 @@ import (
 )
 
 const (
-	tenantPathParamValue       = "tenant"
-	regionPathParamValue       = "eu-1"
-	defaultSubdomain           = "default-subdomain"
+	tenantPathParamValue = "tenant"
+	regionPathParamValue = "eu-1"
+	defaultSubdomain     = "default-subdomain"
 )
-
-type Tenant struct {
-	TenantID               string
-	SubaccountID           string
-	CustomerID             string
-	Subdomain              string
-	SubscriptionProviderID string
-}
 
 func TestSubscriptionFlow(t *testing.T) {
 	ctx := context.Background()
@@ -84,7 +76,7 @@ func TestSubscriptionFlow(t *testing.T) {
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[:1])
 
 	// Create automatic scenario assigment for consumer subaccount
-	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenariosLabel, selectorKey, subscriptionConsumerID)
+	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarios[1], selectorKey, subscriptionConsumerID)
 	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
 	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarioName)
 
@@ -92,17 +84,32 @@ func TestSubscriptionFlow(t *testing.T) {
 	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, consumerApp.ID, scenariosLabel, scenarios[1:])
 	defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, consumerApp.ID, scenariosLabel, scenarios[:1])
 
-	providedTenant := Tenant{
+	providedTenantIDs := tenant.TenantIDs{
 		TenantID:               accountID,
 		SubaccountID:           subscriptionConsumerID,
 		Subdomain:              defaultSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
 	}
 
-	// Build a request for consumer subscription
-	request := createTenantRequest(t, providedTenant, http.MethodPut, testConfig.TenantFetcherFullRegionalURL)
+	tenantProperties := tenant.TenantIDProperties{
+		TenantIDProperty:               testConfig.TenantIDProperty,
+		SubaccountTenantIDProperty:     testConfig.SubaccountTenantIDProperty,
+		CustomerIDProperty:             testConfig.CustomerIDProperty,
+		SubdomainProperty:              testConfig.SubdomainProperty,
+		SubscriptionProviderIDProperty: testConfig.SubscriptionProviderIDProperty,
+	}
 
-	t.Log(fmt.Sprintf("Provisioning tenant with ID %s", actualTenantID(providedTenant)))
+	// Build a request for consumer subscription
+	request := tenant.CreateTenantRequest(t, providedTenantIDs, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL)
+
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
+	t.Log(fmt.Sprintf("Creating a subscription between consumer with id %s and provider with name %s", tenant.ActualTenantID(providedTenantIDs), runtime.Name))
 	response, err := httpClient.Do(request)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, response.StatusCode)
@@ -112,10 +119,8 @@ func TestSubscriptionFlow(t *testing.T) {
 
 	// Create a token with the necessary consumer claims and add it in authorization header
 	claims := map[string]interface{}{
-		"test": "bas-flow",
-		"scope": []string{
-			"prefix.Callback",
-		},
+		"test":     "bas-flow",
+		"scope":    []string{},
 		"tenant":   subscriptionConsumerID,
 		"identity": "subscription-flow",
 		"iss":      testConfig.ExternalServicesMockURL,
@@ -127,58 +132,5 @@ func TestSubscriptionFlow(t *testing.T) {
 	respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 
 	require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
-	require.Equal(t, "consumerApp", len(gjson.Get(respBody, "value.0.title").String()))
-}
-
-// createTenantRequest returns a prepared tenant request with token in the header with the necessary claims for tenant-fetcher
-func createTenantRequest(t *testing.T, tenant Tenant, httpMethod string, url string) *http.Request {
-	var (
-		body = "{}"
-		err  error
-	)
-
-	if len(tenant.TenantID) > 0 {
-		body, err = sjson.Set(body, testConfig.TenantIDProperty, tenant.TenantID)
-		require.NoError(t, err)
-	}
-	if len(tenant.SubaccountID) > 0 {
-		body, err = sjson.Set(body, testConfig.SubaccountTenantIDProperty, tenant.SubaccountID)
-		require.NoError(t, err)
-	}
-	if len(tenant.CustomerID) > 0 {
-		body, err = sjson.Set(body, testConfig.CustomerIDProperty, tenant.CustomerID)
-		require.NoError(t, err)
-	}
-	if len(tenant.Subdomain) > 0 {
-		body, err = sjson.Set(body, testConfig.SubdomainProperty, tenant.Subdomain)
-		require.NoError(t, err)
-	}
-	if len(tenant.SubscriptionProviderID) > 0 {
-		body, err = sjson.Set(body, testConfig.SubscriptionProviderIDProperty, tenant.SubscriptionProviderID)
-		require.NoError(t, err)
-	}
-
-	request, err := http.NewRequest(httpMethod, url, bytes.NewBuffer([]byte(body)))
-	require.NoError(t, err)
-	claims := map[string]interface{}{
-		"test": "tenant-fetcher",
-		"scope": []string{
-			"prefix.Callback",
-		},
-		"tenant":   "tenant",
-		"identity": "tenant-fetcher-tests",
-		"iss":      testConfig.ExternalServicesMockURL,
-		"exp":      time.Now().Unix() + int64(time.Minute.Seconds()),
-	}
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FetchTokenFromExternalServicesMock(t, testConfig.ExternalServicesMockURL, claims)))
-
-	return request
-}
-
-func actualTenantID(tenant Tenant) string {
-	if len(tenant.SubaccountID) > 0 {
-		return tenant.SubaccountID
-	}
-
-	return tenant.TenantID
+	require.Equal(t, "consumerApp", gjson.Get(respBody, "value.0.title").String())
 }
