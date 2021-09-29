@@ -34,19 +34,19 @@ type UIDService interface {
 	Generate() string
 }
 
-type labelUpsertService struct {
+type labelService struct {
 	labelRepo           LabelRepository
 	labelDefinitionRepo LabelDefinitionRepository
 	uidService          UIDService
 }
 
-// NewLabelUpsertService missing godoc
-func NewLabelUpsertService(labelRepo LabelRepository, labelDefinitionRepo LabelDefinitionRepository, uidService UIDService) *labelUpsertService {
-	return &labelUpsertService{labelRepo: labelRepo, labelDefinitionRepo: labelDefinitionRepo, uidService: uidService}
+// NewLabelService missing godoc
+func NewLabelService(labelRepo LabelRepository, labelDefinitionRepo LabelDefinitionRepository, uidService UIDService) *labelService {
+	return &labelService{labelRepo: labelRepo, labelDefinitionRepo: labelDefinitionRepo, uidService: uidService}
 }
 
 // UpsertMultipleLabels missing godoc
-func (s *labelUpsertService) UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error {
+func (s *labelService) UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error {
 	for key, val := range labels {
 		err := s.UpsertLabel(ctx, tenant, &model.LabelInput{
 			Key:        key,
@@ -63,7 +63,7 @@ func (s *labelUpsertService) UpsertMultipleLabels(ctx context.Context, tenant st
 }
 
 // UpsertLabel missing godoc
-func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
+func (s *labelService) UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
 	var labelDef *model.LabelDefinition
 
 	labelDef, err := s.labelDefinitionRepo.GetByKey(ctx, tenant, labelInput.Key)
@@ -103,7 +103,7 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 	return nil
 }
 
-func (s *labelUpsertService) validateLabelInputValue(labelInput *model.LabelInput, labelDef *model.LabelDefinition) error {
+func (s *labelService) validateLabelInputValue(labelInput *model.LabelInput, labelDef *model.LabelDefinition) error {
 	if labelDef == nil || labelDef.Schema == nil {
 		// nothing to validate
 		return nil
@@ -128,4 +128,9 @@ func (s *labelUpsertService) validateLabelInputValue(labelInput *model.LabelInpu
 	}
 
 	return nil
+}
+
+// GetByKey missing godoc
+func (s *labelService) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
+	return s.labelRepo.GetByKey(ctx, tenant, objectType, objectID, key)
 }

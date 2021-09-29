@@ -95,24 +95,24 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 
 	labelConverter := label.NewConverter()
 	labelRepository := label.NewRepository(labelConverter)
-	labelUpsertService := label.NewLabelUpsertService(labelRepository, labelDefRepository, uidSvc)
+	labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
 
 	tenantStorageConv := tenant.NewConverter()
 	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
-	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelUpsertService)
+	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
 
 	scenariosService := labeldef.NewScenariosService(labelDefRepository, uidSvc, cfg.Features.DefaultScenarioEnabled)
 
 	scenarioAssignConv := scenarioassignment.NewConverter()
 	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)
-	scenarioAssignEngine := scenarioassignment.NewEngine(labelUpsertService, labelRepository, scenarioAssignRepo)
+	scenarioAssignEngine := scenarioassignment.NewEngine(labelService, labelRepository, scenarioAssignRepo)
 
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
 	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, scenariosService, uidSvc)
 
 	runtimeConverter := runtime.NewConverter()
 	runtimeRepository := runtime.NewRepository(runtimeConverter)
-	runtimeService := runtime.NewService(runtimeRepository, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern)
+	runtimeService := runtime.NewService(runtimeRepository, labelRepository, scenariosService, labelService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern)
 
 	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, cfg.ClientTimeout)
 	if metricsPusher != nil {
@@ -120,7 +120,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	}
 
 	if cfg.ShouldSyncSubaccounts {
-		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.TenantsRegion, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.TenantsRegion, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
 	}
 	return tenantfetcher.NewGAService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.TenantsRegion[0], eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval)
 }

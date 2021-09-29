@@ -3,6 +3,7 @@ package tenantfetcher
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"strconv"
 	"time"
 
@@ -79,6 +80,12 @@ type LabelDefinitionService interface {
 	Upsert(ctx context.Context, def model.LabelDefinition) error
 }
 
+// LabelService missing godoc
+//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
+type LabelService interface {
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+}
+
 // EventAPIClient missing godoc
 //go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore
 type EventAPIClient interface {
@@ -132,6 +139,7 @@ type SubaccountService struct {
 	fieldMapping                    TenantFieldMapping
 	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
 	labelDefService                 LabelDefinitionService
+	labelService                    LabelService
 	retryAttempts                   uint
 	movedRuntimeLabelKey            string
 	fullResyncInterval              time.Duration
@@ -177,6 +185,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 	tenantStorageService TenantStorageService,
 	runtimeStorageService RuntimeService,
 	labelDefService LabelDefinitionService,
+	labelService LabelService,
 	movedRuntimeLabelKey string,
 	fullResyncInterval time.Duration) *SubaccountService {
 	return &SubaccountService{
@@ -192,6 +201,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 		movedRuntimeByLabelFieldMapping: movRuntime,
 		retryAttempts:                   retryAttempts,
 		labelDefService:                 labelDefService,
+		labelService:                    labelService,
 		movedRuntimeLabelKey:            movedRuntimeLabelKey,
 		fullResyncInterval:              fullResyncInterval,
 		toEventsPage: func(bytes []byte) *eventsPage {
@@ -441,6 +451,10 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
 		}
 
+		if err := checkForScenarios(ctx, s.labelService, runtime); err != nil {
+			return err
+		}
+
 		labelDef := model.LabelDefinition{
 			Tenant: targetInternalTenant,
 			Key:    s.movedRuntimeLabelKey,
@@ -460,6 +474,22 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 	return nil
 }
 
+func checkForScenarios(ctx context.Context, labelService LabelService, runtime *model.Runtime) error {
+	scenariosLabel, err := labelService.GetByKey(ctx, runtime.Tenant, model.RuntimeLabelableObject, runtime.ID, model.ScenariosKey)
+	if err != nil { // todo check if it possible not to have record for a runtime
+		return err
+	}
+	scenarios, err := label.ValueToStringsSlice(scenariosLabel.Value)
+	if err != nil {
+		return err
+	}
+	for _, scenario := range scenarios {
+		if scenario != "DEFAULT" {
+			return errors.Errorf("Could not move subaccount if there is associated formation with it")
+		}
+	}
+	return nil
+}
 func deleteTenants(ctx context.Context, tenantStorageService TenantStorageService, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToDelete := make([]model.BusinessTenantMappingInput, 0)
 	for _, toDelete := range eventsTenants {

@@ -177,7 +177,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	bundleRepo := bundleutil.NewRepository(bundleConverter)
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 
-	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
@@ -186,7 +186,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc)
 
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, cfg.OAuth2Config, systemfetcher.DefaultClientCreator)
 
