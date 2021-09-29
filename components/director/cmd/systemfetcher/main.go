@@ -187,6 +187,9 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
+	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, cfg.OAuth2Config, systemfetcher.DefaultClientCreator)
 
@@ -209,7 +212,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
-	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsAPIClient, directorClient, cfg.SystemFetcher)
+	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, appTemplateSvc, appConverter, systemsAPIClient, directorClient, cfg.SystemFetcher)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
