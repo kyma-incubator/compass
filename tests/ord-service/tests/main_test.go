@@ -41,16 +41,16 @@ var (
 )
 
 type TenantConfig struct {
-	TenantIDProperty               string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
-	SubaccountTenantIDProperty     string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"`
-	CustomerIDProperty             string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
-	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
-	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"`
-	TenantFetcherURL               string `envconfig:"APP_TENANT_FETCHER_URL"`
-	RootAPI                        string `envconfig:"APP_ROOT_API"`
-	RegionalHandlerEndpoint        string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT"`
-	TenantPathParam                string `envconfig:"APP_TENANT_PATH_PARAM"`
-	RegionPathParam                string `envconfig:"APP_REGION_PATH_PARAM"`
+	TenantIDProperty               string
+	SubaccountTenantIDProperty     string
+	CustomerIDProperty             string
+	SubdomainProperty              string
+	SubscriptionProviderIDProperty string
+	TenantFetcherURL               string
+	RootAPI                        string
+	RegionalHandlerEndpoint        string
+	TenantPathParam                string
+	RegionPathParam                string
 	TenantFetcherFullRegionalURL   string `envconfig:"-"`
 }
 

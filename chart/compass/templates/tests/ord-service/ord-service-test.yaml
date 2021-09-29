@@ -61,25 +61,25 @@ spec:
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
               value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
-            - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
+            - name: TENANT_CONFIG_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
-            - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
-              value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
-            - name: APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY
+            - name: TENANT_CONFIG_SUBACCOUNT_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
-            - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
+            - name: TENANT_CONFIG_CUSTOMER_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
+            - name: TENANT_CONFIG_SUBDOMAIN_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
-            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
+            - name: TENANT_CONFIG_SUBSCRIPTION_PROVIDER_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
-            - name: APP_TENANT_FETCHER_URL
+            - name: TENANT_CONFIG_TENANT_FETCHER_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - name: APP_ROOT_API
+            - name: TENANT_CONFIG_ROOT_API
               value: "{{ .Values.global.tenantFetcher.prefix }}"
-            - name: APP_REGIONAL_HANDLER_ENDPOINT
+            - name: TENANT_CONFIG_REGIONAL_HANDLER_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
-            - name: APP_TENANT_PATH_PARAM
+            - name: TENANT_CONFIG_TENANT_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
-            - name: APP_REGION_PATH_PARAM
+            - name: TENANT_CONFIG_REGION_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
             - name: APP_DB_USER
               valueFrom:

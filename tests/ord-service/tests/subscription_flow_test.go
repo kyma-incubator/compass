@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"net/http"
 	"testing"
 	"time"
@@ -80,9 +81,10 @@ func TestSubscriptionFlow(t *testing.T) {
 	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
 	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarioName)
 
-	// Set application scenarios label
-	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, consumerApp.ID, scenariosLabel, scenarios[1:])
-	defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, consumerApp.ID, scenariosLabel, scenarios[:1])
+	// Assign application to scenario
+	appLabelRequest := fixtures.FixSetApplicationLabelRequest(consumerApp.ID, scenariosLabel, scenarios[1:])
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, appLabelRequest, nil))
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, secondaryTenant, consumerApp.ID, testConfig.DefaultScenarioEnabled)
 
 	providedTenantIDs := tenant.TenantIDs{
 		TenantID:               accountID,
