@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Service missing godoc
+// Service consists of various resource services responsible for service-layer ORD operations.
 type Service struct {
 	transact persistence.Transactioner
 
@@ -33,7 +33,7 @@ type Service struct {
 	ordClient Client
 }
 
-// NewAggregatorService missing godoc
+// NewAggregatorService returns a new object responsible for service-layer ORD operations.
 func NewAggregatorService(transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client Client) *Service {
 	return &Service{
 		transact:           transact,
