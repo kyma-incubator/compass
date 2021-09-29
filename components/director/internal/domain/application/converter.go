@@ -198,6 +198,15 @@ func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegister
 	return appInput, nil
 }
 
+// CreateInputJSONToModel converts a JSON input to  application model.
+func (c *converter) CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error) {
+	gqlInput, err := c.CreateInputJSONToGQL(in)
+	if err != nil {
+		return model.ApplicationRegisterInput{}, err
+	}
+	return c.CreateInputFromGraphQL(ctx, gqlInput)
+}
+
 // CreateInputGQLToJSON missing godoc
 func (c *converter) CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error) {
 	appInput, err := json.Marshal(in)

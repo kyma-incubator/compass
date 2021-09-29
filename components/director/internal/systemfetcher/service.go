@@ -50,6 +50,17 @@ type DirectorClient interface {
 	DeleteSystemAsync(ctx context.Context, id, tenant string) error
 }
 
+//go:generate mockery --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore --exported=true
+type applicationTemplateService interface {
+	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
+}
+
+//go:generate mockery --name=applicationConverter --output=automock --outpkg=automock --case=underscore --exported=true
+type applicationConverter interface {
+	CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error)
+}
+
 // Config missing godoc
 type Config struct {
 	SystemsQueueSize          int           `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
@@ -63,26 +74,30 @@ type Config struct {
 
 // SystemFetcher missing godoc
 type SystemFetcher struct {
-	transaction      persistence.Transactioner
-	tenantService    TenantService
-	systemsService   SystemsService
-	systemsAPIClient SystemsAPIClient
-	directorClient   DirectorClient
+	transaction        persistence.Transactioner
+	tenantService      TenantService
+	systemsService     SystemsService
+	appTemplateService applicationTemplateService
+	appConverter       applicationConverter
+	systemsAPIClient   SystemsAPIClient
+	directorClient     DirectorClient
 
 	config  Config
 	workers chan struct{}
 }
 
 // NewSystemFetcher missing godoc
-func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, directorClient DirectorClient, config Config) *SystemFetcher {
+func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, ats applicationTemplateService, ac applicationConverter, sac SystemsAPIClient, directorClient DirectorClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
-		transaction:      tx,
-		tenantService:    ts,
-		systemsService:   ss,
-		systemsAPIClient: sac,
-		directorClient:   directorClient,
-		workers:          make(chan struct{}, config.FetcherParallellism),
-		config:           config,
+		transaction:        tx,
+		tenantService:      ts,
+		systemsService:     ss,
+		appTemplateService: ats,
+		appConverter:       ac,
+		systemsAPIClient:   sac,
+		directorClient:     directorClient,
+		workers:            make(chan struct{}, config.FetcherParallellism),
+		config:             config,
 	}
 }
 
@@ -205,11 +220,11 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 			continue
 		}
 
-		appInput, templateID := s.convertSystemToAppRegisterInput(system)
-		appInputs = append(appInputs, model.ApplicationRegisterInputWithTemplate{
-			ApplicationRegisterInput: appInput,
-			TemplateID:               templateID,
-		})
+		appInput, err := s.convertSystemToAppRegisterInput(ctx, system)
+		if err != nil {
+			return err
+		}
+		appInputs = append(appInputs, *appInput)
 	}
 
 	if len(appInputs) > 0 {
@@ -227,21 +242,63 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 	return nil
 }
 
-func (s *SystemFetcher) convertSystemToAppRegisterInput(sc System) (model.ApplicationRegisterInput, string) {
-	initStatusCond := model.ApplicationStatusConditionInitial
-	baseURL := sc.BaseURL
-
-	appRegisterInput := model.ApplicationRegisterInput{
-		Name:            sc.DisplayName,
-		Description:     &sc.ProductDescription,
-		BaseURL:         &baseURL,
-		ProviderName:    &sc.InfrastructureProvider,
-		StatusCondition: &initStatusCond,
-		SystemNumber:    &sc.SystemNumber,
-		Labels: map[string]interface{}{
-			"managed": "true",
-		},
+func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc System) (*model.ApplicationRegisterInputWithTemplate, error) {
+	if len(sc.TemplateID) > 0 {
+		return s.appRegisterInputFromTemplate(ctx, sc)
 	}
 
-	return appRegisterInput, sc.TemplateID
+	appRegisterInput := model.ApplicationRegisterInput{
+		Name: sc.DisplayName,
+	}
+
+	return enrichAppRegisterInput(appRegisterInput, sc), nil
+}
+
+func (s *SystemFetcher) appRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInputWithTemplate, error) {
+	appTemplate, err := s.appTemplateService.Get(ctx, sc.TemplateID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting application template with ID %s", sc.TemplateID)
+	}
+
+	inputValues := model.ApplicationFromTemplateInputValues{
+		{
+			Placeholder: "name",
+			Value:       sc.DisplayName,
+		},
+		{
+			Placeholder: "display-name",
+			Value:       sc.DisplayName,
+		},
+	}
+	appRegisterInputJSON, err := s.appTemplateService.PrepareApplicationCreateInputJSON(appTemplate, inputValues)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while preparing ApplicationRegisterInput JSON from Application Template with name %s", appTemplate.Name)
+	}
+
+	appRegisterInput, err := s.appConverter.CreateInputJSONToModel(ctx, appRegisterInputJSON)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while preparing ApplicationRegisterInput model from Application Template with name %s", appTemplate.Name)
+	}
+
+	return enrichAppRegisterInput(appRegisterInput, sc), nil
+}
+
+func enrichAppRegisterInput(input model.ApplicationRegisterInput, sc System) *model.ApplicationRegisterInputWithTemplate {
+	initStatusCond := model.ApplicationStatusConditionInitial
+
+	input.Description = &sc.ProductDescription
+	input.BaseURL = &sc.BaseURL
+	input.ProviderName = &sc.InfrastructureProvider
+	input.StatusCondition = &initStatusCond
+	input.SystemNumber = &sc.SystemNumber
+
+	if len(input.Labels) == 0 {
+		input.Labels = make(map[string]interface{}, 1)
+	}
+	input.Labels["managed"] = "true"
+
+	return &model.ApplicationRegisterInputWithTemplate{
+		ApplicationRegisterInput: input,
+		TemplateID:               sc.TemplateID,
+	}
 }
