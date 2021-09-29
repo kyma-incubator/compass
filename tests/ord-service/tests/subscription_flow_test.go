@@ -20,10 +20,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/google/uuid"
 
