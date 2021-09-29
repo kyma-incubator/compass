@@ -24,97 +24,97 @@ import (
 
 // Disclaimer: All regexes below are provided by the ORD spec itself.
 const (
-	// SemVerRegex missing godoc
+	// SemVerRegex represents the valid structure of the field
 	SemVerRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
-	// PackageOrdIDRegex missing godoc
-	PackageOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	// VendorOrdIDRegex missing godoc
-	VendorOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
-	// ProductOrdIDRegex missing godoc
-	ProductOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(product):([a-zA-Z0-9._\\-]+):()$"
-	// BundleOrdIDRegex missing godoc
-	BundleOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(consumptionBundle):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	// TombstoneOrdIDRegex missing godoc
-	TombstoneOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
+	// PackageOrdIDRegex represents the valid structure of the ordID of the Package
+	PackageOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	// VendorOrdIDRegex represents the valid structure of the ordID of the Vendor
+	VendorOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(vendor):([a-zA-Z0-9._\\-]+):()$"
+	// ProductOrdIDRegex represents the valid structure of the ordID of the Product
+	ProductOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(product):([a-zA-Z0-9._\\-]+):()$"
+	// BundleOrdIDRegex represents the valid structure of the ordID of the ConsumptionBundle
+	BundleOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(consumptionBundle):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	// TombstoneOrdIDRegex represents the valid structure of the ordID of the Tombstone
+	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
 
-	// SystemInstanceBaseURLRegex missing godoc
+	// SystemInstanceBaseURLRegex represents the valid structure of the field
 	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?$"
-	// StringArrayElementRegex missing godoc
+	// StringArrayElementRegex represents the valid structure of the field
 	StringArrayElementRegex = "^[a-zA-Z0-9-_.\\/ ]*$"
-	// CountryRegex missing godoc
+	// CountryRegex represents the valid structure of the field
 	CountryRegex = "^[A-Z]{2}$"
-	// APIOrdIDRegex missing godoc
-	APIOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	// EventOrdIDRegex missing godoc
-	EventOrdIDRegex = "^([a-zA-Z0-9._\\-]+):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
-	// CorrelationIDsRegex missing godoc
-	CorrelationIDsRegex = "^([a-zA-Z0-9._\\-]+):([a-zA-Z0-9._\\-\\/]+)$"
-	// LabelsKeyRegex missing godoc
+	// APIOrdIDRegex represents the valid structure of the ordID of the API
+	APIOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	// EventOrdIDRegex represents the valid structure of the ordID of the Event
+	EventOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+	// CorrelationIDsRegex represents the valid structure of the field
+	CorrelationIDsRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
+	// LabelsKeyRegex represents the valid structure of the field
 	LabelsKeyRegex = "^[a-zA-Z0-9-_.]*$"
-	// CustomImplementationStandardRegex missing godoc
-	CustomImplementationStandardRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
-	// VendorPartnersRegex missing godoc
-	VendorPartnersRegex = "^([a-zA-Z0-9._\\-]+):(vendor):([a-zA-Z0-9._\\-]+):()$"
-	// CustomPolicyLevelRegex missing godoc
-	CustomPolicyLevelRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	// CustomImplementationStandardRegex represents the valid structure of the field
+	CustomImplementationStandardRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	// VendorPartnersRegex represents the valid structure of the field
+	VendorPartnersRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(vendor):([a-zA-Z0-9._\\-]+):()$"
+	// CustomPolicyLevelRegex represents the valid structure of the field
+	CustomPolicyLevelRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 )
 
 const (
 	custom string = "custom"
 
-	// PolicyLevelSap missing godoc
+	// PolicyLevelSap is one of the available policy options
 	PolicyLevelSap string = "sap:core:v1"
-	// PolicyLevelSapPartner missing godoc
+	// PolicyLevelSapPartner is one of the available policy options
 	PolicyLevelSapPartner string = "sap:partner:v1"
-	// PolicyLevelCustom missing godoc
+	// PolicyLevelCustom is one of the available policy options
 	PolicyLevelCustom = custom
 
-	// ReleaseStatusBeta missing godoc
+	// ReleaseStatusBeta is one of the available release status options
 	ReleaseStatusBeta string = "beta"
-	// ReleaseStatusActive missing godoc
+	// ReleaseStatusActive is one of the available release status options
 	ReleaseStatusActive string = "active"
-	// ReleaseStatusDeprecated missing godoc
+	// ReleaseStatusDeprecated is one of the available release status options
 	ReleaseStatusDeprecated string = "deprecated"
 
-	// APIProtocolODataV2 missing godoc
+	// APIProtocolODataV2 is one of the available api protocol options
 	APIProtocolODataV2 string = "odata-v2"
-	// APIProtocolODataV4 missing godoc
+	// APIProtocolODataV4 is one of the available api protocol options
 	APIProtocolODataV4 string = "odata-v4"
-	// APIProtocolSoapInbound missing godoc
+	// APIProtocolSoapInbound is one of the available api protocol options
 	APIProtocolSoapInbound string = "soap-inbound"
-	// APIProtocolSoapOutbound missing godoc
+	// APIProtocolSoapOutbound is one of the available api protocol options
 	APIProtocolSoapOutbound string = "soap-outbound"
-	// APIProtocolRest missing godoc
+	// APIProtocolRest is one of the available api protocol options
 	APIProtocolRest string = "rest"
-	// APIProtocolSapRfc missing godoc
+	// APIProtocolSapRfc is one of the available api protocol options
 	APIProtocolSapRfc string = "sap-rfc"
 
-	// APIVisibilityPublic missing godoc
+	// APIVisibilityPublic is one of the available api visibility options
 	APIVisibilityPublic string = "public"
-	// APIVisibilityPrivate missing godoc
+	// APIVisibilityPrivate is one of the available api visibility options
 	APIVisibilityPrivate string = "private"
-	// APIVisibilityInternal missing godoc
+	// APIVisibilityInternal is one of the available api visibility options
 	APIVisibilityInternal string = "internal"
 
-	// APIImplementationStandardDocumentAPI missing godoc
+	// APIImplementationStandardDocumentAPI is one of the available api implementation standard options
 	APIImplementationStandardDocumentAPI string = "sap:ord-document-api:v1"
-	// APIImplementationStandardServiceBroker missing godoc
+	// APIImplementationStandardServiceBroker is one of the available api implementation standard options
 	APIImplementationStandardServiceBroker string = "cff:open-service-broker:v2"
-	// APIImplementationStandardCsnExposure missing godoc
+	// APIImplementationStandardCsnExposure is one of the available api implementation standard options
 	APIImplementationStandardCsnExposure string = "sap:csn-exposure:v1"
-	// APIImplementationStandardCustom missing godoc
+	// APIImplementationStandardCustom is one of the available api implementation standard options
 	APIImplementationStandardCustom = custom
 
-	// SapTitle missing godoc
+	// SapTitle is a valid SAP title
 	SapTitle = "SAP SE"
-	// SapVendor missing godoc
+	// SapVendor is a valid Vendor ordID
 	SapVendor = "sap:vendor:SAP:"
-	// PartnerVendor missing godoc
+	// PartnerVendor is a valid partner Vendor ordID
 	PartnerVendor = "partner:vendor:SAP:"
 )
 
 var (
-	// LineOfBusinesses missing godoc
+	// LineOfBusinesses contain all valid values for this field from the spec
 	LineOfBusinesses = map[string]bool{
 		"Asset Management":                 true,
 		"Commerce":                         true,
@@ -133,7 +133,7 @@ var (
 		"Plant Operations and Maintenance": true,
 		"Maintenance and Engineering":      true,
 	}
-	// Industries missing godoc
+	// Industries contain all valid values for this field from the spec
 	Industries = map[string]bool{
 		"Aerospace and Defense": true,
 		"Automotive":            true,
@@ -171,7 +171,7 @@ var descriptionRules = []validation.Rule{
 	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "description should not contain line breaks"),
 }
 
-// ValidateSystemInstanceInput missing godoc
+// ValidateSystemInstanceInput validates the given SystemInstance
 func ValidateSystemInstanceInput(app *model.Application) error {
 	return validation.ValidateStruct(app,
 		validation.Field(&app.CorrelationIDs, validation.By(func(value interface{}) error {
@@ -1099,7 +1099,7 @@ func validateExtensibleInnerFields(el gjson.Result) error {
 	return nil
 }
 
-// HashObject missing godoc
+// HashObject hashes the given object
 func HashObject(obj interface{}) (uint64, error) {
 	hash, err := hashstructure.Hash(obj, hashstructure.FormatV2, &hashstructure.HashOptions{SlicesAsSets: true})
 	if err != nil {
