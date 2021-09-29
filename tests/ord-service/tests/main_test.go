@@ -51,7 +51,7 @@ type TenantConfig struct {
 	RegionalHandlerEndpoint        string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT"`
 	TenantPathParam                string `envconfig:"APP_TENANT_PATH_PARAM"`
 	RegionPathParam                string `envconfig:"APP_REGION_PATH_PARAM"`
-	TenantFetcherFullRegionalURL   string
+	TenantFetcherFullRegionalURL   string `envconfig:"-"`
 }
 
 type ConnectorCAConfig struct {
