@@ -530,6 +530,7 @@ func fixApplicationPage() *model.ApplicationPage {
 					ID:    appID,
 					Ready: true,
 				},
+				Labels: []byte(fmt.Sprintf(`{"%s": "%s"}`, applicationTypeLabel, testApplicationType)),
 			},
 		},
 		PageInfo: &pagination.Page{
