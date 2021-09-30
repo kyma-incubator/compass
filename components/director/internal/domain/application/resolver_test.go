@@ -1330,7 +1330,9 @@ func TestResolver_Auths(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	sysAuthModels := []model.SystemAuth{{ID: "id1", AppID: &id, Value: &auth}, {ID: "id2", AppID: &id, Value: &auth}}
+	sysAuthModelCert := []model.SystemAuth{{ID: "id1", AppID: &id, Value: nil}}
 	sysAuthGQL := []*graphql.AppSystemAuth{{ID: "id1", Auth: &graphql.Auth{}}, {ID: "id2", Auth: &graphql.Auth{}}}
+	sysAuthGQLCert := []*graphql.AppSystemAuth{{ID: "id1", Auth: nil}}
 	sysAuthExpected := []*graphql.AppSystemAuth{{ID: "id1", Auth: &graphql.Auth{OneTimeToken: &gqlAuth}}, {ID: "id2", Auth: &graphql.Auth{OneTimeToken: &gqlAuth}}}
 	emptySysAuth := make([]*graphql.AppSystemAuth, 0)
 	testCases := []struct {
@@ -1376,6 +1378,34 @@ func TestResolver_Auths(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
+			Name:            "Success when System Auth is certificate",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModelCert, nil).Once()
+				svc.On("IsSystemAuthOneTimeTokenType", &sysAuthModelCert[0]).Return(false).Once()
+				return svc
+			},
+			SysAuthConvFn: func() *automock.SystemAuthConverter {
+				sysAuthConv := &automock.SystemAuthConverter{}
+				sysAuthConv.On("ToGraphQL", &sysAuthModelCert[0]).Return(sysAuthGQLCert[0], nil).Once()
+				return sysAuthConv
+			},
+			TokenSvcFn: func() *automock.OneTimeTokenService {
+				svc := &automock.OneTimeTokenService{}
+				svc.AssertNotCalled(t, "IsTokenValid")
+				return svc
+			},
+			TokenConvFn: func() *automock.TokenConverter {
+				conv := &automock.TokenConverter{}
+				conv.AssertNotCalled(t, "ToGraphQLForApplication")
+				return conv
+			},
+			InputApp:       gqlApp,
+			ExpectedResult: sysAuthGQLCert,
+			ExpectedErr:    nil,
+		},
+		{
 			Name:            "Returns nothing when tokens are invalid",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SystemAuthService {
@@ -1387,7 +1417,8 @@ func TestResolver_Auths(t *testing.T) {
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
 				sysAuthConv := &automock.SystemAuthConverter{}
-				sysAuthConv.AssertNotCalled(t, "ToGraphQL")
+				sysAuthConv.On("ToGraphQL", &sysAuthModels[0]).Return(sysAuthGQL[0], nil).Once()
+				sysAuthConv.On("ToGraphQL", &sysAuthModels[1]).Return(sysAuthGQL[1], nil).Once()
 				return sysAuthConv
 			},
 			TokenSvcFn: func() *automock.OneTimeTokenService {
@@ -1466,7 +1497,7 @@ func TestResolver_Auths(t *testing.T) {
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
-				svc.On("IsSystemAuthOneTimeTokenType", &sysAuthModels[0]).Return(true).Once()
+				svc.AssertNotCalled(t, "IsSystemAuthOneTimeTokenType")
 				return svc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -1476,7 +1507,7 @@ func TestResolver_Auths(t *testing.T) {
 			},
 			TokenSvcFn: func() *automock.OneTimeTokenService {
 				svc := &automock.OneTimeTokenService{}
-				svc.On("IsTokenValid", &sysAuthModels[0]).Return(true, nil).Once()
+				svc.AssertNotCalled(t, "IsTokenValid")
 				return svc
 			},
 			TokenConvFn: func() *automock.TokenConverter {
