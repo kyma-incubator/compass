@@ -3,9 +3,10 @@ package tenantfetcher
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"strconv"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -241,16 +242,19 @@ func (s SubaccountService) SyncTenants() error {
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Printf("Got tenants to create for region: %s", region)
 
 		tenantsToDelete, err := s.getSubaccountsToDeleteForRegion(lastConsumedTenantTimestamp, region)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Printf("Got tenants to delete for region: %s", region)
 
 		runtimesToMove, err := s.getRuntimesToMoveByLabel(lastConsumedTenantTimestamp)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Printf("Got tenants to move for region: %s", region)
 
 		tenantsToCreate = dedupeTenants(tenantsToCreate)
 		tenantsToCreate = excludeTenants(tenantsToCreate, tenantsToDelete)

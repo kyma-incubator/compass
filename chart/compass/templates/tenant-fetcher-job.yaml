@@ -98,7 +98,7 @@ spec:
               - name: APP_ACCOUNT_REGION
                 value: {{ $config.accountRegion }}
               - name: APP_SUBACCOUNT_REGIONS
-                value: {{ $config.subaccountRegions }}
+                value: {{ $config.subaccountRegions | quote }}
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
