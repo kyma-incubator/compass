@@ -260,16 +260,7 @@ func (s *SystemFetcher) appRegisterInputFromTemplate(ctx context.Context, sc Sys
 		return nil, errors.Wrapf(err, "while getting application template with ID %s", sc.TemplateID)
 	}
 
-	inputValues := model.ApplicationFromTemplateInputValues{
-		{
-			Placeholder: "name",
-			Value:       sc.DisplayName,
-		},
-		{
-			Placeholder: "display-name",
-			Value:       sc.DisplayName,
-		},
-	}
+	inputValues := getTemplateInputs(appTemplate, sc)
 	appRegisterInputJSON, err := s.appTemplateService.PrepareApplicationCreateInputJSON(appTemplate, inputValues)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while preparing ApplicationRegisterInput JSON from Application Template with name %s", appTemplate.Name)
@@ -286,6 +277,7 @@ func (s *SystemFetcher) appRegisterInputFromTemplate(ctx context.Context, sc Sys
 func enrichAppRegisterInput(input model.ApplicationRegisterInput, sc System) *model.ApplicationRegisterInputWithTemplate {
 	initStatusCond := model.ApplicationStatusConditionInitial
 
+	input.Name = sc.DisplayName
 	input.Description = &sc.ProductDescription
 	input.BaseURL = &sc.BaseURL
 	input.ProviderName = &sc.InfrastructureProvider
@@ -301,4 +293,24 @@ func enrichAppRegisterInput(input model.ApplicationRegisterInput, sc System) *mo
 		ApplicationRegisterInput: input,
 		TemplateID:               sc.TemplateID,
 	}
+}
+
+func getTemplateInputs(t *model.ApplicationTemplate, s System) model.ApplicationFromTemplateInputValues {
+	inputValues := model.ApplicationFromTemplateInputValues{}
+	for _, p := range t.Placeholders {
+		if strings.Contains(strings.ToLower(p.Name), "url") {
+			inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
+				Placeholder: p.Name,
+				Value:       s.BaseURL,
+			})
+			continue
+		}
+
+		inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
+			Placeholder: p.Name,
+			Value:       s.DisplayName,
+		})
+	}
+
+	return inputValues
 }
