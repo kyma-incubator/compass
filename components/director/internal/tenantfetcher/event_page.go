@@ -127,7 +127,7 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 	region := ""
 	parentID := ""
 	tenantType := tenant.TypeToStr(tenant.Account)
-	if entityType.String() == "Subaccount" { /// TODO refactor
+	if entityType.String() == "Subaccount" { // TODO refactor
 		regionField := gjson.Get(jsonPayload, ep.fieldMapping.RegionField)
 		if !regionField.Exists() {
 			return nil, invalidFieldFormatError(ep.fieldMapping.RegionField)

@@ -59,6 +59,7 @@ type QueryConfig struct {
 	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
 }
 
+// PageConfig missing godoc
 type PageConfig struct {
 	TotalPagesField   string
 	TotalResultsField string
@@ -176,7 +177,7 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 	}
 }
 
-// NewGlobalAccountService missing godoc
+// NewSubaccountService missing godoc
 func NewSubaccountService(queryConfig QueryConfig,
 	transact persistence.Transactioner,
 	kubeClient KubeClient,
@@ -216,6 +217,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 	}
 }
 
+// SyncTenants missing godoc
 func (s SubaccountService) SyncTenants() error {
 	ctx := context.Background()
 	startTime := time.Now()
@@ -436,7 +438,7 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 	for _, mapping := range movedRuntimeMappings {
 		filters := []*labelfilter.LabelFilter{
 			{
-				Key:   s.movedRuntimeLabelKey,                             //global_subaccount_id
+				Key:   s.movedRuntimeLabelKey,                             // lobal_subaccount_id
 				Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)), // guid value
 			},
 		}
