@@ -55,11 +55,11 @@ const (
 		"additionalUrls": {},
 		"additionalAttributes": {}
 	}`
-	displayNameLabelKey = "display-name"
+	labelKey = "customLabel"
 )
 
 var systemLabels = directorSchema.Labels{
-	displayNameLabelKey: "{{display-name}}",
+	labelKey: "{{new-placeholder}}",
 }
 
 func TestSystemFetcherSuccess(t *testing.T) {
@@ -708,7 +708,7 @@ func applicationLabels(name string, fromTemplate bool) directorSchema.Labels {
 	}
 
 	if fromTemplate {
-		labels[displayNameLabelKey] = name
+		labels[labelKey] = name
 	}
 
 	return labels
