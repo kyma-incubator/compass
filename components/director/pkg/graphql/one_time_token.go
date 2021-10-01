@@ -13,7 +13,7 @@ type OneTimeTokenForApplication struct {
 }
 
 // IsOneTimeToken missing godoc
-func (OneTimeTokenForApplication) IsOneTimeToken() {}
+func (t *OneTimeTokenForApplication) IsOneTimeToken() {}
 
 // OneTimeTokenForRuntime missing godoc
 type OneTimeTokenForRuntime struct {

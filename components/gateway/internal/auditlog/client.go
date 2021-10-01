@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"time"
+
+	"github.com/avast/retry-go"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
@@ -27,6 +30,11 @@ type Client struct {
 	configChangeURL  string
 	securityEventURL string
 }
+
+const (
+	retryAttempts          = 2
+	retryDelayMilliseconds = 100
+)
 
 func NewClient(cfg Config, httpClient HttpClient) (*Client, error) {
 	configChangeURL, err := createURL(cfg.URL, cfg.ConfigPath)
@@ -52,12 +60,7 @@ func (c *Client) LogConfigurationChange(ctx context.Context, change model.Config
 		return errors.Wrap(err, "while marshaling auditlog payload")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.configChangeURL, bytes.NewBuffer(payload))
-	if err != nil {
-		return errors.Wrap(err, "while creating request")
-	}
-
-	return c.sendAuditLog(ctx, req)
+	return c.sendAuditLogWithRetry(ctx, c.configChangeURL, payload)
 }
 
 func (c *Client) LogSecurityEvent(ctx context.Context, event model.SecurityEvent) error {
@@ -66,30 +69,39 @@ func (c *Client) LogSecurityEvent(ctx context.Context, event model.SecurityEvent
 		return errors.Wrap(err, "while marshaling auditlog payload")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.securityEventURL, bytes.NewBuffer(payload))
-	if err != nil {
-		return errors.Wrap(err, "while creating request")
-	}
-
-	return c.sendAuditLog(ctx, req)
+	return c.sendAuditLogWithRetry(ctx, c.securityEventURL, payload)
 }
 
-func (c *Client) sendAuditLog(ctx context.Context, req *http.Request) error {
+func (c *Client) sendAuditLogWithRetry(ctx context.Context, url string, payload []byte) error {
 	logger := log.C(ctx)
-	response, err := c.httpClient.Do(req)
-	if err != nil {
-		return errors.Wrapf(err, "while sending auditlog to: %s", req.URL.String())
-	}
-	defer httpcommon.CloseBody(ctx, response.Body)
-
-	if response.StatusCode != http.StatusCreated {
-		logger.Infof("Got different status code: %d\n", response.StatusCode)
-		output, err := ioutil.ReadAll(response.Body)
+	err := retry.Do(func() error {
+		buf := bytes.NewBuffer(payload)
+		request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, buf)
 		if err != nil {
-			return errors.Wrap(err, "while reading response from auditlog")
+			return errors.Wrap(err, "while creating request")
 		}
-		logger.Infoln(string(output))
-		return errors.Errorf("Write to auditlog failed with status code: %d", response.StatusCode)
+
+		response, err := c.httpClient.Do(request)
+		if err != nil {
+			return errors.Wrapf(err, "while sending auditlog to: %s", request.URL.String())
+		}
+
+		defer httpcommon.CloseBody(ctx, response.Body)
+
+		if response.StatusCode != http.StatusCreated {
+			logger.Infof("Got different status code: %d\n", response.StatusCode)
+			output, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				return errors.Wrap(err, "while reading response from auditlog")
+			}
+			logger.Infoln(string(output))
+			return errors.Errorf("Write to auditlog failed with status code: %d", response.StatusCode)
+		}
+		return nil
+	}, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
+
+	if err != nil {
+		return err
 	}
 	return nil
 }
