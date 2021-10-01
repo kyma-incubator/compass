@@ -15,38 +15,34 @@ import (
 )
 
 const (
-	// LifecycleAttributeName missing godoc
+	// LifecycleAttributeName is the lifecycle status attribute of the application in the external source response for applications retrieval.
 	LifecycleAttributeName string = "lifecycleStatus"
-	// LifecycleDeleted missing godoc
+	// LifecycleDeleted is the string matching the deleted lifecycle state of the application in the external source.
 	LifecycleDeleted string = "DELETED"
 
-	// ConcurrentDeleteOperationErrMsg missing godoc
+	// ConcurrentDeleteOperationErrMsg is the error message returned by the Compass Director, when we try to delete an application, which is already undergoing a delete operation.
 	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
 )
 
-// TenantService missing godoc
-//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
-type TenantService interface {
+//go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true
+type tenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
-// SystemsService missing godoc
-//go:generate mockery --name=SystemsService --output=automock --outpkg=automock --case=underscore
-type SystemsService interface {
+//go:generate mockery --name=systemsService --output=automock --outpkg=automock --case=underscore --exported=true
+type systemsService interface {
 	CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error
 	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
 }
 
-// SystemsAPIClient missing godoc
-//go:generate mockery --name=SystemsAPIClient --output=automock --outpkg=automock --case=underscore
-type SystemsAPIClient interface {
+//go:generate mockery --name=systemsAPIClient --output=automock --outpkg=automock --case=underscore --exported=true
+type systemsAPIClient interface {
 	FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error)
 }
 
-// DirectorClient missing godoc
-//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
-type DirectorClient interface {
+//go:generate mockery --name=directorClient --output=automock --outpkg=automock --case=underscore --exported=true
+type directorClient interface {
 	DeleteSystemAsync(ctx context.Context, id, tenant string) error
 }
 
@@ -61,7 +57,7 @@ type applicationConverter interface {
 	CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error)
 }
 
-// Config missing godoc
+// Config holds the configuration available for the SystemFetcher.
 type Config struct {
 	SystemsQueueSize          int           `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
 	FetcherParallellism       int           `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
@@ -72,22 +68,22 @@ type Config struct {
 	EnableSystemDeletion bool `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
 }
 
-// SystemFetcher missing godoc
+// SystemFetcher is responsible for synchronizing the existing applications in Compass and a pre-defined external source.
 type SystemFetcher struct {
 	transaction        persistence.Transactioner
-	tenantService      TenantService
-	systemsService     SystemsService
+	tenantService      tenantService
+	systemsService     systemsService
 	appTemplateService applicationTemplateService
 	appConverter       applicationConverter
-	systemsAPIClient   SystemsAPIClient
-	directorClient     DirectorClient
+	systemsAPIClient   systemsAPIClient
+	directorClient     directorClient
 
 	config  Config
 	workers chan struct{}
 }
 
-// NewSystemFetcher missing godoc
-func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, ats applicationTemplateService, ac applicationConverter, sac SystemsAPIClient, directorClient DirectorClient, config Config) *SystemFetcher {
+// NewSystemFetcher returns a new SystemFetcher.
+func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, ats applicationTemplateService, ac applicationConverter, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
 		transaction:        tx,
 		tenantService:      ts,
@@ -106,7 +102,8 @@ type tenantSystems struct {
 	systems []System
 }
 
-// SyncSystems missing godoc
+// SyncSystems synchronizes applications between Compass and external source. It deletes the applications with deleted state in the external source from Compass,
+// and creates any new applications present in the external source.
 func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 	tenants, err := s.listTenants(ctx)
 	if err != nil {
