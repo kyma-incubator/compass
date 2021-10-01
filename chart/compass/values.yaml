@@ -78,7 +78,7 @@ global:
       version: "PR-2047"
     gateway:
       dir:
-      version: "PR-2027"
+      version: "PR-2034"
     operations_controller:
       dir:
       version: "PR-2027"
@@ -98,10 +98,10 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2027"
+      version: "PR-2042"
     console:
       dir:
-      version: "PR-44"
+      version: "PR-45"
     e2e_tests:
       dir:
       version: "PR-2027"

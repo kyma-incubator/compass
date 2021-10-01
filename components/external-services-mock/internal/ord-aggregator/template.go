@@ -189,8 +189,8 @@ const ordDocument = `{
          "vendor":"sap:vendor:SAP:",
          "parent":"ns:product:id2:",
          "correlationIds":[
-            "foo.bar.baz:123456",
-            "foo.bar.baz:654321"
+            "foo.bar.baz:foo:123456",
+            "foo.bar.baz:bar:654321"
          ],
          "labels":{
             "label-key-1":[

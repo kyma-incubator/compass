@@ -1,24 +1,24 @@
 package ord
 
-// AccessStrategy missing godoc
+// AccessStrategy is an ORD object
 type AccessStrategy struct {
 	Type              AccessStrategyType `json:"type"`
 	CustomType        AccessStrategyType `json:"customType"`
 	CustomDescription string             `json:"customDescription"`
 }
 
-// AccessStrategyType missing godoc
+// AccessStrategyType represents the possible type of the AccessStrategy
 type AccessStrategyType string
 
-// IsSupported missing godoc
+// IsSupported checks if the given AccessStrategy is supported by CMP
 func (a AccessStrategyType) IsSupported() bool {
 	return supportedAccessStrategies[a]
 }
 
 const (
-	// OpenAccessStrategy missing godoc
+	// OpenAccessStrategy is one of the available AccessStrategy types
 	OpenAccessStrategy AccessStrategyType = "open"
-	// CustomAccessStrategy missing godoc
+	// CustomAccessStrategy is one of the available AccessStrategy types
 	CustomAccessStrategy AccessStrategyType = "custom"
 )
 
@@ -26,7 +26,7 @@ var supportedAccessStrategies = map[AccessStrategyType]bool{
 	OpenAccessStrategy: true,
 }
 
-// AccessStrategies missing godoc
+// AccessStrategies is a slice of AccessStrategy objects
 type AccessStrategies []AccessStrategy
 
 // GetSupported returns the first AccessStrategy in the slice that is supported by CMP
