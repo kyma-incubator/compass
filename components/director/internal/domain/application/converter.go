@@ -198,7 +198,7 @@ func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegister
 	return appInput, nil
 }
 
-// CreateInputJSONToModel converts a JSON input to  application model.
+// CreateInputJSONToModel converts a JSON input to an application model.
 func (c *converter) CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error) {
 	gqlInput, err := c.CreateInputJSONToGQL(in)
 	if err != nil {
