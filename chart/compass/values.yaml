@@ -478,8 +478,11 @@ global:
       upstreamComponent: "compass-tenant-fetcher"
     subscription-flow:
       enabled: false
+      gatewayHost: "compass-gateway-ord-external-certs"
       trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
       attributes: '{"uniqueAttribute": { "key": "test", "value": "bas-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+      path: /<.*>
+      upstreamComponent: "compass-ord-service.compass-system.svc.cluster.local:3000"
 
 
   externalServicesMock:
