@@ -68,6 +68,8 @@ const (
 	CannotReadTenantMsg = "cannot read tenant from context"
 	// CannotReadClientUserMsg missing godoc
 	CannotReadClientUserMsg = "cannot read client_user from context"
+	// MultipleConsumersNotSupportedMsg missing godoc
+	MultipleConsumersNotSupportedMsg = "multiple consumers are not supported"
 	// InvalidOperationMsg missing godoc
 	InvalidOperationMsg = "The operation is not allowed"
 	// UnauthorizedMsg missing godoc
