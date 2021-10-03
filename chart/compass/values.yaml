@@ -84,7 +84,7 @@ global:
       version: "PR-1996"
     ord_service:
       dir:
-      version: "PR-41"
+      version: "PR-42"
     schema_migrator:
       dir:
       version: "PR-1998"
@@ -300,8 +300,8 @@ global:
     port: 4455
     timeout_ms: 120000
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}", "tenant": "{{ print .Extra.tenant }}", "externalTenant": "{{ print .Extra.externalTenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read", "tenant": "{{ print (index .Header.Tenant 0) }}", "consumerType": "Internal Component", "flow": "Internal"}'
+      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumers": "{{ .Extra.consumers }}"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read","tenant":"{\"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\",\"externalTenant\":\"\"}","consumers":"[{\"ConsumerID\":\"\",\"ConsumerType\":\"Internal Component\",\"Flow\":\"Internal\"}]"}'
     mutators:
       runtimeMappingService:
         config:
@@ -470,6 +470,10 @@ global:
       attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
       path: tenants/<.*>
       upstreamComponent: "compass-tenant-fetcher"
+    subscription:
+      enabled: false
+      trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
+      attributes: '{"uniqueAttribute": { "key": "test", "value": "bas-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
 
   externalServicesMock:
     enabled: false
@@ -509,6 +513,10 @@ global:
       name: "compass-director-migrations"
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
+
+  extraKeys:
+    default: '"{\"UserObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" }, \"SystemAuthObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" }, \"AuthenticatorObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" }, \"CertServiceObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" } }"'
+    compassGatewayOrdExternalCerts: '"{\"UserObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" }, \"SystemAuthObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" }, \"AuthenticatorObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"consumerExternalTenant\" }, \"CertServiceObjectContextProvider\": { \"TenantKey\": \"providerTenant\", \"ExternalTenantKey\": \"providerExternalTenant\" } }"'
 
 pairing-adapter:
   enabled: false
