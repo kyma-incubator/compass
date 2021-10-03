@@ -477,11 +477,21 @@ func TestAuthenticator_Handler(t *testing.T) {
 }
 
 func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
+	tenantJSON, err := json.Marshal(map[string]string{"tenant": tenant, "externalTenant": ""})
+
+	consumers := []consumer.Consumer{
+		{
+			ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
+			ConsumerType: consumer.Runtime,
+		},
+	}
+
+	consumersJSON, err := json.Marshal(consumers)
+
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, claims.Claims{
-		Tenant:       tenant,
-		Scopes:       scopes,
-		ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
-		ConsumerType: consumer.Runtime,
+		TenantString:    string(tenantJSON),
+		ConsumersString: string(consumersJSON),
+		Scopes: scopes,
 	})
 
 	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
@@ -490,13 +500,23 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 	return signedToken
 }
 
-func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
+func createTokenWithSigningMethod(t *testing.T, tenant string, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
+
+	tenantJSON, err := json.Marshal(map[string]string{"tenant": tenant, "externalTenant": "externalTenantName"})
+
+	consumers := []consumer.Consumer{
+		{
+			ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
+			ConsumerType: consumer.Runtime,
+		},
+	}
+
+	consumersJSON, err := json.Marshal(consumers)
+
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims.Claims{
-		Tenant:         tnt,
-		ExternalTenant: "externalTenantName",
-		Scopes:         scopes,
-		ConsumerID:     "1e176e48-e258-4091-a584-feb1bf708b7e",
-		ConsumerType:   consumer.Runtime,
+		TenantString:    string(tenantJSON),
+		ConsumersString: string(consumersJSON),
+		Scopes:          scopes,
 	})
 
 	if isSigningKeyAvailable {
@@ -504,7 +524,7 @@ func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key j
 	}
 
 	var rawKey interface{}
-	err := key.Raw(&rawKey)
+	err = key.Raw(&rawKey)
 	require.NoError(t, err)
 
 	signedToken, err := token.SignedString(rawKey)

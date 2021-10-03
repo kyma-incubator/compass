@@ -3,6 +3,7 @@ package authenticator
 import (
 	"context"
 	"crypto/rsa"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -153,6 +154,16 @@ func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*c
 
 	if _, err := jwt.ParseWithClaims(bearerToken, &parsed, a.getKeyFunc(ctx)); err != nil {
 		return nil, err
+	}
+
+	err := json.Unmarshal([]byte(parsed.ConsumersString), &parsed.Consumers)
+	if err != nil {
+		log.C(ctx).Errorf("while unmarshaling silistra consumers %v", err)
+	}
+
+	err = json.Unmarshal([]byte(parsed.TenantString), &parsed.Tenant)
+	if err != nil {
+		log.C(ctx).Errorf("while unmarshaling silistra tenants %v", err)
 	}
 
 	return &parsed, nil
