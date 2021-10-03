@@ -3,6 +3,7 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -33,7 +34,7 @@ type systemAuthContextProvider struct {
 }
 
 // GetObjectContext missing godoc
-func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails, keys KeysExtra) (ObjectContext, error) {
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authDetails.AuthID)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
@@ -73,10 +74,34 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		return ObjectContext{}, apperrors.NewInternalError("while mapping reference type to consumer type")
 	}
 
-	objCxt := NewObjectContext(tenantCtx, scopes, refObjID, consumerType)
+	objCxt := NewObjectContext(tenantCtx, keys, scopes, refObjID, authDetails.AuthFlow, consumerType)
 	log.C(ctx).Infof("Object context: %+v", objCxt)
 
 	return objCxt, nil
+}
+
+func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
+	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
+
+	if idVal != "" && certIssuer != oathkeeper.ExternalIssuer {
+		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
+	}
+
+	if idVal := data.Body.Header.Get(oathkeeper.ClientIDTokenKey); idVal != "" {
+		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.OneTimeTokenFlow}, nil
+	}
+
+	if idVal, ok := data.Body.Extra[oathkeeper.ClientIDKey]; ok {
+		authID, err := str.Cast(idVal)
+		if err != nil {
+			return false, nil, errors.Wrapf(err, "while parsing the value for %s", oathkeeper.ClientIDKey)
+		}
+
+		return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.OAuth2Flow}, nil
+	}
+
+	return false, nil, nil
 }
 
 func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx context.Context, reqData oathkeeper.ReqData) (TenantContext, string, error) {
