@@ -3,6 +3,7 @@ package tenantmapping_test
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"net/http"
 	"net/textproto"
 
@@ -22,6 +23,10 @@ import (
 )
 
 func TestUserContextProvider(t *testing.T) {
+	keys := tenantmapping.KeysExtra{
+		TenantKey:         "tenant",
+		ExternalTenantKey: "externalTenant",
+	}
 	username := "some-user"
 	expectedTenantID := uuid.New()
 	expectedExternalTenantID := uuid.New()
@@ -58,7 +63,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -96,7 +101,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -136,7 +141,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -176,7 +181,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -213,7 +218,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -265,7 +270,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -314,7 +319,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(nil, staticGroupRepoMock, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -359,7 +364,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -397,7 +402,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
 
 		require.EqualError(t, err, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: some-user missmatch external tenant: %s", nonExistingExternalTenantID)).Error())
 
@@ -423,7 +428,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, nil)
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
 
 		require.EqualError(t, err, "could not parse external ID for user: some-user: while parsing the value for key=tenant: Internal Server Error: unable to cast the value to a string type")
 
@@ -449,7 +454,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, nil)
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
 
 		require.EqualError(t, err, "while getting user data for user: some-user: while fetching scopes: while parsing the value for scope: Internal Server Error: unable to cast the value to a string type")
 
@@ -467,11 +472,101 @@ func TestUserContextProvider(t *testing.T) {
 
 		jwtAuthDetailsWithMissingUser := jwtAuthDetails
 		jwtAuthDetailsWithMissingUser.AuthID = username
-		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetailsWithMissingUser)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetailsWithMissingUser, keys)
 
 		require.EqualError(t, err, "while getting user data for user: non-existing: while searching for a static user with username non-existing: some-error")
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
+	})
+}
+
+func TestUserContextProviderMatch(t *testing.T) {
+
+	t.Run("returns ID string and JWTAuthFlow when a name is specified in the Extra map of request body", func(t *testing.T) {
+		username := "some-username"
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					"name": username,
+				},
+			},
+		}
+
+		provider := tenantmapping.NewUserContextProvider(nil, nil, nil)
+
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.True(t, match)
+		require.NoError(t, err)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, username, authDetails.AuthID)
+
+	})
+
+	t.Run("returns error when username is specified in Extra map in a non-string format", func(t *testing.T) {
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.UsernameKey: []byte{1, 2, 3},
+				},
+			},
+		}
+
+		provider := tenantmapping.NewUserContextProvider(nil, nil, nil)
+
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.False(t, match)
+		require.Nil(t, authDetails)
+		require.EqualError(t, err, "while parsing the value for name: Internal Server Error: unable to cast the value to a string type")
+	})
+
+	t.Run("returns ID string and JWTAuthFlow when username attribute is specified in the Extra map of request body and no authenticators match", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		authenticatorName := "auth1"
+		username := "some-username"
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					authenticator.CoordinatesKey: authenticator.Coordinates{
+						Name:  authenticatorName,
+						Index: 0,
+					},
+					uniqueAttributeKey:   uniqueAttributeValue,
+					identityAttributeKey: username,
+				},
+			},
+		}
+
+		reqData.Body.Extra[authenticator.CoordinatesKey] = authenticator.Coordinates{
+			Name: "unknown",
+		}
+		reqData.Body.Extra[oathkeeper.UsernameKey] = username
+
+		provider := tenantmapping.NewUserContextProvider(nil, nil, nil)
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.True(t, match)
+		require.NoError(t, err)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, username, authDetails.AuthID)
+	})
+
+	t.Run("return nil when does not match", func(t *testing.T) {
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{},
+			},
+		}
+
+		provider := tenantmapping.NewUserContextProvider(nil, nil, nil)
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.False(t, match)
+		require.NoError(t, err)
+		require.Nil(t, authDetails)
 	})
 }
 

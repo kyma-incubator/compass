@@ -19,6 +19,7 @@ package tenantmapping_test
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
@@ -30,7 +31,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -38,6 +38,10 @@ import (
 
 func TestAuthenticatorContextProvider(t *testing.T) {
 	const scopePrefix = "test-compass@b12345."
+	keys := tenantmapping.KeysExtra{
+		TenantKey:         "tenant",
+		ExternalTenantKey: "externalTenant",
+	}
 
 	username := "some-user"
 	expectedTenantID := uuid.New()
@@ -90,9 +94,9 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -142,9 +146,9 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -195,9 +199,9 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -245,9 +249,9 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
 
 		require.NoError(t, err)
 		require.Empty(t, objCtx.TenantID)
@@ -298,9 +302,9 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
 
 		require.Error(t, err)
 	})
@@ -347,9 +351,9 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
 
 		require.EqualError(t, err, fmt.Sprintf("tenant attribute %q missing from %s authenticator token", tenantAttributeKey, authn.Name))
 	})
@@ -392,10 +396,152 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
 
 		require.EqualError(t, err, fmt.Sprintf("while getting external tenant mapping [ExternalTenantID=%s]: %s", expectedExternalTenantID, mockErr.Error()))
+	})
+}
+
+func TestAuthenticatorContextProviderMatch(t *testing.T) {
+	var (
+		uniqueAttributeKey   string
+		uniqueAttributeValue string
+		identityAttributeKey string
+		username             string
+		authenticatorName    string
+		scopePrefix          string
+		domainURL            string
+		reqData              oathkeeper.ReqData
+		authn                []authenticator.Config
+	)
+	setup := func() {
+		uniqueAttributeKey = "uniqueAttribute"
+		uniqueAttributeValue = "uniqueAttributeValue"
+		identityAttributeKey = "identity"
+		authenticatorName = "auth1"
+		scopePrefix = "prefix"
+		domainURL = "domain.com"
+		username = "some-username"
+		reqData = oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					authenticator.CoordinatesKey: authenticator.Coordinates{
+						Name:  authenticatorName,
+						Index: 0,
+					},
+					uniqueAttributeKey:   uniqueAttributeValue,
+					identityAttributeKey: username,
+				},
+			},
+		}
+
+		authn = []authenticator.Config{
+			{
+				Name: authenticatorName,
+				TrustedIssuers: []authenticator.TrustedIssuer{
+					{
+						DomainURL:   domainURL,
+						ScopePrefix: scopePrefix,
+					},
+				},
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+			},
+		}
+	}
+
+	t.Run("returns ID string and JWTAuthFlow when authenticator identity is specified in the Extra map of request body", func(t *testing.T) {
+		setup()
+		provider := tenantmapping.NewAuthenticatorContextProvider(nil, authn)
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.True(t, match)
+		require.NoError(t, err)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, username, authDetails.AuthID)
+		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
+	})
+
+	t.Run("returns ID string and JWTAuthFlow when multiple authenticators configured", func(t *testing.T) {
+		setup()
+
+		authn = []authenticator.Config{
+			{
+				Name: "emptyAuthenticator",
+			},
+			{
+				Name: authenticatorName,
+				TrustedIssuers: []authenticator.TrustedIssuer{
+					{
+						DomainURL:   domainURL,
+						ScopePrefix: scopePrefix,
+					},
+				},
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+			},
+		}
+		provider := tenantmapping.NewAuthenticatorContextProvider(nil, authn)
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.True(t, match)
+		require.NoError(t, err)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, username, authDetails.AuthID)
+		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
+	})
+
+	t.Run("returns ID string and JWTAuthFlow when authenticator identity and also default username attribute is specified in the Extra map of request body", func(t *testing.T) {
+		setup()
+		identityUsername := "some-identity"
+		reqData.Body.Extra[oathkeeper.UsernameKey] = username
+		reqData.Body.Extra[identityAttributeKey] = identityUsername
+
+		provider := tenantmapping.NewAuthenticatorContextProvider(nil, authn)
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.True(t, match)
+		require.NoError(t, err)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, identityUsername, authDetails.AuthID)
+		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
+	})
+
+	t.Run("returns nil when does not match", func(t *testing.T) {
+		setup()
+		delete(reqData.Body.Extra, identityAttributeKey)
+		provider := tenantmapping.NewAuthenticatorContextProvider(nil, []authenticator.Config{})
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.False(t, match)
+		require.Nil(t, authDetails)
+		require.NoError(t, err)
+	})
+
+	t.Run("returns error during JWTAuthFlow when authenticator unique attribute is present but identity attribute is not specified in the Extra map of request body", func(t *testing.T) {
+		setup()
+		delete(reqData.Body.Extra, identityAttributeKey)
+		provider := tenantmapping.NewAuthenticatorContextProvider(nil, authn)
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.False(t, match)
+		require.Nil(t, authDetails)
+		require.EqualError(t, err, apperrors.NewInvalidDataError(fmt.Sprintf("missing identity attribute from %q authenticator token", authn[0].Name)).Error())
 	})
 }
