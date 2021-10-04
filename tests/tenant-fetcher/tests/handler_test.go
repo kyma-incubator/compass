@@ -109,12 +109,13 @@ func TestOnboardingHandler(t *testing.T) {
 		assertTenant(t, tnt, tenant.TenantID, tenant.Subdomain)
 	})
 
-	t.Run("Successful account tenant creation with matching account and subaccount tenant IDs", func(t *testing.T) {
+	t.Run("Successful account tenant creation with matching customer and account tenant IDs", func(t *testing.T) {
 		id := uuid.New().String()
 		tenant := Tenant{
 			CustomerID: id,
 			TenantID:   id,
 			Subdomain:  defaultSubdomain,
+			SubscriptionProviderID: uuid.New().String(),
 		}
 
 		addTenantExpectStatusCode(t, tenant, http.StatusOK)
