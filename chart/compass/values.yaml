@@ -465,15 +465,19 @@ global:
   authenticators:
     tenant-fetcher:
       enabled: false
+      createRule: true
       gatewayHost: "compass-gateway"
       trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
       attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
       path: tenants/<.*>
       upstreamComponent: "compass-tenant-fetcher"
     subscription:
-      enabled: false
+      enabled: true
+      createRule: false
+      gatewayHost: "compass-gateway"
       trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-      attributes: '{"uniqueAttribute": { "key": "test", "value": "bas-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+      path: <.*>
+      attributes: '{"uniqueAttribute": { "key": "zid", "value": "sap-provisioning" }, "tenant": { "key": "ext_attr.subaccountid" }, "identity": { "key": "ext_attr.zdn" } }'
 
   externalServicesMock:
     enabled: false

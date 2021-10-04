@@ -332,7 +332,7 @@ spec:
   - handler: header
     config:
       headers:
-        x-authenticator-name: {{ .Values.authenticatorName }}
+        x-authenticator-name: "subscription"
   - handler: header
     config:
       headers:
