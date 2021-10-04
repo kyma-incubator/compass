@@ -108,6 +108,10 @@ func NewHandler(reqDataParser tenantmapping.ReqDataParser, httpClient *http.Clie
 	}
 }
 
+type authenticationError struct {
+	Message  string `json:"message"`
+}
+
 // ServeHTTP missing godoc
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
@@ -120,20 +124,23 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while parsing the request.")
-		http.Error(writer, "Unable to parse request data", http.StatusOK)
+		reqData.Body.Extra["error"] = authenticationError{Message: "Zoken validation failed"}
+		h.respond(ctx, writer, reqData.Body)
 		return
 	}
 
 	claims, authCoordinates, err := h.verifyToken(ctx, reqData)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while processing the request.")
-		http.Error(writer, "Token validation failed", http.StatusOK)
+		reqData.Body.Extra["error"] = authenticationError{Message: "Token validation failed"}
+		h.respond(ctx, writer, reqData.Body)
 		return
 	}
 
 	if err := claims.Claims(&reqData.Body.Extra); err != nil {
 		h.logError(ctx, err, "An error has occurred while extracting claims to request body.extra")
-		http.Error(writer, "Token claims extraction failed", http.StatusOK)
+		reqData.Body.Extra["error"] = authenticationError{Message: "Zoken validation failed"}
+		h.respond(ctx, writer, reqData.Body)
 		return
 	}
 	reqData.Body.Extra[authenticator.CoordinatesKey] = authCoordinates
