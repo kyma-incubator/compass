@@ -2,7 +2,6 @@ package tenantmapping_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -766,8 +765,6 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
-
-		fmt.Println(gjson.Get(string(body), "extra.tenant.providerTenant"))
 
 		//require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))

@@ -257,7 +257,6 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 
 func addScopesToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {
 	var objScopes [][]string
-	fmt.Println("CONTEXTS:           ", objectContexts)
 	for _, objCtx := range objectContexts {
 		objScopes = append(objScopes, strings.Split(objCtx.Scopes, " "))
 	}
