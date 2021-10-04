@@ -124,8 +124,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while parsing the request.")
-		reqData.Body.Extra["error"] = authenticationError{Message: "Zoken validation failed"}
-		h.respond(ctx, writer, reqData.Body)
+		http.Error(writer, "Unable to parse request data", http.StatusOK)
 		return
 	}
 
@@ -139,7 +138,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	if err := claims.Claims(&reqData.Body.Extra); err != nil {
 		h.logError(ctx, err, "An error has occurred while extracting claims to request body.extra")
-		reqData.Body.Extra["error"] = authenticationError{Message: "Zoken validation failed"}
+		reqData.Body.Extra["error"] = authenticationError{Message: "Token claims extraction failed"}
 		h.respond(ctx, writer, reqData.Body)
 		return
 	}
