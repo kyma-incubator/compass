@@ -53,9 +53,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.UserObjectContextProvider: keys,
 		})
+		require.NoError(t, err)
+
 		keysString := string(keysJSON)
 		keysQuoted := strconv.Quote(keysString)
 
@@ -118,9 +120,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.AuthenticatorObjectContextProvider: keys,
 		})
+		require.NoError(t, err)
+
 		keysString := string(keysJSON)
 		keysQuoted := strconv.Quote(keysString)
 
@@ -211,9 +215,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.AuthenticatorObjectContextProvider: keys,
 		})
+		require.NoError(t, err)
+
 		keysString := string(keysJSON)
 		keysQuoted := strconv.Quote(keysString)
 
@@ -306,9 +312,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.UserObjectContextProvider: keys,
 		})
+		require.NoError(t, err)
+
 		keysString := string(keysJSON)
 		keysQuoted := strconv.Quote(keysString)
 
@@ -390,9 +398,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.SystemAuthObjectContextProvider: keys,
 		})
+		require.NoError(t, err)
+
 		keysString := string(keysJSON)
 		keysQuoted := strconv.Quote(keysString)
 
@@ -456,9 +466,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.SystemAuthObjectContextProvider: keys,
 		})
+		require.NoError(t, err)
+
 		keysString := string(keysJSON)
 		keysQuoted := strconv.Quote(keysString)
 
@@ -524,9 +536,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.CertServiceObjectContextProvider: keys,
 		})
+		require.NoError(t, err)
+
 		keysString := string(keysJSON)
 		keysQuoted := strconv.Quote(keysString)
 
@@ -590,9 +604,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.SystemAuthObjectContextProvider: keys,
 		})
+		require.NoError(t, err)
+
 		keysString := string(keysJSON)
 		keysQuoted := strconv.Quote(keysString)
 
@@ -662,10 +678,12 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "consumerExternalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.CertServiceObjectContextProvider:   certKeys,
 			tenantmapping.AuthenticatorObjectContextProvider: JWTKeys,
 		})
+		require.NoError(t, err)
+
 		keysString := string(keysJSON)
 		keysQuoted := strconv.Quote(keysString)
 
@@ -837,9 +855,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.UserObjectContextProvider: keys,
 		})
+		require.NoError(t, err)
+
 		notQuotedKeysString := string(keysJSON)
 
 		reqData := oathkeeper.ReqData{
@@ -876,7 +896,7 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		out := oathkeeper.ReqBody{}
-		err := json.NewDecoder(resp.Body).Decode(&out)
+		err = json.NewDecoder(resp.Body).Decode(&out)
 		require.NoError(t, err)
 
 		assert.Equal(t, reqData.Body, out)
@@ -890,9 +910,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.UserObjectContextProvider: keys,
 		})
+		require.NoError(t, err)
+
 		keysString := string(keysJSON)
 		keysQuoted := strconv.Quote(keysString)
 
@@ -967,9 +989,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		keysJSON, _ := json.Marshal(map[string]tenantmapping.KeysExtra{
+		keysJSON, err := json.Marshal(map[string]tenantmapping.KeysExtra{
 			tenantmapping.UserObjectContextProvider: keys,
 		})
+		require.NoError(t, err)
+
 		keysString := string(keysJSON)
 		keysQuoted := strconv.Quote(keysString)
 
@@ -1022,7 +1046,7 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		out := oathkeeper.ReqBody{}
-		err := json.NewDecoder(resp.Body).Decode(&out)
+		err = json.NewDecoder(resp.Body).Decode(&out)
 		require.NoError(t, err)
 
 		assert.Equal(t, reqData.Body, out)

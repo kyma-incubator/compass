@@ -156,18 +156,40 @@ func TestTransport(t *testing.T) {
 	})
 }
 
+func fixTokenClaims(t *testing.T) proxy.TokenClaims {
+	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": "e36c520b-caa2-4677-b289-8a171184192b", "externalTenant": "externalTenantName"})
+	require.NoError(t, err)
+
+	consumers := []proxy.Consumer{
+		{
+			ConsumerID:   ConsumerId,
+			ConsumerType: "Application",
+		},
+	}
+
+	consumersJSON, err := json.Marshal(consumers)
+	require.NoError(t, err)
+
+	return proxy.TokenClaims{
+		TenantString:    string(tenantJSON),
+		ConsumersString: string(consumersJSON),
+		Scopes:          "scopes",
+	}
+}
+
 func fixClaims() proxy.Claims {
 	return proxy.Claims{
-		Tenant:       "e36c520b-caa2-4677-b289-8a171184192b",
-		Scopes:       "scopes",
-		ConsumerID:   ConsumerId,
-		ConsumerType: "Application",
+		Tenant:         "e36c520b-caa2-4677-b289-8a171184192b",
+		ConsumerTenant: "e36c520b-caa2-4677-b289-8a171184192b",
+		Scopes:         "scopes",
+		ConsumerID:     ConsumerId,
+		ConsumerType:   "Application",
 	}
 }
 
 func fixBearerHeader(t *testing.T) string {
 
-	claims := fixClaims()
+	claims := fixTokenClaims(t)
 
 	marshalledClaims, err := json.Marshal(&claims)
 	require.NoError(t, err)

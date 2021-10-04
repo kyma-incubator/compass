@@ -501,8 +501,8 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 }
 
 func createTokenWithSigningMethod(t *testing.T, tenant string, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
-
 	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": tenant, "externalTenant": "externalTenantName"})
+	require.NoError(t, err)
 
 	consumers := []consumer.Consumer{
 		{
@@ -512,6 +512,7 @@ func createTokenWithSigningMethod(t *testing.T, tenant string, scopes string, ke
 	}
 
 	consumersJSON, err := json.Marshal(consumers)
+	require.NoError(t, err)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims.Claims{
 		TenantString:    string(tenantJSON),
