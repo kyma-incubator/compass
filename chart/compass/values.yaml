@@ -380,7 +380,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    securedSystemTypes: ""
+    securedApplicationTypes: "sample-app-type"
 
   systemFetcher:
     enabled: false

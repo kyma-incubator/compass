@@ -56,6 +56,20 @@ func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, w
 	}
 }
 
+func FixSampleApplicationRegisterInputWithORDSecuredWebhooks(appName, appDescription, webhookURL, username, password string) graphql.ApplicationRegisterInput {
+	appRegisterInput := FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, webhookURL)
+	appRegisterInput.Webhooks[0].Auth = &graphql.AuthInput{
+		Credential: &graphql.CredentialDataInput{
+			Basic: &graphql.BasicCredentialDataInput{
+				Username: username,
+				Password: password,
+			},
+		},
+	}
+
+	return appRegisterInput
+}
+
 func FixSampleApplicationRegisterInputWithNameAndWebhooks(placeholder, name string) graphql.ApplicationRegisterInput {
 	sampleInput := FixSampleApplicationRegisterInputWithWebhooks(placeholder)
 	sampleInput.Name = name
