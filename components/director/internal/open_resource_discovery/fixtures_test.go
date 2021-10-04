@@ -53,7 +53,7 @@ const (
 	cursor                    = "cursor"
 	policyLevel               = "sap:core:v1"
 	apiImplementationStandard = "cff:open-service-broker:v2"
-	correlationIDs            = `["foo.bar.baz:123456","foo.bar.baz:654321"]`
+	correlationIDs            = `["foo.bar.baz:foo:123456","foo.bar.baz:bar:654321"]`
 	partners                  = `["microsoft:vendor:Microsoft:"]`
 )
 

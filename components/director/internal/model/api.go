@@ -103,7 +103,7 @@ type APIResourceDefinition struct { // This is the place from where the specific
 
 // Validate missing godoc
 func (rd *APIResourceDefinition) Validate() error {
-	const CustomTypeRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	const CustomTypeRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	return validation.ValidateStruct(rd,
 		validation.Field(&rd.Type, validation.Required, validation.In(APISpecTypeOpenAPIV2, APISpecTypeOpenAPIV3, APISpecTypeRaml, APISpecTypeEDMX,
 			APISpecTypeCsdl, APISpecTypeWsdlV1, APISpecTypeWsdlV2, APISpecTypeRfcMetadata, APISpecTypeCustom), validation.When(rd.CustomType != "", validation.In(APISpecTypeCustom))),
@@ -142,9 +142,10 @@ type AccessStrategy struct {
 
 // Validate missing godoc
 func (as AccessStrategy) Validate() error {
+	const CustomTypeRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	return validation.ValidateStruct(&as,
-		validation.Field(&as.Type, validation.Required, validation.In("open", "custom")),
-		validation.Field(&as.CustomType, validation.When(as.Type != "custom", validation.Empty)),
+		validation.Field(&as.Type, validation.Required, validation.In("open", "custom"), validation.When(as.CustomType != "", validation.In("custom"))),
+		validation.Field(&as.CustomType, validation.When(as.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
 		validation.Field(&as.CustomDescription, validation.When(as.Type != "custom", validation.Empty)),
 	)
 }
