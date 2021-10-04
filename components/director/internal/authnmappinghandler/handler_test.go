@@ -617,7 +617,7 @@ func TestHandler(t *testing.T) {
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					"tenant": "test-tenant",
+					"consumerTenant": "test-tenant",
 				},
 				Header: map[string][]string{
 					authenticator.HeaderName: {authenticatorName},

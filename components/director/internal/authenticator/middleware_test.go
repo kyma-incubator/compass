@@ -477,7 +477,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 }
 
 func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
-	tenantJSON, err := json.Marshal(map[string]string{"tenant": tenant, "externalTenant": ""})
+	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": tenant, "externalTenant": ""})
 
 	consumers := []consumer.Consumer{
 		{
@@ -502,7 +502,7 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 
 func createTokenWithSigningMethod(t *testing.T, tenant string, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
 
-	tenantJSON, err := json.Marshal(map[string]string{"tenant": tenant, "externalTenant": "externalTenantName"})
+	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": tenant, "externalTenant": "externalTenantName"})
 
 	consumers := []consumer.Consumer{
 		{

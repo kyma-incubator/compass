@@ -49,7 +49,7 @@ func TestHandler(t *testing.T) {
 		scopes := "application:read"
 
 		keys := tenantmapping.KeysExtra{
-			TenantKey:         "tenant",
+			TenantKey:         "consumerTenant",
 			ExternalTenantKey: "externalTenant",
 		}
 
@@ -79,7 +79,7 @@ func TestHandler(t *testing.T) {
 			AuthFlow:     oathkeeper.JWTAuthFlow,
 			ConsumerType: "Static User",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumers":"[{\\\"ConsumerID\\\":\\\"` + username + `\\\",\\\"ConsumerType\\\":\\\"Static User\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.JWTAuthFlow) + `\\\"}]","name":"` + username + `","scope":"` + scopes + `","tenant":"{\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"tenant\\\":\\\"` + tenantID.String() + `\\\"}"},"header":{"Extra-Keys":["\"{\\\"UserObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"tenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumers":"[{\\\"ConsumerID\\\":\\\"` + username + `\\\",\\\"ConsumerType\\\":\\\"Static User\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.JWTAuthFlow) + `\\\"}]","name":"` + username + `","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}"},"header":{"Extra-Keys":["\"{\\\"UserObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"consumerTenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
@@ -114,7 +114,7 @@ func TestHandler(t *testing.T) {
 
 	t.Run("success for the request parsed as JWT flow with custom authenticator", func(t *testing.T) {
 		keys := tenantmapping.KeysExtra{
-			TenantKey:         "tenant",
+			TenantKey:         "consumerTenant",
 			ExternalTenantKey: "externalTenant",
 		}
 
@@ -171,7 +171,7 @@ func TestHandler(t *testing.T) {
 		}
 
 		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
-		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumers":"[{\\\"ConsumerID\\\":\\\"` + username + `\\\",\\\"ConsumerType\\\":\\\"Static User\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.JWTAuthFlow) + `\\\"}]","identity":"` + username + `","scope":"` + scopes + `","tenant":"{\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"tenant\\\":\\\"` + tenantID.String() + `\\\"}","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Extra-Keys":["\"{\\\"AuthenticatorObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"tenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumers":"[{\\\"ConsumerID\\\":\\\"` + username + `\\\",\\\"ConsumerType\\\":\\\"Static User\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.JWTAuthFlow) + `\\\"}]","identity":"` + username + `","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Extra-Keys":["\"{\\\"AuthenticatorObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"consumerTenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -207,7 +207,7 @@ func TestHandler(t *testing.T) {
 
 	t.Run("success for the request parsed as JWT flow when both normal user is present and custom authenticator are present", func(t *testing.T) {
 		keys := tenantmapping.KeysExtra{
-			TenantKey:         "tenant",
+			TenantKey:         "consumerTenant",
 			ExternalTenantKey: "externalTenant",
 		}
 
@@ -266,7 +266,7 @@ func TestHandler(t *testing.T) {
 		}
 
 		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: identityUsername, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0]}
-		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumers":"[{\\\"ConsumerID\\\":\\\"` + username + `\\\",\\\"ConsumerType\\\":\\\"Static User\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.JWTAuthFlow) + `\\\"}]","identity":"` + identityUsername + `","name":"` + username + `","scope":"` + scopes + `","tenant":"{\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"tenant\\\":\\\"` + tenantID.String() + `\\\"}","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Extra-Keys":["\"{\\\"AuthenticatorObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"tenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumers":"[{\\\"ConsumerID\\\":\\\"` + username + `\\\",\\\"ConsumerType\\\":\\\"Static User\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.JWTAuthFlow) + `\\\"}]","identity":"` + identityUsername + `","name":"` + username + `","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Extra-Keys":["\"{\\\"AuthenticatorObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"consumerTenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -302,7 +302,7 @@ func TestHandler(t *testing.T) {
 
 	t.Run("success for the request parsed as JWT flow when both normal user is present and custom authenticator are present but no authenticator matches", func(t *testing.T) {
 		keys := tenantmapping.KeysExtra{
-			TenantKey:         "tenant",
+			TenantKey:         "consumerTenant",
 			ExternalTenantKey: "externalTenant",
 		}
 
@@ -350,7 +350,7 @@ func TestHandler(t *testing.T) {
 			},
 		}
 
-		expectedRespPayload := `{"subject":"","extra":{"consumers":"[{\\\"ConsumerID\\\":\\\"` + username + `\\\",\\\"ConsumerType\\\":\\\"Static User\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.JWTAuthFlow) + `\\\"}]","name":"` + username + `","scope":"` + scopes + `","tenant":"{\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"tenant\\\":\\\"` + tenantID.String() + `\\\"}"},"header":{"Extra-Keys":["\"{\\\"UserObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"tenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumers":"[{\\\"ConsumerID\\\":\\\"` + username + `\\\",\\\"ConsumerType\\\":\\\"Static User\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.JWTAuthFlow) + `\\\"}]","name":"` + username + `","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}"},"header":{"Extra-Keys":["\"{\\\"UserObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"consumerTenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -386,7 +386,7 @@ func TestHandler(t *testing.T) {
 
 	t.Run("success for the request parsed as OAuth2 flow", func(t *testing.T) {
 		keys := tenantmapping.KeysExtra{
-			TenantKey:         "tenant",
+			TenantKey:         "consumerTenant",
 			ExternalTenantKey: "externalTenant",
 		}
 
@@ -416,7 +416,7 @@ func TestHandler(t *testing.T) {
 			AuthFlow:     oathkeeper.OAuth2Flow,
 			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","consumers":"[{\\\"ConsumerID\\\":\\\"` + objID.String() + `\\\",\\\"ConsumerType\\\":\\\"Integration System\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.OAuth2Flow) + `\\\"}]","scope":"` + scopes + `","tenant":"{\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"tenant\\\":\\\"` + tenantID.String() + `\\\"}"},"header":{"Extra-Keys":["\"{\\\"SystemAuthObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"tenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
+		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","consumers":"[{\\\"ConsumerID\\\":\\\"` + objID.String() + `\\\",\\\"ConsumerType\\\":\\\"Integration System\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.OAuth2Flow) + `\\\"}]","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}"},"header":{"Extra-Keys":["\"{\\\"SystemAuthObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"consumerTenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -452,7 +452,7 @@ func TestHandler(t *testing.T) {
 
 	t.Run("success for the request parsed as Certificate flow for Connector issuer", func(t *testing.T) {
 		keys := tenantmapping.KeysExtra{
-			TenantKey:         "tenant",
+			TenantKey:         "consumerTenant",
 			ExternalTenantKey: "externalTenant",
 		}
 
@@ -484,7 +484,7 @@ func TestHandler(t *testing.T) {
 			AuthFlow:     oathkeeper.CertificateFlow,
 			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumers":"[{\\\"ConsumerID\\\":\\\"` + objID.String() + `\\\",\\\"ConsumerType\\\":\\\"Integration System\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.CertificateFlow) + `\\\"}]","scope":"` + scopes + `","tenant":"{\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"tenant\\\":\\\"` + tenantID.String() + `\\\"}"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ConnectorIssuer + `"],"Client-Id-From-Certificate":["` + systemAuthID.String() + `"],"Extra-Keys":["\"{\\\"SystemAuthObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"tenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumers":"[{\\\"ConsumerID\\\":\\\"` + objID.String() + `\\\",\\\"ConsumerType\\\":\\\"Integration System\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.CertificateFlow) + `\\\"}]","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ConnectorIssuer + `"],"Client-Id-From-Certificate":["` + systemAuthID.String() + `"],"Extra-Keys":["\"{\\\"SystemAuthObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"consumerTenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -520,7 +520,7 @@ func TestHandler(t *testing.T) {
 
 	t.Run("success for the request parsed as Certificate flow for External issuer", func(t *testing.T) {
 		keys := tenantmapping.KeysExtra{
-			TenantKey:         "tenant",
+			TenantKey:         "consumerTenant",
 			ExternalTenantKey: "externalTenant",
 		}
 
@@ -550,7 +550,7 @@ func TestHandler(t *testing.T) {
 			AuthFlow:     oathkeeper.CertificateFlow,
 			ConsumerType: consumer.Runtime,
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumers":"[{\\\"ConsumerID\\\":\\\"` + externalTenantID + `\\\",\\\"ConsumerType\\\":\\\"Runtime\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.CertificateFlow) + `\\\"}]","scope":"` + "" + `","tenant":"{\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"tenant\\\":\\\"` + externalTenantID + `\\\"}"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"],"Extra-Keys":["\"{\\\"CertServiceObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"tenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumers":"[{\\\"ConsumerID\\\":\\\"` + externalTenantID + `\\\",\\\"ConsumerType\\\":\\\"Runtime\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.CertificateFlow) + `\\\"}]","scope":"` + "" + `","tenant":"{\\\"consumerTenant\\\":\\\"` + externalTenantID + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"],"Extra-Keys":["\"{\\\"CertServiceObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"consumerTenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -586,7 +586,7 @@ func TestHandler(t *testing.T) {
 
 	t.Run("success for the request parsed as OneTimeToken flow", func(t *testing.T) {
 		keys := tenantmapping.KeysExtra{
-			TenantKey:         "tenant",
+			TenantKey:         "consumerTenant",
 			ExternalTenantKey: "externalTenant",
 		}
 
@@ -617,7 +617,7 @@ func TestHandler(t *testing.T) {
 			AuthFlow:     oathkeeper.OneTimeTokenFlow,
 			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumers":"[{\\\"ConsumerID\\\":\\\"` + objID.String() + `\\\",\\\"ConsumerType\\\":\\\"Integration System\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.OneTimeTokenFlow) + `\\\"}]","scope":"` + scopes + `","tenant":"{\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"tenant\\\":\\\"` + tenantID.String() + `\\\"}"},"header":{"Client-Id-From-Token":["` + systemAuthID.String() + `"],"Extra-Keys":["\"{\\\"SystemAuthObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"tenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumers":"[{\\\"ConsumerID\\\":\\\"` + objID.String() + `\\\",\\\"ConsumerType\\\":\\\"Integration System\\\",\\\"Flow\\\":\\\"` + string(oathkeeper.OneTimeTokenFlow) + `\\\"}]","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}"},"header":{"Client-Id-From-Token":["` + systemAuthID.String() + `"],"Extra-Keys":["\"{\\\"SystemAuthObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"consumerTenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -756,7 +756,7 @@ func TestHandler(t *testing.T) {
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.CertificateFlow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient",  externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
 		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
 		handler.ServeHTTP(w, req)
@@ -835,7 +835,7 @@ func TestHandler(t *testing.T) {
 		username := "admin"
 
 		keys := tenantmapping.KeysExtra{
-			TenantKey:         "tenant",
+			TenantKey:         "consumerTenant",
 			ExternalTenantKey: "externalTenant",
 		}
 
@@ -888,7 +888,7 @@ func TestHandler(t *testing.T) {
 
 	t.Run("error when object context provider fails to provide object context", func(t *testing.T) {
 		keys := tenantmapping.KeysExtra{
-			TenantKey:         "tenant",
+			TenantKey:         "consumerTenant",
 			ExternalTenantKey: "externalTenant",
 		}
 
@@ -907,7 +907,7 @@ func TestHandler(t *testing.T) {
 			},
 		}
 
-		expectedRespPayload := `{"subject":"","extra":{"name":"` + username + `"},"header":{"Extra-Keys":["\"{\\\"UserObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"tenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
+		expectedRespPayload := `{"subject":"","extra":{"name":"` + username + `"},"header":{"Extra-Keys":["\"{\\\"UserObjectContextProvider\\\":{\\\"TenantKey\\\":\\\"consumerTenant\\\",\\\"ExternalTenantKey\\\":\\\"externalTenant\\\"}}\""]}}`
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
@@ -965,7 +965,7 @@ func TestHandler(t *testing.T) {
 
 	t.Run("error when transaction commit fails", func(t *testing.T) {
 		keys := tenantmapping.KeysExtra{
-			TenantKey:         "tenant",
+			TenantKey:         "consumerTenant",
 			ExternalTenantKey: "externalTenant",
 		}
 
@@ -1074,7 +1074,8 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, nil).Once()
 
-		handler := tenantmapping.NewHandler(nil, reqDataParserMock, nil, nil, nil)
+		persist, transact := txGen.ThatFailsOnBegin()
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, nil, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1086,7 +1087,7 @@ func TestHandler(t *testing.T) {
 
 		assert.Equal(t, oathkeeper.ReqBody{}, out)
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist)
 	})
 }
 

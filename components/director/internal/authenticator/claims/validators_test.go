@@ -88,8 +88,10 @@ func TestScopesValidator_Validate(t *testing.T) {
 
 func getClaims(intTenantID, extTenantID, scopes string) claims.Claims {
 	return claims.Claims{
-		Tenant: map[string]string{"tenant": intTenantID,
-			"externalTenant": extTenantID},
+		Tenant: map[string]string{
+			"consumerTenant": intTenantID,
+			"externalTenant":  extTenantID,
+		},
 
 		Scopes: scopes,
 		Consumers: []consumer.Consumer{
