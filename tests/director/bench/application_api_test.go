@@ -17,15 +17,11 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	tenantID := tenant.TestTenants.GetDefaultTenantID()
 
 	appsCount := 5
-	apps := make([]graphql.ApplicationRegisterInput, 0, appsCount)
 	for i := 0; i < appsCount; i++ {
-		apps = append(apps, fixtures.CreateApp(fmt.Sprintf("%d", i)))
-	}
-
-	for _, app := range apps {
+		app := fixtures.CreateApp(fmt.Sprintf("%d", i))
 		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, dexGraphQLClient, tenantID, app)
+		defer fixtures.CleanupApplication(b, ctx, dexGraphQLClient, tenantID, &appResp)
 		require.NoError(b, err)
-		defer fixtures.UnregisterApplication(b, ctx, dexGraphQLClient, tenantID, appResp.ID)
 	}
 
 	//create runtime without normalization

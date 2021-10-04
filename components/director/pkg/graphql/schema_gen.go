@@ -502,6 +502,8 @@ type ComplexityRoot struct {
 		InternalID  func(childComplexity int) int
 		Labels      func(childComplexity int, key *string) int
 		Name        func(childComplexity int) int
+		ParentID    func(childComplexity int) int
+		Type        func(childComplexity int) int
 	}
 
 	Version struct {
@@ -3189,6 +3191,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tenant.Name(childComplexity), true
 
+	case "Tenant.parentID":
+		if e.complexity.Tenant.ParentID == nil {
+			break
+		}
+
+		return e.complexity.Tenant.ParentID(childComplexity), true
+
+	case "Tenant.type":
+		if e.complexity.Tenant.Type == nil {
+			break
+		}
+
+		return e.complexity.Tenant.Type(childComplexity), true
+
 	case "Version.deprecated":
 		if e.complexity.Version.Deprecated == nil {
 			break
@@ -4457,6 +4473,8 @@ type Tenant {
 	id: ID!
 	internalID: ID!
 	name: String
+	type: String
+	parentID: ID
 	initialized: Boolean
 	labels(key: String): Labels
 }
@@ -19457,6 +19475,68 @@ func (ec *executionContext) _Tenant_name(ctx context.Context, field graphql.Coll
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Tenant_type(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Tenant",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Tenant_parentID(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Tenant",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Tenant_initialized(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -22590,8 +22670,6 @@ func (ec *executionContext) _OneTimeToken(ctx context.Context, sel ast.Selection
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case OneTimeTokenForApplication:
-		return ec._OneTimeTokenForApplication(ctx, sel, &obj)
 	case *OneTimeTokenForApplication:
 		if obj == nil {
 			return graphql.Null
@@ -25390,6 +25468,10 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "name":
 			out.Values[i] = ec._Tenant_name(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._Tenant_type(ctx, field, obj)
+		case "parentID":
+			out.Values[i] = ec._Tenant_parentID(ctx, field, obj)
 		case "initialized":
 			out.Values[i] = ec._Tenant_initialized(ctx, field, obj)
 		case "labels":

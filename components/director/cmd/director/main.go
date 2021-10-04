@@ -8,17 +8,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
-	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
-	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
-
-	panicrecovery "github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
-
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -26,13 +15,16 @@ import (
 	"github.com/gorilla/mux"
 	graphqlAPI "github.com/kyma-incubator/compass/components/director/internal/api"
 	mp_authenticator "github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
@@ -43,9 +35,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantindex"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	errorpresenter "github.com/kyma-incubator/compass/components/director/internal/error_presenter"
@@ -54,6 +48,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/internal/ownertenant"
 	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
 	panichandler "github.com/kyma-incubator/compass/components/director/internal/panic_handler"
 	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping"
@@ -74,6 +69,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation/k8s"
+	panicrecovery "github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
@@ -115,6 +111,7 @@ type config struct {
 	Log log.Config
 
 	MetricsAddress string `envconfig:"default=127.0.0.1:3003"`
+	MetricsConfig  metrics.Config
 
 	JWKSEndpoint          string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod        time.Duration `envconfig:"default=5m"`
@@ -174,7 +171,7 @@ func main() {
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
 	logger.Infof("Registering metrics collectors...")
-	metricsCollector := metrics.NewCollector()
+	metricsCollector := metrics.NewCollector(cfg.MetricsConfig)
 	dbStatsCollector := sqlstats.NewStatsCollector("director", transact)
 	prometheus.MustRegister(metricsCollector, dbStatsCollector)
 
@@ -272,7 +269,7 @@ func main() {
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(gqlServ))
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider, metricsCollector)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
@@ -407,7 +404,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticators []authenticator.Config, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticators []authenticator.Config, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider, metricsCollector *metrics.Collector) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -434,7 +431,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders).ServeHTTP, nil
+	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders, metricsCollector).ServeHTTP, nil
 }
 
 func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) func(writer http.ResponseWriter, request *http.Request) {

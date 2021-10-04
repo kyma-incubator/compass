@@ -89,7 +89,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 
 		// old way of providing request headers
 		if deprecated.Api.Headers != nil {
-			h, err := graphql.NewHttpHeadersSerialized(*deprecated.Api.Headers)
+			h, err := graphql.NewHTTPHeadersSerialized(*deprecated.Api.Headers)
 			if err != nil {
 				return graphql.BundleCreateInput{}, err
 			}
@@ -110,7 +110,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 		// new way
 		if deprecated.Api.RequestParameters != nil {
 			if deprecated.Api.RequestParameters.Headers != nil {
-				h, err := graphql.NewHttpHeadersSerialized(*deprecated.Api.RequestParameters.Headers)
+				h, err := graphql.NewHTTPHeadersSerialized(*deprecated.Api.RequestParameters.Headers)
 				if err != nil {
 					return graphql.BundleCreateInput{}, err
 				}
@@ -199,7 +199,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 
 			if deprecated.Api.SpecificationRequestParameters != nil && apiDef.Spec.FetchRequest != nil {
 				if deprecated.Api.SpecificationRequestParameters.Headers != nil {
-					h, err := graphql.NewHttpHeadersSerialized(*deprecated.Api.SpecificationRequestParameters.Headers)
+					h, err := graphql.NewHTTPHeadersSerialized(*deprecated.Api.SpecificationRequestParameters.Headers)
 					if err != nil {
 						return graphql.BundleCreateInput{}, err
 					}

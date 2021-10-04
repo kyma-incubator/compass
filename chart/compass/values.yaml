@@ -66,22 +66,22 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2003"
+      version: "PR-2027"
     connectivity_adapter:
       dir:
-      version: "PR-2003"
+      version: "PR-2027"
     pairing_adapter:
       dir:
-      version: "PR-2003"
+      version: "PR-2027"
     director:
       dir:
-      version: "PR-2007"
+      version: "PR-2048"
     gateway:
       dir:
-      version: "PR-2003"
+      version: "PR-2034"
     operations_controller:
       dir:
-      version: "PR-1996"
+      version: "PR-2027"
     ord_service:
       dir:
       version: "PR-42"
@@ -90,7 +90,7 @@ global:
       version: "PR-1998"
     system_broker:
       dir:
-      version: "PR-2003"
+      version: "PR-2027"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -98,13 +98,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2003"
+      version: "PR-2042"
     console:
       dir:
-      version: "PR-42"
+      version: "PR-45"
     e2e_tests:
       dir:
-      version: "PR-2007"
+      version: "PR-2027"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -130,6 +130,8 @@ global:
       port: 8080
     metrics:
       port: 3003
+      enableClientInstrumentation: true
+      censoredFlows: "JWT"
     operations:
       port: 3002
       path: "/operation"
@@ -352,12 +354,16 @@ global:
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       name: "provider"
+      subscriptionProviderIdProperty: "subscriptionProviderId"
+
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
+      subscriptionProviderLabelKey: "subscriptionProviderId"
+      consumerSubaccountIdsLabelKey: "consumerSubaccountIds"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
@@ -469,7 +475,7 @@ global:
       gatewayHost: "compass-gateway"
       trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
       attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
-      path: tenants/<.*>
+      path: /tenants/<.*>
       upstreamComponent: "compass-tenant-fetcher"
     subscription:
       enabled: true

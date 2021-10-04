@@ -553,18 +553,17 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 
 	out := make([]*graphql.AppSystemAuth, 0, len(sysAuths))
 	for _, sa := range sysAuths {
-		isTokenType := r.sysAuthSvc.IsSystemAuthOneTimeTokenType(&sa)
-		if _, err := r.oneTimeTokenSvc.IsTokenValid(&sa); isTokenType && err != nil {
-			log.C(ctx).WithError(err).Errorf("skipping one-time token due to its expiration or usage")
-			continue
-		}
-
 		c, err := r.sysAuthConv.ToGraphQL(&sa)
 		if err != nil {
 			return nil, err
 		}
 
-		if sa.Value.OneTimeToken != nil && sa.Value.OneTimeToken.Type == tokens.ApplicationToken {
+		if r.sysAuthSvc.IsSystemAuthOneTimeTokenType(&sa) && sa.Value.OneTimeToken.Type == tokens.ApplicationToken {
+			if valid, err := r.oneTimeTokenSvc.IsTokenValid(&sa); !valid {
+				log.C(ctx).WithError(err).Errorf("skipping one-time token due to its expiration or usage")
+				continue
+			}
+
 			oneTimeTokenForApplication, err := r.oneTimeTokenConv.ToGraphQLForApplication(*sa.Value.OneTimeToken)
 			if err != nil {
 				return nil, errors.Wrap(err, "while converting one-time token to graphql")
@@ -572,6 +571,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 
 			c.(*graphql.AppSystemAuth).Auth.OneTimeToken = &oneTimeTokenForApplication
 		}
+
 		out = append(out, c.(*graphql.AppSystemAuth))
 	}
 

@@ -48,8 +48,8 @@ func FilterSubquery(queryFor model.LabelableObject, setCombination SetCombinatio
 //
 // It supports querying defined by `queryFor` parameter. All queries are created
 // in the global context
-func FilterQueryGlobal(queryFor model.LabelableObject, setCombination SetCombination, filter []*labelfilter.LabelFilter) (string, []interface{}, error) {
-	if filter == nil {
+func FilterQueryGlobal(queryFor model.LabelableObject, setCombination SetCombination, filters []*labelfilter.LabelFilter) (string, []interface{}, error) {
+	if filters == nil {
 		return "", nil, nil
 	}
 
@@ -57,7 +57,7 @@ func FilterQueryGlobal(queryFor model.LabelableObject, setCombination SetCombina
 
 	stmtPrefix := fmt.Sprintf(stmtPrefixGlobalFormat, objectField, tableName, objectField)
 
-	return buildFilterQuery(stmtPrefix, nil, setCombination, filter, false)
+	return buildFilterQuery(stmtPrefix, nil, setCombination, filters, false)
 }
 
 func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter, isSubQuery bool) (string, []interface{}, error) {
@@ -77,11 +77,11 @@ func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 	return buildFilterQuery(stmtPrefix, stmtPrefixArgs, setCombination, filter, isSubQuery)
 }
 
-func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombination SetCombination, filter []*labelfilter.LabelFilter, isSubQuery bool) (string, []interface{}, error) {
+func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombination SetCombination, filters []*labelfilter.LabelFilter, isSubQuery bool) (string, []interface{}, error) {
 	var queryBuilder strings.Builder
 
-	args := make([]interface{}, 0, len(filter))
-	for idx, lblFilter := range filter {
+	args := make([]interface{}, 0, len(filters))
+	for idx, lblFilter := range filters {
 		if idx > 0 || isSubQuery {
 			queryBuilder.WriteString(fmt.Sprintf(` %s `, setCombination))
 		}

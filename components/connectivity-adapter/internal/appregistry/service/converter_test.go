@@ -13,7 +13,7 @@ import (
 
 func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 	additionalQueryParamsSerialized := graphql.QueryParamsSerialized(`{"q1":["a","b"],"q2":["c","d"]}`)
-	additionalHeadersSerialized := graphql.HttpHeadersSerialized(`{"h1":["e","f"],"h2":["g","h"]}`)
+	additionalHeadersSerialized := graphql.HTTPHeadersSerialized(`{"h1":["e","f"],"h2":["g","h"]}`)
 
 	type testCase struct {
 		given    model.ServiceDetails
@@ -546,7 +546,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 							"q1": []string{"a", "b"},
 							"q2": []string{"c", "d"},
 						},
-						AdditionalHeaders: graphql.HttpHeaders{
+						AdditionalHeaders: graphql.HTTPHeaders{
 							"h1": []string{"e", "f"},
 							"h2": []string{"g", "h"},
 						},
@@ -670,7 +670,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 											"q1": {"a", "b"},
 											"q2": {"c", "d"},
 										},
-										AdditionalHeaders: graphql.HttpHeaders{
+										AdditionalHeaders: graphql.HTTPHeaders{
 											"h1": {"e", "f"},
 											"h2": {"g", "h"},
 										},

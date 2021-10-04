@@ -6,19 +6,17 @@ import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -59,12 +57,19 @@ type TenantRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
+// ClientInstrumenter collects metrics for different client and auth flows.
+//go:generate mockery --name=ClientInstrumenter --output=automock --outpkg=automock --case=underscore
+type ClientInstrumenter interface {
+	InstrumentClient(clientID string, authFlow string, details string)
+}
+
 // Handler missing godoc
 type Handler struct {
 	authenticators         []authenticator.Config
 	reqDataParser          ReqDataParser
 	transact               persistence.Transactioner
 	objectContextProviders map[string]ObjectContextProvider
+	clientInstrumenter     ClientInstrumenter
 }
 
 // NewHandler missing godoc
@@ -72,12 +77,14 @@ func NewHandler(
 	authenticators []authenticator.Config,
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
-	objectContextProviders map[string]ObjectContextProvider) *Handler {
+	objectContextProviders map[string]ObjectContextProvider,
+	clientInstrumenter ClientInstrumenter) *Handler {
 	return &Handler{
 		authenticators:         authenticators,
 		reqDataParser:          reqDataParser,
 		transact:               transact,
 		objectContextProviders: objectContextProviders,
+		clientInstrumenter:     clientInstrumenter,
 	}
 }
 
@@ -129,7 +136,7 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 
 	if len(objCtxs) == 0 {
 		log.C(ctx).WithError(err).Errorf("An error occurred while determining the auth details for the request: %v", err)
-		return  reqData.Body
+		return reqData.Body
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -151,16 +158,25 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 
 	var objectContexts []ObjectContext
 	for name, provider := range h.objectContextProviders {
-		match, details, err := provider.Match(ctx, reqData)
+		match, authDetails, err := provider.Match(ctx, reqData)
+
 		if match && err == nil {
+			flowDetails := authDetails.CertIssuer
+			if authDetails.Authenticator != nil {
+				flowDetails = authDetails.Authenticator.Name
+			}
+			h.clientInstrumenter.InstrumentClient(authDetails.AuthID, string(authDetails.AuthFlow), flowDetails)
+
 			keys, err := extractKeys(reqData, name)
 			if err != nil {
 				return nil, errors.Wrap(err, "while extracting keys: ")
 			}
-			objectContext, err := provider.GetObjectContext(ctx, reqData, *details, keys)
+
+			objectContext, err := provider.GetObjectContext(ctx, reqData, *authDetails, keys)
 			if err != nil {
 				return nil, errors.Wrap(err, "while getting objectContexts: ")
 			}
+
 			objectContexts = append(objectContexts, objectContext)
 		}
 	}
@@ -170,7 +186,7 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 
 func extractKeys(reqData oathkeeper.ReqData, objectContextProviderName string) (KeysExtra, error) {
 	keysStringg := reqData.Body.Header[KeysHeader]
-	if len(keysStringg) < 1{
+	if len(keysStringg) < 1 {
 		return KeysExtra{}, errors.New(`missing "Extra-Keys" header`)
 	}
 	keysString := keysStringg[0]
