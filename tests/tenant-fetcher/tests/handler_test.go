@@ -113,8 +113,8 @@ func TestOnboardingHandler(t *testing.T) {
 		id := uuid.New().String()
 		tenant := Tenant{
 			CustomerID: id,
-			TenantID:     id,
-			Subdomain:    defaultSubdomain,
+			TenantID:   id,
+			Subdomain:  defaultSubdomain,
 		}
 
 		addTenantExpectStatusCode(t, tenant, http.StatusOK)
