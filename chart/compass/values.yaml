@@ -75,10 +75,10 @@ global:
       version: "PR-2027"
     director:
       dir:
-      version: "PR-2048"
+      version: "PR-2050"
     gateway:
       dir:
-      version: "PR-2034"
+      version: "PR-2050"
     operations_controller:
       dir:
       version: "PR-2027"
@@ -480,10 +480,10 @@ global:
     subscription:
       enabled: true
       createRule: false
-      gatewayHost: "compass-gateway"
+      gatewayHost: "compass-gateway-ord-external-certs"
       trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-      path: <.*>
-      attributes: '{"uniqueAttribute": { "key": "zid", "value": "sap-provisioning" }, "tenant": { "key": "ext_attr.subaccountid" }, "identity": { "key": "ext_attr.zdn" } }'
+      path: /<.*>
+      attributes: '{"uniqueAttribute": { "key": "test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
 
   externalServicesMock:
     enabled: false
