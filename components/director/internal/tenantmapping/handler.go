@@ -204,6 +204,10 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 		tenants[objCtx.ExternalTenantKey] = objCtx.ExternalTenantID
 	}
 
+	if _, ok := tenants["consumerTenant"]; !ok {
+		tenants["consumerTenant"] = tenants["providerTenant"]
+	}
+
 	tenantsJSON, err := json.Marshal(tenants)
 	if err != nil {
 	}
