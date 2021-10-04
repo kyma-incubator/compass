@@ -482,7 +482,6 @@ func TestUserContextProvider(t *testing.T) {
 }
 
 func TestUserContextProviderMatch(t *testing.T) {
-
 	t.Run("returns ID string and JWTAuthFlow when a name is specified in the Extra map of request body", func(t *testing.T) {
 		username := "some-username"
 		reqData := oathkeeper.ReqData{
@@ -501,7 +500,6 @@ func TestUserContextProviderMatch(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, username, authDetails.AuthID)
-
 	})
 
 	t.Run("returns error when username is specified in Extra map in a non-string format", func(t *testing.T) {

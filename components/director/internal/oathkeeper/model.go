@@ -218,6 +218,7 @@ func (d *ReqData) SetExtraFromClaims(claims jwt.MapClaims) {
 	d.Body.Extra[GroupsKey] = claims[GroupsKey]
 }
 
+// ExtractCoordinates extracts the authenticator coordinates from ReqData. The coordinates are stored in Body.Extra and the key for them is "authenticator_coordinates".
 func (d *ReqData) ExtractCoordinates() (authenticator.Coordinates, bool, error) {
 	var coords authenticator.Coordinates
 	coordsInterface, exists := d.Body.Extra[authenticator.CoordinatesKey]

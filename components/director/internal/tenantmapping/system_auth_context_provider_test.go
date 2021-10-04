@@ -356,7 +356,6 @@ func TestSystemAuthContextProvider(t *testing.T) {
 }
 
 func TestSystemAuthContextProviderMatch(t *testing.T) {
-
 	t.Run("returns ID string and OAuth2Flow when a client_id is specified in the Extra map of request body", func(t *testing.T) {
 		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 		reqData := oathkeeper.ReqData{

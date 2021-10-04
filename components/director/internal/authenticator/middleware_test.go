@@ -478,6 +478,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": tenant, "externalTenant": ""})
+	require.NoError(t, err)
 
 	consumers := []consumer.Consumer{
 		{
@@ -487,6 +488,7 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 	}
 
 	consumersJSON, err := json.Marshal(consumers)
+	require.NoError(t, err)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, claims.Claims{
 		TenantString:    string(tenantJSON),

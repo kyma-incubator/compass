@@ -145,11 +145,17 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 		return reqData.Body
 	}
 
-	addTenantsToExtra(objCtxs, reqData)
+	if err := addTenantsToExtra(objCtxs, reqData); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while adding tenants to extra: %v", err)
+		return reqData.Body
+	}
 
 	addScopesToExtra(objCtxs, reqData)
 
-	addConsumersToExtra(objCtxs, reqData)
+	if err := addConsumersToExtra(objCtxs, reqData); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while adding consumers to extra: %v", err)
+		return reqData.Body
+	}
 
 	return reqData.Body
 }
@@ -234,7 +240,7 @@ func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.Re
 	}
 }
 
-func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {
+func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
 	tenants := make(map[string]string)
 	for _, objCtx := range objectContexts {
 		tenants[objCtx.TenantKey] = objCtx.TenantID
@@ -247,12 +253,15 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 
 	tenantsJSON, err := json.Marshal(tenants)
 	if err != nil {
+		return errors.Wrap(err, "While marshaling consumers")
 	}
 
 	tenantsStr := string(tenantsJSON)
 
 	escaped := strings.ReplaceAll(tenantsStr, `"`, `\"`)
 	reqData.Body.Extra["tenant"] = escaped
+
+	return nil
 }
 
 func addScopesToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {
@@ -269,15 +278,15 @@ func addScopesToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData
 	reqData.Body.Extra["scope"] = joined
 }
 
-func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {
+func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
 	var consumers []consumer.Consumer
 	for _, objCtx := range objectContexts {
-		consumer := consumer.Consumer{
+		c := consumer.Consumer{
 			ConsumerID:   objCtx.ConsumerID,
 			ConsumerType: objCtx.ConsumerType,
 			Flow:         objCtx.AuthFlow,
 		}
-		consumers = append(consumers, consumer)
+		consumers = append(consumers, c)
 	}
 
 	sort.Slice(consumers, func(i, j int) bool {
@@ -286,12 +295,15 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 
 	consumersJSON, err := json.Marshal(consumers)
 	if err != nil {
+		return errors.Wrap(err, "While marshaling consumers")
 	}
 
 	consumersStr := string(consumersJSON)
 	escaped := strings.ReplaceAll(consumersStr, `"`, `\"`)
 
 	reqData.Body.Extra["consumers"] = escaped
+
+	return nil
 }
 
 func intersect(s1 []string, s2 []string) []string {
