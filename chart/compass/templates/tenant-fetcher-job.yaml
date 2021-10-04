@@ -80,11 +80,11 @@ spec:
               - name: APP_DB_MAX_IDLE_CONNECTIONS
                 value: "{{ $config.dbPool.maxIdleConnections }}"
               - name: APP_ENDPOINT_TENANT_CREATED
-                value: {{ $config.endpoints.tenantCreated }}
+                value: {{ $config.endpoints.accountCreated }}
               - name: APP_ENDPOINT_TENANT_DELETED
-                value: {{ $config.endpoints.tenantDeleted }}
+                value: {{ $config.endpoints.accountDeleted }}
               - name: APP_ENDPOINT_TENANT_UPDATED
-                value: {{ $config.endpoints.tenantUpdated }}
+                value: {{ $config.endpoints.accountUpdated }}
               - name: APP_ENDPOINT_SUBACCOUNT_CREATED
                 value: {{ $config.endpoints.subaccountCreated }}
               - name: APP_ENDPOINT_SUBACCOUNT_DELETED
