@@ -157,22 +157,17 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 	log.C(ctx).Infof("Attempting to get object contexts")
 
 	var objectContexts []ObjectContext
+	var authDetails []*oathkeeper.AuthDetails
 	for name, provider := range h.objectContextProviders {
-		match, authDetails, err := provider.Match(ctx, reqData)
-
+		match, details, err := provider.Match(ctx, reqData)
+		authDetails = append(authDetails, details)
 		if match && err == nil {
-			flowDetails := authDetails.CertIssuer
-			if authDetails.Authenticator != nil {
-				flowDetails = authDetails.Authenticator.Name
-			}
-			h.clientInstrumenter.InstrumentClient(authDetails.AuthID, string(authDetails.AuthFlow), flowDetails)
-
 			keys, err := extractKeys(reqData, name)
 			if err != nil {
 				return nil, errors.Wrap(err, "while extracting keys: ")
 			}
 
-			objectContext, err := provider.GetObjectContext(ctx, reqData, *authDetails, keys)
+			objectContext, err := provider.GetObjectContext(ctx, reqData, *details, keys)
 			if err != nil {
 				return nil, errors.Wrap(err, "while getting objectContexts: ")
 			}
@@ -181,7 +176,32 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 		}
 	}
 
+	h.instrumentClient(objectContexts, authDetails)
+
 	return objectContexts, nil
+}
+
+func (h *Handler) instrumentClient(objectContexts []ObjectContext, authDetails []*oathkeeper.AuthDetails) {
+	var flowDetails string
+	var details *oathkeeper.AuthDetails
+
+	if len(objectContexts) == 1 {
+		details = authDetails[0]
+	} else {
+		for _, d := range authDetails {
+			if d.CertIssuer != "" {
+				details = d
+				break
+			}
+		}
+	}
+
+	flowDetails = details.CertIssuer
+	if details.Authenticator != nil {
+		flowDetails = details.Authenticator.Name
+	}
+
+	h.clientInstrumenter.InstrumentClient(details.AuthID, string(details.AuthFlow), flowDetails)
 }
 
 func extractKeys(reqData oathkeeper.ReqData, objectContextProviderName string) (KeysExtra, error) {
