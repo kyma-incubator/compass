@@ -18,8 +18,9 @@ package tenantmapping
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/tidwall/gjson"
 

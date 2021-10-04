@@ -491,7 +491,7 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, claims.Claims{
 		TenantString:    string(tenantJSON),
 		ConsumersString: string(consumersJSON),
-		Scopes: scopes,
+		Scopes:          scopes,
 	})
 
 	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)

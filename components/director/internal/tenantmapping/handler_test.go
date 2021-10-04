@@ -3,7 +3,6 @@ package tenantmapping_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
@@ -401,7 +402,7 @@ func TestHandler(t *testing.T) {
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					oathkeeper.ClientIDKey: systemAuthID.String(),
-				},Header: http.Header{"Extra-Keys": []string{keysQuoted}},
+				}, Header: http.Header{"Extra-Keys": []string{keysQuoted}},
 			},
 		}
 
@@ -469,7 +470,7 @@ func TestHandler(t *testing.T) {
 				Header: http.Header{
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{systemAuthID.String()},
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ConnectorIssuer},
-				"Extra-Keys": []string{keysQuoted}},
+					"Extra-Keys": []string{keysQuoted}},
 			},
 		}
 
@@ -536,7 +537,7 @@ func TestHandler(t *testing.T) {
 				Header: http.Header{
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{externalTenantID},
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
-				"Extra-Keys": []string{keysQuoted}},
+					"Extra-Keys": []string{keysQuoted}},
 			},
 		}
 
@@ -602,7 +603,7 @@ func TestHandler(t *testing.T) {
 				Extra: make(map[string]interface{}),
 				Header: http.Header{
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDTokenKey): []string{systemAuthID.String()},
-				"Extra-Keys": []string{keysQuoted}},
+					"Extra-Keys": []string{keysQuoted}},
 			},
 		}
 
@@ -687,7 +688,7 @@ func TestHandler(t *testing.T) {
 				Header: http.Header{
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{externalTenantID},
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
-				"Extra-Keys": []string{keysQuoted}},
+					"Extra-Keys": []string{keysQuoted}},
 			},
 		}
 
@@ -696,7 +697,7 @@ func TestHandler(t *testing.T) {
 				ExternalTenantID: externalTenantID,
 				TenantID:         externalTenantID,
 			},
-			Scopes: "test",
+			Scopes:       "test",
 			KeysExtra:    certKeys,
 			ConsumerID:   externalTenantID,
 			AuthFlow:     oathkeeper.CertificateFlow,
@@ -756,7 +757,7 @@ func TestHandler(t *testing.T) {
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient",  externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
 		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
 		handler.ServeHTTP(w, req)
@@ -766,12 +767,12 @@ func TestHandler(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
-		fmt.Println(gjson.Get(string(body),"extra.tenant.providerTenant"))
+		fmt.Println(gjson.Get(string(body), "extra.tenant.providerTenant"))
 
 		//require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
-		require.Equal(t, gjson.Get(expectedRespPayload,"subject"), gjson.Get(strings.TrimSpace(string(body)),"subject"))
-		require.Equal(t, gjson.Get(expectedRespPayload,"extra"), gjson.Get(strings.TrimSpace(string(body)),"extra"))
-		require.Equal(t, gjson.Get(expectedRespPayload,"header"), gjson.Get(strings.TrimSpace(string(body)),"header"))
+		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
+		require.Equal(t, gjson.Get(expectedRespPayload, "extra"), gjson.Get(strings.TrimSpace(string(body)), "extra"))
+		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
 	})

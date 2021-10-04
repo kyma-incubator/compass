@@ -19,6 +19,7 @@ package tenantmapping_test
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"

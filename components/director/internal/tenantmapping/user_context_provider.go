@@ -3,8 +3,9 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/sirupsen/logrus"
 

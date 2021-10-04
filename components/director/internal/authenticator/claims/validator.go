@@ -22,7 +22,7 @@ func (*validator) Validate(claims Claims) error {
 		return apperrors.NewTenantNotFoundError(claims.Tenant["externalTenant"])
 	}
 
-	if len(claims.Consumers) > 1{
+	if len(claims.Consumers) > 1 {
 		return apperrors.NewMultipleConsumersNotSupportedError()
 	}
 

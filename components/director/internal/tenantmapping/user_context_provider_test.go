@@ -3,9 +3,10 @@ package tenantmapping_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"net/http"
 	"net/textproto"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 

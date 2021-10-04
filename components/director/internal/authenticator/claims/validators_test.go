@@ -90,7 +90,7 @@ func getClaims(intTenantID, extTenantID, scopes string) claims.Claims {
 	return claims.Claims{
 		Tenant: map[string]string{
 			"consumerTenant": intTenantID,
-			"externalTenant":  extTenantID,
+			"externalTenant": extTenantID,
 		},
 
 		Scopes: scopes,

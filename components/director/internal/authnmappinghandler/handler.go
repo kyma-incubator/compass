@@ -109,7 +109,7 @@ func NewHandler(reqDataParser tenantmapping.ReqDataParser, httpClient *http.Clie
 }
 
 type authenticationError struct {
-	Message  string `json:"message"`
+	Message string `json:"message"`
 }
 
 // ServeHTTP missing godoc

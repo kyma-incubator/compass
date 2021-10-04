@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-	"github.com/pkg/errors"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
