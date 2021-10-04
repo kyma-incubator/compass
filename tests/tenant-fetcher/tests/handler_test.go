@@ -112,9 +112,9 @@ func TestOnboardingHandler(t *testing.T) {
 	t.Run("Successful account tenant creation with matching customer and account tenant IDs", func(t *testing.T) {
 		id := uuid.New().String()
 		tenant := Tenant{
-			CustomerID: id,
-			TenantID:   id,
-			Subdomain:  defaultSubdomain,
+			CustomerID:             id,
+			TenantID:               id,
+			Subdomain:              defaultSubdomain,
 			SubscriptionProviderID: uuid.New().String(),
 		}
 
