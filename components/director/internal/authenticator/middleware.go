@@ -158,12 +158,12 @@ func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*c
 
 	err := json.Unmarshal([]byte(parsed.ConsumersString), &parsed.Consumers)
 	if err != nil {
-		log.C(ctx).Errorf("while unmarshaling silistra consumers %v", err)
+		log.C(ctx).Errorf("while unmarshaling consumers %v", err)
 	}
 
 	err = json.Unmarshal([]byte(parsed.TenantString), &parsed.Tenant)
 	if err != nil {
-		log.C(ctx).Errorf("while unmarshaling silistra tenants %v", err)
+		log.C(ctx).Errorf("while unmarshaling tenants %v", err)
 	}
 
 	return &parsed, nil

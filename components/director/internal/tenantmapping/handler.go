@@ -167,7 +167,11 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 	authDetails := make([]*oathkeeper.AuthDetails, 0, len(h.objectContextProviders))
 	for name, provider := range h.objectContextProviders {
 		match, details, err := provider.Match(ctx, reqData)
+		if err != nil {
+			log.C(ctx).Infof("Provider %s failed to match: %s", name, err.Error())
+		}
 		if match && err == nil {
+			log.C(ctx).Infof("Provider %s attempting to get object context", name)
 			authDetails = append(authDetails, details)
 
 			keys, err := extractKeys(reqData, name)
@@ -181,6 +185,7 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 			}
 
 			objectContexts = append(objectContexts, objectContext)
+			log.C(ctx).Infof("Provider %s successfuly provided object context", name)
 		}
 	}
 

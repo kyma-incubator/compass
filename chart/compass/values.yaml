@@ -478,9 +478,9 @@ global:
       path: /tenants/<.*>
       upstreamComponent: "compass-tenant-fetcher"
     subscription:
-      enabled: true
+      enabled: false
       createRule: false
-      gatewayHost: "compass-gateway-ord-external-certs"
+      gatewayHost: "compass-gateway-sap-mtls"
       trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
       path: /<.*>
       attributes: '{"uniqueAttribute": { "key": "test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'

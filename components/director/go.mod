@@ -131,9 +131,6 @@ require (
 	sigs.k8s.io/controller-runtime v0.8.3 // DO NOT BUMP
 	sigs.k8s.io/structured-merge-diff/v4 v4.0.2 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
-)
-
-require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
