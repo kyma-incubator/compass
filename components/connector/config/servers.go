@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"net/http"
 
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
@@ -42,8 +43,8 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 }
 
 func PrepareHydratorServer(cfg Config, CSRSubjectConsts certificates.CSRSubjectConsts, externalSubjectConsts certificates.ExternalIssuerSubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
-	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer, oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), oathkeeper.GetCommonName)
-	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer, oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), oathkeeper.GetUUIDOrganizationalUnit)
+	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer, oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), cert.GetCommonName)
+	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer, oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), cert.GetUUIDOrganizationalUnit)
 
 	validationHydrator := oathkeeper.NewValidationHydrator(revokedCertsRepository, connectorCertHeaderParser, externalCertHeaderParser)
 

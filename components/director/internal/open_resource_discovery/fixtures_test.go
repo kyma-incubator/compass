@@ -3,6 +3,7 @@ package ord_test
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 	"strconv"
 	"strings"
 
@@ -186,9 +187,9 @@ func fixWellKnownConfig() *ord.WellKnownConfig {
 				{
 					URL:                 ordDocURI,
 					SystemInstanceAware: true,
-					AccessStrategies: []ord.AccessStrategy{
+					AccessStrategies: []accessstrategy.AccessStrategy{
 						{
-							Type: ord.OpenAccessStrategy,
+							Type: accessstrategy.OpenAccessStrategy,
 						},
 					},
 				},

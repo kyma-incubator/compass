@@ -1,15 +1,12 @@
-package oathkeeper_test
+package cert_test
 
 import (
-	"testing"
-
-	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestSubjectExtraction(t *testing.T) {
-
 	for _, testCase := range []struct {
 		subject     string
 		country     string
@@ -55,15 +52,14 @@ func TestSubjectExtraction(t *testing.T) {
 		},
 	} {
 		t.Run("should extract subject values", func(t *testing.T) {
-			assert.Equal(t, testCase.country, oathkeeper.GetCountry(testCase.subject))
-			assert.Equal(t, testCase.locality, oathkeeper.GetLocality(testCase.subject))
-			assert.Equal(t, testCase.province, oathkeeper.GetProvince(testCase.subject))
-			assert.Equal(t, testCase.org, oathkeeper.GetOrganization(testCase.subject))
-			assert.Equal(t, testCase.orgUnit, oathkeeper.GetOrganizationalUnit(testCase.subject))
-			assert.Equal(t, testCase.orgUnits, oathkeeper.GetAllOrganizationalUnits(testCase.subject))
-			assert.Equal(t, testCase.uuidOrgUnit, oathkeeper.GetUUIDOrganizationalUnit(testCase.subject))
-			assert.Equal(t, testCase.commonName, oathkeeper.GetCommonName(testCase.subject))
+			assert.Equal(t, testCase.country, cert.GetCountry(testCase.subject))
+			assert.Equal(t, testCase.locality, cert.GetLocality(testCase.subject))
+			assert.Equal(t, testCase.province, cert.GetProvince(testCase.subject))
+			assert.Equal(t, testCase.org, cert.GetOrganization(testCase.subject))
+			assert.Equal(t, testCase.orgUnit, cert.GetOrganizationalUnit(testCase.subject))
+			assert.Equal(t, testCase.orgUnits, cert.GetAllOrganizationalUnits(testCase.subject))
+			assert.Equal(t, testCase.uuidOrgUnit, cert.GetUUIDOrganizationalUnit(testCase.subject))
+			assert.Equal(t, testCase.commonName, cert.GetCommonName(testCase.subject))
 		})
 	}
-
 }

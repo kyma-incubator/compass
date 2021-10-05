@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -59,9 +60,9 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 	return docs, nil
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, _ AccessStrategyType) (*Document, error) {
-	log.C(ctx).Infof("Fetching ORD Document %q", documentURL)
-	resp, err := c.Get(documentURL)
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.AccessStrategyType) (*Document, error) {
+	log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
+	resp, err := accessStrategy.Execute(ctx, c.Client, documentURL)
 	if err != nil {
 		return nil, err
 	}
