@@ -167,8 +167,9 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 	authDetails := make([]*oathkeeper.AuthDetails, 0, len(h.objectContextProviders))
 	for name, provider := range h.objectContextProviders {
 		match, details, err := provider.Match(ctx, reqData)
-		authDetails = append(authDetails, details)
 		if match && err == nil {
+			authDetails = append(authDetails, details)
+
 			keys, err := extractKeys(reqData, name)
 			if err != nil {
 				return nil, errors.Wrap(err, "while extracting keys: ")
@@ -190,14 +191,14 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 
 func (h *Handler) instrumentClient(objectContexts []ObjectContext, authDetails []*oathkeeper.AuthDetails) {
 	var flowDetails string
-	var details *oathkeeper.AuthDetails
+	details := oathkeeper.AuthDetails{}
 
 	if len(objectContexts) == 1 {
-		details = authDetails[0]
+		details = *authDetails[0]
 	} else {
 		for _, d := range authDetails {
 			if d.CertIssuer != "" {
-				details = d
+				details = *d
 				break
 			}
 		}
