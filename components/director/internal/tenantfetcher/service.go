@@ -556,13 +556,13 @@ func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string,
 	}
 	createdTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedSubaccountType, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("while fetching created subaccounts: %v", err)
 	}
 	tenantsToCreate = append(tenantsToCreate, createdTenants...)
 
 	updatedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, UpdatedSubaccountType, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("while fetching updated subaccounts: %v", err)
 	}
 
 	tenantsToCreate = append(tenantsToCreate, updatedTenants...)
@@ -622,7 +622,7 @@ func fetchTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, ev
 	err := fetchWithRetries(retryNumber, func() error {
 		fetchedTenants, err := fetchTenants(eventAPIClient, eventsType, f, toEventsPage)
 		if err != nil {
-			return err
+			return fmt.Errorf("while fetching tenants: %v", err)
 		}
 		tenants = fetchedTenants
 		return nil
@@ -671,7 +671,7 @@ func fetchTenants(eventAPIClient EventAPIClient, eventsType EventsType, f func()
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("while walking through pages: %v", err)
 	}
 
 	return tenants, nil
@@ -705,7 +705,7 @@ func walkThroughPages(eventAPIClient EventAPIClient, eventsType EventsType, f fu
 
 	err = applyFunc(toEventsPage(firstPage))
 	if err != nil {
-		return err
+		return fmt.Errorf("while applyfunc on event page: %v", err)
 	}
 
 	initialCount := gjson.GetBytes(firstPage, pageConfig.TotalResultsField).Int()
