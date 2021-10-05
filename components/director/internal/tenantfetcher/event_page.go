@@ -10,6 +10,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// SubaccountEntityType is the value for entityType property when fetching subaccounts
 const SubaccountEntityType = "Subaccount"
 
 type eventsPage struct {
@@ -25,7 +26,7 @@ func (ep eventsPage) getEventsDetails() [][]byte {
 		entityType := event.Get(ep.fieldMapping.EntityTypeField)
 		details := event.Get(ep.fieldMapping.DetailsField).Map()
 		details[ep.fieldMapping.EntityTypeField] = entityType
-		allDetails := make(map[string]interface{}, 0)
+		allDetails := make(map[string]interface{})
 		for key, result := range details {
 			switch result.Type {
 			case gjson.String:
