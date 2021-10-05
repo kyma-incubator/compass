@@ -143,13 +143,31 @@ func checkQueryType(requestBody []byte, typee string) (bool, error) {
 }
 
 type Claims struct {
-	Tenant       string `json:"tenant"`
-	Scopes       string `json:"scopes"`
-	ConsumerID   string `json:"consumerID"`
-	ConsumerType string `json:"consumerType"`
+	Tenant         string `json:"tenant"`
+	ConsumerTenant string `json:"consumerTenant"`
+	Scopes         string `json:"scopes"`
+	ConsumerID     string `json:"consumerID"`
+	ConsumerType   string `json:"consumerType"`
 }
 
 func (c Claims) Valid() error {
+	return nil
+}
+
+type Consumer struct {
+	ConsumerID   string `json:"ConsumerID"`
+	ConsumerType string `json:"ConsumerType"`
+}
+
+type TokenClaims struct {
+	TenantString    string            `json:"tenant"`
+	Tenant          map[string]string `json:"-"`
+	Scopes          string            `json:"scopes"`
+	ConsumersString string            `json:"consumers"`
+	Consumers       []Consumer        `json:"-"`
+}
+
+func (t TokenClaims) Valid() error {
 	return nil
 }
 
@@ -161,10 +179,39 @@ func (t *Transport) getClaims(headers http.Header) (Claims, error) {
 	token = strings.TrimPrefix(token, "Bearer ")
 
 	parser := jwt.Parser{SkipClaimsValidation: true}
-	claims := Claims{}
-	_, _, err := parser.ParseUnverified(token, &claims)
+	tokenClaims := TokenClaims{}
+	_, _, err := parser.ParseUnverified(token, &tokenClaims)
+
 	if err != nil {
-		return claims, errors.Wrap(err, "while parsing beaerer token")
+		return Claims{}, errors.Wrap(err, "while parsing bearer token")
 	}
+
+	err = json.Unmarshal([]byte(tokenClaims.ConsumersString), &tokenClaims.Consumers)
+	if err != nil {
+		return Claims{}, errors.Wrap(err, "while extracting consumers from token")
+	}
+
+	err = json.Unmarshal([]byte(tokenClaims.TenantString), &tokenClaims.Tenant)
+	if err != nil {
+		return Claims{}, errors.Wrap(err, "while extracting tenants from token")
+	}
+
+	claims := Claims{
+		ConsumerTenant: tokenClaims.Tenant["consumerTenant"],
+		Scopes:         tokenClaims.Scopes,
+	}
+
+	if len(tokenClaims.Consumers) > 0 {
+		claims.ConsumerID = tokenClaims.Consumers[0].ConsumerID
+		claims.ConsumerType = tokenClaims.Consumers[0].ConsumerType
+	}
+
+	if tenant, ok := tokenClaims.Tenant["providerTenant"]; ok {
+		claims.Tenant = tenant
+	} else {
+		claims.Tenant = tokenClaims.Tenant["consumerTenant"]
+
+	}
+
 	return claims, nil
 }

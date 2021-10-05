@@ -23,7 +23,7 @@ type certServiceContextProvider struct {
 // GetObjectContext is the certServiceContextProvider implementation of the ObjectContextProvider interface
 // By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
 // There we should only convert the tenant identifier from external to internal. Additionally, we mark the consumer in this flow as Runtime.
-func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oathkeeper.ReqData, authDetails oathkeeper.AuthDetails, keys KeysExtra) (ObjectContext, error) {
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumer.Runtime,
 	})
@@ -49,9 +49,22 @@ func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oat
 
 	*/
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), "", authDetails.AuthID, consumer.Runtime)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), keys, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime)
 
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil
+}
+
+// Match checks if there is "client-id-from-certificate" Header with nonempty value and "client-certificate-issuer" Header with value "certificate-service".
+// If so AuthDetails object is build.
+func (m *certServiceContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
+	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
+
+	if idVal != "" && certIssuer == oathkeeper.ExternalIssuer {
+		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
+	}
+
+	return false, nil, nil
 }

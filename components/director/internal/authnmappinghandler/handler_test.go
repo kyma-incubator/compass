@@ -224,7 +224,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 		require.Contains(t, logsBuffer.String(), mockErr.Error())
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, verifierMock)
@@ -305,7 +305,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w2, req2)
 
 		resp2 := w2.Result()
-		require.Equal(t, http.StatusUnauthorized, resp2.StatusCode)
+		require.Equal(t, http.StatusOK, resp2.StatusCode)
 		require.Contains(t, logsBuffer.String(), mockErr.Error())
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, verifierMock, tokenDataMock)
@@ -349,7 +349,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "request failed: StatusCode: 500 Body: Server error")
 	})
@@ -383,7 +383,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "unique attribute mismatch")
 	})
@@ -419,7 +419,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "error while extracting token issuer subdomain")
 	})
@@ -452,7 +452,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "error while extracting token issuer subdomain")
 	})
@@ -483,7 +483,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "illegal base64 data")
 	})
@@ -514,7 +514,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "invalid token format")
 	})
@@ -545,7 +545,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "unexpected or empty authorization header with length")
 	})
@@ -573,7 +573,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "unexpected or empty authorization header with length")
 	})
@@ -597,7 +597,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "An error has occurred while parsing the request")
 	})
@@ -610,14 +610,14 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	t.Run("error when extracting token claims", func(t *testing.T) {
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					"tenant": "test-tenant",
+					"consumerTenant": "test-tenant",
 				},
 				Header: map[string][]string{
 					authenticator.HeaderName: {authenticatorName},
@@ -645,7 +645,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
@@ -655,6 +655,7 @@ func TestHandler(t *testing.T) {
 		require.Contains(t, strings.TrimSpace(string(body)), expectedResponse)
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, verifierMock, tokenDataMock)
 	})
+
 	t.Run("error when authenticator is found but it does not contain matching trusted issuer", func(t *testing.T) {
 		logsBuffer := &bytes.Buffer{}
 		entry := log.DefaultLogger()
@@ -696,10 +697,11 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), mockErr.Error())
 	})
+
 	t.Run("error when no matching authenticator is found in header", func(t *testing.T) {
 		logsBuffer := &bytes.Buffer{}
 		entry := log.DefaultLogger()
@@ -734,7 +736,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "empty matched authenticator header")
 	})

@@ -51,7 +51,7 @@ data:
   global.systemFetcher.oauth.scopesClaim: "scopes"
   global.systemFetcher.oauth.tenantHeaderName: "x-zid"
   global.authenticators.tenant-fetcher.enabled: "true"
-  global.authenticators.subscription-flow.enabled: "true"
+  global.authenticators.subscription.enabled: "true"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
   system-broker.http.client.skipSSLValidation: "true"

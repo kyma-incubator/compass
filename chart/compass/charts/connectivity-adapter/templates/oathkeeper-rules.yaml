@@ -21,6 +21,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tokenResolverService | indent 4 }}
   - handler: hydrator
@@ -51,6 +55,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator

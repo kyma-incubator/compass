@@ -294,6 +294,15 @@ func NewCannotReadClientUserError() error {
 	}
 }
 
+// NewMultipleConsumersNotSupportedError missing godoc
+func NewMultipleConsumersNotSupportedError() error {
+	return Error{
+		errorCode: InternalError,
+		Message:   MultipleConsumersNotSupportedMsg,
+		arguments: map[string]string{},
+	}
+}
+
 // NewUnauthorizedError missing godoc
 func NewUnauthorizedError(msg string) error {
 	return Error{

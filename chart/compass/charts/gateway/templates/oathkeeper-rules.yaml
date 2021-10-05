@@ -14,6 +14,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
@@ -36,6 +40,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
@@ -60,6 +68,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
@@ -83,6 +95,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.runtimeMappingService | indent 4 }}
   - handler: hydrator
@@ -153,6 +169,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
@@ -177,6 +197,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
@@ -220,6 +244,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tokenResolverService | indent 4 }}
   - handler: hydrator
@@ -245,6 +273,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
@@ -269,6 +301,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
@@ -293,8 +329,18 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        x-authenticator-name: "subscription"
+  - handler: header
+    config:
+      headers:
+        extra-keys: {{ .Values.global.extraKeys.compassGatewayOrdExternalCerts | quote }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.authenticationMappingService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token

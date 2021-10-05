@@ -5,6 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
+	"strconv"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
@@ -23,6 +29,8 @@ const (
 	AuthenticatorObjectContextProvider = "AuthenticatorObjectContextProvider"
 	// CertServiceObjectContextProvider missing godoc
 	CertServiceObjectContextProvider = "CertServiceObjectContextProvider"
+	// KeysHeader key for the Header that contains tenant and internalTenant keys that should be used in the idToken
+	KeysHeader = "Extra-Keys"
 )
 
 // ScopesGetter missing godoc
@@ -40,7 +48,8 @@ type ReqDataParser interface {
 // ObjectContextProvider missing godoc
 //go:generate mockery --name=ObjectContextProvider --output=automock --outpkg=automock --case=underscore
 type ObjectContextProvider interface {
-	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error)
+	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails, extraTenantKeys KeysExtra) (ObjectContext, error)
+	Match(ctx context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error)
 }
 
 // TenantRepository missing godoc
@@ -98,32 +107,18 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	authDetails, err := reqData.GetAuthIDWithAuthenticators(ctx, h.authenticators)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while determining the auth details for the request: %v", err)
-		respond(ctx, writer, reqData.Body)
-		return
-	}
-
-	flowDetails := authDetails.CertIssuer
-	if authDetails.Authenticator != nil {
-		flowDetails = authDetails.Authenticator.Name
-	}
-	h.clientInstrumenter.InstrumentClient(authDetails.AuthID, string(authDetails.AuthFlow), flowDetails)
+	body := h.processRequest(ctx, reqData)
 
 	logger := log.C(ctx).WithFields(logrus.Fields{
-		"authID":        authDetails.AuthID,
-		"authFlow":      authDetails.AuthFlow,
-		"authenticator": authDetails.Authenticator,
+		"consumers": body.Extra["consumers"],
 	})
 
 	newCtx := log.ContextWithLogger(ctx, logger)
 
-	body := h.processRequest(newCtx, reqData, *authDetails)
 	respond(newCtx, writer, body)
 }
 
-func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) oathkeeper.ReqBody {
+func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData) oathkeeper.ReqBody {
 	tx, err := h.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction: %v", err)
@@ -134,9 +129,14 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData,
 	newCtx := persistence.SaveToContext(ctx, tx)
 
 	log.C(ctx).Debug("Getting object context")
-	objCtx, err := h.getObjectContext(newCtx, reqData, authDetails)
+	objCtxs, err := h.getObjectContexts(newCtx, reqData)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while getting object context: %v", err)
+		return reqData.Body
+	}
+
+	if len(objCtxs) == 0 {
+		log.C(ctx).WithError(err).Errorf("An error occurred while determining the auth details for the request: %v", err)
 		return reqData.Body
 	}
 
@@ -145,39 +145,97 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData,
 		return reqData.Body
 	}
 
-	reqData.Body.Extra["tenant"] = objCtx.TenantID
-	reqData.Body.Extra["externalTenant"] = objCtx.ExternalTenantID
-	reqData.Body.Extra["scope"] = objCtx.Scopes
-	reqData.Body.Extra["consumerID"] = objCtx.ConsumerID
-	reqData.Body.Extra["consumerType"] = objCtx.ConsumerType
-	reqData.Body.Extra["flow"] = authDetails.AuthFlow
+	if err := addTenantsToExtra(objCtxs, reqData); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while adding tenants to extra: %v", err)
+		return reqData.Body
+	}
+
+	addScopesToExtra(objCtxs, reqData)
+
+	if err := addConsumersToExtra(objCtxs, reqData); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while adding consumers to extra: %v", err)
+		return reqData.Body
+	}
 
 	return reqData.Body
 }
 
-func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
-	log.C(ctx).Infof("Attempting to get object context for %s flow and authID=%s", authDetails.AuthFlow, authDetails.AuthID)
+func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqData) ([]ObjectContext, error) {
+	log.C(ctx).Infof("Attempting to get object contexts")
 
-	var provider ObjectContextProvider
-	switch authDetails.AuthFlow {
-	case oathkeeper.JWTAuthFlow:
-		if authDetails.Authenticator != nil {
-			provider = h.objectContextProviders[AuthenticatorObjectContextProvider]
-		} else {
-			provider = h.objectContextProviders[UserObjectContextProvider]
+	objectContexts := make([]ObjectContext, 0, len(h.objectContextProviders))
+	authDetails := make([]*oathkeeper.AuthDetails, 0, len(h.objectContextProviders))
+	for name, provider := range h.objectContextProviders {
+		match, details, err := provider.Match(ctx, reqData)
+		if err != nil {
+			log.C(ctx).Infof("Provider %s failed to match: %s", name, err.Error())
 		}
-	case oathkeeper.OAuth2Flow, oathkeeper.OneTimeTokenFlow:
-		provider = h.objectContextProviders[SystemAuthObjectContextProvider]
-	case oathkeeper.CertificateFlow:
-		provider = h.objectContextProviders[SystemAuthObjectContextProvider]
-		if authDetails.CertIssuer == oathkeeper.ExternalIssuer {
-			provider = h.objectContextProviders[CertServiceObjectContextProvider]
+		if match && err == nil {
+			log.C(ctx).Infof("Provider %s attempting to get object context", name)
+			authDetails = append(authDetails, details)
+
+			keys, err := extractKeys(reqData, name)
+			if err != nil {
+				return nil, errors.Wrap(err, "while extracting keys: ")
+			}
+
+			objectContext, err := provider.GetObjectContext(ctx, reqData, *details, keys)
+			if err != nil {
+				return nil, errors.Wrap(err, "while getting objectContexts: ")
+			}
+
+			objectContexts = append(objectContexts, objectContext)
+			log.C(ctx).Infof("Provider %s successfuly provided object context", name)
 		}
-	default:
-		return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authDetails.AuthFlow)
 	}
 
-	return provider.GetObjectContext(ctx, reqData, authDetails)
+	h.instrumentClient(objectContexts, authDetails)
+
+	return objectContexts, nil
+}
+
+func (h *Handler) instrumentClient(objectContexts []ObjectContext, authDetails []*oathkeeper.AuthDetails) {
+	var flowDetails string
+	details := oathkeeper.AuthDetails{}
+
+	if len(objectContexts) == 1 {
+		details = *authDetails[0]
+	} else {
+		for _, d := range authDetails {
+			if d.CertIssuer != "" {
+				details = *d
+				break
+			}
+		}
+	}
+
+	flowDetails = details.CertIssuer
+	if details.Authenticator != nil {
+		flowDetails = details.Authenticator.Name
+	}
+
+	h.clientInstrumenter.InstrumentClient(details.AuthID, string(details.AuthFlow), flowDetails)
+}
+
+func extractKeys(reqData oathkeeper.ReqData, objectContextProviderName string) (KeysExtra, error) {
+	header := reqData.Body.Header[KeysHeader]
+	if len(header) < 1 {
+		return KeysExtra{}, errors.New(`missing "Extra-Keys" header`)
+	}
+	keysString := header[0]
+	keysJSON, err := strconv.Unquote(keysString)
+	if err != nil {
+		return KeysExtra{}, err
+	}
+
+	var keys map[string]KeysExtra
+
+	err = json.Unmarshal([]byte(keysJSON), &keys)
+	if err != nil {
+		return KeysExtra{}, err
+	}
+
+	return keys[objectContextProviderName], nil
 }
 
 func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {
@@ -186,4 +244,91 @@ func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.Re
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data: %v", err)
 	}
+}
+
+func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
+	tenants := make(map[string]string)
+	for _, objCtx := range objectContexts {
+		tenants[objCtx.TenantKey] = objCtx.TenantID
+		tenants[objCtx.ExternalTenantKey] = objCtx.ExternalTenantID
+	}
+
+	if _, ok := tenants["consumerTenant"]; !ok {
+		tenants["consumerTenant"] = tenants["providerTenant"]
+	}
+
+	tenantsJSON, err := json.Marshal(tenants)
+	if err != nil {
+		return errors.Wrap(err, "While marshaling consumers")
+	}
+
+	tenantsStr := string(tenantsJSON)
+
+	escaped := strings.ReplaceAll(tenantsStr, `"`, `\"`)
+	reqData.Body.Extra["tenant"] = escaped
+
+	return nil
+}
+
+func addScopesToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {
+	objScopes := make([][]string, 0, len(objectContexts))
+	for _, objCtx := range objectContexts {
+		objScopes = append(objScopes, strings.Split(objCtx.Scopes, " "))
+	}
+
+	intersection := objScopes[0]
+	for _, s := range objScopes[1:] {
+		intersection = intersect(intersection, s)
+	}
+	joined := strings.Join(intersection, " ")
+	reqData.Body.Extra["scope"] = joined
+}
+
+func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
+	consumers := make([]consumer.Consumer, 0, len(objectContexts))
+	for _, objCtx := range objectContexts {
+		c := consumer.Consumer{
+			ConsumerID:   objCtx.ConsumerID,
+			ConsumerType: objCtx.ConsumerType,
+			Flow:         objCtx.AuthFlow,
+		}
+		consumers = append(consumers, c)
+	}
+
+	sort.Slice(consumers, func(i, j int) bool {
+		return consumers[i].ConsumerType < consumers[j].ConsumerType
+	})
+
+	consumersJSON, err := json.Marshal(consumers)
+	if err != nil {
+		return errors.Wrap(err, "While marshaling consumers")
+	}
+
+	consumersStr := string(consumersJSON)
+	escaped := strings.ReplaceAll(consumersStr, `"`, `\"`)
+
+	reqData.Body.Extra["consumers"] = escaped
+
+	return nil
+}
+
+func intersect(s1 []string, s2 []string) []string {
+	var intersection []string
+	for _, s := range s1 {
+		if contains(s2, s) {
+			intersection = append(intersection, s)
+		}
+	}
+
+	return intersection
+}
+
+func contains(slice []string, s string) bool {
+	for _, ss := range slice {
+		if s == ss {
+			return true
+		}
+	}
+
+	return false
 }

@@ -18,8 +18,12 @@ func (*validator) Validate(claims Claims) error {
 		return errors.Wrapf(err, "while validating claims")
 	}
 
-	if claims.Tenant == "" && claims.ExternalTenant != "" {
-		return apperrors.NewTenantNotFoundError(claims.ExternalTenant)
+	if claims.Tenant["consumerTenant"] == "" && claims.Tenant["externalTenant"] != "" {
+		return apperrors.NewTenantNotFoundError(claims.Tenant["externalTenant"])
+	}
+
+	if len(claims.Consumers) > 1 {
+		return apperrors.NewMultipleConsumersNotSupportedError()
 	}
 
 	return nil
