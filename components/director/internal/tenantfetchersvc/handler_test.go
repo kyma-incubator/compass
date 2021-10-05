@@ -91,6 +91,14 @@ func TestService_Create(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
+	bodyWithMathcingParent, err := json.Marshal(tenantCreationRequest{
+		TenantID:               tenantExtID,
+		CustomerID:             tenantExtID,
+		Subdomain:              tenantSubdomain,
+		SubscriptionProviderID: subscriptionProviderID,
+	})
+	assert.NoError(t, err)
+
 	bodyWithMissingTenantSubdomain, err := json.Marshal(tenantCreationRequest{
 		TenantID:               tenantExtID,
 		CustomerID:             parentTenantExtID,
@@ -151,7 +159,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedStatusCode:    http.StatusOK,
 		},
 		{
-			Name: "Succeeds when matching child tenant ID is provided",
+			Name: "Succeeds when matching subaccount and account tenant IDs are provided",
 			TxFn: txGen.ThatSucceeds,
 			TenantSubscriberFn: func() *automock.TenantSubscriber {
 				subscriber := &automock.TenantSubscriber{}
@@ -159,6 +167,18 @@ func TestService_Create(t *testing.T) {
 				return subscriber
 			},
 			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMathcingChild)),
+			ExpectedSuccessOutput: compassURL,
+			ExpectedStatusCode:    http.StatusOK,
+		},
+		{
+			Name: "Succeeds when matching customer and account tenant IDs are provided",
+			TxFn: txGen.ThatSucceeds,
+			TenantSubscriberFn: func() *automock.TenantSubscriber {
+				subscriber := &automock.TenantSubscriber{}
+				subscriber.On("Subscribe", txtest.CtxWithDBMatcher(), &accountWithoutParentProvisioningRequest, "").Return(nil).Once()
+				return subscriber
+			},
+			Request:               httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMathcingParent)),
 			ExpectedSuccessOutput: compassURL,
 			ExpectedStatusCode:    http.StatusOK,
 		},
