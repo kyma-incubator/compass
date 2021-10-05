@@ -33,6 +33,10 @@ func (ep eventsPage) getEventsDetails() [][]byte {
 				allDetails[key] = result.String()
 			case gjson.Number:
 				allDetails[key] = result.Float()
+			case gjson.True:
+				allDetails[key] = true
+			case gjson.False:
+				allDetails[key] = false
 			case gjson.Null:
 				allDetails[key] = nil
 			default:

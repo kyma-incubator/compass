@@ -148,7 +148,7 @@ func (c *Client) getEndpointForEventsType(eventsType EventsType) (string, error)
 	case UpdatedSubaccountType:
 		return c.apiConfig.EndpointSubaccountUpdated, nil
 	case MovedSubaccountType:
-		return c.apiConfig.EndpointSubaccountUpdated, nil
+		return c.apiConfig.EndpointSubaccountMoved, nil
 	default:
 		return "", apperrors.NewInternalError("unknown events type")
 	}
