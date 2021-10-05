@@ -6,19 +6,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-
 	"github.com/avast/retry-go"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
@@ -428,7 +424,7 @@ func parents(currTenants map[string]string, eventsTenants []model.BusinessTenant
 }
 
 func getTenantParentType(tenantType string) string {
-	if tenantType == "Subaccount" {
+	if tenantType == SubaccountEntityType {
 		return tenant.TypeToStr(tenant.Account)
 	}
 	return tenant.TypeToStr(tenant.Customer)

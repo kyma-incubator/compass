@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	bndlErrors "github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
@@ -31,13 +30,13 @@ type OAuth2Config struct {
 
 // APIConfig missing godoc
 type APIConfig struct {
-	EndpointTenantCreated     string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
-	EndpointTenantDeleted     string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
-	EndpointTenantUpdated     string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
-	EndpointSubaccountCreated string `envconfig:"APP_ENDPOINT_SUBACCOUNT_CREATED"`
-	EndpointSubaccountDeleted string `envconfig:"APP_ENDPOINT_SUBACCOUNT_DELETED"`
-	EndpointSubaccountUpdated string `envconfig:"APP_ENDPOINT_SUBACCOUNT_UPDATED"`
-	EndpointSubaccountMoved   string `envconfig:"APP_ENDPOINT_SUBACCOUNT_MOVED"`
+	EndpointTenantCreated     string `envconfig:"optional,APP_ENDPOINT_TENANT_CREATED"`
+	EndpointTenantDeleted     string `envconfig:"optional,APP_ENDPOINT_TENANT_DELETED"`
+	EndpointTenantUpdated     string `envconfig:"optional,APP_ENDPOINT_TENANT_UPDATED"`
+	EndpointSubaccountCreated string `envconfig:"optional,APP_ENDPOINT_SUBACCOUNT_CREATED"`
+	EndpointSubaccountDeleted string `envconfig:"optional,APP_ENDPOINT_SUBACCOUNT_DELETED"`
+	EndpointSubaccountUpdated string `envconfig:"optional,APP_ENDPOINT_SUBACCOUNT_UPDATED"`
+	EndpointSubaccountMoved   string `envconfig:"optional,APP_ENDPOINT_SUBACCOUNT_MOVED"`
 }
 
 func (c APIConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {

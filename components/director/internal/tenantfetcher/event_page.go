@@ -1,12 +1,16 @@
 package tenantfetcher
 
 import (
+	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
+
+const SubaccountEntityType = "Subaccount"
 
 type eventsPage struct {
 	fieldMapping                    TenantFieldMapping
@@ -18,18 +22,27 @@ type eventsPage struct {
 func (ep eventsPage) getEventsDetails() [][]byte {
 	tenantDetails := make([][]byte, 0)
 	gjson.GetBytes(ep.payload, ep.fieldMapping.EventsField).ForEach(func(key gjson.Result, event gjson.Result) bool {
-		detailsType := event.Get(ep.fieldMapping.DetailsField).Type
-		var details []byte
-		if detailsType == gjson.String {
-			details = []byte(gjson.Parse(event.Get(ep.fieldMapping.DetailsField).String()).Raw)
-		} else if detailsType == gjson.JSON {
-			details = []byte(event.Get(ep.fieldMapping.DetailsField).Raw)
-		} else {
-			log.D().Warnf("Invalid event data format: %+v", event)
-			return true
+		entityType := event.Get(ep.fieldMapping.EntityTypeField)
+		details := event.Get(ep.fieldMapping.DetailsField).Map()
+		details[ep.fieldMapping.EntityTypeField] = entityType
+		allDetails := make(map[string]interface{}, 0)
+		for key, result := range details {
+			switch result.Type {
+			case gjson.String:
+				allDetails[key] = result.String()
+			case gjson.Number:
+				allDetails[key] = result.Float()
+			case gjson.Null:
+				allDetails[key] = nil
+			default:
+				log.D().Warnf("Unknown property type %s", result.Type)
+			}
 		}
-
-		tenantDetails = append(tenantDetails, details)
+		currentTenantDetails, err := json.Marshal(allDetails)
+		if err != nil {
+			return false
+		}
+		tenantDetails = append(tenantDetails, currentTenantDetails)
 		return true
 	})
 	return tenantDetails
@@ -127,7 +140,7 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 	region := ""
 	parentID := ""
 	tenantType := tenant.TypeToStr(tenant.Account)
-	if entityType.String() == "Subaccount" { // TODO refactor
+	if entityType.String() == SubaccountEntityType {
 		regionField := gjson.Get(jsonPayload, ep.fieldMapping.RegionField)
 		if !regionField.Exists() {
 			return nil, invalidFieldFormatError(ep.fieldMapping.RegionField)
