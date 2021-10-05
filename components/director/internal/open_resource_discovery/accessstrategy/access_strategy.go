@@ -2,8 +2,9 @@ package accessstrategy
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 // UnsupportedAccessStrategyErr is an error produced when execution of unsupported access strategy takes place.
@@ -25,6 +26,7 @@ func (a AccessStrategyType) IsSupported() bool {
 	return ok
 }
 
+// Execute executes given access strategy if supported, UnsupportedAccessStrategyErr otherwise
 func (a AccessStrategyType) Execute(ctx context.Context, client *http.Client, url string) (*http.Response, error) {
 	if !a.IsSupported() {
 		return nil, UnsupportedAccessStrategyErr
@@ -45,7 +47,7 @@ const (
 
 var supportedAccessStrategies = map[AccessStrategyType]AccessStrategyExecutor{
 	OpenAccessStrategy:    &openAccessStrategyExecutor{},
-	CMPmTLSAccessStrategy: newCMPmTLSAccessStrategyExecutor(),
+	CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(),
 }
 
 // AccessStrategies is a slice of AccessStrategy objects

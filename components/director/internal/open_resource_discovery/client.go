@@ -3,11 +3,12 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"

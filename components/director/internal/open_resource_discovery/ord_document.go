@@ -2,8 +2,9 @@ package ord
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 	"net/url"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"

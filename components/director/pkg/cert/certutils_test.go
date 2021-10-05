@@ -1,9 +1,10 @@
 package cert_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSubjectExtraction(t *testing.T) {

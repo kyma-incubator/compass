@@ -15,7 +15,7 @@ func ExternalCertIssuerSubjectMatcher(externalSubjectConsts certificates.Externa
 			return false
 		}
 		orgUnitRegex := regexp.MustCompile(externalSubjectConsts.OrganizationalUnitPattern)
-		orgUnits := GetAllOrganizationalUnits(subject)
+		orgUnits := cert.GetAllOrganizationalUnits(subject)
 		for _, orgUnit := range orgUnits {
 			if !orgUnitRegex.MatchString(orgUnit) {
 				return false

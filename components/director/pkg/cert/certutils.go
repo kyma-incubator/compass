@@ -1,8 +1,9 @@
 package cert
 
 import (
-	"github.com/google/uuid"
 	"regexp"
+
+	"github.com/google/uuid"
 )
 
 // GetOrganization returns the O part of the subject
@@ -50,7 +51,6 @@ func GetLocality(subject string) string {
 func GetCommonName(subject string) string {
 	return getRegexMatch("CN=([^,]+)", subject)
 }
-
 
 func getRegexMatch(regex, text string) string {
 	matches := getAllRegexMatches(regex, text)

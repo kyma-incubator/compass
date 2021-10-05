@@ -1,6 +1,7 @@
 package oathkeeper_test
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"net/http"
 	"testing"
 
@@ -47,7 +48,7 @@ func TestParseCertHeader(t *testing.T) {
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			issuer:           oathkeeper.ConnectorIssuer,
 			subjectMatcher:   oathkeeper.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
-			clientIDFunc:     oathkeeper.GetCommonName,
+			clientIDFunc:     cert.GetCommonName,
 			found:            true,
 			expectedHash:     "f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad",
 			expectedClientID: "test-application",
@@ -58,7 +59,7 @@ func TestParseCertHeader(t *testing.T) {
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			issuer:           oathkeeper.ExternalIssuer,
 			subjectMatcher:   oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts),
-			clientIDFunc:     oathkeeper.GetUUIDOrganizationalUnit,
+			clientIDFunc:     cert.GetUUIDOrganizationalUnit,
 			found:            true,
 			expectedHash:     "f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad",
 			expectedClientID: "2d149cda-a4fe-45c9-a21d-915c52fb56a1",
@@ -69,7 +70,7 @@ func TestParseCertHeader(t *testing.T) {
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			issuer:           oathkeeper.ExternalIssuer,
 			subjectMatcher:   oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts),
-			clientIDFunc:     oathkeeper.GetUUIDOrganizationalUnit,
+			clientIDFunc:     cert.GetUUIDOrganizationalUnit,
 			found:            true,
 			expectedHash:     "f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad",
 			expectedClientID: "123e4567-e89b-12d3-a456-426614174001",
@@ -80,7 +81,7 @@ func TestParseCertHeader(t *testing.T) {
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			issuer:         oathkeeper.ConnectorIssuer,
 			subjectMatcher: oathkeeper.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
-			clientIDFunc:   oathkeeper.GetCommonName,
+			clientIDFunc:   cert.GetCommonName,
 			found:          false,
 		},
 		{
@@ -88,7 +89,7 @@ func TestParseCertHeader(t *testing.T) {
 			certHeader:     "invalid header",
 			issuer:         oathkeeper.ConnectorIssuer,
 			subjectMatcher: oathkeeper.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
-			clientIDFunc:   oathkeeper.GetCommonName,
+			clientIDFunc:   cert.GetCommonName,
 			found:          false,
 		},
 		{
@@ -96,7 +97,7 @@ func TestParseCertHeader(t *testing.T) {
 			certHeader:     "",
 			issuer:         oathkeeper.ConnectorIssuer,
 			subjectMatcher: oathkeeper.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
-			clientIDFunc:   oathkeeper.GetCommonName,
+			clientIDFunc:   cert.GetCommonName,
 			found:          false,
 		},
 	} {

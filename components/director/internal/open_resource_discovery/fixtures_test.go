@@ -3,9 +3,10 @@ package ord_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 	"strconv"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
