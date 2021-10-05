@@ -185,7 +185,7 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 			}
 
 			objectContexts = append(objectContexts, objectContext)
-			log.C(ctx).Infof("Provider %s successfuly provided object context", name)
+			log.C(ctx).Infof("Provider %s successfully provided object context", name)
 		}
 	}
 
@@ -218,11 +218,11 @@ func (h *Handler) instrumentClient(objectContexts []ObjectContext, authDetails [
 }
 
 func extractKeys(reqData oathkeeper.ReqData, objectContextProviderName string) (KeysExtra, error) {
-	header := reqData.Body.Header[KeysHeader]
-	if len(header) < 1 {
+	extraKeyHeader := reqData.Body.Header[KeysHeader]
+	if len(extraKeyHeader) < 1 {
 		return KeysExtra{}, errors.New(`missing "Extra-Keys" header`)
 	}
-	keysString := header[0]
+	keysString := extraKeyHeader[0]
 	keysJSON, err := strconv.Unquote(keysString)
 	if err != nil {
 		return KeysExtra{}, err
