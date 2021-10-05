@@ -35,7 +35,7 @@ type TenantFieldMapping struct {
 
 	RegionField     string `envconfig:"default=region,APP_MAPPING_FIELD_REGION"`
 	EntityTypeField string `envconfig:"default=entityType,APP_MAPPING_FIELD_ENTITY_TYPE"`
-	ParentIDField   string `envconfig:"default=entityType,APP_MAPPING_FIELD_PARENT_ID"`
+	ParentIDField   string `envconfig:"default=parentId,APP_MAPPING_FIELD_PARENT_ID"`
 }
 
 // MovedRuntimeByLabelFieldMapping missing godoc
