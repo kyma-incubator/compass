@@ -163,8 +163,8 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqData) ([]ObjectContext, error) {
 	log.C(ctx).Infof("Attempting to get object contexts")
 
-	var objectContexts []ObjectContext
-	var authDetails []*oathkeeper.AuthDetails
+	objectContexts := make([]ObjectContext, 0, len(h.objectContextProviders))
+	authDetails := make([]*oathkeeper.AuthDetails, 0, len(h.objectContextProviders))
 	for name, provider := range h.objectContextProviders {
 		match, details, err := provider.Match(ctx, reqData)
 		authDetails = append(authDetails, details)
@@ -212,11 +212,11 @@ func (h *Handler) instrumentClient(objectContexts []ObjectContext, authDetails [
 }
 
 func extractKeys(reqData oathkeeper.ReqData, objectContextProviderName string) (KeysExtra, error) {
-	keysStringg := reqData.Body.Header[KeysHeader]
-	if len(keysStringg) < 1 {
+	header := reqData.Body.Header[KeysHeader]
+	if len(header) < 1 {
 		return KeysExtra{}, errors.New(`missing "Extra-Keys" header`)
 	}
-	keysString := keysStringg[0]
+	keysString := header[0]
 	keysJSON, err := strconv.Unquote(keysString)
 	if err != nil {
 		return KeysExtra{}, err
@@ -265,7 +265,7 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 }
 
 func addScopesToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {
-	var objScopes [][]string
+	objScopes := make([][]string, 0, len(objectContexts))
 	for _, objCtx := range objectContexts {
 		objScopes = append(objScopes, strings.Split(objCtx.Scopes, " "))
 	}
@@ -279,7 +279,7 @@ func addScopesToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData
 }
 
 func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
-	var consumers []consumer.Consumer
+	consumers := make([]consumer.Consumer, 0, len(objectContexts))
 	for _, objCtx := range objectContexts {
 		c := consumer.Consumer{
 			ConsumerID:   objCtx.ConsumerID,
@@ -308,7 +308,6 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 
 func intersect(s1 []string, s2 []string) []string {
 	var intersection []string
-
 	for _, s := range s1 {
 		if contains(s2, s) {
 			intersection = append(intersection, s)
