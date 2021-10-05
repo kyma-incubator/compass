@@ -22670,8 +22670,6 @@ func (ec *executionContext) _OneTimeToken(ctx context.Context, sel ast.Selection
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case OneTimeTokenForApplication:
-		return ec._OneTimeTokenForApplication(ctx, sel, &obj)
 	case *OneTimeTokenForApplication:
 		if obj == nil {
 			return graphql.Null

@@ -189,6 +189,10 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		req.SubaccountTenantID = ""
 	}
 
+	if req.AccountTenantID == req.CustomerTenantID {
+		req.CustomerTenantID = ""
+	}
+
 	return req, nil
 }
 
