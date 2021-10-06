@@ -7,13 +7,14 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
-	"github.com/pkg/errors"
-	"go.mozilla.org/pkcs7"
 	"math/big"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
+	"github.com/pkg/errors"
+	"go.mozilla.org/pkcs7"
 )
 
 type CsrResponse struct {

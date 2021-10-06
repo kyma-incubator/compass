@@ -1,8 +1,9 @@
 package oathkeeper
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"regexp"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 )

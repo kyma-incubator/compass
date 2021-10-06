@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 

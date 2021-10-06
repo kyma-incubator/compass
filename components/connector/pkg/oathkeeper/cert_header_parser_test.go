@@ -1,9 +1,10 @@
 package oathkeeper_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 

@@ -3,10 +3,11 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/cert"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/cert"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
 

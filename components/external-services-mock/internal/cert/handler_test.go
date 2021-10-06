@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/cert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -17,6 +15,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/cert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHandler_Generate(t *testing.T) {
