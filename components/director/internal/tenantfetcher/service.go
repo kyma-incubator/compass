@@ -35,7 +35,7 @@ type TenantFieldMapping struct {
 
 	RegionField     string `envconfig:"default=region,APP_MAPPING_FIELD_REGION"`
 	EntityTypeField string `envconfig:"default=entityType,APP_MAPPING_FIELD_ENTITY_TYPE"`
-	ParentIDField   string `envconfig:"default=parentId,APP_MAPPING_FIELD_PARENT_ID"`
+	ParentIDField   string `envconfig:"default=parentGuid,APP_MAPPING_FIELD_PARENT_ID"`
 }
 
 // MovedRuntimeByLabelFieldMapping missing godoc
@@ -50,7 +50,7 @@ type QueryConfig struct {
 	PageNumField   string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`
 	PageSizeField  string `envconfig:"default=pageSize,APP_QUERY_PAGE_SIZE_FIELD"`
 	TimestampField string `envconfig:"default=timestamp,APP_QUERY_TIMESTAMP_FIELD"`
-	RegionField    string `envconfig:"default=region,APP_QUERY_REGION_FIELD"`
+	RegionField    string `envconfig:"default=region,APP_QUERY_REGION_FIELD"` //todo add in charts
 	PageStartValue string `envconfig:"default=0,APP_QUERY_PAGE_START"`
 	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
 }
@@ -235,7 +235,8 @@ func (s SubaccountService) SyncTenants() error {
 		newLastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
 	}
 
-	for _, region := range s.tenantsRegions {
+	regions := []string{"us10-staging", "eu20-staging", "us30-staging"}
+	for _, region := range regions {
 		tenantsToCreate, err := s.getSubaccountsToCreateForRegion(lastConsumedTenantTimestamp, region)
 		if err != nil {
 			return err
@@ -334,11 +335,13 @@ func (s GlobalAccountService) SyncTenants() error {
 	if err != nil {
 		return err
 	}
+	log.C(ctx).Printf("Got tenants to create")
 
 	tenantsToDelete, err := s.getAccountsToDelete(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
+	log.C(ctx).Printf("Got tenants to delete")
 
 	tenantsToCreate = dedupeTenants(tenantsToCreate)
 	tenantsToCreate = excludeTenants(tenantsToCreate, tenantsToDelete)
@@ -424,10 +427,11 @@ func parents(currTenants map[string]string, eventsTenants []model.BusinessTenant
 }
 
 func getTenantParentType(tenantType string) string {
-	if tenantType == SubaccountEntityType {
-		return tenant.TypeToStr(tenant.Account)
+	if tenantType == GlobalAccountEntityType {
+		return tenant.TypeToStr(tenant.Customer)
 	}
-	return tenant.TypeToStr(tenant.Customer)
+	return tenant.TypeToStr(tenant.Account)
+
 }
 
 func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntimeMappings []model.MovedRuntimeByLabelMappingInput) error {

@@ -10,8 +10,8 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// SubaccountEntityType is the value for entityType property when fetching subaccounts
-const SubaccountEntityType = "Subaccount"
+// GlobalAccountEntityType is the value for entityType property when fetching subaccounts
+const GlobalAccountEntityType = "GlobalAccount"
 
 type eventsPage struct {
 	fieldMapping                    TenantFieldMapping
@@ -145,7 +145,14 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 	region := ""
 	parentID := ""
 	tenantType := tenant.TypeToStr(tenant.Account)
-	if entityType.String() == SubaccountEntityType {
+	if entityType.String() == GlobalAccountEntityType {
+		customerIDResult := gjson.Get(jsonPayload, ep.fieldMapping.CustomerIDField)
+		if !customerIDResult.Exists() {
+			log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.CustomerIDField, idResult.String())
+		} else {
+			parentID = customerIDResult.String()
+		}
+	} else {
 		regionField := gjson.Get(jsonPayload, ep.fieldMapping.RegionField)
 		if !regionField.Exists() {
 			return nil, invalidFieldFormatError(ep.fieldMapping.RegionField)
@@ -157,13 +164,6 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 		}
 		parentID = parentIDField.String()
 		tenantType = tenant.TypeToStr(tenant.Subaccount)
-	} else {
-		customerIDResult := gjson.Get(jsonPayload, ep.fieldMapping.CustomerIDField)
-		if !customerIDResult.Exists() {
-			log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.CustomerIDField, idResult.String())
-		} else {
-			parentID = customerIDResult.String()
-		}
 	}
 
 	return &model.BusinessTenantMappingInput{

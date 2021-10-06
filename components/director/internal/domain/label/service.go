@@ -80,22 +80,19 @@ func (s *labelService) UpsertLabel(ctx context.Context, tenant string, labelInpu
 			Key:    labelInput.Key,
 			Schema: nil,
 		}
-		err := s.labelDefinitionRepo.Create(ctx, *labelDef)
-		if err != nil {
+		if err := s.labelDefinitionRepo.Create(ctx, *labelDef); err != nil {
 			return errors.Wrapf(err, "while creating a new LabelDefinition for Label with key: '%s'", labelInput.Key)
 		}
 		log.C(ctx).Debugf("Successfully created LabelDefinition with id %s and key %s for Label with key %s", labelDef.ID, labelDef.Key, labelInput.Key)
 	}
 
-	err = s.validateLabelInputValue(labelInput, labelDef)
-	if err != nil {
+	if err := s.validateLabelInputValue(labelInput, labelDef); err != nil {
 		return errors.Wrapf(err, "while validating Label value for '%s'", labelInput.Key)
 	}
 
 	label := labelInput.ToLabel(s.uidService.Generate(), tenant)
 
-	err = s.labelRepo.Upsert(ctx, label)
-	if err != nil {
+	if err := s.labelRepo.Upsert(ctx, label); err != nil {
 		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}
 	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
