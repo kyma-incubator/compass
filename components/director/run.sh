@@ -195,6 +195,8 @@ export APP_HEALTH_CONFIG_INDICATORS="{database,5s,1s,1s,3}"
 export APP_SUGGEST_TOKEN_HTTP_HEADER=suggest_token
 export APP_SCHEMA_MIGRATION_VERSION=$(ls -lr ${ROOT_PATH}/../schema-migrator/migrations/director | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f9 | cut -d '_' -f1)
 export APP_ALLOW_JWT_SIGNING_NONE=true
+export APP_CERT_SUBJECT="C=BG, O=CMP, OU=Local, L=Local, CN=local-clients"
+export APP_CERT_ISSUER="C=BG, L=Local, O=CMP, OU=Local, CN=CMP"
 
 # Tenant Fetcher properties
 export APP_SUBSCRIPTION_CALLBACK_SCOPE=Callback
