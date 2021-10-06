@@ -221,7 +221,7 @@ func (h *Handler) instrumentClient(objectContexts []ObjectContext, authDetails [
 
 func extractKeys(reqData oathkeeper.ReqData, objectContextProviderName string) (KeysExtra, error) {
 	keysString := reqData.Body.Header.Get(KeysHeader)
-	if keysString == ""{
+	if keysString == "" {
 		return KeysExtra{}, errors.New(`missing "Extra-Keys" header`)
 	}
 

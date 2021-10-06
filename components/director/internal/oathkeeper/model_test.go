@@ -2,11 +2,12 @@ package oathkeeper
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/textproto"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
 )
@@ -277,8 +278,8 @@ func TestReqData_ExtractCoordinates(t *testing.T) {
 			expectError:         false,
 		},
 		{
-			name: "fail when key does not exist",
-			body: ReqBody{},
+			name:                "fail when key does not exist",
+			body:                ReqBody{},
 			expectedCoordinates: authenticator.Coordinates{},
 			expectedSuccess:     false,
 			expectError:         false,
@@ -290,9 +291,9 @@ func TestReqData_ExtractCoordinates(t *testing.T) {
 					authenticator.CoordinatesKey: "fail",
 				},
 			},
-			expectedCoordinates: authenticator.Coordinates{},
-			expectedSuccess:     true,
-			expectError:         true,
+			expectedCoordinates:  authenticator.Coordinates{},
+			expectedSuccess:      true,
+			expectError:          true,
 			expectedErrorMessage: "while unmarshaling authenticator coordinates",
 		},
 	}
