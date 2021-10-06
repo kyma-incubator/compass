@@ -36,6 +36,7 @@ import (
 
 // NewAuthenticatorContextProvider implements the ObjectContextProvider interface by looking for user scopes in the 'scope' token attribute
 // and also extracts the tenant information from the token by using a dedicated TenantAttribute defined for the specified authenticator.
+// It uses its authenticators to extract authentication details from the requestData.
 func NewAuthenticatorContextProvider(tenantRepo TenantRepository, authenticators []authenticator.Config) *authenticatorContextProvider {
 	return &authenticatorContextProvider{
 		tenantRepo:     tenantRepo,

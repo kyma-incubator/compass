@@ -31,6 +31,8 @@ const (
 	CertServiceObjectContextProvider = "CertServiceObjectContextProvider"
 	// KeysHeader key for the Header that contains tenant and internalTenant keys that should be used in the idToken
 	KeysHeader = "Extra-Keys"
+
+	consumerTenant = "consumerTenant"
 )
 
 // ScopesGetter missing godoc
@@ -218,11 +220,11 @@ func (h *Handler) instrumentClient(objectContexts []ObjectContext, authDetails [
 }
 
 func extractKeys(reqData oathkeeper.ReqData, objectContextProviderName string) (KeysExtra, error) {
-	extraKeyHeader := reqData.Body.Header[KeysHeader]
-	if len(extraKeyHeader) < 1 {
+	keysString := reqData.Body.Header.Get(KeysHeader)
+	if keysString == ""{
 		return KeysExtra{}, errors.New(`missing "Extra-Keys" header`)
 	}
-	keysString := extraKeyHeader[0]
+
 	keysJSON, err := strconv.Unquote(keysString)
 	if err != nil {
 		return KeysExtra{}, err
@@ -253,8 +255,8 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 		tenants[objCtx.ExternalTenantKey] = objCtx.ExternalTenantID
 	}
 
-	if _, ok := tenants["consumerTenant"]; !ok {
-		tenants["consumerTenant"] = tenants["providerTenant"]
+	if _, ok := tenants[consumerTenant]; !ok {
+		tenants[consumerTenant] = tenants["providerTenant"]
 	}
 
 	tenantsJSON, err := json.Marshal(tenants)
@@ -313,13 +315,17 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 }
 
 func intersect(s1 []string, s2 []string) []string {
-	var intersection []string
+	h := make(map[string]bool, len(s1))
 	for _, s := range s1 {
-		if contains(s2, s) {
+		h[s] = true
+	}
+
+	var intersection []string
+	for _, s := range s2 {
+		if h[s] {
 			intersection = append(intersection, s)
 		}
 	}
-
 	return intersection
 }
 

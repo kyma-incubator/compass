@@ -16,6 +16,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	consumerTenant = "consumerTenant"
+)
+
 var emptyQuery error = errors.New("empty graphql query")
 
 //go:generate mockery --name=RoundTrip --output=automock --outpkg=automock --case=underscore
@@ -197,7 +201,7 @@ func (t *Transport) getClaims(headers http.Header) (Claims, error) {
 	}
 
 	claims := Claims{
-		ConsumerTenant: tokenClaims.Tenant["consumerTenant"],
+		ConsumerTenant: tokenClaims.Tenant[consumerTenant],
 		Scopes:         tokenClaims.Scopes,
 	}
 
@@ -209,7 +213,7 @@ func (t *Transport) getClaims(headers http.Header) (Claims, error) {
 	if tenant, ok := tokenClaims.Tenant["providerTenant"]; ok {
 		claims.Tenant = tenant
 	} else {
-		claims.Tenant = tokenClaims.Tenant["consumerTenant"]
+		claims.Tenant = tokenClaims.Tenant[consumerTenant]
 
 	}
 
