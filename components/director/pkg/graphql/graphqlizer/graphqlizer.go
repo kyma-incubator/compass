@@ -28,6 +28,9 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		{{- if .BaseURL }}
 		baseURL: "{{ .BaseURL }}",
 		{{- end }}
+		{{- if .SystemNumber }}
+		systemNumber: "{{ .SystemNumber }}",
+		{{- end }}
         {{- if .Labels }}
 		labels: {{ LabelsToGQL .Labels}},
 		{{- end }}
