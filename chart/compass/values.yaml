@@ -136,6 +136,10 @@ global:
       port: 3002
       path: "/operation"
       lastOperationPath: "/last_operation"
+    info:
+      path: "/v1/info"
+      certIssuer: "C=BG, L=Local, O=CMP, OU=Local, CN=CMP"
+      certSubject: "C=BG, O=CMP, OU=Local, L=Local, CN=local-clients"
 
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
