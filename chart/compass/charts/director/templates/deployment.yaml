@@ -44,9 +44,6 @@ spec:
             - name: http
               containerPort: {{ .Values.global.director.graphql.external.port }}
               protocol: TCP
-            - name: http-gql-int
-              containerPort: {{ .Values.global.director.graphql.internal.port }}
-              protocol: TCP
             - name: http-validator
               containerPort: {{ .Values.global.director.validator.port }}
               protocol: TCP
