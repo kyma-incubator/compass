@@ -450,7 +450,7 @@ func (g *Graphqlizer) PlaceholderDefinitionInputToGQL(in graphql.PlaceholderDefi
 		defaultValue: "{{.DefaultValue}}",
 		{{- end }}
 		{{- if .InputValueFromApplication }}
-		inputValueFromApplication: "{{.InputValueFromApplication}}",
+		inputValueFromApplication: {{.InputValueFromApplication}},
 		{{- end }}
 	}`)
 }
