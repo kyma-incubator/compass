@@ -11,7 +11,7 @@ const ordConfig = `{
                 "systemInstanceAware": true,
                 "accessStrategies": [
                     {
-                        "type": "open",
+                        "type": "%s",
                         "customType": "",
                         "customDescription": ""
                     }

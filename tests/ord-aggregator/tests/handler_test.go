@@ -34,9 +34,11 @@ const (
 	expectedSystemInstanceName              = "test-app"
 	expectedSecondSystemInstanceName        = "second-test-app"
 	expectedThirdSystemInstanceName         = "third-test-app"
+	expectedFourthSystemInstanceName        = "fourth-test-app"
 	expectedSystemInstanceDescription       = "test-app1-description"
 	expectedSecondSystemInstanceDescription = "test-app2-description"
 	expectedThirdSystemInstanceDescription  = "test-app3-description"
+	expectedFourthSystemInstanceDescription = "test-app4-description"
 	expectedBundleTitle                     = "BUNDLE TITLE"
 	secondExpectedBundleTitle               = "BUNDLE TITLE 2"
 	expectedBundleDescription               = "lorem ipsum dolor nsq sme"
@@ -54,15 +56,15 @@ const (
 	expectedTombstoneOrdID                  = "ns:apiResource:API_ID2:v1"
 	expectedVendorTitle                     = "SAP"
 
-	expectedNumberOfSystemInstances           = 3
-	expectedNumberOfPackages                  = 3
-	expectedNumberOfBundles                   = 6
-	expectedNumberOfProducts                  = 3
-	expectedNumberOfAPIs                      = 3
-	expectedNumberOfResourceDefinitionsPerAPI = 3
-	expectedNumberOfEvents                    = 6
-	expectedNumberOfTombstones                = 3
-	expectedNumberOfVendors                   = 6
+	expectedNumberOfSystemInstances           = 4
+	expectedNumberOfPackages                  = 4
+	expectedNumberOfBundles                   = 8
+	expectedNumberOfProducts                  = 4
+	expectedNumberOfAPIs                      = 4
+	expectedNumberOfResourceDefinitionsPerAPI = 4
+	expectedNumberOfEvents                    = 8
+	expectedNumberOfTombstones                = 4
+	expectedNumberOfVendors                   = 8
 
 	expectedNumberOfAPIsInFirstBundle    = 1
 	expectedNumberOfAPIsInSecondBundle   = 1
@@ -76,11 +78,13 @@ func TestORDAggregator(t *testing.T) {
 	appInput := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL)
 	secondAppInput := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL)
 	thirdAppInput := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL)
+	fourthAppInput := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockCertSecuredURL)
 
 	systemInstancesMap := make(map[string]string)
 	systemInstancesMap[expectedSystemInstanceName] = expectedSystemInstanceDescription
 	systemInstancesMap[expectedSecondSystemInstanceName] = expectedSecondSystemInstanceDescription
 	systemInstancesMap[expectedThirdSystemInstanceName] = expectedThirdSystemInstanceDescription
+	systemInstancesMap[expectedFourthSystemInstanceName] = expectedFourthSystemInstanceDescription
 
 	eventsMap := make(map[string]string)
 	eventsMap[firstEventTitle] = firstEventDescription
@@ -118,6 +122,10 @@ func TestORDAggregator(t *testing.T) {
 
 	thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
 	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
+	require.NoError(t, err)
+
+	fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
 	require.NoError(t, err)
 
 	t.Log("Create integration system")

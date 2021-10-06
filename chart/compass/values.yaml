@@ -104,7 +104,7 @@ global:
       version: "PR-45"
     e2e_tests:
       dir:
-      version: "PR-2052"
+      version: "PR-2057"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -494,6 +494,10 @@ global:
   externalServicesMock:
     enabled: false
     auditlog: false
+    certSecuredPort: 8081
+    certSecuredHost: compass-external-services-mock-sap-mtls
+    host: http://compass-external-services-mock.compass-system.svc.cluster.local
+    oauthSecretName: compass-external-services-mock-oauth-credentials
 
   tests:
     ordService:

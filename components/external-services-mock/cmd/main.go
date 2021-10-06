@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"log"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/cert"
 
@@ -30,9 +33,10 @@ import (
 )
 
 type config struct {
-	Address  string `envconfig:"default=127.0.0.1:8080"`
-	BaseURL  string `envconfig:"default=http://compass-external-services-mock.compass-system.svc.cluster.local:8080"`
-	JWKSPath string `envconfig:"default=/jwks.json"`
+	Address                  string `envconfig:"default=127.0.0.1:8080"`
+	CertSecuredServerAddress string `envconfig:"default=127.0.0.1:8081"`
+	BaseURL                  string `envconfig:"default=http://compass-external-services-mock.compass-system.svc.cluster.local:8080"`
+	JWKSPath                 string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
@@ -52,6 +56,8 @@ type BasicCredentialsConfig struct {
 }
 
 func main() {
+	ctx := context.Background()
+
 	cfg := config{}
 	err := envconfig.InitWithOptions(&cfg, envconfig.Options{Prefix: "APP", AllOptional: true})
 	exitOnError(err, "while loading configuration")
@@ -61,9 +67,28 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("External Services Mock up and running on address: %s", cfg.Address)
-	err = http.ListenAndServe(cfg.Address, handler)
-	exitOnError(err, "while running up http server")
+	certSecuredHandler, err := initCertSecuredAPIs(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	server := &http.Server{
+		Addr:    cfg.Address,
+		Handler: handler,
+	}
+
+	certSecuredServer := &http.Server{
+		Addr:    cfg.CertSecuredServerAddress,
+		Handler: certSecuredHandler,
+	}
+
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+
+	go startServer(ctx, server, wg)
+	go startServer(ctx, certSecuredServer, wg)
+
+	wg.Wait()
 }
 
 func exitOnError(err error, context string) {
@@ -111,10 +136,10 @@ func initHTTP(cfg config) (http.Handler, error) {
 	router.HandleFunc("/external-api/unsecured/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/unsecured/spec/flapping", apispec.FlappingHandleFunc())
 
-	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig)
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("open"))
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument)
 
-	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfig)
+	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfig("open"))
 
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
@@ -138,6 +163,15 @@ func initHTTP(cfg config) (http.Handler, error) {
 	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
+
+	return router, nil
+}
+
+func initCertSecuredAPIs(cfg config) (http.Handler, error) {
+	router := mux.NewRouter()
+
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument)
 
 	return router, nil
 }
@@ -178,4 +212,42 @@ func (h *handler) basicAuthMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func startServer(parentCtx context.Context, server *http.Server, wg *sync.WaitGroup) {
+	ctx, cancel := context.WithCancel(parentCtx)
+	defer cancel()
+
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		stopServer(server)
+	}()
+
+	log.Printf("Starting and listening on %s://%s", "http", server.Addr)
+
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		log.Fatalf("Could not listen on %s://%s: %v\n", "http", server.Addr, err)
+	}
+}
+
+func stopServer(server *http.Server) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	go func(ctx context.Context) {
+		<-ctx.Done()
+
+		if ctx.Err() == context.Canceled {
+			return
+		} else if ctx.Err() == context.DeadlineExceeded {
+			log.Fatal("Timeout while stopping the server, killing instance!")
+		}
+	}(ctx)
+
+	server.SetKeepAlivesEnabled(false)
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
+	}
 }

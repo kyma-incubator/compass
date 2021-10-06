@@ -52,13 +52,13 @@ spec:
             - name: APP_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.auditlog.secretName }}
-                  key: auditlog-client-id
+                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
+                  key: client-id
             - name: APP_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.auditlog.secretName }}
-                  key: auditlog-client-secret
+                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
+                  key: client-secret
             - name: BASIC_CREDENTIALS_USERNAME
               valueFrom:
                 secretKeyRef:

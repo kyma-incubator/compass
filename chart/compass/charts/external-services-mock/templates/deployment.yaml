@@ -24,6 +24,8 @@ spec:
               env:
               - name: APP_ADDRESS
                 value: "127.0.0.1:{{ .Values.deployment.port }}"
+              - name: APP_CERT_SECURED_SERVER_ADDRESS
+                value: "127.0.0.1:{{ .Values.global.externalServicesMock.certSecuredPort }}"
               {{- if eq .Values.global.externalServicesMock.auditlog true }}
               - name: APP_CLIENT_ID
                 valueFrom:
