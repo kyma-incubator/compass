@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/cert_info"
+	"github.com/kyma-incubator/compass/components/director/internal/info"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -139,7 +139,7 @@ type config struct {
 
 	ReadyConfig healthz.ReadyConfig
 
-	CertInfoConfig cert_info.Config
+	CertInfoConfig info.Config
 
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
@@ -330,8 +330,8 @@ func main() {
 	health.RegisterIndicator(healthz.NewIndicator(healthz.DBIndicatorName, healthz.NewDBIndicatorFunc(transact))).Start()
 	mainRouter.HandleFunc("/healthz", healthz.NewHealthHandler(health))
 
-	logger.Infof("Registering certificate info endpoint...")
-	mainRouter.HandleFunc(cfg.CertInfoConfig.APIEndpoint, cert_info.NewCertInfoHandler(ctx, cfg.CertInfoConfig))
+	logger.Infof("Registering info endpoint...")
+	mainRouter.HandleFunc(cfg.CertInfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.CertInfoConfig))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
