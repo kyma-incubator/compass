@@ -261,7 +261,7 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 
 	tenantsJSON, err := json.Marshal(tenants)
 	if err != nil {
-		return errors.Wrap(err, "While marshaling consumers")
+		return errors.Wrap(err, "While marshaling tenants")
 	}
 
 	tenantsStr := string(tenantsJSON)

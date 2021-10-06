@@ -3,6 +3,7 @@ package claims
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -15,16 +16,16 @@ import (
 
 // Claims missing godoc
 type Claims struct {
-	TenantString    string              `json:"tenant"`
-	Tenant          map[string]string   `json:"-"`
+	Tenant          map[string]string   `json:"tenant"`
 	Scopes          string              `json:"scopes"`
-	ConsumersString string              `json:"consumers"`
-	Consumers       []consumer.Consumer `json:"-"`
+	Consumers       []consumer.Consumer `json:"consumers"`
 	ZID             string              `json:"zid"`
 	jwt.StandardClaims
 }
 
-func (c *Claims) UnmarshalJSON(bearerToken string, keyFunc func(token *jwt.Token) (interface{}, error)) (err error) {
+// UnmarshalJSON parses the bearerToken using keyFunc. After the token's claims are extracted the "consumers" claim is unmarshaled into the Claim's slice of
+// "Consumers" and the "tenant" claim is unmarshaled into Claim's map "Tenant"
+func (c *Claims) UnmarshalJSON(ctx context.Context, bearerToken string, keyFunc func(token *jwt.Token) (interface{}, error)) (err error) {
 	temp := struct {
 		TenantString    string `json:"tenant"`
 		Scopes          string `json:"scopes"`
@@ -52,11 +53,11 @@ func (c *Claims) UnmarshalJSON(bearerToken string, keyFunc func(token *jwt.Token
 	c.StandardClaims = temp.StandardClaims
 
 	if err := json.Unmarshal([]byte(temp.ConsumersString), &c.Consumers); err != nil {
-		return errors.Wrap(err, "while unmarshaling consumers")
+		log.C(ctx).Warnf("While unmarshaling consumers: %v", err)
 	}
 
 	if err := json.Unmarshal([]byte(temp.TenantString), &c.Tenant); err != nil {
-		return errors.Wrap(err, "while unmarshaling tenants")
+		log.C(ctx).Warnf("While unmarshaling tenants: %v", err)
 	}
 
 	return nil
