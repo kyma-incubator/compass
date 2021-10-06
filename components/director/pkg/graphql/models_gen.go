@@ -92,6 +92,9 @@ type ApplicationRegisterInput struct {
 	ProviderName *string `json:"providerName"`
 	// **Validation:** max=2000
 	Description *string `json:"description"`
+	// **Validation:** max=2000
+	BaseURL      *string `json:"baseURL"`
+	SystemNumber *string `json:"systemNumber"`
 	// **Validation:** label key is alphanumeric with underscore
 	Labels   Labels          `json:"labels"`
 	Webhooks []*WebhookInput `json:"webhooks"`
@@ -498,15 +501,21 @@ type PageInfo struct {
 }
 
 type PlaceholderDefinition struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
+	Name                      string                                    `json:"name"`
+	Description               *string                                   `json:"description"`
+	Optional                  bool                                      `json:"optional"`
+	DefaultValue              *string                                   `json:"defaultValue"`
+	InputValueFromApplication *ApplicationRegisterInputPlaceholderValue `json:"inputValueFromApplication"`
 }
 
 type PlaceholderDefinitionInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Name string `json:"name"`
 	// **Validation:**  max=2000
-	Description *string `json:"description"`
+	Description               *string                                   `json:"description"`
+	Optional                  *bool                                     `json:"optional"`
+	DefaultValue              *string                                   `json:"defaultValue"`
+	InputValueFromApplication *ApplicationRegisterInputPlaceholderValue `json:"inputValueFromApplication"`
 }
 
 type RuntimeContextInput struct {
@@ -667,6 +676,55 @@ func (e *APISpecType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e APISpecType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ApplicationRegisterInputPlaceholderValue string
+
+const (
+	ApplicationRegisterInputPlaceholderValueName                ApplicationRegisterInputPlaceholderValue = "name"
+	ApplicationRegisterInputPlaceholderValueProviderName        ApplicationRegisterInputPlaceholderValue = "providerName"
+	ApplicationRegisterInputPlaceholderValueDescription         ApplicationRegisterInputPlaceholderValue = "description"
+	ApplicationRegisterInputPlaceholderValueIntegrationSystemID ApplicationRegisterInputPlaceholderValue = "integrationSystemID"
+	ApplicationRegisterInputPlaceholderValueBaseURL             ApplicationRegisterInputPlaceholderValue = "baseURL"
+	ApplicationRegisterInputPlaceholderValueSystemNumber        ApplicationRegisterInputPlaceholderValue = "systemNumber"
+)
+
+var AllApplicationRegisterInputPlaceholderValue = []ApplicationRegisterInputPlaceholderValue{
+	ApplicationRegisterInputPlaceholderValueName,
+	ApplicationRegisterInputPlaceholderValueProviderName,
+	ApplicationRegisterInputPlaceholderValueDescription,
+	ApplicationRegisterInputPlaceholderValueIntegrationSystemID,
+	ApplicationRegisterInputPlaceholderValueBaseURL,
+	ApplicationRegisterInputPlaceholderValueSystemNumber,
+}
+
+func (e ApplicationRegisterInputPlaceholderValue) IsValid() bool {
+	switch e {
+	case ApplicationRegisterInputPlaceholderValueName, ApplicationRegisterInputPlaceholderValueProviderName, ApplicationRegisterInputPlaceholderValueDescription, ApplicationRegisterInputPlaceholderValueIntegrationSystemID, ApplicationRegisterInputPlaceholderValueBaseURL, ApplicationRegisterInputPlaceholderValueSystemNumber:
+		return true
+	}
+	return false
+}
+
+func (e ApplicationRegisterInputPlaceholderValue) String() string {
+	return string(e)
+}
+
+func (e *ApplicationRegisterInputPlaceholderValue) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ApplicationRegisterInputPlaceholderValue(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ApplicationRegisterInputPlaceholderValue", str)
+	}
+	return nil
+}
+
+func (e ApplicationRegisterInputPlaceholderValue) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

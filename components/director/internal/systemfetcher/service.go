@@ -273,13 +273,7 @@ func (s *SystemFetcher) appRegisterInputFromTemplate(ctx context.Context, sc Sys
 
 func enrichAppRegisterInput(input model.ApplicationRegisterInput, sc System) *model.ApplicationRegisterInputWithTemplate {
 	initStatusCond := model.ApplicationStatusConditionInitial
-
-	input.Name = sc.DisplayName
-	input.Description = &sc.ProductDescription
-	input.BaseURL = &sc.BaseURL
-	input.ProviderName = &sc.InfrastructureProvider
 	input.StatusCondition = &initStatusCond
-	input.SystemNumber = &sc.SystemNumber
 
 	if len(input.Labels) == 0 {
 		input.Labels = make(map[string]interface{}, 1)
@@ -295,19 +289,32 @@ func enrichAppRegisterInput(input model.ApplicationRegisterInput, sc System) *mo
 func getTemplateInputs(t *model.ApplicationTemplate, s System) model.ApplicationFromTemplateInputValues {
 	inputValues := model.ApplicationFromTemplateInputValues{}
 	for _, p := range t.Placeholders {
-		if strings.Contains(strings.ToLower(p.Name), "url") {
-			inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
-				Placeholder: p.Name,
-				Value:       s.BaseURL,
-			})
-			continue
-		}
-
 		inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
 			Placeholder: p.Name,
-			Value:       s.DisplayName,
+			Value:       getPlaceholderValue(p, s),
 		})
 	}
 
 	return inputValues
+}
+
+func getPlaceholderValue(placeholder model.ApplicationTemplatePlaceholder, system System) string {
+	if placeholder.AppRegisterInputPlaceholderValue == nil {
+		return ""
+	}
+
+	switch *placeholder.AppRegisterInputPlaceholderValue {
+	case model.ApplicationRegisterInputPlaceholderValueName:
+		return system.DisplayName
+	case model.ApplicationRegisterInputPlaceholderValueDescription:
+		return system.ProductDescription
+	case model.ApplicationRegisterInputPlaceholderValueBaseURL:
+		return system.BaseURL
+	case model.ApplicationRegisterInputPlaceholderValueProviderName:
+		return system.InfrastructureProvider
+	case model.ApplicationRegisterInputPlaceholderValueSystemNumber:
+		return system.SystemNumber
+	}
+
+	return ""
 }

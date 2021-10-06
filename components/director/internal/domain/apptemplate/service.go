@@ -138,13 +138,16 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// PrepareApplicationCreateInputJSON missing godoc
+// PrepareApplicationCreateInputJSON returns a templated JSON string rendered via the provided application template and input values.
 func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error) {
 	appCreateInputJSON := appTemplate.ApplicationInputJSON
 	for _, placeholder := range appTemplate.Placeholders {
 		newValue, err := values.FindPlaceholderValue(placeholder.Name)
-		if err != nil {
+		if err != nil && !placeholder.Optional {
 			return "", errors.Wrap(err, "required placeholder not provided")
+		}
+		if len(newValue) == 0 && placeholder.DefaultValue != nil && len(*placeholder.DefaultValue) > 0 {
+			newValue = *placeholder.DefaultValue
 		}
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
 	}

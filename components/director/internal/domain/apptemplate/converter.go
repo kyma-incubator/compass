@@ -233,9 +233,21 @@ func (c *converter) placeholdersModelToJSON(in []model.ApplicationTemplatePlaceh
 func (c *converter) placeholdersFromGraphql(in []*graphql.PlaceholderDefinitionInput) []model.ApplicationTemplatePlaceholder {
 	placeholders := make([]model.ApplicationTemplatePlaceholder, 0, len(in))
 	for _, p := range in {
+		var optional bool
+		if p.Optional != nil {
+			optional = *p.Optional
+		}
+		var placeholderValuePtr *model.ApplicationRegisterInputPlaceholderValue
+		if p.InputValueFromApplication != nil {
+			placeholderValue := model.ApplicationRegisterInputPlaceholderValue(*p.InputValueFromApplication)
+			placeholderValuePtr = &placeholderValue
+		}
 		np := model.ApplicationTemplatePlaceholder{
-			Name:        p.Name,
-			Description: p.Description,
+			Name:                             p.Name,
+			Description:                      p.Description,
+			Optional:                         optional,
+			DefaultValue:                     p.DefaultValue,
+			AppRegisterInputPlaceholderValue: placeholderValuePtr,
 		}
 		placeholders = append(placeholders, np)
 	}
@@ -245,9 +257,17 @@ func (c *converter) placeholdersFromGraphql(in []*graphql.PlaceholderDefinitionI
 func (c *converter) placeholdersToGraphql(in []model.ApplicationTemplatePlaceholder) []*graphql.PlaceholderDefinition {
 	placeholders := make([]*graphql.PlaceholderDefinition, 0, len(in))
 	for _, p := range in {
+		var placeholderValuePtr *graphql.ApplicationRegisterInputPlaceholderValue
+		if p.AppRegisterInputPlaceholderValue != nil {
+			placeholderValue := graphql.ApplicationRegisterInputPlaceholderValue(*p.AppRegisterInputPlaceholderValue)
+			placeholderValuePtr = &placeholderValue
+		}
 		np := graphql.PlaceholderDefinition{
-			Name:        p.Name,
-			Description: p.Description,
+			Name:                      p.Name,
+			Description:               p.Description,
+			Optional:                  p.Optional,
+			DefaultValue:              p.DefaultValue,
+			InputValueFromApplication: placeholderValuePtr,
 		}
 		placeholders = append(placeholders, &np)
 	}

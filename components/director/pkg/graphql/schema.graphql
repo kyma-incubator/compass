@@ -51,6 +51,15 @@ enum APISpecType {
 	OPEN_API
 }
 
+enum ApplicationRegisterInputPlaceholderValue {
+	name
+	providerName
+	description
+	integrationSystemID
+	baseURL
+	systemNumber
+}
+
 enum ApplicationStatusCondition {
 	INITIAL
 	CONNECTED
@@ -242,6 +251,11 @@ input ApplicationRegisterInput {
 	**Validation:** max=2000
 	"""
 	description: String
+	"""
+	**Validation:** max=2000
+	"""
+	baseURL: String
+	systemNumber: String
 	"""
 	**Validation:** label key is alphanumeric with underscore
 	"""
@@ -574,6 +588,9 @@ input PlaceholderDefinitionInput {
 	**Validation:**  max=2000
 	"""
 	description: String
+	optional: Boolean
+	defaultValue: String
+	inputValueFromApplication: ApplicationRegisterInputPlaceholderValue
 }
 
 input RuntimeContextInput {
@@ -688,6 +705,7 @@ type Application {
 	systemNumber: String
 	providerName: String
 	description: String
+	baseURL: String
 	integrationSystemID: ID
 	applicationTemplateID: ID
 	labels(key: String): Labels
@@ -984,6 +1002,9 @@ type PageInfo {
 type PlaceholderDefinition {
 	name: String!
 	description: String
+	optional: Boolean!
+	defaultValue: String
+	inputValueFromApplication: ApplicationRegisterInputPlaceholderValue
 }
 
 type Runtime {

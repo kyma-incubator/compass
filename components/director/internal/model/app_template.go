@@ -50,6 +50,22 @@ type ApplicationFromTemplateInput struct {
 	Values       ApplicationFromTemplateInputValues
 }
 
+// ApplicationRegisterInputPlaceholderValue is used to add semantics to a placeholder value, and suggest its content.
+type ApplicationRegisterInputPlaceholderValue string
+
+const (
+	// ApplicationRegisterInputPlaceholderValueName indicates that the name of the application/system can be used as a value for the placeholder.
+	ApplicationRegisterInputPlaceholderValueName ApplicationRegisterInputPlaceholderValue = "name"
+	// ApplicationRegisterInputPlaceholderValueProviderName indicates that the provider name of the application/system can be used as a value for the placeholder.
+	ApplicationRegisterInputPlaceholderValueProviderName ApplicationRegisterInputPlaceholderValue = "providerName"
+	// ApplicationRegisterInputPlaceholderValueDescription  indicates that the description of the application/system can be used as a value for the placeholder.
+	ApplicationRegisterInputPlaceholderValueDescription ApplicationRegisterInputPlaceholderValue = "description"
+	// ApplicationRegisterInputPlaceholderValueBaseURL indicates that the base URL of the application/system can be used as a value for the placeholder.
+	ApplicationRegisterInputPlaceholderValueBaseURL ApplicationRegisterInputPlaceholderValue = "baseURL"
+	// ApplicationRegisterInputPlaceholderValueSystemNumber indicates that the system number of the application/system can be used as a value for the placeholder.
+	ApplicationRegisterInputPlaceholderValueSystemNumber ApplicationRegisterInputPlaceholderValue = "systemNumber"
+)
+
 // ApplicationFromTemplateInputValues missing godoc
 type ApplicationFromTemplateInputValues []*ApplicationTemplateValueInput
 
@@ -65,8 +81,11 @@ func (in ApplicationFromTemplateInputValues) FindPlaceholderValue(name string) (
 
 // ApplicationTemplatePlaceholder missing godoc
 type ApplicationTemplatePlaceholder struct {
-	Name        string
-	Description *string
+	Name                             string
+	Description                      *string
+	Optional                         bool
+	DefaultValue                     *string
+	AppRegisterInputPlaceholderValue *ApplicationRegisterInputPlaceholderValue
 }
 
 // ApplicationTemplateValueInput missing godoc

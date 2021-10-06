@@ -27,11 +27,13 @@ func TestSyncSystems(t *testing.T) {
 	)
 
 	testErr := errors.New("testErr")
+	placeholderValue := model.ApplicationRegisterInputPlaceholderValueName
 	appTemplate := &model.ApplicationTemplate{
 		ID: appTemplateID,
-		Placeholders: []model.ApplicationTemplatePlaceholder{
-			{Name: displayNameKey},
-		},
+		Placeholders: []model.ApplicationTemplatePlaceholder{{
+			Name:                             displayNameKey,
+			AppRegisterInputPlaceholderValue: &placeholderValue,
+		}},
 	}
 
 	appTemplateSvcNoErrors := func(systems []systemfetcher.System) *automock.ApplicationTemplateService {

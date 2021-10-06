@@ -96,6 +96,7 @@ type ComplexityRoot struct {
 	Application struct {
 		ApplicationTemplateID func(childComplexity int) int
 		Auths                 func(childComplexity int) int
+		BaseURL               func(childComplexity int) int
 		Bundle                func(childComplexity int, id string) int
 		Bundles               func(childComplexity int, first *int, after *PageCursor) int
 		CreatedAt             func(childComplexity int) int
@@ -419,8 +420,11 @@ type ComplexityRoot struct {
 	}
 
 	PlaceholderDefinition struct {
-		Description func(childComplexity int) int
-		Name        func(childComplexity int) int
+		DefaultValue              func(childComplexity int) int
+		Description               func(childComplexity int) int
+		InputValueFromApplication func(childComplexity int) int
+		Name                      func(childComplexity int) int
+		Optional                  func(childComplexity int) int
 	}
 
 	Query struct {
@@ -853,6 +857,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Auths(childComplexity), true
+
+	case "Application.baseURL":
+		if e.complexity.Application.BaseURL == nil {
+			break
+		}
+
+		return e.complexity.Application.BaseURL(childComplexity), true
 
 	case "Application.bundle":
 		if e.complexity.Application.Bundle == nil {
@@ -2710,6 +2721,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
+	case "PlaceholderDefinition.defaultValue":
+		if e.complexity.PlaceholderDefinition.DefaultValue == nil {
+			break
+		}
+
+		return e.complexity.PlaceholderDefinition.DefaultValue(childComplexity), true
+
 	case "PlaceholderDefinition.description":
 		if e.complexity.PlaceholderDefinition.Description == nil {
 			break
@@ -2717,12 +2735,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PlaceholderDefinition.Description(childComplexity), true
 
+	case "PlaceholderDefinition.inputValueFromApplication":
+		if e.complexity.PlaceholderDefinition.InputValueFromApplication == nil {
+			break
+		}
+
+		return e.complexity.PlaceholderDefinition.InputValueFromApplication(childComplexity), true
+
 	case "PlaceholderDefinition.name":
 		if e.complexity.PlaceholderDefinition.Name == nil {
 			break
 		}
 
 		return e.complexity.PlaceholderDefinition.Name(childComplexity), true
+
+	case "PlaceholderDefinition.optional":
+		if e.complexity.PlaceholderDefinition.Optional == nil {
+			break
+		}
+
+		return e.complexity.PlaceholderDefinition.Optional(childComplexity), true
 
 	case "Query.application":
 		if e.complexity.Query.Application == nil {
@@ -3483,6 +3515,15 @@ enum APISpecType {
 	OPEN_API
 }
 
+enum ApplicationRegisterInputPlaceholderValue {
+	name
+	providerName
+	description
+	integrationSystemID
+	baseURL
+	systemNumber
+}
+
 enum ApplicationStatusCondition {
 	INITIAL
 	CONNECTED
@@ -3674,6 +3715,11 @@ input ApplicationRegisterInput {
 	**Validation:** max=2000
 	"""
 	description: String
+	"""
+	**Validation:** max=2000
+	"""
+	baseURL: String
+	systemNumber: String
 	"""
 	**Validation:** label key is alphanumeric with underscore
 	"""
@@ -4006,6 +4052,9 @@ input PlaceholderDefinitionInput {
 	**Validation:**  max=2000
 	"""
 	description: String
+	optional: Boolean
+	defaultValue: String
+	inputValueFromApplication: ApplicationRegisterInputPlaceholderValue
 }
 
 input RuntimeContextInput {
@@ -4120,6 +4169,7 @@ type Application {
 	systemNumber: String
 	providerName: String
 	description: String
+	baseURL: String
 	integrationSystemID: ID
 	applicationTemplateID: ID
 	labels(key: String): Labels
@@ -4416,6 +4466,9 @@ type PageInfo {
 type PlaceholderDefinition {
 	name: String!
 	description: String
+	optional: Boolean!
+	defaultValue: String
+	inputValueFromApplication: ApplicationRegisterInputPlaceholderValue
 }
 
 type Runtime {
@@ -7837,6 +7890,37 @@ func (ec *executionContext) _Application_description(ctx context.Context, field 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_baseURL(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BaseURL, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17081,6 +17165,102 @@ func (ec *executionContext) _PlaceholderDefinition_description(ctx context.Conte
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PlaceholderDefinition_optional(ctx context.Context, field graphql.CollectedField, obj *PlaceholderDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PlaceholderDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Optional, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PlaceholderDefinition_defaultValue(ctx context.Context, field graphql.CollectedField, obj *PlaceholderDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PlaceholderDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefaultValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PlaceholderDefinition_inputValueFromApplication(ctx context.Context, field graphql.CollectedField, obj *PlaceholderDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PlaceholderDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InputValueFromApplication, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ApplicationRegisterInputPlaceholderValue)
+	fc.Result = res
+	return ec.marshalOApplicationRegisterInputPlaceholderValue2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInputPlaceholderValue(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_applications(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -21545,6 +21725,18 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "baseURL":
+			var err error
+			it.BaseURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "systemNumber":
+			var err error
+			it.SystemNumber, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "labels":
 			var err error
 			it.Labels, err = ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
@@ -22423,6 +22615,24 @@ func (ec *executionContext) unmarshalInputPlaceholderDefinitionInput(ctx context
 			if err != nil {
 				return it, err
 			}
+		case "optional":
+			var err error
+			it.Optional, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "defaultValue":
+			var err error
+			it.DefaultValue, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "inputValueFromApplication":
+			var err error
+			it.InputValueFromApplication, err = ec.unmarshalOApplicationRegisterInputPlaceholderValue2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInputPlaceholderValue(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -23001,6 +23211,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_providerName(ctx, field, obj)
 		case "description":
 			out.Values[i] = ec._Application_description(ctx, field, obj)
+		case "baseURL":
+			out.Values[i] = ec._Application_baseURL(ctx, field, obj)
 		case "integrationSystemID":
 			out.Values[i] = ec._Application_integrationSystemID(ctx, field, obj)
 		case "applicationTemplateID":
@@ -24815,6 +25027,15 @@ func (ec *executionContext) _PlaceholderDefinition(ctx context.Context, sel ast.
 			}
 		case "description":
 			out.Values[i] = ec._PlaceholderDefinition_description(ctx, field, obj)
+		case "optional":
+			out.Values[i] = ec._PlaceholderDefinition_optional(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "defaultValue":
+			out.Values[i] = ec._PlaceholderDefinition_defaultValue(ctx, field, obj)
+		case "inputValueFromApplication":
+			out.Values[i] = ec._PlaceholderDefinition_inputValueFromApplication(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -27688,6 +27909,30 @@ func (ec *executionContext) marshalOApplicationEventingConfiguration2ᚖgithub�
 		return graphql.Null
 	}
 	return ec._ApplicationEventingConfiguration(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOApplicationRegisterInputPlaceholderValue2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInputPlaceholderValue(ctx context.Context, v interface{}) (ApplicationRegisterInputPlaceholderValue, error) {
+	var res ApplicationRegisterInputPlaceholderValue
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOApplicationRegisterInputPlaceholderValue2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInputPlaceholderValue(ctx context.Context, sel ast.SelectionSet, v ApplicationRegisterInputPlaceholderValue) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOApplicationRegisterInputPlaceholderValue2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInputPlaceholderValue(ctx context.Context, v interface{}) (*ApplicationRegisterInputPlaceholderValue, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOApplicationRegisterInputPlaceholderValue2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInputPlaceholderValue(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOApplicationRegisterInputPlaceholderValue2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInputPlaceholderValue(ctx context.Context, sel ast.SelectionSet, v *ApplicationRegisterInputPlaceholderValue) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, v interface{}) (ApplicationStatusCondition, error) {

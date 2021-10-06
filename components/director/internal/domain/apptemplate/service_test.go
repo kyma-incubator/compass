@@ -570,6 +570,35 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
+			Name: "Success when placeholder is optional and not provided",
+			InputAppTemplate: &model.ApplicationTemplate{
+				ApplicationInputJSON: `{"Name": "my-application", "Description": "{{description}}"}`,
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{Name: "description", Description: str.Ptr("Application description"), Optional: true},
+				},
+			},
+			InputValues:    []*model.ApplicationTemplateValueInput{},
+			ExpectedOutput: `{"Name": "my-application", "Description": ""}`,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Success when placeholder is optional and default value provided",
+			InputAppTemplate: &model.ApplicationTemplate{
+				ApplicationInputJSON: `{"Name": "my-application", "Description": "{{description}}"}`,
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{
+						Name:         "description",
+						Description:  str.Ptr("Application description"),
+						Optional:     true,
+						DefaultValue: str.Ptr("description"),
+					},
+				},
+			},
+			InputValues:    []*model.ApplicationTemplateValueInput{},
+			ExpectedOutput: `{"Name": "my-application", "Description": "description"}`,
+			ExpectedError:  nil,
+		},
+		{
 			Name: "Returns error when required placeholder value not provided",
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"Name": "{{name}}", "Description": "Lorem ipsum"}`,

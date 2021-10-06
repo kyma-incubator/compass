@@ -139,6 +139,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		},
 		Name:                name,
 		Description:         &description,
+		BaseURL:             str.Ptr("base_url"),
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        str.Ptr("provider name"),
