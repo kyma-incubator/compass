@@ -441,7 +441,7 @@ func (g *Graphqlizer) PlaceholderDefinitionInputToGQL(in graphql.PlaceholderDefi
 		description: "{{.Description}}",
 		{{- end }}
 		{{- if .Optional }}
-		optional: "{{.Optional}}",
+		optional: {{.Optional}},
 		{{- end }}
 		{{- if .DefaultValue }}
 		defaultValue: "{{.DefaultValue}}",
