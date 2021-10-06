@@ -170,7 +170,7 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 	for name, provider := range h.objectContextProviders {
 		match, details, err := provider.Match(ctx, reqData)
 		if err != nil {
-			log.C(ctx).Infof("Provider %s failed to match: %s", name, err.Error())
+			log.C(ctx).Warningf("Provider %s failed to match: %s", name, err.Error())
 		}
 		if match && err == nil {
 			log.C(ctx).Infof("Provider %s attempting to get object context", name)
