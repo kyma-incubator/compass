@@ -91,43 +91,58 @@ func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, ap
 }
 
 // GenerateOneTimeToken missing godoc
-func (s service) GenerateOneTimeToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
-	if tokenType == model.ApplicationReference {
-		return s.getAppToken(ctx, id)
+func (s *service) GenerateOneTimeToken(ctx context.Context, objectID string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
+	token, suggestedToken, err := s.getToken(ctx, objectID, tokenType)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.saveToken(ctx, objectID, tokenType, token); err != nil {
+		return nil, err
+	}
+	if suggestedToken != "" {
+		token.Token = suggestedToken
 	}
 
-	return s.createToken(ctx, id, tokenType, nil)
+	return token, nil
 }
 
 // RegenerateOneTimeToken missing godoc
-func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string, tokenType tokens.TokenType) (model.OneTimeToken, error) {
+func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string) (*model.OneTimeToken, error) {
 	sysAuth, err := s.sysAuthSvc.GetGlobal(ctx, sysAuthID)
 	if err != nil {
-		return model.OneTimeToken{}, err
+		return nil, err
+	}
+	objectID, err := sysAuth.GetReferenceObjectID()
+	if err != nil {
+		return nil, err
 	}
 	if sysAuth.Value == nil {
 		sysAuth.Value = &model.Auth{}
 	}
-
-	tokenString, err := s.tokenGenerator.NewToken()
+	tokenType, err := sysAuth.GetReferenceObjectType()
 	if err != nil {
-		return model.OneTimeToken{}, errors.Wrapf(err, "while generating onetime token")
+		return nil, err
 	}
-	oneTimeToken := &model.OneTimeToken{
-		Token:        tokenString,
-		ConnectorURL: s.connectorURL,
-		Type:         tokenType,
-		CreatedAt:    s.timeService.Now(),
-		Used:         false,
-		UsedAt:       time.Time{},
+	oneTimeToken, _, err := s.getToken(ctx, objectID, tokenType)
+	if err != nil {
+		return nil, err
 	}
 
 	sysAuth.Value.OneTimeToken = oneTimeToken
 	if err := s.sysAuthSvc.Update(ctx, sysAuth); err != nil {
-		return model.OneTimeToken{}, err
+		return nil, err
 	}
 
-	return *oneTimeToken, nil
+	return oneTimeToken, nil
+}
+
+func (s *service) getToken(ctx context.Context, objectID string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, string, error) {
+	if tokenType == model.ApplicationReference {
+		return s.getAppToken(ctx, objectID)
+	} else {
+		token, err := s.createToken(ctx, objectID, tokenType, nil)
+		return token, "", err
+	}
 }
 
 func (s *service) createToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) (*model.OneTimeToken, error) {
@@ -149,25 +164,17 @@ func (s *service) createToken(ctx context.Context, id string, tokenType model.Sy
 	oneTimeToken.Used = false
 	oneTimeToken.UsedAt = time.Time{}
 
-	if _, err := s.sysAuthSvc.Create(ctx, tokenType, id, &model.AuthInput{OneTimeToken: oneTimeToken}); err != nil {
-		return nil, errors.Wrap(err, "while creating System Auth")
-	}
-
 	return oneTimeToken, nil
 }
 
-func (s *service) getNewToken() (*model.OneTimeToken, error) {
-	tokenString, err := s.tokenGenerator.NewToken()
-	if err != nil {
-		return nil, err
+func (s *service) saveToken(ctx context.Context, objectID string, tokenType model.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) error {
+	if _, err := s.sysAuthSvc.Create(ctx, tokenType, objectID, &model.AuthInput{OneTimeToken: oneTimeToken}); err != nil {
+		return errors.Wrap(err, "while creating System Auth")
 	}
-	return &model.OneTimeToken{
-		Token:        tokenString,
-		ConnectorURL: s.connectorURL,
-	}, nil
+	return nil
 }
 
-func (s *service) getAppToken(ctx context.Context, id string) (*model.OneTimeToken, error) {
+func (s *service) getAppToken(ctx context.Context, id string) (*model.OneTimeToken, string, error) {
 	var (
 		oneTimeToken *model.OneTimeToken
 		err          error
@@ -175,25 +182,25 @@ func (s *service) getAppToken(ctx context.Context, id string) (*model.OneTimeTok
 
 	app, err := s.appSvc.Get(ctx, id)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting application [id: %s]", id)
+		return nil, "", errors.Wrapf(err, "while getting application [id: %s]", id)
 	}
 
 	if app.IntegrationSystemID != nil {
 		if adapterURL, ok := s.intSystemToAdapterMapping[*app.IntegrationSystemID]; ok {
 			oneTimeToken, err = s.getTokenFromAdapter(ctx, adapterURL, *app)
 			if err != nil {
-				return nil, errors.Wrapf(err, "while getting one time token for application from adapter with URL %s", adapterURL)
+				return nil, "", errors.Wrapf(err, "while getting one time token for application from adapter with URL %s", adapterURL)
 			}
 		}
 	}
 
 	oneTimeToken, err = s.createToken(ctx, id, model.ApplicationReference, oneTimeToken)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	oneTimeToken.Token = s.getSuggestedTokenForApp(ctx, app, oneTimeToken)
-	return oneTimeToken, nil
+	suggestedAppTokenString := s.getSuggestedTokenForApp(ctx, app, oneTimeToken)
+	return oneTimeToken, suggestedAppTokenString, nil
 }
 
 func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, app model.Application) (*model.OneTimeToken, error) {
@@ -259,6 +266,17 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	}, nil
 }
 
+func (s *service) getNewToken() (*model.OneTimeToken, error) {
+	tokenString, err := s.tokenGenerator.NewToken()
+	if err != nil {
+		return nil, err
+	}
+	return &model.OneTimeToken{
+		Token:        tokenString,
+		ConnectorURL: s.connectorURL,
+	}, nil
+}
+
 // getSuggestedTokenForApp returns the token that an application would use, depending on its type - if the application belongs to an integration
 // system, then it would use the token as is, if the application is considered "legacy" - an application which still uses the "connectivity-adapter" -
 // then it would use the legacy connector URL, then any new applications which are not managed by an integration system, would use the base64 encoded JSON
@@ -310,8 +328,6 @@ func (s *service) getExpirationTimeForToken(systemAuth *model.SystemAuth) (time.
 		return s.appTokenExpiration, nil
 	case tokens.RuntimeToken:
 		return s.runtimeTokenExpiration, nil
-	case tokens.CSRToken:
-		return s.csrTokenExpiration, nil
 	default:
 		return time.Duration(0), errors.Errorf("One Time Token for system auth id %s has no valid type", systemAuth.ID)
 	}

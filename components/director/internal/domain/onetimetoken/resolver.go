@@ -14,6 +14,7 @@ import (
 //go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore
 type TokenService interface {
 	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error)
+	RegenerateOneTimeToken(ctx context.Context, sysAuthID string) (*model.OneTimeToken, error)
 }
 
 // TokenConverter missing godoc
@@ -37,7 +38,7 @@ func NewTokenResolver(transact persistence.Transactioner, svc TokenService, conv
 }
 
 // RequestOneTimeTokenForRuntime missing godoc
-func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeTokenForRuntime, error) {
+func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string, systemAuthID *string) (*graphql.OneTimeTokenForRuntime, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -45,7 +46,12 @@ func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string)
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	token, err := r.svc.GenerateOneTimeToken(ctx, id, model.RuntimeReference)
+	var token *model.OneTimeToken
+	if systemAuthID != nil {
+		token, err = r.svc.RegenerateOneTimeToken(ctx, *systemAuthID)
+	} else {
+		token, err = r.svc.GenerateOneTimeToken(ctx, id, model.RuntimeReference)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +64,7 @@ func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string)
 }
 
 // RequestOneTimeTokenForApplication missing godoc
-func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeTokenForApplication, error) {
+func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id string, systemAuthID *string) (*graphql.OneTimeTokenForApplication, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -66,7 +72,12 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	token, err := r.svc.GenerateOneTimeToken(ctx, id, model.ApplicationReference)
+	var token *model.OneTimeToken
+	if systemAuthID != nil {
+		token, err = r.svc.RegenerateOneTimeToken(ctx, *systemAuthID)
+	} else {
+		token, err = r.svc.GenerateOneTimeToken(ctx, id, model.ApplicationReference)
+	}
 	if err != nil {
 		return nil, err
 	}

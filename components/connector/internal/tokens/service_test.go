@@ -22,7 +22,7 @@ func TestTokenService(t *testing.T) {
 		// GIVEN
 		gcliMock := &gcliMocks.GraphQLClient{}
 		defer gcliMock.AssertExpectations(t)
-		expected := NewCSRTokenResponse(token)
+		expected := NewTokenResponse(token)
 		gcliMock.On("Run", context.Background(), mock.Anything, mock.Anything).Run(GenerateTestToken(t, expected)).Return(nil).Once()
 		tokenService := NewTokenService(gcliMock)
 		// WHEN
@@ -47,9 +47,9 @@ func TestTokenService(t *testing.T) {
 	})
 }
 
-func GenerateTestToken(t *testing.T, generated CSRTokenResponse) func(args mock.Arguments) {
+func GenerateTestToken(t *testing.T, generated TokenResponse) func(args mock.Arguments) {
 	return func(args mock.Arguments) {
-		arg, ok := args.Get(2).(*CSRTokenResponse)
+		arg, ok := args.Get(2).(*TokenResponse)
 		require.True(t, ok)
 		*arg = generated
 	}

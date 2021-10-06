@@ -38,6 +38,14 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
 	}
+	if authDetails.AuthFlow == oathkeeper.CertificateFlow && sysAuth.Value.CertCommonName != authDetails.AuthID {
+		sysAuth.Value.OneTimeToken = nil
+		sysAuth.Value.CertCommonName = authDetails.AuthID
+
+		if err := m.systemAuthSvc.Update(ctx, sysAuth); err != nil {
+			return ObjectContext{}, errors.Wrap(err, "while updating system auth")
+		}
+	}
 
 	refObjType, err := sysAuth.GetReferenceObjectType()
 	if err != nil {

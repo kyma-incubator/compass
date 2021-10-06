@@ -163,6 +163,7 @@ enum WebhookType {
 interface OneTimeToken {
 	token: String!
 	connectorURL: String!
+	used: Boolean!
 	raw: String
 	rawEncoded: String
 }
@@ -743,6 +744,7 @@ type Auth {
 	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuth
 	oneTimeToken: OneTimeToken
+	certCommonName: String
 }
 
 type AutomaticScenarioAssignment {
@@ -964,6 +966,7 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	token: String!
 	connectorURL: String!
 	legacyConnectorURL: String!
+	used: Boolean!
 	raw: String
 	rawEncoded: String
 }
@@ -971,6 +974,7 @@ type OneTimeTokenForApplication implements OneTimeToken {
 type OneTimeTokenForRuntime implements OneTimeToken {
 	token: String!
 	connectorURL: String!
+	used: Boolean!
 	raw: String
 	rawEncoded: String
 }
@@ -1289,8 +1293,8 @@ type Mutation {
 	- [refetch api spec](examples/refetch-api-spec/refetch-api-spec.graphql)
 	"""
 	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
-	requestOneTimeTokenForRuntime(id: ID!): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
-	requestOneTimeTokenForApplication(id: ID!): OneTimeTokenForApplication! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
+	requestOneTimeTokenForRuntime(id: ID!, systemAuthID: ID): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
+	requestOneTimeTokenForApplication(id: ID!, systemAuthID: ID): OneTimeTokenForApplication! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
 	requestClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForRuntime")
 	requestClientCredentialsForApplication(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForApplication")
 	requestClientCredentialsForIntegrationSystem(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForIntegrationSystem")

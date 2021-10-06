@@ -76,7 +76,7 @@ func TestMain(m *testing.M) {
 
 	directorGCLI := &gcliMocks.GraphQLClient{}
 	directorGCLI.On("Run", mock.Anything, mock.Anything, mock.Anything).
-		Run(GenerateTestToken(tokens.NewCSRTokenResponse("abcd"))).Return(nil).Twice()
+		Run(GenerateTestToken(tokens.NewTokenResponse("abcd"))).Return(nil).Twice()
 	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet, directorGCLI)
 
 	go certsLoader.Run(context.TODO())
@@ -140,9 +140,9 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func GenerateTestToken(generated tokens.CSRTokenResponse) func(args mock.Arguments) {
+func GenerateTestToken(generated tokens.TokenResponse) func(args mock.Arguments) {
 	return func(args mock.Arguments) {
-		arg, ok := args.Get(2).(*tokens.CSRTokenResponse)
+		arg, ok := args.Get(2).(*tokens.TokenResponse)
 		if !ok {
 			log.Fatal("could not cast CSRTokenResponse")
 		}

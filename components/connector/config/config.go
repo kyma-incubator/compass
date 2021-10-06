@@ -52,8 +52,9 @@ type Config struct {
 		Timeout     time.Duration `envconfig:"default=95s"`
 	}
 
-	OneTimeTokenURL   string
-	HTTPClientTimeout time.Duration `envconfig:"default=30s"`
+	OneTimeTokenURL             string
+	HttpClientSkipSslValidation bool
+	HTTPClientTimeout           time.Duration `envconfig:"default=30s"`
 }
 
 func (c *Config) String() string {

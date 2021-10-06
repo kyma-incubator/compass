@@ -10,6 +10,8 @@ type ContextKey string
 
 const (
 	ConnectorTokenKey          ContextKey = "ConnectorToken"
+	TenantFromJWTKey           ContextKey = "TenantFromJWT"
+	ConsumerType               ContextKey = "ConsumerType"
 	ClientIdFromTokenKey       ContextKey = "ClientIdFromToken"
 	ClientIdFromCertificateKey ContextKey = "ClientIdFromCertificate"
 	ClientCertificateHashKey   ContextKey = "ClientCertificateHash"

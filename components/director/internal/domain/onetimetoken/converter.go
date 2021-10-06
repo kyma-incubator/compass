@@ -20,6 +20,7 @@ func (c converter) ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTime
 		TokenWithURL: graphql.TokenWithURL{
 			Token:        model.Token,
 			ConnectorURL: model.ConnectorURL,
+			Used:         model.Used,
 		},
 	}
 }
@@ -35,6 +36,7 @@ func (c converter) ToGraphQLForApplication(model model.OneTimeToken) (graphql.On
 		TokenWithURL: graphql.TokenWithURL{
 			Token:        model.Token,
 			ConnectorURL: model.ConnectorURL,
+			Used:         model.Used,
 		},
 		LegacyConnectorURL: urlWithToken,
 	}, nil
