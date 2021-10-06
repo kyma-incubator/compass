@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 )
 
@@ -245,7 +246,11 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc 
 	}
 
 	appRegisterInput := model.ApplicationRegisterInput{
-		Name: sc.DisplayName,
+		Name:         sc.DisplayName,
+		Description:  str.Ptr(sc.ProductDescription),
+		SystemNumber: str.Ptr(sc.SystemNumber),
+		BaseURL:      str.Ptr(sc.BaseURL),
+		ProviderName: str.Ptr(sc.InfrastructureProvider),
 	}
 
 	return enrichAppRegisterInput(appRegisterInput, sc), nil

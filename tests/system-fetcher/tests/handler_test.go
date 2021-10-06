@@ -58,11 +58,26 @@ const (
 		"additionalAttributes": {}
 	}`
 	labelKey = "displayName"
+
+	namePlaceholder         = "name"
+	providerNamePlaceholder = "provider-name"
+	baseURLPlaceholder      = "base-url"
+	descriptionPlaceholder  = "description"
+	systemNumberPlaceholder = "system-number"
 )
 
-var additionalSystemLabels = directorSchema.Labels{
-	labelKey: "{{name}}",
-}
+var (
+	trueVal           = true
+	nameValue         = directorSchema.ApplicationRegisterInputPlaceholderValueName
+	descriptionValue  = directorSchema.ApplicationRegisterInputPlaceholderValueDescription
+	systemNumberValue = directorSchema.ApplicationRegisterInputPlaceholderValueSystemNumber
+	baseURLValue      = directorSchema.ApplicationRegisterInputPlaceholderValueBaseURL
+	providerValue     = directorSchema.ApplicationRegisterInputPlaceholderValueProviderName
+
+	additionalSystemLabels = directorSchema.Labels{
+		labelKey: "{{name}}",
+	}
+)
 
 func TestSystemFetcherSuccess(t *testing.T) {
 	ctx := context.TODO()
@@ -125,13 +140,15 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				Name:                  "name1",
 				Description:           &description,
 				ApplicationTemplateID: &template.ID,
+				SystemNumber:          str.Ptr("1"),
 			},
 			Labels: applicationLabels("name1", true),
 		},
 		{
 			Application: directorSchema.Application{
-				Name:        "name2",
-				Description: &description,
+				Name:         "name2",
+				Description:  &description,
+				SystemNumber: str.Ptr("2"),
 			},
 			Labels: applicationLabels("name2", false),
 		},
@@ -144,6 +161,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				Name:                  app.Application.Name,
 				Description:           app.Application.Description,
 				ApplicationTemplateID: app.ApplicationTemplateID,
+				SystemNumber:          app.SystemNumber,
 			},
 			Labels: app.Labels,
 		})
@@ -211,6 +229,7 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 				Name:                  app.Application.Name,
 				Description:           app.Application.Description,
 				ApplicationTemplateID: app.ApplicationTemplateID,
+				SystemNumber:          app.SystemNumber,
 			},
 			Labels: app.Labels,
 		})
@@ -290,20 +309,23 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Name:                  "name1",
 				Description:           &description,
 				ApplicationTemplateID: &template.ID,
+				SystemNumber:          str.Ptr("1"),
 			},
 			Labels: applicationLabels("name1", true),
 		},
 		{
 			Application: directorSchema.Application{
-				Name:        "name2",
-				Description: &description,
+				Name:         "name2",
+				Description:  &description,
+				SystemNumber: str.Ptr("2"),
 			},
 			Labels: applicationLabels("name2", false),
 		},
 		{
 			Application: directorSchema.Application{
-				Name:        "name1",
-				Description: &description,
+				Name:         "name1",
+				Description:  &description,
+				SystemNumber: str.Ptr("3"),
 			},
 			Labels: applicationLabels("name1", false),
 		},
@@ -321,6 +343,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Name:                  app.Application.Name,
 				Description:           app.Application.Description,
 				ApplicationTemplateID: app.ApplicationTemplateID,
+				SystemNumber:          app.SystemNumber,
 			},
 			Labels: app.Labels,
 		})
@@ -671,8 +694,9 @@ func getFixExpectedMockSystems(count int, description string) []directorSchema.A
 		systemName := fmt.Sprintf("name%d", i)
 		result[i] = directorSchema.ApplicationExt{
 			Application: directorSchema.Application{
-				Name:        systemName,
-				Description: &description,
+				Name:         systemName,
+				Description:  &description,
+				SystemNumber: str.Ptr(fmt.Sprintf("%d", i)),
 			},
 			Labels: applicationLabels(systemName, false),
 		}
@@ -717,14 +741,6 @@ func applicationLabels(name string, fromTemplate bool) directorSchema.Labels {
 }
 
 func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput {
-	namePlaceholder := "name"
-	providerNamePlaceholder := "provider-name"
-	baseURLPlaceholder := "base-url"
-	descriptionPlaceholder := "description"
-	systemNumberPlaceholder := "system-number"
-
-	trueVal := true
-
 	appTemplateInput := directorSchema.ApplicationTemplateInput{
 		Name:        name,
 		Description: str.Ptr("template description"),
@@ -743,21 +759,26 @@ func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput
 		},
 		Placeholders: []*directorSchema.PlaceholderDefinitionInput{
 			{
-				Name: namePlaceholder,
+				Name:                      namePlaceholder,
+				InputValueFromApplication: &nameValue,
 			},
 			{
-				Name:     providerNamePlaceholder,
-				Optional: &trueVal,
+				Name:                      providerNamePlaceholder,
+				InputValueFromApplication: &providerValue,
+				Optional:                  &trueVal,
 			},
 			{
-				Name: descriptionPlaceholder,
+				Name:                      descriptionPlaceholder,
+				InputValueFromApplication: &descriptionValue,
 			},
 			{
-				Name:     baseURLPlaceholder,
-				Optional: &trueVal,
+				Name:                      baseURLPlaceholder,
+				InputValueFromApplication: &baseURLValue,
+				Optional:                  &trueVal,
 			},
 			{
-				Name: systemNumberPlaceholder,
+				Name:                      systemNumberPlaceholder,
+				InputValueFromApplication: &systemNumberValue,
 			},
 		},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
