@@ -77,6 +77,8 @@ func (fp *GqlFieldsProvider) OmitForApplication(omittedProperties []string) stri
 		"name":                  "name",
 		"providerName":          "providerName",
 		"description":           "description",
+		"baseURL":               "baseURL",
+		"systemNumber":          "systemNumber",
 		"integrationSystemID":   "integrationSystemID",
 		"applicationTemplateID": "applicationTemplateID",
 		"labels":                "labels",
