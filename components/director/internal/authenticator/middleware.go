@@ -150,7 +150,7 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 
 func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*claims.Claims, error) {
 	parsed := claims.Claims{}
-	err := parsed.UnmarshalJSON(bearerToken, a.getKeyFunc(ctx))
+	err := parsed.UnmarshalJSON(ctx, bearerToken, a.getKeyFunc(ctx))
 
 	return &parsed, err
 }
