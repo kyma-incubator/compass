@@ -18,6 +18,8 @@ spec:
     - match:
         - uri:
             exact: /healthz
+        - uri:
+            exact: {{ .Values.global.director.info.path }}
       route:
         - destination:
             port:

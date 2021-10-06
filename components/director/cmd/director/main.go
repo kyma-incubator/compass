@@ -139,7 +139,7 @@ type config struct {
 
 	ReadyConfig healthz.ReadyConfig
 
-	CertInfoConfig info.Config
+	InfoConfig info.Config
 
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
@@ -331,7 +331,7 @@ func main() {
 	mainRouter.HandleFunc("/healthz", healthz.NewHealthHandler(health))
 
 	logger.Infof("Registering info endpoint...")
-	mainRouter.HandleFunc(cfg.CertInfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.CertInfoConfig))
+	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))

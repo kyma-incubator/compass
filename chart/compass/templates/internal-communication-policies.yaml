@@ -30,6 +30,11 @@ spec:
             methods:
               - GET
             paths:
+              - {{ .Values.global.director.info.path }}
+        - operation:
+            methods:
+              - GET
+            paths:
               - /readyz*
         - operation:
             methods:
