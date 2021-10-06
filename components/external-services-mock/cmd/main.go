@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/cert"
 	"log"
 	"net/http"
 	"strings"
@@ -34,6 +35,9 @@ type config struct {
 	OAuthConfig
 	BasicCredentialsConfig
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
+
+	CACert []byte `envconfig:"APP_CA_CERT"`
+	CAKey  []byte `envconfig:"APP_CA_KEY"`
 }
 
 type OAuthConfig struct {
@@ -80,6 +84,7 @@ func initHTTP(cfg config) (http.Handler, error) {
 
 	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, key)
 	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
+	router.HandleFunc("/secured/oauth/token", tokenHandler.Generate).Methods(http.MethodPost)
 
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(cfg.BaseURL, cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
@@ -88,6 +93,10 @@ func initHTTP(cfg config) (http.Handler, error) {
 	router.HandleFunc(cfg.JWKSPath, jwksHanlder.Handle)
 
 	configChangeHandler := configurationchange.NewConfigurationHandler(configChangeSvc, logger)
+
+	certHandler := cert.NewHandler(cfg.CACert, cfg.CAKey)
+	router.HandleFunc("/cert", certHandler.Generate).Methods(http.MethodPost)
+
 	unsignedTokenHandler := oauth.NewHandler(cfg.ClientSecret, cfg.ClientID)
 
 	router.HandleFunc("/v1/healtz", health.HandleFunc)

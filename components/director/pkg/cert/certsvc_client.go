@@ -31,6 +31,9 @@ type CertSvcConfig struct {
 	ClientID     string
 	ClientSecret string
 	OAuthURL     string
+
+	TokenPath      string `envconfig:"default=/oauth/token"`
+	CertSvcAPIPath string `envconfig:"default=/v3/synchronous/certificate"`
 }
 
 // Validate validates a cert service config
@@ -152,7 +155,7 @@ func (c *client) IssueClientCert(ctx context.Context) (*tls.Certificate, error) 
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, c.config.CSREndpoint, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, c.config.CSREndpoint+c.config.CertSvcAPIPath, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +167,7 @@ func (c *client) IssueClientCert(ctx context.Context) (*tls.Certificate, error) 
 	ccConf := clientcredentials.Config{
 		ClientID:     c.config.ClientID,
 		ClientSecret: c.config.ClientSecret,
-		TokenURL:     c.config.OAuthURL,
+		TokenURL:     c.config.OAuthURL + c.config.TokenPath,
 		AuthStyle:    oauth2.AuthStyleAutoDetect,
 	}
 

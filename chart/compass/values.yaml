@@ -380,6 +380,20 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
+    accessStrategies:
+      cmpMtls:
+        subectPattern: "C=DE, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=123e4567-e89b-12d3-a456-426614174001, L=%s, CN=%s"
+        commonName: "compass"
+        locality: "local"
+        policy: "compass-local-clients"
+        csrEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local"
+        certSvcApiPath: "/cert"
+        tokenPath: "/secured/oauth/token"
+        oauthSecret:
+          name: cert-svc-oauth-secret
+          urlKey: url
+          clientIdKey: client-id
+          clientSecretKey: client-secret
 
   systemFetcher:
     enabled: false

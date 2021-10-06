@@ -69,7 +69,11 @@ func (as *cmpMTLSAccessStrategyExecutor) initialize(ctx context.Context, baseCli
 			return err
 		}
 
-		tr := baseClient.Transport.(*http.Transport).Clone()
+		tr := &http.Transport{}
+		if baseClient.Transport != nil {
+			tr = baseClient.Transport.(*http.Transport).Clone()
+		}
+
 		tr.TLSClientConfig = &tls.Config{
 			Certificates: []tls.Certificate{*clientCert},
 			ClientAuth:   tls.RequireAndVerifyClientCert,

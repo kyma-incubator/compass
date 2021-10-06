@@ -48,6 +48,16 @@ spec:
                     key: password
               - name: APP_DEFAULT_TENANT
                 value: "{{ (index .Values.global.tenants 9).id }}"
+              - name: APP_CA_CERT
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.connector.secrets.ca.name }}
+                    key: {{ .Values.global.connector.secrets.ca.certificateKey }}
+              - name: APP_CA_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.connector.secrets.ca.name }}
+                    key: {{ .Values.global.connector.secrets.ca.keyKey }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}
