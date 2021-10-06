@@ -2,6 +2,8 @@ package oathkeeper
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/textproto"
 	"testing"
@@ -247,4 +249,65 @@ func TestReqData_GetUserGroups(t *testing.T) {
 
 		require.Equal(t, []string{}, groups)
 	})
+}
+
+func TestReqData_ExtractCoordinates(t *testing.T) {
+	coordinates := authenticator.Coordinates{
+		Name:  "test",
+		Index: 1,
+	}
+
+	tests := []struct {
+		name                 string
+		body                 ReqBody
+		expectedCoordinates  authenticator.Coordinates
+		expectedSuccess      bool
+		expectError          bool
+		expectedErrorMessage string
+	}{
+		{
+			name: "success",
+			body: ReqBody{
+				Extra: map[string]interface{}{
+					authenticator.CoordinatesKey: coordinates,
+				},
+			},
+			expectedCoordinates: coordinates,
+			expectedSuccess:     true,
+			expectError:         false,
+		},
+		{
+			name: "fail when key does not exist",
+			body: ReqBody{},
+			expectedCoordinates: authenticator.Coordinates{},
+			expectedSuccess:     false,
+			expectError:         false,
+		},
+		{
+			name: "fail when error occurs while marshaling",
+			body: ReqBody{
+				Extra: map[string]interface{}{
+					authenticator.CoordinatesKey: "fail",
+				},
+			},
+			expectedCoordinates: authenticator.Coordinates{},
+			expectedSuccess:     true,
+			expectError:         true,
+			expectedErrorMessage: "while unmarshaling authenticator coordinates",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := NewReqData(context.TODO(), tt.body, nil)
+			coords, success, err := d.ExtractCoordinates()
+
+			if tt.expectError {
+				assert.Contains(t, err.Error(), tt.expectedErrorMessage)
+			}
+
+			assert.Equal(t, tt.expectedCoordinates, coords)
+			assert.Equal(t, tt.expectedSuccess, success)
+
+		})
+	}
 }
