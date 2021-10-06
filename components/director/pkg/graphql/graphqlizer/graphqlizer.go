@@ -25,6 +25,9 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		{{- if .Description }}
 		description: "{{ .Description }}",
 		{{- end }}
+		{{- if .BaseURL }}
+		description: "{{ .BaseURL }}",
+		{{- end }}
         {{- if .Labels }}
 		labels: {{ LabelsToGQL .Labels}},
 		{{- end }}
@@ -436,6 +439,15 @@ func (g *Graphqlizer) PlaceholderDefinitionInputToGQL(in graphql.PlaceholderDefi
 		name: "{{.Name}}",
 		{{- if .Description }}
 		description: "{{.Description}}",
+		{{- end }}
+		{{- if .Optional }}
+		description: "{{.Optional}}",
+		{{- end }}
+		{{- if .DefaultValue }}
+		description: "{{.DefaultValue}}",
+		{{- end }}
+		{{- if .InputValueFromApplication }}
+		description: "{{.InputValueFromApplication}}",
 		{{- end }}
 	}`)
 }
