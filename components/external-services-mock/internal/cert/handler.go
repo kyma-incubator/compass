@@ -63,7 +63,12 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 			httphelpers.WriteError(writer, err, http.StatusInternalServerError)
 			return
 		}
-		caPrivateKey = caPrivateKeyPKCS8.(*rsa.PrivateKey)
+		var ok bool
+		caPrivateKey, ok = caPrivateKeyPKCS8.(*rsa.PrivateKey)
+		if !ok {
+			httphelpers.WriteError(writer, errors.New("unknown CA key type"), http.StatusBadRequest)
+			return
+		}
 	}
 
 	tenant := r.Header.Get("Tenant")
