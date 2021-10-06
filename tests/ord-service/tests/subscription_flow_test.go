@@ -122,7 +122,7 @@ func TestSubscriptionFlow(t *testing.T) {
 
 	// Create a token with the necessary consumer claims and add it in authorization header
 	claims := map[string]interface{}{
-		"test":     "bas-flow",
+		"test":     "subscription-flow",
 		"scope":    []string{},
 		"tenant":   subscriptionConsumerID,
 		"identity": "subscription-flow",
