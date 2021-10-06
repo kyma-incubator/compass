@@ -136,7 +136,6 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 					StatusCode: http.StatusUnauthorized,
 					Body:       ioutil.NopCloser(nil),
 				}
-
 			},
 			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration: status code 401"),
 		},

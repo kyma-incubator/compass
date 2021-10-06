@@ -11,6 +11,7 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+// GetRequestWithCredentials executes a GET http request to the given url with the provided auth credentials
 func GetRequestWithCredentials(ctx context.Context, client *http.Client, url string, auth *model.Auth) (*http.Response, error) {
 	if auth == nil || (auth.Credential.Basic == nil && auth.Credential.Oauth == nil) {
 		return nil, apperrors.NewInvalidDataError("Credentials not provided")
@@ -52,6 +53,7 @@ func secureClient(ctx context.Context, client *http.Client, auth *model.Auth) *h
 	return securedClient
 }
 
+// GetRequestWithoutCredentials executes a GET http request to the given url
 func GetRequestWithoutCredentials(client *http.Client, url string) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

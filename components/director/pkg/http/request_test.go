@@ -103,7 +103,7 @@ func TestRequestWithCredentials_FailedWithBasicAuth(t *testing.T) {
 func TestRequestWithCredentials_SuccessWithOAuth(t *testing.T) {
 	clientID := "client-id"
 	clientSecret := "client-secret"
-	tokenUrl := "http://oauth-server.com/token"
+	tokenURL := "http://oauth-server.com/token"
 	testTkn := "test-tkn"
 
 	client := newTestClient(func(req *http.Request) *http.Response {
@@ -120,7 +120,7 @@ func TestRequestWithCredentials_SuccessWithOAuth(t *testing.T) {
 		clientCreds := strings.Split(string(data), ":")
 		require.Equal(t, clientID, clientCreds[0])
 		require.Equal(t, clientSecret, clientCreds[1])
-		require.Equal(t, tokenUrl, req.URL.String())
+		require.Equal(t, tokenURL, req.URL.String())
 
 		data, err = json.Marshal(struct {
 			AccessToken string `json:"access_token"`
@@ -139,7 +139,7 @@ func TestRequestWithCredentials_SuccessWithOAuth(t *testing.T) {
 			Oauth: &model.OAuthCredentialData{
 				ClientID:     clientID,
 				ClientSecret: clientSecret,
-				URL:          tokenUrl,
+				URL:          tokenURL,
 			},
 		},
 	})

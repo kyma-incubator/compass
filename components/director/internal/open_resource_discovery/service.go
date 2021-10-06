@@ -109,9 +109,11 @@ func (s *Service) listAppPage(ctx context.Context, pageSize int, cursor string) 
 		appLabelsMap[labels[i].ObjectID] = labels[i].Value
 	}
 
-	for i, _ := range page.Data {
-		appType := appLabelsMap[page.Data[i].ID].(string)
-		page.Data[i].Type = &appType
+	for i := range page.Data {
+		appType, ok := appLabelsMap[page.Data[i].ID].(string)
+		if ok {
+			page.Data[i].Type = &appType
+		}
 	}
 
 	return page, tx.Commit()
