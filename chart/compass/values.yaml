@@ -66,7 +66,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2027"
+      version: "PR-2057"
     connectivity_adapter:
       dir:
       version: "PR-2027"
@@ -75,7 +75,7 @@ global:
       version: "PR-2027"
     director:
       dir:
-      version: "PR-2052"
+      version: "PR-2057"
     gateway:
       dir:
       version: "PR-2034"
@@ -98,7 +98,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2042"
+      version: "PR-2057"
     console:
       dir:
       version: "PR-45"
