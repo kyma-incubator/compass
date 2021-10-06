@@ -2,7 +2,6 @@ package ord
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -21,7 +20,7 @@ const applicationTypeLabel = "applicationType"
 type Service struct {
 	transact persistence.Transactioner
 
-	labelRepo LabelRepository
+	labelRepo labelRepository
 
 	appSvc             ApplicationService
 	webhookSvc         WebhookService
@@ -39,7 +38,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(transact persistence.Transactioner, labelRepo LabelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client Client) *Service {
+func NewAggregatorService(transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client Client) *Service {
 	return &Service{
 		transact:           transact,
 		appSvc:             appSvc,
@@ -111,7 +110,8 @@ func (s *Service) listAppPage(ctx context.Context, pageSize int, cursor string) 
 	}
 
 	for i, _ := range page.Data {
-		page.Data[i].Labels = []byte(fmt.Sprintf(`{"%s": "%s"}`, applicationTypeLabel, appLabelsMap[page.Data[i].ID]))
+		appType := appLabelsMap[page.Data[i].ID].(string)
+		page.Data[i].Type = &appType
 	}
 
 	return page, tx.Commit()

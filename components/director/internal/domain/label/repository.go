@@ -129,7 +129,7 @@ func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*mode
 	return labels, nil
 }
 
-// ListGlobalByKeyAndObjects missing godoc
+// ListGlobalByKeyAndObjects lists resources of objectType across tenants (global) which match the given objectIDs and labeled with the provided key
 func (r *repository) ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error) {
 	var entities Collection
 	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.NewEqualCondition("key", key), repo.NewInConditionForStringValues(labelableObjectField(objectType), objectIDs)); err != nil {

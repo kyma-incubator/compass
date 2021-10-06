@@ -6,9 +6,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-// LabelRepository missing godoc
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
-type LabelRepository interface {
+//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore
+type labelRepository interface {
 	ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error)
 }
 

@@ -108,13 +108,13 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 	var resp *http.Response
 	if _, secured := c.securedApplicationTypes[appType]; secured {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is secured and webhook credentials will be used", app.Name, app.ID, appType)
-		resp, err = httputil.RequestWithCredentials(ctx, c.Client, configURL, webhook.Auth)
+		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, configURL, webhook.Auth)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration with webhook credentials")
 		}
 	} else {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is not secured", app.Name, app.ID, appType)
-		resp, err = httputil.RequestWithoutCredentials(c.Client, configURL)
+		resp, err = httputil.GetRequestWithoutCredentials(c.Client, configURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
 		}

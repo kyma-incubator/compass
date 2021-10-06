@@ -63,9 +63,9 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 
 	var resp *http.Response
 	if fr.Auth != nil {
-		resp, err = httputil.RequestWithCredentials(ctx, s.client, fr.URL, fr.Auth)
+		resp, err = httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, fr.Auth)
 	} else {
-		resp, err = httputil.RequestWithoutCredentials(s.client, fr.URL)
+		resp, err = httputil.GetRequestWithoutCredentials(s.client, fr.URL)
 	}
 
 	if err != nil {

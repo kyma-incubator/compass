@@ -58,7 +58,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulLabelRepo := func() *automock.LabelRepository {
 		labelRepo := &automock.LabelRepository{}
-		labelRepo.On("ListGlobalByKeyAndObjects", txtest.CtxWithDBMatcher(), model.ApplicationLabelableObject, mock.Anything, applicationTypeLabel).Return([]*model.Label{
+		labelRepo.On("ListGlobalByKeyAndObjects", txtest.CtxWithDBMatcher(), model.ApplicationLabelableObject, mock.MatchedBy(func(objectIDs []string) bool {
+			return len(objectIDs) == 1 && objectIDs[0] == testApplication.ID
+		}), applicationTypeLabel).Return([]*model.Label{
 			{
 				Value:    testApplicationType,
 				ObjectID: testApplication.ID,
@@ -1703,7 +1705,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, tx, appSvc, whSvc, bndlSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, client)
+			mock.AssertExpectationsForObjects(t, tx, labelRepo, appSvc, whSvc, bndlSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, client)
 		})
 	}
 }
