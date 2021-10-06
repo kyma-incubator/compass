@@ -98,6 +98,8 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		name
 		providerName
 		description
+		baseURL
+		systemNumber
 		integrationSystemID
 		applicationTemplateID
 		labels
