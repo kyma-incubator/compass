@@ -93,12 +93,8 @@ func getClaims(intTenantID, extTenantID, scopes string) claims.Claims {
 			"externalTenant": extTenantID,
 		},
 
-		Scopes: scopes,
-		Consumers: []consumer.Consumer{
-			{
-				ConsumerID:   consumerID,
-				ConsumerType: consumer.Runtime,
-			},
-		},
+		Scopes:       scopes,
+		ConsumerID:   consumerID,
+		ConsumerType: consumer.Runtime,
 	}
 }

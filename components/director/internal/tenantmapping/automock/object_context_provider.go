@@ -15,20 +15,20 @@ type ObjectContextProvider struct {
 	mock.Mock
 }
 
-// GetObjectContext provides a mock function with given fields: ctx, reqData, authDetails, extraTenantKeys
-func (_m *ObjectContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails, extraTenantKeys tenantmapping.KeysExtra) (tenantmapping.ObjectContext, error) {
-	ret := _m.Called(ctx, reqData, authDetails, extraTenantKeys)
+// GetObjectContext provides a mock function with given fields: ctx, reqData, authDetails
+func (_m *ObjectContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (tenantmapping.ObjectContext, error) {
+	ret := _m.Called(ctx, reqData, authDetails)
 
 	var r0 tenantmapping.ObjectContext
-	if rf, ok := ret.Get(0).(func(context.Context, oathkeeper.ReqData, oathkeeper.AuthDetails, tenantmapping.KeysExtra) tenantmapping.ObjectContext); ok {
-		r0 = rf(ctx, reqData, authDetails, extraTenantKeys)
+	if rf, ok := ret.Get(0).(func(context.Context, oathkeeper.ReqData, oathkeeper.AuthDetails) tenantmapping.ObjectContext); ok {
+		r0 = rf(ctx, reqData, authDetails)
 	} else {
 		r0 = ret.Get(0).(tenantmapping.ObjectContext)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, oathkeeper.ReqData, oathkeeper.AuthDetails, tenantmapping.KeysExtra) error); ok {
-		r1 = rf(ctx, reqData, authDetails, extraTenantKeys)
+	if rf, ok := ret.Get(1).(func(context.Context, oathkeeper.ReqData, oathkeeper.AuthDetails) error); ok {
+		r1 = rf(ctx, reqData, authDetails)
 	} else {
 		r1 = ret.Error(1)
 	}

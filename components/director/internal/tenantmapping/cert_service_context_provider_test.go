@@ -21,7 +21,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 	tenantRepo := &tenantmappingmock.TenantRepository{}
 	provider := tenantmapping.NewCertServiceContextProvider(tenantRepo)
 
-	objectCtx, err := provider.GetObjectContext(context.TODO(), oathkeeper.ReqData{}, authDetails, tenantmapping.KeysExtra{TenantKey: "tenant", ExternalTenantKey: "externalTenant"})
+	objectCtx, err := provider.GetObjectContext(context.TODO(), oathkeeper.ReqData{}, authDetails)
 	require.NoError(t, err)
 
 	require.Equal(t, consumer.Runtime, objectCtx.ConsumerType)

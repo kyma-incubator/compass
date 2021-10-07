@@ -1,6 +1,7 @@
 package claims
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 )
@@ -18,12 +19,12 @@ func (*validator) Validate(claims Claims) error {
 		return errors.Wrapf(err, "while validating claims")
 	}
 
-	if claims.Tenant["consumerTenant"] == "" && claims.Tenant["externalTenant"] != "" {
-		return apperrors.NewTenantNotFoundError(claims.Tenant["externalTenant"])
+	if claims.Tenant[tenantmapping.ConsumerTenantKey] == "" && claims.Tenant[tenantmapping.ExternalTenantKey] != "" {
+		return apperrors.NewTenantNotFoundError(claims.Tenant[tenantmapping.ExternalTenantKey])
 	}
 
-	if len(claims.Consumers) > 1 {
-		return apperrors.NewMultipleConsumersNotSupportedError()
+	if claims.OnBehalfOf != "" {
+		return apperrors.NewConsumerProviderFlowNotSupportedError()
 	}
 
 	return nil

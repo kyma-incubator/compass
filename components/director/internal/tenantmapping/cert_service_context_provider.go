@@ -13,17 +13,22 @@ import (
 func NewCertServiceContextProvider(tenantRepo TenantRepository) *certServiceContextProvider {
 	return &certServiceContextProvider{
 		tenantRepo: tenantRepo,
+		tenantKeys: KeysExtra{
+			TenantKey:         ProviderTenantKey,
+			ExternalTenantKey: ProviderExternalTenantKey,
+		},
 	}
 }
 
 type certServiceContextProvider struct {
 	tenantRepo TenantRepository
+	tenantKeys KeysExtra
 }
 
 // GetObjectContext is the certServiceContextProvider implementation of the ObjectContextProvider interface
 // By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
 // There we should only convert the tenant identifier from external to internal. Additionally, we mark the consumer in this flow as Runtime.
-func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oathkeeper.ReqData, authDetails oathkeeper.AuthDetails, keys KeysExtra) (ObjectContext, error) {
+func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumer.Runtime,
 	})
@@ -49,7 +54,7 @@ func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oat
 
 	*/
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), keys, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
 
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 

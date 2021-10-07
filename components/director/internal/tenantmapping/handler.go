@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -29,10 +27,14 @@ const (
 	AuthenticatorObjectContextProvider = "AuthenticatorObjectContextProvider"
 	// CertServiceObjectContextProvider missing godoc
 	CertServiceObjectContextProvider = "CertServiceObjectContextProvider"
-	// KeysHeader key for the Header that contains tenant and internalTenant keys that should be used in the idToken
-	KeysHeader = "Extra-Keys"
-
-	consumerTenant = "consumerTenant"
+	// ConsumerTenantKey key for consumer tenant id in Claims.Tenant
+	ConsumerTenantKey = "consumerTenant"
+	// ExternalTenantKey key for external tenant id in Claims.Tenant
+	ExternalTenantKey = "externalTenant"
+	// ProviderTenantKey key for provider tenant id in Claims.Tenant
+	ProviderTenantKey = "providerTenant"
+	// ProviderExternalTenantKey key for external provider tenant id in Claims.Tenant
+	ProviderExternalTenantKey = "providerExternalTenant"
 )
 
 // ScopesGetter missing godoc
@@ -50,7 +52,7 @@ type ReqDataParser interface {
 // ObjectContextProvider missing godoc
 //go:generate mockery --name=ObjectContextProvider --output=automock --outpkg=automock --case=underscore
 type ObjectContextProvider interface {
-	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails, extraTenantKeys KeysExtra) (ObjectContext, error)
+	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error)
 	Match(ctx context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error)
 }
 
@@ -112,7 +114,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	body := h.processRequest(ctx, reqData)
 
 	logger := log.C(ctx).WithFields(logrus.Fields{
-		"consumers": body.Extra["consumers"],
+		"consumerId": body.Extra["consumers"],
 	})
 
 	newCtx := log.ContextWithLogger(ctx, logger)
@@ -154,10 +156,7 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 
 	addScopesToExtra(objCtxs, reqData)
 
-	if err := addConsumersToExtra(objCtxs, reqData); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while adding consumers to extra: %v", err)
-		return reqData.Body
-	}
+	addConsumersToExtra(objCtxs, reqData)
 
 	return reqData.Body
 }
@@ -176,12 +175,7 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 			log.C(ctx).Infof("Provider %s attempting to get object context", name)
 			authDetails = append(authDetails, details)
 
-			keys, err := extractKeys(reqData, name)
-			if err != nil {
-				return nil, errors.Wrap(err, "while extracting keys: ")
-			}
-
-			objectContext, err := provider.GetObjectContext(ctx, reqData, *details, keys)
+			objectContext, err := provider.GetObjectContext(ctx, reqData, *details)
 			if err != nil {
 				return nil, errors.Wrap(err, "while getting objectContexts: ")
 			}
@@ -219,27 +213,6 @@ func (h *Handler) instrumentClient(objectContexts []ObjectContext, authDetails [
 	h.clientInstrumenter.InstrumentClient(details.AuthID, string(details.AuthFlow), flowDetails)
 }
 
-func extractKeys(reqData oathkeeper.ReqData, objectContextProviderName string) (KeysExtra, error) {
-	keysString := reqData.Body.Header.Get(KeysHeader)
-	if keysString == "" {
-		return KeysExtra{}, errors.New(`missing "Extra-Keys" header`)
-	}
-
-	keysJSON, err := strconv.Unquote(keysString)
-	if err != nil {
-		return KeysExtra{}, err
-	}
-
-	var keys map[string]KeysExtra
-
-	err = json.Unmarshal([]byte(keysJSON), &keys)
-	if err != nil {
-		return KeysExtra{}, err
-	}
-
-	return keys[objectContextProviderName], nil
-}
-
 func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
@@ -255,8 +228,11 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 		tenants[objCtx.ExternalTenantKey] = objCtx.ExternalTenantID
 	}
 
-	if _, ok := tenants[consumerTenant]; !ok {
-		tenants[consumerTenant] = tenants["providerTenant"]
+	_, consumerExists := tenants[ConsumerTenantKey]
+	_, externalExists := tenants[ExternalTenantKey]
+	if !consumerExists && !externalExists {
+		tenants[ConsumerTenantKey] = tenants[ProviderTenantKey]
+		tenants[ExternalTenantKey] = tenants[ProviderExternalTenantKey]
 	}
 
 	tenantsJSON, err := json.Marshal(tenants)
@@ -286,32 +262,42 @@ func addScopesToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData
 	reqData.Body.Extra["scope"] = joined
 }
 
-func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
-	consumers := make([]consumer.Consumer, 0, len(objectContexts))
+func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {
+	consumer := consumer.Consumer{}
+	if len(objectContexts) == 1 {
+		consumer.ConsumerID = objectContexts[0].ConsumerID
+		consumer.ConsumerType = objectContexts[0].ConsumerType
+		consumer.Flow = objectContexts[0].AuthFlow
+	} else {
+		consumer = getCertServiceObjectContextProviderConsumer(objectContexts)
+		consumer.OnBehalfOf = getOnBehalfConsumer(objectContexts)
+	}
+
+	reqData.Body.Extra["consumerID"] = consumer.ConsumerID
+	reqData.Body.Extra["consumerType"] = consumer.ConsumerType
+	reqData.Body.Extra["flow"] = consumer.Flow
+	reqData.Body.Extra["onBehalfOf"] = consumer.OnBehalfOf
+}
+
+func getCertServiceObjectContextProviderConsumer(objectContexts []ObjectContext) consumer.Consumer {
+	consumer := consumer.Consumer{}
 	for _, objCtx := range objectContexts {
-		c := consumer.Consumer{
-			ConsumerID:   objCtx.ConsumerID,
-			ConsumerType: objCtx.ConsumerType,
-			Flow:         objCtx.AuthFlow,
+		if objCtx.ContextProvider == CertServiceObjectContextProvider {
+			consumer.ConsumerID = objCtx.ConsumerID
+			consumer.ConsumerType = objCtx.ConsumerType
+			consumer.Flow = objCtx.AuthFlow
 		}
-		consumers = append(consumers, c)
 	}
+	return consumer
+}
 
-	sort.Slice(consumers, func(i, j int) bool {
-		return consumers[i].ConsumerType < consumers[j].ConsumerType
-	})
-
-	consumersJSON, err := json.Marshal(consumers)
-	if err != nil {
-		return errors.Wrap(err, "While marshaling consumers")
+func getOnBehalfConsumer(objectContexts []ObjectContext) string {
+	for _, objCtx := range objectContexts {
+		if objCtx.ContextProvider != CertServiceObjectContextProvider {
+			return objCtx.ConsumerID
+		}
 	}
-
-	consumersStr := string(consumersJSON)
-	escaped := strings.ReplaceAll(consumersStr, `"`, `\"`)
-
-	reqData.Body.Extra["consumers"] = escaped
-
-	return nil
+	return ""
 }
 
 func intersect(s1 []string, s2 []string) []string {
@@ -327,14 +313,4 @@ func intersect(s1 []string, s2 []string) []string {
 		}
 	}
 	return intersection
-}
-
-func contains(slice []string, s string) bool {
-	for _, ss := range slice {
-		if s == ss {
-			return true
-		}
-	}
-
-	return false
 }

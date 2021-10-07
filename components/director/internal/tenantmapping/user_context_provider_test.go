@@ -24,10 +24,6 @@ import (
 )
 
 func TestUserContextProvider(t *testing.T) {
-	keys := tenantmapping.KeysExtra{
-		TenantKey:         "tenant",
-		ExternalTenantKey: "externalTenant",
-	}
 	username := "some-user"
 	expectedTenantID := uuid.New()
 	expectedExternalTenantID := uuid.New()
@@ -64,7 +60,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -102,7 +98,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -142,7 +138,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -182,7 +178,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -219,7 +215,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -271,7 +267,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -320,7 +316,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(nil, staticGroupRepoMock, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -365,7 +361,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -403,7 +399,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.EqualError(t, err, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: some-user missmatch external tenant: %s", nonExistingExternalTenantID)).Error())
 
@@ -429,7 +425,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, nil)
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.EqualError(t, err, "could not parse external ID for user: some-user: while parsing the value for key=tenant: Internal Server Error: unable to cast the value to a string type")
 
@@ -455,7 +451,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, nil)
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.EqualError(t, err, "while getting user data for user: some-user: while fetching scopes: while parsing the value for scope: Internal Server Error: unable to cast the value to a string type")
 
@@ -473,7 +469,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		jwtAuthDetailsWithMissingUser := jwtAuthDetails
 		jwtAuthDetailsWithMissingUser.AuthID = username
-		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetailsWithMissingUser, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetailsWithMissingUser)
 
 		require.EqualError(t, err, "while getting user data for user: non-existing: while searching for a static user with username non-existing: some-error")
 

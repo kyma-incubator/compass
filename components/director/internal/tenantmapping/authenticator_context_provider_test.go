@@ -39,10 +39,6 @@ import (
 
 func TestAuthenticatorContextProvider(t *testing.T) {
 	const scopePrefix = "test-compass@b12345."
-	keys := tenantmapping.KeysExtra{
-		TenantKey:         "tenant",
-		ExternalTenantKey: "externalTenant",
-	}
 
 	username := "some-user"
 	expectedTenantID := uuid.New()
@@ -97,7 +93,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -149,7 +145,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -202,7 +198,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -252,7 +248,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.NoError(t, err)
 		require.Empty(t, objCtx.TenantID)
@@ -305,7 +301,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.Error(t, err)
 	})
@@ -354,7 +350,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.EqualError(t, err, fmt.Sprintf("tenant attribute %q missing from %s authenticator token", tenantAttributeKey, authn.Name))
 	})
@@ -399,7 +395,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.EqualError(t, err, fmt.Sprintf("while getting external tenant mapping [ExternalTenantID=%s]: %s", expectedExternalTenantID, mockErr.Error()))
 	})

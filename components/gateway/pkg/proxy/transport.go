@@ -152,30 +152,23 @@ type Claims struct {
 	Scopes         string `json:"scopes"`
 	ConsumerID     string `json:"consumerID"`
 	ConsumerType   string `json:"consumerType"`
+	OnBehalfOf     string `json:"onBehalfOf"`
 }
 
 func (c Claims) Valid() error {
 	return nil
 }
 
-type Consumer struct {
-	ConsumerID   string `json:"ConsumerID"`
-	ConsumerType string `json:"ConsumerType"`
-}
-
-type TokenClaims struct {
-	TenantString    string            `json:"tenant"`
-	Tenant          map[string]string `json:"-"`
-	Scopes          string            `json:"scopes"`
-	ConsumersString string            `json:"consumers"`
-	Consumers       []Consumer        `json:"-"`
-}
-
-func (t TokenClaims) Valid() error {
-	return nil
-}
-
 func (t *Transport) getClaims(headers http.Header) (Claims, error) {
+	tokenClaims := struct {
+		TenantString string `json:"tenant"`
+		Scopes       string `json:"scopes"`
+		ConsumerID   string `json:"consumerID"`
+		ConsumerType string `json:"consumerType"`
+		OnBehalfOf   string `json:"onBehalfOf"`
+		jwt.StandardClaims
+	}{}
+
 	token := headers.Get("Authorization")
 	if token == "" {
 		return Claims{}, errors.New("no bearer token")
@@ -183,38 +176,30 @@ func (t *Transport) getClaims(headers http.Header) (Claims, error) {
 	token = strings.TrimPrefix(token, "Bearer ")
 
 	parser := jwt.Parser{SkipClaimsValidation: true}
-	tokenClaims := TokenClaims{}
+
 	_, _, err := parser.ParseUnverified(token, &tokenClaims)
 
 	if err != nil {
 		return Claims{}, errors.Wrap(err, "while parsing bearer token")
 	}
 
-	err = json.Unmarshal([]byte(tokenClaims.ConsumersString), &tokenClaims.Consumers)
-	if err != nil {
-		return Claims{}, errors.Wrap(err, "while extracting consumers from token")
-	}
-
-	err = json.Unmarshal([]byte(tokenClaims.TenantString), &tokenClaims.Tenant)
+	tenants := make(map[string]string, 0)
+	err = json.Unmarshal([]byte(tokenClaims.TenantString), &tenants)
 	if err != nil {
 		return Claims{}, errors.Wrap(err, "while extracting tenants from token")
 	}
 
 	claims := Claims{
-		ConsumerTenant: tokenClaims.Tenant[consumerTenant],
+		Tenant:         tenants[consumerTenant],
+		ConsumerTenant: tenants[consumerTenant],
 		Scopes:         tokenClaims.Scopes,
+		ConsumerID:     tokenClaims.ConsumerID,
+		ConsumerType:   tokenClaims.ConsumerType,
+		OnBehalfOf:     tokenClaims.OnBehalfOf,
 	}
 
-	if len(tokenClaims.Consumers) > 0 {
-		claims.ConsumerID = tokenClaims.Consumers[0].ConsumerID
-		claims.ConsumerType = tokenClaims.Consumers[0].ConsumerType
-	}
-
-	if tenant, ok := tokenClaims.Tenant["providerTenant"]; ok {
-		claims.Tenant = tenant
-	} else {
-		claims.Tenant = tokenClaims.Tenant[consumerTenant]
-
+	if provider, exists := tenants["providerTenant"]; exists {
+		claims.Tenant = provider
 	}
 
 	return claims, nil

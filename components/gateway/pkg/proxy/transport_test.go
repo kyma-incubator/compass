@@ -156,24 +156,15 @@ func TestTransport(t *testing.T) {
 	})
 }
 
-func fixTokenClaims(t *testing.T) proxy.TokenClaims {
+func fixTokenClaims(t *testing.T) proxy.Claims {
 	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": "e36c520b-caa2-4677-b289-8a171184192b", "externalTenant": "externalTenantName"})
 	require.NoError(t, err)
 
-	consumers := []proxy.Consumer{
-		{
-			ConsumerID:   ConsumerId,
-			ConsumerType: "Application",
-		},
-	}
-
-	consumersJSON, err := json.Marshal(consumers)
-	require.NoError(t, err)
-
-	return proxy.TokenClaims{
-		TenantString:    string(tenantJSON),
-		ConsumersString: string(consumersJSON),
-		Scopes:          "scopes",
+	return proxy.Claims{
+		Tenant:       string(tenantJSON),
+		ConsumerID:   ConsumerId,
+		ConsumerType: "Application",
+		Scopes:       "scopes",
 	}
 }
 

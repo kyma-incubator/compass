@@ -39,18 +39,23 @@ import (
 // It uses its authenticators to extract authentication details from the requestData.
 func NewAuthenticatorContextProvider(tenantRepo TenantRepository, authenticators []authenticator.Config) *authenticatorContextProvider {
 	return &authenticatorContextProvider{
-		tenantRepo:     tenantRepo,
+		tenantRepo: tenantRepo,
+		tenantKeys: KeysExtra{
+			TenantKey:         ConsumerTenantKey,
+			ExternalTenantKey: ExternalTenantKey,
+		},
 		authenticators: authenticators,
 	}
 }
 
 type authenticatorContextProvider struct {
 	tenantRepo     TenantRepository
+	tenantKeys     KeysExtra
 	authenticators []authenticator.Config
 }
 
 // GetObjectContext is the authenticatorContextProvider implementation of the ObjectContextProvider interface
-func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails, keys KeysExtra) (ObjectContext, error) {
+func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	var externalTenantID, scopes string
 
 	logger := log.C(ctx).WithFields(logrus.Fields{
@@ -85,12 +90,12 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), keys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User), nil
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), keys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil
