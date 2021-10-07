@@ -176,7 +176,7 @@ global:
         keyKey: ca.key
       rootCA:
         namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
-        # In order for istio mTLS to work we should have two different secrets one containing the server certificate (let’s say X) and one used for validation of the client’s certificates.
+        # In ojkhkjsdhfksdfrder for istio mTLS to work we should have two different secrets one containing the server certificate (let’s say X) and one used for validation of the client’s certificates.
         # The second one should be our root certificate and istio wants it to be named X-cacert. (-cacert suffix).
         # This is the reason for the confusing name of our root certificate. https://preliminary.istio.io/v1.6/docs/tasks/traffic-management/ingress/secure-ingress/#configure-a-mutual-tls-ingress-gateway
         cacert: compass-gateway-mtls-certs-cacert # For cert-rotation the cacert should be in different secret
