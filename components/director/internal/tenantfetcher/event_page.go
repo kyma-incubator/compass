@@ -146,10 +146,7 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 	region := ""
 	parentID := ""
 	tenantType := tenant.TypeToStr(tenant.Account)
-	globalAccountRegex, err := regexp.Compile("^GLOBALACCOUNT_.*|GlobalAccount")
-	if err != nil {
-		return nil, err
-	}
+	globalAccountRegex := regexp.MustCompile("^GLOBALACCOUNT_.*|GlobalAccount")
 	if globalAccountRegex.MatchString(entityType.String()) {
 		customerIDResult := gjson.Get(jsonPayload, ep.fieldMapping.CustomerIDField)
 		if !customerIDResult.Exists() {
