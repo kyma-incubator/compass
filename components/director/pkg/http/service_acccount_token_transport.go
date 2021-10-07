@@ -20,7 +20,7 @@ func NewServiceAccountTokenTransport(roundTripper HTTPRoundTripper) *serviceAcco
 	}
 }
 
-// NewServiceAccountTokenTransport constructs an serviceAccountTokenTransport
+// NewServiceAccountTokenTransportWithHeader constructs an serviceAccountTokenTransport with configurable header name
 func NewServiceAccountTokenTransportWithHeader(roundTripper HTTPRoundTripper, headerName string) *serviceAccountTokenTransport {
 	return &serviceAccountTokenTransport{
 		roundTripper: roundTripper,

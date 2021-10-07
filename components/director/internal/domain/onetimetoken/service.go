@@ -140,12 +140,12 @@ func (s *service) getToken(ctx context.Context, objectID string, tokenType model
 	if tokenType == model.ApplicationReference {
 		return s.getAppToken(ctx, objectID)
 	} else {
-		token, err := s.createToken(ctx, objectID, tokenType, nil)
+		token, err := s.createToken(objectID, tokenType, nil)
 		return token, "", err
 	}
 }
 
-func (s *service) createToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) (*model.OneTimeToken, error) {
+func (s *service) createToken(id string, tokenType model.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) (*model.OneTimeToken, error) {
 	var err error
 	if oneTimeToken == nil {
 		oneTimeToken, err = s.getNewToken()
@@ -194,7 +194,7 @@ func (s *service) getAppToken(ctx context.Context, id string) (*model.OneTimeTok
 		}
 	}
 
-	oneTimeToken, err = s.createToken(ctx, id, model.ApplicationReference, oneTimeToken)
+	oneTimeToken, err = s.createToken(id, model.ApplicationReference, oneTimeToken)
 	if err != nil {
 		return nil, "", err
 	}
