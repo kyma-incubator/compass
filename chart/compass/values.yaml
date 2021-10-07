@@ -120,6 +120,7 @@ global:
   agentPreconfiguration: false
 
   director:
+    host: compass-director.compass-system.svc.cluster.local
     prefix: /director
     graphql:
       external:
