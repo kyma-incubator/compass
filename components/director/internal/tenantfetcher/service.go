@@ -744,6 +744,11 @@ func dedupeTenants(tenants []model.BusinessTenantMappingInput) []model.BusinessT
 	}
 	tenants = make([]model.BusinessTenantMappingInput, 0, len(elms))
 	for _, t := range elms {
+		// cleaning up parents of self referencing tenants
+		if t.ExternalTenant == t.Parent {
+			t.Parent = ""
+		}
+
 		tenants = append(tenants, t)
 	}
 	return tenants
