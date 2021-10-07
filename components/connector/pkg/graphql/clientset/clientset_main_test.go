@@ -95,8 +95,12 @@ func TestMain(m *testing.M) {
 
 	authContextTestMiddleware := func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r = r.WithContext(authentication.PutIntoContext(r.Context(), authentication.ConsumerType, "Application"))
+			r = r.WithContext(authentication.PutIntoContext(r.Context(), authentication.TenantKey, "tenant"))
+
 			connectorToken := r.Header.Get(oathkeeper.ConnectorTokenHeader)
 			if connectorToken != "" {
+
 				r = r.WithContext(authentication.PutIntoContext(r.Context(), authentication.ClientIdFromTokenKey, clientID))
 
 				handler.ServeHTTP(w, r)

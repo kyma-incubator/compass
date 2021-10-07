@@ -53,7 +53,7 @@ type Config struct {
 	}
 
 	OneTimeTokenURL             string
-	HttpClientSkipSslValidation bool
+	HttpClientSkipSslValidation bool          `envconfig:"default=false"`
 	HTTPClientTimeout           time.Duration `envconfig:"default=30s"`
 }
 

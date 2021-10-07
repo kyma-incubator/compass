@@ -45,7 +45,7 @@ func (acm *authContextMiddleware) PropagateAuthentication(handler http.Handler) 
 			}
 
 			tenant := payload[tenantTokenKey].(string)
-			r = r.WithContext(PutIntoContext(r.Context(), TenantFromJWTKey, tenant))
+			r = r.WithContext(PutIntoContext(r.Context(), TenantKey, tenant))
 
 			consumerType := payload[consumerTypeTokenKey].(string)
 			r = r.WithContext(PutIntoContext(r.Context(), ConsumerType, consumerType))
