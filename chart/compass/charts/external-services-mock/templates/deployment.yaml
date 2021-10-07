@@ -64,6 +64,9 @@ spec:
               - name: http
                 containerPort: {{ .Values.deployment.port }}
                 protocol: TCP
+              - name: http-mtls
+                containerPort: {{ .Values.global.externalServicesMock.certSecuredPort }}
+                protocol: TCP
               resources:
                 {{- toYaml .Values.deployment.resources | nindent 16 }}
               {{- with .Values.deployment.securityContext }}

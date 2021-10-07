@@ -7,6 +7,10 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/tidwall/gjson"
+	"io/ioutil"
 	"math/big"
 	"net/http"
 	"strings"
@@ -25,12 +29,17 @@ type CrtResponse struct {
 	Crt string `json:"value"`
 }
 
-type handler struct {
-	CACert []byte
-	CAKey  []byte
+type subjectElement struct {
+	Name  string `json:"shortName"`
+	Value string `json:"value"`
 }
 
-func NewHandler(CACert, CAKey []byte) *handler {
+type handler struct {
+	CACert string
+	CAKey  string
+}
+
+func NewHandler(CACert, CAKey string) *handler {
 	return &handler{
 		CACert: CACert,
 		CAKey:  CAKey,
@@ -45,7 +54,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the CA cert
-	pemBlock, _ := pem.Decode(h.CACert)
+	pemBlock, _ := pem.Decode([]byte(h.CACert))
 
 	caCRT, err := x509.ParseCertificate(pemBlock.Bytes)
 	if err != nil {
@@ -54,7 +63,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the CA key
-	keyPemBlock, _ := pem.Decode(h.CAKey)
+	keyPemBlock, _ := pem.Decode([]byte(h.CAKey))
 
 	caPrivateKey, err := x509.ParsePKCS1PrivateKey(keyPemBlock.Bytes)
 	if err != nil {
@@ -72,8 +81,34 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	tenant := r.Header.Get("Tenant")
+	if len(tenant) == 0 { // If tenant is not provided in header, search it in the OU in the body (imitating the cert svc interface)
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
+			return
+		}
+
+		if len(body) > 0 {
+			subjectElements := gjson.GetBytes(body, "csr.replace.subject")
+			if subjectElements.Exists() {
+				var subjectElementsSlice []subjectElement
+				err = json.Unmarshal([]byte(subjectElements.String()), &subjectElementsSlice)
+				if err != nil {
+					log.C(r.Context()).WithError(err).Infof("Cannot json unmarshalling the request body. Error: %s", err)
+				}
+				for _, se := range subjectElementsSlice {
+					if se.Name == "OU" {
+						if _, err := uuid.Parse(se.Value); err == nil {
+							tenant = se.Value
+						}
+					}
+				}
+			}
+		}
+	}
+
 	if len(tenant) == 0 {
-		httphelpers.WriteError(writer, errors.New("tenant header is required"), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.New("tenant is required"), http.StatusBadRequest)
 		return
 	}
 

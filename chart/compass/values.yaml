@@ -386,7 +386,7 @@ global:
         commonName: "compass"
         locality: "local"
         policy: "compass-local-clients"
-        csrEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local"
+        csrEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
         certSvcApiPath: "/cert"
         tokenPath: "/secured/oauth/token"
         oauthSecret:
@@ -496,7 +496,7 @@ global:
     auditlog: false
     certSecuredPort: 8081
     certSecuredHost: compass-external-services-mock-sap-mtls
-    host: http://compass-external-services-mock.compass-system.svc.cluster.local
+    host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials
 
   tests:

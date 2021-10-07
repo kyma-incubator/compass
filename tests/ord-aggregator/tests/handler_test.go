@@ -61,7 +61,7 @@ const (
 	expectedNumberOfBundles                   = 8
 	expectedNumberOfProducts                  = 4
 	expectedNumberOfAPIs                      = 4
-	expectedNumberOfResourceDefinitionsPerAPI = 4
+	expectedNumberOfResourceDefinitionsPerAPI = 3
 	expectedNumberOfEvents                    = 8
 	expectedNumberOfTombstones                = 4
 	expectedNumberOfVendors                   = 8

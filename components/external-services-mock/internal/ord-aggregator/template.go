@@ -37,7 +37,7 @@ const ordDocument = `{
       "HealthCheckURL":null,
       "IntegrationSystemID":null,
       "ApplicationTemplateID":null,
-      "baseUrl":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080",
+      "baseUrl":"http://compass-external-services-mock.compass-system.svc.cluster.local:%d",
       "labels":{
          "label-key-1":[
             "label-value-1",

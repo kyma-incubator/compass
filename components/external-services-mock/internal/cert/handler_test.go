@@ -50,7 +50,7 @@ func TestHandler_Generate(t *testing.T) {
 	caCrtPem := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caCrtRaw})
 	keyPem := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
 
-	h := cert.NewHandler(caCrtPem, keyPem)
+	h := cert.NewHandler(string(caCrtPem), string(keyPem))
 	r := httptest.NewRecorder()
 
 	//WHEN

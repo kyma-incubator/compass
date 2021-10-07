@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
 	"log"
 	"net/http"
 	"strings"
@@ -41,8 +43,8 @@ type config struct {
 	BasicCredentialsConfig
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
 
-	CACert []byte `envconfig:"APP_CA_CERT"`
-	CAKey  []byte `envconfig:"APP_CA_KEY"`
+	CACert string `envconfig:"APP_CA_CERT"`
+	CAKey  string `envconfig:"APP_CA_KEY"`
 }
 
 type OAuthConfig struct {
@@ -77,9 +79,16 @@ func main() {
 		Handler: handler,
 	}
 
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM([]byte(cfg.CACert))
+
 	certSecuredServer := &http.Server{
 		Addr:    cfg.CertSecuredServerAddress,
 		Handler: certSecuredHandler,
+		TLSConfig: &tls.Config{
+			ClientCAs:  caCertPool,
+			ClientAuth: tls.RequireAndVerifyClientCert,
+		},
 	}
 
 	wg := &sync.WaitGroup{}
@@ -137,7 +146,7 @@ func initHTTP(cfg config) (http.Handler, error) {
 	router.HandleFunc("/external-api/unsecured/spec/flapping", apispec.FlappingHandleFunc())
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("open"))
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument)
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(8080))
 
 	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfig("open"))
 
@@ -171,7 +180,7 @@ func initCertSecuredAPIs(cfg config) (http.Handler, error) {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("sap:cmp-mtls:v1"))
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument)
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(8081))
 
 	return router, nil
 }
