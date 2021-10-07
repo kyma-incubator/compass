@@ -515,25 +515,25 @@ func deleteTenants(ctx context.Context, tenantStorageService TenantStorageServic
 func (s GlobalAccountService) getAccountsToCreate(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
 	var tenantsToCreate []model.BusinessTenantMappingInput
 
-	params := QueryParams{
-		s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
-		s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-		s.queryConfig.TimestampField: fromTimestamp,
+	configProvider := func() (QueryParams, PageConfig) {
+		return QueryParams{
+				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
+				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
+				s.queryConfig.TimestampField: fromTimestamp,
+			}, PageConfig{
+				TotalPagesField:   s.fieldMapping.TotalPagesField,
+				TotalResultsField: s.fieldMapping.TotalResultsField,
+				PageNumField:      s.queryConfig.PageNumField,
+			}
 	}
 
-	pageConfig := PageConfig{
-		TotalPagesField:   s.fieldMapping.TotalPagesField,
-		TotalResultsField: s.fieldMapping.TotalResultsField,
-		PageNumField:      s.queryConfig.PageNumField,
-	}
-
-	createdTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedAccountType, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
+	createdTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedAccountType, configProvider, s.toEventsPage)
 	if err != nil {
 		return nil, err
 	}
 	tenantsToCreate = append(tenantsToCreate, createdTenants...)
 
-	updatedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, UpdatedAccountType, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
+	updatedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, UpdatedAccountType, configProvider, s.toEventsPage)
 	if err != nil {
 		return nil, err
 	}
@@ -546,24 +546,25 @@ func (s GlobalAccountService) getAccountsToCreate(fromTimestamp string) ([]model
 func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string, region string) ([]model.BusinessTenantMappingInput, error) {
 	var tenantsToCreate []model.BusinessTenantMappingInput
 
-	params := QueryParams{
-		s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
-		s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-		s.queryConfig.TimestampField: fromTimestamp,
-		s.queryConfig.RegionField:    region,
+	configProvider := func() (QueryParams, PageConfig) {
+		return QueryParams{
+				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
+				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
+				s.queryConfig.TimestampField: fromTimestamp,
+				s.queryConfig.RegionField:    region,
+			}, PageConfig{
+				TotalPagesField:   s.fieldMapping.TotalPagesField,
+				TotalResultsField: s.fieldMapping.TotalResultsField,
+				PageNumField:      s.queryConfig.PageNumField,
+			}
 	}
-	pageConfig := PageConfig{
-		TotalPagesField:   s.fieldMapping.TotalPagesField,
-		TotalResultsField: s.fieldMapping.TotalResultsField,
-		PageNumField:      s.queryConfig.PageNumField,
-	}
-	createdTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedSubaccountType, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
+	createdTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedSubaccountType, configProvider, s.toEventsPage)
 	if err != nil {
 		return nil, fmt.Errorf("while fetching created subaccounts: %v", err)
 	}
 	tenantsToCreate = append(tenantsToCreate, createdTenants...)
 
-	updatedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, UpdatedSubaccountType, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
+	updatedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, UpdatedSubaccountType, configProvider, s.toEventsPage)
 	if err != nil {
 		return nil, fmt.Errorf("while fetching updated subaccounts: %v", err)
 	}
@@ -574,47 +575,49 @@ func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string,
 }
 
 func (s GlobalAccountService) getAccountsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
-	params := QueryParams{
-		s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
-		s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-		s.queryConfig.TimestampField: fromTimestamp,
+	configProvider := func() (QueryParams, PageConfig) {
+		return QueryParams{
+				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
+				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
+				s.queryConfig.TimestampField: fromTimestamp,
+			}, PageConfig{
+				TotalPagesField:   s.fieldMapping.TotalPagesField,
+				TotalResultsField: s.fieldMapping.TotalResultsField,
+				PageNumField:      s.queryConfig.PageNumField,
+			}
 	}
-
-	pageConfig := PageConfig{
-		TotalPagesField:   s.fieldMapping.TotalPagesField,
-		TotalResultsField: s.fieldMapping.TotalResultsField,
-		PageNumField:      s.queryConfig.PageNumField,
-	}
-	return fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, DeletedAccountType, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
+	return fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, DeletedAccountType, configProvider, s.toEventsPage)
 }
 
 func (s SubaccountService) getSubaccountsToDeleteForRegion(fromTimestamp string, region string) ([]model.BusinessTenantMappingInput, error) {
-	params := QueryParams{
-		s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
-		s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-		s.queryConfig.TimestampField: fromTimestamp,
-		s.queryConfig.RegionField:    region,
+	configProvider := func() (QueryParams, PageConfig) {
+		return QueryParams{
+				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
+				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
+				s.queryConfig.TimestampField: fromTimestamp,
+				s.queryConfig.RegionField:    region,
+			}, PageConfig{
+				TotalPagesField:   s.fieldMapping.TotalPagesField,
+				TotalResultsField: s.fieldMapping.TotalResultsField,
+				PageNumField:      s.queryConfig.PageNumField,
+			}
 	}
-	pageConfig := PageConfig{
-		TotalPagesField:   s.fieldMapping.TotalPagesField,
-		TotalResultsField: s.fieldMapping.TotalResultsField,
-		PageNumField:      s.queryConfig.PageNumField,
-	}
-	return fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, DeletedSubaccountType, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
+	return fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, DeletedSubaccountType, configProvider, s.toEventsPage)
 }
 
 func (s SubaccountService) getRuntimesToMoveByLabel(fromTimestamp string) ([]model.MovedRuntimeByLabelMappingInput, error) {
-	params := QueryParams{
-		s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
-		s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-		s.queryConfig.TimestampField: fromTimestamp,
+	configProvider := func() (QueryParams, PageConfig) {
+		return QueryParams{
+				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
+				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
+				s.queryConfig.TimestampField: fromTimestamp,
+			}, PageConfig{
+				TotalPagesField:   s.fieldMapping.TotalPagesField,
+				TotalResultsField: s.fieldMapping.TotalResultsField,
+				PageNumField:      s.queryConfig.PageNumField,
+			}
 	}
-	pageConfig := PageConfig{
-		TotalPagesField:   s.fieldMapping.TotalPagesField,
-		TotalResultsField: s.fieldMapping.TotalResultsField,
-		PageNumField:      s.queryConfig.PageNumField,
-	}
-	return fetchMovedRuntimesWithRetries(s.eventAPIClient, s.retryAttempts, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
+	return fetchMovedRuntimesWithRetries(s.eventAPIClient, s.retryAttempts, configProvider, s.toEventsPage)
 }
 
 func fetchTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, eventsType EventsType, configProvider func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage) ([]model.BusinessTenantMappingInput, error) {
