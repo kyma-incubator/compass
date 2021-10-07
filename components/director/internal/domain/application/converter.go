@@ -165,10 +165,10 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 		Labels:              labels,
 		HealthCheckURL:      in.HealthCheckURL,
 		BaseURL:             in.BaseURL,
-		SystemNumber:        in.SystemNumber,
 		IntegrationSystemID: in.IntegrationSystemID,
 		StatusCondition:     statusCondition,
 		ProviderName:        in.ProviderName,
+		SystemNumber:        in.SystemNumber,
 		Webhooks:            webhooks,
 		Bundles:             bundles,
 	}, nil
@@ -198,6 +198,7 @@ func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegister
 		return graphql.ApplicationRegisterInput{}, errors.Wrap(err, "while unmarshalling string to ApplicationRegisterInput")
 	}
 
+	cleanupEmptyFields(&appInput)
 	return appInput, nil
 }
 
@@ -270,4 +271,21 @@ func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
 
 	t := graphql.Timestamp(*time)
 	return &t
+}
+
+func cleanupEmptyFields(appInput *graphql.ApplicationRegisterInput) {
+	appInput.ProviderName = getNonEmptyValueOrNil(appInput.ProviderName)
+	appInput.Description = getNonEmptyValueOrNil(appInput.Description)
+	appInput.SystemNumber = getNonEmptyValueOrNil(appInput.SystemNumber)
+	appInput.BaseURL = getNonEmptyValueOrNil(appInput.BaseURL)
+	appInput.HealthCheckURL = getNonEmptyValueOrNil(appInput.HealthCheckURL)
+	appInput.IntegrationSystemID = getNonEmptyValueOrNil(appInput.IntegrationSystemID)
+}
+
+func getNonEmptyValueOrNil(s *string) *string {
+	if s != nil && len(*s) == 0 {
+		return nil
+	}
+
+	return s
 }

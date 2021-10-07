@@ -2,8 +2,10 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -220,6 +222,69 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test new-value", *outputApp.Application.Description)
 	saveExample(t, createAppFromTmplRequest.Query(), "register application from template")
+}
+
+func TestRegisterApplicationFromTemplateWithOptionalFields(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	tmplName := "template"
+	descriptionPlaceholderKey := "description"
+	providerPlaceholderKey := "provider"
+	systemNumberPlaceholderKey := "system-number"
+
+	testAppDescription := "test description"
+	testAppProvider := "compass"
+
+	appTmplInput := fixtures.FixApplicationTemplate(tmplName)
+	appTmplInput.ApplicationInput.Description = ptr.String(fmt.Sprintf("{{%s}}", descriptionPlaceholderKey))
+	appTmplInput.ApplicationInput.ProviderName = ptr.String(fmt.Sprintf("{{%s}}", providerPlaceholderKey))
+	appTmplInput.ApplicationInput.SystemNumber = ptr.String(fmt.Sprintf("{{%s}}", systemNumberPlaceholderKey))
+
+	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name: descriptionPlaceholderKey,
+		},
+		{
+			Name:         providerPlaceholderKey,
+			Optional:     &trueVal,
+			DefaultValue: str.Ptr(testAppProvider),
+		},
+		{
+			Name:     systemNumberPlaceholderKey,
+			Optional: &trueVal,
+		},
+	}
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenantId, &appTmpl)
+	require.NoError(t, err)
+
+	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: tmplName, Values: []*graphql.TemplateValueInput{
+		{
+			Placeholder: descriptionPlaceholderKey,
+			Value:       testAppDescription,
+		}}}
+	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
+	outputApp := graphql.ApplicationExt{}
+	//WHEN
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createAppFromTmplRequest, &outputApp)
+
+	//THEN
+	defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenantId, outputApp.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, outputApp)
+
+	require.NotNil(t, outputApp.Application.Description)
+	require.Equal(t, testAppDescription, *outputApp.Application.Description)
+
+	require.NotNil(t, outputApp.Application.ProviderName)
+	require.Equal(t, testAppProvider, *outputApp.Application.ProviderName)
+
+	require.Nil(t, outputApp.Application.SystemNumber)
 }
 
 func TestAddWebhookToApplicationTemplate(t *testing.T) {

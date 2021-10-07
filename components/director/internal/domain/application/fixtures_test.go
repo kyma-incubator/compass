@@ -23,11 +23,13 @@ import (
 )
 
 var (
-	testURL            = "https://foo.bar"
-	intSysID           = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
-	providerName       = "provider name"
-	fixedTimestamp     = time.Now()
-	legacyConnectorURL = "url.com"
+	testURL               = "https://foo.bar"
+	intSysID              = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
+	providerName          = "provider name"
+	fixedTimestamp        = time.Now()
+	legacyConnectorURL    = "url.com"
+	initialConditionGQL   = graphql.ApplicationStatusConditionInitial
+	initialConditionModel = model.ApplicationStatusConditionInitial
 )
 
 func stringPtr(s string) *string {
@@ -114,6 +116,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		},
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
+		SystemNumber:        stringPtr("1"),
 		BaseURL:             str.Ptr("base_url"),
 		Labels:              json.RawMessage("[]"),
 		CorrelationIDs:      json.RawMessage("[]"),
@@ -140,6 +143,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		Name:                name,
 		Description:         &description,
 		BaseURL:             str.Ptr("base_url"),
+		SystemNumber:        stringPtr("1"),
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        str.Ptr("provider name"),
@@ -193,6 +197,7 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
+		StatusCondition:     &initialConditionModel,
 		Webhooks: []*model.WebhookInput{
 			{URL: stringPtr("webhook1.foo.bar")},
 			{URL: stringPtr("webhook2.foo.bar")},
@@ -246,6 +251,7 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
+		StatusCondition:     &initialConditionGQL,
 		Webhooks: []*graphql.WebhookInput{
 			{URL: stringPtr("webhook1.foo.bar")},
 			{URL: stringPtr("webhook2.foo.bar")},
