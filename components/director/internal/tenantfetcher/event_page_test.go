@@ -231,6 +231,7 @@ func Test_getTenantMappings(t *testing.T) {
 				DetailsField:       "details",
 				DiscriminatorField: discriminatorField,
 				DiscriminatorValue: "discriminator-value",
+				EntityTypeField:    entityTypeField,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
