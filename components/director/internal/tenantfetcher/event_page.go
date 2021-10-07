@@ -2,6 +2,7 @@ package tenantfetcher
 
 import (
 	"encoding/json"
+	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -145,7 +146,11 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 	region := ""
 	parentID := ""
 	tenantType := tenant.TypeToStr(tenant.Account)
-	if entityType.String() == GlobalAccountEntityType {
+	globalAccountRegex, err := regexp.Compile("^GLOBALACCOUNT_.*|GlobalAccount")
+	if err != nil {
+		return nil, err
+	}
+	if globalAccountRegex.MatchString(entityType.String()) {
 		customerIDResult := gjson.Get(jsonPayload, ep.fieldMapping.CustomerIDField)
 		if !customerIDResult.Exists() {
 			log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.CustomerIDField, idResult.String())
