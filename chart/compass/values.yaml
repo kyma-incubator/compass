@@ -495,7 +495,6 @@ global:
     enabled: false
     auditlog: false
     certSecuredPort: 8081
-    certSecuredHost: compass-external-services-mock-sap-mtls
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials
 
