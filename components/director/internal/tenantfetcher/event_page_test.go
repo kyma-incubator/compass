@@ -123,7 +123,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			events := make([][]byte, 0, len(test.detailsPairs))
 			for i, detailPair := range test.detailsPairs {
-				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), constructJSONObject(detailPair...), fieldMapping))
+				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", constructJSONObject(detailPair...), fieldMapping))
 			}
 			page := eventsPage{
 				fieldMapping: fieldMapping,
@@ -151,12 +151,13 @@ func Test_getTenantMappings(t *testing.T) {
 	subdomain := "test-subdomain"
 	providerName := "test-provider"
 	entityTypeField := "type"
+	entityType := "account"
 
 	expectedTenantMapping := model.BusinessTenantMappingInput{
 		ExternalTenant: id,
 		Name:           name,
 		Subdomain:      subdomain,
-		Type:           tenant.TypeToStr(tenant.Account),
+		Type:           entityType,
 		Provider:       providerName,
 	}
 
@@ -189,7 +190,6 @@ func Test_getTenantMappings(t *testing.T) {
 					{idField, id},
 					{nameField, name},
 					{subdomainField, subdomain},
-					{entityTypeField, tenant.TypeToStr(tenant.Account)},
 				},
 			},
 		},
@@ -300,7 +300,7 @@ func Test_getTenantMappings(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			events := make([][]byte, 0, len(test.detailsPairs))
 			for i, detailPair := range test.detailsPairs {
-				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), constructJSONObject(detailPair...), test.fieldMapping))
+				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", constructJSONObject(detailPair...), test.fieldMapping))
 			}
 			page := eventsPage{
 				fieldMapping: test.fieldMapping,
@@ -340,8 +340,8 @@ func constructJSONObject(pairs ...Pair) string {
 	return buffer.String()
 }
 
-func fixEventWithDetails(id, name, details string, fieldMapping TenantFieldMapping) []byte {
-	return []byte(fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":%s}`, fieldMapping.IDField, id, fieldMapping.NameField, name, fieldMapping.DetailsField, details))
+func fixEventWithDetails(id, name, entityType, details string, fieldMapping TenantFieldMapping) []byte {
+	return []byte(fmt.Sprintf(`{"%s":"%s", "%s":"%s", "%s":"%s","%s":%s}`, fieldMapping.IDField, id, fieldMapping.NameField, name, fieldMapping.EntityTypeField, entityType, fieldMapping.DetailsField, details))
 }
 
 func fixTenantEventsResponse(events []byte, total, pages int) TenantEventsResponse {

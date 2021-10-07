@@ -132,6 +132,8 @@ spec:
                 value: {{ $config.fieldMapping.discriminatorValue }}
               - name: APP_MAPPING_FIELD_DETAILS
                 value: {{ $config.fieldMapping.detailsField}}
+              - name: APP_MAPPING_FIELD_PARENT_ID
+                value: {{ $config.fieldMapping.parentIDField}}
               - name: APP_SYNC_SUBACCOUNTS
                 value: "false"
               - name: APP_TENANT_TOTAL_PAGES_FIELD
@@ -144,7 +146,7 @@ spec:
                 value: {{ $config.queryMapping.pageNumField}}
               - name: APP_QUERY_PAGE_SIZE_FIELD
                 value: {{ $config.queryMapping.pageSizeField}}
-              - name: APP_QUERY_REGION__REGION
+              - name: APP_QUERY_REGION_FIELD
                 value: {{ $config.fieldMapping.regionField }}
               - name: APP_QUERY_TIMESTAMP_FIELD
                 value: {{ $config.queryMapping.timestampField}}

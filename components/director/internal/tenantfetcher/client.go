@@ -93,6 +93,11 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 	}
 
 	endpoint, err := c.getEndpointForEventsType(eventsType)
+	if endpoint == "" && err == nil {
+		log.D().Warnf("Endpoint for event %s is not set", eventsType)
+		return nil, nil
+	}
+
 	if err != nil {
 		return nil, err
 	}

@@ -19,6 +19,9 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// DefaultScenario is the name of the default scenario
+const DefaultScenario = "DEFAULT"
+
 // TenantFieldMapping missing godoc
 type TenantFieldMapping struct {
 	TotalPagesField   string `envconfig:"APP_TENANT_TOTAL_PAGES_FIELD"`
@@ -35,7 +38,7 @@ type TenantFieldMapping struct {
 
 	RegionField     string `envconfig:"default=region,APP_MAPPING_FIELD_REGION"`
 	EntityTypeField string `envconfig:"default=entityType,APP_MAPPING_FIELD_ENTITY_TYPE"`
-	ParentIDField   string `envconfig:"default=parentGuid,APP_MAPPING_FIELD_PARENT_ID"`
+	ParentIDField   string `envconfig:"default=parentId,APP_MAPPING_FIELD_PARENT_ID"`
 }
 
 // MovedRuntimeByLabelFieldMapping missing godoc
@@ -50,7 +53,7 @@ type QueryConfig struct {
 	PageNumField   string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`
 	PageSizeField  string `envconfig:"default=pageSize,APP_QUERY_PAGE_SIZE_FIELD"`
 	TimestampField string `envconfig:"default=timestamp,APP_QUERY_TIMESTAMP_FIELD"`
-	RegionField    string `envconfig:"default=region,APP_QUERY_REGION_FIELD"` //todo add in charts
+	RegionField    string `envconfig:"default=region,APP_QUERY_REGION_FIELD"`
 	PageStartValue string `envconfig:"default=0,APP_QUERY_PAGE_START"`
 	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
 }
@@ -59,7 +62,6 @@ type QueryConfig struct {
 type PageConfig struct {
 	TotalPagesField   string
 	TotalResultsField string
-	PageStartValue    string // todo duplicated
 	PageNumField      string
 }
 
@@ -235,25 +237,24 @@ func (s SubaccountService) SyncTenants() error {
 		newLastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
 	}
 
-	regions := []string{"us10-staging", "eu20-staging", "us30-staging"}
-	for _, region := range regions {
+	for _, region := range s.tenantsRegions {
 		tenantsToCreate, err := s.getSubaccountsToCreateForRegion(lastConsumedTenantTimestamp, region)
 		if err != nil {
 			return err
 		}
-		log.C(ctx).Printf("Got tenants to create for region: %s", region)
+		log.C(ctx).Printf("Got subaccount to create for region: %s", region)
 
 		tenantsToDelete, err := s.getSubaccountsToDeleteForRegion(lastConsumedTenantTimestamp, region)
 		if err != nil {
 			return err
 		}
-		log.C(ctx).Printf("Got tenants to delete for region: %s", region)
+		log.C(ctx).Printf("Got subaccount to delete for region: %s", region)
 
 		runtimesToMove, err := s.getRuntimesToMoveByLabel(lastConsumedTenantTimestamp)
 		if err != nil {
 			return err
 		}
-		log.C(ctx).Printf("Got tenants to move for region: %s", region)
+		log.C(ctx).Printf("Got subaccount to move for region: %s", region)
 
 		tenantsToCreate = dedupeTenants(tenantsToCreate)
 		tenantsToCreate = excludeTenants(tenantsToCreate, tenantsToDelete)
@@ -282,17 +283,17 @@ func (s SubaccountService) SyncTenants() error {
 		// Order of event processing matters
 		if len(tenantsToCreate) > 0 {
 			if err := createTenants(ctx, s.tenantStorageService, currentTenants, tenantsToCreate, region, s.providerName); err != nil {
-				return errors.Wrap(err, "while storing tenant")
+				return errors.Wrap(err, "while storing subaccounts")
 			}
 		}
 		if len(runtimesToMove) > 0 {
 			if err := s.moveRuntimesByLabel(ctx, runtimesToMove); err != nil {
-				return errors.Wrap(err, "moving runtimes by label")
+				return errors.Wrap(err, "while moving subaccounts")
 			}
 		}
 		if len(tenantsToDelete) > 0 {
 			if err := deleteTenants(ctx, s.tenantStorageService, currentTenants, tenantsToDelete); err != nil {
-				return errors.Wrap(err, "moving deleting runtimes")
+				return errors.Wrap(err, "while deleting subaccounts")
 			}
 		}
 
@@ -335,13 +336,13 @@ func (s GlobalAccountService) SyncTenants() error {
 	if err != nil {
 		return err
 	}
-	log.C(ctx).Printf("Got tenants to create")
+	log.C(ctx).Printf("Got accounts to create")
 
 	tenantsToDelete, err := s.getAccountsToDelete(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
-	log.C(ctx).Printf("Got tenants to delete")
+	log.C(ctx).Printf("Got accounts to delete")
 
 	tenantsToCreate = dedupeTenants(tenantsToCreate)
 	tenantsToCreate = excludeTenants(tenantsToCreate, tenantsToDelete)
@@ -370,12 +371,12 @@ func (s GlobalAccountService) SyncTenants() error {
 	// Order of event processing matters
 	if len(tenantsToCreate) > 0 {
 		if err := createTenants(ctx, s.tenantStorageService, currentTenants, tenantsToCreate, s.tenantsRegion, s.providerName); err != nil {
-			return errors.Wrap(err, "while storing tenant")
+			return errors.Wrap(err, "while storing accounts")
 		}
 	}
 	if len(tenantsToDelete) > 0 {
 		if err := deleteTenants(ctx, s.tenantStorageService, currentTenants, tenantsToDelete); err != nil {
-			return errors.Wrap(err, "moving deleting runtimes")
+			return errors.Wrap(err, "moving deleting accounts")
 		}
 	}
 
@@ -431,15 +432,14 @@ func getTenantParentType(tenantType string) string {
 		return tenant.TypeToStr(tenant.Customer)
 	}
 	return tenant.TypeToStr(tenant.Account)
-
 }
 
 func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntimeMappings []model.MovedRuntimeByLabelMappingInput) error {
 	for _, mapping := range movedRuntimeMappings {
 		filters := []*labelfilter.LabelFilter{
 			{
-				Key:   s.movedRuntimeLabelKey,                             // lobal_subaccount_id
-				Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)), // guid value
+				Key:   s.movedRuntimeLabelKey,
+				Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)),
 			},
 		}
 
@@ -482,7 +482,7 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 
 func checkForScenarios(ctx context.Context, labelService LabelService, runtime *model.Runtime) error {
 	scenariosLabel, err := labelService.GetByKey(ctx, runtime.Tenant, model.RuntimeLabelableObject, runtime.ID, model.ScenariosKey)
-	if err != nil { // todo check if it possible not to have record for a runtime
+	if err != nil {
 		return err
 	}
 	scenarios, err := label.ValueToStringsSlice(scenariosLabel.Value)
@@ -490,12 +490,13 @@ func checkForScenarios(ctx context.Context, labelService LabelService, runtime *
 		return err
 	}
 	for _, scenario := range scenarios {
-		if scenario != "DEFAULT" {
+		if scenario != DefaultScenario {
 			return errors.Errorf("Could not move subaccount if there is associated formation with it")
 		}
 	}
 	return nil
 }
+
 func deleteTenants(ctx context.Context, tenantStorageService TenantStorageService, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
 	tenantsToDelete := make([]model.BusinessTenantMappingInput, 0)
 	for _, toDelete := range eventsTenants {
@@ -523,7 +524,6 @@ func (s GlobalAccountService) getAccountsToCreate(fromTimestamp string) ([]model
 	pageConfig := PageConfig{
 		TotalPagesField:   s.fieldMapping.TotalPagesField,
 		TotalResultsField: s.fieldMapping.TotalResultsField,
-		PageStartValue:    s.queryConfig.PageStartValue,
 		PageNumField:      s.queryConfig.PageNumField,
 	}
 
@@ -555,7 +555,6 @@ func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string,
 	pageConfig := PageConfig{
 		TotalPagesField:   s.fieldMapping.TotalPagesField,
 		TotalResultsField: s.fieldMapping.TotalResultsField,
-		PageStartValue:    s.queryConfig.PageStartValue,
 		PageNumField:      s.queryConfig.PageNumField,
 	}
 	createdTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedSubaccountType, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
@@ -584,7 +583,6 @@ func (s GlobalAccountService) getAccountsToDelete(fromTimestamp string) ([]model
 	pageConfig := PageConfig{
 		TotalPagesField:   s.fieldMapping.TotalPagesField,
 		TotalResultsField: s.fieldMapping.TotalResultsField,
-		PageStartValue:    s.queryConfig.PageStartValue,
 		PageNumField:      s.queryConfig.PageNumField,
 	}
 	return fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, DeletedAccountType, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
@@ -600,7 +598,6 @@ func (s SubaccountService) getSubaccountsToDeleteForRegion(fromTimestamp string,
 	pageConfig := PageConfig{
 		TotalPagesField:   s.fieldMapping.TotalPagesField,
 		TotalResultsField: s.fieldMapping.TotalResultsField,
-		PageStartValue:    s.queryConfig.PageStartValue,
 		PageNumField:      s.queryConfig.PageNumField,
 	}
 	return fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, DeletedSubaccountType, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
@@ -615,16 +612,15 @@ func (s SubaccountService) getRuntimesToMoveByLabel(fromTimestamp string) ([]mod
 	pageConfig := PageConfig{
 		TotalPagesField:   s.fieldMapping.TotalPagesField,
 		TotalResultsField: s.fieldMapping.TotalResultsField,
-		PageStartValue:    s.queryConfig.PageStartValue,
 		PageNumField:      s.queryConfig.PageNumField,
 	}
 	return fetchMovedRuntimesWithRetries(s.eventAPIClient, s.retryAttempts, func() (QueryParams, PageConfig) { return params, pageConfig }, s.toEventsPage)
 }
 
-func fetchTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, eventsType EventsType, f func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage) ([]model.BusinessTenantMappingInput, error) {
+func fetchTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, eventsType EventsType, configProvider func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage) ([]model.BusinessTenantMappingInput, error) {
 	var tenants []model.BusinessTenantMappingInput
 	err := fetchWithRetries(retryNumber, func() error {
-		fetchedTenants, err := fetchTenants(eventAPIClient, eventsType, f, toEventsPage)
+		fetchedTenants, err := fetchTenants(eventAPIClient, eventsType, configProvider, toEventsPage)
 		if err != nil {
 			return fmt.Errorf("while fetching tenants: %v", err)
 		}
@@ -639,10 +635,10 @@ func fetchTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, ev
 	return tenants, nil
 }
 
-func fetchMovedRuntimesWithRetries(eventAPIClient EventAPIClient, retryNumber uint, f func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage) ([]model.MovedRuntimeByLabelMappingInput, error) {
+func fetchMovedRuntimesWithRetries(eventAPIClient EventAPIClient, retryNumber uint, configProvider func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage) ([]model.MovedRuntimeByLabelMappingInput, error) {
 	var tenants []model.MovedRuntimeByLabelMappingInput
 	err := fetchWithRetries(retryNumber, func() error {
-		fetchedTenants, err := fetchMovedRuntimes(eventAPIClient, f, toEventsPage)
+		fetchedTenants, err := fetchMovedRuntimes(eventAPIClient, configProvider, toEventsPage)
 		if err != nil {
 			return err
 		}
@@ -666,9 +662,9 @@ func fetchWithRetries(retryAttempts uint, applyFunc func() error) error {
 	return nil
 }
 
-func fetchTenants(eventAPIClient EventAPIClient, eventsType EventsType, f func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage) ([]model.BusinessTenantMappingInput, error) {
+func fetchTenants(eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage) ([]model.BusinessTenantMappingInput, error) {
 	tenants := make([]model.BusinessTenantMappingInput, 0)
-	err := walkThroughPages(eventAPIClient, eventsType, f, toEventsPage, func(page *eventsPage) error {
+	err := walkThroughPages(eventAPIClient, eventsType, configProvider, toEventsPage, func(page *eventsPage) error {
 		mappings := page.getTenantMappings(eventsType)
 		tenants = append(tenants, mappings...)
 		return nil
@@ -681,10 +677,10 @@ func fetchTenants(eventAPIClient EventAPIClient, eventsType EventsType, f func()
 	return tenants, nil
 }
 
-func fetchMovedRuntimes(eventAPIClient EventAPIClient, f func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage) ([]model.MovedRuntimeByLabelMappingInput, error) {
+func fetchMovedRuntimes(eventAPIClient EventAPIClient, configProvider func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage) ([]model.MovedRuntimeByLabelMappingInput, error) {
 	allMappings := make([]model.MovedRuntimeByLabelMappingInput, 0)
 
-	err := walkThroughPages(eventAPIClient, MovedSubaccountType, f, toEventsPage, func(page *eventsPage) error {
+	err := walkThroughPages(eventAPIClient, MovedSubaccountType, configProvider, toEventsPage, func(page *eventsPage) error {
 		mappings := page.getMovedRuntimes()
 		allMappings = append(allMappings, mappings...)
 		return nil
@@ -697,8 +693,8 @@ func fetchMovedRuntimes(eventAPIClient EventAPIClient, f func() (QueryParams, Pa
 	return allMappings, nil
 }
 
-func walkThroughPages(eventAPIClient EventAPIClient, eventsType EventsType, f func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage, applyFunc func(*eventsPage) error) error {
-	params, pageConfig := f()
+func walkThroughPages(eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage, applyFunc func(*eventsPage) error) error {
+	params, pageConfig := configProvider()
 	firstPage, err := eventAPIClient.FetchTenantEventsPage(eventsType, params)
 	if err != nil {
 		return errors.Wrap(err, "while fetching tenant events page")
@@ -715,7 +711,7 @@ func walkThroughPages(eventAPIClient EventAPIClient, eventsType EventsType, f fu
 	initialCount := gjson.GetBytes(firstPage, pageConfig.TotalResultsField).Int()
 	totalPages := gjson.GetBytes(firstPage, pageConfig.TotalPagesField).Int()
 
-	pageStart, err := strconv.ParseInt(pageConfig.PageStartValue, 10, 64)
+	pageStart, err := strconv.ParseInt(params[pageConfig.PageNumField], 10, 64)
 	if err != nil {
 		return err
 	}
