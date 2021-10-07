@@ -7,14 +7,15 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
-	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"math/big"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
