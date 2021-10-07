@@ -71,7 +71,6 @@ type WebhookService interface {
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
-	IsSystemAuthOneTimeTokenType(systemAuth *model.SystemAuth) bool
 }
 
 // WebhookConverter missing godoc
@@ -140,8 +139,6 @@ type Resolver struct {
 	sysAuthConv      SystemAuthConverter
 	eventingSvc      EventingService
 	bndlConv         BundleConverter
-
-	oneTimeTokenSvc OneTimeTokenService
 }
 
 // NewResolver missing godoc
@@ -155,8 +152,7 @@ func NewResolver(transact persistence.Transactioner,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
 	bndlSvc BundleService,
-	bndlConverter BundleConverter,
-	oneTimeTokenSvc OneTimeTokenService) *Resolver {
+	bndlConverter BundleConverter) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		appSvc:           svc,
@@ -169,7 +165,6 @@ func NewResolver(transact persistence.Transactioner,
 		eventingSvc:      eventingSvc,
 		bndlSvc:          bndlSvc,
 		bndlConv:         bndlConverter,
-		oneTimeTokenSvc:  oneTimeTokenSvc,
 	}
 }
 

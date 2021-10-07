@@ -38,7 +38,8 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
 	}
-	if authDetails.AuthFlow == oathkeeper.CertificateFlow && sysAuth.Value.CertCommonName != authDetails.AuthID {
+
+	if authDetails.AuthFlow.IsCertFlow() && sysAuth.Value != nil && sysAuth.Value.CertCommonName != authDetails.AuthID {
 		sysAuth.Value.OneTimeToken = nil
 		sysAuth.Value.CertCommonName = authDetails.AuthID
 

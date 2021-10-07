@@ -134,6 +134,53 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
 
+	t.Run("updates system auth with certificate common name if it is certificate flow and not already updated", func(t *testing.T) {
+		authID := uuid.New()
+		refObjID := uuid.New()
+		expectedTenantID := uuid.New()
+		expectedScopes := []string{"application:read"}
+		sysAuth := &model.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
+			AppID:    str.Ptr(refObjID.String()),
+			Value: &model.Auth{
+				OneTimeToken: &model.OneTimeToken{
+					Token: "token",
+				},
+			},
+		}
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ScopesKey: strings.Join(expectedScopes, " "),
+				},
+			},
+		}
+
+		systemAuthSvcMock := getSystemAuthSvcMock()
+		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
+		systemAuthSvcMock.On("Update", mock.Anything, mock.MatchedBy(func(sa *model.SystemAuth) bool {
+			return sa.Value.OneTimeToken == nil && sa.Value.CertCommonName == authID.String()
+		})).Return(nil).Once()
+
+		scopesGetterMock := getScopesGetterMock()
+		scopesGetterMock.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return(expectedScopes, nil).Once()
+
+		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, scopesGetterMock, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
+
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
+
+		require.NoError(t, err)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, "", objCtx.ExternalTenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
+		require.Equal(t, "Application", string(objCtx.ConsumerType))
+
+		mock.AssertExpectationsForObjects(t, systemAuthSvcMock, scopesGetterMock)
+	})
+
 	t.Run("returns error when unable to get SystemAuth from the service", func(t *testing.T) {
 		authID := uuid.New()
 

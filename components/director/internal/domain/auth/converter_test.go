@@ -10,6 +10,7 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
+	emptyCertCommonName := ""
 	// given
 	testCases := []struct {
 		Name     string
@@ -23,9 +24,11 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Expected: fixDetailedGQLAuth(),
 		},
 		{
-			Name:     "Empty",
-			Input:    &model.Auth{},
-			Expected: &graphql.Auth{},
+			Name:  "Empty",
+			Input: &model.Auth{},
+			Expected: &graphql.Auth{
+				CertCommonName: &emptyCertCommonName,
+			},
 		},
 		{
 			Name:     "Nil",
