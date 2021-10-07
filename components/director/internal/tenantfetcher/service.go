@@ -428,7 +428,7 @@ func parents(currTenants map[string]string, eventsTenants []model.BusinessTenant
 }
 
 func getTenantParentType(tenantType string) string {
-	if tenantType == GlobalAccountEntityType {
+	if tenantType == tenant.TypeToStr(tenant.Account) {
 		return tenant.TypeToStr(tenant.Customer)
 	}
 	return tenant.TypeToStr(tenant.Account)

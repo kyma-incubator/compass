@@ -11,9 +11,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// GlobalAccountEntityType is the value for entityType property when fetching subaccounts
-const GlobalAccountEntityType = "GlobalAccount"
-
 type eventsPage struct {
 	fieldMapping                    TenantFieldMapping
 	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
