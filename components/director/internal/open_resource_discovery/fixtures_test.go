@@ -521,7 +521,6 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 }
 
 func fixApplicationPage() *model.ApplicationPage {
-	appType := testApplicationType
 	return &model.ApplicationPage{
 		Data: []*model.Application{
 			{
@@ -531,7 +530,7 @@ func fixApplicationPage() *model.ApplicationPage {
 					ID:    appID,
 					Ready: true,
 				},
-				Type: &appType,
+				Type: testApplicationType,
 			},
 		},
 		PageInfo: &pagination.Page{

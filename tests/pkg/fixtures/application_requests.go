@@ -17,6 +17,14 @@ const (
 	integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
 )
 
+type ORDConfigSecurity struct {
+	Enabled  bool   `json:"enabled"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Token    string `json:"token"`
+	TokenURL string `json:"-"`
+}
+
 func FixSampleApplicationRegisterInputWithName(placeholder, name string) graphql.ApplicationRegisterInput {
 	sampleInput := FixSampleApplicationRegisterInput(placeholder)
 	sampleInput.Name = name
@@ -45,8 +53,8 @@ func FixSampleApplicationRegisterInputWithWebhooks(placeholder string) graphql.A
 	}
 }
 
-func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, webhookURL string) graphql.ApplicationRegisterInput {
-	return graphql.ApplicationRegisterInput{
+func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, webhookURL string, ordConfigSecurity *ORDConfigSecurity) graphql.ApplicationRegisterInput {
+	appRegisterInput := graphql.ApplicationRegisterInput{
 		Name:        appName,
 		Description: ptr.String(appDescription),
 		Webhooks: []*graphql.WebhookInput{{
@@ -54,17 +62,29 @@ func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, w
 			URL:  ptr.String(webhookURL),
 		}},
 	}
-}
 
-func FixSampleApplicationRegisterInputWithORDSecuredWebhooks(appName, appDescription, webhookURL, username, password string) graphql.ApplicationRegisterInput {
-	appRegisterInput := FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, webhookURL)
-	appRegisterInput.Webhooks[0].Auth = &graphql.AuthInput{
-		Credential: &graphql.CredentialDataInput{
-			Basic: &graphql.BasicCredentialDataInput{
-				Username: username,
-				Password: password,
-			},
-		},
+	if ordConfigSecurity != nil && ordConfigSecurity.Enabled {
+		if ordConfigSecurity.TokenURL != "" {
+			appRegisterInput.Webhooks[0].Auth = &graphql.AuthInput{
+				Credential: &graphql.CredentialDataInput{
+					Oauth: &graphql.OAuthCredentialDataInput{
+						ClientID:     ordConfigSecurity.Username,
+						ClientSecret: ordConfigSecurity.Password,
+						URL:          ordConfigSecurity.TokenURL,
+					},
+				},
+			}
+		} else {
+			appRegisterInput.Webhooks[0].Auth = &graphql.AuthInput{
+				Credential: &graphql.CredentialDataInput{
+					Basic: &graphql.BasicCredentialDataInput{
+						Username: ordConfigSecurity.Username,
+						Password: ordConfigSecurity.Password,
+					},
+				},
+			}
+		}
+
 	}
 
 	return appRegisterInput

@@ -101,9 +101,14 @@ func initHTTP(cfg config) (http.Handler, error) {
 	router.HandleFunc("/external-api/unsecured/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/unsecured/spec/flapping", apispec.FlappingHandleFunc())
 
-	ordHandler := ord_aggregator.NewORDHandler()
+	ordHandler, basicORDHandler, oauthORDHandler := ord_aggregator.NewORDHandler(), ord_aggregator.NewORDHandler(), ord_aggregator.NewORDHandler()
 	router.HandleFunc("/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig)
-	router.HandleFunc("/.well-known/open-resource-discovery/configure/security", ordHandler.HandleFuncOrdConfigSecurity)
+	router.HandleFunc("/.well-known/open-resource-discovery/basic", basicORDHandler.HandleFuncOrdConfig)
+	router.HandleFunc("/.well-known/open-resource-discovery/oauth", oauthORDHandler.HandleFuncOrdConfig)
+	router.HandleFunc("/.well-known/open-resource-discovery/oauth/token", oauthORDHandler.HandleFuncOrdConfigSecurityToken)
+
+	router.HandleFunc("/.well-known/open-resource-discovery/basic/configure", basicORDHandler.HandleFuncOrdConfigSecurity)
+	router.HandleFunc("/.well-known/open-resource-discovery/oauth/configure", oauthORDHandler.HandleFuncOrdConfigSecurity)
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument)
 
 	router.HandleFunc("/test/fullPath", ordHandler.HandleFuncOrdConfig)

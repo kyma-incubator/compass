@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
-	"github.com/tidwall/gjson"
 )
 
 // Client represents ORD documents client
@@ -104,16 +103,15 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 		return nil, err
 	}
 
-	appType := gjson.GetBytes(app.Labels, applicationTypeLabel).String()
 	var resp *http.Response
-	if _, secured := c.securedApplicationTypes[appType]; secured {
-		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is secured and webhook credentials will be used", app.Name, app.ID, appType)
+	if _, secured := c.securedApplicationTypes[app.Type]; secured {
+		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is secured and webhook credentials will be used", app.Name, app.ID, app.Type)
 		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, configURL, webhook.Auth)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration with webhook credentials")
 		}
 	} else {
-		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is not secured", app.Name, app.ID, appType)
+		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is not secured", app.Name, app.ID, app.Type)
 		resp, err = httputil.GetRequestWithoutCredentials(c.Client, configURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")

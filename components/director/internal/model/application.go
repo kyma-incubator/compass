@@ -23,7 +23,7 @@ type Application struct {
 	BaseURL               *string         `json:"baseUrl"`
 	Labels                json.RawMessage `json:"labels"`
 	CorrelationIDs        json.RawMessage `json:"correlationIds,omitempty"`
-	Type                  *string         `json:"-"`
+	Type                  string          `json:"-"`
 
 	*BaseEntity
 }

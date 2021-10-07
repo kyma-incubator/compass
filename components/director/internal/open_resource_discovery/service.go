@@ -112,7 +112,7 @@ func (s *Service) listAppPage(ctx context.Context, pageSize int, cursor string) 
 	for i := range page.Data {
 		appType, ok := appLabelsMap[page.Data[i].ID].(string)
 		if ok {
-			page.Data[i].Type = &appType
+			page.Data[i].Type = appType
 		}
 	}
 
