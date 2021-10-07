@@ -30,9 +30,9 @@ type TenantFieldMapping struct {
 
 	NameField              string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
 	IDField                string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
-	GlobalAccountGuidField string `envconfig:"optional,default=globalAccountGUID,APP_GLOBAL_ACCOUNT_GUID_FIELD"`
+	GlobalAccountGUIDField string `envconfig:"optional,default=globalAccountGUID,APP_GLOBAL_ACCOUNT_GUID_FIELD"`
 	SubaccountIDField      string `envconfig:"optional,default=subaccountId,APP_SUBACCOUNT_ID_FIELD"`
-	SubaccountGuidField    string `envconfig:"optional,default=subaccountGuid,APP_SUBACCOUNT_GUID_FIELD"`
+	SubaccountGUIDField    string `envconfig:"optional,default=subaccountGuid,APP_SUBACCOUNT_GUID_FIELD"`
 	CustomerIDField        string `envconfig:"default=customerId,APP_MAPPING_FIELD_CUSTOMER_ID"`
 	SubdomainField         string `envconfig:"default=subdomain,APP_MAPPING_FIELD_SUBDOMAIN"`
 	DetailsField           string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
