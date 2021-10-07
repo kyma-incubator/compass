@@ -477,24 +477,24 @@ func TestAuthenticator_Handler(t *testing.T) {
 }
 
 func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
-	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": tenant, "externalTenant": ""})
-	require.NoError(t, err)
-
-	consumers := []consumer.Consumer{
-		{
-			ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
-			ConsumerType: consumer.Runtime,
-		},
+	tokenClaims := struct {
+		Tenant       string                `json:"tenant"`
+		Scopes       string                `json:"scopes"`
+		ConsumerID   string                `json:"consumerID"`
+		ConsumerType consumer.ConsumerType `json:"consumerType"`
+		OnBehalfOf   string                `json:"onBehalfOf"`
+		jwt.StandardClaims
+	}{
+		Scopes:       scopes,
+		ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
+		ConsumerType: consumer.Runtime,
 	}
 
-	consumersJSON, err := json.Marshal(consumers)
+	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": tenant, "externalTenant": ""})
 	require.NoError(t, err)
+	tokenClaims.Tenant = string(tenantJSON)
 
-	token := jwt.NewWithClaims(jwt.SigningMethodNone, claims.Claims{
-		TenantString:    string(tenantJSON),
-		ConsumersString: string(consumersJSON),
-		Scopes:          scopes,
-	})
+	token := jwt.NewWithClaims(jwt.SigningMethodNone, tokenClaims)
 
 	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
 	require.NoError(t, err)
@@ -503,24 +503,24 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 }
 
 func createTokenWithSigningMethod(t *testing.T, tenant string, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
-	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": tenant, "externalTenant": "externalTenantName"})
-	require.NoError(t, err)
-
-	consumers := []consumer.Consumer{
-		{
-			ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
-			ConsumerType: consumer.Runtime,
-		},
+	tokenClaims := struct {
+		Tenant       string                `json:"tenant"`
+		Scopes       string                `json:"scopes"`
+		ConsumerID   string                `json:"consumerID"`
+		ConsumerType consumer.ConsumerType `json:"consumerType"`
+		OnBehalfOf   string                `json:"onBehalfOf"`
+		jwt.StandardClaims
+	}{
+		Scopes:       scopes,
+		ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
+		ConsumerType: consumer.Runtime,
 	}
 
-	consumersJSON, err := json.Marshal(consumers)
+	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": tenant, "externalTenant": "externalTenantName"})
 	require.NoError(t, err)
+	tokenClaims.Tenant = string(tenantJSON)
 
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims.Claims{
-		TenantString:    string(tenantJSON),
-		ConsumersString: string(consumersJSON),
-		Scopes:          scopes,
-	})
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, tokenClaims)
 
 	if isSigningKeyAvailable {
 		token.Header[authenticator.JwksKeyIDKey] = keyID

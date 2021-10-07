@@ -21,10 +21,6 @@ spec:
     config:
       headers:
         x-authenticator-name: {{ $authenticatorName }}
-  - handler: header
-    config:
-      headers:
-        extra-keys: {{ $.Values.global.extraKeys.default | quote }}
   - handler: hydrator
 {{ toYaml $.Values.global.oathkeeper.mutators.authenticationMappingService | indent 4 }}
   - handler: hydrator

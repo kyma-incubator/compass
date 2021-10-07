@@ -25,6 +25,10 @@ func NewSystemAuthContextProvider(systemAuthSvc systemauth.SystemAuthService, sc
 		systemAuthSvc: systemAuthSvc,
 		scopesGetter:  scopesGetter,
 		tenantRepo:    tenantRepo,
+		tenantKeys: KeysExtra{
+			TenantKey:         ConsumerTenantKey,
+			ExternalTenantKey: ExternalTenantKey,
+		},
 	}
 }
 
@@ -32,10 +36,11 @@ type systemAuthContextProvider struct {
 	systemAuthSvc systemauth.SystemAuthService
 	scopesGetter  ScopesGetter
 	tenantRepo    TenantRepository
+	tenantKeys    KeysExtra
 }
 
 // GetObjectContext missing godoc
-func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails, keys KeysExtra) (ObjectContext, error) {
+func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authDetails.AuthID)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
@@ -75,7 +80,7 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		return ObjectContext{}, apperrors.NewInternalError("while mapping reference type to consumer type")
 	}
 
-	objCxt := NewObjectContext(tenantCtx, keys, scopes, refObjID, authDetails.AuthFlow, consumerType)
+	objCxt := NewObjectContext(tenantCtx, m.tenantKeys, scopes, refObjID, authDetails.AuthFlow, consumerType, SystemAuthObjectContextProvider)
 	log.C(ctx).Infof("Object context: %+v", objCxt)
 
 	return objCxt, nil

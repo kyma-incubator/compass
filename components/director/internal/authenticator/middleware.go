@@ -3,7 +3,6 @@ package authenticator
 import (
 	"context"
 	"crypto/rsa"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -151,22 +150,9 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 
 func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*claims.Claims, error) {
 	parsed := claims.Claims{}
+	err := parsed.UnmarshalJSONClaims(ctx, bearerToken, a.getKeyFunc(ctx))
 
-	if _, err := jwt.ParseWithClaims(bearerToken, &parsed, a.getKeyFunc(ctx)); err != nil {
-		return nil, err
-	}
-
-	err := json.Unmarshal([]byte(parsed.ConsumersString), &parsed.Consumers)
-	if err != nil {
-		log.C(ctx).Errorf("while unmarshaling consumers %v", err)
-	}
-
-	err = json.Unmarshal([]byte(parsed.TenantString), &parsed.Tenant)
-	if err != nil {
-		log.C(ctx).Errorf("while unmarshaling tenants %v", err)
-	}
-
-	return &parsed, nil
+	return &parsed, err
 }
 
 func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (interface{}, error) {

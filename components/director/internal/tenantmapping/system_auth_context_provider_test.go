@@ -23,11 +23,6 @@ import (
 )
 
 func TestSystemAuthContextProvider(t *testing.T) {
-	keys := tenantmapping.KeysExtra{
-		TenantKey:         "tenant",
-		ExternalTenantKey: "externalTenant",
-	}
-
 	t.Run("returns tenant and scopes in the Application or Runtime SystemAuth case for Certificate flow", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
@@ -49,7 +44,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, scopesGetterMock, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -93,7 +88,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, tenantRepoMock)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -129,7 +124,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -152,7 +147,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, "while retrieving system auth from database: some-error")
 
@@ -172,7 +167,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, "while getting reference object type for system auth id 42: Internal Server Error: unknown reference object type")
 
@@ -195,7 +190,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Integration System, using auth flow: OAuth2: while fetching scopes: the key does not exist in the source object [key=scope]", sysAuth.ID))
 
@@ -226,7 +221,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: OAuth2: while fetching tenant external id: while parsing the value for key=tenant: Internal Server Error: unable to cast the value to a string type", sysAuth.ID))
 
@@ -266,7 +261,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, tenantRepoMock)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails, keys)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.Equal(t, objCtx.TenantID, "")
 		require.Nil(t, err)
@@ -296,7 +291,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: OAuth2: Internal Server Error: system auth tenant id cannot be nil", sysAuth.ID))
 
@@ -320,7 +315,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: OAuth2: while fetching scopes: the key does not exist in the source object [key=scope]", sysAuth.ID))
 
@@ -347,7 +342,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, scopesGetterMock, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
 
-		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails, keys)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: Certificate: while fetching scopes: some-error", sysAuth.ID))
 

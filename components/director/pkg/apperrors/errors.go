@@ -294,11 +294,11 @@ func NewCannotReadClientUserError() error {
 	}
 }
 
-// NewMultipleConsumersNotSupportedError missing godoc
-func NewMultipleConsumersNotSupportedError() error {
+// NewConsumerProviderFlowNotSupportedError missing godoc
+func NewConsumerProviderFlowNotSupportedError() error {
 	return Error{
 		errorCode: InternalError,
-		Message:   MultipleConsumersNotSupportedMsg,
+		Message:   ConsumerProviderFlowNotSupportedMsg,
 		arguments: map[string]string{},
 	}
 }

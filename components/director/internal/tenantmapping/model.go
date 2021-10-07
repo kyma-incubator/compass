@@ -27,10 +27,11 @@ func NewTenantContext(externalTenantID, tenantID string) TenantContext {
 type ObjectContext struct {
 	TenantContext
 	KeysExtra
-	Scopes       string
-	ConsumerID   string
-	AuthFlow     oathkeeper.AuthFlow
-	ConsumerType consumer.ConsumerType
+	Scopes          string
+	ConsumerID      string
+	AuthFlow        oathkeeper.AuthFlow
+	ConsumerType    consumer.ConsumerType
+	ContextProvider string
 }
 
 // KeysExtra contains the keys that should be used for Tenant and ExternalTenant in the IDToken claims
@@ -40,13 +41,14 @@ type KeysExtra struct {
 }
 
 // NewObjectContext missing godoc
-func NewObjectContext(tenantCtx TenantContext, keysExtra KeysExtra, scopes string, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.ConsumerType) ObjectContext {
+func NewObjectContext(tenantCtx TenantContext, keysExtra KeysExtra, scopes string, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.ConsumerType, contextProvider string) ObjectContext {
 	return ObjectContext{
-		TenantContext: tenantCtx,
-		KeysExtra:     keysExtra,
-		Scopes:        scopes,
-		ConsumerID:    consumerID,
-		AuthFlow:      authFlow,
-		ConsumerType:  consumerType,
+		TenantContext:   tenantCtx,
+		KeysExtra:       keysExtra,
+		Scopes:          scopes,
+		ConsumerID:      consumerID,
+		AuthFlow:        authFlow,
+		ConsumerType:    consumerType,
+		ContextProvider: contextProvider,
 	}
 }

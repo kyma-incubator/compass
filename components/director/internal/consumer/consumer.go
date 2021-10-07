@@ -25,6 +25,7 @@ type Consumer struct {
 	ConsumerID   string `json:"ConsumerID"`
 	ConsumerType `json:"ConsumerType"`
 	Flow         oathkeeper.AuthFlow `json:"Flow"`
+	OnBehalfOf   string              `json:"onBehalfOf"`
 }
 
 // MapSystemAuthToConsumerType missing godoc

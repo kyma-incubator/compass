@@ -302,8 +302,8 @@ global:
     port: 4455
     timeout_ms: 120000
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumers": "{{ .Extra.consumers }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read","tenant":"{\"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\",\"externalTenant\":\"\"}","consumers":"[{\"ConsumerID\":\"\",\"ConsumerType\":\"Internal Component\",\"Flow\":\"Internal\"}]"}'
+      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read","tenant":"{\"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\",\"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -523,10 +523,6 @@ global:
       name: "compass-director-migrations"
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
-
-  extraKeys:
-    default: '"{\"UserObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" }, \"SystemAuthObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" }, \"AuthenticatorObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" }, \"CertServiceObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" } }"'
-    compassGatewayOrdExternalCerts: '"{\"UserObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" }, \"SystemAuthObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"externalTenant\" }, \"AuthenticatorObjectContextProvider\": { \"TenantKey\": \"consumerTenant\", \"ExternalTenantKey\": \"consumerExternalTenant\" }, \"CertServiceObjectContextProvider\": { \"TenantKey\": \"providerTenant\", \"ExternalTenantKey\": \"providerExternalTenant\" } }"'
 
 pairing-adapter:
   enabled: false
