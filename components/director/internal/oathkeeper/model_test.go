@@ -308,7 +308,6 @@ func TestReqData_ExtractCoordinates(t *testing.T) {
 
 			assert.Equal(t, tt.expectedCoordinates, coords)
 			assert.Equal(t, tt.expectedSuccess, success)
-
 		})
 	}
 }
