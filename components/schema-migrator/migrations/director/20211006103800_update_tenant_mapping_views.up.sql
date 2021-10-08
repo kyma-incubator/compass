@@ -15,9 +15,9 @@ SELECT DISTINCT t_apps.tenant_id, apps.id, apps.name, apps.description, apps.sta
 FROM applications AS apps
          LEFT JOIN app_templates AS tmpl ON apps.app_template_id = tmpl.id
          INNER JOIN (
-    SELECT a1.id, a1.tenant_id::text FROM applications AS a1
+    SELECT a1.id, a1.tenant_id FROM applications AS a1
     UNION ALL
-    SELECT a.id, t.parent::text as tenant_id FROM applications AS a
+    SELECT a.id, t.parent as tenant_id FROM applications AS a
                                                 INNER JOIN  business_tenant_mappings AS t ON t.id = a.tenant_id WHERE t.parent IS NOT NULL
     UNION ALL
     SELECT l.app_id as id, asa.selector_value::text as tenant_id FROM labels AS l
@@ -40,9 +40,9 @@ SELECT DISTINCT t_apps.tenant_id, apis.id, apis.app_id, apis.name, apis.descript
                 apis.target_urls, apis.extensible, apis.successors, apis.resource_hash
 FROM api_definitions AS apis
          INNER JOIN (
-    SELECT a1.id, a1.tenant_id::text FROM applications AS a1
+    SELECT a1.id, a1.tenant_id FROM applications AS a1
     UNION ALL
-    SELECT a.id, t.parent::text as tenant_id FROM applications AS a
+    SELECT a.id, t.parent as tenant_id FROM applications AS a
                                                       INNER JOIN  business_tenant_mappings AS t ON t.id = a.tenant_id WHERE t.parent IS NOT NULL
     UNION ALL
     SELECT l.app_id as id, asa.selector_value::text as tenant_id FROM labels AS l
@@ -59,9 +59,9 @@ SELECT DISTINCT t_apps.tenant_id, events.id, events.app_id, events.name, events.
                 events.updated_at, events.deleted_at, events.error, events.extensible, events.successors, events.resource_hash
 FROM event_api_definitions AS events
          INNER JOIN (
-    SELECT a1.id, a1.tenant_id::text FROM applications AS a1
+    SELECT a1.id, a1.tenant_id FROM applications AS a1
     UNION ALL
-    SELECT a.id, t.parent::text as tenant_id FROM applications AS a
+    SELECT a.id, t.parent as tenant_id FROM applications AS a
                                                       INNER JOIN  business_tenant_mappings AS t ON t.id = a.tenant_id WHERE t.parent IS NOT NULL
     UNION ALL
     SELECT l.app_id as id, asa.selector_value::text as tenant_id FROM labels AS l
@@ -74,9 +74,9 @@ SELECT DISTINCT t_apps.tenant_id,b.id, b.app_id, b.name, b.description, b.instan
                 b.updated_at, b.deleted_at, b.error
 FROM bundles AS b
          INNER JOIN (
-    SELECT a1.id, a1.tenant_id::text FROM applications AS a1
+    SELECT a1.id, a1.tenant_id FROM applications AS a1
     UNION ALL
-    SELECT a.id, t.parent::text as tenant_id FROM applications AS a
+    SELECT a.id, t.parentstatus as tenant_id FROM applications AS a
                                                 INNER JOIN  business_tenant_mappings AS t ON t.id = a.tenant_id WHERE t.parent IS NOT NULL
     UNION ALL
     SELECT l.app_id AS id, asa.selector_value::text AS tenant_id FROM labels AS l
@@ -87,9 +87,9 @@ CREATE OR REPLACE VIEW tenants_specifications  AS
 SELECT DISTINCT t_api_event_def.tenant_id, spec.id, spec.api_def_id, spec.event_def_id, spec.spec_data, spec.api_spec_format, spec.api_spec_type, spec.event_spec_format, spec.event_spec_type, spec.custom_type, spec.created_at
 FROM specifications AS spec
          INNER JOIN (
-    SELECT a.id, a.tenant_id::text FROM tenants_apis AS a
+    SELECT a.id, a.tenant_id FROM tenants_apis AS a
     UNION ALL
-    SELECT e.id, e.tenant_id::text FROM tenants_events AS e
+    SELECT e.id, e.tenant_id FROM tenants_events AS e
 ) AS t_api_event_def ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
 
 COMMIT;
