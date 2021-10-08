@@ -495,23 +495,6 @@ global:
     enabled: true
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
 
-  authenticators:
-    tenant-fetcher:
-      enabled: false
-      createRule: true
-      gatewayHost: "compass-gateway"
-      trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-      attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
-      path: /tenants/<.*>
-      upstreamComponent: "compass-tenant-fetcher"
-    subscription:
-      enabled: false
-      createRule: false
-      gatewayHost: "compass-gateway-sap-mtls"
-      trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-      path: /<.*>
-      attributes: '{"uniqueAttribute": { "key": "test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
-
   externalServicesMock:
     enabled: false
     auditlog: false

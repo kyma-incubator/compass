@@ -114,7 +114,6 @@ type authenticationError struct {
 
 // ServeHTTP missing godoc
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	fmt.Println("Here we are")
 	if req.Method != http.MethodPost {
 		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusOK)
 		return
