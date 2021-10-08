@@ -69,11 +69,11 @@ spec:
                 - name: APP_METRICS_PUSH_ENDPOINT
                   value: {{ $.Values.global.metrics.pushEndpoint}}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_SUBJECT_PATTERN
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.subectPattern }}
+                  value: {{ $.Values.global.mtlsClient.subectPattern }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_COMMON_NAME
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.commonName }}
+                  value: {{ $.Values.global.mtlsClient.commonName }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_LOCALITY
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.locality }}
+                  value: {{ $.Values.global.mtlsClient.locality }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_POLICY
                   value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.policy }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CSR_ENDPOINT

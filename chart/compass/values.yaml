@@ -373,6 +373,11 @@ global:
     port: 3000
     defaultResponseType: "xml"
 
+  mtlsClient:
+    subectPattern: "C=DE, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=123e4567-e89b-12d3-a456-426614174001, L=%s, CN=%s"
+    commonName: "compass"
+    locality: "local"
+
   ordAggregator:
     name: ord-aggregator
     enabled: true
@@ -382,9 +387,6 @@ global:
       maxIdleConnections: 2
     accessStrategies:
       cmpMtls:
-        subectPattern: "C=DE, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=123e4567-e89b-12d3-a456-426614174001, L=%s, CN=%s"
-        commonName: "compass"
-        locality: "local"
         policy: "compass-local-clients"
         csrEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
         certSvcApiPath: "/cert"
