@@ -40,12 +40,12 @@ const (
 	expectedSecondSystemInstanceName        = "second-test-app"
 	expectedThirdSystemInstanceName         = "third-test-app"
 	expectedFourthSystemInstanceName        = "fourth-test-app"
-	expectedFifthSystemInstanceName        = "fifth-test-app"
+	expectedFifthSystemInstanceName         = "fifth-test-app"
 	expectedSystemInstanceDescription       = "test-app1-description"
 	expectedSecondSystemInstanceDescription = "test-app2-description"
 	expectedThirdSystemInstanceDescription  = "test-app3-description"
 	expectedFourthSystemInstanceDescription = "test-app4-description"
-	expectedFifthSystemInstanceDescription = "test-app5-description"
+	expectedFifthSystemInstanceDescription  = "test-app5-description"
 	expectedBundleTitle                     = "BUNDLE TITLE"
 	secondExpectedBundleTitle               = "BUNDLE TITLE 2"
 	expectedBundleDescription               = "lorem ipsum dolor nsq sme"
@@ -152,7 +152,6 @@ func TestORDAggregator(t *testing.T) {
 		bundlesEventsData[secondExpectedBundleTitle] = []string{firstEventTitle, secondEventTitle}
 
 		ctx := context.Background()
-
 
 		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)

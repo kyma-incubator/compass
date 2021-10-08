@@ -138,7 +138,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 
 	clientCert := x509.Certificate{
 		SignatureAlgorithm: clientCSR.SignatureAlgorithm,
-		SerialNumber: big.NewInt(2),
+		SerialNumber:       big.NewInt(2),
 		Subject: pkix.Name{
 			Country:            []string{"DE"},
 			Organization:       []string{"SAP SE"},
