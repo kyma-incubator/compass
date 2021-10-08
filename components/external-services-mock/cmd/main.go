@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"log"
 	"net/http"
 	"strings"
@@ -83,7 +84,9 @@ func main() {
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM([]byte(cfg.CACert))
 	if len(cfg.CertSvcRootCA) > 0 {
-		caCertPool.AppendCertsFromPEM([]byte(cfg.CertSvcRootCA))
+		rootCA, err := base64.StdEncoding.DecodeString(cfg.CertSvcRootCA)
+		exitOnError(err, "while base64 decoding Cert Svc ROOT CA")
+		caCertPool.AppendCertsFromPEM(rootCA)
 	}
 
 	certSecuredServer := &http.Server{
