@@ -770,7 +770,7 @@ func integrationSystemClient(t require.TestingT, ctx context.Context, base *http
 
 // extIssuerCertClient returns http client configured with client certificate manually signed by connector's CA
 // and a subject matching external issuer's subject contract.
-func extIssuerCertClient(t require.TestingT, OUTenantID string) *http.Client {
+func extIssuerCertClient(t require.TestingT, subTenantID string) *http.Client {
 	// Parse the CA cert
 	pemBlock, _ := pem.Decode(testConfig.CA.Certificate)
 	require.NotNil(t, pemBlock)
@@ -796,7 +796,7 @@ func extIssuerCertClient(t require.TestingT, OUTenantID string) *http.Client {
 		Subject: pkix.Name{
 			Country:            []string{"DE"},
 			Organization:       []string{"SAP SE"},
-			OrganizationalUnit: []string{"SAP Cloud Platform Clients", "Region", OUTenantID},
+			OrganizationalUnit: []string{"SAP Cloud Platform Clients", "Region", subTenantID},
 			Locality:           []string{"locality"},
 			CommonName:         "common-name",
 		},
