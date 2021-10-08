@@ -38,6 +38,8 @@ spec:
                     name: {{ .Values.global.auditlog.secretName }}
                     key: auditlog-client-secret
               {{- end }}
+              - name: APP_CERT_SVC_ROOT_CA
+                value: "{{ .Values.global.externalServicesMock.certSvc.rootCA }}"
               - name: BASIC_USERNAME
                 valueFrom:
                   secretKeyRef:

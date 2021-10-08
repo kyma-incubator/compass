@@ -494,6 +494,8 @@ global:
   externalServicesMock:
     enabled: false
     auditlog: false
+    certSvc:
+      rootCA: ""
     certSecuredPort: 8081
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials

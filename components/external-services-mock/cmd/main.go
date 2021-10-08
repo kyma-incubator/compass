@@ -43,8 +43,9 @@ type config struct {
 	BasicCredentialsConfig
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
 
-	CACert string `envconfig:"APP_CA_CERT"`
-	CAKey  string `envconfig:"APP_CA_KEY"`
+	CACert        string `envconfig:"APP_CA_CERT"`
+	CAKey         string `envconfig:"APP_CA_KEY"`
+	CertSvcRootCA string `envconfig:"APP_CERT_SVC_ROOT_CA"`
 }
 
 type OAuthConfig struct {
@@ -81,6 +82,9 @@ func main() {
 
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM([]byte(cfg.CACert))
+	if len(cfg.CertSvcRootCA) > 0 {
+		caCertPool.AppendCertsFromPEM([]byte(cfg.CertSvcRootCA))
+	}
 
 	certSecuredServer := &http.Server{
 		Addr:    cfg.CertSecuredServerAddress,
