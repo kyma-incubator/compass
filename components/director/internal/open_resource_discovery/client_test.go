@@ -134,7 +134,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				return &http.Response{
 					StatusCode: http.StatusUnauthorized,
-					Body:       ioutil.NopCloser(nil),
+					Body:       nil,
 				}
 			},
 			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration: status code 401"),
