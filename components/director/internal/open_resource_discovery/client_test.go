@@ -84,7 +84,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		},
 		{
 			Name:               "Success with secured system type configured and basic credentials",
-			SecuredSystemTypes: []string{"testAppType"},
+			SecuredSystemTypes: []string{testApplicationType},
 			Credentials: &model.Auth{
 				Credential: model.CredentialData{
 					Basic: &model.BasicCredentialData{
@@ -100,7 +100,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		},
 		{
 			Name:               "Success with secured system type configured and oauth credentials",
-			SecuredSystemTypes: []string{"testAppType"},
+			SecuredSystemTypes: []string{testApplicationType},
 			Credentials: &model.Auth{
 				Credential: model.CredentialData{
 					Oauth: &model.OAuthCredentialData{
@@ -117,12 +117,12 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		},
 		{
 			Name:               "Error fetching well-known config due to missing credentials",
-			SecuredSystemTypes: []string{"testAppType"},
+			SecuredSystemTypes: []string{testApplicationType},
 			ExpectedErr:        errors.New("error while fetching open resource discovery well-known configuration with webhook credentials: Invalid data [reason=Credentials not provided]"),
 		},
 		{
 			Name:               "Error fetching well-known config due to invalid credentials",
-			SecuredSystemTypes: []string{"testAppType"},
+			SecuredSystemTypes: []string{testApplicationType},
 			Credentials: &model.Auth{
 				Credential: model.CredentialData{
 					Basic: &model.BasicCredentialData{
