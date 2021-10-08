@@ -330,16 +330,16 @@ global:
             attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
             path: /tenants/<.*>
             upstreamComponent: "compass-tenant-fetcher"
-        subscriptionAuthenMappingService:
+        subscriberAuthenMappingService:
           cfg:
             config:
               api:
-                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/subscription
+                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/subscriber
                 retry:
                   give_up_after: 6s
                   max_delay: 2000ms
           authenticator:
-            name: "subscription"
+            name: "subscriber"
             enabled: false
             createRule: false
             gatewayHost: "compass-gateway-sap-mtls"

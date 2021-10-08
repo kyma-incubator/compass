@@ -27,6 +27,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 
 	"github.com/tidwall/gjson"
@@ -128,9 +130,9 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	path := req.URL.Path
-	matchedAuthenticator := strings.TrimPrefix(path, "/authn-mapping/")
-	if len(matchedAuthenticator) == 0 {
+	vars := mux.Vars(req)
+	matchedAuthenticator, ok := vars["authenticator"]
+	if !ok {
 		h.logError(ctx, errors.New("authenticator not found in path"), "An error has occurred while extracting authenticator name.")
 		reqData.Body.Extra["error"] = authenticationError{Message: "Missing authenticator"}
 		h.respond(ctx, writer, reqData.Body)
