@@ -4,9 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/tls"
-	"crypto/x509"
-	"encoding/base64"
 	"log"
 	"net/http"
 	"strings"
@@ -44,9 +41,8 @@ type config struct {
 	BasicCredentialsConfig
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
 
-	CACert        string `envconfig:"APP_CA_CERT"`
-	CAKey         string `envconfig:"APP_CA_KEY"`
-	CertSvcRootCA string `envconfig:"APP_CERT_SVC_ROOT_CA"`
+	CACert string `envconfig:"APP_CA_CERT"`
+	CAKey  string `envconfig:"APP_CA_KEY"`
 }
 
 type OAuthConfig struct {
@@ -81,21 +77,9 @@ func main() {
 		Handler: handler,
 	}
 
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM([]byte(cfg.CACert))
-	if len(cfg.CertSvcRootCA) > 0 {
-		rootCA, err := base64.StdEncoding.DecodeString(cfg.CertSvcRootCA)
-		exitOnError(err, "while base64 decoding Cert Svc ROOT CA")
-		caCertPool.AppendCertsFromPEM(rootCA)
-	}
-
 	certSecuredServer := &http.Server{
 		Addr:    cfg.CertSecuredServerAddress,
 		Handler: certSecuredHandler,
-		TLSConfig: &tls.Config{
-			ClientCAs:  caCertPool,
-			ClientAuth: tls.RequireAndVerifyClientCert,
-		},
 	}
 
 	wg := &sync.WaitGroup{}

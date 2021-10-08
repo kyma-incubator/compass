@@ -382,6 +382,9 @@ global:
     name: ord-aggregator
     enabled: true
     schedule: "*/1 * * * *"
+    http:
+      client:
+        skipSSLValidation: false
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
@@ -496,9 +499,8 @@ global:
   externalServicesMock:
     enabled: false
     auditlog: false
-    certSvc:
-      rootCA: ""
     certSecuredPort: 8081
+    certSecuredHost: compass-external-services-mock-sap-mtls
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials
 

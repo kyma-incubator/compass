@@ -105,13 +105,13 @@ func (c *client) fetchConfig(ctx context.Context, url string) (*WellKnownConfig,
 
 	defer closeBody(ctx, resp.Body)
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d", resp.StatusCode)
-	}
-
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading response body")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d Body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	config := WellKnownConfig{}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"time"
 
@@ -47,7 +48,8 @@ type config struct {
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
-	ClientTimeout time.Duration `envconfig:"default=60s"`
+	ClientTimeout     time.Duration `envconfig:"default=60s"`
+	SkipSSLValidation bool          `envconfig:"default=false"`
 }
 
 func main() {
@@ -68,9 +70,16 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg.Features, transact, &http.Client{
+	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
-	})
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: cfg.SkipSSLValidation,
+			},
+		},
+	}
+
+	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg.Features, transact, httpClient)
 	err = ordAggregator.SyncORDDocuments(ctx)
 	exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 

@@ -19,6 +19,12 @@ spec:
           labels:
             cronjob: {{ .Values.global.ordAggregator.name }}
         spec:
+          {{ if .Values.global.isLocalEnv }}
+          hostAliases:
+            - ip: {{ .Values.global.minikubeIP }}
+              hostnames:
+                - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+            {{ end }}
           containers:
             - name: aggregator
               image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
@@ -63,6 +69,8 @@ spec:
                   value: "{{ .Values.global.ordAggregator.dbPool.maxOpenConnections }}"
                 - name: APP_DB_MAX_IDLE_CONNECTIONS
                   value: "{{ .Values.global.ordAggregator.dbPool.maxIdleConnections }}"
+                - name: APP_SKIP_SSL_VALIDATION
+                  value: "{{ .Values.global.ordAggregator.http.client.skipSSLValidation }}"
                 - name: APP_LOG_FORMAT
                   value: {{ .Values.global.log.format | quote }}
                 {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}

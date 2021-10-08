@@ -81,27 +81,50 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Parse CSR
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
+		return
+	}
+
+	csr := gjson.GetBytes(body, "csr.value")
+	if !csr.Exists() {
+		httphelpers.WriteError(writer, errors.Wrap(err, "missing csr.value in request body"), http.StatusBadRequest)
+		return
+	}
+
+	csrPemBlock, _ := pem.Decode([]byte(csr.String()))
+	if csrPemBlock == nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "while decoding csr pem block"), http.StatusInternalServerError)
+		return
+	}
+
+	clientCSR, err := x509.ParseCertificateRequest(csrPemBlock.Bytes)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "while parsing CSR"), http.StatusInternalServerError)
+		return
+	}
+
+	err = clientCSR.CheckSignature()
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "CSR signature invalid"), http.StatusInternalServerError)
+		return
+	}
+
 	tenant := r.Header.Get("Tenant")
 	if len(tenant) == 0 { // If tenant is not provided in header, search it in the OU in the body (imitating the cert svc interface)
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
-			return
-		}
-
-		if len(body) > 0 {
-			subjectElements := gjson.GetBytes(body, "csr.replace.subject")
-			if subjectElements.Exists() {
-				var subjectElementsSlice []subjectElement
-				err = json.Unmarshal([]byte(subjectElements.String()), &subjectElementsSlice)
-				if err != nil {
-					log.C(r.Context()).WithError(err).Infof("Cannot json unmarshalling the request body. Error: %s", err)
-				}
-				for _, se := range subjectElementsSlice {
-					if se.Name == "OU" {
-						if _, err := uuid.Parse(se.Value); err == nil {
-							tenant = se.Value
-						}
+		subjectElements := gjson.GetBytes(body, "csr.replace.subject")
+		if subjectElements.Exists() {
+			var subjectElementsSlice []subjectElement
+			err = json.Unmarshal([]byte(subjectElements.String()), &subjectElementsSlice)
+			if err != nil {
+				log.C(r.Context()).WithError(err).Infof("Cannot json unmarshalling the request body. Error: %s", err)
+			}
+			for _, se := range subjectElementsSlice {
+				if se.Name == "OU" {
+					if _, err := uuid.Parse(se.Value); err == nil {
+						tenant = se.Value
 					}
 				}
 			}
@@ -114,6 +137,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	clientCert := x509.Certificate{
+		SignatureAlgorithm: clientCSR.SignatureAlgorithm,
 		SerialNumber: big.NewInt(2),
 		Subject: pkix.Name{
 			Country:            []string{"DE"},
@@ -128,13 +152,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
 
-	clientKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		httphelpers.WriteError(writer, err, http.StatusInternalServerError)
-		return
-	}
-
-	clientCrtRaw, err := x509.CreateCertificate(rand.Reader, &clientCert, caCRT, &clientKey.PublicKey, caPrivateKey)
+	clientCrtRaw, err := x509.CreateCertificate(rand.Reader, &clientCert, caCRT, &clientCSR.PublicKey, caPrivateKey)
 	if err != nil {
 		httphelpers.WriteError(writer, err, http.StatusInternalServerError)
 		return

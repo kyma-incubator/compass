@@ -7,6 +7,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+var supportedAccessStrategies = map[AccessStrategyType]AccessStrategyExecutor{
+	OpenAccessStrategy:    &openAccessStrategyExecutor{},
+	CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(),
+}
+
 // UnsupportedAccessStrategyErr is an error produced when execution of unsupported access strategy takes place.
 var UnsupportedAccessStrategyErr = errors.New("unsupported access strategy")
 
@@ -44,11 +49,6 @@ const (
 	// CustomAccessStrategy is an AccessStrategyType indicating that not a standard ORD security mechanism is used for the ORD document
 	CustomAccessStrategy AccessStrategyType = "custom"
 )
-
-var supportedAccessStrategies = map[AccessStrategyType]AccessStrategyExecutor{
-	OpenAccessStrategy:    &openAccessStrategyExecutor{},
-	CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(),
-}
 
 // AccessStrategies is a slice of AccessStrategy objects
 type AccessStrategies []AccessStrategy
