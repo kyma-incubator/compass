@@ -42,11 +42,15 @@ func (acm *authContextMiddleware) PropagateAuthentication(handler http.Handler) 
 				return
 			}
 
-			tenant := payload[tenantTokenKey].(string)
-			r = r.WithContext(PutIntoContext(r.Context(), TenantKey, tenant))
+			tenant, ok := payload[tenantTokenKey].(string)
+			if ok {
+				r = r.WithContext(PutIntoContext(r.Context(), TenantKey, tenant))
+			}
 
-			consumerType := payload[consumerTypeTokenKey].(string)
-			r = r.WithContext(PutIntoContext(r.Context(), ConsumerType, consumerType))
+			consumerType, ok := payload[consumerTypeTokenKey].(string)
+			if ok {
+				r = r.WithContext(PutIntoContext(r.Context(), ConsumerType, consumerType))
+			}
 		}
 
 		clientIdFromToken := r.Header.Get(oathkeeper.ClientIdFromTokenHeader)
