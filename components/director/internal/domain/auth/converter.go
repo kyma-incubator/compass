@@ -80,6 +80,10 @@ func (c *converterOTT) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 	if err != nil {
 		return nil, err
 	}
+	if auth == nil {
+		return nil, nil
+	}
+
 	if in.OneTimeToken != nil && in.OneTimeToken.Type == tokens.ApplicationToken {
 		oneTimeToken, err := c.tokenConverter.ToGraphQLForApplication(*in.OneTimeToken)
 		if err != nil {
