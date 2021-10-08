@@ -603,25 +603,6 @@ func registerRuntime(t *testing.T, ctx context.Context, name, subscriptionConsum
 	return actualRuntime
 }
 
-//func assertRuntimeSubscription(t *testing.T, ctx context.Context, runtimeID string, providedTenantIDs helper.TenantIDs) {
-//	actualTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.SubaccountID)
-//	require.NoError(t, err)
-//	assertTenant(t, actualTenant, providedTenantIDs.SubaccountID, providedTenantIDs.Subdomain)
-//	require.Equal(t, helper.RegionPathParamValue, actualTenant.Labels[helper.RegionKey])
-//
-//	subscribedRuntime := graphql.RuntimeExt{}
-//	getSubscribedReq := fixtures.FixGetRuntimeRequest(runtimeID)
-//	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getSubscribedReq, &subscribedRuntime)
-//	require.NoError(t, err)
-//	consumerSubaccountIDsLabel, ok := subscribedRuntime.Labels[config.ConsumerSubaccountIDsLabelKey].([]interface{})
-//	require.Equal(t, true, ok)
-//	require.Len(t, consumerSubaccountIDsLabel, 1)
-//	//assert.Len(t, consumerSubaccountIDsLabel, 1)
-//	labelValue, ok := consumerSubaccountIDsLabel[0].(string)
-//	require.Equal(t, true, ok)
-//	require.Equal(t, providedTenantIDs.SubaccountID, labelValue)
-//}
-
 func assertNoRuntimeSubscription(t *testing.T, ctx context.Context, runtimeID string) {
 	notSubscribedRuntime := graphql.RuntimeExt{}
 	getNotSubscribedReq := fixtures.FixGetRuntimeRequest(runtimeID)
