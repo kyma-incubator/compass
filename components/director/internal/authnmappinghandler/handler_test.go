@@ -28,6 +28,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
@@ -42,7 +44,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const wellKnownRespPattern = `{"issuer": %q, "jwks_uri": %q}`
+const (
+	wellKnownRespPattern = `{"issuer": %q, "jwks_uri": %q}`
+	varsKey              = iota
+)
 
 type RoundTripFunc func(req *http.Request) *http.Response
 
@@ -102,6 +107,11 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
+
 		w := httptest.NewRecorder()
 
 		tokenDataMock := &authnMock.TokenData{}
@@ -113,7 +123,7 @@ func TestHandler(t *testing.T) {
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		}, authenticators)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -141,7 +151,13 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Twice()
 
+		//"{\"subject\":\"\",\"extra\":{\"authenticator_coordinates\":{\"name\":\"authenticatorName\",\"index\":0},\"error\":{\"message\":\"Missing authenticator\"},\"tenant\":\"test-tenant\"},\"header\":null}"
+		//"{\"subject\":\"\",\"extra\":{\"authenticator_coordinates\":{\"name\":\"authenticatorName\",\"index\":0},\"tenant\":\"test-tenant\"},\"header\":null}"
+
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 
 		tokenDataMock := &authnMock.TokenData{}
@@ -153,7 +169,7 @@ func TestHandler(t *testing.T) {
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		}, authenticators)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -166,9 +182,12 @@ func TestHandler(t *testing.T) {
 		require.Contains(t, strings.TrimSpace(string(body)), string(expectedPayload))
 
 		req2 := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		reqWithVars2 := mux.SetURLVars(req2, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w2 := httptest.NewRecorder()
 
-		handler.ServeHTTP(w2, req2)
+		handler.ServeHTTP(w2, reqWithVars2)
 
 		resp2 := w2.Result()
 		require.Equal(t, http.StatusOK, resp2.StatusCode)
@@ -202,6 +221,9 @@ func TestHandler(t *testing.T) {
 		ctx := log.ContextWithLogger(context.Background(), entry)
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		req = req.WithContext(ctx)
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 
 		mockErr := errors.New("some-error")
@@ -212,7 +234,7 @@ func TestHandler(t *testing.T) {
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		}, authenticators)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -248,6 +270,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		req1 := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		reqWithVars1 := mux.SetURLVars(req1, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w1 := httptest.NewRecorder()
 
 		logsBuffer := &bytes.Buffer{}
@@ -257,11 +282,14 @@ func TestHandler(t *testing.T) {
 		ctx := log.ContextWithLogger(context.Background(), entry)
 		req2 := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		req2 = req2.WithContext(ctx)
+		reqWithVars2 := mux.SetURLVars(req2, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w2 := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", req1).Return(reqDataMock1, nil).Once()
-		reqDataParserMock.On("Parse", req2).Return(reqDataMock2, nil).Once()
+		reqDataParserMock.On("Parse", reqWithVars1).Return(reqDataMock1, nil).Once()
+		reqDataParserMock.On("Parse", reqWithVars2).Return(reqDataMock2, nil).Once()
 
 		tokenDataMock := &authnMock.TokenData{}
 		tokenDataMock.On("Claims", &reqDataMock1.Body.Extra).Return(nil).Once()
@@ -275,7 +303,7 @@ func TestHandler(t *testing.T) {
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		}, authenticators)
-		handler.ServeHTTP(w1, req1)
+		handler.ServeHTTP(w1, reqWithVars1)
 
 		resp1 := w1.Result()
 		require.Equal(t, http.StatusOK, resp1.StatusCode)
@@ -287,7 +315,7 @@ func TestHandler(t *testing.T) {
 
 		require.Contains(t, strings.TrimSpace(string(body1)), string(expectedPayload))
 
-		handler.ServeHTTP(w2, req2)
+		handler.ServeHTTP(w2, reqWithVars2)
 
 		resp2 := w2.Result()
 		require.Equal(t, http.StatusOK, resp2.StatusCode)
@@ -304,6 +332,9 @@ func TestHandler(t *testing.T) {
 		ctx := log.ContextWithLogger(context.Background(), entry)
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		req = req.WithContext(ctx)
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 
 		mockedWellKnownClient := &http.Client{
@@ -328,7 +359,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownClient, nil, authenticators)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -344,6 +375,9 @@ func TestHandler(t *testing.T) {
 		ctx := log.ContextWithLogger(context.Background(), entry)
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		req = req.WithContext(ctx)
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 
 		reqDataMock := oathkeeper.ReqData{
@@ -359,7 +393,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, nil, nil, authenticators)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -375,6 +409,9 @@ func TestHandler(t *testing.T) {
 		ctx := log.ContextWithLogger(context.Background(), entry)
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		req = req.WithContext(ctx)
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 
 		signedToken := generateToken(t, "abc", mockedAttributes)
@@ -392,7 +429,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, nil, nil, authenticators)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -408,6 +445,9 @@ func TestHandler(t *testing.T) {
 		ctx := log.ContextWithLogger(context.Background(), entry)
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		req = req.WithContext(ctx)
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 
 		signedToken := generateToken(t, "", mockedAttributes)
@@ -425,7 +465,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, nil, nil, authenticators)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -441,6 +481,9 @@ func TestHandler(t *testing.T) {
 		ctx := log.ContextWithLogger(context.Background(), entry)
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		req = req.WithContext(ctx)
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 
 		reqDataMock := oathkeeper.ReqData{
@@ -456,7 +499,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, nil, nil, nil)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -472,6 +515,9 @@ func TestHandler(t *testing.T) {
 		ctx := log.ContextWithLogger(context.Background(), entry)
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		req = req.WithContext(ctx)
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 
 		reqDataMock := oathkeeper.ReqData{
@@ -487,7 +533,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, nil, nil, nil)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -503,6 +549,9 @@ func TestHandler(t *testing.T) {
 		ctx := log.ContextWithLogger(context.Background(), entry)
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		req = req.WithContext(ctx)
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 
 		reqDataMock := oathkeeper.ReqData{
@@ -518,7 +567,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, nil, nil, nil)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -534,6 +583,9 @@ func TestHandler(t *testing.T) {
 		ctx := log.ContextWithLogger(context.Background(), entry)
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		req = req.WithContext(ctx)
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 
 		reqDataMock := oathkeeper.ReqData{
@@ -546,7 +598,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, nil, nil, nil)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -604,6 +656,9 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 		tokenDataMock := &authnMock.TokenData{}
 		tokenDataMock.On("Claims", &reqDataMock.Body.Extra).Return(errors.New("expected")).Once()
@@ -615,7 +670,7 @@ func TestHandler(t *testing.T) {
 			return verifierMock
 		}, authenticators)
 
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -654,6 +709,9 @@ func TestHandler(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		req = req.WithContext(ctx)
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
 		w := httptest.NewRecorder()
 
 		mockErr := errors.New("invalid token")
@@ -664,7 +722,7 @@ func TestHandler(t *testing.T) {
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		}, authenticators)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
