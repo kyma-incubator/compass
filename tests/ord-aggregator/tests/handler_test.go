@@ -105,7 +105,7 @@ func TestORDAggregator(t *testing.T) {
 		Username: randString(8),
 		Password: randString(8),
 		Token:    randString(8),
-		TokenURL: testConfig.ExternalServicesMockBaseURL + "/.well-known/open-resource-discovery/oauth/token",
+		TokenURL: testConfig.ExternalServicesMockBaseURL + "/oauth/token",
 	}
 
 	toggleORDConfigSecurity(t, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/basic/configure", basicORDConfigSecurity)

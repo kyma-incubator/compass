@@ -102,6 +102,7 @@ func initHTTP(cfg config) (http.Handler, error) {
 	router.HandleFunc("/external-api/unsecured/spec/flapping", apispec.FlappingHandleFunc())
 
 	ordHandler, basicORDHandler, oauthORDHandler := ord_aggregator.NewORDHandler(), ord_aggregator.NewORDHandler(), ord_aggregator.NewORDHandler()
+	oauthORDHandler.SetPublicKey(key.PublicKey)
 	router.HandleFunc("/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig)
 	router.HandleFunc("/.well-known/open-resource-discovery/basic", basicORDHandler.HandleFuncOrdConfig)
 	router.HandleFunc("/.well-known/open-resource-discovery/oauth", oauthORDHandler.HandleFuncOrdConfig)

@@ -1,8 +1,10 @@
 package ord_aggregator
 
 import (
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"github.com/form3tech-oss/jwt-go"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,11 +18,12 @@ import (
 )
 
 type ordHandler struct {
-	mutex    sync.RWMutex
-	secured  bool
-	username string
-	password string
-	token    string
+	mutex     sync.RWMutex
+	secured   bool
+	username  string
+	password  string
+	token     string
+	publicKey rsa.PublicKey
 }
 
 func NewORDHandler() *ordHandler {
@@ -28,6 +31,10 @@ func NewORDHandler() *ordHandler {
 		mutex:   sync.RWMutex{},
 		secured: false,
 	}
+}
+
+func (oh *ordHandler) SetPublicKey(publicKey rsa.PublicKey) {
+	oh.publicKey = publicKey
 }
 
 func (oh *ordHandler) HandleFuncOrdConfig(rw http.ResponseWriter, req *http.Request) {
@@ -43,7 +50,7 @@ func (oh *ordHandler) HandleFuncOrdConfig(rw http.ResponseWriter, req *http.Requ
 			}
 		}
 
-		validCredentials := (username == oh.username && password == oh.password) || (authorizationHeader == oh.token)
+		validCredentials := (username == oh.username && password == oh.password) || oh.validToken(authorizationHeader)
 
 		if !validCredentials {
 			httphelpers.WriteError(rw, errors.New("invalid credentials"), http.StatusUnauthorized)
@@ -55,6 +62,24 @@ func (oh *ordHandler) HandleFuncOrdConfig(rw http.ResponseWriter, req *http.Requ
 	if err != nil {
 		httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 	}
+}
+
+func (oh *ordHandler) validToken(header string) bool {
+	if strings.Index(header, "Bearer") == -1 {
+		return false
+	}
+
+	token := strings.TrimPrefix(header, "Bearer ")
+
+	if _, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) {
+		return oh.publicKey, nil
+	}); err != nil {
+		log.Printf("Could not validate request token: %s\n", err)
+		return false
+
+	}
+
+	return true
 }
 
 func (oh *ordHandler) HandleFuncOrdConfigSecurity(rw http.ResponseWriter, req *http.Request) {
