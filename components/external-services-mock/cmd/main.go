@@ -136,10 +136,17 @@ func initHTTP(cfg config) (http.Handler, error) {
 	router.HandleFunc("/external-api/unsecured/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/unsecured/spec/flapping", apispec.FlappingHandleFunc())
 
-	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("open"))
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(8080))
+	ordHandler, basicORDHandler, oauthORDHandler := ord_aggregator.NewORDHandler(), ord_aggregator.NewORDHandler(), ord_aggregator.NewORDHandler()
+	oauthORDHandler.SetPublicKey(&key.PublicKey)
+	router.HandleFunc("/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig("open"))
+	router.HandleFunc("/.well-known/open-resource-discovery/basic", basicORDHandler.HandleFuncOrdConfig("open"))
+	router.HandleFunc("/.well-known/open-resource-discovery/oauth", oauthORDHandler.HandleFuncOrdConfig("open"))
 
-	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfig("open"))
+	router.HandleFunc("/.well-known/open-resource-discovery/basic/configure", basicORDHandler.HandleFuncOrdConfigSecurity)
+	router.HandleFunc("/.well-known/open-resource-discovery/oauth/configure", oauthORDHandler.HandleFuncOrdConfigSecurity)
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(8080))
+
+	router.HandleFunc("/test/fullPath", ordHandler.HandleFuncOrdConfig("open"))
 
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
@@ -170,8 +177,10 @@ func initHTTP(cfg config) (http.Handler, error) {
 func initCertSecuredAPIs(cfg config) (http.Handler, error) {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("sap:cmp-mtls:v1"))
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(8081))
+	ordHandler := ord_aggregator.NewORDHandler()
+
+	router.HandleFunc("/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig("sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(8081))
 
 	return router, nil
 }

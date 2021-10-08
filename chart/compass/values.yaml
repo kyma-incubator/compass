@@ -388,6 +388,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
+    securedApplicationTypes: "sample-app-type" # comma-separated values are used for specifying multiple application types
     accessStrategies:
       cmpMtls:
         policy: "compass-local-clients"

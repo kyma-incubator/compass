@@ -10,35 +10,42 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/pkg/errors"
 )
 
 // Client represents ORD documents client
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore
 type Client interface {
-	FetchOpenResourceDiscoveryDocuments(ctx context.Context, url string) (Documents, error)
+	FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, error)
 }
 
 type client struct {
 	*http.Client
+	securedApplicationTypes map[string]struct{}
 }
 
 // NewClient creates new ORD Client via a provided http.Client
-func NewClient(httpClient *http.Client) *client {
+func NewClient(httpClient *http.Client, securedApplicationTypes []string) *client {
 	return &client{
-		Client: httpClient,
+		Client:                  httpClient,
+		securedApplicationTypes: str.SliceToMap(securedApplicationTypes),
 	}
 }
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
-func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url string) (Documents, error) {
-	config, err := c.fetchConfig(ctx, url)
+func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, error) {
+	config, err := c.fetchConfig(ctx, app, webhook)
 	if err != nil {
 		return nil, err
 	}
 
-	baseURL, err := stripRelativePathFromURL(url)
+	baseURL, err := stripRelativePathFromURL(*webhook.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -92,15 +99,25 @@ func closeBody(ctx context.Context, body io.ReadCloser) {
 	}
 }
 
-func (c *client) fetchConfig(ctx context.Context, url string) (*WellKnownConfig, error) {
-	configURL, err := buildWellKnownEndpoint(url)
+func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook) (*WellKnownConfig, error) {
+	configURL, err := buildWellKnownEndpoint(*webhook.URL)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := c.Get(configURL)
-	if err != nil {
-		return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
+	var resp *http.Response
+	if _, secured := c.securedApplicationTypes[app.Type]; secured {
+		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is secured and webhook credentials will be used", app.Name, app.ID, app.Type)
+		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, configURL, webhook.Auth)
+		if err != nil {
+			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration with webhook credentials")
+		}
+	} else {
+		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is not secured", app.Name, app.ID, app.Type)
+		resp, err = httputil.GetRequestWithoutCredentials(c.Client, configURL)
+		if err != nil {
+			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
+		}
 	}
 
 	defer closeBody(ctx, resp.Body)
