@@ -105,6 +105,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		Name:                  in.Name,
 		Description:           in.Description,
 		HealthCheckURL:        in.HealthCheckURL,
+		BaseURL:               in.BaseURL,
 		IntegrationSystemID:   in.IntegrationSystemID,
 		ApplicationTemplateID: in.ApplicationTemplateID,
 		ProviderName:          in.ProviderName,

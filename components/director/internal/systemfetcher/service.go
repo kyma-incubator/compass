@@ -244,11 +244,7 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc 
 		return s.appRegisterInputFromTemplate(ctx, sc)
 	}
 
-	appRegisterInput := model.ApplicationRegisterInput{
-		Name: sc.DisplayName,
-	}
-
-	return enrichAppRegisterInput(appRegisterInput, sc), nil
+	return replaceCoreAppRegisterInput(model.ApplicationRegisterInput{}, sc), nil
 }
 
 func (s *SystemFetcher) appRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInputWithTemplate, error) {
@@ -268,10 +264,11 @@ func (s *SystemFetcher) appRegisterInputFromTemplate(ctx context.Context, sc Sys
 		return nil, errors.Wrapf(err, "while preparing ApplicationRegisterInput model from Application Template with name %s", appTemplate.Name)
 	}
 
-	return enrichAppRegisterInput(appRegisterInput, sc), nil
+	return replaceCoreAppRegisterInput(appRegisterInput, sc), nil
 }
 
-func enrichAppRegisterInput(input model.ApplicationRegisterInput, sc System) *model.ApplicationRegisterInputWithTemplate {
+// replaceCoreAppRegisterInput replaces the base part of the application with all the information that could be retrieved from the system fetcher.
+func replaceCoreAppRegisterInput(input model.ApplicationRegisterInput, sc System) *model.ApplicationRegisterInputWithTemplate {
 	initStatusCond := model.ApplicationStatusConditionInitial
 
 	input.Name = sc.DisplayName
@@ -295,19 +292,24 @@ func enrichAppRegisterInput(input model.ApplicationRegisterInput, sc System) *mo
 func getTemplateInputs(t *model.ApplicationTemplate, s System) model.ApplicationFromTemplateInputValues {
 	inputValues := model.ApplicationFromTemplateInputValues{}
 	for _, p := range t.Placeholders {
-		if strings.Contains(strings.ToLower(p.Name), "url") {
-			inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
-				Placeholder: p.Name,
-				Value:       s.BaseURL,
-			})
-			continue
-		}
-
 		inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
 			Placeholder: p.Name,
-			Value:       s.DisplayName,
+			Value:       getPlaceholderInput(p, s),
 		})
 	}
 
 	return inputValues
+}
+
+func getPlaceholderInput(p model.ApplicationTemplatePlaceholder, s System) string {
+	if strings.Contains(strings.ToLower(p.Name), "name") {
+		return s.DisplayName
+	}
+	if strings.Contains(strings.ToLower(p.Name), "url") {
+		return s.BaseURL
+	}
+	if strings.Contains(strings.ToLower(p.Name), "description") {
+		return s.ProductDescription
+	}
+	return ""
 }

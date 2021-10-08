@@ -686,6 +686,7 @@ type Application {
 	id: ID!
 	name: String!
 	systemNumber: String
+	baseURL: String
 	providerName: String
 	description: String
 	integrationSystemID: ID
