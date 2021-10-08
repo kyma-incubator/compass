@@ -4,12 +4,13 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"github.com/form3tech-oss/jwt-go"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/form3tech-oss/jwt-go"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
