@@ -133,9 +133,9 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 
-	ordClient := ord.NewClient(httpClient)
+	ordClient := ord.NewClient(httpClient, featuresConfig.SecuredApplicationTypes)
 
-	return ord.NewAggregatorService(transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
+	return ord.NewAggregatorService(transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
