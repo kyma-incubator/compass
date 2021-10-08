@@ -40,7 +40,10 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 
 // SetConfig sets the Access Strategy config. This is used when reading from environment is not suitable in that context.
 func (as *cmpMTLSAccessStrategyExecutor) SetConfig(config cert.CertSvcConfig) {
+	as.lock.Lock()
+	defer as.lock.Unlock()
 	as.config = &config
+	as.client = nil // This is needed because new config should trigger a new cert issuing.
 }
 
 func (as *cmpMTLSAccessStrategyExecutor) isInitialized() bool {
