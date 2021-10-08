@@ -152,7 +152,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
 
-	clientCrtRaw, err := x509.CreateCertificate(rand.Reader, &clientCert, caCRT, &clientCSR.PublicKey, caPrivateKey)
+	clientCrtRaw, err := x509.CreateCertificate(rand.Reader, &clientCert, caCRT, clientCSR.PublicKey, caPrivateKey)
 	if err != nil {
 		httphelpers.WriteError(writer, err, http.StatusInternalServerError)
 		return

@@ -1,6 +1,7 @@
 package cert_test
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -12,7 +13,6 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -20,9 +20,40 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type csrRequest struct {
+	Csr csrPayload `json:"csr"`
+}
+
+type csrPayload struct {
+	Value string `json:"value"`
+}
+
 func TestHandler_Generate(t *testing.T) {
+	clientKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	csrTemplate := x509.CertificateRequest{
+		Subject: pkix.Name{
+			Country:            []string{"DE"},
+			Organization:       []string{"SAP SE"},
+			OrganizationalUnit: []string{"OU"},
+			Locality:           []string{"local"},
+			CommonName:         "compass test",
+		},
+	}
+
+	csr, err := x509.CreateCertificateRequest(rand.Reader, &csrTemplate, clientKey)
+	require.NoError(t, err)
+
+	pemEncodedCSR := pem.EncodeToMemory(&pem.Block{
+		Type: "CERTIFICATE REQUEST", Bytes: csr,
+	})
+
+	data, err := json.Marshal(&csrRequest{csrPayload{Value: string(pemEncodedCSR)}})
+	require.NoError(t, err)
+
 	//GIVEN
-	req := httptest.NewRequest(http.MethodPost, "http://target.com/cert", strings.NewReader(""))
+	req := httptest.NewRequest(http.MethodPost, "http://target.com/cert", bytes.NewBuffer(data))
 	req.Header.Set("authorization", "Bearer test-tkn")
 	req.Header.Set("tenant", "tnt")
 
