@@ -44,10 +44,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	wellKnownRespPattern = `{"issuer": %q, "jwks_uri": %q}`
-	varsKey              = iota
-)
+const wellKnownRespPattern = `{"issuer": %q, "jwks_uri": %q}`
 
 type RoundTripFunc func(req *http.Request) *http.Response
 
