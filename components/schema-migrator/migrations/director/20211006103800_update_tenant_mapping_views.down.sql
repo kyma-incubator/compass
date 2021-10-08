@@ -24,30 +24,6 @@ FROM applications AS apps
                                                                           INNER JOIN automatic_scenario_assignments AS asa ON asa.tenant_id = l.tenant_id AND l.value ? asa.scenario AND asa.selector_key='global_subaccount_id'
     WHERE l.app_id IS NOT NULL AND l.key = 'scenarios') AS t_apps ON apps.id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_bundles  AS
-SELECT DISTINCT t_apps.tenant_id,b.id, b.app_id, b.name, b.description, b.instance_auth_request_json_schema,b. default_instance_auth,
-                b.ord_id, b.short_description, b.links, b.labels, b.credential_exchange_strategies, b.ready, b.created_at,
-                b.updated_at, b.deleted_at, b.error
-FROM bundles AS b
-         INNER JOIN (
-    SELECT a1.id, a1.tenant_id FROM applications AS a1
-    UNION ALL
-    SELECT a.id, t.parent as tenant_id FROM applications AS a
-                                                INNER JOIN  business_tenant_mappings AS t ON t.id = a.tenant_id WHERE t.parent IS NOT NULL
-    UNION ALL
-    SELECT l.app_id AS id, asa.selector_value::uuid AS tenant_id FROM labels AS l
-                                                                          INNER JOIN automatic_scenario_assignments AS asa ON asa.tenant_id = l.tenant_id AND l.value ? asa.scenario AND asa.selector_key='global_subaccount_id'
-    WHERE l.app_id IS NOT NULL AND l.key = 'scenarios') AS t_apps ON b.app_id = t_apps.id;
-
-CREATE OR REPLACE VIEW tenants_specifications  AS
-SELECT DISTINCT t_api_event_def.tenant_id, spec.id, spec.api_def_id, spec.event_def_id, spec.spec_data, spec.api_spec_format, spec.api_spec_type, spec.event_spec_format, spec.event_spec_type, spec.custom_type, spec.created_at
-FROM specifications AS spec
-         INNER JOIN (
-    SELECT a.id, a.tenant_id FROM tenants_apis AS a
-    UNION ALL
-    SELECT e.id, e.tenant_id FROM tenants_events AS e
-) AS t_api_event_def ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
-
 CREATE OR REPLACE VIEW tenants_apis  AS
 SELECT DISTINCT t_apps.tenant_id, apis.id, apis.app_id, apis.name, apis.description, apis.group_name, apis.default_auth,
                 apis.version_value, apis.version_deprecated, apis.version_deprecated_since, apis.version_for_removal,
@@ -91,5 +67,31 @@ FROM event_api_definitions AS events
     SELECT l.app_id as id, asa.selector_value::uuid as tenant_id FROM labels AS l
                                                                           INNER JOIN automatic_scenario_assignments AS asa ON asa.tenant_id = l.tenant_id AND l.value ? asa.scenario AND asa.selector_key='global_subaccount_id'
     WHERE l.app_id IS NOT NULL AND l.key = 'scenarios') AS t_apps ON events.app_id = t_apps.id;
+
+
+CREATE OR REPLACE VIEW tenants_bundles  AS
+SELECT DISTINCT t_apps.tenant_id,b.id, b.app_id, b.name, b.description, b.instance_auth_request_json_schema,b. default_instance_auth,
+                b.ord_id, b.short_description, b.links, b.labels, b.credential_exchange_strategies, b.ready, b.created_at,
+                b.updated_at, b.deleted_at, b.error
+FROM bundles AS b
+         INNER JOIN (
+    SELECT a1.id, a1.tenant_id FROM applications AS a1
+    UNION ALL
+    SELECT a.id, t.parent as tenant_id FROM applications AS a
+                                                INNER JOIN  business_tenant_mappings AS t ON t.id = a.tenant_id WHERE t.parent IS NOT NULL
+    UNION ALL
+    SELECT l.app_id AS id, asa.selector_value::uuid AS tenant_id FROM labels AS l
+                                                                          INNER JOIN automatic_scenario_assignments AS asa ON asa.tenant_id = l.tenant_id AND l.value ? asa.scenario AND asa.selector_key='global_subaccount_id'
+    WHERE l.app_id IS NOT NULL AND l.key = 'scenarios') AS t_apps ON b.app_id = t_apps.id;
+
+CREATE OR REPLACE VIEW tenants_specifications  AS
+SELECT DISTINCT t_api_event_def.tenant_id, spec.id, spec.api_def_id, spec.event_def_id, spec.spec_data, spec.api_spec_format, spec.api_spec_type, spec.event_spec_format, spec.event_spec_type, spec.custom_type, spec.created_at
+FROM specifications AS spec
+         INNER JOIN (
+    SELECT a.id, a.tenant_id FROM tenants_apis AS a
+    UNION ALL
+    SELECT e.id, e.tenant_id FROM tenants_events AS e
+) AS t_api_event_def ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
+
 
 COMMIT;
