@@ -22,7 +22,7 @@ type ordHandler struct {
 	username  string
 	password  string
 	token     string
-	publicKey rsa.PublicKey
+	publicKey *rsa.PublicKey
 }
 
 func NewORDHandler() *ordHandler {
@@ -32,7 +32,7 @@ func NewORDHandler() *ordHandler {
 	}
 }
 
-func (oh *ordHandler) SetPublicKey(publicKey rsa.PublicKey) {
+func (oh *ordHandler) SetPublicKey(publicKey *rsa.PublicKey) {
 	oh.publicKey = publicKey
 }
 
