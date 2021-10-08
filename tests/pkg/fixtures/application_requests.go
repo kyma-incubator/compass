@@ -21,7 +21,6 @@ type ORDConfigSecurity struct {
 	Enabled  bool   `json:"enabled"`
 	Username string `json:"username"`
 	Password string `json:"password"`
-	Token    string `json:"token"`
 	TokenURL string `json:"-"`
 }
 

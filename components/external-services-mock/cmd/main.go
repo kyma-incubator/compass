@@ -106,7 +106,6 @@ func initHTTP(cfg config) (http.Handler, error) {
 	router.HandleFunc("/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig)
 	router.HandleFunc("/.well-known/open-resource-discovery/basic", basicORDHandler.HandleFuncOrdConfig)
 	router.HandleFunc("/.well-known/open-resource-discovery/oauth", oauthORDHandler.HandleFuncOrdConfig)
-	router.HandleFunc("/.well-known/open-resource-discovery/oauth/token", oauthORDHandler.HandleFuncOrdConfigSecurityToken)
 
 	router.HandleFunc("/.well-known/open-resource-discovery/basic/configure", basicORDHandler.HandleFuncOrdConfigSecurity)
 	router.HandleFunc("/.well-known/open-resource-discovery/oauth/configure", oauthORDHandler.HandleFuncOrdConfigSecurity)

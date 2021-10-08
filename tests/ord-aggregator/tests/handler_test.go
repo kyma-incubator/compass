@@ -104,7 +104,6 @@ func TestORDAggregator(t *testing.T) {
 		Enabled:  true,
 		Username: randString(8),
 		Password: randString(8),
-		Token:    randString(8),
 		TokenURL: testConfig.ExternalServicesMockBaseURL + "/oauth/token",
 	}
 
