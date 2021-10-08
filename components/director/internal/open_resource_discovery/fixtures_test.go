@@ -530,6 +530,7 @@ func fixApplicationPage() *model.ApplicationPage {
 					ID:    appID,
 					Ready: true,
 				},
+				Type: testApplicationType,
 			},
 		},
 		PageInfo: &pagination.Page{
