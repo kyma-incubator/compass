@@ -1,10 +1,12 @@
 package tests
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 
@@ -12,7 +14,14 @@ import (
 )
 
 func TestGetInfo(t *testing.T) {
-	get, err := http.DefaultClient.Get(infoEndpoint())
+	client := &http.Client{
+		Timeout: time.Second * 3,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
+	get, err := client.Get(infoEndpoint())
 	require.NoError(t, err)
 
 	info := struct {
@@ -28,12 +37,19 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestCallingInfoEndpointFailForMethodsOtherThanGet(t *testing.T) {
+	client := &http.Client{
+		Timeout: time.Second * 3,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
 	req, err := http.NewRequest(http.MethodPost, infoEndpoint(), strings.NewReader("{}"))
 	require.NoError(t, err)
-	get, err := http.DefaultClient.Do(req)
+	get, err := client.Do(req)
 
 	require.NoError(t, err)
-	require.Equal(t, http.StatusMethodNotAllowed, get.StatusCode)
+	require.Equal(t, http.StatusForbidden, get.StatusCode)
 }
 
 func infoEndpoint() string {
