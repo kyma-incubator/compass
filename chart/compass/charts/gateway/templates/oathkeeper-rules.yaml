@@ -293,14 +293,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
-  - handler: header
-    config:
-      headers:
-        x-authenticator-name: "subscription"
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.authenticationMappingService | indent 4 }}
+{{ toYaml .Values.global.oathkeeper.mutators.authenticationMappingServices.subscriptionAuthenMappingService.cfg | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token

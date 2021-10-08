@@ -12,7 +12,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/sirupsen/logrus"
@@ -70,7 +69,6 @@ type ClientInstrumenter interface {
 
 // Handler missing godoc
 type Handler struct {
-	authenticators         []authenticator.Config
 	reqDataParser          ReqDataParser
 	transact               persistence.Transactioner
 	objectContextProviders map[string]ObjectContextProvider
@@ -79,13 +77,11 @@ type Handler struct {
 
 // NewHandler missing godoc
 func NewHandler(
-	authenticators []authenticator.Config,
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
 	objectContextProviders map[string]ObjectContextProvider,
 	clientInstrumenter ClientInstrumenter) *Handler {
 	return &Handler{
-		authenticators:         authenticators,
 		reqDataParser:          reqDataParser,
 		transact:               transact,
 		objectContextProviders: objectContextProviders,

@@ -51,7 +51,7 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestHandler(t *testing.T) {
-	target := "http://example.com/foo"
+	target := "http://example.com/authn-mapping/authenticatorName"
 	domainURL := "localhost:8080"
 	issuer := "http://tenant." + domainURL + "/oauth/token"
 	jwksURL := "http://tenant." + domainURL + "/keys"
@@ -93,9 +93,6 @@ func TestHandler(t *testing.T) {
 				Extra: map[string]interface{}{
 					"tenant": "test-tenant",
 				},
-				Header: map[string][]string{
-					authenticator.HeaderName: {authenticatorName},
-				},
 			},
 			Header: map[string][]string{
 				"Authorization": {"Bearer " + mockedToken},
@@ -135,9 +132,6 @@ func TestHandler(t *testing.T) {
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					"tenant": "test-tenant",
-				},
-				Header: map[string][]string{
-					authenticator.HeaderName: {authenticatorName},
 				},
 			},
 			Header: map[string][]string{
@@ -192,9 +186,6 @@ func TestHandler(t *testing.T) {
 				Extra: map[string]interface{}{
 					"tenant": "test-tenant",
 				},
-				Header: map[string][]string{
-					authenticator.HeaderName: {authenticatorName},
-				},
 			},
 			Header: map[string][]string{
 				"Authorization": {"Bearer " + mockedToken},
@@ -239,9 +230,6 @@ func TestHandler(t *testing.T) {
 				Extra: map[string]interface{}{
 					"tenant": "test-tenant",
 				},
-				Header: map[string][]string{
-					authenticator.HeaderName: {authenticatorName},
-				},
 			},
 			Header: map[string][]string{
 				"Authorization": {"Bearer " + mockedToken1},
@@ -252,9 +240,6 @@ func TestHandler(t *testing.T) {
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					"tenant": "test-tenant",
-				},
-				Header: map[string][]string{
-					authenticator.HeaderName: {authenticatorName},
 				},
 			},
 			Header: map[string][]string{
@@ -333,9 +318,6 @@ func TestHandler(t *testing.T) {
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{},
-				Header: map[string][]string{
-					authenticator.HeaderName: {authenticatorName},
-				},
 			},
 			Header: map[string][]string{
 				"Authorization": {"Bearer " + mockedToken},
@@ -367,9 +349,6 @@ func TestHandler(t *testing.T) {
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{},
-				Header: map[string][]string{
-					authenticator.HeaderName: {authenticatorName},
-				},
 			},
 			Header: map[string][]string{
 				"Authorization": {"Bearer " + generateToken(t, issuer, map[string]interface{}{uniqueAttributeKey: "unexpected-unique-attribute-value"})},
@@ -403,9 +382,6 @@ func TestHandler(t *testing.T) {
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{},
-				Header: map[string][]string{
-					authenticator.HeaderName: {authenticatorName},
-				},
 			},
 			Header: map[string][]string{
 				"Authorization": {"Bearer " + signedToken},
@@ -619,9 +595,6 @@ func TestHandler(t *testing.T) {
 				Extra: map[string]interface{}{
 					"consumerTenant": "test-tenant",
 				},
-				Header: map[string][]string{
-					authenticator.HeaderName: {authenticatorName},
-				},
 			},
 			Header: map[string][]string{
 				"Authorization": {"Bearer " + mockedToken},
@@ -670,9 +643,6 @@ func TestHandler(t *testing.T) {
 				Extra: map[string]interface{}{
 					"tenant": "test-tenant",
 				},
-				Header: map[string][]string{
-					authenticator.HeaderName: {authenticatorName},
-				},
 			},
 			Header: map[string][]string{
 				"Authorization": {"Bearer " + invalidToken},
@@ -702,7 +672,7 @@ func TestHandler(t *testing.T) {
 		require.Contains(t, logsBuffer.String(), mockErr.Error())
 	})
 
-	t.Run("error when no matching authenticator is found in header", func(t *testing.T) {
+	t.Run("error when no matching authenticator is found in path", func(t *testing.T) {
 		logsBuffer := &bytes.Buffer{}
 		entry := log.DefaultLogger()
 		entry.Logger.SetOutput(logsBuffer)
@@ -725,7 +695,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		req := httptest.NewRequest(http.MethodPost, "http://example.com/authn-mapping/", strings.NewReader(""))
 		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 
@@ -738,7 +708,7 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
-		require.Contains(t, logsBuffer.String(), "empty matched authenticator header")
+		require.Contains(t, logsBuffer.String(), "authenticator not found in path")
 	})
 }
 

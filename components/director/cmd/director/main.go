@@ -101,7 +101,7 @@ type config struct {
 	APIEndpoint                   string `envconfig:"default=/graphql"`
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
-	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
+	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping/"`
 	OperationPath                 string `envconfig:"default=/operation"`
 	LastOperationPath             string `envconfig:"default=/last_operation"`
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
@@ -282,7 +282,7 @@ func main() {
 	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.AuthenticationMappingEndpoint)
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
 
-	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
+	mainRouter.PathPrefix(cfg.AuthenticationMappingEndpoint).Handler(authnMappingHandlerFunc)
 
 	operationHandler := operation.NewHandler(transact, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
 		return appRepo.GetByID(ctx, tenantID, resourceID)
@@ -431,7 +431,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders, metricsCollector).ServeHTTP, nil
+	return tenantmapping.NewHandler(reqDataParser, transact, objectContextProviders, metricsCollector).ServeHTTP, nil
 }
 
 func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) func(writer http.ResponseWriter, request *http.Request) {
