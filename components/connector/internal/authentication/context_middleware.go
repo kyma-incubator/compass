@@ -31,7 +31,6 @@ func (acm *authContextMiddleware) PropagateAuthentication(handler http.Handler) 
 			if err != nil {
 				log.C(ctx).WithError(err).Error("could not read token")
 				w.WriteHeader(400)
-				w.Write([]byte("could not read token"))
 				return
 			}
 
@@ -40,7 +39,6 @@ func (acm *authContextMiddleware) PropagateAuthentication(handler http.Handler) 
 			if err != nil {
 				log.C(ctx).WithError(err).Error("could not parse token")
 				w.WriteHeader(400)
-				w.Write([]byte("could not parse token"))
 				return
 			}
 
