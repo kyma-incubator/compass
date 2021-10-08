@@ -178,6 +178,13 @@ func (c *client) IssueClientCert(ctx context.Context) (*tls.Certificate, error) 
 		return nil, err
 	}
 
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.C(ctx).Info("Failed to close HTTP response body")
+		}
+	}()
+
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err

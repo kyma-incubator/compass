@@ -28,6 +28,15 @@ func NewCMPmTLSAccessStrategyExecutor() *cmpMTLSAccessStrategyExecutor {
 	}
 }
 
+// NewCMPmTLSAccessStrategyExecutorWithConfig creates a new Executor for the CMP mTLS Access Strategy with a given config.
+// This is used when reading from environment is not suitable in that context.
+func NewCMPmTLSAccessStrategyExecutorWithConfig(config cert.CertSvcConfig) *cmpMTLSAccessStrategyExecutor {
+	return &cmpMTLSAccessStrategyExecutor{
+		lock:   sync.RWMutex{},
+		config: &config,
+	}
+}
+
 // Execute performs the access strategy's specific execution logic
 func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL string) (*http.Response, error) {
 	if !as.isInitialized() {
@@ -36,14 +45,6 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		}
 	}
 	return as.client.Get(documentURL)
-}
-
-// SetConfig sets the Access Strategy config. This is used when reading from environment is not suitable in that context.
-func (as *cmpMTLSAccessStrategyExecutor) SetConfig(config cert.CertSvcConfig) {
-	as.lock.Lock()
-	defer as.lock.Unlock()
-	as.config = &config
-	as.client = nil // This is needed because new config should trigger a new cert issuing.
 }
 
 func (as *cmpMTLSAccessStrategyExecutor) isInitialized() bool {
