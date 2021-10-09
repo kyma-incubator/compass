@@ -25,7 +25,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+	testPkg "github.com/kyma-incubator/compass/tests/pkg/webhook"
 	"k8s.io/client-go/rest"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -36,7 +39,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	testPkg "github.com/kyma-incubator/compass/tests/pkg/webhook"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -55,11 +57,13 @@ const (
 		"additionalUrls": {},
 		"additionalAttributes": {}
 	}`
-	labelKey = "customLabel"
+
+	nameLabelKey    = "displayName"
+	namePlaceholder = "name"
 )
 
-var systemLabels = directorSchema.Labels{
-	labelKey: "{{new-placeholder}}",
+var additionalSystemLabels = directorSchema.Labels{
+	nameLabelKey: "{{name}}",
 }
 
 func TestSystemFetcherSuccess(t *testing.T) {
@@ -89,12 +93,12 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	setMockSystems(t, mockSystems)
 	defer cleanupMockSystems(t)
 
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplateWithLabels("temp1", systemLabels))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateInput2 := fixtures.FixApplicationTemplateWithLabels("temp2", systemLabels)
+	appTemplateInput2 := fixApplicationTemplate("temp2")
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
@@ -123,13 +127,15 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				Name:                  "name1",
 				Description:           &description,
 				ApplicationTemplateID: &template.ID,
+				SystemNumber:          str.Ptr("1"),
 			},
 			Labels: applicationLabels("name1", true),
 		},
 		{
 			Application: directorSchema.Application{
-				Name:        "name2",
-				Description: &description,
+				Name:         "name2",
+				Description:  &description,
+				SystemNumber: str.Ptr("2"),
 			},
 			Labels: applicationLabels("name2", false),
 		},
@@ -142,6 +148,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				Name:                  app.Application.Name,
 				Description:           app.Application.Description,
 				ApplicationTemplateID: app.ApplicationTemplateID,
+				SystemNumber:          app.SystemNumber,
 			},
 			Labels: app.Labels,
 		})
@@ -161,14 +168,14 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	setMultipleMockSystemsResponses(t)
 	defer cleanupMockSystems(t)
 
-	appTemplateInput2 := fixtures.FixApplicationTemplateWithLabels("temp2", systemLabels)
+	appTemplateInput2 := fixApplicationTemplate("temp2")
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplateWithLabels("temp1", systemLabels))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
@@ -209,6 +216,7 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 				Name:                  app.Application.Name,
 				Description:           app.Application.Description,
 				ApplicationTemplateID: app.ApplicationTemplateID,
+				SystemNumber:          app.SystemNumber,
 			},
 			Labels: app.Labels,
 		})
@@ -258,12 +266,12 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	setMockSystems(t, mockSystems)
 	defer cleanupMockSystems(t)
 
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplateWithLabels("temp1", systemLabels))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateInput2 := fixtures.FixApplicationTemplateWithLabels("temp2", systemLabels)
+	appTemplateInput2 := fixApplicationTemplate("temp2")
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
@@ -288,20 +296,23 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Name:                  "name1",
 				Description:           &description,
 				ApplicationTemplateID: &template.ID,
+				SystemNumber:          str.Ptr("1"),
 			},
 			Labels: applicationLabels("name1", true),
 		},
 		{
 			Application: directorSchema.Application{
-				Name:        "name2",
-				Description: &description,
+				Name:         "name2",
+				Description:  &description,
+				SystemNumber: str.Ptr("2"),
 			},
 			Labels: applicationLabels("name2", false),
 		},
 		{
 			Application: directorSchema.Application{
-				Name:        "name1",
-				Description: &description,
+				Name:         "name1",
+				Description:  &description,
+				SystemNumber: str.Ptr("3"),
 			},
 			Labels: applicationLabels("name1", false),
 		},
@@ -319,6 +330,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Name:                  app.Application.Name,
 				Description:           app.Application.Description,
 				ApplicationTemplateID: app.ApplicationTemplateID,
+				SystemNumber:          app.SystemNumber,
 			},
 			Labels: app.Labels,
 		})
@@ -367,12 +379,12 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 
 	setMockSystems(t, mockSystems)
 
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixtures.FixApplicationTemplateWithLabels("temp1", systemLabels))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateInput2 := fixtures.FixApplicationTemplateWithLabels("temp2", systemLabels)
+	appTemplateInput2 := fixApplicationTemplate("temp2")
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/"))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
@@ -669,8 +681,9 @@ func getFixExpectedMockSystems(count int, description string) []directorSchema.A
 		systemName := fmt.Sprintf("name%d", i)
 		result[i] = directorSchema.ApplicationExt{
 			Application: directorSchema.Application{
-				Name:        systemName,
-				Description: &description,
+				Name:         systemName,
+				Description:  &description,
+				SystemNumber: str.Ptr(fmt.Sprintf("%d", i)),
 			},
 			Labels: applicationLabels(systemName, false),
 		}
@@ -708,8 +721,32 @@ func applicationLabels(name string, fromTemplate bool) directorSchema.Labels {
 	}
 
 	if fromTemplate {
-		labels[labelKey] = name
+		labels[nameLabelKey] = name
 	}
 
 	return labels
+}
+
+func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput {
+	appTemplateInput := directorSchema.ApplicationTemplateInput{
+		Name:        name,
+		Description: str.Ptr("template description"),
+		ApplicationInput: &directorSchema.ApplicationRegisterInput{
+			Name:         fmt.Sprintf("{{%s}}", namePlaceholder),
+			Labels:       additionalSystemLabels,
+			Webhooks: []*directorSchema.WebhookInput{{
+				Type: directorSchema.WebhookTypeConfigurationChanged,
+				URL:  ptr.String("http://url.com"),
+			}},
+			HealthCheckURL: ptr.String("http://url.valid"),
+		},
+		Placeholders: []*directorSchema.PlaceholderDefinitionInput{
+			{
+				Name: namePlaceholder,
+			},
+		},
+		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
+	}
+
+	return appTemplateInput
 }
