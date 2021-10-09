@@ -732,8 +732,8 @@ func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput
 		Name:        name,
 		Description: str.Ptr("template description"),
 		ApplicationInput: &directorSchema.ApplicationRegisterInput{
-			Name:         fmt.Sprintf("{{%s}}", namePlaceholder),
-			Labels:       additionalSystemLabels,
+			Name:   fmt.Sprintf("{{%s}}", namePlaceholder),
+			Labels: additionalSystemLabels,
 			Webhooks: []*directorSchema.WebhookInput{{
 				Type: directorSchema.WebhookTypeConfigurationChanged,
 				URL:  ptr.String("http://url.com"),
