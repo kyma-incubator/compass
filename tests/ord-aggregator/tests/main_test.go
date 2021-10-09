@@ -40,6 +40,7 @@ type config struct {
 	ExternalServicesMockBaseURL     string
 	ExternalServicesMockAbsoluteURL string
 	ORDServiceDefaultResponseType   string
+	SecuredApplicationTypes         []string
 }
 
 var (

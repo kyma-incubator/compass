@@ -1,9 +1,13 @@
 package tests
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"strings"
 	"testing"
@@ -22,7 +26,8 @@ import (
 )
 
 const (
-	tenantHeader = "Tenant"
+	tenantHeader            = "Tenant"
+	applicationTypeLabelKey = "applicationType"
 
 	descriptionField      = "description"
 	shortDescriptionField = "shortDescription"
@@ -34,9 +39,11 @@ const (
 	expectedSystemInstanceName              = "test-app"
 	expectedSecondSystemInstanceName        = "second-test-app"
 	expectedThirdSystemInstanceName         = "third-test-app"
+	expectedFourthSystemInstanceName        = "fourth-test-app"
 	expectedSystemInstanceDescription       = "test-app1-description"
 	expectedSecondSystemInstanceDescription = "test-app2-description"
 	expectedThirdSystemInstanceDescription  = "test-app3-description"
+	expectedFourthSystemInstanceDescription = "test-app4-description"
 	expectedBundleTitle                     = "BUNDLE TITLE"
 	secondExpectedBundleTitle               = "BUNDLE TITLE 2"
 	expectedBundleDescription               = "lorem ipsum dolor nsq sme"
@@ -54,15 +61,15 @@ const (
 	expectedTombstoneOrdID                  = "ns:apiResource:API_ID2:v1"
 	expectedVendorTitle                     = "SAP"
 
-	expectedNumberOfSystemInstances           = 3
-	expectedNumberOfPackages                  = 3
-	expectedNumberOfBundles                   = 6
-	expectedNumberOfProducts                  = 3
-	expectedNumberOfAPIs                      = 3
+	expectedNumberOfSystemInstances           = 4
+	expectedNumberOfPackages                  = 4
+	expectedNumberOfBundles                   = 8
+	expectedNumberOfProducts                  = 4
+	expectedNumberOfAPIs                      = 4
 	expectedNumberOfResourceDefinitionsPerAPI = 3
-	expectedNumberOfEvents                    = 6
-	expectedNumberOfTombstones                = 3
-	expectedNumberOfVendors                   = 6
+	expectedNumberOfEvents                    = 8
+	expectedNumberOfTombstones                = 4
+	expectedNumberOfVendors                   = 8
 
 	expectedNumberOfAPIsInFirstBundle    = 1
 	expectedNumberOfAPIsInSecondBundle   = 1
@@ -72,90 +79,131 @@ const (
 	testTimeoutAdditionalBuffer = 5 * time.Minute
 )
 
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+func randString(n int) string {
+	buffer := make([]rune, n)
+	for i := range buffer {
+		buffer[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(buffer)
+}
+
 func TestORDAggregator(t *testing.T) {
-	appInput := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL)
-	secondAppInput := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL)
-	thirdAppInput := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL)
-
-	systemInstancesMap := make(map[string]string)
-	systemInstancesMap[expectedSystemInstanceName] = expectedSystemInstanceDescription
-	systemInstancesMap[expectedSecondSystemInstanceName] = expectedSecondSystemInstanceDescription
-	systemInstancesMap[expectedThirdSystemInstanceName] = expectedThirdSystemInstanceDescription
-
-	eventsMap := make(map[string]string)
-	eventsMap[firstEventTitle] = firstEventDescription
-	eventsMap[secondEventTitle] = secondEventDescription
-
-	bundlesMap := make(map[string]string)
-	bundlesMap[expectedBundleTitle] = expectedBundleDescription
-	bundlesMap[secondExpectedBundleTitle] = secondExpectedBundleDescription
-
-	bundlesAPIsNumberMap := make(map[string]int)
-	bundlesAPIsNumberMap[expectedBundleTitle] = expectedNumberOfAPIsInFirstBundle
-	bundlesAPIsNumberMap[secondExpectedBundleTitle] = expectedNumberOfAPIsInSecondBundle
-
-	bundlesAPIsData := make(map[string][]string)
-	bundlesAPIsData[expectedBundleTitle] = []string{firstAPIExpectedTitle}
-	bundlesAPIsData[secondExpectedBundleTitle] = []string{firstAPIExpectedTitle}
-
-	bundlesEventsNumberMap := make(map[string]int)
-	bundlesEventsNumberMap[expectedBundleTitle] = expectedNumberOfEventsInFirstBundle
-	bundlesEventsNumberMap[secondExpectedBundleTitle] = expectedNumberOfEventsInSecondBundle
-
-	bundlesEventsData := make(map[string][]string)
-	bundlesEventsData[expectedBundleTitle] = []string{firstEventTitle, secondEventTitle}
-	bundlesEventsData[secondExpectedBundleTitle] = []string{firstEventTitle, secondEventTitle}
-
-	ctx := context.Background()
-
-	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
-	require.NoError(t, err)
-
-	secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
-	require.NoError(t, err)
-
-	thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
-	require.NoError(t, err)
-
-	t.Log("Create integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
-
-	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
-
-	unsecuredHttpClient := http.DefaultClient
-	unsecuredHttpClient.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
+	basicORDConfigSecurity := &fixtures.ORDConfigSecurity{
+		Enabled:  true,
+		Username: randString(8),
+		Password: randString(8),
 	}
 
-	oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
-	require.True(t, ok)
-
-	conf := &clientcredentials.Config{
-		ClientID:     oauthCredentialData.ClientID,
-		ClientSecret: oauthCredentialData.ClientSecret,
-		TokenURL:     oauthCredentialData.URL,
+	oauthORDConfigSecurity := &fixtures.ORDConfigSecurity{
+		Enabled:  true,
+		Username: randString(8),
+		Password: randString(8),
+		TokenURL: testConfig.ExternalServicesMockBaseURL + "/oauth/token",
 	}
 
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, unsecuredHttpClient)
-	httpClient := conf.Client(ctx)
-	httpClient.Timeout = 10 * time.Second
+	toggleORDConfigSecurity(t, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/basic/configure", basicORDConfigSecurity)
+	toggleORDConfigSecurity(t, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/oauth/configure", oauthORDConfigSecurity)
 
-	scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
-	require.NoError(t, err)
-
-	defaultTestTimeout := 2*scheduleTime + testTimeoutAdditionalBuffer
-	defaultCheckInterval := defaultTestTimeout / 20
-
+	var appInput, secondAppInput, thirdAppInput, fourthAppInput directorSchema.ApplicationRegisterInput
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
+		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, &fixtures.ORDConfigSecurity{})
+		secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL, &fixtures.ORDConfigSecurity{})
+		thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/basic", basicORDConfigSecurity)
+		fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/oauth", oauthORDConfigSecurity)
+
+		systemInstancesMap := make(map[string]string)
+		systemInstancesMap[expectedSystemInstanceName] = expectedSystemInstanceDescription
+		systemInstancesMap[expectedSecondSystemInstanceName] = expectedSecondSystemInstanceDescription
+		systemInstancesMap[expectedThirdSystemInstanceName] = expectedThirdSystemInstanceDescription
+		systemInstancesMap[expectedFourthSystemInstanceName] = expectedFourthSystemInstanceDescription
+
+		eventsMap := make(map[string]string)
+		eventsMap[firstEventTitle] = firstEventDescription
+		eventsMap[secondEventTitle] = secondEventDescription
+
+		bundlesMap := make(map[string]string)
+		bundlesMap[expectedBundleTitle] = expectedBundleDescription
+		bundlesMap[secondExpectedBundleTitle] = secondExpectedBundleDescription
+
+		bundlesAPIsNumberMap := make(map[string]int)
+		bundlesAPIsNumberMap[expectedBundleTitle] = expectedNumberOfAPIsInFirstBundle
+		bundlesAPIsNumberMap[secondExpectedBundleTitle] = expectedNumberOfAPIsInSecondBundle
+
+		bundlesAPIsData := make(map[string][]string)
+		bundlesAPIsData[expectedBundleTitle] = []string{firstAPIExpectedTitle}
+		bundlesAPIsData[secondExpectedBundleTitle] = []string{firstAPIExpectedTitle}
+
+		bundlesEventsNumberMap := make(map[string]int)
+		bundlesEventsNumberMap[expectedBundleTitle] = expectedNumberOfEventsInFirstBundle
+		bundlesEventsNumberMap[secondExpectedBundleTitle] = expectedNumberOfEventsInSecondBundle
+
+		bundlesEventsData := make(map[string][]string)
+		bundlesEventsData[expectedBundleTitle] = []string{firstEventTitle, secondEventTitle}
+		bundlesEventsData[secondExpectedBundleTitle] = []string{firstEventTitle, secondEventTitle}
+
+		ctx := context.Background()
+
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		require.NoError(t, err)
+
+		secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
+		require.NoError(t, err)
+
+		thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
+		require.NoError(t, err)
+
+		fixtures.SetApplicationLabelWithTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdApp.ID, applicationTypeLabelKey, testConfig.SecuredApplicationTypes[0])
+
+		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
+		require.NoError(t, err)
+
+		fixtures.SetApplicationLabelWithTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthApp.ID, applicationTypeLabelKey, testConfig.SecuredApplicationTypes[0])
+
+		t.Log("Create integration system")
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
+		defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys)
+		require.NoError(t, err)
+		require.NotEmpty(t, intSys.ID)
+
+		intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
+
+		unsecuredHttpClient := http.DefaultClient
+		unsecuredHttpClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+
+		oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
+		require.True(t, ok)
+
+		conf := &clientcredentials.Config{
+			ClientID:     oauthCredentialData.ClientID,
+			ClientSecret: oauthCredentialData.ClientSecret,
+			TokenURL:     oauthCredentialData.URL,
+		}
+
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, unsecuredHttpClient)
+		httpClient := conf.Client(ctx)
+		httpClient.Timeout = 10 * time.Second
+
+		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
+		require.NoError(t, err)
+
+		defaultTestTimeout := 2*scheduleTime + testTimeoutAdditionalBuffer
+		defaultCheckInterval := defaultTestTimeout / 20
+
 		err = verifyORDDocument(defaultCheckInterval, defaultTestTimeout, func() bool {
 			var respBody string
 
@@ -292,4 +340,23 @@ func verifyORDDocument(interval time.Duration, timeout time.Duration, conditiona
 
 func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, headers map[string][]string) string {
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
+}
+
+func toggleORDConfigSecurity(t *testing.T, url string, ordSecurityConfig *fixtures.ORDConfigSecurity) {
+	body, err := json.Marshal(ordSecurityConfig)
+	require.NoError(t, err)
+
+	reader := bytes.NewReader(body)
+	response, err := http.DefaultClient.Post(url, "application/json", reader)
+	require.NoError(t, err)
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
+	if response.StatusCode != http.StatusOK {
+		bytes, err := ioutil.ReadAll(response.Body)
+		require.NoError(t, err)
+		t.Fatalf("Failed to toggle ORD Config security to %t: %s", ordSecurityConfig.Enabled, string(bytes))
+	}
 }
