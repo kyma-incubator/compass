@@ -46,15 +46,9 @@ type directorClient interface {
 	DeleteSystemAsync(ctx context.Context, id, tenant string) error
 }
 
-//go:generate mockery --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore --exported=true
-type applicationTemplateService interface {
-	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
-	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
-}
-
-//go:generate mockery --name=applicationConverter --output=automock --outpkg=automock --case=underscore --exported=true
-type applicationConverter interface {
-	CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error)
+//go:generate mockery --name=templateRenderer --output=automock --outpkg=automock --case=underscore --exported=true
+type templateRenderer interface {
+	ApplicationRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error)
 }
 
 // Config holds the configuration available for the SystemFetcher.
@@ -70,30 +64,28 @@ type Config struct {
 
 // SystemFetcher is responsible for synchronizing the existing applications in Compass and a pre-defined external source.
 type SystemFetcher struct {
-	transaction        persistence.Transactioner
-	tenantService      tenantService
-	systemsService     systemsService
-	appTemplateService applicationTemplateService
-	appConverter       applicationConverter
-	systemsAPIClient   systemsAPIClient
-	directorClient     directorClient
+	transaction                  persistence.Transactioner
+	tenantService                tenantService
+	systemsService               systemsService
+	templatedApplicationResolver templateRenderer
+	systemsAPIClient             systemsAPIClient
+	directorClient               directorClient
 
 	config  Config
 	workers chan struct{}
 }
 
 // NewSystemFetcher returns a new SystemFetcher.
-func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, ats applicationTemplateService, ac applicationConverter, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
+func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, tar templateRenderer, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
-		transaction:        tx,
-		tenantService:      ts,
-		systemsService:     ss,
-		appTemplateService: ats,
-		appConverter:       ac,
-		systemsAPIClient:   sac,
-		directorClient:     directorClient,
-		workers:            make(chan struct{}, config.FetcherParallellism),
-		config:             config,
+		transaction:                  tx,
+		tenantService:                ts,
+		systemsService:               ss,
+		templatedApplicationResolver: tar,
+		systemsAPIClient:             sac,
+		directorClient:               directorClient,
+		workers:                      make(chan struct{}, config.FetcherParallellism),
+		config:                       config,
 	}
 }
 
@@ -231,8 +223,7 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed to commit applications for tenant %s", tenantMapping.ExternalTenant))
 	}
 
@@ -240,41 +231,32 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 }
 
 func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc System) (*model.ApplicationRegisterInputWithTemplate, error) {
+	input, err := s.appRegisterInput(ctx, sc)
+	if err != nil {
+		return nil, err
+	}
+
+	return enrichAppRegisterInput(*input, sc), nil
+}
+
+func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error) {
 	if len(sc.TemplateID) > 0 {
-		return s.appRegisterInputFromTemplate(ctx, sc)
+		return s.templatedApplicationResolver.ApplicationRegisterInputFromTemplate(ctx, sc)
 	}
 
-	return replaceCoreAppRegisterInput(model.ApplicationRegisterInput{}, sc), nil
+	return &model.ApplicationRegisterInput{
+		Name:         sc.DisplayName,
+		Description:  &sc.ProductDescription,
+		ProviderName: &sc.InfrastructureProvider,
+		BaseURL:      &sc.BaseURL,
+		SystemNumber: &sc.SystemNumber,
+	}, nil
 }
 
-func (s *SystemFetcher) appRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInputWithTemplate, error) {
-	appTemplate, err := s.appTemplateService.Get(ctx, sc.TemplateID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting application template with ID %s", sc.TemplateID)
-	}
-
-	inputValues := getTemplateInputs(appTemplate, sc)
-	appRegisterInputJSON, err := s.appTemplateService.PrepareApplicationCreateInputJSON(appTemplate, inputValues)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while preparing ApplicationRegisterInput JSON from Application Template with name %s", appTemplate.Name)
-	}
-
-	appRegisterInput, err := s.appConverter.CreateInputJSONToModel(ctx, appRegisterInputJSON)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while preparing ApplicationRegisterInput model from Application Template with name %s", appTemplate.Name)
-	}
-
-	return replaceCoreAppRegisterInput(appRegisterInput, sc), nil
-}
-
-// replaceCoreAppRegisterInput replaces the base part of the application with all the information that could be retrieved from the system fetcher.
-func replaceCoreAppRegisterInput(input model.ApplicationRegisterInput, sc System) *model.ApplicationRegisterInputWithTemplate {
+// enrichAppRegisterInput replaces the base part of the application with all the information that could be retrieved from the system fetcher.
+func enrichAppRegisterInput(input model.ApplicationRegisterInput, sc System) *model.ApplicationRegisterInputWithTemplate {
 	initStatusCond := model.ApplicationStatusConditionInitial
 
-	input.Name = sc.DisplayName
-	input.Description = &sc.ProductDescription
-	input.BaseURL = &sc.BaseURL
-	input.ProviderName = &sc.InfrastructureProvider
 	input.StatusCondition = &initStatusCond
 	input.SystemNumber = &sc.SystemNumber
 
@@ -287,29 +269,4 @@ func replaceCoreAppRegisterInput(input model.ApplicationRegisterInput, sc System
 		ApplicationRegisterInput: input,
 		TemplateID:               sc.TemplateID,
 	}
-}
-
-func getTemplateInputs(t *model.ApplicationTemplate, s System) model.ApplicationFromTemplateInputValues {
-	inputValues := model.ApplicationFromTemplateInputValues{}
-	for _, p := range t.Placeholders {
-		inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
-			Placeholder: p.Name,
-			Value:       getPlaceholderInput(p, s),
-		})
-	}
-
-	return inputValues
-}
-
-func getPlaceholderInput(p model.ApplicationTemplatePlaceholder, s System) string {
-	if strings.Contains(strings.ToLower(p.Name), "name") {
-		return s.DisplayName
-	}
-	if strings.Contains(strings.ToLower(p.Name), "url") {
-		return s.BaseURL
-	}
-	if strings.Contains(strings.ToLower(p.Name), "description") {
-		return s.ProductDescription
-	}
-	return ""
 }

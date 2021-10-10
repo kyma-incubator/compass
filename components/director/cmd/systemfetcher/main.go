@@ -42,20 +42,26 @@ import (
 )
 
 type config struct {
-	APIConfig                      systemfetcher.APIConfig
-	OAuth2Config                   systemfetcher.OAuth2Config
-	SystemFetcher                  systemfetcher.Config
-	Database                       persistence.DatabaseConfig
-	SystemToTemplateMappingsString string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
+	APIConfig      systemfetcher.APIConfig
+	OAuth2Config   systemfetcher.OAuth2Config
+	SystemFetcher  systemfetcher.Config
+	Database       persistence.DatabaseConfig
+	TemplateConfig appTemplateConfig
 
 	Log log.Config
 
 	Features features.Config
 
-	ConfigurationFile       string
-	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
+	ConfigurationFile string
 
-	ClientTimeout time.Duration `envconfig:"default=60s"`
+	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
+	ClientTimeout           time.Duration `envconfig:"default=60s"`
+}
+
+type appTemplateConfig struct {
+	SystemToTemplateMappingsString string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
+	TemplateApplicationInput       string `envconfig:"APP_TEMPLATE_APPLICATION_INPUT"`
+	TemplatePlaceholders           string `envconfig:"APP_TEMPLATE_PLACEHOLDERS"`
 }
 
 func main() {
@@ -96,7 +102,7 @@ func main() {
 
 func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner) error {
 	var systemToTemplateMappings []systemfetcher.TemplateMapping
-	if err := json.Unmarshal([]byte(cfg.SystemToTemplateMappingsString), &systemToTemplateMappings); err != nil {
+	if err := json.Unmarshal([]byte(cfg.TemplateConfig.SystemToTemplateMappingsString), &systemToTemplateMappings); err != nil {
 		return errors.Wrap(err, "failed to read system template mappings")
 	}
 
@@ -212,7 +218,8 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
-	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, appTemplateSvc, appConverter, systemsAPIClient, directorClient, cfg.SystemFetcher)
+	templateRenderer := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter)
+	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
