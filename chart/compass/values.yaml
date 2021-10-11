@@ -313,7 +313,7 @@ global:
               give_up_after: 6s
               max_delay: 2000ms
       authenticationMappingServices:
-        tenantFetcherAuthenMappingService:
+        tenantFetcher:
           cfg:
             config:
               api:
@@ -330,7 +330,7 @@ global:
             attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
             path: /tenants/<.*>
             upstreamComponent: "compass-tenant-fetcher"
-        subscriberAuthenMappingService:
+        subscriber:
           cfg:
             config:
               api:

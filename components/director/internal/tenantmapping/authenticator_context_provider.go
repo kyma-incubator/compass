@@ -89,8 +89,8 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 		if apperrors.IsNotFoundError(err) {
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
-			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider), nil
+			log.C(ctx).Infof("Returning tenant context with same internal tenant ID and external ID %s", externalTenantID)
+			return NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
