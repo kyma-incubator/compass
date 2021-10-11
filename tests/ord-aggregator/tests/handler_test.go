@@ -118,7 +118,7 @@ func TestORDAggregator(t *testing.T) {
 		secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL, &fixtures.ORDConfigSecurity{})
 		thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/basic/.well-known/open-resource-discovery", basicORDConfigSecurity)
 		fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/oauth/.well-known/open-resource-discovery", oauthORDConfigSecurity)
-		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockCertSecuredURL, &fixtures.ORDConfigSecurity{})
+		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/cert/.well-known/open-resource-discovery", &fixtures.ORDConfigSecurity{})
 
 		systemInstancesMap := make(map[string]string)
 		systemInstancesMap[expectedSystemInstanceName] = expectedSystemInstanceDescription
