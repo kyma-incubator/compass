@@ -25,7 +25,7 @@ func BenchmarkSystemBundles(b *testing.B) {
 
 	appsCount := 15
 	for i := 0; i < appsCount; i++ {
-		app := fixtures.CreateApp(fmt.Sprintf("%d", i))
+		app := fixtures.CreateApp(fmt.Sprintf("ord-service-%d", i))
 		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, dexGraphQLClient, defaultTestTenant, app)
 		defer fixtures.CleanupApplication(b, ctx, dexGraphQLClient, defaultTestTenant, &appResp)
 		require.NoError(b, err)
