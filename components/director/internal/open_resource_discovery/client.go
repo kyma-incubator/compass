@@ -54,14 +54,18 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 
 	docs := make([]*Document, 0)
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
+		documentURL, err := buildDocumentURL(docDetails.URL, baseURL, config.BaseURL)
+		if err != nil {
+			return nil, errors.Wrap(err, "error building document URL")
+		}
 		strategy, ok := docDetails.AccessStrategies.GetSupported()
 		if !ok {
-			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", baseURL+docDetails.URL)
+			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
 			continue
 		}
-		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, baseURL+docDetails.URL, strategy)
+		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy)
 		if err != nil {
-			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", baseURL+docDetails.URL)
+			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", documentURL)
 		}
 
 		docs = append(docs, doc)
@@ -144,6 +148,20 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 	}
 
 	return &config, nil
+}
+
+func buildDocumentURL(docURL, whBaseURL, configBaseURL string) (string, error) { // TODO: tests when the whole algorithm is implemented
+	docURLParsed, err := url.Parse(docURL)
+	if err != nil {
+		return "", err
+	}
+	if docURLParsed.IsAbs() {
+		return docURL, nil
+	}
+	if len(configBaseURL) > 0 {
+		return configBaseURL + docURL, nil
+	}
+	return whBaseURL + docURL, nil
 }
 
 func buildWellKnownEndpoint(u string) (string, error) {

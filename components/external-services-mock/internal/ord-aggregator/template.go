@@ -5,6 +5,7 @@ package ord_aggregator
 const ordConfig = `{
     "$schema": "../spec/v1/generated/Configuration.schema.json",
     "openResourceDiscoveryV1": {
+		%s
         "documents": [
             {
                 "url": "/open-resource-discovery/v1/documents/example1",
@@ -37,7 +38,7 @@ const ordDocument = `{
       "HealthCheckURL":null,
       "IntegrationSystemID":null,
       "ApplicationTemplateID":null,
-      "baseUrl":"http://compass-external-services-mock.compass-system.svc.cluster.local:%d",
+      "baseUrl":"%s",
       "labels":{
          "label-key-1":[
             "label-value-1",

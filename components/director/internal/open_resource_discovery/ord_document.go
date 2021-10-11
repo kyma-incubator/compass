@@ -18,6 +18,7 @@ const WellKnownEndpoint = "/.well-known/open-resource-discovery"
 // WellKnownConfig represents the whole config object
 type WellKnownConfig struct {
 	Schema                  string                  `json:"$schema"`
+	BaseURL                 string                  `json:"baseUrl"`
 	OpenResourceDiscoveryV1 OpenResourceDiscoveryV1 `json:"openResourceDiscoveryV1"`
 }
 

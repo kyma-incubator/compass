@@ -116,8 +116,8 @@ func TestORDAggregator(t *testing.T) {
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
 		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, &fixtures.ORDConfigSecurity{})
 		secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL, &fixtures.ORDConfigSecurity{})
-		thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/basic", basicORDConfigSecurity)
-		fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/oauth", oauthORDConfigSecurity)
+		thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/basic/.well-known/open-resource-discovery", basicORDConfigSecurity)
+		fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/oauth/.well-known/open-resource-discovery", oauthORDConfigSecurity)
 		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockCertSecuredURL, &fixtures.ORDConfigSecurity{})
 
 		systemInstancesMap := make(map[string]string)

@@ -36,7 +36,7 @@ func (oh *ordHandler) SetPublicKey(publicKey *rsa.PublicKey) {
 	oh.publicKey = publicKey
 }
 
-func (oh *ordHandler) HandleFuncOrdConfig(accessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
+func (oh *ordHandler) HandleFuncOrdConfig(baseURL, accessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		oh.mutex.RLock()
 		defer oh.mutex.RUnlock()
@@ -58,17 +58,17 @@ func (oh *ordHandler) HandleFuncOrdConfig(accessStrategy string) func(rw http.Re
 		}
 
 		rw.WriteHeader(http.StatusOK)
-		_, err := rw.Write([]byte(fmt.Sprintf(ordConfig, accessStrategy)))
+		_, err := rw.Write([]byte(fmt.Sprintf(ordConfig, baseURL, accessStrategy)))
 		if err != nil {
 			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 		}
 	}
 }
 
-func (oh *ordHandler) HandleFuncOrdDocument(serverPort int) func(rw http.ResponseWriter, req *http.Request) {
+func (oh *ordHandler) HandleFuncOrdDocument(baseURL string) func(rw http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		rw.WriteHeader(http.StatusOK)
-		_, err := rw.Write([]byte(fmt.Sprintf(ordDocument, serverPort)))
+		_, err := rw.Write([]byte(fmt.Sprintf(ordDocument, baseURL)))
 		if err != nil {
 			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 		}

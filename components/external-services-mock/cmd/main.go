@@ -36,6 +36,7 @@ type config struct {
 	Address                  string `envconfig:"default=127.0.0.1:8080"`
 	CertSecuredServerAddress string `envconfig:"default=127.0.0.1:8081"`
 	BaseURL                  string `envconfig:"default=http://compass-external-services-mock.compass-system.svc.cluster.local:8080"`
+	CertSecuredBaseURL       string
 	JWKSPath                 string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
@@ -138,15 +139,17 @@ func initHTTP(cfg config) (http.Handler, error) {
 
 	ordHandler, basicORDHandler, oauthORDHandler := ord_aggregator.NewORDHandler(), ord_aggregator.NewORDHandler(), ord_aggregator.NewORDHandler()
 	oauthORDHandler.SetPublicKey(&key.PublicKey)
-	router.HandleFunc("/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig("open"))
-	router.HandleFunc("/.well-known/open-resource-discovery/basic", basicORDHandler.HandleFuncOrdConfig("open"))
-	router.HandleFunc("/.well-known/open-resource-discovery/oauth", oauthORDHandler.HandleFuncOrdConfig("open"))
+	router.HandleFunc("/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig("", "open"))
+	router.HandleFunc("/basic/.well-known/open-resource-discovery", basicORDHandler.HandleFuncOrdConfig("", "open"))
+	router.HandleFunc("/oauth/.well-known/open-resource-discovery", oauthORDHandler.HandleFuncOrdConfig("", "open"))
+
+	router.HandleFunc("/cert/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig(cfg.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
 
 	router.HandleFunc("/.well-known/open-resource-discovery/basic/configure", basicORDHandler.HandleFuncOrdConfigSecurity)
 	router.HandleFunc("/.well-known/open-resource-discovery/oauth/configure", oauthORDHandler.HandleFuncOrdConfigSecurity)
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(8080))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(cfg.BaseURL))
 
-	router.HandleFunc("/test/fullPath", ordHandler.HandleFuncOrdConfig("open"))
+	router.HandleFunc("/test/fullPath", ordHandler.HandleFuncOrdConfig("", "open"))
 
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
@@ -179,8 +182,7 @@ func initCertSecuredAPIs(cfg config) (http.Handler, error) {
 
 	ordHandler := ord_aggregator.NewORDHandler()
 
-	router.HandleFunc("/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig("sap:cmp-mtls:v1"))
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(8081))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(cfg.CertSecuredBaseURL))
 
 	return router, nil
 }
