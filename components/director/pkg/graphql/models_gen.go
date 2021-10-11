@@ -685,6 +685,8 @@ const (
 	ApplicationStatusConditionDeleting        ApplicationStatusCondition = "DELETING"
 	ApplicationStatusConditionDeleteFailed    ApplicationStatusCondition = "DELETE_FAILED"
 	ApplicationStatusConditionDeleteSucceeded ApplicationStatusCondition = "DELETE_SUCCEEDED"
+	ApplicationStatusConditionUnpairing       ApplicationStatusCondition = "UNPAIRING"
+	ApplicationStatusConditionUnpairFailed    ApplicationStatusCondition = "UNPAIR_FAILED"
 )
 
 var AllApplicationStatusCondition = []ApplicationStatusCondition{
@@ -700,11 +702,13 @@ var AllApplicationStatusCondition = []ApplicationStatusCondition{
 	ApplicationStatusConditionDeleting,
 	ApplicationStatusConditionDeleteFailed,
 	ApplicationStatusConditionDeleteSucceeded,
+	ApplicationStatusConditionUnpairing,
+	ApplicationStatusConditionUnpairFailed,
 }
 
 func (e ApplicationStatusCondition) IsValid() bool {
 	switch e {
-	case ApplicationStatusConditionInitial, ApplicationStatusConditionConnected, ApplicationStatusConditionFailed, ApplicationStatusConditionCreating, ApplicationStatusConditionCreateFailed, ApplicationStatusConditionCreateSucceeded, ApplicationStatusConditionUpdating, ApplicationStatusConditionUpdateFailed, ApplicationStatusConditionUpdateSucceeded, ApplicationStatusConditionDeleting, ApplicationStatusConditionDeleteFailed, ApplicationStatusConditionDeleteSucceeded:
+	case ApplicationStatusConditionInitial, ApplicationStatusConditionConnected, ApplicationStatusConditionFailed, ApplicationStatusConditionCreating, ApplicationStatusConditionCreateFailed, ApplicationStatusConditionCreateSucceeded, ApplicationStatusConditionUpdating, ApplicationStatusConditionUpdateFailed, ApplicationStatusConditionUpdateSucceeded, ApplicationStatusConditionDeleting, ApplicationStatusConditionDeleteFailed, ApplicationStatusConditionDeleteSucceeded, ApplicationStatusConditionUnpairing, ApplicationStatusConditionUnpairFailed:
 		return true
 	}
 	return false
@@ -1149,17 +1153,19 @@ const (
 	OperationTypeCreate OperationType = "CREATE"
 	OperationTypeUpdate OperationType = "UPDATE"
 	OperationTypeDelete OperationType = "DELETE"
+	OperationTypeUnpair OperationType = "UNPAIR"
 )
 
 var AllOperationType = []OperationType{
 	OperationTypeCreate,
 	OperationTypeUpdate,
 	OperationTypeDelete,
+	OperationTypeUnpair,
 }
 
 func (e OperationType) IsValid() bool {
 	switch e {
-	case OperationTypeCreate, OperationTypeUpdate, OperationTypeDelete:
+	case OperationTypeCreate, OperationTypeUpdate, OperationTypeDelete, OperationTypeUnpair:
 		return true
 	}
 	return false
