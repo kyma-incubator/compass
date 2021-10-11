@@ -9,13 +9,19 @@ type credential struct {
 	*OAuthCredentialData
 }
 
+type oneTimeToken struct {
+	TokenWithURL
+	LegacyConnectorURL string `json:"legacyConnectorURL"`
+}
+
 // UnmarshalJSON is used only by integration tests, we have to help graphql client to deal with Credential field
 func (a *Auth) UnmarshalJSON(data []byte) error {
 	type Alias Auth
 
 	aux := &struct {
 		*Alias
-		Credential credential `json:"credential"`
+		Credential   credential   `json:"credential"`
+		OneTimeToken oneTimeToken `json:"oneTimeToken"`
 	}{
 		Alias: (*Alias)(a),
 	}
@@ -24,6 +30,7 @@ func (a *Auth) UnmarshalJSON(data []byte) error {
 	}
 
 	a.Credential = retrieveCredential(aux.Credential)
+	a.OneTimeToken = retrieveOneTimeToken(aux.OneTimeToken)
 
 	return nil
 }
@@ -48,9 +55,21 @@ func (csrf *CSRFTokenCredentialRequestAuth) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func retrieveCredential(umarshaledCredential credential) CredentialData {
-	if umarshaledCredential.BasicCredentialData != nil {
-		return umarshaledCredential.BasicCredentialData
+func retrieveCredential(unmarshaledCredential credential) CredentialData {
+	if unmarshaledCredential.BasicCredentialData != nil {
+		return unmarshaledCredential.BasicCredentialData
 	}
-	return umarshaledCredential.OAuthCredentialData
+	return unmarshaledCredential.OAuthCredentialData
+}
+
+func retrieveOneTimeToken(unmarshaledOTT oneTimeToken) OneTimeToken {
+	if unmarshaledOTT.LegacyConnectorURL != "" {
+		return &OneTimeTokenForApplication{
+			TokenWithURL:       unmarshaledOTT.TokenWithURL,
+			LegacyConnectorURL: unmarshaledOTT.LegacyConnectorURL,
+		}
+	}
+	return &OneTimeTokenForRuntime{
+		TokenWithURL: unmarshaledOTT.TokenWithURL,
+	}
 }
