@@ -95,10 +95,11 @@ func TestHydrators(t *testing.T) {
 
 			assert.Equal(t, true, hasAuth)
 
-			// check if the gql resolver is not sending used/expired auths
+			// check that gql resolver is sending used/expired auths, but there is valid property
 			if testCase.clientType == "Application" {
 				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID).Auths
-				assert.Len(t, appSystemAuths, 0)
+				assert.Len(t, appSystemAuths, 1)
+				assert.False(t, appSystemAuths[0].Auth.OneTimeToken.(*graphql.OneTimeTokenForApplication).Used)
 			}
 		})
 
