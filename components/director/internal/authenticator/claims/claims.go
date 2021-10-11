@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -30,8 +30,8 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-// UnmarshalJSONClaims parses the bearerToken using keyFunc. After the token's claims are extracted the "tenant" claim is unmarshaled into Claim's map "Tenant"
-func (c *Claims) UnmarshalJSONClaims(ctx context.Context, bearerToken string, keyFunc func(token *jwt.Token) (interface{}, error)) error {
+// UnmarshalJSON implements Unmarshaler interface. The method unmarshal the data from b into Claims structure.
+func (c *Claims) UnmarshalJSON(b []byte) error {
 	tokenClaims := struct {
 		TenantString string                `json:"tenant"`
 		Scopes       string                `json:"scopes"`
@@ -43,18 +43,9 @@ func (c *Claims) UnmarshalJSONClaims(ctx context.Context, bearerToken string, ke
 		jwt.StandardClaims
 	}{}
 
-	token, err := jwt.Parse(bearerToken, keyFunc)
+	err := json.Unmarshal(b, &tokenClaims)
 	if err != nil {
-		return err
-	}
-
-	marshaled, err := json.Marshal(token.Claims)
-	if err != nil {
-		return errors.Wrap(err, "while marshaling token claims:")
-	}
-
-	if err := json.Unmarshal(marshaled, &tokenClaims); err != nil {
-		return errors.Wrap(err, "while unmarshaling token claims:")
+		return errors.Wrap(err, "While unmarshaling token claims:")
 	}
 
 	c.Scopes = tokenClaims.Scopes
@@ -66,7 +57,7 @@ func (c *Claims) UnmarshalJSONClaims(ctx context.Context, bearerToken string, ke
 	c.StandardClaims = tokenClaims.StandardClaims
 
 	if err := json.Unmarshal([]byte(tokenClaims.TenantString), &c.Tenant); err != nil {
-		log.C(ctx).Warnf("While unmarshaling tenants: %v", err)
+		log.D().Warnf("While unmarshaling tenants: %v", err)
 	}
 
 	return nil

@@ -66,7 +66,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2027"
+      version: "PR-2057"
     connectivity_adapter:
       dir:
       version: "PR-2027"
@@ -87,7 +87,7 @@ global:
       version: "PR-42"
     schema_migrator:
       dir:
-      version: "PR-1998"
+      version: "PR-2025"
     system_broker:
       dir:
       version: "PR-2027"
@@ -98,7 +98,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2051"
+      version: "PR-2057"
     console:
       dir:
       version: "PR-45"
@@ -313,7 +313,7 @@ global:
               give_up_after: 6s
               max_delay: 2000ms
       authenticationMappingServices:
-        tenantFetcherAuthenMappingService:
+        tenantFetcher:
           cfg:
             config:
               api:
@@ -330,7 +330,7 @@ global:
             attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
             path: /tenants/<.*>
             upstreamComponent: "compass-tenant-fetcher"
-        subscriberAuthenMappingService:
+        subscriber:
           cfg:
             config:
               api:
@@ -400,14 +400,33 @@ global:
     port: 3000
     defaultResponseType: "xml"
 
+  mtlsClient:
+    subjectPattern: "C=DE, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=123e4567-e89b-12d3-a456-426614174001, L=%s, CN=%s"
+    commonName: "compass"
+    locality: "local"
+
   ordAggregator:
     name: ord-aggregator
     enabled: true
     schedule: "*/1 * * * *"
+    http:
+      client:
+        skipSSLValidation: false
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
     securedApplicationTypes: "sample-app-type" # comma-separated values are used for specifying multiple application types
+    accessStrategies:
+      cmpMtls:
+        policy: "compass-local-clients"
+        csrEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+        certSvcApiPath: "/cert"
+        tokenPath: "/secured/oauth/token"
+        oauthSecret:
+          name: cert-svc-oauth-secret
+          urlKey: url
+          clientIdKey: client-id
+          clientSecretKey: client-secret
 
   systemFetcher:
     enabled: false
@@ -499,6 +518,10 @@ global:
   externalServicesMock:
     enabled: false
     auditlog: false
+    certSecuredPort: 8081
+    certSecuredHost: compass-external-services-mock-sap-mtls
+    host: compass-external-services-mock.compass-system.svc.cluster.local
+    oauthSecretName: compass-external-services-mock-oauth-credentials
 
   tests:
     ordService:

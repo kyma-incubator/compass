@@ -150,9 +150,12 @@ func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 
 func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*claims.Claims, error) {
 	parsed := claims.Claims{}
-	err := parsed.UnmarshalJSONClaims(ctx, bearerToken, a.getKeyFunc(ctx))
 
-	return &parsed, err
+	if _, err := jwt.ParseWithClaims(bearerToken, &parsed, a.getKeyFunc(ctx)); err != nil {
+		return &parsed, err
+	}
+
+	return &parsed, nil
 }
 
 func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (interface{}, error) {
