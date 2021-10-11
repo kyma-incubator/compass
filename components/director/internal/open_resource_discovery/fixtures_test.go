@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -186,9 +188,9 @@ func fixWellKnownConfig() *ord.WellKnownConfig {
 				{
 					URL:                 ordDocURI,
 					SystemInstanceAware: true,
-					AccessStrategies: []ord.AccessStrategy{
+					AccessStrategies: []accessstrategy.AccessStrategy{
 						{
-							Type: ord.OpenAccessStrategy,
+							Type: accessstrategy.OpenAccessStrategy,
 						},
 					},
 				},

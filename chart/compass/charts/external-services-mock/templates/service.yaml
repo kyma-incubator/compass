@@ -13,6 +13,10 @@ spec:
       targetPort: {{ .Values.deployment.port }}
       protocol: TCP
       name: http
+    - port: {{ .Values.global.externalServicesMock.certSecuredPort }}
+      targetPort: {{ .Values.global.externalServicesMock.certSecuredPort }}
+      protocol: TCP
+      name: http-mtls
     selector:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
