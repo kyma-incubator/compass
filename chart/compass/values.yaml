@@ -98,7 +98,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2042"
+      version: "PR-2051"
     console:
       dir:
       version: "PR-45"
@@ -407,6 +407,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
+    securedApplicationTypes: "sample-app-type" # comma-separated values are used for specifying multiple application types
 
   systemFetcher:
     enabled: false
