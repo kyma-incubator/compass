@@ -139,8 +139,6 @@ global:
       lastOperationPath: "/last_operation"
     info:
       path: "/v1/info"
-      certIssuer: "C=BG, L=Local, O=CMP, OU=Local, CN=CMP"
-      certSubject: "C=BG, O=CMP, OU=Local, L=Local, CN=local-clients"
 
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
@@ -377,6 +375,12 @@ global:
     staticPrefix: /open-resource-discovery-static/v0
     port: 3000
     defaultResponseType: "xml"
+
+  mtlsClient:
+    issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
+    subjectPattern: "C=DE, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=123e4567-e89b-12d3-a456-426614174001, L=%s, CN=%s"
+    commonName: "compass"
+    locality: "local"
 
   ordAggregator:
     name: ord-aggregator

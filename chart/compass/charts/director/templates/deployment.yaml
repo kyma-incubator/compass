@@ -148,9 +148,9 @@ spec:
             - name: APP_INFO_API_ENDPOINT
               value: {{ .Values.global.director.info.path }}
             - name: APP_INFO_CERT_SUBJECT
-              value: {{ .Values.global.director.info.certSubject }}
+              value: {{ quote (printf .Values.global.mtlsClient.subjectPattern .Values.global.mtlsClient.locality .Values.global.mtlsClient.commonName) }}
             - name: APP_INFO_CERT_ISSUER
-              value: {{ .Values.global.director.info.certIssuer }}
+              value: {{ .Values.global.mtlsClient.issuer }}
             {{- if .Values.deployment.pairingAdapterConfigMap }}
             - name: APP_PAIRING_ADAPTER_SRC
               value: /pairing-adapters/config.json
