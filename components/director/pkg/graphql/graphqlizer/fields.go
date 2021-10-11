@@ -370,6 +370,11 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 					
 				}
 			}
+			oneTimeToken {
+				token
+				used
+			}
+			certCommonName
 			additionalHeaders
 			additionalQueryParams
 			requestAuth { 
