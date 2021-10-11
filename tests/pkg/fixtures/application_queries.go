@@ -123,6 +123,15 @@ func SetApplicationLabel(t require.TestingT, ctx context.Context, gqlClient *gcl
 	return label
 }
 
+func SetApplicationLabelWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, id string, labelKey string, labelValue interface{}) graphql.Label {
+	setLabelRequest := FixSetApplicationLabelRequest(id, labelKey, labelValue)
+	label := graphql.Label{}
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, setLabelRequest, &label)
+	require.NoError(t, err)
+
+	return label
+}
+
 func GenerateClientCredentialsForApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) graphql.AppSystemAuth {
 	req := FixRequestClientCredentialsForApplication(id)
 

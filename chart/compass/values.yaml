@@ -75,7 +75,7 @@ global:
       version: "PR-2027"
     director:
       dir:
-      version: "PR-2055"
+      version: "PR-2051"
     gateway:
       dir:
       version: "PR-2034"
@@ -98,13 +98,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2042"
+      version: "PR-2051"
     console:
       dir:
       version: "PR-45"
     e2e_tests:
       dir:
-      version: "PR-2052"
+      version: "PR-2051"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -380,6 +380,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
+    securedApplicationTypes: "sample-app-type" # comma-separated values are used for specifying multiple application types
 
   systemFetcher:
     enabled: false

@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/pkg/errors"
@@ -26,39 +29,119 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 	}
 }
 
+var successfulRoundTripFunc = func(t *testing.T) func(req *http.Request) *http.Response {
+	return func(req *http.Request) *http.Response {
+		var data []byte
+		var err error
+		var reqBody []byte
+		if req.Body != nil {
+			reqBody, err = ioutil.ReadAll(req.Body)
+			require.NoError(t, err)
+		}
+		statusCode := http.StatusOK
+		if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
+			data, err = json.Marshal(fixWellKnownConfig())
+			require.NoError(t, err)
+		} else if strings.Contains(req.URL.String(), ordDocURI) {
+			data, err = json.Marshal(fixORDDocument())
+			require.NoError(t, err)
+		} else if strings.Contains(string(reqBody), "client_secret") {
+			statusCode = http.StatusOK
+			data, err = json.Marshal(struct {
+				AccessToken string `json:"access_token"`
+			}{
+				AccessToken: "test-tkn",
+			})
+			require.NoError(t, err)
+		} else if strings.Contains(string(reqBody), "grant_type=client_credentials") {
+			statusCode = http.StatusOK
+		} else {
+			statusCode = http.StatusNotFound
+		}
+		return &http.Response{
+			StatusCode: statusCode,
+			Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+		}
+	}
+}
+
 func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 	testCases := []struct {
-		Name           string
-		RoundTripFunc  func(req *http.Request) *http.Response
-		ExpectedResult ord.Documents
-		ExpectedErr    error
+		Name               string
+		SecuredSystemTypes []string
+		Credentials        *model.Auth
+		RoundTripFunc      func(req *http.Request) *http.Response
+		ExpectedResult     ord.Documents
+		ExpectedErr        error
 	}{
 		{
-			Name: "Success",
-			RoundTripFunc: func(req *http.Request) *http.Response {
-				var data []byte
-				var err error
-				statusCode := http.StatusOK
-				if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
-					data, err = json.Marshal(fixWellKnownConfig())
-					require.NoError(t, err)
-				} else if strings.Contains(req.URL.String(), ordDocURI) {
-					data, err = json.Marshal(fixORDDocument())
-					require.NoError(t, err)
-				} else {
-					statusCode = http.StatusNotFound
-				}
-				return &http.Response{
-					StatusCode: statusCode,
-					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
-				}
-			},
+			Name:               "Success",
+			SecuredSystemTypes: []string{},
+			RoundTripFunc:      successfulRoundTripFunc(t),
 			ExpectedResult: ord.Documents{
 				fixORDDocument(),
 			},
 		},
 		{
-			Name: "Error fetching well-known config",
+			Name:               "Success with secured system type configured and basic credentials",
+			SecuredSystemTypes: []string{testApplicationType},
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
+						Username: "user",
+						Password: "pass",
+					},
+				},
+			},
+			RoundTripFunc: successfulRoundTripFunc(t),
+			ExpectedResult: ord.Documents{
+				fixORDDocument(),
+			},
+		},
+		{
+			Name:               "Success with secured system type configured and oauth credentials",
+			SecuredSystemTypes: []string{testApplicationType},
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
+					Oauth: &model.OAuthCredentialData{
+						ClientID:     "client-id",
+						ClientSecret: "client-secret",
+						URL:          "url",
+					},
+				},
+			},
+			RoundTripFunc: successfulRoundTripFunc(t),
+			ExpectedResult: ord.Documents{
+				fixORDDocument(),
+			},
+		},
+		{
+			Name:               "Error fetching well-known config due to missing credentials",
+			SecuredSystemTypes: []string{testApplicationType},
+			ExpectedErr:        errors.New("error while fetching open resource discovery well-known configuration with webhook credentials: Invalid data [reason=Credentials not provided]"),
+		},
+		{
+			Name:               "Error fetching well-known config due to invalid credentials",
+			SecuredSystemTypes: []string{testApplicationType},
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
+						Username: "user",
+						Password: "pass",
+					},
+				},
+			},
+			RoundTripFunc: func(req *http.Request) *http.Response {
+				return &http.Response{
+					StatusCode: http.StatusUnauthorized,
+					Body:       ioutil.NopCloser(nil),
+				}
+			},
+			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration: status code 401"),
+		},
+		{
+			Name:               "Error fetching well-known config",
+			SecuredSystemTypes: []string{},
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				statusCode := http.StatusNotFound
@@ -73,7 +156,8 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration: status code 500"),
 		},
 		{
-			Name: "Error when well-known config is not proper json",
+			Name:               "Error when well-known config is not proper json",
+			SecuredSystemTypes: []string{},
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				statusCode := http.StatusNotFound
@@ -89,7 +173,8 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedErr: errors.New("error unmarshaling json body"),
 		},
 		{
-			Name: "Document with unsupported access strategy is skipped",
+			Name:               "Document with unsupported access strategy is skipped",
+			SecuredSystemTypes: []string{},
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				var err error
@@ -113,7 +198,8 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedResult: ord.Documents{},
 		},
 		{
-			Name: "Error fetching document",
+			Name:               "Error fetching document",
+			SecuredSystemTypes: []string{},
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				var err error
@@ -135,7 +221,8 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedErr:    errors.Errorf("error while fetching open resource discovery document %q: status code %d", baseURL+ordDocURI, 500),
 		},
 		{
-			Name: "Error when document is not proper json",
+			Name:               "Error when document is not proper json",
+			SecuredSystemTypes: []string{},
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				var err error
@@ -162,8 +249,20 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
-			client := ord.NewClient(testHTTPClient)
-			docs, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), baseURL)
+			client := ord.NewClient(testHTTPClient, test.SecuredSystemTypes)
+
+			testApp := fixApplicationPage().Data[0]
+			testWebhook := fixWebhooks()[0]
+
+			if len(test.SecuredSystemTypes) != 0 {
+				testApp.Labels = []byte(fmt.Sprintf(`{"%s": "%s"}`, applicationTypeLabel, test.SecuredSystemTypes[0]))
+			}
+
+			if test.Credentials != nil {
+				testWebhook.Auth = test.Credentials
+			}
+
+			docs, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testApp, testWebhook)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

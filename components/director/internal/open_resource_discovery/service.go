@@ -14,9 +14,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+const applicationTypeLabel = "applicationType"
+
 // Service consists of various resource services responsible for service-layer ORD operations.
 type Service struct {
 	transact persistence.Transactioner
+
+	labelRepo labelRepository
 
 	appSvc             ApplicationService
 	webhookSvc         WebhookService
@@ -34,10 +38,11 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client Client) *Service {
+func NewAggregatorService(transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client Client) *Service {
 	return &Service{
 		transact:           transact,
 		appSvc:             appSvc,
+		labelRepo:          labelRepo,
 		webhookSvc:         webhookSvc,
 		bundleSvc:          bundleSvc,
 		bundleReferenceSvc: bundleReferenceSvc,
@@ -88,6 +93,29 @@ func (s *Service) listAppPage(ctx context.Context, pageSize int, cursor string) 
 	if err != nil {
 		return nil, err
 	}
+
+	applicationIDs := make([]string, 0, page.TotalCount)
+	for _, app := range page.Data {
+		applicationIDs = append(applicationIDs, app.ID)
+	}
+
+	labels, err := s.labelRepo.ListGlobalByKeyAndObjects(ctx, model.ApplicationLabelableObject, applicationIDs, applicationTypeLabel)
+	if err != nil {
+		return nil, err
+	}
+
+	appLabelsMap := make(map[string]interface{}, page.TotalCount)
+	for i := range labels {
+		appLabelsMap[labels[i].ObjectID] = labels[i].Value
+	}
+
+	for i := range page.Data {
+		appType, ok := appLabelsMap[page.Data[i].ID].(string)
+		if ok {
+			page.Data[i].Type = appType
+		}
+	}
+
 	return page, tx.Commit()
 }
 
@@ -112,7 +140,7 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
 			ctx = addFieldToLogger(ctx, "app_id", app.ID)
-			documents, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, *wh.URL)
+			documents, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, wh)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", wh.ID, err)
 			}
