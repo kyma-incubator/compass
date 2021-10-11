@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -142,7 +144,9 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 
-	ordClient := ord.NewClient(httpClient, featuresConfig.SecuredApplicationTypes)
+	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider()
+
+	ordClient := ord.NewClient(httpClient, featuresConfig.SecuredApplicationTypes, accessStrategyExecutorProvider)
 
 	return ord.NewAggregatorService(transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
 }

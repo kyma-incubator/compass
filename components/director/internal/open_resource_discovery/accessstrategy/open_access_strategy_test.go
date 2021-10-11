@@ -18,7 +18,11 @@ func TestOpenAccessStrategy(t *testing.T) {
 		return expectedResp, nil
 	})
 
-	resp, err := accessstrategy.OpenAccessStrategy.Execute(context.Background(), client, testURL)
+	provider := accessstrategy.NewDefaultExecutorProvider()
+	executor, err := provider.Provide(accessstrategy.OpenAccessStrategy)
+	require.NoError(t, err)
+
+	resp, err := executor.Execute(context.Background(), client, testURL)
 	require.NoError(t, err)
 	require.Equal(t, expectedResp, resp)
 }

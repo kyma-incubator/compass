@@ -27,14 +27,16 @@ type Client interface {
 
 type client struct {
 	*http.Client
-	securedApplicationTypes map[string]struct{}
+	securedApplicationTypes        map[string]struct{}
+	accessStrategyExecutorProvider accessstrategy.ExecutorProvider
 }
 
 // NewClient creates new ORD Client via a provided http.Client
-func NewClient(httpClient *http.Client, securedApplicationTypes []string) *client {
+func NewClient(httpClient *http.Client, securedApplicationTypes []string, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
 	return &client{
-		Client:                  httpClient,
-		securedApplicationTypes: str.SliceToMap(securedApplicationTypes),
+		Client:                         httpClient,
+		securedApplicationTypes:        str.SliceToMap(securedApplicationTypes),
+		accessStrategyExecutorProvider: accessStrategyExecutorProvider,
 	}
 }
 
@@ -68,9 +70,14 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	return docs, nil
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.AccessStrategyType) (*Document, error) {
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type) (*Document, error) {
 	log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
-	resp, err := accessStrategy.Execute(ctx, c.Client, documentURL)
+	executor, err := c.accessStrategyExecutorProvider.Provide(accessStrategy)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := executor.Execute(ctx, c.Client, documentURL)
 	if err != nil {
 		return nil, err
 	}

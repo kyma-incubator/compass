@@ -374,7 +374,7 @@ global:
     defaultResponseType: "xml"
 
   mtlsClient:
-    subectPattern: "C=DE, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=123e4567-e89b-12d3-a456-426614174001, L=%s, CN=%s"
+    subjectPattern: "C=DE, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=123e4567-e89b-12d3-a456-426614174001, L=%s, CN=%s"
     commonName: "compass"
     locality: "local"
 

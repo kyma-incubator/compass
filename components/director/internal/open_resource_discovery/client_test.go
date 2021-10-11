@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
@@ -249,7 +251,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
-			client := ord.NewClient(testHTTPClient, test.SecuredSystemTypes)
+			client := ord.NewClient(testHTTPClient, test.SecuredSystemTypes, accessstrategy.NewDefaultExecutorProvider())
 
 			testApp := fixApplicationPage().Data[0]
 			testWebhook := fixWebhooks()[0]
