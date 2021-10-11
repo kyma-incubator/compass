@@ -17,6 +17,13 @@ const (
 	integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
 )
 
+type ORDConfigSecurity struct {
+	Enabled  bool   `json:"enabled"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	TokenURL string `json:"-"`
+}
+
 func FixSampleApplicationRegisterInputWithName(placeholder, name string) graphql.ApplicationRegisterInput {
 	sampleInput := FixSampleApplicationRegisterInput(placeholder)
 	sampleInput.Name = name
@@ -45,8 +52,8 @@ func FixSampleApplicationRegisterInputWithWebhooks(placeholder string) graphql.A
 	}
 }
 
-func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, webhookURL string) graphql.ApplicationRegisterInput {
-	return graphql.ApplicationRegisterInput{
+func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, webhookURL string, ordConfigSecurity *ORDConfigSecurity) graphql.ApplicationRegisterInput {
+	appRegisterInput := graphql.ApplicationRegisterInput{
 		Name:        appName,
 		Description: ptr.String(appDescription),
 		Webhooks: []*graphql.WebhookInput{{
@@ -54,6 +61,32 @@ func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, w
 			URL:  ptr.String(webhookURL),
 		}},
 	}
+
+	if ordConfigSecurity != nil && ordConfigSecurity.Enabled {
+		if ordConfigSecurity.TokenURL != "" {
+			appRegisterInput.Webhooks[0].Auth = &graphql.AuthInput{
+				Credential: &graphql.CredentialDataInput{
+					Oauth: &graphql.OAuthCredentialDataInput{
+						ClientID:     ordConfigSecurity.Username,
+						ClientSecret: ordConfigSecurity.Password,
+						URL:          ordConfigSecurity.TokenURL,
+					},
+				},
+			}
+		} else {
+			appRegisterInput.Webhooks[0].Auth = &graphql.AuthInput{
+				Credential: &graphql.CredentialDataInput{
+					Basic: &graphql.BasicCredentialDataInput{
+						Username: ordConfigSecurity.Username,
+						Password: ordConfigSecurity.Password,
+					},
+				},
+			}
+		}
+
+	}
+
+	return appRegisterInput
 }
 
 func FixSampleApplicationRegisterInputWithNameAndWebhooks(placeholder, name string) graphql.ApplicationRegisterInput {

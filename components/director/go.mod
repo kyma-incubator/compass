@@ -136,3 +136,5 @@ require (
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/urfave/cli v1.22.1 // indirect
 )
+
+require github.com/vektra/mockery v1.1.2 // indirect
