@@ -21,7 +21,7 @@ func TestGetInfo(t *testing.T) {
 		},
 	}
 
-	get, err := client.Get(infoEndpoint())
+	resp, err := client.Get(infoEndpoint())
 	require.NoError(t, err)
 
 	info := struct {
@@ -29,7 +29,7 @@ func TestGetInfo(t *testing.T) {
 		Issuer  string `json:"certIssuer"`
 	}{}
 
-	err = json.NewDecoder(get.Body).Decode(&info)
+	err = json.NewDecoder(resp.Body).Decode(&info)
 	require.NoError(t, err)
 
 	require.Equal(t, conf.CertSubject, info.Subject)
@@ -46,10 +46,10 @@ func TestCallingInfoEndpointFailForMethodsOtherThanGet(t *testing.T) {
 
 	req, err := http.NewRequest(http.MethodPost, infoEndpoint(), strings.NewReader("{}"))
 	require.NoError(t, err)
-	get, err := client.Do(req)
+	resp, err := client.Do(req)
 
 	require.NoError(t, err)
-	require.Equal(t, http.StatusForbidden, get.StatusCode)
+	require.Equal(t, http.StatusForbidden, resp.StatusCode)
 }
 
 func infoEndpoint() string {
