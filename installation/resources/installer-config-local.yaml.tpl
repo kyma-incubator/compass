@@ -56,6 +56,7 @@ data:
   system-broker.http.client.skipSSLValidation: "true"
   operations-controller.http.client.skipSSLValidation: "true"
   global.systemFetcher.http.client.skipSSLValidation: "true"
+  global.ordAggregator.http.client.skipSSLValidation: "true"
 ---
 apiVersion: v1
 kind: ConfigMap

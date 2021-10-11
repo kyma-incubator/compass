@@ -66,7 +66,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2027"
+      version: "PR-2057"
     connectivity_adapter:
       dir:
       version: "PR-2027"
@@ -98,7 +98,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2051"
+      version: "PR-2057"
     console:
       dir:
       version: "PR-45"
@@ -386,10 +386,24 @@ global:
     name: ord-aggregator
     enabled: true
     schedule: "*/1 * * * *"
+    http:
+      client:
+        skipSSLValidation: false
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
     securedApplicationTypes: "sample-app-type" # comma-separated values are used for specifying multiple application types
+    accessStrategies:
+      cmpMtls:
+        policy: "compass-local-clients"
+        csrEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+        certSvcApiPath: "/cert"
+        tokenPath: "/secured/oauth/token"
+        oauthSecret:
+          name: cert-svc-oauth-secret
+          urlKey: url
+          clientIdKey: client-id
+          clientSecretKey: client-secret
 
   systemFetcher:
     enabled: false
@@ -490,6 +504,10 @@ global:
   externalServicesMock:
     enabled: false
     auditlog: false
+    certSecuredPort: 8081
+    certSecuredHost: compass-external-services-mock-sap-mtls
+    host: compass-external-services-mock.compass-system.svc.cluster.local
+    oauthSecretName: compass-external-services-mock-oauth-credentials
 
   tests:
     ordService:
