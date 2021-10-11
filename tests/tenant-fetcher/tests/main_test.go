@@ -3,12 +3,13 @@ package tests
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/helper"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 
@@ -79,10 +80,10 @@ func TestMain(m *testing.M) {
 		},
 	}
 
-	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), helper.TenantPathParamValue, 1)
+	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantfetcher.TenantPathParamValue, 1)
 	config.TenantFetcherFullURL = config.TenantFetcherURL + config.RootAPI + endpoint
 
-	config.TenantFetcherFullRegionalURL = helper.BuildTenantFetcherRegionalURL(config.RegionalHandlerEndpoint, config.TenantPathParam, config.RegionPathParam, config.TenantFetcherURL, config.RootAPI)
+	config.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(config.RegionalHandlerEndpoint, config.TenantPathParam, config.RegionPathParam, config.TenantFetcherURL, config.RootAPI)
 
 	config.TenantFetcherFullDependenciesURL = config.TenantFetcherURL + config.RootAPI + config.DependenciesEndpoint
 

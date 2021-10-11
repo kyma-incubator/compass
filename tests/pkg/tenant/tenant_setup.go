@@ -2,10 +2,11 @@ package tenant
 
 import (
 	"context"
+	"log"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/vrischmann/envconfig"
-	"log"
 
 	"github.com/stretchr/testify/require"
 )

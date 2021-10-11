@@ -30,9 +30,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/helper"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -50,7 +50,7 @@ func TestSubscriptionFlow(t *testing.T) {
 	runtimeInput := graphql.RuntimeInput{
 		Name:        "providerRuntime",
 		Description: ptr.String("providerRuntime-description"),
-		Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: subscriptionProviderID, helper.RegionKey: helper.RegionPathParamValue, selectorKey: subscriptionProviderSubaccountID},
+		Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: subscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, selectorKey: subscriptionProviderSubaccountID},
 	}
 
 	// Register provider runtime with the necessary label
@@ -85,14 +85,14 @@ func TestSubscriptionFlow(t *testing.T) {
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, appLabelRequest, nil))
 	defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, secondaryTenant, consumerApp.ID, testConfig.DefaultScenarioEnabled)
 
-	providedTenantIDs := helper.TenantIDs{
+	providedTenantIDs := tenantfetcher.Tenant{
 		TenantID:               accountID,
 		SubaccountID:           subscriptionConsumerSubaccountID,
-		Subdomain:              helper.DefaultSubdomain,
+		Subdomain:              tenantfetcher.DefaultSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
 	}
 
-	tenantProperties := helper.TenantIDProperties{
+	tenantProperties := tenantfetcher.TenantIDProperties{
 		TenantIDProperty:               testConfig.TenantIDProperty,
 		SubaccountTenantIDProperty:     testConfig.SubaccountTenantIDProperty,
 		CustomerIDProperty:             testConfig.CustomerIDProperty,
@@ -101,7 +101,7 @@ func TestSubscriptionFlow(t *testing.T) {
 	}
 
 	// Build a request for consumer subscription
-	request := helper.CreateTenantRequest(t, providedTenantIDs, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL)
+	request := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL)
 
 	httpClient := &http.Client{
 		Timeout: 10 * time.Second,
@@ -110,12 +110,12 @@ func TestSubscriptionFlow(t *testing.T) {
 		},
 	}
 
-	t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", helper.ActualTenantID(providedTenantIDs), runtime.Name, subscriptionProviderSubaccountID))
+	t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenantIDs), runtime.Name, subscriptionProviderSubaccountID))
 	response, err := httpClient.Do(request)
 
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, response.StatusCode)
-	helper.AssertRuntimeSubscription(t, ctx, runtime.ID, providedTenantIDs, dexGraphQLClient, testConfig.ConsumerSubaccountIdsLabelKey)
+	tenantfetcher.AssertRuntimeSubscription(t, ctx, runtime.ID, providedTenantIDs, dexGraphQLClient, testConfig.ConsumerSubaccountIdsLabelKey)
 
 	// HTTP client configured with manually signed client certificate
 	extIssuerCertHttpClient := extIssuerCertClient(t, subscriptionProviderSubaccountID)
@@ -129,7 +129,7 @@ func TestSubscriptionFlow(t *testing.T) {
 		"iss":            testConfig.ExternalServicesMockURL,
 		"exp":            time.Now().Unix() + int64(time.Minute.Seconds()),
 	}
-	headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", token.FetchTokenFromExternalServicesMock(t, testConfig.ExternalServicesMockURL, claims))}}
+	headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, testConfig.ExternalServicesMockURL, claims))}}
 
 	// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 	respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)

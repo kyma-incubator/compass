@@ -26,9 +26,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/helper"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -101,7 +101,7 @@ func TestMain(m *testing.M) {
 	testConfig.CA.Certificate = secret.Data[testConfig.CA.SecretCertificateKey]
 	testConfig.CA.Key = secret.Data[testConfig.CA.SecretKeyKey]
 
-	testConfig.TenantFetcherFullRegionalURL = helper.BuildTenantFetcherRegionalURL(testConfig.RegionalHandlerEndpoint, testConfig.TenantPathParam, testConfig.RegionPathParam, testConfig.TenantFetcherURL, testConfig.RootAPI)
+	testConfig.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(testConfig.RegionalHandlerEndpoint, testConfig.TenantPathParam, testConfig.RegionPathParam, testConfig.TenantFetcherURL, testConfig.RootAPI)
 
 	dexToken := server.Token()
 
