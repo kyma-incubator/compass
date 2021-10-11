@@ -4,6 +4,7 @@ type ConnectorTestConfig struct {
 	Tenant               string `envconfig:"default=3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
 	ConnectorURL         string `envconfig:"default=http://compass-connector:3000/graphql"`
 	DirectorURL          string `envconfig:"default=http://compass-director:3000/graphql"`
+	DirectorMtlsURL      string
 	ConnectorHydratorURL string `envconfig:"default=http://compass-connector:8080"`
 	DirectorHydratorURL  string `envconfig:"default=http://compass-director:8080"`
 

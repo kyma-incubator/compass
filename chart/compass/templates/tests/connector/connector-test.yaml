@@ -30,6 +30,8 @@ spec:
             value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql'
           - name: APP_DIRECTOR_URL
             value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
+          - name: APP_DIRECTOR_MTLS_URL
+            value: 'https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
           - name: APP_CONNECTOR_HYDRATOR_URL
             value: '{{ .Values.global.tests.connectorFQDN }}:{{ .Values.global.connector.validator.port }}'
           - name: APP_DIRECTOR_HYDRATOR_URL
