@@ -57,8 +57,13 @@ func (oh *ordHandler) HandleFuncOrdConfig(baseURL, accessStrategy string) func(r
 			}
 		}
 
+		var baseURLFormat string
+		if len(baseURL) > 0 {
+			baseURLFormat = fmt.Sprintf(`"baseUrl": "%s",`, baseURL)
+		}
+
 		rw.WriteHeader(http.StatusOK)
-		_, err := rw.Write([]byte(fmt.Sprintf(ordConfig, baseURL, accessStrategy)))
+		_, err := rw.Write([]byte(fmt.Sprintf(ordConfig, baseURLFormat, accessStrategy)))
 		if err != nil {
 			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 		}
