@@ -322,6 +322,8 @@ func determineApplicationInProgressStatus(opType graphql.OperationType) (*model.
 		appStatusCondition = model.ApplicationStatusConditionUpdating
 	case graphql.OperationTypeDelete:
 		appStatusCondition = model.ApplicationStatusConditionDeleting
+	case graphql.OperationTypeUnpair:
+		appStatusCondition = model.ApplicationStatusConditionUnpairing
 	default:
 		return nil, apperrors.NewInvalidStatusCondition(resource.Application)
 	}

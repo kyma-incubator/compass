@@ -384,9 +384,39 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 
-	deletedApp := r.appConverter.ToGraphQL(app)
+	unpairedApp, err := r.appSvc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApp := r.appConverter.ToGraphQL(unpairedApp)
 
 	log.C(ctx).Infof("Successfully unregistered Application with id %s", id)
+	return gqlApp, nil
+}
+
+// UnpairApplication missing godoc
+func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.Application, error) {
+	log.C(ctx).Infof("Unpairing Application with id %s", id)
+
+	app, err := r.appSvc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	auths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, app.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths)
+	if err != nil {
+		return nil, err
+	}
+
+	deletedApp := r.appConverter.ToGraphQL(app)
+
+	log.C(ctx).Infof("Successfully Unpaired Application with id %s", id)
 	return deletedApp, nil
 }
 

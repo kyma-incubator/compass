@@ -38,6 +38,7 @@ const (
 	OperationTypeCreate OperationType = "Create"
 	OperationTypeUpdate OperationType = "Update"
 	OperationTypeDelete OperationType = "Delete"
+	OperationTypeUnpair OperationType = "Unpair"
 )
 
 // OperationSpec defines the desired state of Operation

@@ -99,6 +99,10 @@ const (
 	ApplicationStatusConditionDeleteFailed ApplicationStatusCondition = "DELETE_FAILED"
 	// ApplicationStatusConditionDeleteSucceeded missing godoc
 	ApplicationStatusConditionDeleteSucceeded ApplicationStatusCondition = "DELETE_SUCCEEDED"
+	// ApplicationStatusConditionUnpairing Status condition when an application is doing unpairing
+	ApplicationStatusConditionUnpairing ApplicationStatusCondition = "UNPAIRING"
+	// ApplicationStatusConditionUnpairFailed Status condition when an application has failed to unpair
+	ApplicationStatusConditionUnpairFailed ApplicationStatusCondition = "UNPAIR_FAILED"
 )
 
 // ApplicationPage missing godoc

@@ -207,6 +207,10 @@ func determineApplicationFinalStatus(opType OperationType, opError *string) mode
 		if opError != nil || str.PtrStrToStr(opError) != "" {
 			appConditionStatus = model.ApplicationStatusConditionDeleteFailed
 		}
+	case OperationTypeUnpair:
+		if opError != nil || str.PtrStrToStr(opError) != "" {
+			appConditionStatus = model.ApplicationStatusConditionUnpairFailed
+		}
 	}
 
 	return appConditionStatus
