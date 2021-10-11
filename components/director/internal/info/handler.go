@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 )
 
-//Config contains the data that should be exported on the info endpoint
+// Config contains the data that should be exported on the info endpoint
 type Config struct {
 	APIEndpoint string `envconfig:"APP_INFO_API_ENDPOINT,default=/v1/info" json:"-"`
 	Issuer      string `envconfig:"APP_INFO_CERT_ISSUER" json:"certIssuer"`
