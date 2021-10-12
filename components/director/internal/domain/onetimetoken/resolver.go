@@ -105,6 +105,8 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*
 	return rawEncoded(&graphql.TokenWithURL{
 		Token:        extractToken(obj.Token),
 		ConnectorURL: obj.ConnectorURL,
+		Used:         obj.Used,
+		ExpiresAt:    obj.ExpiresAt,
 	})
 }
 
@@ -121,5 +123,7 @@ func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string,
 	return raw(&graphql.TokenWithURL{
 		Token:        extractToken(obj.Token),
 		ConnectorURL: obj.ConnectorURL,
+		Used:         obj.Used,
+		ExpiresAt:    obj.ExpiresAt,
 	})
 }

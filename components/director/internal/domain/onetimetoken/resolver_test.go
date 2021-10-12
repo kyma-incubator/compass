@@ -221,7 +221,7 @@ func TestResolver_RawEncoded(t *testing.T) {
 	ctx := context.TODO()
 	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL", Used: false}, LegacyConnectorURL: "legacyConnectorURL"}
 	expectedRawToken := "{\"token\":\"Token\"," +
-		"\"connectorURL\":\"connectorURL\",\"used\":false}"
+		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null}"
 	expectedBaseToken := base64.StdEncoding.EncodeToString([]byte(expectedRawToken))
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
@@ -251,7 +251,7 @@ func TestResolver_Raw(t *testing.T) {
 	ctx := context.TODO()
 	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL"}, LegacyConnectorURL: "legacyConnectorURL"}
 	expectedRawToken := "{\"token\":\"Token\"," +
-		"\"connectorURL\":\"connectorURL\",\"used\":false}"
+		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null}"
 
 	t.Run("Success", func(t *testing.T) {
 		//GIVEN
