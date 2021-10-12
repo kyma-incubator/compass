@@ -36,7 +36,7 @@ func (acm *authContextMiddleware) PropagateAuthentication(handler http.Handler) 
 		if authorizationHeader != "" {
 			parser := jwt.Parser{}
 			var tokenClaims tokenClaims
-			_, _, err := parser.ParseUnverified(authorizationHeader[7:], tokenClaims)
+			_, _, err := parser.ParseUnverified(authorizationHeader[7:], &tokenClaims)
 			if err != nil {
 				log.C(ctx).WithError(err).Error("could not parse token")
 				w.WriteHeader(http.StatusBadRequest)
