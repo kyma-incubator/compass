@@ -258,6 +258,7 @@ func enrichAppRegisterInput(input model.ApplicationRegisterInput, sc System) *mo
 	initStatusCond := model.ApplicationStatusConditionInitial
 
 	input.StatusCondition = &initStatusCond
+	input.SystemNumber = &sc.SystemNumber
 
 	if len(input.Labels) == 0 {
 		input.Labels = make(map[string]interface{}, 1)
