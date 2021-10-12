@@ -384,12 +384,7 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 
-	unpairedApp, err := r.appSvc.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	gqlApp := r.appConverter.ToGraphQL(unpairedApp)
+	gqlApp := r.appConverter.ToGraphQL(app)
 
 	log.C(ctx).Infof("Successfully unregistered Application with id %s", id)
 	return gqlApp, nil

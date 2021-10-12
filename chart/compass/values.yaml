@@ -75,13 +75,13 @@ global:
       version: "PR-2027"
     director:
       dir:
-      version: "PR-2051"
+      version: "PR-2063"
     gateway:
       dir:
       version: "PR-2034"
     operations_controller:
       dir:
-      version: "PR-2027"
+      version: "PR-2063"
     ord_service:
       dir:
       version: "PR-41"
