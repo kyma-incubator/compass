@@ -10,13 +10,6 @@ import (
 )
 
 func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
-	return FixApplicationTemplateWithLabels(name, graphql.Labels{
-		"a": []string{"b", "c"},
-		"d": []string{"e", "f"},
-	})
-}
-
-func FixApplicationTemplateWithLabels(name string, labels graphql.Labels) graphql.ApplicationTemplateInput {
 	appTemplateDesc := "app-template-desc"
 	placeholderDesc := "new-placeholder-desc"
 	providerName := "compass-tests"
@@ -27,7 +20,10 @@ func FixApplicationTemplateWithLabels(name string, labels graphql.Labels) graphq
 			Name:         "app",
 			ProviderName: &providerName,
 			Description:  ptr.String("test {{new-placeholder}}"),
-			Labels:       labels,
+			Labels:       graphql.Labels{
+				"a": []string{"b", "c"},
+				"d": []string{"e", "f"},
+			},
 			Webhooks: []*graphql.WebhookInput{{
 				Type: graphql.WebhookTypeConfigurationChanged,
 				URL:  ptr.String("http://url.com"),

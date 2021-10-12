@@ -18,12 +18,10 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 		appInputOverride     = `{ "description": "{{description}}"}`
 	)
 
-	placeholdersMappings := systemfetcher.PlaceholdersMappings{
-		Mapping: []systemfetcher.PlaceholderMapping{
-			{
-				PlaceholderName: "description",
-				SystemKey:       "productDescription",
-			},
+	placeholdersMappings := []systemfetcher.PlaceholderMapping{
+		{
+			PlaceholderName: "description",
+			SystemKey:       "productDescription",
 		},
 	}
 
@@ -70,7 +68,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 		system              systemfetcher.System
 		expectedErr         error
 		appInputOverride    string
-		placeholderMappings systemfetcher.PlaceholdersMappings
+		placeholderMappings []systemfetcher.PlaceholderMapping
 		setupAppTemplateSvc func(testSystem systemfetcher.System, potentialErr error) *automock.ApplicationTemplateService
 		setupAppConverter   func(testSystem systemfetcher.System, potentialErr error) *automock.ApplicationConverter
 	}
