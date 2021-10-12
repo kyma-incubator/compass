@@ -21,6 +21,7 @@ type oneTimeTokenDTO struct {
 	TypeName string `json:"__typename"`
 }
 
+// IsOneTimeToken implements the interface OneTimeToken
 func (*OneTimeTokenDTO) IsOneTimeToken() {}
 
 // UnmarshalJSON is used only by integration tests, we have to help graphql client to deal with Credential field
