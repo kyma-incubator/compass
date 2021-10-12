@@ -55,6 +55,32 @@ spec:
               value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
             - name: CA_SECRET_KEY_KEY
               value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
+            - name: EXTERNAL_SERVICES_MOCK_URL
+              value: {{ .Values.global.tests.externalServicesMockFQDN }}:8080
+            - name: SUBSCRIPTION_PROVIDER_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
+            - name: TENANT_CONFIG_TENANT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
+            - name: TENANT_CONFIG_SUBACCOUNT_TENANT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
+            - name: TENANT_CONFIG_CUSTOMER_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
+            - name: TENANT_CONFIG_SUBDOMAIN_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
+            - name: TENANT_CONFIG_SUBSCRIPTION_PROVIDER_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
+            - name: TENANT_CONFIG_TENANT_FETCHER_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: TENANT_CONFIG_ROOT_API
+              value: "{{ .Values.global.tenantFetcher.prefix }}"
+            - name: TENANT_CONFIG_REGIONAL_HANDLER_ENDPOINT
+              value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
+            - name: TENANT_CONFIG_TENANT_PATH_PARAM
+              value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
+            - name: TENANT_CONFIG_REGION_PATH_PARAM
+              value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
