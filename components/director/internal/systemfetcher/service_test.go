@@ -578,15 +578,6 @@ func TestSyncSystems(t *testing.T) {
 	}
 }
 
-func inputValuesForSystem(s systemfetcher.System) model.ApplicationFromTemplateInputValues {
-	return model.ApplicationFromTemplateInputValues{
-		{
-			Placeholder: "display-name",
-			Value:       s.DisplayName,
-		},
-	}
-}
-
 func fixAppsInputsWithTemplatesBySystems(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
 	initStatusCond := model.ApplicationStatusConditionInitial
 	result := make([]model.ApplicationRegisterInputWithTemplate, 0, len(systems))

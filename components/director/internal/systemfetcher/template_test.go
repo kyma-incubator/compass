@@ -14,16 +14,30 @@ import (
 func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 	const (
 		appTemplateID        = "appTmp1"
-		appRegisterInputJSON = `{ "name": "test1"}`
-
-		displayNameKey = "display-name"
+		appRegisterInputJSON = `{"description":"{{description}}","name":"test1"}`
+		appInputOverride     = `{ "description": "{{description}}"}`
 	)
 
+	placeholdersMappings := systemfetcher.PlaceholdersMappings{
+		Mapping: []systemfetcher.PlaceholderMapping{
+			{
+				PlaceholderName: "description",
+				SystemKey:       "productDescription",
+			},
+		},
+	}
+
 	appTemplate := &model.ApplicationTemplate{
+		ID:                   appTemplateID,
+		ApplicationInputJSON: `{ "name": "test1"}`,
+	}
+
+	appTemplateWithOverrides := &model.ApplicationTemplate{
 		ID: appTemplateID,
 		Placeholders: []model.ApplicationTemplatePlaceholder{
-			{Name: displayNameKey},
+			{Name: "description"},
 		},
+		ApplicationInputJSON: appRegisterInputJSON,
 	}
 
 	testSystem := systemfetcher.System{
@@ -39,9 +53,9 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 
 	appTemplateSvcNoErrors := func(testSystem systemfetcher.System, _ error) *automock.ApplicationTemplateService {
 		svc := &automock.ApplicationTemplateService{}
-		inputValues := inputValuesForSystem(testSystem)
+		inputValues := fixInputValuesForSystem(testSystem)
 		svc.On("Get", context.TODO(), testSystem.TemplateID).Return(appTemplate, nil).Once()
-		svc.On("PrepareApplicationCreateInputJSON", appTemplate, inputValues).Return(appRegisterInputJSON, nil).Once()
+		svc.On("PrepareApplicationCreateInputJSON", appTemplateWithOverrides, inputValues).Return(appRegisterInputJSON, nil).Once()
 		return svc
 	}
 	appConvSvcNoErrors := func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
@@ -55,6 +69,8 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 		name                string
 		system              systemfetcher.System
 		expectedErr         error
+		appInputOverride    string
+		placeholderMappings systemfetcher.PlaceholdersMappings
 		setupAppTemplateSvc func(testSystem systemfetcher.System, potentialErr error) *automock.ApplicationTemplateService
 		setupAppConverter   func(testSystem systemfetcher.System, potentialErr error) *automock.ApplicationConverter
 	}
@@ -62,13 +78,75 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 		{
 			name:                "Succeeds",
 			system:              testSystem,
+			appInputOverride:    appInputOverride,
+			placeholderMappings: placeholdersMappings,
 			setupAppTemplateSvc: appTemplateSvcNoErrors,
 			setupAppConverter:   appConvSvcNoErrors,
 		},
 		{
-			name:        "Fails when template cannot be fetched",
-			system:      testSystem,
-			expectedErr: errors.New("cannot get template"),
+			name:                "Succeeds when app template should be enriched with additional labels",
+			system:              testSystem,
+			appInputOverride:    `{"description":"{{description}}","labels":{"legacy":"true"}}`,
+			placeholderMappings: placeholdersMappings,
+			setupAppTemplateSvc: func(testSystem systemfetcher.System, _ error) *automock.ApplicationTemplateService {
+				resultTemplate := *appTemplateWithOverrides
+				resultTemplate.ApplicationInputJSON = `{"description":"{{description}}","labels":{"legacy":"true","tenant":"123"},"name":"test1"}`
+				appTemplateFromDB := *appTemplate
+				appTemplateFromDB.ApplicationInputJSON = `{ "name": "test1","labels":{"tenant":"123"}}`
+
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
+				svc.On("PrepareApplicationCreateInputJSON", &resultTemplate, fixInputValuesForSystem(testSystem)).Return(appRegisterInputJSON, nil).Once()
+				return svc
+			},
+			setupAppConverter: appConvSvcNoErrors,
+		},
+		{
+			name:                "Fails when app input from template and overrides have the same field with different types",
+			system:              testSystem,
+			expectedErr:         errors.New("values map[tenant:123] and hello of key labels have different types - map[string]interface {} and string"),
+			appInputOverride:    `{"description":"{{description}}","labels":"hello"}`,
+			placeholderMappings: placeholdersMappings,
+			setupAppTemplateSvc: func(testSystem systemfetcher.System, _ error) *automock.ApplicationTemplateService {
+				resultTemplate := *appTemplateWithOverrides
+				resultTemplate.ApplicationInputJSON = `{"description":"{{description}}","labels":{"legacy":"true","tenant":"123"},"name":"test1"}`
+				appTemplateFromDB := *appTemplate
+				appTemplateFromDB.ApplicationInputJSON = `{ "name": "test1","labels":{"tenant":"123"}}`
+
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
+				return svc
+			},
+			setupAppConverter: func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
+				return &automock.ApplicationConverter{}
+			},
+		},
+		{
+			name:                "Fails when app input from template and overrides have a field with incorrect type",
+			system:              testSystem,
+			expectedErr:         errors.New("app template labels are with type string instead of map[string]interface{}"),
+			appInputOverride:    `{"description":"{{description}}","labels":"hello"}`,
+			placeholderMappings: placeholdersMappings,
+			setupAppTemplateSvc: func(testSystem systemfetcher.System, _ error) *automock.ApplicationTemplateService {
+				resultTemplate := *appTemplateWithOverrides
+				resultTemplate.ApplicationInputJSON = `{"description":"{{description}}","labels":"hello2","name":"test1"}`
+				appTemplateFromDB := *appTemplate
+				appTemplateFromDB.ApplicationInputJSON = `{ "name": "test1","labels":"hello"}`
+
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
+				return svc
+			},
+			setupAppConverter: func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
+				return &automock.ApplicationConverter{}
+			},
+		},
+		{
+			name:                "Fails when template cannot be fetched",
+			system:              testSystem,
+			appInputOverride:    appInputOverride,
+			placeholderMappings: placeholdersMappings,
+			expectedErr:         errors.New("cannot get template"),
 			setupAppTemplateSvc: func(testSystem systemfetcher.System, err error) *automock.ApplicationTemplateService {
 				svc := &automock.ApplicationTemplateService{}
 				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(nil, err).Once()
@@ -79,14 +157,16 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			},
 		},
 		{
-			name:        "Fails when app input JSON cannot be prepared",
-			system:      testSystem,
-			expectedErr: errors.New("cannot prepare input json"),
+			name:                "Fails when app input JSON cannot be prepared",
+			system:              testSystem,
+			appInputOverride:    appInputOverride,
+			placeholderMappings: placeholdersMappings,
+			expectedErr:         errors.New("cannot prepare input json"),
 			setupAppTemplateSvc: func(testSystem systemfetcher.System, err error) *automock.ApplicationTemplateService {
 				svc := &automock.ApplicationTemplateService{}
-				inputValues := inputValuesForSystem(testSystem)
+				inputValues := fixInputValuesForSystem(testSystem)
 				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(appTemplate, nil).Once()
-				svc.On("PrepareApplicationCreateInputJSON", appTemplate, inputValues).Return("", err).Once()
+				svc.On("PrepareApplicationCreateInputJSON", appTemplateWithOverrides, inputValues).Return("", err).Once()
 				return svc
 			},
 			setupAppConverter: func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
@@ -94,8 +174,10 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			},
 		},
 		{
-			name:                "Fails when app input JSON cannot be prepared",
+			name:                "Fails when app input cannot be prepared",
 			system:              testSystem,
+			appInputOverride:    appInputOverride,
+			placeholderMappings: placeholdersMappings,
 			expectedErr:         errors.New("cannot prepare input"),
 			setupAppTemplateSvc: appTemplateSvcNoErrors,
 			setupAppConverter: func(testSystem systemfetcher.System, err error) *automock.ApplicationConverter {
@@ -110,7 +192,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			// GIVEN
 			templateSvc := test.setupAppTemplateSvc(test.system, test.expectedErr)
 			convSvc := test.setupAppConverter(test.system, test.expectedErr)
-			tr := systemfetcher.NewTemplateRenderer(templateSvc, convSvc)
+			tr := systemfetcher.NewTemplateRenderer(templateSvc, convSvc, test.appInputOverride, test.placeholderMappings)
 
 			// WHEN
 			regIn, err := tr.ApplicationRegisterInputFromTemplate(context.TODO(), testSystem)
@@ -118,12 +200,21 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			// THEN
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				require.ErrorIs(t, err, test.expectedErr)
+				require.Contains(t, err.Error(), test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, fixAppInputBySystem(test.system), *regIn)
 			}
 		})
+	}
+}
+
+func fixInputValuesForSystem(s systemfetcher.System) model.ApplicationFromTemplateInputValues {
+	return model.ApplicationFromTemplateInputValues{
+		{
+			Placeholder: "description",
+			Value:       s.ProductDescription,
+		},
 	}
 }
 

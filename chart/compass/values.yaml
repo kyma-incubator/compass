@@ -389,7 +389,7 @@ global:
     manageSecrets: true
     # enableSystemDeletion - whether systems in deleted state should be deleted from director database
     enableSystemDeletion: true
-    # fetchParallellism - shows how many http calls will be made in parallel to fetch systems
+    # fetchParallelism - shows how many http calls will be made in parallel to fetch systems
     fetchParallellism: 30
     # queueSize - shows how many system fetches (individual requests may fetch more than 1 system)
     # can be put in the queue for processing before blocking. It is best for the queue to be about 2 times bigger than the parallellism
@@ -409,6 +409,8 @@ global:
     systemsAPIFilterTenantCriteriaPattern: ""
     # systemToTemplateMappings - how to map system properties to an existing application template
     systemToTemplateMappings: '{}'
+    templatePlaceholderToSystemKeyMappings: '[{"placeholder_name":"name","system_key":"displayName"},{"placeholder_name":"description","system_key":"productDescription"},{"placeholder_name":"baseURL","system_key":"baseUrl"}]'
+    templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","baseURL": "{{baseURL}}"}'
     http:
       client:
         skipSSLValidation: false

@@ -60,8 +60,8 @@ type config struct {
 
 type appTemplateConfig struct {
 	SystemToTemplateMappingsString string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
-	TemplateApplicationInput       string `envconfig:"APP_TEMPLATE_APPLICATION_INPUT"`
-	TemplatePlaceholders           string `envconfig:"APP_TEMPLATE_PLACEHOLDERS"`
+	OverrideApplicationInput       string `envconfig:"APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT"`
+	PlaceholderToSystemKeyMappings string `envconfig:"APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS"`
 }
 
 func main() {
@@ -93,9 +93,12 @@ func main() {
 		log.D().Fatal(err)
 	}
 
-	sf := createSystemFetcher(cfg, cfgProvider, transact, &http.Client{Timeout: cfg.ClientTimeout})
-	err = sf.SyncSystems(ctx)
+	sf, err := createSystemFetcher(cfg, cfgProvider, transact, &http.Client{Timeout: cfg.ClientTimeout})
 	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
+	}
+
+	if err = sf.SyncSystems(ctx); err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to sync systems"))
 	}
 }
@@ -146,7 +149,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	return nil
 }
 
-func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient *http.Client) *systemfetcher.SystemFetcher {
+func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient *http.Client) (*systemfetcher.SystemFetcher, error) {
 	uidSvc := uid.NewService()
 
 	tenantConv := tenant.NewConverter()
@@ -218,8 +221,15 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
-	templateRenderer := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter)
-	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher)
+	var placeholdersMapping []systemfetcher.PlaceholderMapping
+	if err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping); err != nil {
+		return nil, err
+	}
+	if _, err := appConverter.CreateInputJSONToModel(context.Background(), cfg.TemplateConfig.OverrideApplicationInput); err != nil {
+		return nil, errors.Wrapf(err, "while converting override application input JSON into application input")
+	}
+	templateRenderer := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
+	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

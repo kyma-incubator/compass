@@ -2,10 +2,13 @@ package systemfetcher
 
 import (
 	"context"
-	"strings"
+	"encoding/json"
+	"fmt"
+	"reflect"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 )
 
 //go:generate mockery --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore --exported=true
@@ -19,16 +22,37 @@ type applicationConverter interface {
 	CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error)
 }
 
+// PlaceholderMapping is the mapping we have between a placeholder key we use in templates,
+// and input field from the external system provider.
+type PlaceholderMapping struct {
+	PlaceholderName string `json:"placeholder_name"`
+	SystemKey       string `json:"system_key"`
+}
+
 type renderer struct {
 	appTemplateService applicationTemplateService
 	appConverter       applicationConverter
+
+	appInputOverride     string
+	placeholdersMapping  []PlaceholderMapping
+	placeholdersOverride []model.ApplicationTemplatePlaceholder
 }
 
 // NewTemplateRenderer returns a new application input renderer by a given application template.
-func NewTemplateRenderer(appTemplateService applicationTemplateService, appConverter applicationConverter) *renderer {
+func NewTemplateRenderer(appTemplateService applicationTemplateService, appConverter applicationConverter, appInputOverride string, mapping []PlaceholderMapping) *renderer {
+	placeholders := make([]model.ApplicationTemplatePlaceholder, 0)
+	for _, p := range mapping {
+		placeholders = append(placeholders, model.ApplicationTemplatePlaceholder{
+			Name: p.PlaceholderName,
+		})
+	}
+
 	return &renderer{
-		appTemplateService: appTemplateService,
-		appConverter:       appConverter,
+		appTemplateService:   appTemplateService,
+		appConverter:         appConverter,
+		appInputOverride:     appInputOverride,
+		placeholdersMapping:  mapping,
+		placeholdersOverride: placeholders,
 	}
 }
 
@@ -38,8 +62,17 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 		return nil, errors.Wrapf(err, "while getting application template with ID %s", sc.TemplateID)
 	}
 
-	inputValues := getTemplateInputs(appTemplate, sc)
-	appRegisterInputJSON, err := r.appTemplateService.PrepareApplicationCreateInputJSON(appTemplate, inputValues)
+	inputValues, err := r.getTemplateInputs(sc)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting template inputs for Application Template with name %s", appTemplate.Name)
+	}
+
+	appTemplate.Placeholders = r.placeholdersOverride
+	appTemplate.ApplicationInputJSON, err = r.mergedApplicationInput(appTemplate.ApplicationInputJSON, r.appInputOverride)
+	if err != nil {
+		return nil, errors.Wrap(err, "while merging application input from template and override application input")
+	}
+	appRegisterInputJSON, err := r.appTemplateService.PrepareApplicationCreateInputJSON(appTemplate, *inputValues)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while preparing ApplicationRegisterInput JSON from Application Template with name %s", appTemplate.Name)
 	}
@@ -52,27 +85,75 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 	return &appRegisterInput, nil
 }
 
-func getTemplateInputs(t *model.ApplicationTemplate, s System) model.ApplicationFromTemplateInputValues {
+func (r *renderer) getTemplateInputs(s System) (*model.ApplicationFromTemplateInputValues, error) {
+	systemJSON, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
 	inputValues := model.ApplicationFromTemplateInputValues{}
-	for _, p := range t.Placeholders {
+	for _, pm := range r.placeholdersMapping {
+		placeholderInput := gjson.GetBytes(systemJSON, pm.SystemKey).String()
 		inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
-			Placeholder: p.Name,
-			Value:       getPlaceholderInput(p, s),
+			Placeholder: pm.PlaceholderName,
+			Value:       placeholderInput,
 		})
 	}
 
-	return inputValues
+	return &inputValues, nil
 }
 
-func getPlaceholderInput(p model.ApplicationTemplatePlaceholder, s System) string {
-	if strings.Contains(strings.ToLower(p.Name), "name") {
-		return s.DisplayName
+func (r *renderer) mergedApplicationInput(originalAppInputJSON, overrideAppInputJSON string) (string, error) {
+	var originalAppInput map[string]interface{}
+	var overrideAppInput map[string]interface{}
+
+	if err := json.Unmarshal([]byte(originalAppInputJSON), &originalAppInput); err != nil {
+		return "", errors.Wrapf(err, "while unmarshaling original application input")
 	}
-	if strings.Contains(strings.ToLower(p.Name), "url") {
-		return s.BaseURL
+
+	if err := json.Unmarshal([]byte(overrideAppInputJSON), &overrideAppInput); err != nil {
+		return "", errors.Wrapf(err, "while unmarshaling override application input")
 	}
-	if strings.Contains(strings.ToLower(p.Name), "description") {
-		return s.ProductDescription
+
+	for field, overrideV := range overrideAppInput {
+		if originalV, ok := originalAppInput[field]; ok {
+			if reflect.TypeOf(originalV) != reflect.TypeOf(overrideV) {
+				return "", fmt.Errorf("values %v and %v of key %s have different types - %T and %T", originalV, overrideV, field, originalV, overrideV)
+			}
+
+			if field == "labels" {
+				newLabels, err := enrichLabels(originalV, overrideV)
+				if err != nil {
+					return "", err
+				}
+
+				originalAppInput[field] = newLabels
+				continue
+			}
+		}
+
+		originalAppInput[field] = overrideV
 	}
-	return ""
+
+	merged, err := json.Marshal(originalAppInput)
+	if err != nil {
+		return "", errors.Wrapf(err, "while marshalling merged app input")
+	}
+	return string(merged), nil
+}
+
+func enrichLabels(originalLabels, overrideLabels interface{}) (map[string]interface{}, error) {
+	templateLabelsMap, ok := originalLabels.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("app template labels are with type %T instead of map[string]interface{}", originalLabels)
+	}
+	overrideLabelsMap, ok := overrideLabels.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("overrides labels are with type %T instead of map[string]interface{}", overrideLabels)
+	}
+
+	for labelKey, labelValue := range overrideLabelsMap {
+		templateLabelsMap[labelKey] = labelValue
+	}
+	return templateLabelsMap, nil
 }
