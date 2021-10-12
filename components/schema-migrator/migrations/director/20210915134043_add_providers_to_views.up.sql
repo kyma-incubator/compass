@@ -133,7 +133,7 @@ FROM api_definitions apis
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id, (SELECT id FROM business_tenant_mappings WHERE external_tenant = a_s.tenant_id), cpr.provider_tenant::uuid AS provider_tenant_id
+               SELECT a_s.id, (SELECT id FROM business_tenant_mappings WHERE external_tenant = a_s.tenant_id::text), cpr.provider_tenant::uuid AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON apis.app_id = t_apps.id
@@ -184,7 +184,7 @@ FROM applications apps
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id,(SELECT id FROM business_tenant_mappings WHERE external_tenant = a_s.tenant_id), cpr.provider_tenant::uuid AS provider_tenant_id
+               SELECT a_s.id,(SELECT id FROM business_tenant_mappings WHERE external_tenant = a_s.tenant_id::text), cpr.provider_tenant::uuid AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps
@@ -232,7 +232,7 @@ FROM bundles b
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id, (SELECT id FROM business_tenant_mappings WHERE external_tenant = a_s.tenant_id), cpr.provider_tenant::uuid AS provider_tenant_id
+               SELECT a_s.id, (SELECT id FROM business_tenant_mappings WHERE external_tenant = a_s.tenant_id::text), cpr.provider_tenant::uuid AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON b.app_id = t_apps.id;
@@ -298,7 +298,7 @@ FROM event_api_definitions events
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id, (SELECT id FROM business_tenant_mappings WHERE external_tenant = a_s.tenant_id), cpr.provider_tenant::uuid AS provider_tenant_id
+               SELECT a_s.id, (SELECT id FROM business_tenant_mappings WHERE external_tenant = a_s.tenant_id::text), cpr.provider_tenant::uuid AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON events.app_id = t_apps.id;
