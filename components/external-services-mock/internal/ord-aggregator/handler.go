@@ -36,30 +36,47 @@ func (oh *ordHandler) SetPublicKey(publicKey *rsa.PublicKey) {
 	oh.publicKey = publicKey
 }
 
-func (oh *ordHandler) HandleFuncOrdConfig(rw http.ResponseWriter, req *http.Request) {
-	oh.mutex.RLock()
-	defer oh.mutex.RUnlock()
+func (oh *ordHandler) HandleFuncOrdConfig(baseURL, accessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		oh.mutex.RLock()
+		defer oh.mutex.RUnlock()
 
-	authorizationHeader := req.Header.Get("Authorization")
-	if oh.secured {
-		username, password, exist := req.BasicAuth()
-		if !exist {
-			if authorizationHeader == "" {
-				httphelpers.WriteError(rw, errors.New("missing Authorization header"), http.StatusUnauthorized)
+		authorizationHeader := req.Header.Get("Authorization")
+		if oh.secured {
+			username, password, exist := req.BasicAuth()
+			if !exist {
+				if authorizationHeader == "" {
+					httphelpers.WriteError(rw, errors.New("missing Authorization header"), http.StatusUnauthorized)
+				}
+			}
+
+			validCredentials := (username == oh.username && password == oh.password) || oh.isValidToken(authorizationHeader)
+
+			if !validCredentials {
+				httphelpers.WriteError(rw, errors.New("invalid credentials"), http.StatusUnauthorized)
 			}
 		}
 
-		validCredentials := (username == oh.username && password == oh.password) || oh.isValidToken(authorizationHeader)
+		var baseURLFormat string
+		if len(baseURL) > 0 {
+			baseURLFormat = fmt.Sprintf(`"baseUrl": "%s",`, baseURL)
+		}
 
-		if !validCredentials {
-			httphelpers.WriteError(rw, errors.New("invalid credentials"), http.StatusUnauthorized)
+		rw.WriteHeader(http.StatusOK)
+		_, err := rw.Write([]byte(fmt.Sprintf(ordConfig, baseURLFormat, accessStrategy)))
+		if err != nil {
+			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 		}
 	}
+}
 
-	rw.WriteHeader(http.StatusOK)
-	_, err := rw.Write([]byte(ordConfig))
-	if err != nil {
-		httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
+func (oh *ordHandler) HandleFuncOrdDocument(baseURL string) func(rw http.ResponseWriter, req *http.Request) {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		rw.WriteHeader(http.StatusOK)
+		_, err := rw.Write([]byte(fmt.Sprintf(ordDocument, baseURL)))
+		if err != nil {
+			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
+		}
 	}
 }
 
@@ -95,14 +112,6 @@ func (oh *ordHandler) HandleFuncOrdConfigSecurity(rw http.ResponseWriter, req *h
 	log.Println(fmt.Printf("Configured secured for ORD Config handler: %+v\n", result))
 
 	rw.WriteHeader(http.StatusOK)
-}
-
-func (oh *ordHandler) HandleFuncOrdDocument(rw http.ResponseWriter, req *http.Request) {
-	rw.WriteHeader(http.StatusOK)
-	_, err := rw.Write([]byte(ordDocument))
-	if err != nil {
-		httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
-	}
 }
 
 func (oh *ordHandler) isValidToken(authorizationHeader string) bool {
