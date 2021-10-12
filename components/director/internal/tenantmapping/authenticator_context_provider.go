@@ -84,13 +84,21 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
+
+	// TODO currently we do not have all subaccounts in business_tenant_mappings and ORD service consumes external IDs therefore we should not convert in this case
+	// once we have all subaccounts in business_tenant_mappings ORD service view should convert to internal IDs and this should be removed
+	if authn.Name == "subscriber"{
+		log.C(ctx).Infof("Returning tenant context with same internal tenant ID and external ID %s", externalTenantID)
+		return NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider), nil
+	}
+
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
-			log.C(ctx).Infof("Returning tenant context with same internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider), nil
+			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
