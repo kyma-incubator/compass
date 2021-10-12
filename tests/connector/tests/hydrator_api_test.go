@@ -3,6 +3,7 @@ package tests
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
@@ -99,7 +100,9 @@ func TestHydrators(t *testing.T) {
 			if testCase.clientType == "Application" {
 				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID).Auths
 				assert.Len(t, appSystemAuths, 1)
-				assert.False(t, appSystemAuths[0].Auth.OneTimeToken.(*graphql.OneTimeTokenForApplication).Used)
+				assert.True(t, appSystemAuths[0].Auth.OneTimeToken.(*graphql.OneTimeTokenForApplication).Used)
+				assert.True(t, time.Time(*appSystemAuths[0].Auth.OneTimeToken.(*graphql.OneTimeTokenForApplication).ExpiresAt).After(time.Now()))
+
 			}
 		})
 
