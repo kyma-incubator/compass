@@ -87,7 +87,7 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 
 	// TODO currently we do not have all subaccounts in business_tenant_mappings and ORD service consumes external IDs therefore we should not convert in this case
 	// once we have all subaccounts in business_tenant_mappings ORD service view should convert to internal IDs and this should be removed
-	if authn.Name == "subscriber"{
+	if authn.Name == "subscriber" {
 		log.C(ctx).Infof("Returning tenant context with same internal tenant ID and external ID %s", externalTenantID)
 		return NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider), nil
 	}
