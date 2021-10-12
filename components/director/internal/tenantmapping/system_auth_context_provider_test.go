@@ -3,6 +3,8 @@ package tenantmapping_test
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/textproto"
 	"strings"
 	"testing"
 
@@ -392,6 +394,100 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: Certificate: while fetching scopes: some-error", sysAuth.ID))
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock, scopesGetterMock)
+	})
+}
+
+func TestSystemAuthContextProviderMatch(t *testing.T) {
+	t.Run("returns ID string and OAuth2Flow when a client_id is specified in the Extra map of request body", func(t *testing.T) {
+		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ClientIDKey: clientID,
+				},
+			},
+		}
+
+		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
+
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.True(t, match)
+		require.NoError(t, err)
+		require.Equal(t, oathkeeper.OAuth2Flow, authDetails.AuthFlow)
+		require.Equal(t, clientID, authDetails.AuthID)
+	})
+
+	t.Run("returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map of request body", func(t *testing.T) {
+		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
+		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
+
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey): []string{clientID},
+				},
+			},
+		}
+
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.True(t, match)
+		require.NoError(t, err)
+		require.Equal(t, oathkeeper.CertificateFlow, authDetails.AuthFlow)
+		require.Equal(t, clientID, authDetails.AuthID)
+	})
+
+	t.Run("returns ID string and OneTimeTokenFlow when a client-id-from-token is specified in the Header map of request body", func(t *testing.T) {
+		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
+		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
+
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDTokenKey): []string{clientID},
+				},
+			},
+		}
+
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.True(t, match)
+		require.NoError(t, err)
+		require.Equal(t, oathkeeper.OneTimeTokenFlow, authDetails.AuthFlow)
+		require.Equal(t, clientID, authDetails.AuthID)
+	})
+
+	t.Run("returns nil when does not match", func(t *testing.T) {
+		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{},
+			},
+		}
+
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.False(t, match)
+		require.Nil(t, authDetails)
+		require.NoError(t, err)
+	})
+
+	t.Run("returns error when client_id is specified in Extra map in a non-string format", func(t *testing.T) {
+		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ClientIDKey: []byte{1, 2, 3},
+				},
+			},
+		}
+
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.False(t, match)
+		require.Nil(t, authDetails)
+		require.EqualError(t, err, "while parsing the value for client_id: Internal Server Error: unable to cast the value to a string type")
 	})
 }
 

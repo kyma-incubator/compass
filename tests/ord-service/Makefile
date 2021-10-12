@@ -25,7 +25,7 @@ run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-ord-service-local-0 -c ord-service-tests -- ./ord-service.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
-	env GOOS=linux GOARCH=arm go test -c ./tests -o ord-service.test
+	env GOOS=linux go test -c ./tests -o ord-service.test
 	kubectl cp ./ord-service.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-ord-service-local-0:/ -c ord-service-tests
 	rm ./ord-service.test
 

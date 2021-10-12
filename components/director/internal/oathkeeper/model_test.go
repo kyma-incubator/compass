@@ -2,14 +2,12 @@ package oathkeeper
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/textproto"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
 )
@@ -39,232 +37,6 @@ func TestAuthFlow(t *testing.T) {
 		require.True(t, authFlow.IsJWTFlow())
 		require.False(t, authFlow.IsOAuth2Flow())
 		require.False(t, authFlow.IsCertFlow())
-	})
-}
-
-func TestReqData_GetAuthID(t *testing.T) {
-	t.Run("returns ID string and JWTAuthFlow when a name is specified in the Extra map of request body", func(t *testing.T) {
-		username := "some-username"
-		reqData := ReqData{
-			Body: ReqBody{
-				Extra: map[string]interface{}{
-					UsernameKey: username,
-				},
-			},
-		}
-
-		authDetails, err := reqData.GetAuthID(ctx)
-
-		require.NoError(t, err)
-		require.Equal(t, JWTAuthFlow, authDetails.AuthFlow)
-		require.Equal(t, username, authDetails.AuthID)
-	})
-
-	t.Run("returns ID string and OAuth2Flow when a client_id is specified in the Extra map of request body", func(t *testing.T) {
-		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
-		reqData := ReqData{
-			Body: ReqBody{
-				Extra: map[string]interface{}{
-					ClientIDKey: clientID,
-				},
-			},
-		}
-
-		authDetails, err := reqData.GetAuthID(ctx)
-
-		require.NoError(t, err)
-		require.Equal(t, OAuth2Flow, authDetails.AuthFlow)
-		require.Equal(t, clientID, authDetails.AuthID)
-	})
-
-	t.Run("returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map of request body", func(t *testing.T) {
-		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
-		reqData := ReqData{
-			Body: ReqBody{
-				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(ClientIDCertKey): []string{clientID},
-				},
-			},
-		}
-
-		authDetails, err := reqData.GetAuthID(ctx)
-
-		require.NoError(t, err)
-		require.Equal(t, CertificateFlow, authDetails.AuthFlow)
-		require.Equal(t, clientID, authDetails.AuthID)
-	})
-
-	t.Run("returns error when no ID string is specified in one of known fields", func(t *testing.T) {
-		reqData := ReqData{}
-
-		_, err := reqData.GetAuthID(ctx)
-
-		require.EqualError(t, err, apperrors.NewInternalError("unable to find valid auth ID").Error())
-	})
-
-	t.Run("returns error when client_id is specified in Extra map in a non-string format", func(t *testing.T) {
-		reqData := ReqData{
-			Body: ReqBody{
-				Extra: map[string]interface{}{
-					ClientIDKey: []byte{1, 2, 3},
-				},
-			},
-		}
-
-		_, err := reqData.GetAuthID(ctx)
-
-		require.EqualError(t, err, "while parsing the value for client_id: Internal Server Error: unable to cast the value to a string type")
-	})
-
-	t.Run("returns error when a name is specified in Extra map in a non-string format", func(t *testing.T) {
-		reqData := ReqData{
-			Body: ReqBody{
-				Extra: map[string]interface{}{
-					UsernameKey: []byte{1, 2, 3},
-				},
-			},
-		}
-
-		_, err := reqData.GetAuthID(ctx)
-
-		require.EqualError(t, err, "while parsing the value for name: Internal Server Error: unable to cast the value to a string type")
-	})
-}
-
-func TestReqData_GetAuthIDWithAuthenticators(t *testing.T) {
-	var (
-		uniqueAttributeKey   string
-		uniqueAttributeValue string
-		identityAttributeKey string
-		username             string
-		authenticatorName    string
-		scopePrefix          string
-		domainURL            string
-		reqData              ReqData
-		authn                []authenticator.Config
-	)
-	setup := func() {
-		uniqueAttributeKey = "uniqueAttribute"
-		uniqueAttributeValue = "uniqueAttributeValue"
-		identityAttributeKey = "identity"
-		authenticatorName = "auth1"
-		scopePrefix = "prefix"
-		domainURL = "domain.com"
-		username = "some-username"
-		reqData = ReqData{
-			Body: ReqBody{
-				Extra: map[string]interface{}{
-					authenticator.CoordinatesKey: authenticator.Coordinates{
-						Name:  authenticatorName,
-						Index: 0,
-					},
-					uniqueAttributeKey:   uniqueAttributeValue,
-					identityAttributeKey: username,
-				},
-			},
-		}
-
-		authn = []authenticator.Config{
-			{
-				Name: authenticatorName,
-				TrustedIssuers: []authenticator.TrustedIssuer{
-					{
-						DomainURL:   domainURL,
-						ScopePrefix: scopePrefix,
-					},
-				},
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					IdentityAttribute: authenticator.Attribute{
-						Key: identityAttributeKey,
-					},
-				},
-			},
-		}
-	}
-
-	t.Run("returns ID string and JWTAuthFlow when authenticator identity is specified in the Extra map of request body", func(t *testing.T) {
-		setup()
-		authDetails, err := reqData.GetAuthIDWithAuthenticators(ctx, authn)
-
-		require.NoError(t, err)
-		require.Equal(t, JWTAuthFlow, authDetails.AuthFlow)
-		require.Equal(t, username, authDetails.AuthID)
-		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
-	})
-
-	t.Run("returns ID string and JWTAuthFlow when authenticator identity and also default username attribute is specified in the Extra map of request body", func(t *testing.T) {
-		setup()
-		identityUsername := "some-identity"
-		reqData.Body.Extra[UsernameKey] = username
-		reqData.Body.Extra[identityAttributeKey] = identityUsername
-
-		authDetails, err := reqData.GetAuthIDWithAuthenticators(ctx, authn)
-
-		require.NoError(t, err)
-		require.Equal(t, JWTAuthFlow, authDetails.AuthFlow)
-		require.Equal(t, identityUsername, authDetails.AuthID)
-		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
-	})
-
-	t.Run("returns ID string and JWTAuthFlow when username attribute is specified in the Extra map of request body and no authenticators match", func(t *testing.T) {
-		setup()
-		reqData.Body.Extra[authenticator.CoordinatesKey] = authenticator.Coordinates{
-			Name: "unknown",
-		}
-		reqData.Body.Extra[UsernameKey] = username
-
-		authn := []authenticator.Config{
-			{
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					IdentityAttribute: authenticator.Attribute{
-						Key: identityAttributeKey,
-					},
-				},
-			},
-		}
-
-		authDetails, err := reqData.GetAuthIDWithAuthenticators(ctx, authn)
-
-		require.NoError(t, err)
-		require.Equal(t, JWTAuthFlow, authDetails.AuthFlow)
-		require.Equal(t, username, authDetails.AuthID)
-	})
-
-	t.Run("returns error during JWTAuthFlow when authenticator unique attribute is present but identity attribute is not specified in the Extra map of request body", func(t *testing.T) {
-		setup()
-		delete(reqData.Body.Extra, identityAttributeKey)
-
-		_, err := reqData.GetAuthIDWithAuthenticators(ctx, authn)
-
-		require.EqualError(t, err, apperrors.NewInvalidDataError(fmt.Sprintf("missing identity attribute from %q authenticator token", authn[0].Name)).Error())
-	})
-
-	t.Run("returns error when no ID string is specified in one of known fields", func(t *testing.T) {
-		setup()
-		identityAttributeKey = "identity"
-		reqData = ReqData{}
-
-		authn = []authenticator.Config{
-			{
-				Attributes: authenticator.Attributes{
-					IdentityAttribute: authenticator.Attribute{
-						Key: identityAttributeKey,
-					},
-				},
-			},
-		}
-
-		_, err := reqData.GetAuthIDWithAuthenticators(ctx, authn)
-
-		require.EqualError(t, err, apperrors.NewInternalError("unable to find valid auth ID").Error())
 	})
 }
 
@@ -478,4 +250,64 @@ func TestReqData_GetUserGroups(t *testing.T) {
 
 		require.Equal(t, []string{}, groups)
 	})
+}
+
+func TestReqData_ExtractCoordinates(t *testing.T) {
+	coordinates := authenticator.Coordinates{
+		Name:  "test",
+		Index: 1,
+	}
+
+	tests := []struct {
+		name                 string
+		body                 ReqBody
+		expectedCoordinates  authenticator.Coordinates
+		expectedSuccess      bool
+		expectError          bool
+		expectedErrorMessage string
+	}{
+		{
+			name: "success",
+			body: ReqBody{
+				Extra: map[string]interface{}{
+					authenticator.CoordinatesKey: coordinates,
+				},
+			},
+			expectedCoordinates: coordinates,
+			expectedSuccess:     true,
+			expectError:         false,
+		},
+		{
+			name:                "fail when key does not exist",
+			body:                ReqBody{},
+			expectedCoordinates: authenticator.Coordinates{},
+			expectedSuccess:     false,
+			expectError:         false,
+		},
+		{
+			name: "fail when error occurs while marshaling",
+			body: ReqBody{
+				Extra: map[string]interface{}{
+					authenticator.CoordinatesKey: "fail",
+				},
+			},
+			expectedCoordinates:  authenticator.Coordinates{},
+			expectedSuccess:      true,
+			expectError:          true,
+			expectedErrorMessage: "while unmarshaling authenticator coordinates",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := NewReqData(context.TODO(), tt.body, nil)
+			coords, success, err := d.ExtractCoordinates()
+
+			if tt.expectError {
+				assert.Contains(t, err.Error(), tt.expectedErrorMessage)
+			}
+
+			assert.Equal(t, tt.expectedCoordinates, coords)
+			assert.Equal(t, tt.expectedSuccess, success)
+		})
+	}
 }

@@ -152,12 +152,12 @@ spec:
             {{- end }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
-            {{- range $authenticatorName, $config := .Values.global.authenticators }}
-            {{- if eq $config.enabled true }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
-              value: {{ $config.trusted_issuers | quote }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
-              value: {{ $config.attributes | quote }}
+            {{- range $authenMappingServiceName, $config := .Values.global.oathkeeper.mutators.authenticationMappingServices }}
+            {{- if eq $config.authenticator.enabled true }}
+            - name: APP_{{ $config.authenticator.name }}_AUTHENTICATOR_TRUSTED_ISSUERS
+              value: {{ $config.authenticator.trusted_issuers | quote }}
+            - name: APP_{{ $config.authenticator.name }}_AUTHENTICATOR_ATTRIBUTES
+              value: {{ $config.authenticator.attributes | quote }}
             {{- end }}
             {{- end }}
             - name: APP_HEALTH_CONFIG_INDICATORS

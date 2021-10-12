@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/textproto"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"strings"
@@ -472,6 +474,94 @@ func TestUserContextProvider(t *testing.T) {
 		require.EqualError(t, err, "while getting user data for user: non-existing: while searching for a static user with username non-existing: some-error")
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
+	})
+}
+
+func TestUserContextProviderMatch(t *testing.T) {
+	t.Run("returns ID string and JWTAuthFlow when a name is specified in the Extra map of request body", func(t *testing.T) {
+		username := "some-username"
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					"name": username,
+				},
+			},
+		}
+
+		provider := tenantmapping.NewUserContextProvider(nil, nil, nil)
+
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.True(t, match)
+		require.NoError(t, err)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, username, authDetails.AuthID)
+	})
+
+	t.Run("returns error when username is specified in Extra map in a non-string format", func(t *testing.T) {
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.UsernameKey: []byte{1, 2, 3},
+				},
+			},
+		}
+
+		provider := tenantmapping.NewUserContextProvider(nil, nil, nil)
+
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.False(t, match)
+		require.Nil(t, authDetails)
+		require.EqualError(t, err, "while parsing the value for name: Internal Server Error: unable to cast the value to a string type")
+	})
+
+	t.Run("returns ID string and JWTAuthFlow when username attribute is specified in the Extra map of request body and no authenticators match", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		authenticatorName := "auth1"
+		username := "some-username"
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					authenticator.CoordinatesKey: authenticator.Coordinates{
+						Name:  authenticatorName,
+						Index: 0,
+					},
+					uniqueAttributeKey:   uniqueAttributeValue,
+					identityAttributeKey: username,
+				},
+			},
+		}
+
+		reqData.Body.Extra[authenticator.CoordinatesKey] = authenticator.Coordinates{
+			Name: "unknown",
+		}
+		reqData.Body.Extra[oathkeeper.UsernameKey] = username
+
+		provider := tenantmapping.NewUserContextProvider(nil, nil, nil)
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.True(t, match)
+		require.NoError(t, err)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, username, authDetails.AuthID)
+	})
+
+	t.Run("return nil when does not match", func(t *testing.T) {
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{},
+			},
+		}
+
+		provider := tenantmapping.NewUserContextProvider(nil, nil, nil)
+		match, authDetails, err := provider.Match(context.TODO(), reqData)
+
+		require.False(t, match)
+		require.NoError(t, err)
+		require.Nil(t, authDetails)
 	})
 }
 
