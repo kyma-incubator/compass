@@ -116,7 +116,7 @@ func (r *renderer) mergedApplicationInput(originalAppInputJSON, overrideAppInput
 	}
 
 	for field, overrideV := range overrideAppInput {
-		if originalV, ok := originalAppInput[field]; ok {
+		if originalV, ok := originalAppInput[field]; ok && originalV != nil {
 			if reflect.TypeOf(originalV) != reflect.TypeOf(overrideV) {
 				return "", fmt.Errorf("values %v and %v of key %s have different types - %T and %T", originalV, overrideV, field, originalV, overrideV)
 			}
