@@ -32,7 +32,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		tokenValue          = "abc"
 		connectorURL        = "connector.url"
 		legacyTokenURL      = connectorURL + "?token=" + tokenValue
-		rawEncodedToken     = "eyJ0b2tlbiI6ImFiYyIsImNvbm5lY3RvclVSTCI6ImNvbm5lY3Rvci51cmwiLCJ1c2VkIjpmYWxzZX0="
+		rawEncodedToken     = "eyJ0b2tlbiI6ImFiYyIsImNvbm5lY3RvclVSTCI6ImNvbm5lY3Rvci51cmwiLCJ1c2VkIjpmYWxzZSwiZXhwaXJlc0F0IjpudWxsfQ=="
 		appID               = "4c86b315-c027-467f-a6fc-b184ca0a80f1"
 		runtimeID           = "31a607c7-695f-4a31-b2d1-777939f84aac"
 		integrationSystemID = "123607c7-695f-4a31-b2d1-777939f84123"
@@ -837,6 +837,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 			Type:         tokens.RuntimeToken,
 			CreatedAt:    now,
 			Used:         false,
+			ExpiresAt:    now.Add(ottConfig.ApplicationExpiration),
 			UsedAt:       time.Time{},
 		}
 
@@ -869,6 +870,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 			Type:         tokens.RuntimeToken,
 			CreatedAt:    now,
 			Used:         false,
+			ExpiresAt:    now.Add(ottConfig.ApplicationExpiration),
 			UsedAt:       time.Time{},
 		}
 
@@ -1016,7 +1018,7 @@ func TestIsTokenValid(t *testing.T) {
 				},
 			},
 			shouldHaveError: true,
-			errorMsg:        "One Time Token for system auth id 234 has no valid type",
+			errorMsg:        "one-time token for system auth id 234 has no valid expiration type",
 		},
 	}
 
