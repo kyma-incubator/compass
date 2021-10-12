@@ -100,3 +100,7 @@ spec:
               value: "DEFAULT"
             - name: APP_DEFAULT_NORMALIZATION_PREFIX
               value: "mp-"
+            - name: APP_INFO_CERT_SUBJECT
+              value: {{ quote (printf .Values.global.mtlsClient.subjectPattern .Values.global.mtlsClient.locality .Values.global.mtlsClient.commonName) }}
+            - name: APP_INFO_CERT_ISSUER
+              value: {{ .Values.global.mtlsClient.issuer }}
