@@ -104,6 +104,12 @@ spec:
               value: "{{.Values.global.tests.token.server.enabled}}"
             - name: APP_ADDRESS
               value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
+            - name: APP_INFO_API_ENDPOINT
+              value: {{ .Values.global.director.info.path }}
+            - name: APP_INFO_CERT_SUBJECT
+              value: {{ quote (printf .Values.global.mtlsClient.subjectPattern .Values.global.mtlsClient.locality .Values.global.mtlsClient.commonName) }}
+            - name: APP_INFO_CERT_ISSUER
+              value: {{ .Values.global.mtlsClient.issuer }}
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
