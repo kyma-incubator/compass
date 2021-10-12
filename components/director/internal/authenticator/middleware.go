@@ -152,7 +152,7 @@ func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*c
 	parsed := claims.Claims{}
 
 	if _, err := jwt.ParseWithClaims(bearerToken, &parsed, a.getKeyFunc(ctx)); err != nil {
-		return nil, err
+		return &parsed, err
 	}
 
 	return &parsed, nil
