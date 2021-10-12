@@ -28,8 +28,10 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 		Name:   "test-first-app",
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
 	})
-	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, &firstApp)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, firstApp.ID, true)
+	defer func() {
+		fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, &firstApp)
+		fixtures.UnassignApplicationFromScenarios(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, firstApp.ID, true)
+	}()
 	require.NoError(t, err)
 	require.NotEmpty(t, firstApp.ID)
 
@@ -64,8 +66,10 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 		Name:   "test-second-app",
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
 	})
-	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, &secondApp)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, secondApp.ID, true)
+	defer func() {
+		fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, &secondApp)
+		fixtures.UnassignApplicationFromScenarios(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, secondApp.ID, true)
+	}()
 	require.NoError(t, err)
 	require.NotEmpty(t, secondApp.ID)
 
