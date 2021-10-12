@@ -44,6 +44,8 @@ spec:
             value: {{ .Values.global.connector.revocation.configmap.name | quote }}
           - name: APP_TENANT
             value: "{{.Values.global.defaultTenant}}"
+          - name: APP_APPS_FOR_RUNTIME_TENANT
+            value: "{{ (index .Values.global.tenants 14).id }}"
           - name: DOMAIN
             value: "{{ .Values.global.ingress.domainName }}"
           - name: USER_EMAIL

@@ -38,6 +38,7 @@ var (
 	configmapCleaner        *k8s.ConfigmapCleaner
 	ctx                     context.Context
 	clientKey               *rsa.PrivateKey
+	appsForRuntimeTenantID  string
 )
 
 func TestMain(m *testing.M) {
@@ -47,6 +48,8 @@ func TestMain(m *testing.M) {
 	ctx = context.Background()
 
 	dexToken := server.Token()
+
+	appsForRuntimeTenantID = cfg.AppsForRuntimeTenant
 
 	key, err := certs.GenerateKey()
 	if err != nil {
