@@ -75,7 +75,7 @@ global:
       version: "PR-2027"
     director:
       dir:
-      version: "PR-2057"
+      version: "PR-2059"
     gateway:
       dir:
       version: "PR-2034"
@@ -120,6 +120,7 @@ global:
   agentPreconfiguration: false
 
   director:
+    host: compass-director.compass-system.svc.cluster.local
     prefix: /director
     graphql:
       external:
@@ -136,6 +137,8 @@ global:
       port: 3002
       path: "/operation"
       lastOperationPath: "/last_operation"
+    info:
+      path: "/v1/info"
 
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
@@ -374,6 +377,7 @@ global:
     defaultResponseType: "xml"
 
   mtlsClient:
+    issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     subjectPattern: "C=DE, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=123e4567-e89b-12d3-a456-426614174001, L=%s, CN=%s"
     commonName: "compass"
     locality: "local"
