@@ -13,11 +13,16 @@ import (
 func NewCertServiceContextProvider(tenantRepo TenantRepository) *certServiceContextProvider {
 	return &certServiceContextProvider{
 		tenantRepo: tenantRepo,
+		tenantKeys: KeysExtra{
+			TenantKey:         ProviderTenantKey,
+			ExternalTenantKey: ProviderExternalTenantKey,
+		},
 	}
 }
 
 type certServiceContextProvider struct {
 	tenantRepo TenantRepository
+	tenantKeys KeysExtra
 }
 
 // GetObjectContext is the certServiceContextProvider implementation of the ObjectContextProvider interface
@@ -49,9 +54,22 @@ func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oat
 
 	*/
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), "", authDetails.AuthID, consumer.Runtime)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
 
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil
+}
+
+// Match checks if there is "client-id-from-certificate" Header with nonempty value and "client-certificate-issuer" Header with value "certificate-service".
+// If so AuthDetails object is build.
+func (m *certServiceContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
+	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
+
+	if idVal != "" && certIssuer == oathkeeper.ExternalIssuer {
+		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
+	}
+
+	return false, nil, nil
 }

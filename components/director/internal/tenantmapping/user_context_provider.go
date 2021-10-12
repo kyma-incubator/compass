@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -21,6 +23,10 @@ func NewUserContextProvider(staticUserRepo StaticUserRepository, staticGroupRepo
 		staticUserRepo:  staticUserRepo,
 		staticGroupRepo: staticGroupRepo,
 		tenantRepo:      tenantRepo,
+		tenantKeys: KeysExtra{
+			TenantKey:         ConsumerTenantKey,
+			ExternalTenantKey: ExternalTenantKey,
+		},
 	}
 }
 
@@ -28,6 +34,7 @@ type userContextProvider struct {
 	staticUserRepo  StaticUserRepository
 	staticGroupRepo StaticGroupRepository
 	tenantRepo      TenantRepository
+	tenantKeys      KeysExtra
 }
 
 // GetObjectContext missing godoc
@@ -61,7 +68,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 		log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
 
 		log.C(ctx).Info("Could not create tenant context, returning empty context...")
-		return NewObjectContext(TenantContext{}, scopes, authDetails.AuthID, consumer.User), nil
+		return NewObjectContext(TenantContext{}, m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider), nil
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
@@ -71,7 +78,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), scopes, authDetails.AuthID, consumer.User), nil
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
@@ -80,10 +87,22 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: %s missmatch external tenant: %s", staticUser.Username, tenantMapping.ExternalTenant))
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, authDetails.AuthID, consumer.User)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil
+}
+
+func (m *userContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	if usernameVal, ok := data.Body.Extra[oathkeeper.UsernameKey]; ok {
+		username, err := str.Cast(usernameVal)
+		if err != nil {
+			return false, nil, errors.Wrapf(err, "while parsing the value for %s", oathkeeper.UsernameKey)
+		}
+		return true, &oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow}, nil
+	}
+
+	return false, nil, nil
 }
 
 func (m *userContextProvider) getScopesForUserGroups(ctx context.Context, reqData oathkeeper.ReqData) string {
