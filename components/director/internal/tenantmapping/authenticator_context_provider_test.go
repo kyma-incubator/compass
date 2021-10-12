@@ -207,7 +207,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
 	})
 
-	t.Run("returns tenant and scopes with internal tenant equal to external tenant when external tenant is not found", func(t *testing.T) {
+	t.Run("returns tenant and scopes without internal tenant ID when external tenant is not found", func(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
@@ -251,7 +251,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
 		require.NoError(t, err)
-		require.Equal(t, expectedExternalTenantID.String(), objCtx.TenantID)
+		require.Empty(t, objCtx.TenantID)
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
