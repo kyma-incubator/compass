@@ -371,8 +371,10 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 				}
 			}
 			oneTimeToken {
+				__typename
 				token
 				used
+				expiresAt
 			}
 			certCommonName
 			additionalHeaders

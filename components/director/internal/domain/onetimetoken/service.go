@@ -163,6 +163,11 @@ func (s *service) createToken(tokenType model.SystemAuthReferenceObjectType, one
 	oneTimeToken.CreatedAt = s.timeService.Now()
 	oneTimeToken.Used = false
 	oneTimeToken.UsedAt = time.Time{}
+	expiresAfter, err := s.getExpirationDurationForToken(oneTimeToken.Type)
+	if err != nil {
+		return nil, err
+	}
+	oneTimeToken.ExpiresAt = oneTimeToken.CreatedAt.Add(expiresAfter)
 
 	return oneTimeToken, nil
 }
@@ -322,14 +327,14 @@ func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Applic
 	return *rawEnc
 }
 
-func (s *service) getExpirationTimeForToken(systemAuth *model.SystemAuth) (time.Duration, error) {
-	switch systemAuth.Value.OneTimeToken.Type {
+func (s *service) getExpirationDurationForToken(tokenType tokens.TokenType) (time.Duration, error) {
+	switch tokenType {
 	case tokens.ApplicationToken:
 		return s.appTokenExpiration, nil
 	case tokens.RuntimeToken:
 		return s.runtimeTokenExpiration, nil
 	default:
-		return time.Duration(0), errors.Errorf("One Time Token for system auth id %s has no valid type", systemAuth.ID)
+		return time.Duration(0), errors.Errorf("%s is no valid token type", tokenType)
 	}
 }
 
@@ -346,9 +351,9 @@ func (s *service) IsTokenValid(systemAuth *model.SystemAuth) (bool, error) {
 		return false, errors.Errorf("One Time Token for system auth id %s has been used", systemAuth.ID)
 	}
 
-	expirationTime, err := s.getExpirationTimeForToken(systemAuth)
+	expirationTime, err := s.getExpirationDurationForToken(systemAuth.Value.OneTimeToken.Type)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "one-time token for system auth id %s has no valid expiration type", systemAuth.ID)
 	}
 
 	isExpired := systemAuth.Value.OneTimeToken.CreatedAt.Add(expirationTime).Before(s.timeService.Now())

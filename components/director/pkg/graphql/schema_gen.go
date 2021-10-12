@@ -400,6 +400,7 @@ type ComplexityRoot struct {
 
 	OneTimeTokenForApplication struct {
 		ConnectorURL       func(childComplexity int) int
+		ExpiresAt          func(childComplexity int) int
 		LegacyConnectorURL func(childComplexity int) int
 		Raw                func(childComplexity int) int
 		RawEncoded         func(childComplexity int) int
@@ -409,6 +410,7 @@ type ComplexityRoot struct {
 
 	OneTimeTokenForRuntime struct {
 		ConnectorURL func(childComplexity int) int
+		ExpiresAt    func(childComplexity int) int
 		Raw          func(childComplexity int) int
 		RawEncoded   func(childComplexity int) int
 		Token        func(childComplexity int) int
@@ -2643,6 +2645,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OneTimeTokenForApplication.ConnectorURL(childComplexity), true
 
+	case "OneTimeTokenForApplication.expiresAt":
+		if e.complexity.OneTimeTokenForApplication.ExpiresAt == nil {
+			break
+		}
+
+		return e.complexity.OneTimeTokenForApplication.ExpiresAt(childComplexity), true
+
 	case "OneTimeTokenForApplication.legacyConnectorURL":
 		if e.complexity.OneTimeTokenForApplication.LegacyConnectorURL == nil {
 			break
@@ -2684,6 +2693,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OneTimeTokenForRuntime.ConnectorURL(childComplexity), true
+
+	case "OneTimeTokenForRuntime.expiresAt":
+		if e.complexity.OneTimeTokenForRuntime.ExpiresAt == nil {
+			break
+		}
+
+		return e.complexity.OneTimeTokenForRuntime.ExpiresAt(childComplexity), true
 
 	case "OneTimeTokenForRuntime.raw":
 		if e.complexity.OneTimeTokenForRuntime.Raw == nil {
@@ -3620,6 +3636,7 @@ interface OneTimeToken {
 	token: String!
 	connectorURL: String!
 	used: Boolean!
+	expiresAt: Timestamp!
 	raw: String
 	rawEncoded: String
 }
@@ -4423,6 +4440,7 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	connectorURL: String!
 	legacyConnectorURL: String!
 	used: Boolean!
+	expiresAt: Timestamp!
 	raw: String
 	rawEncoded: String
 }
@@ -4431,6 +4449,7 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	token: String!
 	connectorURL: String!
 	used: Boolean!
+	expiresAt: Timestamp!
 	raw: String
 	rawEncoded: String
 }
@@ -16831,6 +16850,40 @@ func (ec *executionContext) _OneTimeTokenForApplication_used(ctx context.Context
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OneTimeTokenForApplication_expiresAt(ctx context.Context, field graphql.CollectedField, obj *OneTimeTokenForApplication) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OneTimeTokenForApplication",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExpiresAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalNTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OneTimeTokenForApplication_raw(ctx context.Context, field graphql.CollectedField, obj *OneTimeTokenForApplication) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -16993,6 +17046,40 @@ func (ec *executionContext) _OneTimeTokenForRuntime_used(ctx context.Context, fi
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OneTimeTokenForRuntime_expiresAt(ctx context.Context, field graphql.CollectedField, obj *OneTimeTokenForRuntime) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OneTimeTokenForRuntime",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExpiresAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalNTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OneTimeTokenForRuntime_raw(ctx context.Context, field graphql.CollectedField, obj *OneTimeTokenForRuntime) (ret graphql.Marshaler) {
@@ -24823,6 +24910,11 @@ func (ec *executionContext) _OneTimeTokenForApplication(ctx context.Context, sel
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "expiresAt":
+			out.Values[i] = ec._OneTimeTokenForApplication_expiresAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "raw":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -24879,6 +24971,11 @@ func (ec *executionContext) _OneTimeTokenForRuntime(ctx context.Context, sel ast
 			}
 		case "used":
 			out.Values[i] = ec._OneTimeTokenForRuntime_used(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "expiresAt":
+			out.Values[i] = ec._OneTimeTokenForRuntime_expiresAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -27431,6 +27528,24 @@ func (ec *executionContext) unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubator�
 }
 
 func (ec *executionContext) marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v Timestamp) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (*Timestamp, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalNTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v *Timestamp) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
 	return v
 }
 

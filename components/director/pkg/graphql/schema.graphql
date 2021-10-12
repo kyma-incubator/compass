@@ -164,6 +164,7 @@ interface OneTimeToken {
 	token: String!
 	connectorURL: String!
 	used: Boolean!
+	expiresAt: Timestamp!
 	raw: String
 	rawEncoded: String
 }
@@ -967,6 +968,7 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	connectorURL: String!
 	legacyConnectorURL: String!
 	used: Boolean!
+	expiresAt: Timestamp!
 	raw: String
 	rawEncoded: String
 }
@@ -975,6 +977,7 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	token: String!
 	connectorURL: String!
 	used: Boolean!
+	expiresAt: Timestamp!
 	raw: String
 	rawEncoded: String
 }

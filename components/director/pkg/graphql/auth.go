@@ -9,9 +9,16 @@ type credential struct {
 	*OAuthCredentialData
 }
 
+// OneTimeTokenDTO this a model for transportation of one-time tokens, because the json marshaller cannot unmarshal to either of the types OTTForApp or OTTForRuntime
 type OneTimeTokenDTO struct {
 	TokenWithURL
 	LegacyConnectorURL string `json:"legacyConnectorURL"`
+}
+
+// oneTimeTokenDTO is used to hyde TypeName property to consumers
+type oneTimeTokenDTO struct {
+	*OneTimeTokenDTO
+	TypeName string `json:"__typename"`
 }
 
 func (*OneTimeTokenDTO) IsOneTimeToken() {}
@@ -23,7 +30,7 @@ func (a *Auth) UnmarshalJSON(data []byte) error {
 	aux := &struct {
 		*Alias
 		Credential   credential       `json:"credential"`
-		OneTimeToken *OneTimeTokenDTO `json:"oneTimeToken"`
+		OneTimeToken *oneTimeTokenDTO `json:"oneTimeToken"`
 	}{
 		Alias: (*Alias)(a),
 	}
@@ -32,7 +39,9 @@ func (a *Auth) UnmarshalJSON(data []byte) error {
 	}
 
 	a.Credential = retrieveCredential(aux.Credential)
-	a.OneTimeToken = aux.OneTimeToken
+	if aux.OneTimeToken != nil {
+		a.OneTimeToken = retrieveOneTimeToken(aux.OneTimeToken)
+	}
 
 	return nil
 }
@@ -62,4 +71,19 @@ func retrieveCredential(unmarshaledCredential credential) CredentialData {
 		return unmarshaledCredential.BasicCredentialData
 	}
 	return unmarshaledCredential.OAuthCredentialData
+}
+
+func retrieveOneTimeToken(ottDTO *oneTimeTokenDTO) OneTimeToken {
+	switch ottDTO.TypeName {
+	case "OneTimeTokenForApplication":
+		return &OneTimeTokenForApplication{
+			TokenWithURL:       ottDTO.TokenWithURL,
+			LegacyConnectorURL: ottDTO.LegacyConnectorURL,
+		}
+	case "OneTimeTokenForRuntime":
+		return &OneTimeTokenForRuntime{
+			TokenWithURL: ottDTO.TokenWithURL,
+		}
+	}
+	return ottDTO.OneTimeTokenDTO
 }

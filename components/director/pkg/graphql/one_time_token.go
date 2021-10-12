@@ -2,9 +2,10 @@ package graphql
 
 // TokenWithURL missing godoc
 type TokenWithURL struct {
-	Token        string `json:"token"`
-	ConnectorURL string `json:"connectorURL"`
-	Used         bool   `json:"used"`
+	Token        string     `json:"token"`
+	ConnectorURL string     `json:"connectorURL"`
+	Used         bool       `json:"used"`
+	ExpiresAt    *Timestamp `json:"expiresAt"`
 }
 
 // OneTimeTokenForApplication missing godoc
