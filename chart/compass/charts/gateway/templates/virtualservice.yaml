@@ -56,6 +56,14 @@ spec:
               number: {{ .Values.global.oathkeeper.port }}
     - match:
       - uri:
+         prefix: {{ .Values.global.director.info.path }}
+      route:
+        - destination:
+            host: {{ .Values.global.director.host }}
+            port:
+              number: {{ .Values.global.director.graphql.external.port }}
+    - match:
+      - uri:
           exact: {{ .Values.global.director.prefix }}
       redirect:
         uri: {{ .Values.global.director.prefix }}/

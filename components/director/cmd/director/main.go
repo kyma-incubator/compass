@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/info"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -133,6 +135,8 @@ type config struct {
 	HealthConfig healthz.Config `envconfig:"APP_HEALTH_CONFIG_INDICATORS"`
 
 	ReadyConfig healthz.ReadyConfig
+
+	InfoConfig info.Config
 
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
@@ -319,6 +323,9 @@ func main() {
 	exitOnError(err, "Could not initialize health")
 	health.RegisterIndicator(healthz.NewIndicator(healthz.DBIndicatorName, healthz.NewDBIndicatorFunc(transact))).Start()
 	mainRouter.HandleFunc("/healthz", healthz.NewHealthHandler(health))
+
+	logger.Infof("Registering info endpoint...")
+	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))

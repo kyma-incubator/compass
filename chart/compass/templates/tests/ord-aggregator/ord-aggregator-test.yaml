@@ -44,6 +44,8 @@ spec:
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080"
             - name: EXTERNAL_SERVICES_MOCK_ABSOLUTE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080/test/fullPath"
+            - name: EXTERNAL_SERVICES_MOCK_CERT_SECURED_URL
+              value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
             - name: SECURED_APPLICATION_TYPES

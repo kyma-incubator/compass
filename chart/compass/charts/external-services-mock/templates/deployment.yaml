@@ -24,6 +24,10 @@ spec:
               env:
               - name: APP_ADDRESS
                 value: "127.0.0.1:{{ .Values.deployment.port }}"
+              - name: APP_CERT_SECURED_SERVER_ADDRESS
+                value: "127.0.0.1:{{ .Values.global.externalServicesMock.certSecuredPort }}"
+              - name: APP_CERT_SECURED_BASE_URL
+                value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
               {{- if eq .Values.global.externalServicesMock.auditlog true }}
               - name: APP_CLIENT_ID
                 valueFrom:
@@ -48,9 +52,22 @@ spec:
                     key: password
               - name: APP_DEFAULT_TENANT
                 value: "{{ (index .Values.global.tenants 9).id }}"
+              - name: APP_CA_CERT
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.connector.secrets.ca.name }}
+                    key: {{ .Values.global.connector.secrets.ca.certificateKey }}
+              - name: APP_CA_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.connector.secrets.ca.name }}
+                    key: {{ .Values.global.connector.secrets.ca.keyKey }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}
+                protocol: TCP
+              - name: http-mtls
+                containerPort: {{ .Values.global.externalServicesMock.certSecuredPort }}
                 protocol: TCP
               resources:
                 {{- toYaml .Values.deployment.resources | nindent 16 }}
