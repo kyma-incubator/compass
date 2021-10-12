@@ -18,25 +18,27 @@ const (
 
 func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	scenarios := []string{DefaultScenario, TestScenario}
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, []string{DefaultScenario})
+	// Listing scenarios for LabelDefinition creates a default record if there are no scenarios. This invocation is needed so that we can later update the scenarios instead of creating a new LabelDefinition
+	_, err := fixtures.ListLabelDefinitionByKeyWithinTenant(ctx, directorAppsForRuntimeClient.DexGraphqlClient, ScenariosLabel, appsForRuntimeTenantID)
+	require.NoError(t, err)
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, scenarios)
 
 	appIdToCommonName := make(map[string]string)
 
 	// Register first Application
-	firstApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
+	firstApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
 		Name:   "test-first-app",
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
 	})
 	defer func() {
-		fixtures.UnassignApplicationFromScenarios(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, firstApp.ID, true)
-		fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, &firstApp)
+		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, firstApp.ID, true)
+		fixtures.CleanupApplication(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, &firstApp)
 	}()
 	require.NoError(t, err)
 	require.NotEmpty(t, firstApp.ID)
 
 	// Issue a certificate for the first Application
-	certResult, configuration := clients.GenerateApplicationCertificate(t, directorClient, connectorClient, firstApp.ID, clientKey)
+	certResult, configuration := clients.GenerateApplicationCertificate(t, directorAppsForRuntimeClient, connectorClient, firstApp.ID, clientKey)
 	certs.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certResult)
 
 	decodedClientCert := certs.DecodeCert(t, certResult.ClientCertificate)
@@ -46,35 +48,35 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	defer certs.Cleanup(t, configmapCleaner, certResult)
 
 	// Register Runtime
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, &graphql.RuntimeInput{
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, &graphql.RuntimeInput{
 		Name:   "test-runtime",
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
 	})
-	defer fixtures.CleanupRuntime(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, &runtime)
+	defer fixtures.CleanupRuntime(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
 	// Issue a certificate for the Runtime
-	ott, err := directorClient.GenerateRuntimeToken(t, runtime.ID)
+	ott, err := directorAppsForRuntimeClient.GenerateRuntimeToken(t, runtime.ID)
 	require.NoError(t, err)
 	rtCertResult, rtConfiguration := clients.GenerateRuntimeCertificate(t, &ott, connectorClient, clientKey)
 	certs.AssertCertificate(t, rtConfiguration.CertificateSigningRequestInfo.Subject, rtCertResult)
 	defer certs.Cleanup(t, configmapCleaner, rtCertResult)
 
 	// Register second Application
-	secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
+	secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
 		Name:   "test-second-app",
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
 	})
 	defer func() {
-		fixtures.UnassignApplicationFromScenarios(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, secondApp.ID, true)
-		fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, appsForRuntimeTenantID, &secondApp)
+		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, secondApp.ID, true)
+		fixtures.CleanupApplication(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, &secondApp)
 	}()
 	require.NoError(t, err)
 	require.NotEmpty(t, secondApp.ID)
 
 	// Issue a certificate for the second Application
-	secondCertResult, secondConfiguration := clients.GenerateApplicationCertificate(t, directorClient, connectorClient, secondApp.ID, clientKey)
+	secondCertResult, secondConfiguration := clients.GenerateApplicationCertificate(t, directorAppsForRuntimeClient, connectorClient, secondApp.ID, clientKey)
 	certs.AssertCertificate(t, secondConfiguration.CertificateSigningRequestInfo.Subject, secondCertResult)
 
 	decodedClientCertSecondApp := certs.DecodeCert(t, secondCertResult.ClientCertificate)

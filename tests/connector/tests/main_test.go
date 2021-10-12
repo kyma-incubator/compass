@@ -30,15 +30,16 @@ const (
 )
 
 var (
-	cfg                     config.ConnectorTestConfig
-	directorClient          *clients.StaticUserClient
-	connectorHydratorClient *clients.HydratorClient
-	directorHydratorClient  *clients.HydratorClient
-	connectorClient         *clients.TokenSecuredClient
-	configmapCleaner        *k8s.ConfigmapCleaner
-	ctx                     context.Context
-	clientKey               *rsa.PrivateKey
-	appsForRuntimeTenantID  string
+	cfg                          config.ConnectorTestConfig
+	directorClient               *clients.StaticUserClient
+	directorAppsForRuntimeClient *clients.StaticUserClient
+	connectorHydratorClient      *clients.HydratorClient
+	directorHydratorClient       *clients.HydratorClient
+	connectorClient              *clients.TokenSecuredClient
+	configmapCleaner             *k8s.ConfigmapCleaner
+	ctx                          context.Context
+	clientKey                    *rsa.PrivateKey
+	appsForRuntimeTenantID       string
 )
 
 func TestMain(m *testing.M) {
@@ -58,6 +59,11 @@ func TestMain(m *testing.M) {
 	}
 	clientKey = key
 	directorClient, err = clients.NewStaticUserClient(ctx, cfg.DirectorURL, cfg.Tenant, dexToken)
+	if err != nil {
+		log.Errorf("Failed to create director client: %s", err.Error())
+		os.Exit(1)
+	}
+	directorAppsForRuntimeClient, err = clients.NewStaticUserClient(ctx, cfg.DirectorURL, cfg.AppsForRuntimeTenant, dexToken)
 	if err != nil {
 		log.Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)
