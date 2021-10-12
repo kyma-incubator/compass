@@ -100,10 +100,10 @@ SELECT DISTINCT t_api_event_def.tenant_id, spec.id, spec.api_def_id, spec.event_
 FROM specifications AS spec
          INNER JOIN (
 --  select APIs
-    SELECT a.id, a.tenant_id FROM tenants_apis AS a
+    SELECT a.id, a.tenant_id::text FROM tenants_apis AS a
     UNION ALL
 --  select APIs
-    SELECT e.id, e.tenant_id FROM tenants_events AS e
+    SELECT e.id, e.tenant_id::text FROM tenants_events AS e
 ) AS t_api_event_def ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
 
 COMMIT;
