@@ -1,5 +1,5 @@
 {{- range $authenMappingServiceName, $value := .Values.global.oathkeeper.mutators.authenticationMappingServices -}}
-{{if and (eq $value.authenticator.enabled true) (eq $value.authenticator.createRule true)}}
+{{ if and (eq $value.authenticator.enabled true) (eq $value.authenticator.createRule true) }}
 ---
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
@@ -18,7 +18,12 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml $value.cfg| indent 4 }}
+    config:
+      api:
+        url: "http://{{ $.Values.global.director.host }}:{{ $.Values.global.director.graphql.external.port }}/authn-mapping/{{ $value.authenticator.name }}"
+        retry:
+          give_up_after: {{ default "6s" ((((($value).cfg).config).api).retry).give_up_after }}
+          max_delay: {{ default "2000ms" ((((($value).cfg).config).api).retry).max_delay }}
   - handler: hydrator
 {{ toYaml $.Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
