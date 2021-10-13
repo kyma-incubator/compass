@@ -730,7 +730,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 					expectedToken = f()
 				} else {
 					var ok bool
-					expectedToken = test.expectedToken.(string)
+					expectedToken, ok = test.expectedToken.(string)
 					assert.True(t, ok)
 				}
 				assert.Equal(t, expectedToken, token.Token)
