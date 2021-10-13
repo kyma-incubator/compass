@@ -75,19 +75,19 @@ global:
       version: "PR-2027"
     director:
       dir:
-      version: "PR-2059"
+      version: "PR-2050"
     gateway:
       dir:
-      version: "PR-2034"
+      version: "PR-2050"
     operations_controller:
       dir:
       version: "PR-2027"
     ord_service:
       dir:
-      version: "PR-41"
+      version: "PR-42"
     schema_migrator:
       dir:
-      version: "PR-1998"
+      version: "PR-2050"
     system_broker:
       dir:
       version: "PR-2027"
@@ -104,7 +104,7 @@ global:
       version: "PR-45"
     e2e_tests:
       dir:
-      version: "PR-2059"
+      version: "PR-2050"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -305,8 +305,8 @@ global:
     port: 4455
     timeout_ms: 120000
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}", "tenant": "{{ print .Extra.tenant }}", "externalTenant": "{{ print .Extra.externalTenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read", "tenant": "{{ print (index .Header.Tenant 0) }}", "consumerType": "Internal Component", "flow": "Internal"}'
+      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read","tenant":"{\"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\",\"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -315,13 +315,40 @@ global:
             retry:
               give_up_after: 6s
               max_delay: 2000ms
-      authenticationMappingService:
-        config:
-          api:
-            url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping
-            retry:
-              give_up_after: 6s
-              max_delay: 2000ms
+      authenticationMappingServices:
+        tenantFetcher:
+          cfg:
+            config:
+              api:
+                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/tenant-fetcher
+                retry:
+                  give_up_after: 6s
+                  max_delay: 2000ms
+          authenticator:
+            name: "tenant-fetcher"
+            enabled: false
+            createRule: true
+            gatewayHost: "compass-gateway"
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
+            attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+            path: /tenants/<.*>
+            upstreamComponent: "compass-tenant-fetcher"
+        subscriber:
+          cfg:
+            config:
+              api:
+                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/subscriber
+                retry:
+                  give_up_after: 6s
+                  max_delay: 2000ms
+          authenticator:
+            name: "subscriber"
+            enabled: false
+            createRule: false
+            gatewayHost: "compass-gateway-sap-mtls"
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
+            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+            path: /<.*>
       tenantMappingService:
         config:
           api:
@@ -366,7 +393,7 @@ global:
       tenantPathParam: "tenantId"
       regionPathParam: "region"
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountIdsLabelKey: "consumerSubaccountIds"
+      consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
@@ -491,15 +518,6 @@ global:
   metrics:
     enabled: true
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
-
-  authenticators:
-    tenant-fetcher:
-      enabled: false
-      gatewayHost: "compass-gateway"
-      trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-      attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
-      path: /tenants/<.*>
-      upstreamComponent: "compass-tenant-fetcher"
 
   externalServicesMock:
     enabled: false

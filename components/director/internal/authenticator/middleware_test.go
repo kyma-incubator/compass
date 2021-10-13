@@ -477,12 +477,24 @@ func TestAuthenticator_Handler(t *testing.T) {
 }
 
 func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodNone, claims.Claims{
-		Tenant:       tenant,
+	tokenClaims := struct {
+		Tenant       string                `json:"tenant"`
+		Scopes       string                `json:"scopes"`
+		ConsumerID   string                `json:"consumerID"`
+		ConsumerType consumer.ConsumerType `json:"consumerType"`
+		OnBehalfOf   string                `json:"onBehalfOf"`
+		jwt.StandardClaims
+	}{
 		Scopes:       scopes,
 		ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
 		ConsumerType: consumer.Runtime,
-	})
+	}
+
+	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": tenant, "externalTenant": ""})
+	require.NoError(t, err)
+	tokenClaims.Tenant = string(tenantJSON)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodNone, tokenClaims)
 
 	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
 	require.NoError(t, err)
@@ -490,21 +502,32 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 	return signedToken
 }
 
-func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims.Claims{
-		Tenant:         tnt,
-		ExternalTenant: "externalTenantName",
-		Scopes:         scopes,
-		ConsumerID:     "1e176e48-e258-4091-a584-feb1bf708b7e",
-		ConsumerType:   consumer.Runtime,
-	})
+func createTokenWithSigningMethod(t *testing.T, tenant string, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
+	tokenClaims := struct {
+		Tenant       string                `json:"tenant"`
+		Scopes       string                `json:"scopes"`
+		ConsumerID   string                `json:"consumerID"`
+		ConsumerType consumer.ConsumerType `json:"consumerType"`
+		OnBehalfOf   string                `json:"onBehalfOf"`
+		jwt.StandardClaims
+	}{
+		Scopes:       scopes,
+		ConsumerID:   "1e176e48-e258-4091-a584-feb1bf708b7e",
+		ConsumerType: consumer.Runtime,
+	}
+
+	tenantJSON, err := json.Marshal(map[string]string{"consumerTenant": tenant, "externalTenant": "externalTenantName"})
+	require.NoError(t, err)
+	tokenClaims.Tenant = string(tenantJSON)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, tokenClaims)
 
 	if isSigningKeyAvailable {
 		token.Header[authenticator.JwksKeyIDKey] = keyID
 	}
 
 	var rawKey interface{}
-	err := key.Raw(&rawKey)
+	err = key.Raw(&rawKey)
 	require.NoError(t, err)
 
 	signedToken, err := token.SignedString(rawKey)
