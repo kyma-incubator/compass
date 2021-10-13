@@ -325,7 +325,7 @@ global:
                   give_up_after: 6s
                   max_delay: 2000ms
           authenticator:
-            name: "tenant-fetcher"
+            name: "tenant-fetcher" # we need this property because the ory-rule name should be FQDN compliant, and we cannot rename the parent property tenantFetcher to tenant-fetcher because Helm does not support it https://helm.sh/docs/chart_best_practices/values/
             enabled: false
             createRule: true
             gatewayHost: "compass-gateway"
