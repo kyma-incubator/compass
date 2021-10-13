@@ -22,16 +22,8 @@ spec:
       api:
         url: "http://{{ $.Values.global.director.host }}:{{ $.Values.global.director.graphql.external.port }}/authn-mapping/{{ $value.authenticator.name }}"
         retry:
-          {{- if $value.cfg.config.api.retry.give_up_after -}}
-          give_up_after: {{ $value.cfg.config.api.retry.give_up_after }}
-          {{- else -}}
-          give_up_after: "6s"
-          {{- end -}}
-          {{- if $value.cfg.config.api.retry.max_delay -}}
-          max_delay: {{ $value.cfg.config.api.retry.max_delay }}
-          {{- else -}}
-          max_delay: "2000ms"
-          {{- end -}}
+          give_up_after: {{ default "6s" ((((($value).cfg).config).api).retry).give_up_after }}
+          max_delay: {{ default "2000ms" ((((($value).cfg).config).api).retry).max_delay }}
   - handler: hydrator
 {{ toYaml $.Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
