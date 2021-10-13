@@ -190,6 +190,21 @@ func (s *service) DeleteByIDForObject(ctx context.Context, objectType model.Syst
 	return nil
 }
 
+// DeleteMultipleByIDForObject missing godoc
+func (s *service) DeleteMultipleByIDForObject(ctx context.Context, systemAuths []model.SystemAuth) error {
+	for _, auth := range systemAuths {
+		referenceType, err := auth.GetReferenceObjectType()
+		if err != nil {
+			return errors.Wrapf(err, "while fetching System Auth reference object type for id '%s'", auth.ID)
+		}
+		if err := s.DeleteByIDForObject(ctx, referenceType, auth.ID); err != nil {
+			return errors.Wrapf(err, "while deleting System Auth with reference object type '%s' and id '%s'", referenceType, auth.ID)
+		}
+	}
+
+	return nil
+}
+
 // IsSystemAuthOneTimeTokenType missing godoc
 func (s *service) IsSystemAuthOneTimeTokenType(systemAuth *model.SystemAuth) bool {
 	if systemAuth == nil || systemAuth.Value == nil {

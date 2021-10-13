@@ -49,6 +49,7 @@ type ApplicationRepository interface {
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
+	Unpair(ctx context.Context, tenant, id string) error
 }
 
 // LabelRepository missing godoc
@@ -365,31 +366,33 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	scenarios, err := s.getScenarioNamesForApplication(ctx, id)
+	_, err = s.IsBeingUsed(ctx, appTenant, id)
 	if err != nil {
 		return err
-	}
-
-	validScenarios := removeDefaultScenario(scenarios)
-	if len(validScenarios) > 0 {
-		runtimes, err := s.getRuntimeNamesForScenarios(ctx, appTenant, validScenarios)
-		if err != nil {
-			return err
-		}
-
-		if len(runtimes) > 0 {
-			application, err := s.appRepo.GetByID(ctx, appTenant, id)
-			if err != nil {
-				return errors.Wrapf(err, "while getting application with id %s", id)
-			}
-			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
-			return apperrors.NewInvalidOperationError(msg)
-		}
 	}
 
 	err = s.appRepo.Delete(ctx, appTenant, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Application with id %s", id)
+	}
+
+	return nil
+}
+
+func (s *service) Unpair(ctx context.Context, id string) error {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	_, err = s.IsBeingUsed(ctx, appTenant, id)
+	if err != nil {
+		return err
+	}
+
+	err = s.appRepo.Unpair(ctx, appTenant, id)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -486,6 +489,35 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	}
 
 	return nil
+}
+
+// IsBeingUsed Checks if an application has scenarios associated with it. If the scenarios are part of a runtime, then the application is considered being used by that runtime.
+func (s *service) IsBeingUsed(ctx context.Context, tenant, id string) (bool, error) {
+	scenarios, err := s.getScenarioNamesForApplication(ctx, id)
+	if err != nil {
+		return false, err
+	}
+
+	validScenarios := removeDefaultScenario(scenarios)
+	if len(validScenarios) > 0 {
+		runtimes, err := s.getRuntimeNamesForScenarios(ctx, tenant, validScenarios)
+		if err != nil {
+			return false, err
+		}
+
+		if len(runtimes) > 0 {
+			application, err := s.appRepo.GetByID(ctx, tenant, id)
+			if err != nil {
+				return true, errors.Wrapf(err, "while getting application with id %s", id)
+			}
+			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
+			return true, apperrors.NewInvalidOperationError(msg)
+		}
+
+		return false, nil
+	}
+
+	return false, nil
 }
 
 func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationRegisterInput, tenant string, applicationID string) error {

@@ -40,6 +40,7 @@ type ApplicationService interface {
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
+	Unpair(ctx context.Context, id string) error
 }
 
 // ApplicationConverter missing godoc
@@ -50,6 +51,7 @@ type ApplicationConverter interface {
 	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
+	ModelToUpdateInput(model *model.Application) graphql.ApplicationUpdateInput
 }
 
 // EventingService missing godoc
@@ -74,6 +76,7 @@ type WebhookService interface {
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 	IsSystemAuthOneTimeTokenType(systemAuth *model.SystemAuth) bool
+	DeleteMultipleByIDForObject(ctx context.Context, systemAuths []model.SystemAuth) error
 }
 
 // WebhookConverter missing godoc
@@ -384,10 +387,10 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 
-	gqlApp := r.appConverter.ToGraphQL(app)
+	deletedApp := r.appConverter.ToGraphQL(app)
 
 	log.C(ctx).Infof("Successfully unregistered Application with id %s", id)
-	return gqlApp, nil
+	return deletedApp, nil
 }
 
 // UnpairApplication missing godoc
@@ -399,7 +402,17 @@ func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.A
 		return nil, err
 	}
 
+	err = r.appSvc.Unpair(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
 	auths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, app.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.sysAuthSvc.DeleteMultipleByIDForObject(ctx, auths)
 	if err != nil {
 		return nil, err
 	}
@@ -409,10 +422,14 @@ func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.A
 		return nil, err
 	}
 
-	deletedApp := r.appConverter.ToGraphQL(app)
+	gqlApp := r.appConverter.ToGraphQL(app)
+
+	//modelInput := r.appConverter.ModelToUpdateInput(app)
+	//input := r.appConverter.UpdateInputFromGraphQL(modelInput)
+	//r.appSvc.Update(ctx, id, input)
 
 	log.C(ctx).Infof("Successfully Unpaired Application with id %s", id)
-	return deletedApp, nil
+	return gqlApp, nil
 }
 
 // SetApplicationLabel missing godoc
