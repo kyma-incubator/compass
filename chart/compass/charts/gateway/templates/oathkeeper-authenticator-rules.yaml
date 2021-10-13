@@ -1,5 +1,5 @@
 {{- range $authenMappingServiceName, $value := .Values.global.oathkeeper.mutators.authenticationMappingServices -}}
-{{if and (eq $value.authenticator.enabled true) (eq $value.authenticator.createRule true)}}
+{{ if and (eq $value.authenticator.enabled true) (eq $value.authenticator.createRule true) }}
 ---
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
@@ -20,7 +20,7 @@ spec:
   - handler: hydrator
     config:
       api:
-        url: {{ $value.cfg.config.api.url }}
+        url: "http://{{ $.Values.global.director.host }}:{{ $.Values.global.director.graphql.external.port }}/authn-mapping/{{ $value.authenticator.name }}"
         retry:
           give_up_after: {{ $value.cfg.config.api.retry.give_up_after | default "6s" }}
           max_delay: {{ $value.cfg.config.api.retry.max_delay | default "2000ms" }}
