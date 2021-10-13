@@ -175,7 +175,7 @@ func (in *Operation) NextPollTime(retryInterval *int, timeLayout string) (time.D
 // based on the creation timestamp of the Operation and the provided
 // timeout duration variable.
 func (in *Operation) TimeoutReached(timeout time.Duration) bool {
-	operationEndTime := in.ObjectMeta.CreationTimestamp.Time.Add(timeout)
+	operationEndTime := in.Status.InitializedAt.Time.Add(timeout)
 
 	return time.Now().After(operationEndTime)
 }
