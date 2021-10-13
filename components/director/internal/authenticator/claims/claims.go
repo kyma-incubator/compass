@@ -13,6 +13,7 @@ import (
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 )
 
@@ -55,7 +56,7 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 	c.StandardClaims = tokenClaims.StandardClaims
 
 	if err := json.Unmarshal([]byte(tokenClaims.TenantString), &c.Tenant); err != nil {
-		return errors.Wrap(err, "while unmarshaling tenants")
+		log.D().Warnf("While unmarshaling tenants: %+v", err)
 	}
 
 	return nil

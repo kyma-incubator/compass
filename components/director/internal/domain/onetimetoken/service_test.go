@@ -3,11 +3,13 @@ package onetimetoken_test
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
 
@@ -27,12 +29,13 @@ import (
 
 var runtimeID = "runtimeID"
 
+var nowTime = time.Now()
+
 func TestGenerateOneTimeToken(t *testing.T) {
 	const (
 		tokenValue          = "abc"
 		connectorURL        = "connector.url"
 		legacyTokenURL      = connectorURL + "?token=" + tokenValue
-		rawEncodedToken     = "eyJ0b2tlbiI6ImFiYyIsImNvbm5lY3RvclVSTCI6ImNvbm5lY3Rvci51cmwiLCJ1c2VkIjpmYWxzZSwiZXhwaXJlc0F0IjpudWxsfQ=="
 		appID               = "4c86b315-c027-467f-a6fc-b184ca0a80f1"
 		runtimeID           = "31a607c7-695f-4a31-b2d1-777939f84aac"
 		integrationSystemID = "123607c7-695f-4a31-b2d1-777939f84123"
@@ -65,7 +68,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		shouldHaveError           bool
 		errorMsg                  string
 		tokenType                 model.SystemAuthReferenceObjectType
-		expectedToken             string
+		expectedToken             interface{}
 		intSystemToAdapterMapping map[string]string
 		systemAuthSvc             func() onetimetoken.SystemAuthService
 		appSvc                    func() onetimetoken.ApplicationService
@@ -147,8 +150,13 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenType:                 model.ApplicationReference,
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
-			timeService:               directorTime.NewService(),
-			expectedToken:             rawEncodedToken,
+			timeService:               &Timer{},
+			expectedToken: func() string {
+				nowT := nowTime.Add(ottConfig.ApplicationExpiration)
+				converted, err := nowT.MarshalJSON()
+				assert.NoError(t, err)
+				return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"token":"abc","connectorURL":"connector.url","used":false,"expiresAt":%s}`, string(converted))))
+			},
 		},
 		{
 			description: "Generate Application token for legacy application, with suggestion enabled, should succeed",
@@ -715,7 +723,14 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				} else {
 					assert.Equal(t, tokens.RuntimeToken, token.Type)
 				}
-				assert.Equal(t, test.expectedToken, token.Token)
+				var expectedToken string
+				if reflect.TypeOf(test.expectedToken).Kind() == reflect.Func {
+					f := test.expectedToken.(func() string)
+					expectedToken = f()
+				} else {
+					expectedToken = test.expectedToken.(string)
+				}
+				assert.Equal(t, expectedToken, token.Token)
 				assert.Equal(t, fakeToken.UsedAt, token.UsedAt)
 				assert.Equal(t, fakeToken.Used, token.Used)
 				if test.intSystemToAdapterMapping == nil {
@@ -1042,4 +1057,10 @@ func TestIsTokenValid(t *testing.T) {
 			mock.AssertExpectationsForObjects(t, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator)
 		})
 	}
+}
+
+type Timer struct{}
+
+func (t *Timer) Now() time.Time {
+	return nowTime
 }
