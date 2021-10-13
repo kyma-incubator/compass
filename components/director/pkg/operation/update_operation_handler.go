@@ -93,7 +93,7 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 
 	if err := validation.ValidateStruct(operation,
 		validation.Field(&operation.ResourceID, is.UUID),
-		validation.Field(&operation.OperationType, validation.Required, validation.In(OperationTypeCreate, OperationTypeUpdate, OperationTypeDelete)),
+		validation.Field(&operation.OperationType, validation.Required, validation.In(OperationTypeCreate, OperationTypeUpdate, OperationTypeDelete, OperationTypeUnpair)),
 		validation.Field(&operation.ResourceType, validation.Required, validation.In(resource.Application))); err != nil {
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInvalidDataError("Invalid operation properties: %s", err), http.StatusBadRequest)
 		return
@@ -118,11 +118,10 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 	}
 
 	appConditionStatus := determineApplicationFinalStatus(operation.OperationType, opError)
-
 	switch operation.OperationType {
 	case OperationTypeCreate:
 		fallthrough
-	case OperationTypeUpdate:
+	case OperationTypeUpdate, OperationTypeUnpair:
 		if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError, appConditionStatus); err != nil {
 			log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s: %v", operation.ResourceType, operation.ResourceID, err)
 			apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)

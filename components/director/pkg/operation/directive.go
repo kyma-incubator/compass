@@ -208,10 +208,10 @@ func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationTy
 	if !app.GetDeletedAt().IsZero() && isErrored(app) { // DELETING
 		return apperrors.NewConcurrentOperationInProgressError("delete operation is in progress")
 	}
-	// Note: This will be needed when there is async UPDATE supported
-	// if app.DeletedAt.IsZero() && app.UpdatedAt.After(app.CreatedAt) && !app.Ready && *app.Error == "" { // UPDATING
-	// 	return nil, apperrors.NewInvalidData	Error("another operation is in progress")
-	// }
+
+	if app.GetDeletedAt().IsZero() && app.GetUpdatedAt().After(app.GetCreatedAt()) && !app.GetReady() && isErrored(app) { // UPDATING or UNPAIRING
+		return apperrors.NewConcurrentOperationInProgressError("another operation is in progress")
+	}
 
 	return nil
 }

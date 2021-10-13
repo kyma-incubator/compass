@@ -55,7 +55,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210922140924-1dc663c3ed24
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20211011114927-c19eb4116016
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210922132333-3deb7cf90637
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
