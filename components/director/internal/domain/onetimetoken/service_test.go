@@ -725,10 +725,13 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				}
 				var expectedToken string
 				if reflect.TypeOf(test.expectedToken).Kind() == reflect.Func {
-					f := test.expectedToken.(func() string)
+					f, ok := test.expectedToken.(func() string)
+					assert.True(t, ok)
 					expectedToken = f()
 				} else {
+					var ok bool
 					expectedToken = test.expectedToken.(string)
+					assert.True(t, ok)
 				}
 				assert.Equal(t, expectedToken, token.Token)
 				assert.Equal(t, fakeToken.UsedAt, token.UsedAt)
