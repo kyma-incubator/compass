@@ -18,7 +18,12 @@ spec:
     handler: allow
   mutators:
   - handler: hydrator
-{{ toYaml $value.cfg| indent 4 }}
+    config:
+      api:
+        url: {{ $value.cfg.config.api.url }}
+        retry:
+          give_up_after: {{ $value.cfg.config.api.retry.give_up_after | default "6s" }}
+          max_delay: {{ $value.cfg.config.api.retry.max_delay | default "2000ms" }}
   - handler: hydrator
 {{ toYaml $.Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
