@@ -136,7 +136,7 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	}
 
 	if len(objCtxs) == 0 {
-		log.C(ctx).WithError(err).Errorf("An error occurred while determining the auth details for the request: %v", err)
+		log.C(ctx).Error("An error occurred while determining the auth details for the request: no object contexts were found")
 		return reqData.Body
 	}
 
