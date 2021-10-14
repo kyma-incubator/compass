@@ -12,17 +12,18 @@ import (
 )
 
 func Test_Clientset(t *testing.T) {
-
 	// given
-	ctx := context.Background()
-
 	var err error
 	token := "mock-token"
 
 	clientSet := NewConnectorClientSet(WithSkipTLSVerify(true))
 
+	// ctx := context.WithValue(context.Background(), authentication.ConsumerType, "Application")
+	// ctx = context.WithValue(ctx, authentication.TenantKey, "tenant")
+	ctx := context.TODO()
+
 	// when
-	certificate, err := clientSet.GenerateCertificateForToken(context.TODO(), token, externalAPIUrl)
+	certificate, err := clientSet.GenerateCertificateForToken(ctx, token, externalAPIUrl)
 
 	// then
 	require.NoError(t, err)
@@ -34,7 +35,7 @@ func Test_Clientset(t *testing.T) {
 	certSecuredClient := clientSet.CertificateSecuredClient(externalAPIUrl, certificate)
 
 	// when
-	configuration, err := certSecuredClient.Configuration(context.TODO())
+	configuration, err := certSecuredClient.Configuration(ctx)
 
 	// then
 	require.NoError(t, err)
@@ -44,7 +45,7 @@ func Test_Clientset(t *testing.T) {
 	_, csr, err := NewCSR(configuration.CertificateSigningRequestInfo.Subject, nil)
 	require.NoError(t, err)
 
-	certResponse, err := certSecuredClient.SignCSR(context.TODO(), encodeCSR(csr))
+	certResponse, err := certSecuredClient.SignCSR(ctx, encodeCSR(csr))
 
 	// then
 	require.NoError(t, err)
@@ -52,7 +53,7 @@ func Test_Clientset(t *testing.T) {
 	assert.NotEmpty(t, certResponse.ClientCertificate)
 
 	// when
-	revokeResponse, err := certSecuredClient.RevokeCertificate(context.TODO())
+	revokeResponse, err := certSecuredClient.RevokeCertificate(ctx)
 
 	// then
 	require.NoError(t, err)

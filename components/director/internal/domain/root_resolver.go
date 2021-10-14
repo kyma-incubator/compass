@@ -105,7 +105,8 @@ func NewRootResolver(
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
 
-	authConverter := auth.NewConverter()
+	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
+	authConverter := auth.NewConverterWithOTT(tokenConverter)
 	runtimeConverter := runtime.NewConverter()
 	runtimeContextConverter := runtimectx.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
@@ -117,7 +118,6 @@ func NewRootResolver(
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
-	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	intSysConverter := integrationsystem.NewConverter()
 	tenantConverter := tenant.NewConverter()
@@ -180,7 +180,7 @@ func NewRootResolver(
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
-		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, tokenConverter, tokenSvc),
+		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter),
 		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter),
 		api:                api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter),
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
@@ -609,13 +609,13 @@ func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID str
 }
 
 // RequestOneTimeTokenForApplication missing godoc
-func (r *mutationResolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeTokenForApplication, error) {
-	return r.token.RequestOneTimeTokenForApplication(ctx, id)
+func (r *mutationResolver) RequestOneTimeTokenForApplication(ctx context.Context, id string, systemAuthID *string) (*graphql.OneTimeTokenForApplication, error) {
+	return r.token.RequestOneTimeTokenForApplication(ctx, id, systemAuthID)
 }
 
 // RequestOneTimeTokenForRuntime missing godoc
-func (r *mutationResolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeTokenForRuntime, error) {
-	return r.token.RequestOneTimeTokenForRuntime(ctx, id)
+func (r *mutationResolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string, systemAuthID *string) (*graphql.OneTimeTokenForRuntime, error) {
+	return r.token.RequestOneTimeTokenForRuntime(ctx, id, systemAuthID)
 }
 
 // RequestClientCredentialsForRuntime missing godoc

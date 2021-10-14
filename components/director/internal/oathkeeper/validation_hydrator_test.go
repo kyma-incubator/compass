@@ -199,7 +199,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 			Value: &model.Auth{
 				OneTimeToken: &model.OneTimeToken{
 					CreatedAt: time.Now(),
-					Type:      tokens.CSRToken,
+					Type:      tokens.ApplicationToken,
 				},
 			},
 		}
@@ -229,7 +229,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 			Value: &model.Auth{
 				OneTimeToken: &model.OneTimeToken{
 					CreatedAt: time.Now(),
-					Type:      tokens.CSRToken,
+					Type:      tokens.RuntimeToken,
 				},
 			},
 		}
