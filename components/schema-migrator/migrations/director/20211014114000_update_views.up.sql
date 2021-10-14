@@ -52,7 +52,7 @@ SELECT l1.value ->> 0 AS provider_tenant, l2.value AS consumer_tenants
 FROM (SELECT *
     FROM labels
     WHERE key::text = 'global_subaccount_id'
-    AND value ->> 0 IS NOT NULL) l1 -- Get the subaccount for each runtime
+    AND (value ->> 0) IS NOT NULL) l1 -- Get the subaccount for each runtime
     JOIN (SELECT * FROM labels WHERE key::text = 'consumer_subaccount_ids') l2 -- Get all the consumer subaccounts for each runtime
 ON l1.runtime_id = l2.runtime_id AND l1.runtime_id IS NOT NULL;
 END
