@@ -428,6 +428,7 @@ global:
         tokenPath: "/secured/oauth/token"
         oauthSecret:
           name: cert-svc-oauth-secret
+          managed: true
           urlKey: url
           clientIdKey: client-id
           clientSecretKey: client-secret
