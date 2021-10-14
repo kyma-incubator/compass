@@ -46,3 +46,6 @@ istio:
       compassDirector: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-director
       compassConnectorTests: cluster.local/ns/{{ .Values.global.tests.namespace }}/sa/compass-connector-tests
 
+http:
+  client:
+    skipSSLValidation: false

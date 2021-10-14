@@ -46,6 +46,15 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
 	}
 
+	if authDetails.AuthFlow.IsCertFlow() && sysAuth.Value != nil && sysAuth.Value.CertCommonName != authDetails.AuthID {
+		sysAuth.Value.OneTimeToken = nil
+		sysAuth.Value.CertCommonName = authDetails.AuthID
+
+		if err := m.systemAuthSvc.Update(ctx, sysAuth); err != nil {
+			return ObjectContext{}, errors.Wrap(err, "while updating system auth")
+		}
+	}
+
 	refObjType, err := sysAuth.GetReferenceObjectType()
 	if err != nil {
 		return ObjectContext{}, errors.Wrapf(err, "while getting reference object type for system auth id %s", sysAuth.ID)
