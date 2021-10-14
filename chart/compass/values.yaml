@@ -398,15 +398,15 @@ global:
     securedApplicationTypes: "sample-app-type" # comma-separated values are used for specifying multiple application types
     accessStrategies:
       cmpMtls:
-        policy: "compass-local-clients"
-        csrEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
         certSvcApiPath: "/cert"
         tokenPath: "/secured/oauth/token"
-        oauthSecret:
-          name: cert-svc-oauth-secret
-          urlKey: url
+        secret:
+          name: cert-svc-secret
+          oauthUrlKey: url
           clientIdKey: client-id
           clientSecretKey: client-secret
+          csrEndpointKey: csr-endpoint
+          policyKey: policy
 
   systemFetcher:
     enabled: false
