@@ -7,6 +7,7 @@ type Auth struct {
 	AdditionalQueryParams map[string][]string
 	RequestAuth           *CredentialRequestAuth
 	OneTimeToken          *OneTimeToken
+	CertCommonName        string
 }
 
 // CredentialRequestAuth missing godoc

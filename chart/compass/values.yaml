@@ -66,7 +66,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2057"
+      version: "PR-2060"
     connectivity_adapter:
       dir:
       version: "PR-2027"
@@ -104,7 +104,7 @@ global:
       version: "PR-45"
     e2e_tests:
       dir:
-      version: "PR-2066"
+      version: "PR-2060"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -125,8 +125,6 @@ global:
     graphql:
       external:
         port: 3000
-      internal:
-        port: 3001
     validator:
       port: 8080
     metrics:
@@ -306,7 +304,7 @@ global:
     timeout_ms: 120000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read","tenant":"{\"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\",\"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read","tenant":"{\"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\",\"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
