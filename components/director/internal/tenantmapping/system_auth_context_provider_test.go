@@ -8,18 +8,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
-
 	"github.com/google/uuid"
 	systemauthmock "github.com/kyma-incubator/compass/components/director/internal/domain/systemauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	tenantmappingmock "github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSystemAuthContextProvider(t *testing.T) {
@@ -416,6 +415,27 @@ func TestSystemAuthContextProviderMatch(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, oathkeeper.OAuth2Flow, authDetails.AuthFlow)
 		require.Equal(t, clientID, authDetails.AuthID)
+	})
+
+	t.Run("returns nil when authenticator_coordinates is specified in the Extra map of request body", func(t *testing.T) {
+		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ClientIDKey:       clientID,
+					oathkeeper.ScopesKey:         "application:read",
+					oathkeeper.UsernameKey:       "test",
+					authenticator.CoordinatesKey: "test",
+				},
+			},
+		}
+
+		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
+
+		match, _, err := provider.Match(context.TODO(), reqData)
+
+		require.False(t, match)
+		require.NoError(t, err)
 	})
 
 	t.Run("returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map of request body", func(t *testing.T) {
