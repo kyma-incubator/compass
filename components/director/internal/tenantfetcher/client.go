@@ -27,6 +27,7 @@ type OAuth2Config struct {
 	ClientID           string `envconfig:"APP_CLIENT_ID"`
 	ClientSecret       string `envconfig:"APP_CLIENT_SECRET"`
 	OAuthTokenEndpoint string `envconfig:"APP_OAUTH_TOKEN_ENDPOINT"`
+	TokenPath          string `envconfig:"APP_OAUTH_TOKEN_PATH"`
 }
 
 // APIConfig missing godoc
@@ -66,7 +67,7 @@ func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig, timeout time.Dura
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
 		ClientSecret: oAuth2Config.ClientSecret,
-		TokenURL:     oAuth2Config.OAuthTokenEndpoint,
+		TokenURL:     oAuth2Config.OAuthTokenEndpoint + oAuth2Config.TokenPath,
 	}
 
 	httpClient := cfg.Client(context.Background())

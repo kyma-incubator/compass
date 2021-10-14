@@ -465,6 +465,12 @@ global:
         client: ""
         secret: ""
         tokenURL: ""
+        tokenPath: ""
+      secret:
+        name: "compass-tenant-fetcher-secret-job1"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
       endpoints:
         tenantCreated: "127.0.0.1/events?type=created"
         tenantDeleted: "127.0.0.1/events?type=deleted"
