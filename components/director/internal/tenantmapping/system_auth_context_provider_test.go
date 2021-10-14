@@ -371,6 +371,27 @@ func TestSystemAuthContextProviderMatch(t *testing.T) {
 		require.Equal(t, clientID, authDetails.AuthID)
 	})
 
+	t.Run("returns nil when a client_id is specified in the Extra map of request body, but the extra fields are more than expected", func(t *testing.T) {
+		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ClientIDKey: clientID,
+					oathkeeper.ScopesKey: "application:read",
+					oathkeeper.UsernameKey: "test",
+					"extra-field": "extra",
+				},
+			},
+		}
+
+		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
+
+		match, _, err := provider.Match(context.TODO(), reqData)
+
+		require.False(t, match)
+		require.NoError(t, err)
+	})
+
 	t.Run("returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map of request body", func(t *testing.T) {
 		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)

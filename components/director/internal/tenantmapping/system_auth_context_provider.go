@@ -19,6 +19,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// hydraTokenMaxExtraDataLength is the maximum properties count that we can get from a Hydra token in the OAuth flow.
+const hydraTokenMaxExtraDataLength = 3
+
 // NewSystemAuthContextProvider missing godoc
 func NewSystemAuthContextProvider(systemAuthSvc systemauth.SystemAuthService, scopesGetter ScopesGetter, tenantRepo TenantRepository) *systemAuthContextProvider {
 	return &systemAuthContextProvider{
@@ -87,6 +90,7 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 }
 
 func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	// Certificate flow
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
 
@@ -94,11 +98,13 @@ func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.Req
 		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
 	}
 
+	// One-Time Token flow
 	if idVal := data.Body.Header.Get(oathkeeper.ClientIDTokenKey); idVal != "" {
 		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.OneTimeTokenFlow}, nil
 	}
 
-	if idVal, ok := data.Body.Extra[oathkeeper.ClientIDKey]; ok {
+	// Hydra Client Credentials OAuth flow
+	if idVal, ok := data.Body.Extra[oathkeeper.ClientIDKey]; ok && len(data.Body.Extra) <= hydraTokenMaxExtraDataLength {
 		authID, err := str.Cast(idVal)
 		if err != nil {
 			return false, nil, errors.Wrapf(err, "while parsing the value for %s", oathkeeper.ClientIDKey)
