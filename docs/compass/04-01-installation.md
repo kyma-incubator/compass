@@ -174,7 +174,7 @@ You can also specify if you want the Kyma installation to contain only `minimal`
 ./installation/cmd/run.sh --kyma-installation full
 ```
 
-Additional option is to specify if you want to populate the DB with data. That can be happen with `--dump-db` flag, using this option a DB dump will be downloaded from our dev environment. Otherwise, the database will be empty. `Note:` Keep in mind if you specified this flag then new `schema-migrator` image will be build from the local files.
+Optionally, you can use the `--dump-db` flag to populate the DB with sample data. As a result, a DB dump is downloaded from the Compass development environment and is imported into the DB during the installation of Compass. Note that using this flag also results in building a new `schema-migrator` image from the local files.
 
 ```bash
 ./installation/cmd/run.sh --dump-db
