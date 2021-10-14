@@ -160,7 +160,7 @@ NODE=$(kubectl get nodes | tail -n 1 | cut -d ' ' -f 1)
 kubectl label node "$NODE" benchmark=true || true
 
 if [[ ${DUMP_DB} ]]; then
-    echo "DUMP_DB option is selected. Building an image for the schema-migrator using local files..."
+    echo -e "${YELLOW}DUMP_DB option is selected. Building an image for the schema-migrator using local files...${NC}"
     export DOCKER_TAG=$DUMP_IMAGE_TAG
     make -C ${ROOT_PATH}/components/schema-migrator build-to-minikube
 fi

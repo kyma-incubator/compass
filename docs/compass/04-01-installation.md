@@ -174,6 +174,12 @@ You can also specify if you want the Kyma installation to contain only `minimal`
 ./installation/cmd/run.sh --kyma-installation full
 ```
 
+Additional option is to specify if you want to populate the DB with data. That can be happen with `--dump-db` flag, using this option a DB dump will be downloaded from our dev environment. Otherwise, the database will be empty. `Note:` Keep in mind if you specified this flag then new `schema-migrator` image will be build from the local files.
+
+```bash
+./installation/cmd/run.sh --dump-db
+```
+
 ## Single cluster with Compass and Runtime Agent
 
 You can install Compass on a single cluster with all Kyma components, including the Runtime Agent. In this mode, the Runtime Agent is already connected to Compass. This mode is useful for all kind of testing and development purposes.
