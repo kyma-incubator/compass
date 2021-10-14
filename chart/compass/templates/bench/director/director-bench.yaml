@@ -82,5 +82,7 @@ spec:
                 secretKeyRef:
                   name: admin-user
                   key: password
+            - name: DOMAIN
+              value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_DEFAULT_SCENARIO
               value: "DEFAULT"
