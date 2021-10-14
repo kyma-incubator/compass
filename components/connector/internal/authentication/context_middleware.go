@@ -10,11 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	tenantTokenKey       = "tenant"
-	consumerTypeTokenKey = "consumerType"
-)
-
 type authContextMiddleware struct {
 }
 
