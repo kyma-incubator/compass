@@ -1,19 +1,19 @@
 package tokens
 
-func NewCSRTokenResponse(token string) CSRTokenResponse {
-	return CSRTokenResponse{
+func NewTokenResponse(token string) TokenResponse {
+	return TokenResponse{
 		tokenResponse{
 			TokenValue: token,
 		},
 	}
 }
 
-func (r CSRTokenResponse) GetTokenValue() string {
+func (r TokenResponse) GetTokenValue() string {
 	return r.Token.TokenValue
 }
 
-type CSRTokenResponse struct {
-	Token tokenResponse `json:"generateCSRToken"`
+type TokenResponse struct {
+	Token tokenResponse `json:"result"`
 }
 
 type tokenResponse struct {

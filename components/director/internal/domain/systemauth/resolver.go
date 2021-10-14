@@ -15,6 +15,7 @@ type SystemAuthService interface {
 	GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error)
 	GetGlobal(ctx context.Context, id string) (*model.SystemAuth, error)
 	DeleteByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) error
+	Update(ctx context.Context, item *model.SystemAuth) error
 }
 
 // OAuth20Service missing godoc
