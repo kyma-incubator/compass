@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -18,9 +19,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 )
-
-// hydraTokenMaxExtraDataLength is the maximum properties count that we can get from a Hydra token in the OAuth flow.
-const hydraTokenMaxExtraDataLength = 3
 
 // NewSystemAuthContextProvider missing godoc
 func NewSystemAuthContextProvider(systemAuthSvc systemauth.SystemAuthService, scopesGetter ScopesGetter, tenantRepo TenantRepository) *systemAuthContextProvider {
@@ -90,6 +88,11 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 }
 
 func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	// Custom authenticator flow
+	if _, ok := data.Body.Extra[authenticator.CoordinatesKey]; ok {
+		return false, nil, nil
+	}
+
 	// Certificate flow
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
@@ -104,7 +107,7 @@ func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.Req
 	}
 
 	// Hydra Client Credentials OAuth flow
-	if idVal, ok := data.Body.Extra[oathkeeper.ClientIDKey]; ok && len(data.Body.Extra) <= hydraTokenMaxExtraDataLength {
+	if idVal, ok := data.Body.Extra[oathkeeper.ClientIDKey]; ok {
 		authID, err := str.Cast(idVal)
 		if err != nil {
 			return false, nil, errors.Wrapf(err, "while parsing the value for %s", oathkeeper.ClientIDKey)
