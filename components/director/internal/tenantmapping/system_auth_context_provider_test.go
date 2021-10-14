@@ -377,9 +377,9 @@ func TestSystemAuthContextProviderMatch(t *testing.T) {
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					oathkeeper.ClientIDKey: clientID,
-					oathkeeper.ScopesKey: "application:read",
+					oathkeeper.ScopesKey:   "application:read",
 					oathkeeper.UsernameKey: "test",
-					"extra-field": "extra",
+					"extra-field":          "extra",
 				},
 			},
 		}
