@@ -47,7 +47,9 @@ data:
   global.systemFetcher.systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] }, {"Name": "temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
   global.systemFetcher.oauth.client: "admin"
   global.systemFetcher.oauth.secret: "admin"
-  global.systemFetcher.oauth.tokenURLPattern: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/oauth/token"
+  global.systemFetcher.oauth.tokenBaseUrl: "compass-external-services-mock.compass-system.svc.cluster.local:8080"
+  global.systemFetcher.oauth.tokenPath: "/systemfetcher/oauth/token"
+  global.systemFetcher.oauth.tokenEndpointProtocol: "http"
   global.systemFetcher.oauth.scopesClaim: "scopes"
   global.systemFetcher.oauth.tenantHeaderName: "x-zid"
   global.authenticators.tenant-fetcher.enabled: "true"

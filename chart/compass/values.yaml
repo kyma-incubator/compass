@@ -361,7 +361,6 @@ global:
       subdomainProperty: "subdomain"
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderId"
-
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
@@ -441,9 +440,16 @@ global:
     oauth:
       client: ""
       secret: ""
-      tokenURLPattern: ""
+      tokenEndpointProtocol: ""
+      tokenBaseUrl: ""
+      tokenPath: ""
       scopesClaim: ""
       tenantHeaderName: ""
+    secret:
+      name: "compass-system-fetcher-secret"
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      oauthUrlKey: url
     paging:
       pageSize: 200
       sizeParam: "$top"
