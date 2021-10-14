@@ -88,7 +88,9 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 }
 
 func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
-	// Custom authenticator flow
+	// Custom authenticator flow:
+	// If that key is set, then the request has already passed by the authenticator mapping handler,
+	// hence the context provider will be the one of that particular authenticator.
 	if _, ok := data.Body.Extra[authenticator.CoordinatesKey]; ok {
 		return false, nil, nil
 	}
