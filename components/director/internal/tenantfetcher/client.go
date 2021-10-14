@@ -27,7 +27,7 @@ type OAuth2Config struct {
 	ClientID           string `envconfig:"APP_CLIENT_ID"`
 	ClientSecret       string `envconfig:"APP_CLIENT_SECRET"`
 	OAuthTokenEndpoint string `envconfig:"APP_OAUTH_TOKEN_ENDPOINT"`
-	TokenPath          string `envconfig:"APP_OAUTH_TOKEN_PATH"`
+	TokenPath          string `envconfig:"optional,APP_OAUTH_TOKEN_PATH"`
 }
 
 // APIConfig missing godoc
