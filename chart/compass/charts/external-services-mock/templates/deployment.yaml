@@ -32,13 +32,13 @@ spec:
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
-                    name: {{ .Values.global.auditlog.secretName }}
-                    key: auditlog-client-id
+                    name: {{ .Values.global.auditlog.secret.name }}
+                    key: {{ .Values.global.auditlog.secret.clientIdKey }}
               - name: APP_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
-                    name: {{ .Values.global.auditlog.secretName }}
-                    key: auditlog-client-secret
+                    name: {{ .Values.global.auditlog.secret.name }}
+                    key: {{ .Values.global.auditlog.secret.clientSecretKey }}
               {{- end }}
               - name: BASIC_USERNAME
                 valueFrom:

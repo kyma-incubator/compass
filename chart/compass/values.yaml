@@ -145,9 +145,12 @@ global:
 
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
-    secretName: "compass-gateway-auditlog-secret"
-    script:
-      configMapName: "auditlog-script"
+    tokenPath: "/oauth/token"
+    secret:
+      name: "compass-gateway-auditlog-secret"
+      urlKey: url
+      clientIdKey: client-id
+      clientSecretKey: client-secret
 
   log:
     format: "kibana"
