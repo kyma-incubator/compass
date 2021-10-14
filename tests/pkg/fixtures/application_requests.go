@@ -190,6 +190,24 @@ func FixAsyncUnregisterApplicationRequest(id string) *gcli.Request {
 	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
+func FixUnpairApplicationRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		unpairApplication(id: "%s") {
+			%s
+		}	
+	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
+func FixAsyncUnpairApplicationRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		unpairApplication(id: "%s" mode: ASYNC) {
+			%s
+		}
+	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
 func FixRequestClientCredentialsForApplication(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
