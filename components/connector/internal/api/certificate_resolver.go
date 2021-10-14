@@ -60,8 +60,13 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 	}
 	log.C(ctx).Infof("Fetching configuration for client with id %s", clientId)
 
+	consumerType, err := authentication.GetStringFromContext(ctx, authentication.ConsumerType)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to authenticate request, consumer type not found")
+	}
+
 	log.C(ctx).Infof("Getting one-time token as part of fetching configuration process for client with id %s", clientId)
-	token, err := r.tokenService.GetToken(ctx, clientId)
+	token, err := r.tokenService.GetToken(ctx, clientId, consumerType)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error occurred while getting one-time token for client with id %s during fetching configuration process: %v", clientId, err)
 		return nil, errors.Wrap(err, "Failed to get one-time token during fetching configuration process")

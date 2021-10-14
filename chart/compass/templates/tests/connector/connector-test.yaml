@@ -30,6 +30,8 @@ spec:
             value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql'
           - name: APP_DIRECTOR_URL
             value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
+          - name: APP_DIRECTOR_MTLS_URL
+            value: 'https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
           - name: APP_CONNECTOR_HYDRATOR_URL
             value: '{{ .Values.global.tests.connectorFQDN }}:{{ .Values.global.connector.validator.port }}'
           - name: APP_DIRECTOR_HYDRATOR_URL
@@ -42,6 +44,8 @@ spec:
             value: {{ .Values.global.connector.revocation.configmap.name | quote }}
           - name: APP_TENANT
             value: "{{.Values.global.defaultTenant}}"
+          - name: APP_APPS_FOR_RUNTIME_TENANT
+            value: "{{ (index .Values.global.tenants 13).id }}"
           - name: DOMAIN
             value: "{{ .Values.global.ingress.domainName }}"
           - name: USER_EMAIL
