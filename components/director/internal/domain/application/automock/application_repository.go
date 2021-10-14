@@ -256,6 +256,20 @@ func (_m *ApplicationRepository) TechnicalUpdate(ctx context.Context, item *mode
 	return r0
 }
 
+// Unpair provides a mock function with given fields: ctx, app
+func (_m *ApplicationRepository) Unpair(ctx context.Context, app *model.Application) error {
+	ret := _m.Called(ctx, app)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Application) error); ok {
+		r0 = rf(ctx, app)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Update provides a mock function with given fields: ctx, item
 func (_m *ApplicationRepository) Update(ctx context.Context, item *model.Application) error {
 	ret := _m.Called(ctx, item)

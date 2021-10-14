@@ -401,11 +401,6 @@ func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.A
 		return nil, err
 	}
 
-	err = r.appSvc.Unpair(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
 	auths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, app.ID)
 	if err != nil {
 		return nil, err
@@ -417,6 +412,11 @@ func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.A
 	}
 
 	err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.appSvc.Unpair(ctx, id)
 	if err != nil {
 		return nil, err
 	}

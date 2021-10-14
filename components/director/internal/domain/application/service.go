@@ -49,7 +49,7 @@ type ApplicationRepository interface {
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
-	Unpair(ctx context.Context, tenant, id string) error
+	Unpair(ctx context.Context, app *model.Application) error
 }
 
 // LabelRepository missing godoc
@@ -391,7 +391,12 @@ func (s *service) Unpair(ctx context.Context, id string) error {
 		return err
 	}
 
-	err = s.appRepo.Unpair(ctx, appTenant, id)
+	app, err := s.appRepo.GetByID(ctx, appTenant, id)
+	if err != nil {
+		return err
+	}
+
+	err = s.appRepo.Unpair(ctx, app)
 	if err != nil {
 		return err
 	}

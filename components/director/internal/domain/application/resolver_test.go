@@ -486,6 +486,230 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 	}
 }
 
+func TestResolver_UnpairApplication(t *testing.T) {
+	// given
+	appID := uuid.New()
+	modelApplication := fixModelApplication(appID.String(), "tenant-foo", "Foo", "Bar")
+	gqlApplication := fixGQLApplication(appID.String(), "Foo", "Bar")
+	testErr := errors.New("Test error")
+	testAuths := fixOAuths()
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name                string
+		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn           func() *automock.ApplicationService
+		ConverterFn         func() *automock.ApplicationConverter
+		EventingSvcFn       func() *automock.EventingService
+		SysAuthServiceFn    func() *automock.SystemAuthService
+		OAuth20ServiceFn    func() *automock.OAuth20Service
+		InputID             string
+		ExpectedApplication *graphql.Application
+		ExpectedErr         error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
+				svc.On("Unpair", context.TODO(), appID.String()).Return(nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.On("ToGraphQL", modelApplication).Return(gqlApplication).Once()
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil).Once()
+				svc.On("DeleteMultipleByIDForObject", context.TODO(), testAuths).Return(nil).Once()
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", context.TODO(), testAuths).Return(nil).Once()
+				return svc
+			},
+			InputID:             appID.String(),
+			ExpectedApplication: gqlApplication,
+			ExpectedErr:         nil,
+		},
+		{
+			Name:            "Returns error when application unpairing failed",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
+				svc.On("Unpair", context.TODO(), appID.String()).Return(testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
+				svc.On("DeleteMultipleByIDForObject", context.TODO(), testAuths).Return(nil).Once()
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", context.TODO(), testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:             appID.String(),
+			ExpectedApplication: nil,
+			ExpectedErr:         testErr,
+		},
+		{
+			Name:            "Returns error when application retrieval failed",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", context.TODO(), appID.String()).Return(nil, testErr).Once()
+				svc.AssertNotCalled(t, "Unpair")
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.AssertNotCalled(t, "DeleteMultipleByIDForObject")
+				svc.AssertNotCalled(t, "ListForObject")
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.AssertNotCalled(t, "DeleteMultipleClientCredentials")
+				return svc
+			},
+			InputID:             appID.String(),
+			ExpectedApplication: nil,
+			ExpectedErr:         testErr,
+		},
+		{
+			Name:            "Return error when listing all auths failed",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
+				svc.AssertNotCalled(t, "Unpair")
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "ToGraphQL")
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.AssertNotCalled(t, "DeleteMultipleClientCredentials")
+				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(nil, testErr)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.AssertNotCalled(t, "DeleteMultipleClientCredentials")
+				return svc
+			},
+			InputID:             appID.String(),
+			ExpectedApplication: nil,
+			ExpectedErr:         testErr,
+		},
+		{
+			Name:            "Return error when removing oauth from hydra",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
+				svc.AssertNotCalled(t, "Unpair")
+
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "ToGraphQL")
+
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("DeleteMultipleByIDForObject", context.TODO(), testAuths).Return(nil).Once()
+				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", context.TODO(), testAuths).Return(testErr)
+				return svc
+			},
+			InputID:             appID.String(),
+			ExpectedApplication: nil,
+			ExpectedErr:         testErr,
+		},
+		{
+			Name:            "Return error when removing system auths",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
+				svc.AssertNotCalled(t, "Unpair")
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "ToGraphQL")
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("DeleteMultipleByIDForObject", context.TODO(), testAuths).Return(testErr).Once()
+				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.AssertNotCalled(t, "DeleteMultipleClientCredentials")
+				return svc
+			},
+			InputID:             appID.String(),
+			ExpectedApplication: nil,
+			ExpectedErr:         testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+			persistTx, transact := testCase.TransactionerFn()
+			sysAuthSvc := testCase.SysAuthServiceFn()
+			oAuth20Svc := testCase.OAuth20ServiceFn()
+			resolver := application.NewResolver(transact, svc, nil, oAuth20Svc, sysAuthSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver.SetConverter(converter)
+
+			// when
+			result, err := resolver.UnpairApplication(context.TODO(), testCase.InputID)
+
+			// then
+			assert.Equal(t, testCase.ExpectedApplication, result)
+			if testCase.ExpectedErr != nil {
+				assert.EqualError(t, testCase.ExpectedErr, err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, svc, converter, persistTx, transact, sysAuthSvc, oAuth20Svc)
+		})
+	}
+}
+
 func TestResolver_Application(t *testing.T) {
 	// given
 	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Bar")

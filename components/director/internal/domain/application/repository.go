@@ -113,16 +113,10 @@ func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	return r.globalDeleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// Unpair Updates application's UpdatedAt property when the operation type is graphql.OperationModeAsync
-func (r *pgRepository) Unpair(ctx context.Context, tenant, id string) error {
+// Unpair Updates application's UpdatedAt property by doing an "empty" application update when the operation type is graphql.OperationModeAsync
+func (r *pgRepository) Unpair(ctx context.Context, app *model.Application) error {
 	opMode := operation.ModeFromCtx(ctx)
 	if opMode == graphql.OperationModeAsync {
-		app, err := r.GetByID(ctx, tenant, id)
-		if err != nil {
-			return err
-		}
-
-		app.SetUpdatedAt(time.Now())
 		return r.Update(ctx, app)
 	}
 	return nil
