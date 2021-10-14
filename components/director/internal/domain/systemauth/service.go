@@ -204,16 +204,3 @@ func (s *service) DeleteMultipleByIDForObject(ctx context.Context, systemAuths [
 
 	return nil
 }
-
-// IsSystemAuthOneTimeTokenType missing godoc
-func (s *service) IsSystemAuthOneTimeTokenType(systemAuth *model.SystemAuth) bool {
-	if systemAuth == nil || systemAuth.Value == nil {
-		return false
-	}
-
-	if systemAuth.Value.Credential.Basic != nil || systemAuth.Value.Credential.Oauth != nil || systemAuth.Value.RequestAuth != nil {
-		return false
-	}
-
-	return true
-}

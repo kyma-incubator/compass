@@ -13,5 +13,6 @@ type OneTimeToken struct {
 	Type         tokens.TokenType
 	CreatedAt    time.Time
 	Used         bool
+	ExpiresAt    time.Time
 	UsedAt       time.Time
 }

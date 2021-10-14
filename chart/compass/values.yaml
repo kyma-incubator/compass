@@ -66,7 +66,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2027"
+      version: "PR-2060"
     connectivity_adapter:
       dir:
       version: "PR-2027"
@@ -78,13 +78,13 @@ global:
       version: "PR-2063"
     gateway:
       dir:
-      version: "PR-2034"
+      version: "PR-2050"
     operations_controller:
       dir:
       version: "PR-2063"
     ord_service:
       dir:
-      version: "PR-41"
+      version: "PR-42"
     schema_migrator:
       dir:
       version: "PR-2063"
@@ -98,13 +98,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2051"
+      version: "PR-2057"
     console:
       dir:
       version: "PR-45"
     e2e_tests:
       dir:
-      version: "PR-2051"
+      version: "PR-2060"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -120,12 +120,11 @@ global:
   agentPreconfiguration: false
 
   director:
+    host: compass-director.compass-system.svc.cluster.local
     prefix: /director
     graphql:
       external:
         port: 3000
-      internal:
-        port: 3001
     validator:
       port: 8080
     metrics:
@@ -136,6 +135,8 @@ global:
       port: 3002
       path: "/operation"
       lastOperationPath: "/last_operation"
+    info:
+      path: "/v1/info"
 
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
@@ -302,8 +303,8 @@ global:
     port: 4455
     timeout_ms: 120000
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}", "tenant": "{{ print .Extra.tenant }}", "externalTenant": "{{ print .Extra.externalTenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read", "tenant": "{{ print (index .Header.Tenant 0) }}", "consumerType": "Internal Component", "flow": "Internal"}'
+      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read","tenant":"{\"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\",\"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -312,13 +313,40 @@ global:
             retry:
               give_up_after: 6s
               max_delay: 2000ms
-      authenticationMappingService:
-        config:
-          api:
-            url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping
-            retry:
-              give_up_after: 6s
-              max_delay: 2000ms
+      authenticationMappingServices:
+        tenantFetcher:
+          cfg:
+            config:
+              api:
+                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/tenant-fetcher
+                retry:
+                  give_up_after: 6s
+                  max_delay: 2000ms
+          authenticator:
+            name: "tenant-fetcher" # we need this property because the ory-rule name should be FQDN compliant, and we cannot rename the parent property tenantFetcher to tenant-fetcher because Helm does not support it https://helm.sh/docs/chart_best_practices/values/
+            enabled: false
+            createRule: true
+            gatewayHost: "compass-gateway"
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
+            attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+            path: /tenants/<.*>
+            upstreamComponent: "compass-tenant-fetcher"
+        subscriber:
+          cfg:
+            config:
+              api:
+                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/subscriber
+                retry:
+                  give_up_after: 6s
+                  max_delay: 2000ms
+          authenticator:
+            name: "subscriber"
+            enabled: false
+            createRule: false
+            gatewayHost: "compass-gateway-sap-mtls"
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
+            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+            path: /<.*>
       tenantMappingService:
         config:
           api:
@@ -363,7 +391,7 @@ global:
       tenantPathParam: "tenantId"
       regionPathParam: "region"
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountIdsLabelKey: "consumerSubaccountIds"
+      consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
@@ -373,14 +401,35 @@ global:
     port: 3000
     defaultResponseType: "xml"
 
+  mtlsClient:
+    issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
+    subjectPattern: "C=DE, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=123e4567-e89b-12d3-a456-426614174001, L=%s, CN=%s"
+    commonName: "compass"
+    locality: "local"
+
   ordAggregator:
     name: ord-aggregator
     enabled: true
     schedule: "*/1 * * * *"
+    http:
+      client:
+        skipSSLValidation: false
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
     securedApplicationTypes: "sample-app-type" # comma-separated values are used for specifying multiple application types
+    accessStrategies:
+      cmpMtls:
+        policy: "compass-local-clients"
+        csrEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+        certSvcApiPath: "/cert"
+        tokenPath: "/secured/oauth/token"
+        oauthSecret:
+          name: cert-svc-oauth-secret
+          managed: true
+          urlKey: url
+          clientIdKey: client-id
+          clientSecretKey: client-secret
 
   systemFetcher:
     enabled: false
@@ -469,18 +518,13 @@ global:
     enabled: true
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
 
-  authenticators:
-    tenant-fetcher:
-      enabled: false
-      gatewayHost: "compass-gateway"
-      trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-      attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
-      path: /tenants/<.*>
-      upstreamComponent: "compass-tenant-fetcher"
-
   externalServicesMock:
     enabled: false
     auditlog: false
+    certSecuredPort: 8081
+    certSecuredHost: compass-external-services-mock-sap-mtls
+    host: compass-external-services-mock.compass-system.svc.cluster.local
+    oauthSecretName: compass-external-services-mock-oauth-credentials
 
   tests:
     ordService:

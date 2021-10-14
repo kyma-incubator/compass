@@ -1,6 +1,8 @@
 package onetimetoken
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -20,6 +22,8 @@ func (c converter) ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTime
 		TokenWithURL: graphql.TokenWithURL{
 			Token:        model.Token,
 			ConnectorURL: model.ConnectorURL,
+			Used:         model.Used,
+			ExpiresAt:    timeToTimestampPtr(model.ExpiresAt),
 		},
 	}
 }
@@ -35,7 +39,14 @@ func (c converter) ToGraphQLForApplication(model model.OneTimeToken) (graphql.On
 		TokenWithURL: graphql.TokenWithURL{
 			Token:        model.Token,
 			ConnectorURL: model.ConnectorURL,
+			Used:         model.Used,
+			ExpiresAt:    timeToTimestampPtr(model.ExpiresAt),
 		},
 		LegacyConnectorURL: urlWithToken,
 	}, nil
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }

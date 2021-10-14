@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
@@ -16,6 +18,7 @@ const WellKnownEndpoint = "/.well-known/open-resource-discovery"
 // WellKnownConfig represents the whole config object
 type WellKnownConfig struct {
 	Schema                  string                  `json:"$schema"`
+	BaseURL                 string                  `json:"baseUrl"`
 	OpenResourceDiscoveryV1 OpenResourceDiscoveryV1 `json:"openResourceDiscoveryV1"`
 }
 
@@ -30,8 +33,8 @@ type DocumentDetails struct {
 	// TODO: Currently we cannot differentiate between system instance types reliably, therefore we cannot make use of the systemInstanceAware optimization (store it once per system type and reuse it for each system instance of that type).
 	//  Once we have system landscape discovery and stable system types we can make use of this optimization. Until then we store all the information for a system instance as it is provided in the documents.
 	//  Therefore we treat every resource as SystemInstanceAware = true
-	SystemInstanceAware bool             `json:"systemInstanceAware"`
-	AccessStrategies    AccessStrategies `json:"accessStrategies"`
+	SystemInstanceAware bool                            `json:"systemInstanceAware"`
+	AccessStrategies    accessstrategy.AccessStrategies `json:"accessStrategies"`
 }
 
 // Document represents an ORD Document

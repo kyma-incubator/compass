@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -56,6 +58,18 @@ func RegisterApplicationFromInput(t require.TestingT, ctx context.Context, gqlCl
 
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createRequest, &app)
 	return app, err
+}
+
+func AppsForRuntime(ctx context.Context, gqlClient *gcli.Client, tenantID, runtimeID string) (graphql.ApplicationPageExt, error) {
+	req := FixApplicationForRuntimeRequest(runtimeID)
+	var applicationPage graphql.ApplicationPageExt
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &applicationPage)
+	if err != nil {
+		return graphql.ApplicationPageExt{}, errors.Wrapf(err, "Failed to get Applications for Runtime with id %q", runtimeID)
+	}
+
+	return applicationPage, nil
 }
 
 func RequestClientCredentialsForApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.AppSystemAuth {

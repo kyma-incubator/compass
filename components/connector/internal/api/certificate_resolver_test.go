@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
+	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	authenticationMocks "github.com/kyma-incubator/compass/components/connector/internal/authentication/mocks"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	certificatesMocks "github.com/kyma-incubator/compass/components/connector/internal/certificates/mocks"
@@ -218,16 +219,19 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 
 	t.Run("should return configuration", func(t *testing.T) {
 		// given
+		ctx := context.WithValue(context.Background(), authentication.ConsumerType, "Application")
+		ctx = context.WithValue(ctx, authentication.TenantKey, "tenant")
+
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("Authenticate", context.Background()).Return(clientId, nil)
+		authenticator.On("Authenticate", ctx).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
-		tokenService.On("GetToken", mock.Anything, subject.CommonName).Return(token, nil)
+		tokenService.On("GetToken", mock.Anything, subject.CommonName, "Application").Return(token, nil)
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
-		configurationResult, err := certificateResolver.Configuration(context.Background())
+		configurationResult, err := certificateResolver.Configuration(ctx)
 
 		// then
 		require.NoError(t, err)
@@ -241,16 +245,19 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 
 	t.Run("should return error when failed to generate token", func(t *testing.T) {
 		// given
+		ctx := context.WithValue(context.Background(), authentication.ConsumerType, "Application")
+		ctx = context.WithValue(ctx, authentication.TenantKey, "tenant")
+
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("Authenticate", context.Background()).Return(clientId, nil)
+		authenticator.On("Authenticate", ctx).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
-		tokenService.On("GetToken", mock.Anything, subject.CommonName).Return("", apperrors.Internal("error"))
+		tokenService.On("GetToken", mock.Anything, subject.CommonName, "Application").Return("", apperrors.Internal("error"))
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
-		configurationResult, err := certificateResolver.Configuration(context.Background())
+		configurationResult, err := certificateResolver.Configuration(ctx)
 
 		// then
 		require.Error(t, err)
@@ -260,15 +267,18 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 
 	t.Run("should return error when failed to authenticate", func(t *testing.T) {
 		// given
+		ctx := context.WithValue(context.Background(), authentication.ConsumerType, "Application")
+		ctx = context.WithValue(ctx, authentication.TenantKey, "tenant")
+
 		authenticator := &authenticationMocks.Authenticator{}
-		authenticator.On("Authenticate", context.Background()).Return("", apperrors.Forbidden("Error"))
+		authenticator.On("Authenticate", ctx).Return("", apperrors.Forbidden("Error"))
 		tokenService := &tokensMocks.Service{}
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
 		// when
-		configurationResult, err := certificateResolver.Configuration(context.Background())
+		configurationResult, err := certificateResolver.Configuration(ctx)
 
 		// then
 		require.Error(t, err)
