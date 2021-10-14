@@ -53,13 +53,17 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestHandler(t *testing.T) {
-	target := "http://example.com/authn-mapping/authenticatorName"
-	domainURL := "localhost:8080"
-	issuer := "http://tenant." + domainURL + "/oauth/token"
-	jwksURL := "http://tenant." + domainURL + "/keys"
-	uniqueAttributeKey := "unique_key"
-	uniqueAttributeValue := "testUniqueValue"
-	authenticatorName := "authenticatorName"
+	var (
+		target               = "http://example.com/authn-mapping/authenticatorName"
+		domainURL            = "localhost:8080"
+		issuer               = "http://tenant." + domainURL + "/oauth/token"
+		jwksURL              = "http://tenant." + domainURL + "/keys"
+		uniqueAttributeKey   = "unique_key"
+		uniqueAttributeValue = "testUniqueValue"
+		authenticatorName    = "authenticatorName"
+		extraFieldForRemoval = "for_removal"
+	)
+
 	mockedAttributes := map[string]interface{}{uniqueAttributeKey: uniqueAttributeValue}
 	authenticators := []authenticator.Config{
 		{
@@ -73,6 +77,7 @@ func TestHandler(t *testing.T) {
 			TrustedIssuers: []authenticator.TrustedIssuer{
 				{DomainURL: domainURL},
 			},
+			StripExtraFields: []string{extraFieldForRemoval},
 		},
 	}
 
@@ -174,6 +179,68 @@ func TestHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedPayload, err := json.Marshal(reqDataMock.Body)
+		require.NoError(t, err)
+
+		require.Contains(t, strings.TrimSpace(string(body)), string(expectedPayload))
+
+		req2 := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		reqWithVars2 := mux.SetURLVars(req2, map[string]string{
+			"authenticator": authenticatorName,
+		})
+		w2 := httptest.NewRecorder()
+
+		handler.ServeHTTP(w2, reqWithVars2)
+
+		resp2 := w2.Result()
+		require.Equal(t, http.StatusOK, resp2.StatusCode)
+		body2, err := ioutil.ReadAll(resp2.Body)
+		require.NoError(t, err)
+
+		require.Contains(t, strings.TrimSpace(string(body2)), string(expectedPayload))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, verifierMock, tokenDataMock)
+	})
+
+	t.Run("success when extra fields should be stropped from token", func(t *testing.T) {
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					"tenant":             "test-tenant",
+					extraFieldForRemoval: "test",
+				},
+			},
+			Header: map[string][]string{
+				"Authorization": {"Bearer " + mockedToken},
+			},
+		}
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Twice()
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		reqWithVars := mux.SetURLVars(req, map[string]string{
+			"authenticator": authenticatorName,
+		})
+		w := httptest.NewRecorder()
+
+		tokenDataMock := &authnMock.TokenData{}
+		tokenDataMock.On("Claims", &reqDataMock.Body.Extra).Return(nil).Twice()
+
+		verifierMock := &authnMock.TokenVerifier{}
+		verifierMock.On("Verify", mock.Anything, mockedToken).Return(tokenDataMock, nil).Twice()
+
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
+			return verifierMock
+		}, authenticators)
+		handler.ServeHTTP(w, reqWithVars)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		expectedBody := reqDataMock.Body
+		delete(expectedBody.Extra, extraFieldForRemoval)
+		expectedPayload, err := json.Marshal(expectedBody)
 		require.NoError(t, err)
 
 		require.Contains(t, strings.TrimSpace(string(body)), string(expectedPayload))

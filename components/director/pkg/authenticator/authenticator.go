@@ -31,6 +31,7 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 	authenticators := make(map[string]*Config)
 	attributesPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_ATTRIBUTES$", envPrefix))
 	trustedIssuersPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_TRUSTED_ISSUERS$", envPrefix))
+	stripExtraFieldsPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_STRIP_EXTRA_FIELDS$", envPrefix))
 
 	for _, env := range os.Environ() {
 		pair := strings.SplitN(env, "=", 2)
@@ -73,6 +74,25 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 				authenticators[authenticatorName] = &Config{
 					Name:           authenticatorName,
 					TrustedIssuers: trustedIssuers,
+				}
+			}
+		}
+
+		matches = stripExtraFieldsPattern.FindStringSubmatch(key)
+		if len(matches) > 0 {
+			authenticatorName := matches[1]
+
+			var stripExtraFields []string
+			if err := json.Unmarshal([]byte(value), &stripExtraFields); err != nil {
+				return nil, fmt.Errorf("unable to unmarshal trusted issuers: %w", err)
+			}
+
+			if authenticator, exists := authenticators[authenticatorName]; exists {
+				authenticator.StripExtraFields = stripExtraFields
+			} else {
+				authenticators[authenticatorName] = &Config{
+					Name:             authenticatorName,
+					StripExtraFields: stripExtraFields,
 				}
 			}
 		}

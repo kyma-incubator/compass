@@ -28,9 +28,10 @@ const HeaderName = "X-Authenticator-Name"
 
 // Config holds all configuration related to an additional authenticator provided to the Director
 type Config struct {
-	Name           string          `json:"name"`
-	TrustedIssuers []TrustedIssuer `json:"trusted_issuers"`
-	Attributes     Attributes      `json:"attributes"`
+	Name             string          `json:"name"`
+	TrustedIssuers   []TrustedIssuer `json:"trusted_issuers"`
+	Attributes       Attributes      `json:"attributes"`
+	StripExtraFields []string        `json:"strip_extra_fields"`
 }
 
 // TrustedIssuer missing godoc

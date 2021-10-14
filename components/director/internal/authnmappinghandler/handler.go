@@ -157,6 +157,11 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	}
 	reqData.Body.Extra[authenticator.CoordinatesKey] = authCoordinates
 
+	config := h.authenticators[authCoordinates.Index]
+	for _, f := range config.StripExtraFields {
+		delete(reqData.Body.Extra, f)
+	}
+
 	h.respond(ctx, writer, reqData.Body)
 }
 

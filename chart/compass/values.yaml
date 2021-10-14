@@ -331,6 +331,7 @@ global:
             gatewayHost: "compass-gateway"
             trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
             attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+            strip_extra_fields: '["test"]'
             path: /tenants/<.*>
             upstreamComponent: "compass-tenant-fetcher"
         subscriber:
@@ -428,6 +429,7 @@ global:
         tokenPath: "/secured/oauth/token"
         oauthSecret:
           name: cert-svc-oauth-secret
+          manage: true
           urlKey: url
           clientIdKey: client-id
           clientSecretKey: client-secret

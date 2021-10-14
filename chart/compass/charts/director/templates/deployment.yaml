@@ -163,6 +163,8 @@ spec:
               value: {{ $config.authenticator.trusted_issuers | quote }}
             - name: APP_{{ $config.authenticator.name }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.authenticator.attributes | quote }}
+            - name: APP_{{ $config.authenticator.name }}_AUTHENTICATOR_STRIP_EXTRA_FIELDS
+              value: {{ $config.authenticator.strip_extra_fields | quote }}
             {{- end }}
             {{- end }}
             - name: APP_HEALTH_CONFIG_INDICATORS
