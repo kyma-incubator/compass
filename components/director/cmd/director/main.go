@@ -15,7 +15,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/mux"
-	graphqlAPI "github.com/kyma-incubator/compass/components/director/internal/api"
 	mp_authenticator "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
@@ -62,7 +61,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql/internalschema"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -89,9 +87,8 @@ import (
 const envPrefix = "APP"
 
 type config struct {
-	Address                string `envconfig:"default=127.0.0.1:3000"`
-	InternalGraphQLAddress string `envconfig:"default=127.0.0.1:3001"`
-	HydratorAddress        string `envconfig:"default=127.0.0.1:8080"`
+	Address         string `envconfig:"default=127.0.0.1:3000"`
+	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
 
 	InternalAddress string `envconfig:"default=127.0.0.1:3002"`
 	AppURL          string `envconfig:"APP_URL"`
@@ -310,9 +307,6 @@ func main() {
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
 	oneTimeTokenService := tokenService(cfg, cfgProvider, httpClient, internalHTTPClient, pairingAdapters)
-	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, oneTimeTokenService), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
-	exitOnError(err, "Failed configuring internal graphQL handler")
-
 	hydratorHandler, err := PrepareHydratorHandler(cfg, systemAuthSvc(), transact, oneTimeTokenService, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring hydrator handler")
 
@@ -341,7 +335,6 @@ func main() {
 
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
-	runInternalGQLSrv, shutdownInternalGQLSrv := createServer(ctx, cfg.InternalGraphQLAddress, internalGQLHandler, "internal_graphql", cfg.ServerTimeout)
 	runHydratorSrv, shutdownHydratorSrv := createServer(ctx, cfg.HydratorAddress, hydratorHandler, "hydrator", cfg.ServerTimeout)
 	runInternalSrv, shutdownInternalSrv := createServer(ctx, cfg.InternalAddress, internalRouter, "internal", cfg.ServerTimeout)
 
@@ -351,12 +344,10 @@ func main() {
 		shutdownMetricsSrv()
 		shutdownInternalSrv()
 		shutdownMainSrv()
-		shutdownInternalGQLSrv()
 		shutdownHydratorSrv()
 	}()
 
 	go runMetricsSrv()
-	go runInternalGQLSrv()
 	go runHydratorSrv()
 	go runInternalSrv()
 	runMainSrv()
@@ -555,31 +546,7 @@ func webhookService() webhook.WebhookService {
 	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
 }
 
-// PrepareInternalGraphQLServer missing godoc
-func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenResolver, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
-	gqlInternalCfg := internalschema.Config{
-		Resolvers: &graphqlAPI.InternalResolver{
-			TokenResolver: tokenResolver,
-		},
-	}
-
-	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
-	gqlHandler := handler.NewDefaultServer(internalExecutableSchema)
-
-	internalRouter := mux.NewRouter()
-	internalRouter.Handle(cfg.APIEndpoint, gqlHandler)
-	internalRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
-
-	internalRouter.Use(middlewares...)
-
-	handlerWithTimeout, err := timeouthandler.WithTimeout(internalRouter, cfg.ServerTimeout)
-	if err != nil {
-		return nil, err
-	}
-	return handlerWithTimeout, nil
-}
-
-func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHTTPClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
+func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHTTPClient *http.Client, pairingAdapters map[string]string) oathkeeper.OneTimeTokenService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -639,7 +606,7 @@ func systemAuthSvc() oathkeeper.SystemAuthService {
 }
 
 // PrepareHydratorHandler missing godoc
-func PrepareHydratorHandler(cfg config, tokenService oathkeeper.SystemAuthService, transact persistence.Transactioner, oneTimeTokenService graphqlAPI.TokenService, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
+func PrepareHydratorHandler(cfg config, tokenService oathkeeper.SystemAuthService, transact persistence.Transactioner, oneTimeTokenService oathkeeper.OneTimeTokenService, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
 	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, oneTimeTokenService)
 
 	router := mux.NewRouter()
