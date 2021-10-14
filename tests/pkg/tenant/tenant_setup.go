@@ -180,8 +180,7 @@ func (mgr *TestTenantsManager) Init() {
 
 func (mgr TestTenantsManager) Cleanup() {
 	dbCfg := persistence.DatabaseConfig{}
-	err := envconfig.Init(&dbCfg)
-	if err != nil {
+	if err := envconfig.Init(&dbCfg); err != nil {
 		log.Fatal(err)
 	}
 	transact, closeFunc, err := persistence.Configure(context.TODO(), dbCfg)
@@ -212,15 +211,13 @@ func (mgr TestTenantsManager) Cleanup() {
 
 	// A tenant is considered initialized if there is any labelDefinitions associated with it.
 	// On first request for a given tenant a labelDefinition for key scenario and value DEFAULT is created.
-	// Therefore once accessed a tenant is considered initialized. That's the reason we clean up (uninitialize) all the tests tenants here.
+	// Therefore, once accessed a tenant is considered initialized. That's the reason we clean up (uninitialize) all the tests tenants here.
 	// There is a test relying on this (testing tenants graphql query).
-	_, err = tx.ExecContext(context.TODO(), query, args...)
-	if err != nil {
+	if _, err = tx.ExecContext(context.TODO(), query, args...); err != nil {
 		log.Fatal(err)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		log.Fatal(err)
 	}
 }

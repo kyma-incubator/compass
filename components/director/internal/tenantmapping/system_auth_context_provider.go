@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -23,6 +25,10 @@ func NewSystemAuthContextProvider(systemAuthSvc systemauth.SystemAuthService, sc
 		systemAuthSvc: systemAuthSvc,
 		scopesGetter:  scopesGetter,
 		tenantRepo:    tenantRepo,
+		tenantKeys: KeysExtra{
+			TenantKey:         ConsumerTenantKey,
+			ExternalTenantKey: ExternalTenantKey,
+		},
 	}
 }
 
@@ -30,6 +36,7 @@ type systemAuthContextProvider struct {
 	systemAuthSvc systemauth.SystemAuthService
 	scopesGetter  ScopesGetter
 	tenantRepo    TenantRepository
+	tenantKeys    KeysExtra
 }
 
 // GetObjectContext missing godoc
@@ -37,6 +44,15 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authDetails.AuthID)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
+	}
+
+	if authDetails.AuthFlow.IsCertFlow() && sysAuth.Value != nil && sysAuth.Value.CertCommonName != authDetails.AuthID {
+		sysAuth.Value.OneTimeToken = nil
+		sysAuth.Value.CertCommonName = authDetails.AuthID
+
+		if err := m.systemAuthSvc.Update(ctx, sysAuth); err != nil {
+			return ObjectContext{}, errors.Wrap(err, "while updating system auth")
+		}
 	}
 
 	refObjType, err := sysAuth.GetReferenceObjectType()
@@ -73,10 +89,34 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		return ObjectContext{}, apperrors.NewInternalError("while mapping reference type to consumer type")
 	}
 
-	objCxt := NewObjectContext(tenantCtx, scopes, refObjID, consumerType)
+	objCxt := NewObjectContext(tenantCtx, m.tenantKeys, scopes, refObjID, authDetails.AuthFlow, consumerType, SystemAuthObjectContextProvider)
 	log.C(ctx).Infof("Object context: %+v", objCxt)
 
 	return objCxt, nil
+}
+
+func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
+	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
+
+	if idVal != "" && certIssuer != oathkeeper.ExternalIssuer {
+		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
+	}
+
+	if idVal := data.Body.Header.Get(oathkeeper.ClientIDTokenKey); idVal != "" {
+		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.OneTimeTokenFlow}, nil
+	}
+
+	if idVal, ok := data.Body.Extra[oathkeeper.ClientIDKey]; ok {
+		authID, err := str.Cast(idVal)
+		if err != nil {
+			return false, nil, errors.Wrapf(err, "while parsing the value for %s", oathkeeper.ClientIDKey)
+		}
+
+		return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.OAuth2Flow}, nil
+	}
+
+	return false, nil, nil
 }
 
 func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx context.Context, reqData oathkeeper.ReqData) (TenantContext, string, error) {

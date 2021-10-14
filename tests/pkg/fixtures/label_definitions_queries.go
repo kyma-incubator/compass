@@ -92,3 +92,12 @@ func ListLabelDefinitionsWithinTenant(t require.TestingT, ctx context.Context, g
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, labelDefinitionsRequest, &labelDefinitions)
 	return labelDefinitions, err
 }
+
+func ListLabelDefinitionByKeyWithinTenant(ctx context.Context, gqlClient *gcli.Client, key, tenantID string) (*graphql.LabelDefinition, error) {
+	labelDefinitionRequest := FixLabelDefinitionRequest(key)
+
+	var labelDefinition *graphql.LabelDefinition
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, labelDefinitionRequest, &labelDefinition)
+	return labelDefinition, err
+}
