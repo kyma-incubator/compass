@@ -20,7 +20,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210922140924-1dc663c3ed24
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20211014120217-5f586a97b5de
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210922132333-3deb7cf90637
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.6
@@ -86,9 +86,6 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20211011114927-c19eb4116016
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210922132333-3deb7cf90637
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect
@@ -141,8 +138,4 @@ require (
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.0.2 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
-	github.com/russross/blackfriday/v2 v2.0.1 // indirect
-	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
-	github.com/urfave/cli v1.22.1 // indirect
 )
