@@ -122,8 +122,6 @@ func (r *pgRepository) Unpair(ctx context.Context, tenant, id string) error {
 			return err
 		}
 
-		app.SetReady(false)
-		app.SetError("")
 		app.SetUpdatedAt(time.Now())
 		return r.Update(ctx, app)
 	}

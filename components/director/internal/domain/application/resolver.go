@@ -51,7 +51,6 @@ type ApplicationConverter interface {
 	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
-	ModelToUpdateInput(model *model.Application) graphql.ApplicationUpdateInput
 }
 
 // EventingService missing godoc
@@ -423,10 +422,6 @@ func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.A
 	}
 
 	gqlApp := r.appConverter.ToGraphQL(app)
-
-	//modelInput := r.appConverter.ModelToUpdateInput(app)
-	//input := r.appConverter.UpdateInputFromGraphQL(modelInput)
-	//r.appSvc.Update(ctx, id, input)
 
 	log.C(ctx).Infof("Successfully Unpaired Application with id %s", id)
 	return gqlApp, nil

@@ -379,6 +379,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// Unpair missing godoc
 func (s *service) Unpair(ctx context.Context, id string) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
