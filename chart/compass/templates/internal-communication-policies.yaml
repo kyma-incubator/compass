@@ -46,6 +46,11 @@ spec:
               - GET
             paths:
               - /open-resource-discovery-docs*
+        - operation:
+            methods:
+              - GET
+            paths:
+              - {{ .Values.global.director.info.path }}
     - to: # db communication
         - operation:
             ports:

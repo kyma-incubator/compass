@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 
@@ -47,7 +50,8 @@ type config struct {
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
-	ClientTimeout time.Duration `envconfig:"default=60s"`
+	ClientTimeout     time.Duration `envconfig:"default=60s"`
+	SkipSSLValidation bool          `envconfig:"default=false"`
 }
 
 func main() {
@@ -68,9 +72,16 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg.Features, transact, &http.Client{
+	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
-	})
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: cfg.SkipSSLValidation,
+			},
+		},
+	}
+
+	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg.Features, transact, httpClient)
 	err = ordAggregator.SyncORDDocuments(ctx)
 	exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 
@@ -133,7 +144,9 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 
-	ordClient := ord.NewClient(httpClient, featuresConfig.SecuredApplicationTypes)
+	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider()
+
+	ordClient := ord.NewClient(httpClient, featuresConfig.SecuredApplicationTypes, accessStrategyExecutorProvider)
 
 	return ord.NewAggregatorService(transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
 }

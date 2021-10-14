@@ -144,7 +144,7 @@ func TestORDService(stdT *testing.T) {
 
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
 	require.NoError(t, err)
-	extIssuerCertHttpClient := extIssuerCertClient(t)
+	extIssuerCertHttpClient := extIssuerCertClient(t, subTenantID)
 
 	t.Run("401 when requests to ORD Service are unsecured", func(t *testing.T) {
 		makeRequestWithStatusExpect(t, unsecuredHttpClient, testConfig.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
@@ -770,7 +770,7 @@ func integrationSystemClient(t require.TestingT, ctx context.Context, base *http
 
 // extIssuerCertClient returns http client configured with client certificate manually signed by connector's CA
 // and a subject matching external issuer's subject contract.
-func extIssuerCertClient(t require.TestingT) *http.Client {
+func extIssuerCertClient(t require.TestingT, subTenantID string) *http.Client {
 	// Parse the CA cert
 	pemBlock, _ := pem.Decode(testConfig.CA.Certificate)
 	require.NotNil(t, pemBlock)

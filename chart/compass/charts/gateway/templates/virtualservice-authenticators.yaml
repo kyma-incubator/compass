@@ -1,11 +1,11 @@
 {{ $outerScope := . }}
-{{- range $authenticatorName, $config := .Values.global.authenticators -}}
-{{if eq $config.enabled true}}
+{{- range $authenticatorName, $config := .Values.global.oathkeeper.mutators.authenticationMappingServices -}}
+{{if eq $config.authenticator.enabled true}}
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: "compass-gateway-{{ $authenticatorName }}"
+  name: "compass-gateway-{{ $config.authenticator.name }}"
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ template "name" $outerScope }} # Needed because 'for' loop introduces its own scope and 'name' template helper function is in the outer scope
@@ -14,13 +14,13 @@ metadata:
     release: {{ $.Release.Name }}
 spec:
   hosts:
-    - '{{ $config.gatewayHost }}.{{ $.Values.global.ingress.domainName }}'
+    - '{{ $config.authenticator.gatewayHost }}.{{ $.Values.global.ingress.domainName }}'
   gateways:
     - {{ $.Values.global.istio.gateway.namespace }}/{{ $.Values.global.istio.gateway.name }}
   http:
     - match:
       - uri:
-          regex: '{{ $config.path }}'
+          regex: '{{ $config.authenticator.path }}'
       route:
         - destination:
             host: {{ $.Values.global.oathkeeper.host }}

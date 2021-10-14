@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/info"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -101,7 +103,7 @@ type config struct {
 	APIEndpoint                   string `envconfig:"default=/graphql"`
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
-	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
+	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping/{authenticator}"`
 	OperationPath                 string `envconfig:"default=/operation"`
 	LastOperationPath             string `envconfig:"default=/last_operation"`
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
@@ -136,6 +138,8 @@ type config struct {
 	HealthConfig healthz.Config `envconfig:"APP_HEALTH_CONFIG_INDICATORS"`
 
 	ReadyConfig healthz.ReadyConfig
+
+	InfoConfig info.Config
 
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
@@ -326,6 +330,9 @@ func main() {
 	health.RegisterIndicator(healthz.NewIndicator(healthz.DBIndicatorName, healthz.NewDBIndicatorFunc(transact))).Start()
 	mainRouter.HandleFunc("/healthz", healthz.NewHealthHandler(health))
 
+	logger.Infof("Registering info endpoint...")
+	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig))
+
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
 
@@ -426,12 +433,12 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
 		tenantmapping.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(staticUsersRepo, staticGroupsRepo, tenantRepo),
 		tenantmapping.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(systemAuthSvc, cfgProvider, tenantRepo),
-		tenantmapping.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(tenantRepo),
+		tenantmapping.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(tenantRepo, authenticators),
 		tenantmapping.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(tenantRepo),
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders, metricsCollector).ServeHTTP, nil
+	return tenantmapping.NewHandler(reqDataParser, transact, objectContextProviders, metricsCollector).ServeHTTP, nil
 }
 
 func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) func(writer http.ResponseWriter, request *http.Request) {

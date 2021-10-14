@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -25,14 +27,16 @@ type Client interface {
 
 type client struct {
 	*http.Client
-	securedApplicationTypes map[string]struct{}
+	securedApplicationTypes        map[string]struct{}
+	accessStrategyExecutorProvider accessstrategy.ExecutorProvider
 }
 
 // NewClient creates new ORD Client via a provided http.Client
-func NewClient(httpClient *http.Client, securedApplicationTypes []string) *client {
+func NewClient(httpClient *http.Client, securedApplicationTypes []string, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
 	return &client{
-		Client:                  httpClient,
-		securedApplicationTypes: str.SliceToMap(securedApplicationTypes),
+		Client:                         httpClient,
+		securedApplicationTypes:        str.SliceToMap(securedApplicationTypes),
+		accessStrategyExecutorProvider: accessStrategyExecutorProvider,
 	}
 }
 
@@ -50,14 +54,18 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 
 	docs := make([]*Document, 0)
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
+		documentURL, err := buildDocumentURL(docDetails.URL, baseURL, config.BaseURL)
+		if err != nil {
+			return nil, errors.Wrap(err, "error building document URL")
+		}
 		strategy, ok := docDetails.AccessStrategies.GetSupported()
 		if !ok {
-			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", baseURL+docDetails.URL)
+			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
 			continue
 		}
-		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, baseURL+docDetails.URL, strategy)
+		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy)
 		if err != nil {
-			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", baseURL+docDetails.URL)
+			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", documentURL)
 		}
 
 		docs = append(docs, doc)
@@ -66,9 +74,14 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	return docs, nil
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, _ AccessStrategyType) (*Document, error) {
-	log.C(ctx).Infof("Fetching ORD Document %q", documentURL)
-	resp, err := c.Get(documentURL)
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type) (*Document, error) {
+	log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
+	executor, err := c.accessStrategyExecutorProvider.Provide(accessStrategy)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := executor.Execute(ctx, c.Client, documentURL)
 	if err != nil {
 		return nil, err
 	}
@@ -120,13 +133,13 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 
 	defer closeBody(ctx, resp.Body)
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d", resp.StatusCode)
-	}
-
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading response body")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d Body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	config := WellKnownConfig{}
@@ -135,6 +148,20 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 	}
 
 	return &config, nil
+}
+
+func buildDocumentURL(docURL, whBaseURL, configBaseURL string) (string, error) { // TODO: tests when the whole algorithm is implemented
+	docURLParsed, err := url.Parse(docURL)
+	if err != nil {
+		return "", err
+	}
+	if docURLParsed.IsAbs() {
+		return docURL, nil
+	}
+	if len(configBaseURL) > 0 {
+		return configBaseURL + docURL, nil
+	}
+	return whBaseURL + docURL, nil
 }
 
 func buildWellKnownEndpoint(u string) (string, error) {
