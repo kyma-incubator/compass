@@ -63,7 +63,7 @@ spec:
       containers:
       - name: editor
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         command:
         - "/bin/bash"
         args:

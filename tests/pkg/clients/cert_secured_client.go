@@ -15,7 +15,7 @@ import (
 )
 
 type CertificateSecuredClient struct {
-	graphQlClient *gcli.Client
+	GraphQlClient *gcli.Client
 	queryProvider queryProvider
 }
 
@@ -45,7 +45,7 @@ func NewCertificateSecuredConnectorClient(endpoint string, key *rsa.PrivateKey, 
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
 
 	return &CertificateSecuredClient{
-		graphQlClient: graphQlClient,
+		GraphQlClient: graphQlClient,
 		queryProvider: queryProvider{},
 	}
 }
@@ -56,7 +56,7 @@ func (c *CertificateSecuredClient) Configuration(headers ...http.Header) (extern
 
 	var response certs.ConfigurationResponse
 
-	err := c.graphQlClient.Run(context.Background(), req, &response)
+	err := c.GraphQlClient.Run(context.Background(), req, &response)
 	if err != nil {
 		return externalschema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
 	}
@@ -69,7 +69,7 @@ func (c *CertificateSecuredClient) SignCSR(csr string, headers ...http.Header) (
 
 	var response certs.CertificationResponse
 
-	err := c.graphQlClient.Run(context.Background(), req, &response)
+	err := c.GraphQlClient.Run(context.Background(), req, &response)
 	if err != nil {
 		return externalschema.CertificationResult{}, errors.Wrap(err, "Failed to generate certificate")
 	}
@@ -82,7 +82,7 @@ func (c *CertificateSecuredClient) RevokeCertificate() (bool, error) {
 
 	var response certs.RevokeResult
 
-	err := c.graphQlClient.Run(context.Background(), req, &response)
+	err := c.GraphQlClient.Run(context.Background(), req, &response)
 	if err != nil {
 		return false, errors.Wrap(err, "Failed to revoke certificate")
 	}

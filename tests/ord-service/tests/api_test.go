@@ -144,7 +144,7 @@ func TestORDService(stdT *testing.T) {
 
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
 	require.NoError(t, err)
-	extIssuerCertHttpClient := extIssuerCertClient(t)
+	extIssuerCertHttpClient := extIssuerCertClient(t, subTenantID)
 
 	t.Run("401 when requests to ORD Service are unsecured", func(t *testing.T) {
 		makeRequestWithStatusExpect(t, unsecuredHttpClient, testConfig.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
@@ -155,7 +155,7 @@ func TestORDService(stdT *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service have wrong tenant header", func(t *testing.T) {
-		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {" "}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("400 when requests to ORD Service api specification do not have tenant header", func(t *testing.T) {
@@ -188,7 +188,7 @@ func TestORDService(stdT *testing.T) {
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
-		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {" "}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("400 when requests to ORD Service event specification have wrong tenant header", func(t *testing.T) {
@@ -199,7 +199,7 @@ func TestORDService(stdT *testing.T) {
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
-		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {" "}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to configured default response type when Accept header allows everything", func(t *testing.T) {
@@ -770,7 +770,7 @@ func integrationSystemClient(t require.TestingT, ctx context.Context, base *http
 
 // extIssuerCertClient returns http client configured with client certificate manually signed by connector's CA
 // and a subject matching external issuer's subject contract.
-func extIssuerCertClient(t require.TestingT) *http.Client {
+func extIssuerCertClient(t require.TestingT, subTenantID string) *http.Client {
 	// Parse the CA cert
 	pemBlock, _ := pem.Decode(testConfig.CA.Certificate)
 	require.NotNil(t, pemBlock)

@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	conf             = &config.DirectorConfig{}
+	conf             = &config.BaseDirectorConfig{}
 	dexGraphQLClient *graphql.Client
 )
 

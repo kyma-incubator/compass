@@ -1,28 +1,29 @@
-{{- range $authenticatorName, $config := .Values.global.authenticators -}}
-{{if eq $config.enabled true}}
+{{- range $authenMappingServiceName, $value := .Values.global.oathkeeper.mutators.authenticationMappingServices -}}
+{{ if and (eq $value.authenticator.enabled true) (eq $value.authenticator.createRule true) }}
 ---
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
 metadata:
-  name: "compass-gateway-{{ $authenticatorName }}"
+  name: "compass-gateway-{{ $authenMappingServiceName }}"
 spec:
   # Configuration of oathkeeper for secure endpoint of compass <authenticatorName> gateway
   upstream:
-    url: "http://{{ $config.upstreamComponent }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.global.gateway.port }}"
+    url: "http://{{ $value.authenticator.upstreamComponent }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.global.gateway.port }}"
   match:
     methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"]
-    url: <http|https>://{{ $config.gatewayHost }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>{{ $config.path }}
+    url: <http|https>://{{ $value.authenticator.gatewayHost }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>{{ $value.authenticator.path }}
   authenticators:
   - handler: noop
   authorizer:
     handler: allow
   mutators:
-  - handler: header
-    config:
-      headers:
-        x-authenticator-name: {{ $authenticatorName }}
   - handler: hydrator
-{{ toYaml $.Values.global.oathkeeper.mutators.authenticationMappingService | indent 4 }}
+    config:
+      api:
+        url: "http://{{ $.Values.global.director.host }}:{{ $.Values.global.director.graphql.external.port }}/authn-mapping/{{ $authenMappingServiceName }}"
+        retry:
+          give_up_after: {{ default "6s" ((((($value).cfg).config).api).retry).give_up_after }}
+          max_delay: {{ default "2000ms" ((((($value).cfg).config).api).retry).max_delay }}
   - handler: hydrator
 {{ toYaml $.Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
