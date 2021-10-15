@@ -182,6 +182,7 @@ func initCertSecuredAPIs(cfg config) (http.Handler, error) {
 
 	ordHandler := ord_aggregator.NewORDHandler()
 
+	router.HandleFunc("/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig(cfg.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(cfg.CertSecuredBaseURL))
 
 	return router, nil

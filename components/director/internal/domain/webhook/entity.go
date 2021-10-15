@@ -15,6 +15,7 @@ type Entity struct {
 	Mode                  sql.NullString `db:"mode"`
 	URL                   sql.NullString `db:"url"`
 	Auth                  sql.NullString `db:"auth"`
+	AccessStrategy        sql.NullString `db:"access_strategy"`
 	RetryInterval         sql.NullInt32  `db:"retry_interval"`
 	Timeout               sql.NullInt32  `db:"timeout"`
 	URLTemplate           sql.NullString `db:"url_template"`

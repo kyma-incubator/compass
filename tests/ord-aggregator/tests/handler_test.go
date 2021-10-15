@@ -41,11 +41,13 @@ const (
 	expectedThirdSystemInstanceName         = "third-test-app"
 	expectedFourthSystemInstanceName        = "fourth-test-app"
 	expectedFifthSystemInstanceName         = "fifth-test-app"
+	expectedSixthSystemInstanceName         = "sixth-test-app"
 	expectedSystemInstanceDescription       = "test-app1-description"
 	expectedSecondSystemInstanceDescription = "test-app2-description"
 	expectedThirdSystemInstanceDescription  = "test-app3-description"
 	expectedFourthSystemInstanceDescription = "test-app4-description"
 	expectedFifthSystemInstanceDescription  = "test-app5-description"
+	expectedSixthSystemInstanceDescription  = "test-app6-description"
 	expectedBundleTitle                     = "BUNDLE TITLE"
 	secondExpectedBundleTitle               = "BUNDLE TITLE 2"
 	expectedBundleDescription               = "lorem ipsum dolor nsq sme"
@@ -63,15 +65,15 @@ const (
 	expectedTombstoneOrdID                  = "ns:apiResource:API_ID2:v1"
 	expectedVendorTitle                     = "SAP"
 
-	expectedNumberOfSystemInstances           = 5
-	expectedNumberOfPackages                  = 5
-	expectedNumberOfBundles                   = 10
-	expectedNumberOfProducts                  = 5
-	expectedNumberOfAPIs                      = 5
+	expectedNumberOfSystemInstances           = 6
+	expectedNumberOfPackages                  = 6
+	expectedNumberOfBundles                   = 12
+	expectedNumberOfProducts                  = 6
+	expectedNumberOfAPIs                      = 6
 	expectedNumberOfResourceDefinitionsPerAPI = 3
-	expectedNumberOfEvents                    = 10
-	expectedNumberOfTombstones                = 5
-	expectedNumberOfVendors                   = 10
+	expectedNumberOfEvents                    = 12
+	expectedNumberOfTombstones                = 6
+	expectedNumberOfVendors                   = 12
 
 	expectedNumberOfAPIsInFirstBundle    = 1
 	expectedNumberOfAPIsInSecondBundle   = 1
@@ -109,16 +111,22 @@ func TestORDAggregator(t *testing.T) {
 		TokenURL: testConfig.ExternalServicesMockBaseURL + "/oauth/token",
 	}
 
+	accessStrategyConfigSecurity := &fixtures.ORDConfigSecurity{
+		Enabled:  true,
+		AccessStrategy: "sap:cmp-mtls:v1",
+	}
+
 	toggleORDConfigSecurity(t, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/basic/configure", basicORDConfigSecurity)
 	toggleORDConfigSecurity(t, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/oauth/configure", oauthORDConfigSecurity)
 
-	var appInput, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput directorSchema.ApplicationRegisterInput
+	var appInput, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput, sixthAppInput directorSchema.ApplicationRegisterInput
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
 		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, &fixtures.ORDConfigSecurity{})
 		secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL, &fixtures.ORDConfigSecurity{})
 		thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/basic/.well-known/open-resource-discovery", basicORDConfigSecurity)
 		fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/oauth/.well-known/open-resource-discovery", oauthORDConfigSecurity)
 		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/cert/.well-known/open-resource-discovery", &fixtures.ORDConfigSecurity{})
+		sixthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSixthSystemInstanceName, expectedSixthSystemInstanceDescription, testConfig.ExternalServicesMockCertSecuredURL, accessStrategyConfigSecurity)
 
 		systemInstancesMap := make(map[string]string)
 		systemInstancesMap[expectedSystemInstanceName] = expectedSystemInstanceDescription
@@ -126,6 +134,7 @@ func TestORDAggregator(t *testing.T) {
 		systemInstancesMap[expectedThirdSystemInstanceName] = expectedThirdSystemInstanceDescription
 		systemInstancesMap[expectedFourthSystemInstanceName] = expectedFourthSystemInstanceDescription
 		systemInstancesMap[expectedFifthSystemInstanceName] = expectedFifthSystemInstanceDescription
+		systemInstancesMap[expectedSixthSystemInstanceName] = expectedSixthSystemInstanceDescription
 
 		eventsMap := make(map[string]string)
 		eventsMap[firstEventTitle] = firstEventDescription
@@ -175,6 +184,10 @@ func TestORDAggregator(t *testing.T) {
 
 		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
+		require.NoError(t, err)
+
+		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
 		require.NoError(t, err)
 
 		t.Log("Create integration system")

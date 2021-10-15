@@ -59,11 +59,13 @@ func (as AccessStrategies) GetSupported() (Type, bool) {
 }
 
 // Executor defines an interface for execution of different access strategies
+//go:generate mockery --name=Executor --output=automock --outpkg=automock --case=underscore
 type Executor interface {
 	Execute(ctx context.Context, client *http.Client, url string) (*http.Response, error)
 }
 
 // ExecutorProvider defines an interface for access strategy executor provider
+//go:generate mockery --name=ExecutorProvider --output=automock --outpkg=automock --case=underscore
 type ExecutorProvider interface {
 	Provide(accessStrategyType Type) (Executor, error)
 }

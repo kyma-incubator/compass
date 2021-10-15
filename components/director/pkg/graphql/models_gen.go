@@ -607,6 +607,7 @@ type Webhook struct {
 	Timeout               *int         `json:"timeout"`
 	URL                   *string      `json:"url"`
 	Auth                  *Auth        `json:"auth"`
+	AccessStrategy        *string      `json:"accessStrategy"`
 	URLTemplate           *string      `json:"urlTemplate"`
 	InputTemplate         *string      `json:"inputTemplate"`
 	HeaderTemplate        *string      `json:"headerTemplate"`
@@ -619,6 +620,7 @@ type WebhookInput struct {
 	// **Validation:** valid URL, max=256
 	URL              *string      `json:"url"`
 	Auth             *AuthInput   `json:"auth"`
+	AccessStrategy   *string      `json:"accessStrategy"`
 	Mode             *WebhookMode `json:"mode"`
 	CorrelationIDKey *string      `json:"correlationIdKey"`
 	RetryInterval    *int         `json:"retryInterval"`

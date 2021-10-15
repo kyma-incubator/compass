@@ -634,6 +634,7 @@ input WebhookInput {
 	"""
 	url: String
 	auth: AuthInput
+	accessStrategy: String
 	mode: WebhookMode
 	correlationIdKey: String
 	retryInterval: Int
@@ -1088,6 +1089,7 @@ type Webhook {
 	timeout: Int
 	url: String
 	auth: Auth @sanitize(path: "graphql.field.webhooks.auth")
+	accessStrategy: String
 	urlTemplate: String
 	inputTemplate: String
 	headerTemplate: String

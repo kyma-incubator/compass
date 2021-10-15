@@ -117,7 +117,17 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 	}
 
 	var resp *http.Response
-	if _, secured := c.securedApplicationTypes[app.Type]; secured {
+	if webhook.AccessStrategy != nil && len(*webhook.AccessStrategy) > 0 {
+		log.C(ctx).Infof("Application %q (id = %q, type = %q) ORD webhook is configured with %q access strategy.", app.Name, app.ID, app.Type, *webhook.AccessStrategy)
+		executor, err := c.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*webhook.AccessStrategy))
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", *webhook.AccessStrategy)
+		}
+		resp, err = executor.Execute(ctx, c.Client, configURL)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", *webhook.AccessStrategy)
+		}
+	} else if _, secured := c.securedApplicationTypes[app.Type]; secured {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is secured and webhook credentials will be used", app.Name, app.ID, app.Type)
 		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, configURL, webhook.Auth)
 		if err != nil {

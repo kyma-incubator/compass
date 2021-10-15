@@ -12,6 +12,7 @@ type Webhook struct {
 	Type                  WebhookType
 	URL                   *string
 	Auth                  *Auth
+	AccessStrategy        *string
 	Mode                  *WebhookMode
 	RetryInterval         *int
 	Timeout               *int
@@ -28,6 +29,7 @@ type WebhookInput struct {
 	Type             WebhookType
 	URL              *string
 	Auth             *AuthInput
+	AccessStrategy   *string
 	Mode             *WebhookMode
 	RetryInterval    *int
 	Timeout          *int
@@ -95,6 +97,7 @@ func (i *WebhookInput) toGenericWebhook(id string) *Webhook {
 		Type:             i.Type,
 		URL:              i.URL,
 		Auth:             i.Auth.ToAuth(),
+		AccessStrategy:   i.AccessStrategy,
 		Mode:             i.Mode,
 		RetryInterval:    i.RetryInterval,
 		Timeout:          i.Timeout,

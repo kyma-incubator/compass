@@ -14,6 +14,8 @@ func stringPtr(s string) *string {
 	return &s
 }
 
+var fixAccessStrategy = "accessStrategy"
+
 func fixApplicationModelWebhook(id, appID, tenant, url string) *model.Webhook {
 	return &model.Webhook{
 		ID:             id,
@@ -22,6 +24,7 @@ func fixApplicationModelWebhook(id, appID, tenant, url string) *model.Webhook {
 		Type:           model.WebhookTypeConfigurationChanged,
 		URL:            &url,
 		Auth:           &model.Auth{},
+		AccessStrategy: &fixAccessStrategy,
 		Mode:           &modelWebhookMode,
 		URLTemplate:    &emptyTemplate,
 		InputTemplate:  &emptyTemplate,
@@ -37,6 +40,7 @@ func fixApplicationTemplateModelWebhook(id, appTemplateID, url string) *model.We
 		Type:                  model.WebhookTypeConfigurationChanged,
 		URL:                   &url,
 		Auth:                  &model.Auth{},
+		AccessStrategy:        &fixAccessStrategy,
 		Mode:                  &modelWebhookMode,
 		URLTemplate:           &emptyTemplate,
 		InputTemplate:         &emptyTemplate,
@@ -52,6 +56,7 @@ func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
 		Type:           graphql.WebhookTypeConfigurationChanged,
 		URL:            &url,
 		Auth:           &graphql.Auth{},
+		AccessStrategy: &fixAccessStrategy,
 		Mode:           &graphqlWebhookMode,
 		URLTemplate:    &emptyTemplate,
 		InputTemplate:  &emptyTemplate,
@@ -65,6 +70,7 @@ func fixModelWebhookInput(url string) *model.WebhookInput {
 		Type:           model.WebhookTypeConfigurationChanged,
 		URL:            &url,
 		Auth:           &model.AuthInput{},
+		AccessStrategy: &fixAccessStrategy,
 		Mode:           &modelWebhookMode,
 		URLTemplate:    &emptyTemplate,
 		InputTemplate:  &emptyTemplate,
@@ -78,6 +84,7 @@ func fixGQLWebhookInput(url string) *graphql.WebhookInput {
 		Type:           graphql.WebhookTypeConfigurationChanged,
 		URL:            &url,
 		Auth:           &graphql.AuthInput{},
+		AccessStrategy: &fixAccessStrategy,
 		Mode:           &graphqlWebhookMode,
 		URLTemplate:    &emptyTemplate,
 		InputTemplate:  &emptyTemplate,

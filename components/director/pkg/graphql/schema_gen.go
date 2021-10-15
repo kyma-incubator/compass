@@ -524,6 +524,7 @@ type ComplexityRoot struct {
 	}
 
 	Webhook struct {
+		AccessStrategy        func(childComplexity int) int
 		ApplicationID         func(childComplexity int) int
 		ApplicationTemplateID func(childComplexity int) int
 		Auth                  func(childComplexity int) int
@@ -3287,6 +3288,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Viewer.Type(childComplexity), true
 
+	case "Webhook.accessStrategy":
+		if e.complexity.Webhook.AccessStrategy == nil {
+			break
+		}
+
+		return e.complexity.Webhook.AccessStrategy(childComplexity), true
+
 	case "Webhook.applicationID":
 		if e.complexity.Webhook.ApplicationID == nil {
 			break
@@ -4106,6 +4114,7 @@ input WebhookInput {
 	"""
 	url: String
 	auth: AuthInput
+	accessStrategy: String
 	mode: WebhookMode
 	correlationIdKey: String
 	retryInterval: Int
@@ -4560,6 +4569,7 @@ type Webhook {
 	timeout: Int
 	url: String
 	auth: Auth @sanitize(path: "graphql.field.webhooks.auth")
+	accessStrategy: String
 	urlTemplate: String
 	inputTemplate: String
 	headerTemplate: String
@@ -20433,6 +20443,37 @@ func (ec *executionContext) _Webhook_auth(ctx context.Context, field graphql.Col
 	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Webhook_accessStrategy(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Webhook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AccessStrategy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Webhook_urlTemplate(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -22806,6 +22847,12 @@ func (ec *executionContext) unmarshalInputWebhookInput(ctx context.Context, obj 
 		case "auth":
 			var err error
 			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "accessStrategy":
+			var err error
+			it.AccessStrategy, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -25854,6 +25901,8 @@ func (ec *executionContext) _Webhook(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Webhook_url(ctx, field, obj)
 		case "auth":
 			out.Values[i] = ec._Webhook_auth(ctx, field, obj)
+		case "accessStrategy":
+			out.Values[i] = ec._Webhook_accessStrategy(ctx, field, obj)
 		case "urlTemplate":
 			out.Values[i] = ec._Webhook_urlTemplate(ctx, field, obj)
 		case "inputTemplate":
