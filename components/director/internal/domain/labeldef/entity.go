@@ -8,6 +8,7 @@ type Entity struct {
 	TenantID   string         `db:"tenant_id"`
 	Key        string         `db:"key"`
 	SchemaJSON sql.NullString `db:"schema"`
+	Version    int            `db:"version"`
 }
 
 // EntityCollection missing godoc

@@ -53,6 +53,10 @@ graphql:
     refetchEventAPISpec: ["application:write"]
     addDocumentToBundle: ["application:write"]
     deleteDocument: ["application:write"]
+    createFormation: ["formation:write"]
+    deleteFormation: ["formation:write"]
+    assignFormation: [ "formation:write" ]
+    unAssignFormation: [ "formation:write" ]
     createLabelDefinition: ["label_definition:write"]
     updateLabelDefinition: ["label_definition:write"]
     deleteLabelDefinition: ["label_definition:write"]
@@ -138,6 +142,7 @@ clientCredentialsRegistrationScopes:
     - "automatic_scenario_assignment:write"
     - "integration_system.auths:read"
     - "application_template.webhooks:read"
+    - "formation:write"
 
 clientCredentialsRegistrationGrantTypes:
   - "client_credentials"

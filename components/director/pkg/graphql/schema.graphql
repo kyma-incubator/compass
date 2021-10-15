@@ -108,6 +108,11 @@ enum FetchRequestStatusCondition {
 	FAILED
 }
 
+enum FormationObjectType {
+	APPLICATION
+	TENANT
+}
+
 enum HealthCheckStatusCondition {
 	SUCCEEDED
 	FAILED
@@ -512,6 +517,10 @@ input FetchRequestInput {
 	filter: String
 }
 
+input FormationInput {
+	name: String!
+}
+
 input IntegrationSystemInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -907,6 +916,10 @@ type FetchRequestStatus {
 	condition: FetchRequestStatusCondition!
 	message: String
 	timestamp: Timestamp!
+}
+
+type Formation {
+	name: String!
 }
 
 type HealthCheck {
@@ -1323,6 +1336,10 @@ type Mutation {
 	- [delete document](examples/delete-document/delete-document.graphql)
 	"""
 	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
+	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	deleteFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.deleteFormation")
+	assignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.assignFormation")
+	unAssignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unAssignFormation")
 	"""
 	**Examples**
 	- [create label definition](examples/create-label-definition/create-label-definition.graphql)

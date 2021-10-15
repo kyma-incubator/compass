@@ -5,7 +5,7 @@ echo -e "${GREEN}Internal Tenant ID for default tenant from dump: $INTERNAL_TENA
 
 
 HEADER=$(echo "{ \"alg\": \"none\", \"typ\": \"JWT\" }" | base64 | tr '/+' '_-' | tr -d '=')
-PAYLOAD=$(echo "{ \"scopes\": \"application:read automatic_scenario_assignment:write automatic_scenario_assignment:read health_checks:read application:write runtime:write label_definition:write label_definition:read runtime:read tenant:read\", \"tenant\": \"$INTERNAL_TENANT_ID\" }" | base64 | tr '/+' '_-' | tr -d '=')
+PAYLOAD=$(echo "{ \"scopes\": \"application:read automatic_scenario_assignment:write automatic_scenario_assignment:read health_checks:read application:write runtime:write label_definition:write label_definition:read runtime:read tenant:read formation:write\", \"tenant\": \"$INTERNAL_TENANT_ID\" }" | base64 | tr '/+' '_-' | tr -d '=')
 JWT_TOKEN="$HEADER.$PAYLOAD."
 
 echo -e "${GREEN}Use the following JWT token when requesting Director as default tenant:${NC}"

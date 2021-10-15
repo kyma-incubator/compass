@@ -10,6 +10,7 @@ type Label struct {
 	Value      interface{}
 	ObjectID   string
 	ObjectType LabelableObject
+	Version    int
 }
 
 // LabelInput missing godoc
@@ -55,6 +56,7 @@ func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value inte
 		ObjectID:   runtimeCtx.ID,
 		Key:        key,
 		Value:      value,
+		Version:    0,
 	}
 }
 
@@ -67,6 +69,7 @@ func NewLabelForRuntime(runtime Runtime, key string, value interface{}) *Label {
 		ObjectID:   runtime.ID,
 		Key:        key,
 		Value:      value,
+		Version:    0,
 	}
 }
 
@@ -79,5 +82,6 @@ func NewLabelForApplication(app Application, key string, value interface{}) *Lab
 		ObjectID:   app.ID,
 		Key:        key,
 		Value:      value,
+		Version:    0,
 	}
 }

@@ -18,6 +18,7 @@ import (
 // Updater missing godoc
 type Updater interface {
 	UpdateSingle(ctx context.Context, dbEntity interface{}) error
+	UpdateSingleWithVersion(ctx context.Context, dbEntity interface{}) error
 	SetIDColumns(idColumns []string)
 	SetUpdatableColumns(updatableColumns []string)
 	Clone() Updater
@@ -70,12 +71,17 @@ func (u *universalUpdater) SetUpdatableColumns(updatableColumns []string) {
 
 // UpdateSingle missing godoc
 func (u *universalUpdater) UpdateSingle(ctx context.Context, dbEntity interface{}) error {
-	return u.unsafeUpdateSingle(ctx, dbEntity, false, false)
+	return u.unsafeUpdateSingle(ctx, dbEntity, false, false, false)
 }
 
 // UpdateSingleGlobal missing godoc
 func (u *universalUpdater) UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error {
-	return u.unsafeUpdateSingle(ctx, dbEntity, true, false)
+	return u.unsafeUpdateSingle(ctx, dbEntity, true, false, false)
+}
+
+// UpdateSingle missing godoc
+func (u *universalUpdater) UpdateSingleWithVersion(ctx context.Context, dbEntity interface{}) error {
+	return u.unsafeUpdateSingle(ctx, dbEntity, false, false, true)
 }
 
 // Clone missing godoc
@@ -93,10 +99,10 @@ func (u *universalUpdater) Clone() Updater {
 
 // TechnicalUpdate missing godoc
 func (u *universalUpdater) TechnicalUpdate(ctx context.Context, dbEntity interface{}) error {
-	return u.unsafeUpdateSingle(ctx, dbEntity, false, true)
+	return u.unsafeUpdateSingle(ctx, dbEntity, false, true, false)
 }
 
-func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity interface{}, isGlobal, isTechnical bool) error {
+func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity interface{}, isGlobal, isTechnical, isVersioned bool) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -106,9 +112,12 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 		return err
 	}
 
-	fieldsToSet := make([]string, 0, len(u.updatableColumns))
+	fieldsToSet := make([]string, 0, len(u.updatableColumns)+1)
 	for _, c := range u.updatableColumns {
 		fieldsToSet = append(fieldsToSet, fmt.Sprintf("%s = :%s", c, c))
+	}
+	if isVersioned {
+		fieldsToSet = append(fieldsToSet, "version = version+1")
 	}
 
 	var stmtBuilder strings.Builder

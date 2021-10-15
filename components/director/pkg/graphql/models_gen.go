@@ -402,6 +402,10 @@ type FetchRequestStatus struct {
 	Timestamp Timestamp                   `json:"timestamp"`
 }
 
+type FormationInput struct {
+	Name string `json:"name"`
+}
+
 type HealthCheck struct {
 	Type      HealthCheckType            `json:"type"`
 	Condition HealthCheckStatusCondition `json:"condition"`
@@ -1019,6 +1023,47 @@ func (e *FetchRequestStatusCondition) UnmarshalGQL(v interface{}) error {
 }
 
 func (e FetchRequestStatusCondition) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type FormationObjectType string
+
+const (
+	FormationObjectTypeApplication FormationObjectType = "APPLICATION"
+	FormationObjectTypeTenant      FormationObjectType = "TENANT"
+)
+
+var AllFormationObjectType = []FormationObjectType{
+	FormationObjectTypeApplication,
+	FormationObjectTypeTenant,
+}
+
+func (e FormationObjectType) IsValid() bool {
+	switch e {
+	case FormationObjectTypeApplication, FormationObjectTypeTenant:
+		return true
+	}
+	return false
+}
+
+func (e FormationObjectType) String() string {
+	return string(e)
+}
+
+func (e *FormationObjectType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FormationObjectType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FormationObjectType", str)
+	}
+	return nil
+}
+
+func (e FormationObjectType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
