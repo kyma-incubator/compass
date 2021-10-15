@@ -46,7 +46,7 @@ type UIDService interface {
 // LabelDefService missing godoc
 //go:generate mockery --name=LabelDefService --output=automock --outpkg=automock --case=underscore
 type LabelDefService interface {
-	Create(ctx context.Context, def model.LabelDefinition) (model.LabelDefinition, error)
+	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
 	ValidateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant, key string) error
 	ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error
 }
@@ -81,7 +81,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		return s.assignApplication(ctx, tnt, objectID, objectType, formation)
+		return s.assignApplication(ctx, tnt, objectID, formation)
 	case graphql.FormationObjectTypeTenant:
 
 	default:
@@ -94,7 +94,7 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 	def, err := s.labelDefRepository.GetByKey(ctx, tnt, model.ScenariosKey)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			if err = s.create(ctx, tnt, []string{formationName}); err != nil {
+			if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formationName}); err != nil {
 				return nil, err
 			}
 			return &model.Formation{Name: formationName}, nil
@@ -136,21 +136,7 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 	return &model.Formation{Name: formationName}, nil
 }
 
-func (s *service) create(ctx context.Context, tnt string, formations []string) error {
-	schema, err := labeldef.NewSchemaForFormations(formations)
-	if err != nil {
-		return errors.Wrapf(err, "while creaing new schema for key %s", model.ScenariosKey)
-	}
-	return s.labelDefRepository.Create(ctx, model.LabelDefinition{
-		ID:      s.uuidService.Generate(),
-		Tenant:  tnt,
-		Key:     model.ScenariosKey,
-		Schema:  &schema,
-		Version: 0,
-	})
-}
-
-func (s *service) assignApplication(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
+func (s *service) assignApplication(ctx context.Context, tnt, objectID string, formation model.Formation) (*model.Formation, error) {
 	lbl := &model.Label{
 		ID:         s.uuidService.Generate(),
 		Tenant:     tnt,

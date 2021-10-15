@@ -81,6 +81,20 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 	return def, nil
 }
 
+func (s *service) CreateWithFormations(ctx context.Context, tnt string, formations []string) error {
+	schema, err := NewSchemaForFormations(formations)
+	if err != nil {
+		return errors.Wrapf(err, "while creaing new schema for key %s", model.ScenariosKey)
+	}
+	return s.repo.Create(ctx, model.LabelDefinition{
+		ID:      s.uidService.Generate(),
+		Tenant:  tnt,
+		Key:     model.ScenariosKey,
+		Schema:  &schema,
+		Version: 0,
+	})
+}
+
 // Get missing godoc
 func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	// TODO: Once proper tenant initialization, with creating scenarios LD, is introduced this hack should be removed
