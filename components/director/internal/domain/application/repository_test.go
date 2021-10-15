@@ -371,7 +371,7 @@ func TestRepository_Unpair(t *testing.T) {
 		dbMock.ExpectExec(updateStmt).
 			WillReturnError(givenError())
 
-		ctx = persistence.SaveToContext(context.TODO(), db)
+		ctx = persistence.SaveToContext(ctx, db)
 		repository := application.NewRepository(mockConverter)
 
 		// when
