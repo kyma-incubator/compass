@@ -41,7 +41,7 @@ import (
 
 func TestSubscriptionFlow(stdT *testing.T) {
 	t := testingx.NewT(stdT)
-	t.Run("Consuming provider resources after successful subscription", func(t *testing.T) {
+	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
 		ctx := context.Background()
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
 		secondaryTenant := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
