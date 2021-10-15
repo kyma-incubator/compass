@@ -112,7 +112,7 @@ func TestORDAggregator(t *testing.T) {
 	}
 
 	accessStrategyConfigSecurity := &fixtures.ORDConfigSecurity{
-		Enabled:  true,
+		Enabled:        true,
 		AccessStrategy: "sap:cmp-mtls:v1",
 	}
 

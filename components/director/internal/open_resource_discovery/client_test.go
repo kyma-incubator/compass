@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy/automock"
-	"github.com/stretchr/testify/mock"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy/automock"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
