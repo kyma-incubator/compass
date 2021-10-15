@@ -275,6 +275,9 @@ func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error
 		{{- if .CorrelationIDKey }} 
 		correlationIdKey: "{{.CorrelationIDKey }}",
 		{{- end }}
+		{{- if .AccessStrategy }} 
+		accessStrategy: "{{.AccessStrategy }}",
+		{{- end }}
 		{{- if .RetryInterval }} 
 		retryInterval: {{.RetryInterval }},
 		{{- end }}
