@@ -451,7 +451,7 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Tran
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, defaultScenarioEnabled)
-	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
+	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	runtimeConv := runtime.NewConverter()
 	runtimeRepo := runtime.NewRepository(runtimeConv)
 
@@ -610,7 +610,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
+	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	bundleRepo := bundle.NewRepository(packageConverter)

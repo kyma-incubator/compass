@@ -44,7 +44,7 @@ func main() {
 	labelRepo := label.NewRepository(labelConv)
 	labelDefConv := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConv)
-	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, UIDSvc)
+	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, UIDSvc)
 
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)

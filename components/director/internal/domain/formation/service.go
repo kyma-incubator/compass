@@ -29,12 +29,12 @@ type LabelDefRepository interface {
 	UpdateWithVersion(ctx context.Context, def model.LabelDefinition) error
 }
 
-// LabelRepository missing godoc
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
-type LabelRepository interface {
-	Create(ctx context.Context, label *model.Label) error
-	UpdateWithVersion(ctx context.Context, label *model.Label) error
-	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+// LabelService missing godoc
+//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
+type LabelService interface {
+	CreateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
+	UpdateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
+	GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error)
 }
 
 // UIDService missing godoc
@@ -51,19 +51,21 @@ type LabelDefService interface {
 	ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error
 }
 
+type ModificationFunc func([]string, string) []string
+
 type service struct {
 	labelConverter     LabelConverter
 	labelDefRepository LabelDefRepository
-	labelRepository    LabelRepository
+	labelService       LabelService
 	labelDefService    LabelDefService
 	uuidService        UIDService
 }
 
-func NewService(labelConverter LabelConverter, labelDefRepository LabelDefRepository, labelRepository LabelRepository, uuidService UIDService, labelDefService LabelDefService) *service {
+func NewService(labelConverter LabelConverter, labelDefRepository LabelDefRepository, labelService LabelService, uuidService UIDService, labelDefService LabelDefService) *service {
 	return &service{
 		labelConverter:     labelConverter,
 		labelDefRepository: labelDefRepository,
-		labelRepository:    labelRepository,
+		labelService:       labelService,
 		labelDefService:    labelDefService,
 		uuidService:        uuidService,
 	}
@@ -81,7 +83,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		return s.assignApplication(ctx, tnt, objectID, formation)
+		return s.assignApplication(ctx, tnt, objectID, formation, addFormation)
 	case graphql.FormationObjectTypeTenant:
 
 	default:
@@ -90,7 +92,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	panic("")
 }
 
-func (s *service) modifyFormations(ctx context.Context, tnt, formationName string, modificationFunc func([]string, string) []string) (*model.Formation, error) {
+func (s *service) modifyFormations(ctx context.Context, tnt, formationName string, modificationFunc ModificationFunc) (*model.Formation, error) {
 	def, err := s.labelDefRepository.GetByKey(ctx, tnt, model.ScenariosKey)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
@@ -136,20 +138,19 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 	return &model.Formation{Name: formationName}, nil
 }
 
-func (s *service) assignApplication(ctx context.Context, tnt, objectID string, formation model.Formation) (*model.Formation, error) {
-	lbl := &model.Label{
-		ID:         s.uuidService.Generate(),
-		Tenant:     tnt,
+func (s *service) assignApplication(ctx context.Context, tnt, objectID string, formation model.Formation, modificationFunc ModificationFunc) (*model.Formation, error) {
+	labelInput := &model.LabelInput{
 		Key:        model.ScenariosKey,
 		Value:      []string{formation.Name},
 		ObjectID:   objectID,
 		ObjectType: model.ApplicationLabelableObject,
+		Version:    0,
 	}
 
-	existingLabel, err := s.labelRepository.GetByKey(ctx, lbl.Tenant, lbl.ObjectType, lbl.ObjectID, lbl.Key)
+	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			if err = s.labelRepository.Create(ctx, lbl); err != nil {
+			if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
 				return nil, err
 			}
 			return &formation, nil
@@ -157,19 +158,14 @@ func (s *service) assignApplication(ctx context.Context, tnt, objectID string, f
 		return nil, err
 	}
 
-	existingFormations, ok := existingLabel.Value.([]string)
-	if !ok {
-		return nil, fmt.Errorf("could not parse scenarios label")
+	existingFormations, err := label.ValueToStringsSlice(existingLabel.Value)
+	if err != nil {
+		return nil, err
 	}
 
-	for _, f := range existingFormations {
-		if f == formation.Name {
-			return &model.Formation{Name: formation.Name}, nil
-		}
-	}
-
-	lbl.Value = append(existingFormations, formation.Name)
-	return &formation, s.labelRepository.UpdateWithVersion(ctx, lbl)
+	labelInput.Value = modificationFunc(existingFormations, formation.Name)
+	labelInput.Version = existingLabel.Version
+	return &formation, s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
 }
 
 func addFormation(formations []string, formation string) []string {

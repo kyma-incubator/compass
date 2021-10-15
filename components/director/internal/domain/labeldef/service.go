@@ -82,6 +82,7 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 }
 
 func (s *service) CreateWithFormations(ctx context.Context, tnt string, formations []string) error {
+	formations = s.addDefaultScenarioIfEnabled(formations)
 	schema, err := NewSchemaForFormations(formations)
 	if err != nil {
 		return errors.Wrapf(err, "while creaing new schema for key %s", model.ScenariosKey)
@@ -244,6 +245,14 @@ func (s *service) AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[s
 	}
 }
 
+func (s *service) addDefaultScenarioIfEnabled(formations []string) []string {
+	if !s.defaultScenarioEnabled {
+		return formations
+	}
+
+	return append(formations, "DEFAULT")
+}
+
 func (s *service) ValidateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant, key string) error {
 	existingLabels, err := s.labelRepo.ListByKey(ctx, tenant, key)
 	if err != nil {
@@ -326,31 +335,6 @@ func ParseFormationsFromSchema(schema *interface{}) ([]string, error) {
 	}
 	return f.Items.Enum, nil
 }
-
-// EnsureScenariosLabelDefinitionExists missing godoc
-//func (s *service) Create(ctx context.Context, tenant string, initialFormations []string) error {
-//	schema, err := newSchemaForFormations(initialFormations)
-//	if err != nil {
-//		return errors.Wrapf(err, "while creating schema for Label Definition with key %s", model.ScenariosKey)
-//	}
-//
-//	formationLD := model.LabelDefinition{
-//		ID:     s.uuidService.Generate(),
-//		Tenant: tenant,
-//		Key:    model.ScenariosKey,
-//		Schema: &schema,
-//	}
-//	err = s.labelDefRepository.Create(ctx, formationLD)
-//	if err != nil {
-//		return errors.Wrapf(err, "while creating Label Definition with key %s", model.ScenariosKey)
-//	}
-//	return nil
-//}
-
-// EnsureScenariosLabelDefinitionExists missing godoc
-//func (s *service) createDefault(ctx context.Context, tenant string) error {
-//	return s.Create(ctx, tenant, []string{"DEFAULT"})
-//}
 
 func (s *service) fetchScenariosFromAssignments(ctx context.Context, tenantID string) ([]string, error) {
 	m := make(map[string]struct{})

@@ -19,6 +19,7 @@ type LabelInput struct {
 	Value      interface{}
 	ObjectID   string
 	ObjectType LabelableObject
+	Version    int
 }
 
 // ToLabel missing godoc
@@ -30,6 +31,7 @@ func (i *LabelInput) ToLabel(id, tenant string) *Label {
 		ObjectID:   i.ObjectID,
 		Key:        i.Key,
 		Value:      i.Value,
+		Version:    i.Version,
 	}
 }
 

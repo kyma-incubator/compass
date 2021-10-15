@@ -128,7 +128,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 
 	uidSvc := uid.NewService()
-	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
+	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)

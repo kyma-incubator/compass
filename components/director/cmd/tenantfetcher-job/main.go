@@ -94,7 +94,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 
 	labelConverter := label.NewConverter()
 	labelRepository := label.NewRepository(labelConverter)
-	labelUpsertService := label.NewLabelUpsertService(labelRepository, labelDefRepository, uidSvc)
+	labelUpsertService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
 
 	tenantStorageConv := tenant.NewConverter()
 	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)

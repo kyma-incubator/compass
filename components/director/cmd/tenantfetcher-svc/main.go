@@ -192,7 +192,7 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	labelRepo := label.NewRepository(labelConv)
 	labelDefConv := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConv)
-	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
+	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 
 	converter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(converter)

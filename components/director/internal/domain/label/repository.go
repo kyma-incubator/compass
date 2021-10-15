@@ -73,6 +73,7 @@ func (r *repository) Upsert(ctx context.Context, label *model.Label) error {
 		return err
 	}
 
+	l.Value = label.Value
 	labelEntity, err := r.conv.ToEntity(*l)
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")

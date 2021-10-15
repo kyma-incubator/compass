@@ -6,6 +6,7 @@ const ScenariosKey = "scenarios"
 var (
 	// ScenariosDefaultValue missing godoc
 	ScenariosDefaultValue = []interface{}{"DEFAULT"}
+	// ScenariosDefaultValueSlice missing godoc
 	// ScenariosSchema missing godoc
 	ScenariosSchema = map[string]interface{}{
 		"type":        "array",
