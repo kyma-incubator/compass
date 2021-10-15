@@ -468,7 +468,7 @@ func (r *mutationResolver) AssignFormation(ctx context.Context, objectID string,
 }
 
 func (r *mutationResolver) UnAssignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
-	return r.formation.UnAssignFormation(ctx, objectID, objectType, formation)
+	return r.formation.UnassignFormation(ctx, objectID, objectType, formation)
 }
 
 func (r *mutationResolver) CreateFormation(ctx context.Context, formation graphql.FormationInput) (*graphql.Formation, error) {

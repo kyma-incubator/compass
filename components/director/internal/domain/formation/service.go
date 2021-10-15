@@ -51,8 +51,6 @@ type LabelDefService interface {
 	ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error
 }
 
-type ModificationFunc func([]string, string) []string
-
 type service struct {
 	labelConverter     LabelConverter
 	labelDefRepository LabelDefRepository
@@ -72,7 +70,14 @@ func NewService(labelConverter LabelConverter, labelDefRepository LabelDefReposi
 }
 
 func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
-	return s.modifyFormations(ctx, tnt, formation.Name, addFormation)
+	f, err := s.modifyFormations(ctx, tnt, formation.Name, addFormation)
+	if apperrors.IsNotFoundError(err) {
+		if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formation.Name}); err != nil {
+			return nil, err
+		}
+		return &model.Formation{Name: formation.Name}, nil
+	}
+	return f, nil
 }
 
 func (s *service) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
@@ -80,10 +85,29 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 }
 
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
-
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		return s.assignApplication(ctx, tnt, objectID, formation, addFormation)
+		f, err := s.modifyAssignedFormationsForApplication(ctx, tnt, objectID, formation, addFormation)
+		if apperrors.IsNotFoundError(err) {
+			labelInput := newLabelInput(formation.Name, objectID, model.ApplicationLabelableObject)
+			if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
+				return nil, err
+			}
+			return &formation, nil
+		}
+		return f, nil
+	case graphql.FormationObjectTypeTenant:
+
+	default:
+		return nil, fmt.Errorf("unknown formation type %s", objectType)
+	}
+	panic("")
+}
+
+func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
+	switch objectType {
+	case graphql.FormationObjectTypeApplication:
+		return s.modifyAssignedFormationsForApplication(ctx, tnt, objectID, formation, deleteFormation)
 	case graphql.FormationObjectTypeTenant:
 
 	default:
@@ -95,12 +119,6 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 func (s *service) modifyFormations(ctx context.Context, tnt, formationName string, modificationFunc ModificationFunc) (*model.Formation, error) {
 	def, err := s.labelDefRepository.GetByKey(ctx, tnt, model.ScenariosKey)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formationName}); err != nil {
-				return nil, err
-			}
-			return &model.Formation{Name: formationName}, nil
-		}
 		return nil, errors.Wrapf(err, "while getting `%s` label definition", model.ScenariosKey)
 	}
 	if def.Schema == nil {
@@ -138,23 +156,11 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 	return &model.Formation{Name: formationName}, nil
 }
 
-func (s *service) assignApplication(ctx context.Context, tnt, objectID string, formation model.Formation, modificationFunc ModificationFunc) (*model.Formation, error) {
-	labelInput := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      []string{formation.Name},
-		ObjectID:   objectID,
-		ObjectType: model.ApplicationLabelableObject,
-		Version:    0,
-	}
+func (s *service) modifyAssignedFormationsForApplication(ctx context.Context, tnt, objectID string, formation model.Formation, modificationFunc ModificationFunc) (*model.Formation, error) {
+	labelInput := newLabelInput(formation.Name, objectID, model.ApplicationLabelableObject)
 
 	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
-				return nil, err
-			}
-			return &formation, nil
-		}
 		return nil, err
 	}
 
@@ -167,6 +173,8 @@ func (s *service) assignApplication(ctx context.Context, tnt, objectID string, f
 	labelInput.Version = existingLabel.Version
 	return &formation, s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
 }
+
+type ModificationFunc func([]string, string) []string
 
 func addFormation(formations []string, formation string) []string {
 	for _, f := range formations {
@@ -187,4 +195,14 @@ func deleteFormation(formations []string, formation string) []string {
 	}
 
 	return filteredFormations
+}
+
+func newLabelInput(formation, objectID string, objectType model.LabelableObject) *model.LabelInput {
+	return &model.LabelInput{
+		Key:        model.ScenariosKey,
+		Value:      []string{formation},
+		ObjectID:   objectID,
+		ObjectType: objectType,
+		Version:    0,
+	}
 }

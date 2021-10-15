@@ -16,6 +16,7 @@ type Service interface {
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 }
 
 // Converter missing godoc
@@ -117,7 +118,12 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 	return r.conv.ToGraphQL(newFormation), nil
 }
 
-func (r *Resolver) UnAssignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
+func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -125,6 +131,15 @@ func (r *Resolver) UnAssignFormation(ctx context.Context, objectID string, objec
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	panic("")
 
+	newFormation, err := r.service.UnassignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation))
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
+
+	return r.conv.ToGraphQL(newFormation), nil
 }
