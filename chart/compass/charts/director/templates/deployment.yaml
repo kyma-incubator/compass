@@ -154,9 +154,9 @@ spec:
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             {{- range $authenMappingServiceName, $config := .Values.global.oathkeeper.mutators.authenticationMappingServices }}
             {{- if eq $config.authenticator.enabled true }}
-            - name: APP_{{ $config.authenticator.name }}_AUTHENTICATOR_TRUSTED_ISSUERS
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_TRUSTED_ISSUERS
               value: {{ $config.authenticator.trusted_issuers | quote }}
-            - name: APP_{{ $config.authenticator.name }}_AUTHENTICATOR_ATTRIBUTES
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.authenticator.attributes | quote }}
             {{- end }}
             {{- end }}
