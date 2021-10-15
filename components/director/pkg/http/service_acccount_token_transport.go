@@ -20,6 +20,14 @@ func NewServiceAccountTokenTransport(roundTripper HTTPRoundTripper) *serviceAcco
 	}
 }
 
+// NewServiceAccountTokenTransportWithHeader constructs an serviceAccountTokenTransport with configurable header name
+func NewServiceAccountTokenTransportWithHeader(roundTripper HTTPRoundTripper, headerName string) *serviceAccountTokenTransport {
+	return &serviceAccountTokenTransport{
+		roundTripper: roundTripper,
+		headerName:   headerName,
+	}
+}
+
 // NewServiceAccountTokenTransportWithPath constructs an serviceAccountTokenTransport with a given path
 func NewServiceAccountTokenTransportWithPath(roundTripper HTTPRoundTripper, path string) *serviceAccountTokenTransport {
 	return &serviceAccountTokenTransport{
@@ -32,6 +40,7 @@ func NewServiceAccountTokenTransportWithPath(roundTripper HTTPRoundTripper, path
 type serviceAccountTokenTransport struct {
 	roundTripper HTTPRoundTripper
 	path         string
+	headerName   string
 }
 
 // RoundTrip attaches a kubernetes service account token in the X-Authorization header for internal authentication.
@@ -45,7 +54,11 @@ func (tr *serviceAccountTokenTransport) RoundTrip(r *http.Request) (*http.Respon
 		return nil, errors.Wrapf(err, "Unable to read service account token file")
 	}
 
-	r.Header.Set(InternalAuthorizationHeader, "Bearer "+string(token))
+	headerName := InternalAuthorizationHeader
+	if tr.headerName != "" {
+		headerName = tr.headerName
+	}
+	r.Header.Set(headerName, "Bearer "+string(token))
 
 	return tr.roundTripper.RoundTrip(r)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -48,7 +49,7 @@ func main() {
 	k8sClientSet, appErr := newK8SClientSet(ctx, cfg.KubernetesClient.PollInteval, cfg.KubernetesClient.PollTimeout, cfg.KubernetesClient.Timeout)
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 
-	directorGCLI := newInternalGraphQLClient(cfg.OneTimeTokenURL, cfg.HTTPClientTimeout)
+	directorGCLI := newInternalGraphQLClient(cfg.OneTimeTokenURL, cfg.HTTPClientTimeout, cfg.HttpClientSkipSslValidation)
 	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet, directorGCLI)
 	go certsLoader.Run(ctx)
 	go revokedCertsLoader.Run(ctx)
@@ -165,9 +166,15 @@ func newK8SClientSet(ctx context.Context, interval, pollingTimeout, timeout time
 	return k8sClientSet, nil
 }
 
-func newInternalGraphQLClient(URL string, timeout time.Duration) *gcli.Client {
+func newInternalGraphQLClient(URL string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: skipSSLValidation,
+		},
+	}
+
 	client := &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")),
 		Timeout:   timeout,
 	}
 

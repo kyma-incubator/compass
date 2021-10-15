@@ -20,6 +20,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+
 	"github.com/tidwall/gjson"
 
 	"github.com/sirupsen/logrus"
@@ -34,14 +36,22 @@ import (
 
 // NewAuthenticatorContextProvider implements the ObjectContextProvider interface by looking for user scopes in the 'scope' token attribute
 // and also extracts the tenant information from the token by using a dedicated TenantAttribute defined for the specified authenticator.
-func NewAuthenticatorContextProvider(tenantRepo TenantRepository) *authenticatorContextProvider {
+// It uses its authenticators to extract authentication details from the requestData.
+func NewAuthenticatorContextProvider(tenantRepo TenantRepository, authenticators []authenticator.Config) *authenticatorContextProvider {
 	return &authenticatorContextProvider{
 		tenantRepo: tenantRepo,
+		tenantKeys: KeysExtra{
+			TenantKey:         ConsumerTenantKey,
+			ExternalTenantKey: ExternalTenantKey,
+		},
+		authenticators: authenticators,
 	}
 }
 
 type authenticatorContextProvider struct {
-	tenantRepo TenantRepository
+	tenantRepo     TenantRepository
+	tenantKeys     KeysExtra
+	authenticators []authenticator.Config
 }
 
 // GetObjectContext is the authenticatorContextProvider implementation of the ObjectContextProvider interface
@@ -74,19 +84,51 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
+
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), scopes, authDetails.AuthID, consumer.User), nil
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, authDetails.AuthID, consumer.User)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil
+}
+
+// Match checks whether any of its preconfigured authenticators matches the ReqData and if so builds AuthDetails for the matched authenticator
+func (m *authenticatorContextProvider) Match(ctx context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	coords, exist, err := data.ExtractCoordinates()
+	if err != nil {
+		return false, nil, errors.Wrap(err, "while extracting coordinates")
+	}
+	if exist {
+		for _, authn := range m.authenticators {
+			if authn.Name != coords.Name {
+				continue
+			}
+			log.C(ctx).Infof("Request token matches %q authenticator", authn.Name)
+
+			extra, err := data.MarshalExtra()
+			if err != nil {
+				return false, nil, err
+			}
+
+			authID := gjson.Get(extra, authn.Attributes.IdentityAttribute.Key).String()
+			if len(authID) == 0 {
+				return false, nil, apperrors.NewInvalidDataError("missing identity attribute from %q authenticator token", authn.Name)
+			}
+
+			index := coords.Index
+			return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn, ScopePrefix: authn.TrustedIssuers[index].ScopePrefix}, nil
+		}
+	}
+
+	return false, nil, nil
 }

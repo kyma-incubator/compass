@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 COMPONENT=$1
-echo $COMPONENT
+echo "Component name: $COMPONENT"
 kubectl get testdefinition compass-e2e-$COMPONENT -n kyma-system -o json > td_duplicate.json
 export TD_NAME=compass-e2e-$COMPONENT-local
 jq --arg e "$TD_NAME"  '.metadata.name = $e' td_duplicate.json |sponge td_duplicate.json

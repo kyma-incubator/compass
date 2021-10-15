@@ -1,9 +1,13 @@
 package authentication
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 )
 
 type authContextMiddleware struct {
@@ -13,8 +17,61 @@ func NewAuthenticationContextMiddleware() *authContextMiddleware {
 	return &authContextMiddleware{}
 }
 
+type tokenClaims struct {
+	Tenant       map[string]string `json:"tenant"`
+	ConsumerType string            `json:"consumerType"`
+}
+
+func (tokenClaims) Valid() error {
+	return nil
+}
+
+// UnmarshalJSON implements Unmarshaler interface. The method unmarshal the data from b into Claims structure.
+func (c *tokenClaims) UnmarshalJSON(b []byte) error {
+	tokenClaims := struct {
+		TenantString string `json:"tenant"`
+		ConsumerType string `json:"consumerType"`
+	}{}
+
+	err := json.Unmarshal(b, &tokenClaims)
+	if err != nil {
+		return errors.Wrap(err, "while unmarshaling token claims:")
+	}
+
+	c.ConsumerType = tokenClaims.ConsumerType
+
+	if err := json.Unmarshal([]byte(tokenClaims.TenantString), &c.Tenant); err != nil {
+		return errors.Wrap(err, "while unmarshaling tenants")
+	}
+
+	return nil
+}
+
 func (acm *authContextMiddleware) PropagateAuthentication(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		authorizationHeader := r.Header.Get("Authorization")
+		if authorizationHeader != "" {
+			parser := jwt.Parser{}
+			var tokenClaims tokenClaims
+			_, _, err := parser.ParseUnverified(authorizationHeader[7:], &tokenClaims)
+			if err != nil {
+				log.C(ctx).WithError(err).Error("could not parse token")
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			tenant, found := tokenClaims.Tenant["consumerTenant"]
+			if found && tenant != "" {
+				r = r.WithContext(PutIntoContext(r.Context(), TenantKey, tenant))
+			}
+
+			consumerType := tokenClaims.ConsumerType
+			if consumerType != "" {
+				r = r.WithContext(PutIntoContext(r.Context(), ConsumerType, consumerType))
+			}
+		}
+
 		clientIdFromToken := r.Header.Get(oathkeeper.ClientIdFromTokenHeader)
 		r = r.WithContext(PutIntoContext(r.Context(), ClientIdFromTokenKey, clientIdFromToken))
 

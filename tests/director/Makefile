@@ -33,7 +33,7 @@ run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
-	env GOOS=linux GOARCH=arm go test -c ./tests -o director.test
+	env GOOS=linux go test -c ./tests -o director.test
 	kubectl cp ./director.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-director-local-0:/ -c director-tests
 	rm ./director.test
 

@@ -44,9 +44,6 @@ spec:
             - name: http
               containerPort: {{ .Values.global.director.graphql.external.port }}
               protocol: TCP
-            - name: http-gql-int
-              containerPort: {{ .Values.global.director.graphql.internal.port }}
-              protocol: TCP
             - name: http-validator
               containerPort: {{ .Values.global.director.validator.port }}
               protocol: TCP
@@ -65,8 +62,6 @@ spec:
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.graphql.external.port }}"
-            - name: APP_GRAPHQL_INTERNAL_ADDRESS
-              value: "0.0.0.0:{{ .Values.global.director.graphql.internal.port }}"
             - name: APP_HYDRATOR_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.validator.port }}"
             - name: APP_INTERNAL_ADDRESS
@@ -157,12 +152,12 @@ spec:
             {{- end }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
-            {{- range $authenticatorName, $config := .Values.global.authenticators }}
-            {{- if eq $config.enabled true }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
-              value: {{ $config.trusted_issuers | quote }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
-              value: {{ $config.attributes | quote }}
+            {{- range $authenMappingServiceName, $config := .Values.global.oathkeeper.mutators.authenticationMappingServices }}
+            {{- if eq $config.authenticator.enabled true }}
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_TRUSTED_ISSUERS
+              value: {{ $config.authenticator.trusted_issuers | quote }}
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_ATTRIBUTES
+              value: {{ $config.authenticator.attributes | quote }}
             {{- end }}
             {{- end }}
             - name: APP_HEALTH_CONFIG_INDICATORS
