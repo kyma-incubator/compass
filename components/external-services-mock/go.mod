@@ -9,7 +9,7 @@ require (
 	github.com/goccy/go-json v0.7.8 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210922113925-7ff5909fa72b
+	github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a5435ac7a
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
@@ -27,7 +27,7 @@ require (
 	github.com/vrischmann/envconfig v1.3.0
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
+	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

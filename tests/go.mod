@@ -29,7 +29,7 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210922143733-cb93bcfd3cd6
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
-	github.com/kyma-incubator/compass/components/director v0.0.0-20211012083004-29d8e75e30e3
+	github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a5435ac7a
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210922140924-1dc663c3ed24
