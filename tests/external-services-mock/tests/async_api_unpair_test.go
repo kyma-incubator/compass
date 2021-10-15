@@ -93,7 +93,6 @@ func triggerAsyncUnpair(t *testing.T, ctx context.Context, app graphql.Applicati
 		require.NotEmpty(t, unpairedApp.UpdatedAt, "Application Update time is not empty")
 		updatedAt := time.Time(*unpairedApp.UpdatedAt)
 		require.True(t, appNearCreationTime.Before(updatedAt), "Updated time is before creation time")
-		require.True(t, time.Now().After(updatedAt), "Updated time is in the future")
 
 		t.Log("Unlock application webhook")
 		testPkg.UnlockWebhook(t, operationFullPath)
