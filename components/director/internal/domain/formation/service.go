@@ -51,20 +51,30 @@ type LabelDefService interface {
 	ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error
 }
 
+// AutomaticFormationAssignmentService missing godoc
+//go:generate mockery --name=AutomaticFormationAssignment --output=automock --outpkg=automock --case=underscore
+type AutomaticFormationAssignmentService interface {
+	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
+	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
+}
+
 type service struct {
 	labelConverter     LabelConverter
 	labelDefRepository LabelDefRepository
 	labelService       LabelService
 	labelDefService    LabelDefService
+	asaService         AutomaticFormationAssignmentService
 	uuidService        UIDService
 }
 
-func NewService(labelConverter LabelConverter, labelDefRepository LabelDefRepository, labelService LabelService, uuidService UIDService, labelDefService LabelDefService) *service {
+func NewService(labelConverter LabelConverter, labelDefRepository LabelDefRepository, labelService LabelService, uuidService UIDService, labelDefService LabelDefService, asaService AutomaticFormationAssignmentService) *service {
 	return &service{
 		labelConverter:     labelConverter,
 		labelDefRepository: labelDefRepository,
 		labelService:       labelService,
 		labelDefService:    labelDefService,
+		asaService:         asaService,
 		uuidService:        uuidService,
 	}
 }
@@ -97,11 +107,14 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}
 		return f, nil
 	case graphql.FormationObjectTypeTenant:
-
+		_, err := s.asaService.Create(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, objectID))
+		if err != nil {
+			return nil, err
+		}
+		return &formation, err
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
-	panic("")
 }
 
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
@@ -109,11 +122,17 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	case graphql.FormationObjectTypeApplication:
 		return s.modifyAssignedFormationsForApplication(ctx, tnt, objectID, formation, deleteFormation)
 	case graphql.FormationObjectTypeTenant:
-
+		asa, err := s.asaService.GetForScenarioName(ctx, formation.Name)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.asaService.Delete(ctx, asa); err != nil {
+			return nil, err
+		}
+		return &formation, nil
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
-	panic("")
 }
 
 func (s *service) modifyFormations(ctx context.Context, tnt, formationName string, modificationFunc ModificationFunc) (*model.Formation, error) {
@@ -204,5 +223,16 @@ func newLabelInput(formation, objectID string, objectType model.LabelableObject)
 		ObjectID:   objectID,
 		ObjectType: objectType,
 		Version:    0,
+	}
+}
+
+func newAutomaticScenarioAssignmentModel(formation, callerTenant, targetTenant string) model.AutomaticScenarioAssignment {
+	return model.AutomaticScenarioAssignment{
+		ScenarioName: formation,
+		Tenant:       callerTenant,
+		Selector: model.LabelSelector{
+			Key:   "global_subaccount_id",
+			Value: targetTenant,
+		},
 	}
 }

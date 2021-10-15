@@ -2,7 +2,8 @@ package scenarioassignment
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
@@ -92,7 +93,7 @@ func (s *service) validateThatScenarioExists(ctx context.Context, in model.Autom
 		}
 	}
 
-	return fmt.Errorf("scenario `%s` does not exist", in.ScenarioName)
+	return apperrors.NewNotFoundError(resource.AutomaticScenarioAssigment, in.ScenarioName)
 }
 
 func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
