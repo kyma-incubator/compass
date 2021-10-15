@@ -75,8 +75,6 @@ type ApplicationStatusCondition string
 const (
 	// ApplicationStatusConditionInitial missing godoc
 	ApplicationStatusConditionInitial ApplicationStatusCondition = "INITIAL"
-	// ApplicationStatusConditionManaged missing godoc
-	ApplicationStatusConditionManaged ApplicationStatusCondition = "MANAGED"
 	// ApplicationStatusConditionConnected missing godoc
 	ApplicationStatusConditionConnected ApplicationStatusCondition = "CONNECTED"
 	// ApplicationStatusConditionFailed missing godoc

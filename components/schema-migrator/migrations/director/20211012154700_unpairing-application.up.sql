@@ -19,7 +19,6 @@ CREATE TYPE application_status_condition AS ENUM (
     'DELETING',
     'DELETE_FAILED',
     'DELETE_SUCCEEDED',
-    'MANAGED',
     'UNPAIRING',
     'UNPAIR_FAILED'
 );
