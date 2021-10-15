@@ -4,8 +4,8 @@ package ord_aggregator
 // If any breaking/validation change is applied to the fixture's WellKnownConfig structure, it must be applied here as well. Otherwise, the aggregator e2e test will fail.
 const ordConfig = `{
     "$schema": "../spec/v1/generated/Configuration.schema.json",
-    "openResourceDiscoveryV1": {
-		%s
+    %s
+	"openResourceDiscoveryV1": {
         "documents": [
             {
                 "url": "/open-resource-discovery/v1/documents/example1",
