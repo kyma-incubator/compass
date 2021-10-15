@@ -5,7 +5,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: "compass-gateway-{{ $config.authenticator.name }}"
+  name: "compass-gateway-{{ $authenticatorName }}"
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ template "name" $outerScope }} # Needed because 'for' loop introduces its own scope and 'name' template helper function is in the outer scope
