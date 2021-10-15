@@ -39,7 +39,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func TestSubscriptionFlow(stdT *testing.T) {
+func TestConsumerProviderFlow(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
 		ctx := context.Background()
