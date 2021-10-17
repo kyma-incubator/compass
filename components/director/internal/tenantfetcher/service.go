@@ -30,9 +30,9 @@ type TenantFieldMapping struct {
 
 	NameField              string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
 	IDField                string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
-	GlobalAccountGUIDField string `envconfig:"optional,default=globalAccountGUID,APP_GLOBAL_ACCOUNT_GUID_FIELD"`
-	SubaccountIDField      string `envconfig:"optional,default=subaccountId,APP_SUBACCOUNT_ID_FIELD"`
-	SubaccountGUIDField    string `envconfig:"optional,default=subaccountGuid,APP_SUBACCOUNT_GUID_FIELD"`
+	GlobalAccountGUIDField string `envconfig:"optional,default=globalAccountGUID"`
+	SubaccountIDField      string `envconfig:"optional,default=subaccountId"`
+	SubaccountGUIDField    string `envconfig:"optional,default=subaccountGuid"`
 	CustomerIDField        string `envconfig:"default=customerId,APP_MAPPING_FIELD_CUSTOMER_ID"`
 	SubdomainField         string `envconfig:"default=subdomain,APP_MAPPING_FIELD_SUBDOMAIN"`
 	DetailsField           string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
@@ -253,7 +253,7 @@ func (s SubaccountService) SyncTenants() error {
 		}
 		log.C(ctx).Printf("Got subaccount to delete for region: %s", region)
 
-		runtimesToMove, err := s.getRuntimesToMoveByLabel(lastConsumedTenantTimestamp)
+		runtimesToMove, err := s.getRuntimesToMoveByLabel(lastConsumedTenantTimestamp, region)
 		if err != nil {
 			return err
 		}
@@ -608,12 +608,13 @@ func (s SubaccountService) getSubaccountsToDeleteForRegion(fromTimestamp string,
 	return fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, DeletedSubaccountType, configProvider, s.toEventsPage)
 }
 
-func (s SubaccountService) getRuntimesToMoveByLabel(fromTimestamp string) ([]model.MovedRuntimeByLabelMappingInput, error) {
+func (s SubaccountService) getRuntimesToMoveByLabel(fromTimestamp string, region string) ([]model.MovedRuntimeByLabelMappingInput, error) {
 	configProvider := func() (QueryParams, PageConfig) {
 		return QueryParams{
 				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
 				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
 				s.queryConfig.TimestampField: fromTimestamp,
+				s.queryConfig.RegionField:    region,
 			}, PageConfig{
 				TotalPagesField:   s.fieldMapping.TotalPagesField,
 				TotalResultsField: s.fieldMapping.TotalResultsField,
@@ -777,7 +778,7 @@ func excludeTenants(source, target []model.BusinessTenantMappingInput) []model.B
 	return result
 }
 
-func getCurrentTenants(ctx context.Context, tenantStorage TenantStorageService) (map[string]string, error) { // map externalTenant <--> internalTenant
+func getCurrentTenants(ctx context.Context, tenantStorage TenantStorageService) (map[string]string, error) {
 	currentTenants, listErr := tenantStorage.List(ctx)
 	if listErr != nil {
 		return nil, errors.Wrap(listErr, "while listing tenants")

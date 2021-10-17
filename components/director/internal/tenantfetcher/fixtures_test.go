@@ -30,23 +30,6 @@ func fixEvent(t require.TestingT, eventType string, fields map[string]string) []
 	return wrapIntoEventPageJSON(string(eventData), eventType)
 }
 
-func fixMovedRuntimeByLabelEvent(id, source, target, eventType string, fieldMapping tenantfetcher.MovedRuntimeByLabelFieldMapping) []byte {
-	eventData := fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s"}`, fieldMapping.LabelValue, id, fieldMapping.SourceTenant, source, fieldMapping.TargetTenant, target)
-
-	return wrapIntoEventPageJSON(eventData, eventType)
-}
-
-func fixEventWithDiscriminator(id, name, discriminator, eventType string, fieldMapping tenantfetcher.TenantFieldMapping) []byte {
-	discriminatorData := ""
-	if fieldMapping.DiscriminatorField != "" {
-		discriminatorData = fmt.Sprintf(`"%s": "%s",`, fieldMapping.DiscriminatorField, discriminator)
-	}
-
-	eventData := fmt.Sprintf(`{"%s":"%s",%s"%s":"%s"}`, fieldMapping.IDField, id, discriminatorData, fieldMapping.NameField, name)
-
-	return wrapIntoEventPageJSON(eventData, eventType)
-}
-
 func wrapIntoEventPageJSON(eventData, eventType string) []byte {
 	return []byte(fmt.Sprintf(`{
 		"id":        "%s",

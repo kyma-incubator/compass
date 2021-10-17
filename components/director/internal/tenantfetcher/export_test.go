@@ -9,3 +9,7 @@ func (c *Client) SetHTTPClient(client *http.Client) {
 func (s *GlobalAccountService) SetRetryAttempts(n uint) {
 	s.retryAttempts = n
 }
+
+func (s *SubaccountService) SetRetryAttempts(n uint) {
+	s.retryAttempts = n
+}

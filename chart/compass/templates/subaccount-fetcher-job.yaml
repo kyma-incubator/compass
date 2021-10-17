@@ -149,7 +149,7 @@ spec:
               - name: APP_QUERY_PAGE_SIZE_FIELD
                 value: {{ $config.queryMapping.pageSizeField}}
               - name: APP_QUERY_REGION_FIELD
-                value: {{ $config.fieldMapping.regionField }}
+                value: {{ $config.queryMapping.regionField }}
               - name: APP_QUERY_TIMESTAMP_FIELD
                 value: {{ $config.queryMapping.timestampField}}
               - name: APP_QUERY_PAGE_START
