@@ -82,25 +82,7 @@ spec:
                 secretKeyRef:
                   name: admin-user
                   key: password
-            - name: DEFAULT_TENANT
-              value: "{{.Values.global.defaultTenant}}"
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
-            - name: GATEWAY_OAUTH20_SUBDOMAIN
-              value: "{{ .Values.global.gateway.tls.secure.oauth.host }}"
-            - name: GATEWAY_JWT_SUBDOMAIN
-              value: "{{ .Values.global.gateway.tls.host }}"
-            - name: GATEWAY_CLIENT_CERTS_SUBDOMAIN
-              value: "{{ .Values.global.gateway.mtls.host }}"
-            - name: APP_GATEWAY_OAUTH
-              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
-            - name: APP_WEBHOOK_URL
-              value: "https://kyma-project.io"
-            - name: APP_INFO_CERT_SUBJECT
-              value: {{ quote (printf .Values.global.mtlsClient.subjectPattern .Values.global.mtlsClient.locality .Values.global.mtlsClient.commonName) }}
-            - name: APP_INFO_CERT_ISSUER
-              value: {{ .Values.global.mtlsClient.issuer }}
             - name: APP_DEFAULT_SCENARIO
               value: "DEFAULT"
-            - name: APP_DEFAULT_NORMALIZATION_PREFIX
-              value: "mp-"

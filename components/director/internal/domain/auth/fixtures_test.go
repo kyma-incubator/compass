@@ -49,6 +49,7 @@ func fixDetailedAuth() *model.Auth {
 }
 
 func fixDetailedGQLAuth() *graphql.Auth {
+	emptyCertCommonName := ""
 	return &graphql.Auth{
 		Credential: graphql.BasicCredentialData{
 			Username: authUsername,
@@ -69,6 +70,7 @@ func fixDetailedGQLAuth() *graphql.Auth {
 				AdditionalQueryParams: authParams,
 			},
 		},
+		CertCommonName: &emptyCertCommonName,
 	}
 }
 
