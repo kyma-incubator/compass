@@ -44,9 +44,6 @@ spec:
             - name: http
               containerPort: {{ .Values.global.director.graphql.external.port }}
               protocol: TCP
-            - name: http-gql-int
-              containerPort: {{ .Values.global.director.graphql.internal.port }}
-              protocol: TCP
             - name: http-validator
               containerPort: {{ .Values.global.director.validator.port }}
               protocol: TCP
@@ -65,8 +62,6 @@ spec:
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.graphql.external.port }}"
-            - name: APP_GRAPHQL_INTERNAL_ADDRESS
-              value: "0.0.0.0:{{ .Values.global.director.graphql.internal.port }}"
             - name: APP_HYDRATOR_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.validator.port }}"
             - name: APP_INTERNAL_ADDRESS
@@ -159,9 +154,9 @@ spec:
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             {{- range $authenMappingServiceName, $config := .Values.global.oathkeeper.mutators.authenticationMappingServices }}
             {{- if eq $config.authenticator.enabled true }}
-            - name: APP_{{ $config.authenticator.name }}_AUTHENTICATOR_TRUSTED_ISSUERS
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_TRUSTED_ISSUERS
               value: {{ $config.authenticator.trusted_issuers | quote }}
-            - name: APP_{{ $config.authenticator.name }}_AUTHENTICATOR_ATTRIBUTES
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.authenticator.attributes | quote }}
             {{- end }}
             {{- end }}

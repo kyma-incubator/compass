@@ -8,18 +8,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
-
 	"github.com/google/uuid"
 	systemauthmock "github.com/kyma-incubator/compass/components/director/internal/domain/systemauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	tenantmappingmock "github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSystemAuthContextProvider(t *testing.T) {
@@ -134,6 +133,53 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		require.Equal(t, "Application", string(objCtx.ConsumerType))
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
+	})
+
+	t.Run("updates system auth with certificate common name if it is certificate flow and not already updated", func(t *testing.T) {
+		authID := uuid.New()
+		refObjID := uuid.New()
+		expectedTenantID := uuid.New()
+		expectedScopes := []string{"application:read"}
+		sysAuth := &model.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
+			AppID:    str.Ptr(refObjID.String()),
+			Value: &model.Auth{
+				OneTimeToken: &model.OneTimeToken{
+					Token: "token",
+				},
+			},
+		}
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ScopesKey: strings.Join(expectedScopes, " "),
+				},
+			},
+		}
+
+		systemAuthSvcMock := getSystemAuthSvcMock()
+		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
+		systemAuthSvcMock.On("Update", mock.Anything, mock.MatchedBy(func(sa *model.SystemAuth) bool {
+			return sa.Value.OneTimeToken == nil && sa.Value.CertCommonName == authID.String()
+		})).Return(nil).Once()
+
+		scopesGetterMock := getScopesGetterMock()
+		scopesGetterMock.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return(expectedScopes, nil).Once()
+
+		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, scopesGetterMock, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
+
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
+
+		require.NoError(t, err)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, "", objCtx.ExternalTenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
+		require.Equal(t, "Application", string(objCtx.ConsumerType))
+
+		mock.AssertExpectationsForObjects(t, systemAuthSvcMock, scopesGetterMock)
 	})
 
 	t.Run("returns error when unable to get SystemAuth from the service", func(t *testing.T) {
@@ -369,6 +415,27 @@ func TestSystemAuthContextProviderMatch(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, oathkeeper.OAuth2Flow, authDetails.AuthFlow)
 		require.Equal(t, clientID, authDetails.AuthID)
+	})
+
+	t.Run("returns nil when authenticator_coordinates is specified in the Extra map of request body", func(t *testing.T) {
+		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ClientIDKey:       clientID,
+					oathkeeper.ScopesKey:         "application:read",
+					oathkeeper.UsernameKey:       "test",
+					authenticator.CoordinatesKey: "test",
+				},
+			},
+		}
+
+		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
+
+		match, _, err := provider.Match(context.TODO(), reqData)
+
+		require.False(t, match)
+		require.NoError(t, err)
 	})
 
 	t.Run("returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map of request body", func(t *testing.T) {

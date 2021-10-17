@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -44,6 +45,15 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authDetails.AuthID)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
+	}
+
+	if authDetails.AuthFlow.IsCertFlow() && sysAuth.Value != nil && sysAuth.Value.CertCommonName != authDetails.AuthID {
+		sysAuth.Value.OneTimeToken = nil
+		sysAuth.Value.CertCommonName = authDetails.AuthID
+
+		if err := m.systemAuthSvc.Update(ctx, sysAuth); err != nil {
+			return ObjectContext{}, errors.Wrap(err, "while updating system auth")
+		}
 	}
 
 	refObjType, err := sysAuth.GetReferenceObjectType()
@@ -87,6 +97,14 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 }
 
 func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	// Custom authenticator flow:
+	// If that key is set, then the request has already passed by the authenticator mapping handler,
+	// hence the context provider will be the one of that particular authenticator.
+	if _, ok := data.Body.Extra[authenticator.CoordinatesKey]; ok {
+		return false, nil, nil
+	}
+
+	// Certificate flow
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
 
@@ -94,10 +112,12 @@ func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.Req
 		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
 	}
 
+	// One-Time Token flow
 	if idVal := data.Body.Header.Get(oathkeeper.ClientIDTokenKey); idVal != "" {
 		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.OneTimeTokenFlow}, nil
 	}
 
+	// Hydra Client Credentials OAuth flow
 	if idVal, ok := data.Body.Extra[oathkeeper.ClientIDKey]; ok {
 		authID, err := str.Cast(idVal)
 		if err != nil {
