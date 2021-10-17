@@ -21,7 +21,7 @@ const (
 func TestSyncSystems(t *testing.T) {
 	const appTemplateID = "appTmp1"
 	testErr := errors.New("testErr")
-	setupSuccessfulTemplateAppResolver := func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+	setupSuccessfulTemplateRenderer := func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
 		svc := &automock.TemplateRenderer{}
 		for i := range appsInputs {
 			svc.On("ApplicationRegisterInputFromTemplate", txtest.CtxWithDBMatcher(), systems[i]).Return(&appsInputs[i], nil).Once()
@@ -30,16 +30,16 @@ func TestSyncSystems(t *testing.T) {
 	}
 
 	type testCase struct {
-		name                        string
-		mockTransactioner           func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner)
-		fixTestSystems              func() []systemfetcher.System
-		fixAppInputs                func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate
-		setupTenantSvc              func() *automock.TenantService
-		setupTemplateAppResolverSvc func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer
-		setupSystemSvc              func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService
-		setupSysAPIClient           func(testSystems []systemfetcher.System) *automock.SystemsAPIClient
-		setupDirectorClient         func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient
-		expectedErr                 error
+		name                     string
+		mockTransactioner        func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner)
+		fixTestSystems           func() []systemfetcher.System
+		fixAppInputs             func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate
+		setupTenantSvc           func() *automock.TenantService
+		setupTemplateRendererSvc func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer
+		setupSystemSvc           func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService
+		setupSysAPIClient        func(testSystems []systemfetcher.System) *automock.SystemsAPIClient
+		setupDirectorClient      func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient
+		expectedErr              error
 	}
 	tests := []testCase{
 		{
@@ -64,7 +64,7 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupTemplateAppResolverSvc: setupSuccessfulTemplateAppResolver,
+			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), appsInputs).Return(nil).Once()
@@ -97,7 +97,7 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupTemplateAppResolverSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
 				return &automock.TemplateRenderer{}
 			},
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
@@ -145,7 +145,7 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupTemplateAppResolverSvc: setupSuccessfulTemplateAppResolver,
+			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), appsInputs).Return(nil).Once()
@@ -192,7 +192,7 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupTemplateAppResolverSvc: setupSuccessfulTemplateAppResolver,
+			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[0]}).Return(nil).Once()
@@ -225,7 +225,7 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, testErr).Once()
 				return tenantSvc
 			},
-			setupTemplateAppResolverSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
 				return &automock.TemplateRenderer{}
 			},
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
@@ -253,7 +253,7 @@ func TestSyncSystems(t *testing.T) {
 			setupTenantSvc: func() *automock.TenantService {
 				return &automock.TenantService{}
 			},
-			setupTemplateAppResolverSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
 				return &automock.TemplateRenderer{}
 			},
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
@@ -289,7 +289,7 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupTemplateAppResolverSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
 				return &automock.TemplateRenderer{}
 			},
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
@@ -324,7 +324,7 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupTemplateAppResolverSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
 				return &automock.TemplateRenderer{}
 			},
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
@@ -366,7 +366,7 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupTemplateAppResolverSvc: setupSuccessfulTemplateAppResolver,
+			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[0]}).Return(errors.New("expected")).Once()
@@ -408,7 +408,7 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupTemplateAppResolverSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
 				svc := &automock.TemplateRenderer{}
 				for i := range appsInputs {
 					svc.On("ApplicationRegisterInputFromTemplate", txtest.CtxWithDBMatcher(), systems[i]).Return(nil, testErr).Once()
@@ -461,7 +461,7 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupTemplateAppResolverSvc: setupSuccessfulTemplateAppResolver,
+			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[0]}).Return(nil).Once()
@@ -516,7 +516,7 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupTemplateAppResolverSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
 				svc := &automock.TemplateRenderer{}
 				appInput := appsInputs[0] // appsInputs[1] belongs to a system with status "DELETED"
 				svc.On("ApplicationRegisterInputFromTemplate", txtest.CtxWithDBMatcher(), systems[0]).Return(&appInput, nil)
@@ -558,7 +558,7 @@ func TestSyncSystems(t *testing.T) {
 			for _, in := range appsInputs {
 				appInputsWithoutTemplates = append(appInputsWithoutTemplates, in.ApplicationRegisterInput)
 			}
-			templateAppResolver := testCase.setupTemplateAppResolverSvc(testSystems, appInputsWithoutTemplates)
+			templateAppResolver := testCase.setupTemplateRendererSvc(testSystems, appInputsWithoutTemplates)
 			sysAPIClient := testCase.setupSysAPIClient(testSystems)
 			directorClient := testCase.setupDirectorClient(testSystems, appsInputs)
 			defer mock.AssertExpectationsForObjects(t, tenantSvc, sysAPIClient, systemSvc, templateAppResolver, mockedTx, transactioner)

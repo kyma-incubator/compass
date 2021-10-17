@@ -163,6 +163,8 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 		Name:                in.Name,
 		Description:         in.Description,
 		Labels:              labels,
+		SystemNumber:        in.SystemNumber,
+		BaseURL:             in.BaseURL,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
 		StatusCondition:     statusCondition,

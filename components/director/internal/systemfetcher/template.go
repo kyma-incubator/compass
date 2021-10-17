@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -27,6 +26,7 @@ type applicationConverter interface {
 type PlaceholderMapping struct {
 	PlaceholderName string `json:"placeholder_name"`
 	SystemKey       string `json:"system_key"`
+	Optional        bool   `json:"optional"`
 }
 
 type renderer struct {
@@ -39,7 +39,10 @@ type renderer struct {
 }
 
 // NewTemplateRenderer returns a new application input renderer by a given application template.
-func NewTemplateRenderer(appTemplateService applicationTemplateService, appConverter applicationConverter, appInputOverride string, mapping []PlaceholderMapping) *renderer {
+func NewTemplateRenderer(appTemplateService applicationTemplateService, appConverter applicationConverter, appInputOverride string, mapping []PlaceholderMapping) (*renderer, error) {
+	if _, err := appConverter.CreateInputJSONToModel(context.Background(), appInputOverride); err != nil {
+		return nil, errors.Wrapf(err, "while converting override application input JSON into application input")
+	}
 	placeholders := make([]model.ApplicationTemplatePlaceholder, 0)
 	for _, p := range mapping {
 		placeholders = append(placeholders, model.ApplicationTemplatePlaceholder{
@@ -53,7 +56,7 @@ func NewTemplateRenderer(appTemplateService applicationTemplateService, appConve
 		appInputOverride:     appInputOverride,
 		placeholdersMapping:  mapping,
 		placeholdersOverride: placeholders,
-	}
+	}, nil
 }
 
 func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error) {
@@ -94,6 +97,9 @@ func (r *renderer) getTemplateInputs(s System) (*model.ApplicationFromTemplateIn
 	inputValues := model.ApplicationFromTemplateInputValues{}
 	for _, pm := range r.placeholdersMapping {
 		placeholderInput := gjson.GetBytes(systemJSON, pm.SystemKey).String()
+		if len(placeholderInput) == 0 && !pm.Optional {
+			return nil, fmt.Errorf("failed to find key %q in system input %s", pm.SystemKey, string(systemJSON))
+		}
 		inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
 			Placeholder: pm.PlaceholderName,
 			Value:       placeholderInput,
@@ -115,27 +121,18 @@ func (r *renderer) mergedApplicationInput(originalAppInputJSON, overrideAppInput
 		return "", errors.Wrapf(err, "while unmarshaling override application input")
 	}
 
-	for field, overrideV := range overrideAppInput {
-		if originalV, ok := originalAppInput[field]; ok && originalV != nil {
-			if reflect.TypeOf(originalV) != reflect.TypeOf(overrideV) {
-				return "", fmt.Errorf("values %v and %v of key %s have different types - %T and %T", originalV, overrideV, field, originalV, overrideV)
+	if originalLabels, ok := originalAppInput["labels"]; ok {
+		if overrideLabels, ok := overrideAppInput["labels"]; ok {
+			var err error
+			overrideLabels, err = enrichLabels(originalLabels, overrideLabels)
+			if err != nil {
+				return "", err
 			}
-
-			if field == "labels" {
-				newLabels, err := enrichLabels(originalV, overrideV)
-				if err != nil {
-					return "", err
-				}
-
-				originalAppInput[field] = newLabels
-				continue
-			}
+			overrideAppInput["labels"] = overrideLabels
 		}
-
-		originalAppInput[field] = overrideV
 	}
 
-	merged, err := json.Marshal(originalAppInput)
+	merged, err := json.Marshal(overrideAppInput)
 	if err != nil {
 		return "", errors.Wrapf(err, "while marshalling merged app input")
 	}

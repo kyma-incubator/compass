@@ -223,12 +223,14 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 
 	var placeholdersMapping []systemfetcher.PlaceholderMapping
 	if err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
 	}
-	if _, err := appConverter.CreateInputJSONToModel(context.Background(), cfg.TemplateConfig.OverrideApplicationInput); err != nil {
-		return nil, errors.Wrapf(err, "while converting override application input JSON into application input")
+
+	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while creating template renderer")
 	}
-	templateRenderer := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
+
 	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
 }
 

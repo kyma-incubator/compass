@@ -96,10 +96,13 @@ type ApplicationRegisterInput struct {
 	Labels   Labels          `json:"labels"`
 	Webhooks []*WebhookInput `json:"webhooks"`
 	// **Validation:** valid URL, max=256
-	HealthCheckURL      *string                     `json:"healthCheckURL"`
-	Bundles             []*BundleCreateInput        `json:"bundles"`
+	HealthCheckURL *string `json:"healthCheckURL"`
+	// **Validation:** valid URL, max=256
+	BaseURL             *string                     `json:"baseUrl"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
+	SystemNumber        *string                     `json:"systemNumber"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
+	Bundles             []*BundleCreateInput        `json:"bundles"`
 }
 
 type ApplicationStatus struct {

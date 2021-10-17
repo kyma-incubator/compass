@@ -64,28 +64,28 @@ type Config struct {
 
 // SystemFetcher is responsible for synchronizing the existing applications in Compass and a pre-defined external source.
 type SystemFetcher struct {
-	transaction                  persistence.Transactioner
-	tenantService                tenantService
-	systemsService               systemsService
-	templatedApplicationResolver templateRenderer
-	systemsAPIClient             systemsAPIClient
-	directorClient               directorClient
+	transaction      persistence.Transactioner
+	tenantService    tenantService
+	systemsService   systemsService
+	templateRenderer templateRenderer
+	systemsAPIClient systemsAPIClient
+	directorClient   directorClient
 
 	config  Config
 	workers chan struct{}
 }
 
 // NewSystemFetcher returns a new SystemFetcher.
-func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, tar templateRenderer, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
+func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, tr templateRenderer, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
-		transaction:                  tx,
-		tenantService:                ts,
-		systemsService:               ss,
-		templatedApplicationResolver: tar,
-		systemsAPIClient:             sac,
-		directorClient:               directorClient,
-		workers:                      make(chan struct{}, config.FetcherParallellism),
-		config:                       config,
+		transaction:      tx,
+		tenantService:    ts,
+		systemsService:   ss,
+		templateRenderer: tr,
+		systemsAPIClient: sac,
+		directorClient:   directorClient,
+		workers:          make(chan struct{}, config.FetcherParallellism),
+		config:           config,
 	}
 }
 
@@ -236,37 +236,27 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc 
 		return nil, err
 	}
 
-	return enrichAppRegisterInput(*input, sc), nil
+	return &model.ApplicationRegisterInputWithTemplate{
+		ApplicationRegisterInput: *input,
+		TemplateID:               sc.TemplateID,
+	}, nil
 }
 
 func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error) {
 	if len(sc.TemplateID) > 0 {
-		return s.templatedApplicationResolver.ApplicationRegisterInputFromTemplate(ctx, sc)
+		return s.templateRenderer.ApplicationRegisterInputFromTemplate(ctx, sc)
 	}
 
-	return &model.ApplicationRegisterInput{
-		Name:         sc.DisplayName,
-		Description:  &sc.ProductDescription,
-		ProviderName: &sc.InfrastructureProvider,
-		BaseURL:      &sc.BaseURL,
-		SystemNumber: &sc.SystemNumber,
-	}, nil
-}
-
-// enrichAppRegisterInput replaces the base part of the application with all the information that could be retrieved from the system fetcher.
-func enrichAppRegisterInput(input model.ApplicationRegisterInput, sc System) *model.ApplicationRegisterInputWithTemplate {
 	initStatusCond := model.ApplicationStatusConditionInitial
-
-	input.StatusCondition = &initStatusCond
-	input.SystemNumber = &sc.SystemNumber
-
-	if len(input.Labels) == 0 {
-		input.Labels = make(map[string]interface{}, 1)
-	}
-	input.Labels["managed"] = "true"
-
-	return &model.ApplicationRegisterInputWithTemplate{
-		ApplicationRegisterInput: input,
-		TemplateID:               sc.TemplateID,
-	}
+	return &model.ApplicationRegisterInput{
+		Name:            sc.DisplayName,
+		Description:     &sc.ProductDescription,
+		StatusCondition: &initStatusCond,
+		ProviderName:    &sc.InfrastructureProvider,
+		BaseURL:         &sc.BaseURL,
+		SystemNumber:    &sc.SystemNumber,
+		Labels: map[string]interface{}{
+			"managed": "true",
+		},
+	}, nil
 }
