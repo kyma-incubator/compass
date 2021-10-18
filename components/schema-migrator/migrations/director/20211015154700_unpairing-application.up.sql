@@ -1,6 +1,6 @@
 BEGIN;
 
-DROP VIEW tenants_apps;
+DROP VIEW IF EXISTS tenants_apps;
 
 ALTER TABLE applications
     ALTER COLUMN status_condition DROP DEFAULT;
@@ -33,25 +33,53 @@ ALTER TABLE applications
 
 DROP TYPE application_status_condition_old;
 
-CREATE OR REPLACE VIEW tenants_apps  AS
-SELECT DISTINCT t_apps.tenant_id, apps.id, apps.name, apps.description, apps.status_condition,
-                apps.status_timestamp, apps.healthcheck_url, apps.integration_system_id,
-                apps.provider_name, apps.base_url, apps.labels, apps.ready, apps.created_at,
-                apps.updated_at, apps.deleted_at, apps.error, apps.app_template_id, apps.correlation_ids,
-                apps.system_number, tmpl.name as product_type
-FROM applications AS apps
-         LEFT JOIN app_templates AS tmpl ON apps.app_template_id = tmpl.id
-         INNER JOIN (
---  select GAs
-    SELECT a1.id, a1.tenant_id FROM applications AS a1
-    UNION ALL
---  select CRM
-    SELECT a.id, t.parent as tenant_id FROM applications AS a
-                                                INNER JOIN  business_tenant_mappings AS t ON t.id = a.tenant_id WHERE t.parent IS NOT NULL
-    UNION ALL
---  select SA
-    SELECT l.app_id as id, asa.selector_value::uuid as tenant_id FROM labels AS l
-                                                                          INNER JOIN automatic_scenario_assignments AS asa ON asa.tenant_id = l.tenant_id AND l.value ? asa.scenario AND asa.selector_key='global_subaccount_id'
-    WHERE l.app_id IS NOT NULL AND l.key = 'scenarios') AS t_apps ON apps.id = t_apps.id;
+CREATE OR REPLACE VIEW tenants_apps
+            (tenant_id, provider_tenant_id, id, name, description, status_condition, status_timestamp, healthcheck_url,
+             integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error,
+             app_template_id, correlation_ids, system_number, product_type)
+AS
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.provider_tenant_id,
+                apps.id,
+                apps.name,
+                apps.description,
+                apps.status_condition,
+                apps.status_timestamp,
+                apps.healthcheck_url,
+                apps.integration_system_id,
+                apps.provider_name,
+                apps.base_url,
+                apps.labels,
+                apps.ready,
+                apps.created_at,
+                apps.updated_at,
+                apps.deleted_at,
+                apps.error,
+                apps.app_template_id,
+                apps.correlation_ids,
+                apps.system_number,
+                tmpl.name AS product_type
+FROM applications apps
+         LEFT JOIN app_templates tmpl ON apps.app_template_id = tmpl.id
+         JOIN (SELECT a1.id,
+                      a1.tenant_id::text,
+                      a1.tenant_id::text AS provider_tenant_id
+               FROM applications a1
+               UNION ALL
+               SELECT a.id,
+                      t.parent::text AS tenant_id,
+                      t.parent::text AS provider_tenant_id
+               FROM applications a
+                        JOIN business_tenant_mappings t ON t.id = a.tenant_id
+               WHERE t.parent IS NOT NULL
+               UNION ALL
+               SELECT *
+               FROM apps_subaccounts_func()
+               UNION ALL
+               SELECT a_s.id,(SELECT id::text FROM business_tenant_mappings WHERE external_tenant = a_s.tenant_id::text), cpr.provider_tenant::text AS provider_tenant_id
+               FROM apps_subaccounts_func() a_s
+                        JOIN consumers_provider_for_runtimes_func() cpr
+                             ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps
+              ON apps.id = t_apps.id;
 
 COMMIT;
