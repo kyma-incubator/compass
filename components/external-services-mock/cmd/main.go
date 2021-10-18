@@ -184,6 +184,8 @@ func initCertSecuredAPIs(cfg config) (http.Handler, error) {
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(cfg.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
+	router.HandleFunc("/external-api/unsecured/spec", apispec.HandleFunc)
+	router.HandleFunc("/external-api/unsecured/spec/flapping", apispec.FlappingHandleFunc())
 
 	return router, nil
 }
