@@ -61,13 +61,13 @@ SELECT DISTINCT t_apps.tenant_id,
 FROM applications apps
          LEFT JOIN app_templates tmpl ON apps.app_template_id = tmpl.id
          JOIN (SELECT a1.id,
-                      a1.tenant_id,
-                      a1.tenant_id AS provider_tenant_id
+                      a1.tenant_id::text,
+                      a1.tenant_id::text AS provider_tenant_id
                FROM applications a1
                UNION ALL
                SELECT a.id,
-                      t.parent AS tenant_id,
-                      t.parent AS provider_tenant_id
+                      t.parent::text AS tenant_id,
+                      t.parent::text AS provider_tenant_id
                FROM applications a
                         JOIN business_tenant_mappings t ON t.id = a.tenant_id
                WHERE t.parent IS NOT NULL
@@ -75,7 +75,7 @@ FROM applications apps
                SELECT *
                FROM apps_subaccounts_func()
                UNION ALL
-               SELECT a_s.id,(SELECT id FROM business_tenant_mappings WHERE external_tenant = a_s.tenant_id::text), cpr.provider_tenant::uuid AS provider_tenant_id
+               SELECT a_s.id,(SELECT id::text FROM business_tenant_mappings WHERE external_tenant = a_s.tenant_id::text), cpr.provider_tenant::text AS provider_tenant_id
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps
