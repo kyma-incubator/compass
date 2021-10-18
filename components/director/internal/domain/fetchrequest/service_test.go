@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+	accessstrategyautomock "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
@@ -40,11 +41,15 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 }
 
 func TestService_HandleSpec(t *testing.T) {
+	testErr := errors.New("test")
+
 	const username = "username"
 	const password = "password"
 	const clientID = "clId"
 	const secret = "clSecret"
 	const url = "mocked-url/oauth/token"
+	const testAccessStrategy = "testAccessStrategy"
+
 	mockSpec := "spec"
 	timestamp := time.Now()
 
@@ -62,6 +67,13 @@ func TestService_HandleSpec(t *testing.T) {
 		ID:     "test",
 		Mode:   model.FetchModeSingle,
 		Filter: str.Ptr("filter"),
+	}
+
+	modelInputAccessStrategy := model.FetchRequest{
+		ID:   "test",
+		Mode: model.FetchModeSingle,
+		URL: "http://test.com",
+		Auth: &model.Auth{AccessStrategy: testAccessStrategy},
 	}
 
 	modelInputBasicCredentials := model.FetchRequest{
@@ -105,11 +117,12 @@ func TestService_HandleSpec(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name           string
-		Client         func(t *testing.T) *http.Client
-		InputFr        model.FetchRequest
-		ExpectedResult *string
-		ExpectedStatus *model.FetchRequestStatus
+		Name                 string
+		Client               func(t *testing.T) *http.Client
+		InputFr              model.FetchRequest
+		ExecutorProviderFunc func() accessstrategy.ExecutorProvider
+		ExpectedResult       *string
+		ExpectedStatus       *model.FetchRequestStatus
 	}{
 
 		{
@@ -149,6 +162,55 @@ func TestService_HandleSpec(t *testing.T) {
 			InputFr:        modelInputFilter,
 			ExpectedResult: nil,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr("Invalid data [reason=Filter for Fetch Request was provided, currently it's unsupported]"), timestamp),
+		},
+		{
+			Name: "Success with access strategy",
+			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
+				executor := &accessstrategyautomock.Executor{}
+				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL).Return(&http.Response{
+					StatusCode: http.StatusOK,
+					Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+				}, nil).Once()
+
+				executorProvider := &accessstrategyautomock.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
+				return executorProvider
+			},
+			Client: func(t *testing.T) *http.Client {
+				return nil
+			},
+			InputFr:        modelInputAccessStrategy,
+			ExpectedResult: &mockSpec,
+			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionSucceeded, nil, timestamp),
+		},
+		{
+			Name: "Fails when access strategy is unknown",
+			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
+				executorProvider := &accessstrategyautomock.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(nil, testErr).Once()
+				return executorProvider
+			},
+			Client: func(t *testing.T) *http.Client {
+				return nil
+			},
+			InputFr:        modelInputAccessStrategy,
+			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec: test"), timestamp),
+		},
+		{
+			Name: "Fails when access strategy execution fail",
+			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
+				executor := &accessstrategyautomock.Executor{}
+				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL).Return(nil, testErr).Once()
+
+				executorProvider := &accessstrategyautomock.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
+				return executorProvider
+			},
+			Client: func(t *testing.T) *http.Client {
+				return nil
+			},
+			InputFr:        modelInputAccessStrategy,
+			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec: test"), timestamp),
 		},
 		{
 			Name: "Success with basic authentication",
@@ -270,17 +332,26 @@ func TestService_HandleSpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
+			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider()
+			if testCase.ExecutorProviderFunc != nil {
+				executorProviderMock = testCase.ExecutorProviderFunc()
+			}
+
 			ctx := context.TODO()
 			frRepo := &automock.FetchRequestRepository{}
 			frRepo.On("Update", ctx, mock.Anything).Return(nil).Once()
 
-			svc := fetchrequest.NewService(frRepo, testCase.Client(t), accessstrategy.NewDefaultExecutorProvider())
+			svc := fetchrequest.NewService(frRepo, testCase.Client(t), executorProviderMock)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			result := svc.HandleSpec(ctx, &testCase.InputFr)
 
 			assert.Equal(t, testCase.ExpectedStatus, testCase.InputFr.Status)
 			assert.Equal(t, testCase.ExpectedResult, result)
+
+			if testCase.ExecutorProviderFunc != nil {
+				mock.AssertExpectationsForObjects(t, executorProviderMock)
+			}
 		})
 	}
 }
