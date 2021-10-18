@@ -80,25 +80,25 @@ spec:
               - name: APP_DB_MAX_IDLE_CONNECTIONS
                 value: "{{ $config.dbPool.maxIdleConnections }}"
               - name: APP_ENDPOINT_TENANT_CREATED
-                value: {{ $config.endpoints.accountCreated }}
+                value: {{ $config.endpoints.accountCreated | default "127.0.0.1/events?type=account-created" }}
               - name: APP_ENDPOINT_TENANT_DELETED
-                value: {{ $config.endpoints.accountDeleted }}
+                value: {{ $config.endpoints.accountDeleted | default "127.0.0.1/events?type=account-deleted"}}
               - name: APP_ENDPOINT_TENANT_UPDATED
-                value: {{ $config.endpoints.accountUpdated }}
+                value: {{ $config.endpoints.accountUpdated | default "127.0.0.1/events?type=account-updated"}}
               - name: APP_ENDPOINT_SUBACCOUNT_CREATED
-                value: {{ $config.endpoints.subaccountCreated }}
+                value: {{ $config.endpoints.subaccountCreated | default "127.0.0.1/events?type=subaccount-created"}}
               - name: APP_ENDPOINT_SUBACCOUNT_DELETED
-                value: {{ $config.endpoints.subaccountDeleted }}
+                value: {{ $config.endpoints.subaccountDeleted | default "127.0.0.1/events?type=subaccount-deleted"}}
               - name: APP_ENDPOINT_SUBACCOUNT_UPDATED
-                value: {{ $config.endpoints.subaccountUpdated }}
+                value: {{ $config.endpoints.subaccountUpdated | default "127.0.0.1/events?type=subaccount-updated"}}
               - name: APP_ENDPOINT_SUBACCOUNT_MOVED
-                value: {{ $config.endpoints.subaccountMoved }}
+                value: {{ $config.endpoints.subaccountMoved | default "127.0.0.1/events?type=subaccount-moved"}}
               - name: APP_TENANT_PROVIDER
                 value: {{ $config.providerName }}
               - name: APP_ACCOUNT_REGION
-                value: {{ $config.accountRegion }}
+                value: {{ $config.accountRegion | default "central"}}
               - name: APP_SUBACCOUNT_REGIONS
-                value: {{ $config.subaccountRegions | quote }}
+                value: {{ $config.subaccountRegions | quote | default "central"}}
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
@@ -165,11 +165,11 @@ spec:
               - name: APP_DEFAULT_SCENARIO_ENABLED
                 value: {{ $.Values.global.enableCompassDefaultScenarioAssignment | quote }}
               - name: APP_MOVED_RUNTIME_BY_LABEL_SOURCE_TENANT_FIELD
-                value: {{ $config.queryMapping.movedRuntimeByLabelSourceField }}
+                value: {{ $config.queryMapping.movedRuntimeByLabelSourceField | default "sourceGlobalAccountGUID"}}
               - name: APP_MOVED_RUNTIME_BY_LABEL_TARGET_TENANT_FIELD
-                value: {{ $config.queryMapping.movedRuntimeByLabelTargetField }}
+                value: {{ $config.queryMapping.movedRuntimeByLabelTargetField | default "targetGlobalAccountGUID"}}
               - name: APP_MOVED_RUNTIME_LABEL_KEY
-                value: {{ $config.movedRuntimeLabelKey }}
+                value: {{ $config.movedRuntimeLabelKey | default "movedRuntimeLabelKey" }}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
               - name: APP_METRICS_PUSH_ENDPOINT
                 value: {{ $.Values.global.metrics.pushEndpoint}}
