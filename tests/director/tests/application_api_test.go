@@ -650,19 +650,6 @@ func TestUnpairApplication(t *testing.T) {
 		defaultValue := "DEFAULT"
 		scenarios := []string{defaultValue, "test-scenario"}
 
-		jsonSchema := map[string]interface{}{
-			"type":        "array",
-			"minItems":    1,
-			"uniqueItems": true,
-			"items": map[string]interface{}{
-				"type": "string",
-				"enum": scenarios,
-			},
-		}
-		var schema interface{} = jsonSchema
-
-		fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
-
 		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
 		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios}
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
@@ -672,7 +659,10 @@ func TestUnpairApplication(t *testing.T) {
 		application := graphql.ApplicationExt{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &application)
+		defer func() {
+			defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantID, &application)
+			defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantID, application.ID, conf.DefaultScenarioEnabled)
+		}()
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
@@ -717,10 +707,13 @@ func TestUnpairApplication(t *testing.T) {
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantID, &application)
+		defer func() {
+			defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantID, &application)
+			defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantID, application.ID, conf.DefaultScenarioEnabled)
+		}()
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantID, application.ID, conf.DefaultScenarioEnabled)
 
 		//WHEN
 		req := fixtures.FixUnpairApplicationRequest(application.ID)
