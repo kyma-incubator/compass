@@ -150,13 +150,9 @@ func TestORDAggregator(t *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
 		require.NoError(t, err)
 
-		fixtures.SetApplicationLabelWithTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdApp.ID, applicationTypeLabelKey, testConfig.SecuredApplicationTypes[0])
-
 		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
 		require.NoError(t, err)
-
-		fixtures.SetApplicationLabelWithTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthApp.ID, applicationTypeLabelKey, testConfig.SecuredApplicationTypes[0])
 
 		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)

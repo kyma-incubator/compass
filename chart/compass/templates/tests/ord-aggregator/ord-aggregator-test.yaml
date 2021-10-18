@@ -74,8 +74,6 @@ spec:
                   key: client-secret
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
-            - name: SECURED_APPLICATION_TYPES
-              value: "{{ .Values.global.ordAggregator.securedApplicationTypes }}"
             - name: AGGREGATOR_SCHEDULE
               value: "{{ .Values.global.ordAggregator.schedule }}"
             - name: USER_EMAIL

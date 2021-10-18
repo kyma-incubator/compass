@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -27,15 +26,13 @@ type Client interface {
 
 type client struct {
 	*http.Client
-	securedApplicationTypes        map[string]struct{}
 	accessStrategyExecutorProvider accessstrategy.ExecutorProvider
 }
 
 // NewClient creates new ORD Client via a provided http.Client
-func NewClient(httpClient *http.Client, securedApplicationTypes []string, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
+func NewClient(httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
 	return &client{
 		Client:                         httpClient,
-		securedApplicationTypes:        str.SliceToMap(securedApplicationTypes),
 		accessStrategyExecutorProvider: accessStrategyExecutorProvider,
 	}
 }
@@ -132,7 +129,7 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 		if err != nil {
 			return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", *webhook.Auth.AccessStrategy)
 		}
-	} else if _, secured := c.securedApplicationTypes[app.Type]; secured {
+	} else if webhook.Auth != nil {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is secured and webhook credentials will be used", app.Name, app.ID, app.Type)
 		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, configURL, webhook.Auth)
 		if err != nil {

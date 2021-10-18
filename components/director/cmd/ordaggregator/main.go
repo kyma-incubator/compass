@@ -146,7 +146,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 
-	ordClient := ord.NewClient(httpClient, featuresConfig.SecuredApplicationTypes, accessStrategyExecutorProvider)
+	ordClient := ord.NewClient(httpClient, accessStrategyExecutorProvider)
 
 	return ord.NewAggregatorService(transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
 }

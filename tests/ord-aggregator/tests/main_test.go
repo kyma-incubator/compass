@@ -48,7 +48,6 @@ type config struct {
 	BasicUsername                      string
 	BasicPassword                      string
 	ORDServiceDefaultResponseType      string
-	SecuredApplicationTypes            []string
 }
 
 var (
