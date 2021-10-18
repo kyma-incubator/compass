@@ -1,13 +1,9 @@
 package tests
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"strings"
 	"testing"
@@ -83,49 +79,29 @@ const (
 	testTimeoutAdditionalBuffer = 5 * time.Minute
 )
 
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
-func randString(n int) string {
-	buffer := make([]rune, n)
-	for i := range buffer {
-		buffer[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(buffer)
-}
-
 func TestORDAggregator(t *testing.T) {
 	basicORDConfigSecurity := &fixtures.ORDConfigSecurity{
-		Enabled:  true,
-		Username: randString(8),
-		Password: randString(8),
+		Username: testConfig.BasicUsername,
+		Password: testConfig.BasicPassword,
 	}
 
 	oauthORDConfigSecurity := &fixtures.ORDConfigSecurity{
-		Enabled:  true,
-		Username: randString(8),
-		Password: randString(8),
+		Username: testConfig.ClientID,
+		Password: testConfig.ClientSecret,
 		TokenURL: testConfig.ExternalServicesMockBaseURL + "/oauth/token",
 	}
 
 	accessStrategyConfigSecurity := &fixtures.ORDConfigSecurity{
-		Enabled:        true,
 		AccessStrategy: "sap:cmp-mtls:v1",
 	}
 
-	toggleORDConfigSecurity(t, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/basic/configure", basicORDConfigSecurity)
-	toggleORDConfigSecurity(t, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/oauth/configure", oauthORDConfigSecurity)
-
 	var appInput, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput, sixthAppInput directorSchema.ApplicationRegisterInput
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
-		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, &fixtures.ORDConfigSecurity{})
-		secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL, &fixtures.ORDConfigSecurity{})
-		thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/basic/.well-known/open-resource-discovery", basicORDConfigSecurity)
-		fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/oauth/.well-known/open-resource-discovery", oauthORDConfigSecurity)
-		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/cert/.well-known/open-resource-discovery", &fixtures.ORDConfigSecurity{})
+		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, nil)
+		secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredURL, nil)
+		thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBasicURL, basicORDConfigSecurity)
+		fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockOauthURL, oauthORDConfigSecurity)
+		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredURL+"/cert/.well-known/open-resource-discovery", nil)
 		sixthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSixthSystemInstanceName, expectedSixthSystemInstanceDescription, testConfig.ExternalServicesMockCertSecuredURL, accessStrategyConfigSecurity)
 
 		systemInstancesMap := make(map[string]string)
@@ -361,23 +337,4 @@ func verifyORDDocument(interval time.Duration, timeout time.Duration, conditiona
 
 func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, headers map[string][]string) string {
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
-}
-
-func toggleORDConfigSecurity(t *testing.T, url string, ordSecurityConfig *fixtures.ORDConfigSecurity) {
-	body, err := json.Marshal(ordSecurityConfig)
-	require.NoError(t, err)
-
-	reader := bytes.NewReader(body)
-	response, err := http.DefaultClient.Post(url, "application/json", reader)
-	require.NoError(t, err)
-	defer func() {
-		if err := response.Body.Close(); err != nil {
-			t.Logf("Could not close response body %s", err)
-		}
-	}()
-	if response.StatusCode != http.StatusOK {
-		bytes, err := ioutil.ReadAll(response.Body)
-		require.NoError(t, err)
-		t.Fatalf("Failed to toggle ORD Config security to %t: %s", ordSecurityConfig.Enabled, string(bytes))
-	}
 }

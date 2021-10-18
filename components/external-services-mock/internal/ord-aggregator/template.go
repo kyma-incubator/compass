@@ -286,7 +286,7 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"application/json",
-               "url":"/external-api/unsecured/spec/flapping",
+               "url":"/external-api/spec/flapping",
                "accessStrategies":[
                   {
                      "type":"%[2]s",
