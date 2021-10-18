@@ -110,7 +110,6 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 
 	// Oauth server handlers
 	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, key)
-	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
 	router.HandleFunc("/secured/oauth/token", tokenHandler.Generate).Methods(http.MethodPost)
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
@@ -201,9 +200,10 @@ func initUnsecuredORDServer(cfg config) *http.Server {
 
 func initBasicSecuredORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
-	router.Use(basicAuthMiddleware(cfg.Username, cfg.Password))
 
-	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
+	configRouter := router.PathPrefix("/.well-known").Subrouter()
+	configRouter.Use(basicAuthMiddleware(cfg.Username, cfg.Password))
+	configRouter.HandleFunc("/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.BasicPort), "open"))
 
@@ -218,9 +218,10 @@ func initBasicSecuredORDServer(cfg config) *http.Server {
 
 func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router := mux.NewRouter()
-	router.Use(oauthMiddleware(&key.PublicKey))
 
-	router.HandleFunc("/oauth/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
+	configRouter := router.PathPrefix("/.well-known").Subrouter()
+	configRouter.Use(oauthMiddleware(&key.PublicKey))
+	configRouter.HandleFunc("/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.OauthPort), "open"))
 

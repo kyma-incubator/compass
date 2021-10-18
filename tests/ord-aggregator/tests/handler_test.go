@@ -88,7 +88,7 @@ func TestORDAggregator(t *testing.T) {
 	oauthORDConfigSecurity := &fixtures.ORDConfigSecurity{
 		Username: testConfig.ClientID,
 		Password: testConfig.ClientSecret,
-		TokenURL: testConfig.ExternalServicesMockBaseURL + "/oauth/token",
+		TokenURL: testConfig.ExternalServicesMockBaseURL + "/secured/oauth/token",
 	}
 
 	accessStrategyConfigSecurity := &fixtures.ORDConfigSecurity{
