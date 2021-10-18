@@ -103,11 +103,7 @@ func (r *repository) Create(ctx context.Context, label *model.Label) error {
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
-	err = r.creator.Create(ctx, labelEntity)
-	if err != nil {
-		return errors.Wrap(err, "while creating label")
-	}
-	return nil
+	return r.creator.Create(ctx, labelEntity)
 }
 
 // GetByKey missing godoc

@@ -73,9 +73,9 @@ func (s *labelService) CreateLabel(ctx context.Context, tenant, id string, label
 
 	err := s.labelRepo.Create(ctx, label)
 	if err != nil {
-		return errors.Wrapf(err, "while updating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}
-	log.C(ctx).Debugf("Successfully updated Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 
 	return nil
 }

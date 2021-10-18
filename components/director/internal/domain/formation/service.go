@@ -29,6 +29,14 @@ type LabelDefRepository interface {
 	UpdateWithVersion(ctx context.Context, def model.LabelDefinition) error
 }
 
+// LabelDefService missing godoc
+//go:generate mockery --name=LabelDefService --output=automock --outpkg=automock --case=underscore
+type LabelDefService interface {
+	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
+	ValidateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant, key string) error
+	ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error
+}
+
 // LabelService missing godoc
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
 type LabelService interface {
@@ -43,16 +51,8 @@ type UIDService interface {
 	Generate() string
 }
 
-// LabelDefService missing godoc
-//go:generate mockery --name=LabelDefService --output=automock --outpkg=automock --case=underscore
-type LabelDefService interface {
-	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
-	ValidateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant, key string) error
-	ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error
-}
-
 // AutomaticFormationAssignmentService missing godoc
-//go:generate mockery --name=AutomaticFormationAssignment --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=AutomaticFormationAssignmentService --output=automock --outpkg=automock --case=underscore
 type AutomaticFormationAssignmentService interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
@@ -81,11 +81,14 @@ func NewService(labelConverter LabelConverter, labelDefRepository LabelDefReposi
 
 func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
 	f, err := s.modifyFormations(ctx, tnt, formation.Name, addFormation)
-	if apperrors.IsNotFoundError(err) {
-		if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formation.Name}); err != nil {
-			return nil, err
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formation.Name}); err != nil {
+				return nil, err
+			}
+			return &model.Formation{Name: formation.Name}, nil
 		}
-		return &model.Formation{Name: formation.Name}, nil
+		return nil, err
 	}
 	return f, nil
 }
@@ -98,12 +101,15 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
 		f, err := s.modifyAssignedFormationsForApplication(ctx, tnt, objectID, formation, addFormation)
-		if apperrors.IsNotFoundError(err) {
-			labelInput := newLabelInput(formation.Name, objectID, model.ApplicationLabelableObject)
-			if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
-				return nil, err
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				labelInput := newLabelInput(formation.Name, objectID, model.ApplicationLabelableObject)
+				if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
+					return nil, err
+				}
+				return &formation, nil
 			}
-			return &formation, nil
+			return nil, err
 		}
 		return f, nil
 	case graphql.FormationObjectTypeTenant:
@@ -126,7 +132,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, err
 		}
-		if err := s.asaService.Delete(ctx, asa); err != nil {
+		if err = s.asaService.Delete(ctx, asa); err != nil {
 			return nil, err
 		}
 		return &formation, nil
