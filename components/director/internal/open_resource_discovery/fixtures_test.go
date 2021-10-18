@@ -317,7 +317,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						Type:      "openapi-v3",
 						MediaType: "application/json",
 						URL:       fmt.Sprintf("%s/external-api/unsecured/spec/flapping", providedBaseURL),
-						AccessStrategy: []model.AccessStrategy{
+						AccessStrategy: []accessstrategy.AccessStrategy{
 							{
 								Type: "open",
 							},
@@ -327,7 +327,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						Type:      "openapi-v3",
 						MediaType: "text/yaml",
 						URL:       "https://test.com/odata/1.0/catalog",
-						AccessStrategy: []model.AccessStrategy{
+						AccessStrategy: []accessstrategy.AccessStrategy{
 							{
 								Type: "open",
 							},
@@ -337,7 +337,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						Type:      "edmx",
 						MediaType: "application/xml",
 						URL:       "https://TEST:443//odata/$metadata",
-						AccessStrategy: []model.AccessStrategy{
+						AccessStrategy: []accessstrategy.AccessStrategy{
 							{
 								Type: "open",
 							},
@@ -386,7 +386,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						Type:      "edmx",
 						MediaType: "application/xml",
 						URL:       "https://TEST:443//odata/$metadata",
-						AccessStrategy: []model.AccessStrategy{
+						AccessStrategy: []accessstrategy.AccessStrategy{
 							{
 								Type: "open",
 							},
@@ -396,7 +396,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						Type:      "openapi-v3",
 						MediaType: "application/json",
 						URL:       fmt.Sprintf("%s/odata/1.0/catalog.svc/$value?type=json", providedBaseURL),
-						AccessStrategy: []model.AccessStrategy{
+						AccessStrategy: []accessstrategy.AccessStrategy{
 							{
 								Type: "open",
 							},
@@ -440,7 +440,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						Type:      "asyncapi-v2",
 						MediaType: "application/json",
 						URL:       "http://localhost:8080/asyncApi2.json",
-						AccessStrategy: []model.AccessStrategy{
+						AccessStrategy: []accessstrategy.AccessStrategy{
 							{
 								Type: "open",
 							},
@@ -482,7 +482,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 						Type:      "asyncapi-v2",
 						MediaType: "application/json",
 						URL:       fmt.Sprintf("%s/api/eventCatalog.json", providedBaseURL),
-						AccessStrategy: []model.AccessStrategy{
+						AccessStrategy: []accessstrategy.AccessStrategy{
 							{
 								Type: "open",
 							},
@@ -880,7 +880,8 @@ func fixAPI1SpecInputs() []*model.SpecInput {
 			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL: baseURL + "/external-api/unsecured/spec/flapping",
+				URL:  baseURL + "/external-api/unsecured/spec/flapping",
+				Auth: &model.AuthInput{AccessStrategy: "open"},
 			},
 		},
 		{
@@ -888,7 +889,8 @@ func fixAPI1SpecInputs() []*model.SpecInput {
 			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL: "https://test.com/odata/1.0/catalog",
+				URL:  "https://test.com/odata/1.0/catalog",
+				Auth: &model.AuthInput{AccessStrategy: "open"},
 			},
 		},
 		{
@@ -896,7 +898,8 @@ func fixAPI1SpecInputs() []*model.SpecInput {
 			APIType:    &edmxAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL: "https://TEST:443//odata/$metadata",
+				URL:  "https://TEST:443//odata/$metadata",
+				Auth: &model.AuthInput{AccessStrategy: "open"},
 			},
 		},
 	}
@@ -945,7 +948,8 @@ func fixAPI2SpecInputs() []*model.SpecInput {
 			APIType:    &edmxAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL: "https://TEST:443//odata/$metadata",
+				URL:  "https://TEST:443//odata/$metadata",
+				Auth: &model.AuthInput{AccessStrategy: "open"},
 			},
 		},
 		{
@@ -953,7 +957,8 @@ func fixAPI2SpecInputs() []*model.SpecInput {
 			APIType:    &openAPIType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL: baseURL + "/odata/1.0/catalog.svc/$value?type=json",
+				URL:  baseURL + "/odata/1.0/catalog.svc/$value?type=json",
+				Auth: &model.AuthInput{AccessStrategy: "open"},
 			},
 		},
 	}
@@ -992,7 +997,8 @@ func fixEvent1SpecInputs() []*model.SpecInput {
 			EventType:  &eventType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL: "http://localhost:8080/asyncApi2.json",
+				URL:  "http://localhost:8080/asyncApi2.json",
+				Auth: &model.AuthInput{AccessStrategy: "open"},
 			},
 		},
 	}
@@ -1021,7 +1027,8 @@ func fixEvent2SpecInputs() []*model.SpecInput {
 			EventType:  &eventType,
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
-				URL: baseURL + "/api/eventCatalog.json",
+				URL:  baseURL + "/api/eventCatalog.json",
+				Auth: &model.AuthInput{AccessStrategy: "open"},
 			},
 		},
 	}

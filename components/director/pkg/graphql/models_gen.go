@@ -150,6 +150,7 @@ type ApplicationUpdateInput struct {
 
 type Auth struct {
 	Credential                      CredentialData         `json:"credential"`
+	AccessStrategy                  *string                `json:"accessStrategy"`
 	AdditionalHeaders               HTTPHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized     *HTTPHeadersSerialized `json:"additionalHeadersSerialized"`
 	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
@@ -160,7 +161,8 @@ type Auth struct {
 }
 
 type AuthInput struct {
-	Credential *CredentialDataInput `json:"credential"`
+	Credential     *CredentialDataInput `json:"credential"`
+	AccessStrategy *string              `json:"accessStrategy"`
 	// **Validation:** if provided, headers name and value required
 	AdditionalHeaders           HTTPHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized *HTTPHeadersSerialized `json:"additionalHeadersSerialized"`
@@ -607,7 +609,6 @@ type Webhook struct {
 	Timeout               *int         `json:"timeout"`
 	URL                   *string      `json:"url"`
 	Auth                  *Auth        `json:"auth"`
-	AccessStrategy        *string      `json:"accessStrategy"`
 	URLTemplate           *string      `json:"urlTemplate"`
 	InputTemplate         *string      `json:"inputTemplate"`
 	HeaderTemplate        *string      `json:"headerTemplate"`
@@ -620,7 +621,6 @@ type WebhookInput struct {
 	// **Validation:** valid URL, max=256
 	URL              *string      `json:"url"`
 	Auth             *AuthInput   `json:"auth"`
-	AccessStrategy   *string      `json:"accessStrategy"`
 	Mode             *WebhookMode `json:"mode"`
 	CorrelationIDKey *string      `json:"correlationIdKey"`
 	RetryInterval    *int         `json:"retryInterval"`

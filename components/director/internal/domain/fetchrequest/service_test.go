@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
 
@@ -272,7 +274,7 @@ func TestService_HandleSpec(t *testing.T) {
 			frRepo := &automock.FetchRequestRepository{}
 			frRepo.On("Update", ctx, mock.Anything).Return(nil).Once()
 
-			svc := fetchrequest.NewService(frRepo, testCase.Client(t))
+			svc := fetchrequest.NewService(frRepo, testCase.Client(t), accessstrategy.NewDefaultExecutorProvider())
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			result := svc.HandleSpec(ctx, &testCase.InputFr)
@@ -294,7 +296,7 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 			StatusCode: http.StatusOK,
 			Body:       ioutil.NopCloser(bytes.NewBufferString("spec")),
 		}
-	}))
+	}), accessstrategy.NewDefaultExecutorProvider())
 	svc.SetTimestampGen(func() time.Time { return timestamp })
 
 	modelInput := &model.FetchRequest{

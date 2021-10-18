@@ -17,7 +17,6 @@ func TestWebhookInput_ToApplicationWebhook(t *testing.T) {
 	tenant := "baz"
 	template := `{}`
 	webhookMode := model.WebhookModeSync
-	accessStrategy := "accessStrategy"
 	webhookURL := "foourl"
 	testCases := []struct {
 		Name     string
@@ -36,7 +35,6 @@ func TestWebhookInput_ToApplicationWebhook(t *testing.T) {
 					},
 				},
 				Mode:           &webhookMode,
-				AccessStrategy: &accessStrategy,
 				URLTemplate:    &template,
 				InputTemplate:  &template,
 				HeaderTemplate: &template,
@@ -55,7 +53,6 @@ func TestWebhookInput_ToApplicationWebhook(t *testing.T) {
 					},
 				},
 				Mode:           &webhookMode,
-				AccessStrategy: &accessStrategy,
 				URLTemplate:    &template,
 				InputTemplate:  &template,
 				HeaderTemplate: &template,
@@ -95,7 +92,6 @@ func TestWebhookInput_ToApplicationTemplateWebhook(t *testing.T) {
 	id := "bar"
 	template := `{}`
 	webhookMode := model.WebhookModeSync
-	accessStrategy := "accessStrategy"
 	webhookURL := "foourl"
 	testCases := []struct {
 		Name     string
@@ -114,7 +110,6 @@ func TestWebhookInput_ToApplicationTemplateWebhook(t *testing.T) {
 					},
 				},
 				Mode:           &webhookMode,
-				AccessStrategy: &accessStrategy,
 				URLTemplate:    &template,
 				InputTemplate:  &template,
 				HeaderTemplate: &template,
@@ -132,7 +127,6 @@ func TestWebhookInput_ToApplicationTemplateWebhook(t *testing.T) {
 					},
 				},
 				Mode:           &webhookMode,
-				AccessStrategy: &accessStrategy,
 				URLTemplate:    &template,
 				InputTemplate:  &template,
 				HeaderTemplate: &template,

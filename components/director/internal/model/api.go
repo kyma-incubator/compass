@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -94,11 +96,11 @@ type APIDefinitionInput struct {
 
 // APIResourceDefinition missing godoc
 type APIResourceDefinition struct { // This is the place from where the specification for this API is fetched
-	Type           APISpecType      `json:"type"`
-	CustomType     string           `json:"customType"`
-	MediaType      SpecFormat       `json:"mediaType"`
-	URL            string           `json:"url"`
-	AccessStrategy []AccessStrategy `json:"accessStrategies"`
+	Type           APISpecType                     `json:"type"`
+	CustomType     string                          `json:"customType"`
+	MediaType      SpecFormat                      `json:"mediaType"`
+	URL            string                          `json:"url"`
+	AccessStrategy accessstrategy.AccessStrategies `json:"accessStrategies"`
 }
 
 // Validate missing godoc
@@ -122,32 +124,22 @@ func (rd *APIResourceDefinition) Validate() error {
 
 // ToSpec missing godoc
 func (rd *APIResourceDefinition) ToSpec() *SpecInput {
+	var auth *AuthInput
+	if as, ok := rd.AccessStrategy.GetSupported(); ok {
+		auth = &AuthInput{
+			AccessStrategy: string(as),
+		}
+	}
+
 	return &SpecInput{
 		Format:     rd.MediaType,
 		APIType:    &rd.Type,
 		CustomType: &rd.CustomType,
-		FetchRequest: &FetchRequestInput{ // TODO: Convert AccessStrategies to FetchRequestAuths once ORD defines them
+		FetchRequest: &FetchRequestInput{
 			URL:  rd.URL,
-			Auth: nil, // Currently only open AccessStrategy is defined by ORD, which means no auth
+			Auth: auth,
 		},
 	}
-}
-
-// AccessStrategy missing godoc
-type AccessStrategy struct {
-	Type              string `json:"type"`
-	CustomType        string `json:"customType"`
-	CustomDescription string `json:"customDescription"`
-}
-
-// Validate missing godoc
-func (as AccessStrategy) Validate() error {
-	const CustomTypeRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
-	return validation.ValidateStruct(&as,
-		validation.Field(&as.Type, validation.Required, validation.In("open", "custom"), validation.When(as.CustomType != "", validation.In("custom"))),
-		validation.Field(&as.CustomType, validation.When(as.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
-		validation.Field(&as.CustomDescription, validation.When(as.Type != "custom", validation.Empty)),
-	)
 }
 
 // ConsumptionBundleReference missing godoc

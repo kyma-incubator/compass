@@ -3,6 +3,7 @@ package model
 // Auth missing godoc
 type Auth struct {
 	Credential            CredentialData
+	AccessStrategy        string
 	AdditionalHeaders     map[string][]string
 	AdditionalQueryParams map[string][]string
 	RequestAuth           *CredentialRequestAuth
@@ -45,6 +46,7 @@ type OAuthCredentialData struct {
 // AuthInput missing godoc
 type AuthInput struct {
 	Credential            *CredentialDataInput
+	AccessStrategy        string
 	AdditionalHeaders     map[string][]string
 	AdditionalQueryParams map[string][]string
 	RequestAuth           *CredentialRequestAuthInput
@@ -69,6 +71,7 @@ func (i *AuthInput) ToAuth() *Auth {
 
 	return &Auth{
 		Credential:            credential,
+		AccessStrategy:        i.AccessStrategy,
 		AdditionalQueryParams: i.AdditionalQueryParams,
 		AdditionalHeaders:     i.AdditionalHeaders,
 		RequestAuth:           requestAuth,

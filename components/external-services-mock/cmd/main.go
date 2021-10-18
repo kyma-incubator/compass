@@ -147,7 +147,7 @@ func initHTTP(cfg config) (http.Handler, error) {
 
 	router.HandleFunc("/.well-known/open-resource-discovery/basic/configure", basicORDHandler.HandleFuncOrdConfigSecurity)
 	router.HandleFunc("/.well-known/open-resource-discovery/oauth/configure", oauthORDHandler.HandleFuncOrdConfigSecurity)
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(cfg.BaseURL))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(cfg.BaseURL, "open"))
 
 	router.HandleFunc("/test/fullPath", ordHandler.HandleFuncOrdConfig("", "open"))
 
@@ -183,7 +183,7 @@ func initCertSecuredAPIs(cfg config) (http.Handler, error) {
 	ordHandler := ord_aggregator.NewORDHandler()
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ordHandler.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(cfg.CertSecuredBaseURL))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ordHandler.HandleFuncOrdDocument(cfg.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
 
 	return router, nil
 }

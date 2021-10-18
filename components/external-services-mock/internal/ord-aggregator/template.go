@@ -289,7 +289,7 @@ const ordDocument = `{
                "url":"/external-api/unsecured/spec/flapping",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -302,7 +302,7 @@ const ordDocument = `{
                "url":"https://test.com/odata/1.0/catalog",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -315,7 +315,7 @@ const ordDocument = `{
                "url":"https://TEST:443//odata/$metadata",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -422,7 +422,7 @@ const ordDocument = `{
                "url":"https://TEST:443//odata/$metadata",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -435,7 +435,7 @@ const ordDocument = `{
                "url":"/odata/1.0/catalog.svc/$value?type=json",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -523,7 +523,7 @@ const ordDocument = `{
                "url":"http://localhost:8080/asyncApi2.json",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -611,7 +611,7 @@ const ordDocument = `{
                "url":"/api/eventCatalog.json",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }

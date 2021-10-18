@@ -309,6 +309,7 @@ input ApplicationUpdateInput {
 
 input AuthInput {
 	credential: CredentialDataInput
+	accessStrategy: String
 	"""
 	**Validation:** if provided, headers name and value required
 	"""
@@ -634,7 +635,6 @@ input WebhookInput {
 	"""
 	url: String
 	auth: AuthInput
-	accessStrategy: String
 	mode: WebhookMode
 	correlationIdKey: String
 	retryInterval: Int
@@ -740,6 +740,7 @@ type ApplicationTemplatePage implements Pageable {
 
 type Auth {
 	credential: CredentialData
+	accessStrategy: String
 	additionalHeaders: HttpHeaders
 	additionalHeadersSerialized: HttpHeadersSerialized
 	additionalQueryParams: QueryParams
@@ -1089,7 +1090,6 @@ type Webhook {
 	timeout: Int
 	url: String
 	auth: Auth @sanitize(path: "graphql.field.webhooks.auth")
-	accessStrategy: String
 	urlTemplate: String
 	inputTemplate: String
 	headerTemplate: String

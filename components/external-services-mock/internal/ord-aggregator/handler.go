@@ -70,10 +70,10 @@ func (oh *ordHandler) HandleFuncOrdConfig(baseURL, accessStrategy string) func(r
 	}
 }
 
-func (oh *ordHandler) HandleFuncOrdDocument(baseURL string) func(rw http.ResponseWriter, req *http.Request) {
+func (oh *ordHandler) HandleFuncOrdDocument(baseURL string, accessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		rw.WriteHeader(http.StatusOK)
-		_, err := rw.Write([]byte(fmt.Sprintf(ordDocument, baseURL)))
+		_, err := rw.Write([]byte(fmt.Sprintf(ordDocument, baseURL, accessStrategy)))
 		if err != nil {
 			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 		}

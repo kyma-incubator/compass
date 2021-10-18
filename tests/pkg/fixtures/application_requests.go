@@ -65,7 +65,9 @@ func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, w
 
 	if ordConfigSecurity != nil && ordConfigSecurity.Enabled {
 		if len(ordConfigSecurity.AccessStrategy) > 0 {
-			appRegisterInput.Webhooks[0].AccessStrategy = &ordConfigSecurity.AccessStrategy
+			appRegisterInput.Webhooks[0].Auth = &graphql.AuthInput{
+				AccessStrategy: ordConfigSecurity.AccessStrategy,
+			}
 		} else if ordConfigSecurity.TokenURL != "" {
 			appRegisterInput.Webhooks[0].Auth = &graphql.AuthInput{
 				Credential: &graphql.CredentialDataInput{

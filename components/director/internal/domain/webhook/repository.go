@@ -21,8 +21,8 @@ const (
 )
 
 var (
-	webhookColumns         = []string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth", "access_strategy", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
-	updatableColumns       = []string{"type", "url", "auth", "access_strategy", "mode", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
+	webhookColumns         = []string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
+	updatableColumns       = []string{"type", "url", "auth", "mode", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 	missingInputModelError = apperrors.NewInternalError("model has to be provided")
 	tenantColumn           = "tenant_id"
 )

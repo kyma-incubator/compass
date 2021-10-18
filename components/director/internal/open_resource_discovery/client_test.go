@@ -321,10 +321,13 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			}
 
 			if len(test.AccessStrategy) > 0 {
-				testWebhook.AccessStrategy = &test.AccessStrategy
+				if testWebhook.Auth == nil {
+					testWebhook.Auth = &model.Auth{}
+				}
+				testWebhook.Auth.AccessStrategy = test.AccessStrategy
 			}
 
-			docs, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testApp, testWebhook)
+			docs, actualBaseURL, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testApp, testWebhook)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -332,6 +335,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.Len(t, docs, len(test.ExpectedResult))
+				require.Equal(t, baseURL, actualBaseURL)
 				require.Equal(t, test.ExpectedResult, docs)
 			}
 
