@@ -75,7 +75,7 @@ global:
       version: "PR-2027"
     director:
       dir:
-      version: "PR-2073"
+      version: "PR-2083"
     gateway:
       dir:
       version: "PR-2050"
@@ -104,7 +104,7 @@ global:
       version: "PR-45"
     e2e_tests:
       dir:
-      version: "PR-2072"
+      version: "PR-2083"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -415,7 +415,6 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    securedApplicationTypes: "sample-app-type" # comma-separated values are used for specifying multiple application types
     accessStrategies:
       cmpMtls:
         policy: "compass-local-clients"
