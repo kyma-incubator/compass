@@ -134,6 +134,8 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/systemfetcher/systems", systemFetcherHandler.HandleFunc)
 
 	// Fetch request handlers
+	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
+
 	oauthRouter := router.PathPrefix("/external-api/secured/oauth").Subrouter()
 	oauthRouter.Use(oauthMiddleware(&key.PublicKey))
 	oauthRouter.HandleFunc("/spec", apispec.HandleFunc)
