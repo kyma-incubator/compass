@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -69,24 +68,21 @@ var successfulRoundTripFunc = func(t *testing.T) func(req *http.Request) *http.R
 
 func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 	testCases := []struct {
-		Name               string
-		SecuredSystemTypes []string
-		Credentials        *model.Auth
-		RoundTripFunc      func(req *http.Request) *http.Response
-		ExpectedResult     ord.Documents
-		ExpectedErr        error
+		Name           string
+		Credentials    *model.Auth
+		RoundTripFunc  func(req *http.Request) *http.Response
+		ExpectedResult ord.Documents
+		ExpectedErr    error
 	}{
 		{
-			Name:               "Success",
-			SecuredSystemTypes: []string{},
-			RoundTripFunc:      successfulRoundTripFunc(t),
+			Name:          "Success",
+			RoundTripFunc: successfulRoundTripFunc(t),
 			ExpectedResult: ord.Documents{
 				fixORDDocument(),
 			},
 		},
 		{
-			Name:               "Success with secured system type configured and basic credentials",
-			SecuredSystemTypes: []string{testApplicationType},
+			Name: "Success with secured system type configured and basic credentials",
 			Credentials: &model.Auth{
 				Credential: model.CredentialData{
 					Basic: &model.BasicCredentialData{
@@ -101,8 +97,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Success with secured system type configured and oauth credentials",
-			SecuredSystemTypes: []string{testApplicationType},
+			Name: "Success with secured system type configured and oauth credentials",
 			Credentials: &model.Auth{
 				Credential: model.CredentialData{
 					Oauth: &model.OAuthCredentialData{
@@ -118,13 +113,25 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Error fetching well-known config due to missing credentials",
-			SecuredSystemTypes: []string{testApplicationType},
-			ExpectedErr:        errors.New("error while fetching open resource discovery well-known configuration with webhook credentials: Invalid data [reason=Credentials not provided]"),
+			Name:        "Error fetching well-known config due to missing basic credentials",
+			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration with webhook credentials: Invalid data [reason=Credentials not provided]"),
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: nil,
+				},
+			},
 		},
 		{
-			Name:               "Error fetching well-known config due to invalid credentials",
-			SecuredSystemTypes: []string{testApplicationType},
+			Name:        "Error fetching well-known config due to missing oauth credentials",
+			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration with webhook credentials: Invalid data [reason=Credentials not provided]"),
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
+					Oauth: nil,
+				},
+			},
+		},
+		{
+			Name: "Error fetching well-known config due to invalid credentials",
 			Credentials: &model.Auth{
 				Credential: model.CredentialData{
 					Basic: &model.BasicCredentialData{
@@ -142,8 +149,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration: status code 401"),
 		},
 		{
-			Name:               "Error fetching well-known config",
-			SecuredSystemTypes: []string{},
+			Name: "Error fetching well-known config",
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				statusCode := http.StatusNotFound
@@ -158,8 +164,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration: status code 500"),
 		},
 		{
-			Name:               "Error when well-known config is not proper json",
-			SecuredSystemTypes: []string{},
+			Name: "Error when well-known config is not proper json",
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				statusCode := http.StatusNotFound
@@ -175,8 +180,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedErr: errors.New("error unmarshaling json body"),
 		},
 		{
-			Name:               "Document with unsupported access strategy is skipped",
-			SecuredSystemTypes: []string{},
+			Name: "Document with unsupported access strategy is skipped",
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				var err error
@@ -200,8 +204,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedResult: ord.Documents{},
 		},
 		{
-			Name:               "Error fetching document",
-			SecuredSystemTypes: []string{},
+			Name: "Error fetching document",
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				var err error
@@ -223,8 +226,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedErr:    errors.Errorf("error while fetching open resource discovery document %q: status code %d", baseURL+ordDocURI, 500),
 		},
 		{
-			Name:               "Error when document is not proper json",
-			SecuredSystemTypes: []string{},
+			Name: "Error when document is not proper json",
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				var err error
@@ -251,18 +253,12 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
-			client := ord.NewClient(testHTTPClient, test.SecuredSystemTypes, accessstrategy.NewDefaultExecutorProvider())
+			client := ord.NewClient(testHTTPClient, accessstrategy.NewDefaultExecutorProvider())
 
 			testApp := fixApplicationPage().Data[0]
 			testWebhook := fixWebhooks()[0]
 
-			if len(test.SecuredSystemTypes) != 0 {
-				testApp.Labels = []byte(fmt.Sprintf(`{"%s": "%s"}`, applicationTypeLabel, test.SecuredSystemTypes[0]))
-			}
-
-			if test.Credentials != nil {
-				testWebhook.Auth = test.Credentials
-			}
+			testWebhook.Auth = test.Credentials
 
 			docs, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testApp, testWebhook)
 
