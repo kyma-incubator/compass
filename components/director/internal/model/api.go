@@ -126,8 +126,9 @@ func (rd *APIResourceDefinition) Validate() error {
 func (rd *APIResourceDefinition) ToSpec() *SpecInput {
 	var auth *AuthInput
 	if as, ok := rd.AccessStrategy.GetSupported(); ok {
+		asString := string(as)
 		auth = &AuthInput{
-			AccessStrategy: string(as),
+			AccessStrategy: &asString,
 		}
 	}
 

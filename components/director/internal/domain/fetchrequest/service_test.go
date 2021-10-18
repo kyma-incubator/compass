@@ -48,7 +48,8 @@ func TestService_HandleSpec(t *testing.T) {
 	const clientID = "clId"
 	const secret = "clSecret"
 	const url = "mocked-url/oauth/token"
-	const testAccessStrategy = "testAccessStrategy"
+
+	var testAccessStrategy = "testAccessStrategy"
 
 	mockSpec := "spec"
 	timestamp := time.Now()
@@ -73,7 +74,7 @@ func TestService_HandleSpec(t *testing.T) {
 		ID:   "test",
 		Mode: model.FetchModeSingle,
 		URL: "http://test.com",
-		Auth: &model.Auth{AccessStrategy: testAccessStrategy},
+		Auth: &model.Auth{AccessStrategy: &testAccessStrategy},
 	}
 
 	modelInputBasicCredentials := model.FetchRequest{

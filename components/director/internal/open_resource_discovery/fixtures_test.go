@@ -881,7 +881,7 @@ func fixAPI1SpecInputs() []*model.SpecInput {
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL:  baseURL + "/external-api/unsecured/spec/flapping",
-				Auth: &model.AuthInput{AccessStrategy: "open"},
+				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
 		{
@@ -890,7 +890,7 @@ func fixAPI1SpecInputs() []*model.SpecInput {
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL:  "https://test.com/odata/1.0/catalog",
-				Auth: &model.AuthInput{AccessStrategy: "open"},
+				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
 		{
@@ -899,7 +899,7 @@ func fixAPI1SpecInputs() []*model.SpecInput {
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL:  "https://TEST:443//odata/$metadata",
-				Auth: &model.AuthInput{AccessStrategy: "open"},
+				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
 	}
@@ -949,7 +949,7 @@ func fixAPI2SpecInputs() []*model.SpecInput {
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL:  "https://TEST:443//odata/$metadata",
-				Auth: &model.AuthInput{AccessStrategy: "open"},
+				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
 		{
@@ -958,7 +958,7 @@ func fixAPI2SpecInputs() []*model.SpecInput {
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL:  baseURL + "/odata/1.0/catalog.svc/$value?type=json",
-				Auth: &model.AuthInput{AccessStrategy: "open"},
+				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
 	}
@@ -998,7 +998,7 @@ func fixEvent1SpecInputs() []*model.SpecInput {
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL:  "http://localhost:8080/asyncApi2.json",
-				Auth: &model.AuthInput{AccessStrategy: "open"},
+				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
 	}
@@ -1028,7 +1028,7 @@ func fixEvent2SpecInputs() []*model.SpecInput {
 			CustomType: str.Ptr(""),
 			FetchRequest: &model.FetchRequestInput{
 				URL:  baseURL + "/api/eventCatalog.json",
-				Auth: &model.AuthInput{AccessStrategy: "open"},
+				Auth: &model.AuthInput{AccessStrategy: str.Ptr("open")},
 			},
 		},
 	}

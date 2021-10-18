@@ -122,15 +122,15 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 	}
 
 	var resp *http.Response
-	if webhook.Auth != nil && len(webhook.Auth.AccessStrategy) > 0 {
-		log.C(ctx).Infof("Application %q (id = %q, type = %q) ORD webhook is configured with %q access strategy.", app.Name, app.ID, app.Type, webhook.Auth.AccessStrategy)
-		executor, err := c.accessStrategyExecutorProvider.Provide(accessstrategy.Type(webhook.Auth.AccessStrategy))
+	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {
+		log.C(ctx).Infof("Application %q (id = %q, type = %q) ORD webhook is configured with %q access strategy.", app.Name, app.ID, app.Type, *webhook.Auth.AccessStrategy)
+		executor, err := c.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*webhook.Auth.AccessStrategy))
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", webhook.Auth.AccessStrategy)
+			return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", *webhook.Auth.AccessStrategy)
 		}
 		resp, err = executor.Execute(ctx, c.Client, configURL)
 		if err != nil {
-			return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", webhook.Auth.AccessStrategy)
+			return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", *webhook.Auth.AccessStrategy)
 		}
 	} else if _, secured := c.securedApplicationTypes[app.Type]; secured {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is secured and webhook credentials will be used", app.Name, app.ID, app.Type)

@@ -66,12 +66,12 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 	}
 
 	var resp *http.Response
-	if fr.Auth != nil && len(fr.Auth.AccessStrategy) > 0 {
-		log.C(ctx).Infof("Fetch Request with id %s is configured with %s access strategy.", fr.ID, fr.Auth.AccessStrategy)
+	if fr.Auth != nil && fr.Auth.AccessStrategy != nil && len(*fr.Auth.AccessStrategy) > 0 {
+		log.C(ctx).Infof("Fetch Request with id %s is configured with %s access strategy.", fr.ID, *fr.Auth.AccessStrategy)
 		var executor accessstrategy.Executor
-		executor, err = s.accessStrategyExecutorProvider.Provide(accessstrategy.Type(fr.Auth.AccessStrategy))
+		executor, err = s.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*fr.Auth.AccessStrategy))
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Cannot find executor for access strategy %q as part of fetch request %s processing: %v", fr.Auth.AccessStrategy, fr.ID, err)
+			log.C(ctx).WithError(err).Errorf("Cannot find executor for access strategy %q as part of fetch request %s processing: %v", *fr.Auth.AccessStrategy, fr.ID, err)
 			return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching Spec: %s", err.Error())), s.timestampGen())
 		}
 		resp, err = executor.Execute(ctx, s.client, fr.URL)

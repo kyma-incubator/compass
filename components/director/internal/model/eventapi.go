@@ -114,8 +114,9 @@ func (rd *EventResourceDefinition) Validate() error {
 func (rd *EventResourceDefinition) ToSpec() *SpecInput {
 	var auth *AuthInput
 	if as, ok := rd.AccessStrategy.GetSupported(); ok {
+		asString := string(as)
 		auth = &AuthInput{
-			AccessStrategy: string(as),
+			AccessStrategy: &asString,
 		}
 	}
 

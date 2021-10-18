@@ -3,7 +3,7 @@ package model
 // Auth missing godoc
 type Auth struct {
 	Credential            CredentialData
-	AccessStrategy        string
+	AccessStrategy        *string
 	AdditionalHeaders     map[string][]string
 	AdditionalQueryParams map[string][]string
 	RequestAuth           *CredentialRequestAuth
@@ -46,7 +46,7 @@ type OAuthCredentialData struct {
 // AuthInput missing godoc
 type AuthInput struct {
 	Credential            *CredentialDataInput
-	AccessStrategy        string
+	AccessStrategy        *string
 	AdditionalHeaders     map[string][]string
 	AdditionalQueryParams map[string][]string
 	RequestAuth           *CredentialRequestAuthInput

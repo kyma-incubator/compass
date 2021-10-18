@@ -324,7 +324,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				if testWebhook.Auth == nil {
 					testWebhook.Auth = &model.Auth{}
 				}
-				testWebhook.Auth.AccessStrategy = test.AccessStrategy
+				testWebhook.Auth.AccessStrategy = &test.AccessStrategy
 			}
 
 			docs, actualBaseURL, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testApp, testWebhook)
