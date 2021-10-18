@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	auditlogTokenEndpoint        = "/secured/oauth/token"
+	auditlogTokenEndpoint        = "secured/oauth/token"
 	auditlogSearchEndpoint       = "audit-log/v2/configuration-changes/search"
 	auditlogDeleteEndpointFormat = "audit-log/v2/configuration-changes/%s"
 )
