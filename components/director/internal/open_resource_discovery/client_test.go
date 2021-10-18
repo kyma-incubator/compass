@@ -314,7 +314,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				executorProviderMock = test.ExecutorProviderFunc()
 			}
 
-			client := ord.NewClient(testHTTPClient, accessstrategy.NewDefaultExecutorProvider())
+			client := ord.NewClient(testHTTPClient, executorProviderMock)
 
 			testApp := fixApplicationPage().Data[0]
 			testWebhook := fixWebhooks()[0]
