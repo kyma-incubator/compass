@@ -73,7 +73,7 @@ func TestService_HandleSpec(t *testing.T) {
 	modelInputAccessStrategy := model.FetchRequest{
 		ID:   "test",
 		Mode: model.FetchModeSingle,
-		URL: "http://test.com",
+		URL:  "http://test.com",
 		Auth: &model.Auth{AccessStrategy: &testAccessStrategy},
 	}
 
