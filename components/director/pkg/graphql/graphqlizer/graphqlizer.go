@@ -213,7 +213,7 @@ func (g *Graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 		credential: {{ CredentialDataInputToGQL .Credential }},
 		{{- end }}
 		{{- if .AccessStrategy }}
-		accessStrategy: {{ .AccessStrategy }},
+		accessStrategy: "{{ .AccessStrategy }}",
 		{{- end }}
 		{{- if .AdditionalHeaders }}
 		additionalHeaders: {{ HTTPHeadersToGQL .AdditionalHeaders }},
