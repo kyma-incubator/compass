@@ -170,6 +170,8 @@ spec:
                 value: {{ $config.queryMapping.movedRuntimeByLabelTargetField | default "targetGlobalAccountGUID"}}
               - name: APP_MOVED_RUNTIME_LABEL_KEY
                 value: {{ $config.movedRuntimeLabelKey | default "movedRuntimeLabelKey" }}
+              - name: APP_GLOBAL_ACCOUNT_REGEX
+                value: {{ $config.globalAccountRegex }}}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
               - name: APP_METRICS_PUSH_ENDPOINT
                 value: {{ $.Values.global.metrics.pushEndpoint}}

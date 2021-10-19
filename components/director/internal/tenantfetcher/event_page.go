@@ -16,6 +16,7 @@ type eventsPage struct {
 	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
 	providerName                    string
 	payload                         []byte
+	GlobalAccountRegex              string `envconfig:"default=GlobalAccount,APP_GLOBAL_ACCOUNT_REGEX"`
 }
 
 func (ep eventsPage) getEventsDetails() [][]byte {
@@ -141,38 +142,51 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 		return nil, invalidFieldFormatError(ep.fieldMapping.EntityTypeField)
 	}
 
-	region := ""
-	parentID := ""
-	tenantType := tenant.TypeToStr(tenant.Account)
-	globalAccountRegex := regexp.MustCompile("^GLOBALACCOUNT_.*|GlobalAccount")
+	globalAccountRegex := regexp.MustCompile(ep.GlobalAccountRegex)
 	if globalAccountRegex.MatchString(entityType.String()) {
-		customerIDResult := gjson.Get(jsonPayload, ep.fieldMapping.CustomerIDField)
-		if !customerIDResult.Exists() {
-			log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.CustomerIDField, id)
-		} else {
-			parentID = customerIDResult.String()
-		}
+		return constructGlobalAccountTenant(jsonPayload, nameResult.String(), subdomain.String(), id, ep), nil
 	} else {
-		regionField := gjson.Get(jsonPayload, ep.fieldMapping.RegionField)
-		if !regionField.Exists() {
-			return nil, invalidFieldFormatError(ep.fieldMapping.RegionField)
-		}
-		region = regionField.String()
-		parentIDField := gjson.Get(jsonPayload, ep.fieldMapping.ParentIDField)
-		if !parentIDField.Exists() {
-			return nil, invalidFieldFormatError(ep.fieldMapping.ParentIDField)
-		}
-		parentID = parentIDField.String()
-		tenantType = tenant.TypeToStr(tenant.Subaccount)
+		return constructSubaccountTenant(jsonPayload, nameResult.String(), subdomain.String(), id, ep)
 	}
+}
 
+func constructGlobalAccountTenant(jsonPayload, name, subdomain, externalTenant string, ep eventsPage) *model.BusinessTenantMappingInput {
+	parentID := ""
+	customerIDResult := gjson.Get(jsonPayload, ep.fieldMapping.CustomerIDField)
+	if !customerIDResult.Exists() {
+		log.D().Warnf("Missig or invalid format of field: %s for tenant with id: %s", ep.fieldMapping.CustomerIDField, externalTenant)
+	} else {
+		parentID = customerIDResult.String()
+	}
 	return &model.BusinessTenantMappingInput{
-		Name:           nameResult.String(),
-		ExternalTenant: id,
+		Name:           name,
+		ExternalTenant: externalTenant,
 		Parent:         parentID,
-		Subdomain:      subdomain.String(),
+		Subdomain:      subdomain,
+		Region:         "",
+		Type:           tenant.TypeToStr(tenant.Account),
+		Provider:       ep.providerName,
+	}
+}
+
+func constructSubaccountTenant(jsonPayload, name, subdomain, externalTenant string, ep eventsPage) (*model.BusinessTenantMappingInput, error) {
+	regionField := gjson.Get(jsonPayload, ep.fieldMapping.RegionField)
+	if !regionField.Exists() {
+		return nil, invalidFieldFormatError(ep.fieldMapping.RegionField)
+	}
+	region := regionField.String()
+	parentIDField := gjson.Get(jsonPayload, ep.fieldMapping.ParentIDField)
+	if !parentIDField.Exists() {
+		return nil, invalidFieldFormatError(ep.fieldMapping.ParentIDField)
+	}
+	parentID := parentIDField.String()
+	return &model.BusinessTenantMappingInput{
+		Name:           name,
+		ExternalTenant: externalTenant,
+		Parent:         parentID,
+		Subdomain:      subdomain,
 		Region:         region,
-		Type:           tenantType,
+		Type:           tenant.TypeToStr(tenant.Subaccount),
 		Provider:       ep.providerName,
 	}, nil
 }
