@@ -143,7 +143,7 @@ spec:
               - name: APP_MAPPING_FIELD_PARENT_ID
                 value: {{ $config.fieldMapping.parentIDField}}
               - name: APP_SYNC_SUBACCOUNTS
-                value: {{ $config.shouldSyncSubaccounts }}
+                value: {{ $config.shouldSyncSubaccounts | quote }}
               - name: APP_TENANT_TOTAL_PAGES_FIELD
                 value: {{ $config.fieldMapping.totalPagesField}}
               - name: APP_TENANT_TOTAL_RESULTS_FIELD
