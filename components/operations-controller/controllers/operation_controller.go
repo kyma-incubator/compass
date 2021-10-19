@@ -93,6 +93,11 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return r.handleFetchApplicationError(ctx, operation, err)
 	}
 
+	if app == nil && operation.Spec.OperationType == v1alpha1.OperationTypeDelete {
+		log.C(ctx).Info("Application is already deleted in Director")
+		return r.finalizeStatusSuccess(ctx, operation, nil)
+	}
+
 	if app.Result.Ready {
 		return r.finalizeStatus(ctx, operation, app.Result.Error, nil)
 	}

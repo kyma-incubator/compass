@@ -111,13 +111,10 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 		"bundles.apiDefinitions.spec.fetchRequest",
 		"bundles.eventDefinitions.spec.fetchRequest",
 	})))
-
 	apps := ApplicationsOutput{}
-
 	req := gcli.NewRequest(query)
 
-	err := c.gcli.Do(ctx, req, &apps)
-	if err != nil {
+	if err := c.gcli.Do(ctx, req, &apps); err != nil {
 		return nil, errors.Wrap(err, "while fetching applications in gqlclient")
 	}
 	if apps.Result == nil {

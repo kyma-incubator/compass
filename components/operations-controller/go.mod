@@ -35,7 +35,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a5435ac7a
+	github.com/kyma-incubator/compass/components/director v0.0.0-20211019161525-3f1fae795975
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210922132333-3deb7cf90637
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
