@@ -24,6 +24,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -82,17 +83,15 @@ func (c *GraphQLClient) FetchApplication(ctx context.Context, id string) (*Appli
 		"auths",
 		"eventingConfiguration",
 	}))
-
 	app := ApplicationOutput{}
-
 	req := gcli.NewRequest(query)
 
-	err := c.gcli.Do(ctx, req, &app)
-	if err != nil {
+	if err := c.gcli.Do(ctx, req, &app); err != nil {
 		return nil, errors.Wrap(err, "while fetching application in gqlclient")
 	}
 	if app.Result == nil {
-		return nil, errors.New("failed to fetch application")
+		log.C(ctx).Warnf("Application with ID %s not found", id)
+		return nil, nil
 	}
 
 	return &app, nil
