@@ -180,7 +180,7 @@ func NewRootResolver(
 	timeService := time.NewService()
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
-	formationSvc := formation.NewService(labelConverter, labelDefRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentSvc)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
@@ -467,7 +467,7 @@ func (r *mutationResolver) AssignFormation(ctx context.Context, objectID string,
 	return r.formation.AssignFormation(ctx, objectID, objectType, formation)
 }
 
-func (r *mutationResolver) UnAssignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
+func (r *mutationResolver) UnassignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
 	return r.formation.UnassignFormation(ctx, objectID, objectType, formation)
 }
 

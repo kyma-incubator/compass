@@ -26,12 +26,14 @@ type Converter interface {
 	ToGraphQL(i *model.Formation) *graphql.Formation
 }
 
+// Resolver is the formation resolver
 type Resolver struct {
 	transact persistence.Transactioner
 	service  Service
 	conv     Converter
 }
 
+// NewResolver creates formation resolver
 func NewResolver(transact persistence.Transactioner, service Service, conv Converter) *Resolver {
 	return &Resolver{
 		transact: transact,
@@ -40,6 +42,7 @@ func NewResolver(transact persistence.Transactioner, service Service, conv Conve
 	}
 }
 
+// CreateFormation creates new formation for the caller tenant
 func (r *Resolver) CreateFormation(ctx context.Context, formation graphql.FormationInput) (*graphql.Formation, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -66,6 +69,7 @@ func (r *Resolver) CreateFormation(ctx context.Context, formation graphql.Format
 	return r.conv.ToGraphQL(newFormation), nil
 }
 
+// DeleteFormation deletes the formation from the caller tenant formations
 func (r *Resolver) DeleteFormation(ctx context.Context, formation graphql.FormationInput) (*graphql.Formation, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -92,6 +96,7 @@ func (r *Resolver) DeleteFormation(ctx context.Context, formation graphql.Format
 	return r.conv.ToGraphQL(deletedFormation), nil
 }
 
+// AssignFormation assigns object to the provided formation
 func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -118,6 +123,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 	return r.conv.ToGraphQL(newFormation), nil
 }
 
+// UnassignFormation unassigns the object from the provided formation
 func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

@@ -13,13 +13,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// LabelConverter missing godoc
-//go:generate mockery --name=LabelConverter --output=automock --outpkg=automock --case=underscore
-type LabelConverter interface {
-	ToEntity(in model.Label) (label.Entity, error)
-	FromEntity(in label.Entity) (model.Label, error)
-}
-
 // LabelDefRepository missing godoc
 //go:generate mockery --name=LabelDefRepository --output=automock --outpkg=automock --case=underscore
 type LabelDefRepository interface {
@@ -60,7 +53,6 @@ type AutomaticFormationAssignmentService interface {
 }
 
 type service struct {
-	labelConverter     LabelConverter
 	labelDefRepository LabelDefRepository
 	labelService       LabelService
 	labelDefService    LabelDefService
@@ -68,9 +60,9 @@ type service struct {
 	uuidService        UIDService
 }
 
-func NewService(labelConverter LabelConverter, labelDefRepository LabelDefRepository, labelService LabelService, uuidService UIDService, labelDefService LabelDefService, asaService AutomaticFormationAssignmentService) *service {
+// NewService creates formation service
+func NewService(labelDefRepository LabelDefRepository, labelService LabelService, uuidService UIDService, labelDefService LabelDefService, asaService AutomaticFormationAssignmentService) *service {
 	return &service{
-		labelConverter:     labelConverter,
 		labelDefRepository: labelDefRepository,
 		labelService:       labelService,
 		labelDefService:    labelDefService,
@@ -79,6 +71,8 @@ func NewService(labelConverter LabelConverter, labelDefRepository LabelDefReposi
 	}
 }
 
+// CreateFormation adds the provided formation to the scenario label definitions of the given tenant.
+// If the scenario label definition does not exist it will be created
 func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
 	f, err := s.modifyFormations(ctx, tnt, formation.Name, addFormation)
 	if err != nil {
@@ -93,10 +87,15 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	return f, nil
 }
 
+// DeleteFormation removes the provided formation from the scenario label definitions of the given tenant.
 func (s *service) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
 	return s.modifyFormations(ctx, tnt, formation.Name, deleteFormation)
 }
 
+// AssignFormation assigns object base on graphql.FormationObjectType.
+// If the graphql.FormationObjectType is graphql.FormationObjectTypeApplication it adds the provided formation to the
+// scenario label of the application. If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
+// create automatic scenario assignment with the caller and target tenant.
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
@@ -123,6 +122,10 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	}
 }
 
+// UnassignFormation unassigns object base on graphql.FormationObjectType.
+// If the graphql.FormationObjectType is graphql.FormationObjectTypeApplication it removes the provided formation from the
+// scenario label of the application. If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
+// delete the automatic scenario assignment with the caller and target tenant.
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
@@ -141,7 +144,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 }
 
-func (s *service) modifyFormations(ctx context.Context, tnt, formationName string, modificationFunc ModificationFunc) (*model.Formation, error) {
+func (s *service) modifyFormations(ctx context.Context, tnt, formationName string, modificationFunc modificationFunc) (*model.Formation, error) {
 	def, err := s.labelDefRepository.GetByKey(ctx, tnt, model.ScenariosKey)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting `%s` label definition", model.ScenariosKey)
@@ -181,7 +184,7 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 	return &model.Formation{Name: formationName}, nil
 }
 
-func (s *service) modifyAssignedFormationsForApplication(ctx context.Context, tnt, objectID string, formation model.Formation, modificationFunc ModificationFunc) (*model.Formation, error) {
+func (s *service) modifyAssignedFormationsForApplication(ctx context.Context, tnt, objectID string, formation model.Formation, modificationFunc modificationFunc) (*model.Formation, error) {
 	labelInput := newLabelInput(formation.Name, objectID, model.ApplicationLabelableObject)
 
 	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
@@ -199,7 +202,7 @@ func (s *service) modifyAssignedFormationsForApplication(ctx context.Context, tn
 	return &formation, s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
 }
 
-type ModificationFunc func([]string, string) []string
+type modificationFunc func([]string, string) []string
 
 func addFormation(formations []string, formation string) []string {
 	for _, f := range formations {

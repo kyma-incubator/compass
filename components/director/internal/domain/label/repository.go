@@ -22,7 +22,7 @@ var (
 	tableColumns       = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "key", "value", "version"}
 	updatableColumns   = []string{"value"}
 	idColumns          = []string{"id"}
-	versionedIdColumns = append(idColumns, "version")
+	versionedIDColumns = append(idColumns, "version")
 )
 
 // Converter missing godoc
@@ -54,7 +54,7 @@ func NewRepository(conv Converter) *repository {
 		queryBuilder:     repo.NewQueryBuilder(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
 		creator:          repo.NewCreator(resource.Label, tableName, tableColumns),
 		updater:          repo.NewUpdater(resource.Label, tableName, updatableColumns, tenantColumn, idColumns),
-		versionedUpdater: repo.NewUpdater(resource.Label, tableName, updatableColumns, tenantColumn, versionedIdColumns),
+		versionedUpdater: repo.NewUpdater(resource.Label, tableName, updatableColumns, tenantColumn, versionedIDColumns),
 		conv:             conv,
 	}
 }

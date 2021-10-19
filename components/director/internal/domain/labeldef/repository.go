@@ -27,7 +27,7 @@ type EntityConverter interface {
 
 var (
 	idColumns          = []string{"id"}
-	versionedIdColumns = append(idColumns, versionColumn)
+	versionedIDColumns = append(idColumns, versionColumn)
 	labeldefColumns    = []string{"id", tenantColumn, keyColumn, schemaColumn, versionColumn}
 	updatableColumns   = []string{"schema"}
 )
@@ -53,7 +53,7 @@ func NewRepository(conv EntityConverter) *repository {
 		lister:           repo.NewLister(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
 		deleter:          repo.NewDeleter(resource.LabelDefinition, tableName, tenantColumn),
 		updater:          repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
-		versionedUpdater: repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, versionedIdColumns),
+		versionedUpdater: repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, versionedIDColumns),
 		upserter:         repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}),
 	}
 }

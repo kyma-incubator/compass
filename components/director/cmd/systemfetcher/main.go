@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	gcli "github.com/machinebox/graphql"
 
@@ -178,7 +180,9 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 
 	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	assignmentConv := scenarioassignment.NewConverter()
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)

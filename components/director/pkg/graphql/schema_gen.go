@@ -383,7 +383,7 @@ type ComplexityRoot struct {
 		SetBundleInstanceAuth                         func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
-		UnAssignFormation                             func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
+		UnassignFormation                             func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		UnregisterApplication                         func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
 		UnregisterRuntime                             func(childComplexity int, id string) int
@@ -629,7 +629,7 @@ type MutationResolver interface {
 	CreateFormation(ctx context.Context, formation FormationInput) (*Formation, error)
 	DeleteFormation(ctx context.Context, formation FormationInput) (*Formation, error)
 	AssignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
-	UnAssignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
+	UnassignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
 	CreateLabelDefinition(ctx context.Context, in LabelDefinitionInput) (*LabelDefinition, error)
 	UpdateLabelDefinition(ctx context.Context, in LabelDefinitionInput) (*LabelDefinition, error)
 	DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*LabelDefinition, error)
@@ -2504,17 +2504,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SetRuntimeLabel(childComplexity, args["runtimeID"].(string), args["key"].(string), args["value"].(interface{})), true
 
-	case "Mutation.unAssignFormation":
-		if e.complexity.Mutation.UnAssignFormation == nil {
+	case "Mutation.unassignFormation":
+		if e.complexity.Mutation.UnassignFormation == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_unAssignFormation_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_unassignFormation_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UnAssignFormation(childComplexity, args["objectID"].(string), args["objectType"].(FormationObjectType), args["formation"].(FormationInput)), true
+		return e.complexity.Mutation.UnassignFormation(childComplexity, args["objectID"].(string), args["objectType"].(FormationObjectType), args["formation"].(FormationInput)), true
 
 	case "Mutation.unregisterApplication":
 		if e.complexity.Mutation.UnregisterApplication == nil {
@@ -4885,7 +4885,7 @@ type Mutation {
 	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
 	deleteFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.deleteFormation")
 	assignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.assignFormation")
-	unAssignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unAssignFormation")
+	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
 	"""
 	**Examples**
 	- [create label definition](examples/create-label-definition/create-label-definition.graphql)
@@ -6269,7 +6269,7 @@ func (ec *executionContext) field_Mutation_setRuntimeLabel_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_unAssignFormation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_unassignFormation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -15756,7 +15756,7 @@ func (ec *executionContext) _Mutation_assignFormation(ctx context.Context, field
 	return ec.marshalNFormation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_unAssignFormation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_unassignFormation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -15772,7 +15772,7 @@ func (ec *executionContext) _Mutation_unAssignFormation(ctx context.Context, fie
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_unAssignFormation_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_unassignFormation_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -15781,10 +15781,10 @@ func (ec *executionContext) _Mutation_unAssignFormation(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UnAssignFormation(rctx, args["objectID"].(string), args["objectType"].(FormationObjectType), args["formation"].(FormationInput))
+			return ec.resolvers.Mutation().UnassignFormation(rctx, args["objectID"].(string), args["objectType"].(FormationObjectType), args["formation"].(FormationInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unAssignFormation")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unassignFormation")
 			if err != nil {
 				return nil, err
 			}
@@ -25268,8 +25268,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "unAssignFormation":
-			out.Values[i] = ec._Mutation_unAssignFormation(ctx, field)
+		case "unassignFormation":
+			out.Values[i] = ec._Mutation_unassignFormation(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

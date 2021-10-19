@@ -58,7 +58,7 @@ type service struct {
 	uidService               UIDService
 }
 
-// NewService missing godoc
+// NewService creates new label definition service
 func NewService(repo Repository, labelRepo LabelRepository, scenarioAssignmentLister ScenarioAssignmentLister, uidService UIDService, defaultScenarioEnabled bool) *service {
 	return &service{
 		defaultScenarioEnabled:   defaultScenarioEnabled,
@@ -69,7 +69,7 @@ func NewService(repo Repository, labelRepo LabelRepository, scenarioAssignmentLi
 	}
 }
 
-// Create missing godoc
+// Create creates label definition
 func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.LabelDefinition, error) {
 	id := s.uidService.Generate()
 	def.ID = id
@@ -81,12 +81,15 @@ func (s *service) Create(ctx context.Context, def model.LabelDefinition) (model.
 	return def, nil
 }
 
+// CreateWithFormations creates label definition with the provided formations
 func (s *service) CreateWithFormations(ctx context.Context, tnt string, formations []string) error {
 	formations = s.addDefaultScenarioIfEnabled(formations)
+
 	schema, err := NewSchemaForFormations(formations)
 	if err != nil {
 		return errors.Wrapf(err, "while creaing new schema for key %s", model.ScenariosKey)
 	}
+
 	return s.repo.Create(ctx, model.LabelDefinition{
 		ID:      s.uidService.Generate(),
 		Tenant:  tnt,
@@ -96,7 +99,7 @@ func (s *service) CreateWithFormations(ctx context.Context, tnt string, formatio
 	})
 }
 
-// Get missing godoc
+// Get returns the tenant scoped label definition with the provided key
 func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	// TODO: Once proper tenant initialization, with creating scenarios LD, is introduced this hack should be removed
 	if key == model.ScenariosKey {
@@ -113,7 +116,7 @@ func (s *service) Get(ctx context.Context, tenant string, key string) (*model.La
 	return def, nil
 }
 
-// List missing godoc
+// List returns all label definitions for the provided tenant
 func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
 	defs, err := s.repo.List(ctx, tenant)
 	if err != nil {
@@ -122,7 +125,7 @@ func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinit
 	return defs, nil
 }
 
-// Update missing godoc
+// Update updates the provided label definition
 func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	ld, err := s.repo.GetByKey(ctx, def.Tenant, def.Key)
 	if err != nil {
@@ -151,7 +154,7 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 	return nil
 }
 
-// Upsert missing godoc
+// Upsert creates or updates label definitions depending on its existence
 func (s service) Upsert(ctx context.Context, def model.LabelDefinition) error {
 	def.ID = s.uidService.Generate()
 
@@ -163,7 +166,7 @@ func (s service) Upsert(ctx context.Context, def model.LabelDefinition) error {
 	return nil
 }
 
-// Delete missing godoc
+// Delete removes label definitions
 func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedLabels bool) error {
 	if key == model.ScenariosKey {
 		return fmt.Errorf("labelDefinition with key %s can not be deleted", model.ScenariosKey)
@@ -195,7 +198,7 @@ func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedL
 	return s.repo.DeleteByKey(ctx, tenant, ld.Key)
 }
 
-//ScenariosLabelDefinitionExists missing godoc
+// EnsureScenariosLabelDefinitionExists creates scenario label definition if missing
 func (s *service) EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error {
 	ldExists, err := s.repo.Exists(ctx, tenant, model.ScenariosKey)
 	if err != nil {
@@ -217,7 +220,7 @@ func (s *service) EnsureScenariosLabelDefinitionExists(ctx context.Context, tena
 	return nil
 }
 
-// GetAvailableScenarios missing godoc
+// GetAvailableScenarios returns available scenarios based on scenario label definition
 func (s *service) GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
 	def, err := s.repo.GetByKey(ctx, tenantID, model.ScenariosKey)
 	if err != nil {
@@ -230,7 +233,7 @@ func (s *service) GetAvailableScenarios(ctx context.Context, tenantID string) ([
 	return ParseFormationsFromSchema(def.Schema)
 }
 
-// AddDefaultScenarioIfEnabled missing godoc
+// AddDefaultScenarioIfEnabled adds DEFAULT scenario if defaultScenarioEnabled
 func (s *service) AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{}) {
 	if labels == nil || !s.defaultScenarioEnabled {
 		return
@@ -250,9 +253,16 @@ func (s *service) addDefaultScenarioIfEnabled(formations []string) []string {
 		return formations
 	}
 
+	for _, f := range formations {
+		if f == "DEFAULT" {
+			return formations
+		}
+	}
+
 	return append(formations, "DEFAULT")
 }
 
+// ValidateExistingLabelsAgainstSchema validates the existing labels based on the provided schema
 func (s *service) ValidateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant, key string) error {
 	existingLabels, err := s.labelRepo.ListByKey(ctx, tenant, key)
 	if err != nil {
@@ -277,6 +287,7 @@ func (s *service) ValidateExistingLabelsAgainstSchema(ctx context.Context, schem
 	return nil
 }
 
+// ValidateAutomaticScenarioAssignmentAgainstSchema validates the existing scenario assignments based on the provided schema
 func (s *service) ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error {
 	if key != model.ScenariosKey {
 		return nil
@@ -302,8 +313,9 @@ func (s *service) ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.C
 	return nil
 }
 
+// NewSchemaForFormations returns new scenario schema with the provided formations
 func NewSchemaForFormations(formations []string) (interface{}, error) {
-	newSchema := model.ScenariosSchema
+	newSchema := model.NewScenariosSchema()
 	items, ok := newSchema["items"]
 	if !ok {
 		return nil, fmt.Errorf("mandatory property items is missing")
@@ -317,13 +329,13 @@ func NewSchemaForFormations(formations []string) (interface{}, error) {
 	return newSchema, nil
 }
 
-// ScenariosDefinition missing godoc
 type formation struct {
 	Items struct {
 		Enum []string
 	}
 }
 
+// ParseFormationsFromSchema returns available scenarios from the provided schema
 func ParseFormationsFromSchema(schema *interface{}) ([]string, error) {
 	b, err := json.Marshal(schema)
 	if err != nil {

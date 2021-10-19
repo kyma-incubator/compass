@@ -69,13 +69,8 @@ func TestServiceCreate(t *testing.T) {
 func TestServiceCreateWithFormations(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
-		in := model.LabelDefinition{
-			ID:      fixUUID(),
-			Key:     model.ScenariosKey,
-			Tenant:  "tenant",
-			Schema:  fixSchemaForFormations([]string{"test-formation-one", "test-formation-two"}),
-			Version: 0,
-		}
+		testFormations := []string{"test-formation-one", "test-formation-two"}
+		expectedFormations := append(testFormations, "DEFAULT")
 		ctx := context.TODO()
 
 		mockUID := &automock.UIDService{}
@@ -84,24 +79,27 @@ func TestServiceCreateWithFormations(t *testing.T) {
 
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
-		mockRepository.On("Create", mock.Anything, in).Return(nil)
+		mockRepository.On("Create", mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+			if schemaArgs, ok := args.Get(1).(model.LabelDefinition); ok {
+				formations, err := labeldef.ParseFormationsFromSchema(schemaArgs.Schema)
+				require.NoError(t, err)
+				require.ElementsMatch(t, formations, expectedFormations)
+				return
+			}
+			t.Fatal("schema should contain desired formations")
+		})
 
 		sut := labeldef.NewService(mockRepository, nil, nil, mockUID, defaultScenarioEnabled)
 		// WHEN
-		err := sut.CreateWithFormations(ctx, "tenant", []string{"test-formation-one", "test-formation-two"})
+		err := sut.CreateWithFormations(ctx, "tenant", testFormations)
 		// THEN
 		require.NoError(t, err)
 	})
 
 	t.Run("success when default scenario is disabled", func(t *testing.T) {
 		// GIVEN
-		in := model.LabelDefinition{
-			ID:      fixUUID(),
-			Key:     model.ScenariosKey,
-			Tenant:  "tenant",
-			Schema:  fixSchemaForFormations([]string{"test-formation-one", "test-formation-two"}),
-			Version: 0,
-		}
+		testFormations := []string{"test-formation-one", "test-formation-two"}
+		expectedFormations := testFormations
 		ctx := context.TODO()
 
 		mockUID := &automock.UIDService{}
@@ -110,26 +108,29 @@ func TestServiceCreateWithFormations(t *testing.T) {
 
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
-		mockRepository.On("Create", mock.Anything, in).Return(nil)
+		mockRepository.On("Create", mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+			if schemaArgs, ok := args.Get(1).(model.LabelDefinition); ok {
+				formations, err := labeldef.ParseFormationsFromSchema(schemaArgs.Schema)
+				require.NoError(t, err)
+				require.ElementsMatch(t, formations, expectedFormations)
+				return
+			}
+			t.Fatal("schema should contain desired formations")
+		})
 
 		sut := labeldef.NewService(mockRepository, nil, nil, mockUID, false)
 		// WHEN
-		err := sut.CreateWithFormations(ctx, "tenant", []string{"test-formation-one", "test-formation-two"})
+		err := sut.CreateWithFormations(ctx, "tenant", testFormations)
 		// THEN
 		require.NoError(t, err)
 	})
 
 	t.Run("returns error if cannot create Label Definition", func(t *testing.T) {
 		// GIVEN
-		in := model.LabelDefinition{
-			ID:      fixUUID(),
-			Key:     model.ScenariosKey,
-			Tenant:  "tenant",
-			Schema:  fixSchemaForFormations([]string{"test-formation-one", "test-formation-two"}),
-			Version: 0,
-		}
+		testFormations := []string{"test-formation-one", "test-formation-two"}
+		expectedFormations := append(testFormations, "DEFAULT")
 		ctx := context.TODO()
-		testError := errors.New("Test error")
+		testError := errors.New("test error")
 
 		mockUID := &automock.UIDService{}
 		defer mockUID.AssertExpectations(t)
@@ -137,11 +138,19 @@ func TestServiceCreateWithFormations(t *testing.T) {
 
 		mockRepository := &automock.Repository{}
 		defer mockRepository.AssertExpectations(t)
-		mockRepository.On("Create", mock.Anything, in).Return(testError)
+		mockRepository.On("Create", mock.Anything, mock.Anything).Return(testError).Run(func(args mock.Arguments) {
+			if schemaArgs, ok := args.Get(1).(model.LabelDefinition); ok {
+				formations, err := labeldef.ParseFormationsFromSchema(schemaArgs.Schema)
+				require.NoError(t, err)
+				require.ElementsMatch(t, formations, expectedFormations)
+				return
+			}
+			t.Fatal("schema should contain desired formations")
+		})
 
 		sut := labeldef.NewService(mockRepository, nil, nil, mockUID, defaultScenarioEnabled)
 		// WHEN
-		err := sut.CreateWithFormations(ctx, "tenant", []string{"test-formation-one", "test-formation-two"})
+		err := sut.CreateWithFormations(ctx, "tenant", testFormations)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testError.Error())
@@ -194,11 +203,12 @@ func TestServiceGet(t *testing.T) {
 		ctx := context.TODO()
 		testTenant := "tenant"
 		testKey := model.ScenariosKey
+		var schema interface{} = model.ScenariosSchema
 		given := model.LabelDefinition{
 			ID:      fixUUID(),
 			Key:     testKey,
 			Tenant:  testTenant,
-			Schema:  fixSchemaForFormations([]string{"DEFAULT"}),
+			Schema:  &schema,
 			Version: 0,
 		}
 
@@ -895,7 +905,6 @@ func TestService_Upsert(t *testing.T) {
 			labelDefRepo := testCase.LabelDefRepoFn()
 
 			scenarioAssignmentLister := &automock.ScenarioAssignmentLister{}
-			scenariosService := &automock.ScenariosService{}
 			uidService := testCase.UIDServiceFn()
 
 			svc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentLister, uidService, defaultScenarioEnabled)
@@ -916,7 +925,6 @@ func TestService_Upsert(t *testing.T) {
 			uidService.AssertExpectations(t)
 			labelRepo.AssertExpectations(t)
 			scenarioAssignmentLister.AssertExpectations(t)
-			scenariosService.AssertExpectations(t)
 		})
 	}
 }
@@ -1193,13 +1201,6 @@ func fixSchema(t *testing.T, propertyName, propertyType, propertyDescription, re
 	require.NoError(t, err)
 	var objTemp interface{} = obj
 	return &objTemp
-}
-
-func fixSchemaForFormations(formations []string) *interface{} {
-	formationsSchema := model.ScenariosSchema
-	formationsSchema["enum"] = formations
-	var schema interface{} = formationsSchema
-	return &schema
 }
 
 func fixDefaultScenariosLabelDefinition(tenantID string) model.LabelDefinition {

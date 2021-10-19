@@ -55,7 +55,7 @@ graphql:
     createFormation: ["formation:write"]
     deleteFormation: ["formation:write"]
     assignFormation: ["formation:write"]
-    unAssignFormation: ["formation:write"]
+    unassignFormation: ["formation:write"]
     createLabelDefinition: ["label_definition:write"]
     updateLabelDefinition: ["label_definition:write"]
     deleteLabelDefinition: ["label_definition:write"]

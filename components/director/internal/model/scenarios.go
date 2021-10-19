@@ -6,7 +6,6 @@ const ScenariosKey = "scenarios"
 var (
 	// ScenariosDefaultValue missing godoc
 	ScenariosDefaultValue = []interface{}{"DEFAULT"}
-	// ScenariosDefaultValueSlice missing godoc
 	// ScenariosSchema missing godoc
 	ScenariosSchema = map[string]interface{}{
 		"type":        "array",
@@ -64,3 +63,18 @@ var (
 		},
 	}
 )
+
+// NewScenariosSchema returns new default scenario schema
+func NewScenariosSchema() map[string]interface{} {
+	return map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type":      "string",
+			"pattern":   "^[A-Za-z0-9]([-_A-Za-z0-9\\s]*[A-Za-z0-9])$",
+			"enum":      []string{"DEFAULT"},
+			"maxLength": 128,
+		},
+	}
+}
