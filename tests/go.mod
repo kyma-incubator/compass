@@ -29,7 +29,7 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210922143733-cb93bcfd3cd6
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
-	github.com/kyma-incubator/compass/components/director v0.0.0-20211015085353-c09711128193
+	github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a5435ac7a
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20211014123116-dd19192a2e8f
@@ -50,8 +50,8 @@ require (
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/gjson v1.9.1
-	github.com/tidwall/match v1.0.3 // indirect
+	github.com/tidwall/gjson v1.9.4
+	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/sjson v1.2.2
 	github.com/vektah/gqlparser/v2 v2.1.0 // indirect
@@ -62,7 +62,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed
-	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
+	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1
 	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.6 // indirect
