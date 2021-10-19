@@ -4697,9 +4697,6 @@ type Mutation {
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
 	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(operationType: DELETE, idField: "id", webhookType: UNREGISTER_APPLICATION)
-	**Examples**
-	- [unpair application](examples/unpair-application/unpair-application.graphql)
-	"""
 	unpairApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unpairApplication") @async(operationType: UPDATE, idField: "id", webhookType: UNPAIR_APPLICATION)
 	"""
 	**Examples**
