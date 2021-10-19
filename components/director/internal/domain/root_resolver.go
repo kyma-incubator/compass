@@ -473,7 +473,7 @@ func (r *mutationResolver) UnregisterApplication(ctx context.Context, id string,
 	return r.app.UnregisterApplication(ctx, id)
 }
 
-// UnpairApplication missing godoc
+// UnpairApplication removes system auths, hydra client credentials and performs the "unpair" flow in the database
 func (r *mutationResolver) UnpairApplication(ctx context.Context, id string, _ *graphql.OperationMode) (*graphql.Application, error) {
 	return r.app.UnpairApplication(ctx, id)
 }

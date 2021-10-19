@@ -366,7 +366,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	_, err = s.IsBeingUsed(ctx, appTenant, id)
+	_, err = s.IsApplicationInScenarios(ctx, appTenant, id)
 	if err != nil {
 		return err
 	}
@@ -386,7 +386,7 @@ func (s *service) Unpair(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	_, err = s.IsBeingUsed(ctx, appTenant, id)
+	_, err = s.IsApplicationInScenarios(ctx, appTenant, id)
 	if err != nil {
 		return err
 	}
@@ -497,9 +497,9 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	return nil
 }
 
-// IsBeingUsed Checks if an application has scenarios associated with it. If the scenarios are part of a runtime, then the application is considered being used by that runtime.
-func (s *service) IsBeingUsed(ctx context.Context, tenant, id string) (bool, error) {
-	scenarios, err := s.getScenarioNamesForApplication(ctx, id)
+// IsApplicationInScenarios Checks if an application has scenarios associated with it. If the scenarios are part of a runtime, then the application is considered being used by that runtime.
+func (s *service) IsApplicationInScenarios(ctx context.Context, tenant, appId string) (bool, error) {
+	scenarios, err := s.getScenarioNamesForApplication(ctx, appId)
 	if err != nil {
 		return false, err
 	}
@@ -512,9 +512,9 @@ func (s *service) IsBeingUsed(ctx context.Context, tenant, id string) (bool, err
 		}
 
 		if len(runtimes) > 0 {
-			application, err := s.appRepo.GetByID(ctx, tenant, id)
+			application, err := s.appRepo.GetByID(ctx, tenant, appId)
 			if err != nil {
-				return true, errors.Wrapf(err, "while getting application with id %s", id)
+				return true, errors.Wrapf(err, "while getting application with id %s", appId)
 			}
 			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
 			return true, apperrors.NewInvalidOperationError(msg)

@@ -58,10 +58,8 @@ const (
 	OperationTypeCreate OperationType = "Create"
 	// OperationTypeUpdate missing godoc
 	OperationTypeUpdate OperationType = "Update"
-	// OperationTypeDelete missing godoc
+	// OperationTypeDelete Operation type for indicating the Update or Unpair flow
 	OperationTypeDelete OperationType = "Delete"
-	// OperationTypeUnpair Operation type for indicating the Unpair flow
-	OperationTypeUnpair OperationType = "Unpair"
 )
 
 // OperationResponse defines the expected response format for the Operations API

@@ -40,10 +40,11 @@ import (
 
 // OperationRequest is the expected request body when updating certain operation status
 type OperationRequest struct {
-	OperationType OperationType `json:"operation_type,omitempty"`
-	ResourceType  resource.Type `json:"resource_type"`
-	ResourceID    string        `json:"resource_id"`
-	Error         string        `json:"error"`
+	OperationType     OperationType `json:"operation_type,omitempty"`
+	ResourceType      resource.Type `json:"resource_type"`
+	ResourceID        string        `json:"resource_id"`
+	Error             string        `json:"error"`
+	OperationCategory string        `json:"operation_category,omitempty"`
 }
 
 // ResourceUpdaterFunc defines a function which updates a particular resource ready and error status
@@ -66,6 +67,8 @@ type errResponse struct {
 type operationError struct {
 	Error string `json:"error"`
 }
+
+const OperationCategoryUnpairApplication = "unpairApplication"
 
 // NewUpdateOperationHandler creates a new handler struct to update resource by operation
 func NewUpdateOperationHandler(transact persistence.Transactioner, resourceUpdaterFuncs map[resource.Type]ResourceUpdaterFunc, resourceDeleterFuncs map[resource.Type]ResourceDeleterFunc) *updateOperationHandler {
@@ -93,7 +96,7 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 
 	if err := validation.ValidateStruct(operation,
 		validation.Field(&operation.ResourceID, is.UUID),
-		validation.Field(&operation.OperationType, validation.Required, validation.In(OperationTypeCreate, OperationTypeUpdate, OperationTypeDelete, OperationTypeUnpair)),
+		validation.Field(&operation.OperationType, validation.Required, validation.In(OperationTypeCreate, OperationTypeUpdate, OperationTypeDelete)),
 		validation.Field(&operation.ResourceType, validation.Required, validation.In(resource.Application))); err != nil {
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInvalidDataError("Invalid operation properties: %s", err), http.StatusBadRequest)
 		return
@@ -117,11 +120,11 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 		return
 	}
 
-	appConditionStatus := determineApplicationFinalStatus(operation.OperationType, opError)
+	appConditionStatus := determineApplicationFinalStatus(operation, opError)
 	switch operation.OperationType {
 	case OperationTypeCreate:
 		fallthrough
-	case OperationTypeUpdate, OperationTypeUnpair:
+	case OperationTypeUpdate:
 		if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, opError, appConditionStatus); err != nil {
 			log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s: %v", operation.ResourceType, operation.ResourceID, err)
 			apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
@@ -158,6 +161,7 @@ func operationRequestFromBody(ctx context.Context, request *http.Request) (*Oper
 	if err != nil {
 		return nil, &errResponse{apperrors.NewInternalError("Unable to read request body"), http.StatusInternalServerError}
 	}
+
 	defer func() {
 		err := request.Body.Close()
 		if err != nil {
@@ -188,15 +192,26 @@ func stringifiedJSONError(errorMsg string) (*string, error) {
 	return &stringifiedErr, nil
 }
 
-func determineApplicationFinalStatus(opType OperationType, opError *string) model.ApplicationStatusCondition {
+func determineApplicationFinalStatus(op *OperationRequest, opError *string) model.ApplicationStatusCondition {
 	appConditionStatus := model.ApplicationStatusConditionInitial
-	switch opType {
+	switch op.OperationType {
 	case OperationTypeCreate:
 		appConditionStatus = model.ApplicationStatusConditionCreateSucceeded
 		if opError != nil || str.PtrStrToStr(opError) != "" {
 			appConditionStatus = model.ApplicationStatusConditionCreateFailed
 		}
 	case OperationTypeUpdate:
+		if op.OperationCategory == OperationCategoryUnpairApplication {
+			appConditionStatus = model.ApplicationStatusConditionInitial
+			if opError != nil || str.PtrStrToStr(opError) != "" {
+				appConditionStatus = model.ApplicationStatusConditionUnpairFailed
+			}
+		} else {
+			appConditionStatus = model.ApplicationStatusConditionUpdateSucceeded
+			if opError != nil || str.PtrStrToStr(opError) != "" {
+				appConditionStatus = model.ApplicationStatusConditionUpdateFailed
+			}
+		}
 		appConditionStatus = model.ApplicationStatusConditionUpdateSucceeded
 		if opError != nil || str.PtrStrToStr(opError) != "" {
 			appConditionStatus = model.ApplicationStatusConditionUpdateFailed
@@ -205,10 +220,6 @@ func determineApplicationFinalStatus(opType OperationType, opError *string) mode
 		appConditionStatus = model.ApplicationStatusConditionDeleteSucceeded
 		if opError != nil || str.PtrStrToStr(opError) != "" {
 			appConditionStatus = model.ApplicationStatusConditionDeleteFailed
-		}
-	case OperationTypeUnpair:
-		if opError != nil || str.PtrStrToStr(opError) != "" {
-			appConditionStatus = model.ApplicationStatusConditionUnpairFailed
 		}
 	}
 

@@ -124,7 +124,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, apperrors.NewInternalError("Failed to process operation")
 	}
 
-	appConditionStatus, err := determineApplicationInProgressStatus(operationType)
+	appConditionStatus, err := determineApplicationInProgressStatus(operation)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("While determining the application status condition: %v", err)
 		return nil, err
@@ -313,17 +313,19 @@ func isErrored(app model.Entity) bool {
 	return (app.GetError() == nil || *app.GetError() == "")
 }
 
-func determineApplicationInProgressStatus(opType graphql.OperationType) (*model.ApplicationStatusCondition, error) {
+func determineApplicationInProgressStatus(op *Operation) (*model.ApplicationStatusCondition, error) {
 	var appStatusCondition model.ApplicationStatusCondition
-	switch opType {
-	case graphql.OperationTypeCreate:
+	switch op.OperationType {
+	case OperationTypeCreate:
 		appStatusCondition = model.ApplicationStatusConditionCreating
-	case graphql.OperationTypeUpdate:
-		appStatusCondition = model.ApplicationStatusConditionUpdating
-	case graphql.OperationTypeDelete:
+	case OperationTypeUpdate:
+		if op.OperationCategory == OperationCategoryUnpairApplication {
+			appStatusCondition = model.ApplicationStatusConditionUnpairing
+		} else {
+			appStatusCondition = model.ApplicationStatusConditionUpdating
+		}
+	case OperationTypeDelete:
 		appStatusCondition = model.ApplicationStatusConditionDeleting
-	case graphql.OperationTypeUnpair:
-		appStatusCondition = model.ApplicationStatusConditionUnpairing
 	default:
 		return nil, apperrors.NewInvalidStatusCondition(resource.Application)
 	}

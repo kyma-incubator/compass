@@ -50,6 +50,7 @@ const (
 	WebhookTypeDeleteApplication WebhookType = "UNREGISTER_APPLICATION"
 	// WebhookTypeOpenResourceDiscovery missing godoc
 	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
+	WebhookTypeUnpairApplication     WebhookType = "UNPAIR_APPLICATION"
 )
 
 // WebhookMode missing godoc

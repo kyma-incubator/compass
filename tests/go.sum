@@ -315,6 +315,8 @@ github.com/go-openapi/runtime v0.19.24/go.mod h1:Lm9YGCeecBnUUkFTxPC4s1+lwrkJ0pt
 github.com/go-openapi/runtime v0.19.26/go.mod h1:BvrQtn6iVb2QmiVXRsFAm6ZCAZBpbVKFfN6QWCp582M=
 github.com/go-openapi/runtime v0.19.27/go.mod h1:BvrQtn6iVb2QmiVXRsFAm6ZCAZBpbVKFfN6QWCp582M=
 github.com/go-openapi/runtime v0.19.31/go.mod h1:BvrQtn6iVb2QmiVXRsFAm6ZCAZBpbVKFfN6QWCp582M=
+github.com/go-openapi/runtime v0.20.0 h1:DEV4oYH28MqakaabtbxH0cjvlzFegi/15kfUVCfiZW0=
+github.com/go-openapi/runtime v0.20.0/go.mod h1:2WnLRxMiOUWNN0UZskSkxW0+WXdfB1KmqRKCFH+ZWYk=
 github.com/go-openapi/spec v0.0.0-20160808142527-6aced65f8501/go.mod h1:J8+jY1nAiCcj+friV/PDoE1/3eeccG9LYBs0tYvLOWc=
 github.com/go-openapi/spec v0.17.0/go.mod h1:XkF/MOi14NmjsfZ8VtAKf8pIlbZzyoTvZsdfssdxcBI=
 github.com/go-openapi/spec v0.18.0/go.mod h1:XkF/MOi14NmjsfZ8VtAKf8pIlbZzyoTvZsdfssdxcBI=
@@ -394,6 +396,7 @@ github.com/goccy/go-json v0.4.8/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGF
 github.com/goccy/go-json v0.7.4/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/goccy/go-json v0.7.6/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/goccy/go-json v0.7.7/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
+github.com/goccy/go-json v0.7.8/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/gogo/googleapis v1.1.0/go.mod h1:gf4bu3Q80BeJ6H1S1vYPm8/ELATdvryBaNFGgqEef3s=
 github.com/gogo/protobuf v1.0.0/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
@@ -651,6 +654,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20211012083004-29d8
 github.com/kyma-incubator/compass/components/director v0.0.0-20211012083004-29d8e75e30e3/go.mod h1:Jy2CpNlAKRDxUN3zsj8+Kgdvv8ZlY5UhlBmn+4zBE5M=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a5435ac7a h1:tJ+IsHS1+VCgDHk1Q7OWpoAgWIscZB/zYZiur0MQeOY=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a5435ac7a/go.mod h1:C+Vzw+Mc5IiFw2xL5xr7JkRz29HGVeqUa1cRNVoD1XQ=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211019181454-bcd6786ec4cd h1:tOaWrCOWe5lSzq1NF3HQCRjNLppBYONFQzOJyePioRU=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211019181454-bcd6786ec4cd/go.mod h1:K+8B7PprAqpO9GEenlOLyJ+qsd4P9wDCDvrP7OLTFVA=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f h1:FvflJncP+u6Z2KqtZkAuD7wCDgMh8+kZPcE1xp9mQrg=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f/go.mod h1:jD4pOTINIMZlScN8KxgnxJ73PQV3JUKy0E+GwnFf2ww=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36 h1:/BmeBQXQWwsRm6mBmgDYAkukecCd6TPBrYLXrl85H1g=
@@ -679,6 +684,7 @@ github.com/lestrrat-go/backoff/v2 v2.0.8/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBB
 github.com/lestrrat-go/blackmagic v1.0.0/go.mod h1:TNgH//0vYSs8VXDCfkZLgIrVTTXQELZffUV0tz3MtdQ=
 github.com/lestrrat-go/codegen v1.0.0/go.mod h1:JhJw6OQAuPEfVKUCLItpaVLumDGWQznd1VaXrBk9TdM=
 github.com/lestrrat-go/codegen v1.0.1/go.mod h1:JhJw6OQAuPEfVKUCLItpaVLumDGWQznd1VaXrBk9TdM=
+github.com/lestrrat-go/codegen v1.0.2/go.mod h1:JhJw6OQAuPEfVKUCLItpaVLumDGWQznd1VaXrBk9TdM=
 github.com/lestrrat-go/httpcc v1.0.0/go.mod h1:tGS/u00Vh5N6FHNkExqGGNId8e0Big+++0Gf8MBnAvE=
 github.com/lestrrat-go/iter v1.0.0/go.mod h1:zIdgO1mRKhn8l9vrZJZz9TUMMFbQbLeTsbqPDrJ/OJc=
 github.com/lestrrat-go/iter v1.0.1/go.mod h1:zIdgO1mRKhn8l9vrZJZz9TUMMFbQbLeTsbqPDrJ/OJc=
@@ -687,6 +693,7 @@ github.com/lestrrat-go/jwx v1.1.4/go.mod h1:VE4Y8PnxQ1hWQ34Nbx1EbIAgs+IzsEhANW4z
 github.com/lestrrat-go/jwx v1.2.0/go.mod h1:Tg2uP7bpxEHUDtuWjap/PxroJ4okxGzkQznXiG+a5Dc=
 github.com/lestrrat-go/jwx v1.2.4/go.mod h1:CAe9Z479rJwIYDR2DqWwMm9c+gCNoYB6+0wBxPkEh0Q=
 github.com/lestrrat-go/jwx v1.2.6/go.mod h1:tJuGuAI3LC71IicTx82Mz1n3w9woAs2bYJZpkjJQ5aU=
+github.com/lestrrat-go/jwx v1.2.7/go.mod h1:bw24IXWbavc0R2RsOtpXL7RtMyP589yZ1+L7kd09ZGA=
 github.com/lestrrat-go/option v0.0.0-20210103042652-6f1ecfceda35/go.mod h1:5ZHFbivi4xwXxhxY9XHDe2FHo6/Z7WWmtT7T5nBBp3I=
 github.com/lestrrat-go/option v1.0.0/go.mod h1:5ZHFbivi4xwXxhxY9XHDe2FHo6/Z7WWmtT7T5nBBp3I=
 github.com/lestrrat-go/pdebug/v3 v3.0.1/go.mod h1:za+m+Ve24yCxTEhR59N7UlnJomWwCiIqbJRmKeiADU4=

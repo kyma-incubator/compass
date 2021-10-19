@@ -541,7 +541,7 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
+				svc.AssertNotCalled(t, "Get")
 				svc.On("Unpair", context.TODO(), appID.String()).Return(testErr).Once()
 				return svc
 			},
@@ -551,13 +551,13 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
-				svc.On("DeleteMultipleByIDForObject", context.TODO(), testAuths).Return(nil).Once()
+				svc.AssertNotCalled(t, "DeleteMultipleByIDForObject")
+				svc.AssertNotCalled(t, "ListForObject")
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", context.TODO(), testAuths).Return(nil)
+				svc.AssertNotCalled(t, "DeleteMultipleClientCredentials")
 
 				return svc
 			},
@@ -571,7 +571,7 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), appID.String()).Return(nil, testErr).Once()
-				svc.AssertNotCalled(t, "Unpair")
+				svc.On("Unpair", context.TODO(), appID.String()).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -599,7 +599,7 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
-				svc.AssertNotCalled(t, "Unpair")
+				svc.On("Unpair", context.TODO(), appID.String()).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -628,7 +628,7 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
-				svc.AssertNotCalled(t, "Unpair")
+				svc.On("Unpair", context.TODO(), appID.String()).Return(nil).Once()
 
 				return svc
 			},
@@ -659,7 +659,7 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
-				svc.AssertNotCalled(t, "Unpair")
+				svc.On("Unpair", context.TODO(), appID.String()).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {

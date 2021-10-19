@@ -526,7 +526,7 @@ func TestDeleteApplication(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Success when application is in scenario but not in runtime", func(t *testing.T) {
+	t.Run("Success when application is in scenario but not with runtime", func(t *testing.T) {
 		//GIVEN
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
@@ -569,7 +569,7 @@ func TestDeleteApplication(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Error when application is in scenario and runtime", func(t *testing.T) {
+	t.Run("Error when application is in scenario with runtime", func(t *testing.T) {
 		//GIVEN
 		expectedErrorMsg := "graphql: The operation is not allowed [reason=System first is still used and cannot be deleted. Unassign the system from the following formations first: test-scenario. Then, unassign the system from the following runtimes, too: one-runtime]"
 
@@ -642,7 +642,7 @@ func TestUnpairApplication(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Success when application is in scenario but not in runtime", func(t *testing.T) {
+	t.Run("Success when application is in scenario but not with runtime", func(t *testing.T) {
 		//GIVEN
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
@@ -675,7 +675,7 @@ func TestUnpairApplication(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Error when application is in scenario and runtime", func(t *testing.T) {
+	t.Run("Error when application is in scenario with runtime", func(t *testing.T) {
 		//GIVEN
 		expectedErrorMsg := "graphql: The operation is not allowed [reason=System first is still used and cannot be deleted. Unassign the system from the following formations first: test-scenario. Then, unassign the system from the following runtimes, too: one-runtime]"
 

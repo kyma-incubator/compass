@@ -313,7 +313,7 @@ func TestRepository_Unpair(t *testing.T) {
 		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
 
 		op := &operation.Operation{
-			OperationType:     operation.OperationTypeUnpair,
+			OperationType:     operation.OperationTypeUpdate,
 			OperationCategory: "unregisterApplication",
 		}
 
@@ -352,7 +352,7 @@ func TestRepository_Unpair(t *testing.T) {
 		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
 
 		op := &operation.Operation{
-			OperationType:     operation.OperationTypeUnpair,
+			OperationType:     operation.OperationTypeUpdate,
 			OperationCategory: "unregisterApplication",
 		}
 		ctx = operation.SaveToContext(ctx, &[]*operation.Operation{op})

@@ -1154,19 +1154,17 @@ const (
 	OperationTypeCreate OperationType = "CREATE"
 	OperationTypeUpdate OperationType = "UPDATE"
 	OperationTypeDelete OperationType = "DELETE"
-	OperationTypeUnpair OperationType = "UNPAIR"
 )
 
 var AllOperationType = []OperationType{
 	OperationTypeCreate,
 	OperationTypeUpdate,
 	OperationTypeDelete,
-	OperationTypeUnpair,
 }
 
 func (e OperationType) IsValid() bool {
 	switch e {
-	case OperationTypeCreate, OperationTypeUpdate, OperationTypeDelete, OperationTypeUnpair:
+	case OperationTypeCreate, OperationTypeUpdate, OperationTypeDelete:
 		return true
 	}
 	return false
@@ -1374,6 +1372,7 @@ const (
 	WebhookTypeRegisterApplication   WebhookType = "REGISTER_APPLICATION"
 	WebhookTypeUnregisterApplication WebhookType = "UNREGISTER_APPLICATION"
 	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
+	WebhookTypeUnpairApplication     WebhookType = "UNPAIR_APPLICATION"
 )
 
 var AllWebhookType = []WebhookType{
@@ -1381,11 +1380,12 @@ var AllWebhookType = []WebhookType{
 	WebhookTypeRegisterApplication,
 	WebhookTypeUnregisterApplication,
 	WebhookTypeOpenResourceDiscovery,
+	WebhookTypeUnpairApplication,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery:
+	case WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeUnpairApplication:
 		return true
 	}
 	return false

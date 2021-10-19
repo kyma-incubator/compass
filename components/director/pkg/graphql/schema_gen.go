@@ -3614,7 +3614,6 @@ enum OperationType {
 	CREATE
 	UPDATE
 	DELETE
-	UNPAIR
 }
 
 enum RuntimeStatusCondition {
@@ -3647,6 +3646,7 @@ enum WebhookType {
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
+	UNPAIR_APPLICATION
 }
 
 interface OneTimeToken {
@@ -4697,7 +4697,10 @@ type Mutation {
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
 	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(operationType: DELETE, idField: "id", webhookType: UNREGISTER_APPLICATION)
-	unpairApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unpairApplication") @async(operationType: UNPAIR, idField: "id", webhookType: UNREGISTER_APPLICATION)
+	**Examples**
+	- [unpair application](examples/unpair-application/unpair-application.graphql)
+	"""
+	unpairApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unpairApplication") @async(operationType: UPDATE, idField: "id", webhookType: UNPAIR_APPLICATION)
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
@@ -13223,11 +13226,11 @@ func (ec *executionContext) _Mutation_unpairApplication(ctx context.Context, fie
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
 		directive2 := func(ctx context.Context) (interface{}, error) {
-			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "UNPAIR")
+			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "UPDATE")
 			if err != nil {
 				return nil, err
 			}
-			webhookType, err := ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "UNREGISTER_APPLICATION")
+			webhookType, err := ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "UNPAIR_APPLICATION")
 			if err != nil {
 				return nil, err
 			}

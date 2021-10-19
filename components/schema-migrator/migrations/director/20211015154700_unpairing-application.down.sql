@@ -32,6 +32,21 @@ ALTER TABLE applications
 
 DROP TYPE application_status_condition_old;
 
+ALTER TABLE webhooks
+    ALTER COLUMN type TYPE VARCHAR(255);
+
+DROP TYPE webhook_type;
+
+CREATE TYPE webhook_type AS ENUM (
+    'CONFIGURATION_CHANGED',
+    'REGISTER_APPLICATION',
+    'UNREGISTER_APPLICATION',
+    'OPEN_RESOURCE_DISCOVERY'
+    );
+
+ALTER TABLE webhooks
+    ALTER COLUMN type TYPE webhook_type USING (type::webhook_type);
+
 CREATE OR REPLACE VIEW tenants_apps
             (tenant_id, provider_tenant_id, id, name, description, status_condition, status_timestamp, healthcheck_url,
              integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error,

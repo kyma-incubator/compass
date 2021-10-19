@@ -380,6 +380,10 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.Application, error) {
 	log.C(ctx).Infof("Unpairing Application with id %s", id)
 
+	if err := r.appSvc.Unpair(ctx, id); err != nil {
+		return nil, err
+	}
+
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -390,18 +394,11 @@ func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.A
 		return nil, err
 	}
 
-	err = r.sysAuthSvc.DeleteMultipleByIDForObject(ctx, auths)
-	if err != nil {
+	if err = r.sysAuthSvc.DeleteMultipleByIDForObject(ctx, auths); err != nil {
 		return nil, err
 	}
 
-	err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths)
-	if err != nil {
-		return nil, err
-	}
-
-	err = r.appSvc.Unpair(ctx, id)
-	if err != nil {
+	if err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths); err != nil {
 		return nil, err
 	}
 

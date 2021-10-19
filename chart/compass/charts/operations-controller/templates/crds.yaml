@@ -54,7 +54,6 @@ spec:
                 - Create
                 - Update
                 - Delete
-                - Unpair
                 type: string
               request_object:
                 type: string
