@@ -11,12 +11,14 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// GlobalAccountRegex determines whether event entity type is global account
+const GlobalAccountRegex = "^GLOBALACCOUNT_.*|GlobalAccount"
+
 type eventsPage struct {
 	fieldMapping                    TenantFieldMapping
 	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
 	providerName                    string
 	payload                         []byte
-	GlobalAccountRegex              string `envconfig:"default=GlobalAccount,APP_GLOBAL_ACCOUNT_REGEX"`
 }
 
 func (ep eventsPage) getEventsDetails() [][]byte {
@@ -142,7 +144,7 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 		return nil, invalidFieldFormatError(ep.fieldMapping.EntityTypeField)
 	}
 
-	globalAccountRegex := regexp.MustCompile(ep.GlobalAccountRegex)
+	globalAccountRegex := regexp.MustCompile(GlobalAccountRegex)
 	if globalAccountRegex.MatchString(entityType.String()) {
 		return constructGlobalAccountTenant(jsonPayload, nameResult.String(), subdomain.String(), id, ep), nil
 	} else {
