@@ -81,7 +81,7 @@ global:
       version: "PR-2082"
     operations_controller:
       dir:
-      version: "PR-2082"
+      version: "PR-2084"
     ord_service:
       dir:
       version: "PR-45"
@@ -90,7 +90,7 @@ global:
       version: "PR-2072"
     system_broker:
       dir:
-      version: "PR-2082"
+      version: "PR-2084"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
