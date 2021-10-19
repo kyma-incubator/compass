@@ -66,31 +66,31 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2060"
+      version: "PR-2082"
     connectivity_adapter:
       dir:
-      version: "PR-2027"
+      version: "PR-2082"
     pairing_adapter:
       dir:
-      version: "PR-2027"
+      version: "PR-2082"
     director:
       dir:
       version: "PR-2047"
     gateway:
       dir:
-      version: "PR-2050"
+      version: "PR-2082"
     operations_controller:
       dir:
-      version: "PR-2027"
+      version: "PR-2082"
     ord_service:
       dir:
-      version: "PR-44"
+      version: "PR-45"
     schema_migrator:
       dir:
       version: "PR-2072"
     system_broker:
       dir:
-      version: "PR-2027"
+      version: "PR-2082"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -98,13 +98,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2057"
+      version: "PR-2082"
     console:
       dir:
       version: "PR-45"
     e2e_tests:
       dir:
-      version: "PR-2072"
+      version: "PR-2082"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -415,7 +415,6 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    securedApplicationTypes: "sample-app-type" # comma-separated values are used for specifying multiple application types
     accessStrategies:
       cmpMtls:
         policy: "compass-local-clients"

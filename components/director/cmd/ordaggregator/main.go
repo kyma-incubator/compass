@@ -146,7 +146,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider()
 
-	ordClient := ord.NewClient(httpClient, featuresConfig.SecuredApplicationTypes, accessStrategyExecutorProvider)
+	ordClient := ord.NewClient(httpClient, accessStrategyExecutorProvider)
 
 	return ord.NewAggregatorService(transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
 }
