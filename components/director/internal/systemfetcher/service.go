@@ -15,42 +15,43 @@ import (
 )
 
 const (
-	// LifecycleAttributeName missing godoc
+	// LifecycleAttributeName is the lifecycle status attribute of the application in the external source response for applications retrieval.
 	LifecycleAttributeName string = "lifecycleStatus"
-	// LifecycleDeleted missing godoc
+	// LifecycleDeleted is the string matching the deleted lifecycle state of the application in the external source.
 	LifecycleDeleted string = "DELETED"
 
-	// ConcurrentDeleteOperationErrMsg missing godoc
+	// ConcurrentDeleteOperationErrMsg is the error message returned by the Compass Director, when we try to delete an application, which is already undergoing a delete operation.
 	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
 )
 
-// TenantService missing godoc
-//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
-type TenantService interface {
+//go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true
+type tenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
-// SystemsService missing godoc
-//go:generate mockery --name=SystemsService --output=automock --outpkg=automock --case=underscore
-type SystemsService interface {
+//go:generate mockery --name=systemsService --output=automock --outpkg=automock --case=underscore --exported=true
+type systemsService interface {
 	CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error
 	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
 }
 
-// SystemsAPIClient missing godoc
-//go:generate mockery --name=SystemsAPIClient --output=automock --outpkg=automock --case=underscore
-type SystemsAPIClient interface {
+//go:generate mockery --name=systemsAPIClient --output=automock --outpkg=automock --case=underscore --exported=true
+type systemsAPIClient interface {
 	FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error)
 }
 
-// DirectorClient missing godoc
-//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
-type DirectorClient interface {
+//go:generate mockery --name=directorClient --output=automock --outpkg=automock --case=underscore --exported=true
+type directorClient interface {
 	DeleteSystemAsync(ctx context.Context, id, tenant string) error
 }
 
-// Config missing godoc
+//go:generate mockery --name=templateRenderer --output=automock --outpkg=automock --case=underscore --exported=true
+type templateRenderer interface {
+	ApplicationRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error)
+}
+
+// Config holds the configuration available for the SystemFetcher.
 type Config struct {
 	SystemsQueueSize          int           `envconfig:"default=100,APP_SYSTEM_INFORMATION_QUEUE_SIZE"`
 	FetcherParallellism       int           `envconfig:"default=30,APP_SYSTEM_INFORMATION_PARALLELLISM"`
@@ -61,24 +62,26 @@ type Config struct {
 	EnableSystemDeletion bool `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
 }
 
-// SystemFetcher missing godoc
+// SystemFetcher is responsible for synchronizing the existing applications in Compass and a pre-defined external source.
 type SystemFetcher struct {
 	transaction      persistence.Transactioner
-	tenantService    TenantService
-	systemsService   SystemsService
-	systemsAPIClient SystemsAPIClient
-	directorClient   DirectorClient
+	tenantService    tenantService
+	systemsService   systemsService
+	templateRenderer templateRenderer
+	systemsAPIClient systemsAPIClient
+	directorClient   directorClient
 
 	config  Config
 	workers chan struct{}
 }
 
-// NewSystemFetcher missing godoc
-func NewSystemFetcher(tx persistence.Transactioner, ts TenantService, ss SystemsService, sac SystemsAPIClient, directorClient DirectorClient, config Config) *SystemFetcher {
+// NewSystemFetcher returns a new SystemFetcher.
+func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systemsService, tr templateRenderer, sac systemsAPIClient, directorClient directorClient, config Config) *SystemFetcher {
 	return &SystemFetcher{
 		transaction:      tx,
 		tenantService:    ts,
 		systemsService:   ss,
+		templateRenderer: tr,
 		systemsAPIClient: sac,
 		directorClient:   directorClient,
 		workers:          make(chan struct{}, config.FetcherParallellism),
@@ -91,7 +94,8 @@ type tenantSystems struct {
 	systems []System
 }
 
-// SyncSystems missing godoc
+// SyncSystems synchronizes applications between Compass and external source. It deletes the applications with deleted state in the external source from Compass,
+// and creates any new applications present in the external source.
 func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 	tenants, err := s.listTenants(ctx)
 	if err != nil {
@@ -205,11 +209,11 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 			continue
 		}
 
-		appInput, templateID := s.convertSystemToAppRegisterInput(system)
-		appInputs = append(appInputs, model.ApplicationRegisterInputWithTemplate{
-			ApplicationRegisterInput: appInput,
-			TemplateID:               templateID,
-		})
+		appInput, err := s.convertSystemToAppRegisterInput(ctx, system)
+		if err != nil {
+			return err
+		}
+		appInputs = append(appInputs, *appInput)
 	}
 
 	if len(appInputs) > 0 {
@@ -219,29 +223,40 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed to commit applications for tenant %s", tenantMapping.ExternalTenant))
 	}
 
 	return nil
 }
 
-func (s *SystemFetcher) convertSystemToAppRegisterInput(sc System) (model.ApplicationRegisterInput, string) {
-	initStatusCond := model.ApplicationStatusConditionInitial
-	baseURL := sc.BaseURL
+func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc System) (*model.ApplicationRegisterInputWithTemplate, error) {
+	input, err := s.appRegisterInput(ctx, sc)
+	if err != nil {
+		return nil, err
+	}
 
-	appRegisterInput := model.ApplicationRegisterInput{
+	return &model.ApplicationRegisterInputWithTemplate{
+		ApplicationRegisterInput: *input,
+		TemplateID:               sc.TemplateID,
+	}, nil
+}
+
+func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error) {
+	if len(sc.TemplateID) > 0 {
+		return s.templateRenderer.ApplicationRegisterInputFromTemplate(ctx, sc)
+	}
+
+	initStatusCond := model.ApplicationStatusConditionInitial
+	return &model.ApplicationRegisterInput{
 		Name:            sc.DisplayName,
 		Description:     &sc.ProductDescription,
-		BaseURL:         &baseURL,
-		ProviderName:    &sc.InfrastructureProvider,
 		StatusCondition: &initStatusCond,
+		ProviderName:    &sc.InfrastructureProvider,
+		BaseURL:         &sc.BaseURL,
 		SystemNumber:    &sc.SystemNumber,
 		Labels: map[string]interface{}{
 			"managed": "true",
 		},
-	}
-
-	return appRegisterInput, sc.TemplateID
+	}, nil
 }
