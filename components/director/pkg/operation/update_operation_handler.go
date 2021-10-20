@@ -68,6 +68,7 @@ type operationError struct {
 	Error string `json:"error"`
 }
 
+// OperationCategoryUnpairApplication Operation category for unpair application mutation. It's used determine the operation status
 const OperationCategoryUnpairApplication = "unpairApplication"
 
 // NewUpdateOperationHandler creates a new handler struct to update resource by operation
@@ -211,10 +212,6 @@ func determineApplicationFinalStatus(op *OperationRequest, opError *string) mode
 			if opError != nil || str.PtrStrToStr(opError) != "" {
 				appConditionStatus = model.ApplicationStatusConditionUpdateFailed
 			}
-		}
-		appConditionStatus = model.ApplicationStatusConditionUpdateSucceeded
-		if opError != nil || str.PtrStrToStr(opError) != "" {
-			appConditionStatus = model.ApplicationStatusConditionUpdateFailed
 		}
 	case OperationTypeDelete:
 		appConditionStatus = model.ApplicationStatusConditionDeleteSucceeded

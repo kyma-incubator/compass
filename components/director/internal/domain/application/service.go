@@ -498,8 +498,8 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 }
 
 // IsApplicationInScenarios Checks if an application has scenarios associated with it. If the scenarios are part of a runtime, then the application is considered being used by that runtime.
-func (s *service) IsApplicationInScenarios(ctx context.Context, tenant, appId string) (bool, error) {
-	scenarios, err := s.getScenarioNamesForApplication(ctx, appId)
+func (s *service) IsApplicationInScenarios(ctx context.Context, tenant, appID string) (bool, error) {
+	scenarios, err := s.getScenarioNamesForApplication(ctx, appID)
 	if err != nil {
 		return false, err
 	}
@@ -512,9 +512,9 @@ func (s *service) IsApplicationInScenarios(ctx context.Context, tenant, appId st
 		}
 
 		if len(runtimes) > 0 {
-			application, err := s.appRepo.GetByID(ctx, tenant, appId)
+			application, err := s.appRepo.GetByID(ctx, tenant, appID)
 			if err != nil {
-				return true, errors.Wrapf(err, "while getting application with id %s", appId)
+				return true, errors.Wrapf(err, "while getting application with id %s", appID)
 			}
 			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
 			return true, apperrors.NewInvalidOperationError(msg)
