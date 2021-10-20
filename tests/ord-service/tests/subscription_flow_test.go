@@ -104,7 +104,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		}
 
 		// Build a request for consumer subscription
-		request := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL)
+		request := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret)
 
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,
@@ -132,7 +132,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			"iss":            testConfig.ExternalServicesMockURL,
 			"exp":            time.Now().Unix() + int64(time.Minute.Seconds()),
 		}
-		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, testConfig.ExternalServicesMockURL, claims))}}
+		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret, claims))}}
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)

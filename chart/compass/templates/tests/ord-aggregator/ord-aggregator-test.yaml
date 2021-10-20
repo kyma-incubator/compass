@@ -42,10 +42,36 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080"
+            - name: EXTERNAL_SERVICES_MOCK_UNSECURED_URL
+              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPort}}"
             - name: EXTERNAL_SERVICES_MOCK_ABSOLUTE_URL
-              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080/test/fullPath"
+              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPort}}/test/fullPath"
             - name: EXTERNAL_SERVICES_MOCK_CERT_SECURED_URL
               value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+            - name: EXTERNAL_SERVICES_MOCK_BASIC_URL
+              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.basicSecuredPort }}"
+            - name: EXTERNAL_SERVICES_MOCK_OAUTH_URL
+              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.oauthSecuredPort }}"
+            - name: BASIC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.testCredentials.secretName }}
+                  key: username
+            - name: BASIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.testCredentials.secretName }}
+                  key: password
+            - name: CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
+                  key: client-id
+            - name: CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
+                  key: client-secret
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
             - name: AGGREGATOR_SCHEDULE
