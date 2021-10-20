@@ -96,6 +96,7 @@ type ComplexityRoot struct {
 	Application struct {
 		ApplicationTemplateID func(childComplexity int) int
 		Auths                 func(childComplexity int) int
+		BaseURL               func(childComplexity int) int
 		Bundle                func(childComplexity int, id string) int
 		Bundles               func(childComplexity int, first *int, after *PageCursor) int
 		CreatedAt             func(childComplexity int) int
@@ -858,6 +859,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Auths(childComplexity), true
+
+	case "Application.baseUrl":
+		if e.complexity.Application.BaseURL == nil {
+			break
+		}
+
+		return e.complexity.Application.BaseURL(childComplexity), true
 
 	case "Application.bundle":
 		if e.complexity.Application.Bundle == nil {
@@ -3725,9 +3733,13 @@ input ApplicationRegisterInput {
 	**Validation:** valid URL, max=256
 	"""
 	healthCheckURL: String
-	bundles: [BundleCreateInput!]
+	"""
+	**Validation:** valid URL, max=256
+	"""
+	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	bundles: [BundleCreateInput!]
 }
 
 """
@@ -4160,6 +4172,7 @@ type Application {
 	id: ID!
 	name: String!
 	systemNumber: String
+	baseUrl: String
 	providerName: String
 	description: String
 	integrationSystemID: ID
@@ -7838,6 +7851,37 @@ func (ec *executionContext) _Application_systemNumber(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.SystemNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_baseUrl(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BaseURL, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21793,9 +21837,9 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
-		case "bundles":
+		case "baseUrl":
 			var err error
-			it.Bundles, err = ec.unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInputᚄ(ctx, v)
+			it.BaseURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -21808,6 +21852,12 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 		case "statusCondition":
 			var err error
 			it.StatusCondition, err = ec.unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "bundles":
+			var err error
+			it.Bundles, err = ec.unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -23227,6 +23277,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			}
 		case "systemNumber":
 			out.Values[i] = ec._Application_systemNumber(ctx, field, obj)
+		case "baseUrl":
+			out.Values[i] = ec._Application_baseUrl(ctx, field, obj)
 		case "providerName":
 			out.Values[i] = ec._Application_providerName(ctx, field, obj)
 		case "description":

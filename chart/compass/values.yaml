@@ -75,7 +75,7 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2082"
+      version: "PR-2065"
     gateway:
       dir:
       version: "PR-2082"
@@ -104,7 +104,7 @@ global:
       version: "PR-45"
     e2e_tests:
       dir:
-      version: "PR-2082"
+      version: "PR-2065"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -435,7 +435,7 @@ global:
     manageSecrets: true
     # enableSystemDeletion - whether systems in deleted state should be deleted from director database
     enableSystemDeletion: true
-    # fetchParallellism - shows how many http calls will be made in parallel to fetch systems
+    # fetchParallelism - shows how many http calls will be made in parallel to fetch systems
     fetchParallellism: 30
     # queueSize - shows how many system fetches (individual requests may fetch more than 1 system)
     # can be put in the queue for processing before blocking. It is best for the queue to be about 2 times bigger than the parallellism
@@ -455,6 +455,8 @@ global:
     systemsAPIFilterTenantCriteriaPattern: ""
     # systemToTemplateMappings - how to map system properties to an existing application template
     systemToTemplateMappings: '{}'
+    templatePlaceholderToSystemKeyMappings: '[{"placeholder_name": "name","system_key": "displayName"},{"placeholder_name": "display-name","system_key": "displayName"},{"placeholder_name": "systemNumber","system_key": "systemNumber"},{"placeholder_name": "description","system_key": "productDescription", "optional": true},{"placeholder_name": "baseUrl","system_key": "baseUrl", "optional":true},{"placeholder_name": "providerName","system_key": "infrastructureProvider", "optional": true}]'
+    templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true"},"baseUrl": "{{baseUrl}}"}'
     http:
       client:
         skipSSLValidation: false
