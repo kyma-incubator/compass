@@ -221,9 +221,10 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
+	claimsValidator := claims.NewValidator(runtimeSvc(cfg), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountIDsLabelKey)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claims.NewValidator())
+	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
 
 	if cfg.JWKSSyncPeriod != 0 {
 		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
@@ -671,4 +672,24 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 		app.Error = errorMsg
 		return appRepo.TechnicalUpdate(ctx, app)
 	}
+}
+
+func runtimeSvc(cfg config) claims.RuntimeService {
+	uidSvc := uid.NewService()
+
+	rtConverter := runtime.NewConverter()
+	rtRepo := runtime.NewRepository(rtConverter)
+
+	lblRepo := label.NewRepository(label.NewConverter())
+
+	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
+	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+
+	labelUpsertSvc := label.NewLabelUpsertService(lblRepo, labelDefRepo, uidSvc)
+
+	assignmentConv := scenarioassignment.NewConverter()
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, lblRepo, scenarioAssignmentRepo)
+
+	return runtime.NewService(rtRepo, lblRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, cfg.Features.ProtectedLabelPattern)
 }
