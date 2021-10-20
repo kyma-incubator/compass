@@ -97,11 +97,17 @@ func TestORDAggregator(t *testing.T) {
 
 	var appInput, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput, sixthAppInput directorSchema.ApplicationRegisterInput
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
+		// Unsecured config endpoint with full absolute URL in the webhook; unsecured document; doc baseURL from the webhook
 		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, nil)
+		// Unsecured config endpoint with automatic .well-known/open-resource-discovery; unsecured document; doc baseURL from the webhook
 		secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredURL, nil)
+		// Basic secured config endpoint; unsecured document; doc baseURL from the webhook
 		thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBasicURL, basicORDConfigSecurity)
+		// Oauth secured config endpoint; unsecured document; doc baseURL from the webhook
 		fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockOauthURL, oauthORDConfigSecurity)
-		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredURL+"/cert/.well-known/open-resource-discovery", nil)
+		// Unsecured config endpoint with full absolute URL in the webhook; cert secured document; doc baseURL configured in the config response
+		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/cert/.well-known/open-resource-discovery", nil)
+		// Cert secured config endpoint with automatic .well-known/open-resource-discovery; cert secured document; doc baseURL from the webhook
 		sixthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSixthSystemInstanceName, expectedSixthSystemInstanceDescription, testConfig.ExternalServicesMockCertSecuredURL, accessStrategyConfigSecurity)
 
 		systemInstancesMap := make(map[string]string)
