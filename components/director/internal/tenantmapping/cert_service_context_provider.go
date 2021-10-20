@@ -54,7 +54,7 @@ func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oat
 
 	*/
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, "", authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
 
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 

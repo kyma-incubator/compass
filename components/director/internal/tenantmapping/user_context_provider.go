@@ -68,7 +68,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 		log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
 
 		log.C(ctx).Info("Could not create tenant context, returning empty context...")
-		return NewObjectContext(TenantContext{}, m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider), nil
+		return NewObjectContext(TenantContext{}, m.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider), nil
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
@@ -78,7 +78,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider), nil
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
@@ -87,7 +87,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: %s missmatch external tenant: %s", staticUser.Username, tenantMapping.ExternalTenant))
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil
