@@ -149,7 +149,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
-	// non-isolated and unsecured ORD handlers. NOTE: Do not host document endpoints on this default server in order to ensure test separations.
+	// non-isolated and unsecured ORD handlers. NOTE: Do not host document endpoints on this default server in order to ensure testс separation.
 	// Unsecured config pointing to cert secured document
 	router.HandleFunc("/cert/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
 
