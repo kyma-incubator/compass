@@ -466,6 +466,45 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
 
+func TestReconcile_FetchApplicationReturnsNilApplication_ShouldResultNoRequeueNoError(t *testing.T) {
+	// GIVEN:
+	stubLoggerAssertion(t, mockedErr.Error(), fmt.Sprintf("Application with ID %s is already deleted in Director", appGUID))
+	defer func() { ctrl.Log = &originalLogger }()
+	operation := *mockedOperation
+	operation.CreationTimestamp = metav1.Time{}
+	operation.Spec.OperationType = v1alpha1.OperationTypeDelete
+	operation.Status = v1alpha1.OperationStatus{Phase: v1alpha1.StateInProgress}
+
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
+	k8sClient.GetReturns(&operation, nil)
+	k8sClient.DeleteReturns(nil)
+
+	statusMgrClient := &controllersfakes.FakeStatusManager{}
+	statusMgrClient.InitializeReturns(nil)
+
+	directorClient := &controllersfakes.FakeDirectorClient{}
+	directorClient.FetchApplicationReturns(nil, nil)
+
+	// WHEN:
+	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
+
+	// THEN:
+	// GENERAL ASSERTIONS:
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	// SPECIFIC CLIENT ASSERTIONS:
+	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
+	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
+	assertStatusManagerSuccessStatusCalledWithOperation(t, statusMgrClient, &operation)
+	assertZeroInvocations(t, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
+		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.FailedStatusCallCount)
+}
+
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
