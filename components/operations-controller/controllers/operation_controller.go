@@ -94,8 +94,8 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if app == nil && operation.Spec.OperationType == v1alpha1.OperationTypeDelete && operation.Status.Phase == v1alpha1.StateInProgress {
-		log.C(ctx).Info("Application is already deleted in Director")
-		return r.finalizeStatusSuccess(ctx, operation, nil)
+		log.C(ctx).Info(fmt.Sprintf("Application with ID %s is already deleted in Director", operation.Spec.ResourceID))
+		return r.finalizeStatus(ctx, operation, nil, nil)
 	}
 
 	if app.Result.Ready {
@@ -272,7 +272,6 @@ func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1a
 	}
 
 	if errorMsg != nil && *errorMsg != "" {
-
 		r.metricsCollector.RecordError(operation.ObjectMeta.Name,
 			operation.Spec.CorrelationID,
 			string(operation.Spec.OperationType),
@@ -283,14 +282,16 @@ func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1a
 		if err := r.statusManager.FailedStatus(ctx, operation, *errorMsg); err != nil {
 			return ctrl.Result{}, err
 		}
-	} else {
-		if err := r.statusManager.SuccessStatus(ctx, operation); err != nil {
-			return ctrl.Result{}, err
-		}
 
-		duration := time.Now().Sub(operation.Status.InitializedAt.Time)
-		r.metricsCollector.RecordLatency(string(operation.Spec.OperationType), duration)
+		return ctrl.Result{}, nil
 	}
+
+	if err := r.statusManager.SuccessStatus(ctx, operation); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	duration := time.Now().Sub(operation.Status.InitializedAt.Time)
+	r.metricsCollector.RecordLatency(string(operation.Spec.OperationType), duration)
 
 	return ctrl.Result{}, nil
 }
