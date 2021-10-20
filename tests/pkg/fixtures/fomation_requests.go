@@ -1,20 +1,15 @@
 package fixtures
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func FixCreateFormationRequest(formationName string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
-				  createFormation(formation: {name: "%s"}){
+				  result: createFormation(formation: {name: "%s"}){
 					name
 				  }
 				}`, formationName))
@@ -23,16 +18,26 @@ func FixCreateFormationRequest(formationName string) *gcli.Request {
 func FixDeleteFormationRequest(formationName string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
-				  deleteFormation(formation: {name: "%s"}){
+				  result: deleteFormation(formation: {name: "%s"}){
 					name
 				  }
 				}`, formationName))
 }
 
-func CleanupFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, formation string) {
-	deleteRequest := FixDeleteFormationRequest(formation)
+func FixAssignFormationRequest(objID, objType, formationName string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{
+			  result: assignFormation(objectID:"%s",objectType: %s ,formation: {name: "%s"}){
+				name
+			  }
+			}`, objID, objType, formationName))
+}
 
-	var f graphql.Formation
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &f)
-	assert.NoError(t, err)
+func FixUnassignFormationRequest(objID, objType, formationName string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{
+			  result: unassignFormation(objectID:"%s",objectType: %s ,formation: {name: "%s"}){
+				name
+			  }
+			}`, objID, objType, formationName))
 }
