@@ -56,6 +56,7 @@ const (
 
 var (
 	mockedErr         = errors.New("mocked error")
+	notFoundErr       = &director.NotFoundError{}
 	mockedLocationURL = "https://test-domain.com/operation"
 	ctrlRequest       = ctrl.Request{
 		NamespacedName: types.NamespacedName{
@@ -466,12 +467,11 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
 
-func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsDeleteAndInProgress_ShouldResultNoRequeueNoError(t *testing.T) {
+func TestReconcile_FetchApplicationReturnsNotFoundErr_And_OperationIsDeleteAndInProgress_ShouldResultSuccessOperationNoRequeueNoError(t *testing.T) {
 	// GIVEN:
-	stubLoggerAssertion(t, mockedErr.Error(), fmt.Sprintf("Application with ID %s is already deleted in Director", appGUID))
+	stubLoggerAssertion(t, notFoundErr.Error(), fmt.Sprintf("Unable to fetch application with ID %s", appGUID))
 	defer func() { ctrl.Log = &originalLogger }()
 	operation := *mockedOperation
-	operation.CreationTimestamp = metav1.Time{}
 	operation.Spec.OperationType = v1alpha1.OperationTypeDelete
 	operation.Status = v1alpha1.OperationStatus{Phase: v1alpha1.StateInProgress}
 
@@ -483,7 +483,7 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsDeleteAn
 	statusMgrClient.InitializeReturns(nil)
 
 	directorClient := &controllersfakes.FakeDirectorClient{}
-	directorClient.FetchApplicationReturns(nil, nil)
+	directorClient.FetchApplicationReturns(nil, notFoundErr)
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
@@ -505,19 +505,22 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsDeleteAn
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.FailedStatusCallCount)
 }
 
-func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsNotDeleteNorInProgress_ShouldResultNoRequeueError(t *testing.T) {
+func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsUpdateAndInProgress_ShouldResultFailedOperationNoRequeueNoError(t *testing.T) {
 	// GIVEN:
-	stubLoggerAssertion(t, mockedErr.Error(), "Unable to fetch application")
+	stubLoggerAssertion(t, notFoundErr.Error(), fmt.Sprintf("Unable to fetch application with ID %s", appGUID))
 	defer func() { ctrl.Log = &originalLogger }()
+	operation := *mockedOperation
+	operation.Spec.OperationType = v1alpha1.OperationTypeUpdate
+	operation.Status = v1alpha1.OperationStatus{Phase: v1alpha1.StateInProgress}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(&operation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
 
 	directorClient := &controllersfakes.FakeDirectorClient{}
-	directorClient.FetchApplicationReturns(nil, nil)
+	directorClient.FetchApplicationReturns(nil, notFoundErr)
 
 	// WHEN:
 	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
@@ -532,11 +535,44 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsNotDelet
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
 	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, mockedOperation, "application is missing in Director")
+	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, &operation, "Application not found in director")
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
+}
+
+func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsNotDeleteNorInProgress_ShouldResultNoRequeueError(t *testing.T) {
+	// GIVEN:
+	stubLoggerAssertion(t, notFoundErr.Error(), fmt.Sprintf("Unable to fetch application with ID %s", appGUID))
+	defer func() { ctrl.Log = &originalLogger }()
+
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
+	k8sClient.GetReturns(mockedOperation, nil)
+
+	statusMgrClient := &controllersfakes.FakeStatusManager{}
+	statusMgrClient.InitializeReturns(nil)
+
+	directorClient := &controllersfakes.FakeDirectorClient{}
+	directorClient.FetchApplicationReturns(nil, notFoundErr)
+
+	// WHEN:
+	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
+
+	// THEN:
+	// GENERAL ASSERTIONS:
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.Error(t, err)
+
+	// SPECIFIC CLIENT ASSERTIONS:
+	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
+		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {

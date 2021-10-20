@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
@@ -57,4 +59,15 @@ type DirectorClient interface {
 type WebhookClient interface {
 	Do(ctx context.Context, request *webhook.Request) (*webhookdir.Response, error)
 	Poll(ctx context.Context, request *webhook.PollRequest) (*webhookdir.ResponseStatus, error)
+}
+
+func isNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	nfe, ok := errors.Cause(err).(interface {
+		NotFound() bool
+	})
+	return ok && nfe.NotFound()
 }

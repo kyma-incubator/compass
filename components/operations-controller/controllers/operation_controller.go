@@ -94,10 +94,6 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return r.handleFetchApplicationError(ctx, operation, err)
 	}
 
-	if app == nil {
-		return r.handleMissingApplication(ctx, operation)
-	}
-
 	if app.Result.Ready {
 		return r.finalizeStatus(ctx, operation, app.Result.Error, nil)
 	}
@@ -191,7 +187,7 @@ func (r *OperationReconciler) handleGetOperationError(ctx context.Context, req *
 }
 
 func (r *OperationReconciler) handleFetchApplicationError(ctx context.Context, operation *v1alpha1.Operation, err error) (ctrl.Result, error) {
-	log.C(ctx).Error(err, "Unable to fetch application")
+	log.C(ctx).Error(err, fmt.Sprintf("Unable to fetch application with ID %s", operation.Spec.ResourceID))
 	if operation.TimeoutReached(time.Duration(r.config.TimeoutFactor) * r.config.WebhookTimeout) {
 		if err := r.k8sClient.Delete(ctx, operation); err != nil {
 			return ctrl.Result{}, err
@@ -201,6 +197,16 @@ func (r *OperationReconciler) handleFetchApplicationError(ctx context.Context, o
 		return ctrl.Result{}, nil
 	}
 
+	if isNotFoundError(err) {
+		if operation.Spec.OperationType == v1alpha1.OperationTypeDelete && operation.Status.Phase == v1alpha1.StateInProgress {
+			return r.finalizeStatus(ctx, operation, nil, nil)
+		}
+		if operation.Spec.OperationType == v1alpha1.OperationTypeUpdate && operation.Status.Phase == v1alpha1.StateInProgress {
+			return r.finalizeStatus(ctx, operation, str.Ptr("Application not found in director"), nil)
+		}
+	}
+
+	// requeue in case of async create (app is not created in director yet), or a glitch in controller<->director communication
 	return ctrl.Result{}, err
 }
 
@@ -351,15 +357,6 @@ func (r *OperationReconciler) determineTimeout(webhook *graphql.Webhook) time.Du
 	}
 
 	return time.Duration(*webhook.Timeout) * time.Second
-}
-
-func (r *OperationReconciler) handleMissingApplication(ctx context.Context, operation *v1alpha1.Operation) (ctrl.Result, error) {
-	if operation.Spec.OperationType == v1alpha1.OperationTypeDelete && operation.Status.Phase == v1alpha1.StateInProgress {
-		log.C(ctx).Info(fmt.Sprintf("Application with ID %s is already deleted in Director", operation.Spec.ResourceID))
-		return r.finalizeStatus(ctx, operation, nil, nil)
-	}
-
-	return r.finalizeStatus(ctx, operation, str.Ptr("application is missing in Director"), nil)
 }
 
 func prepareDirectorRequest(operation *v1alpha1.Operation) *director.Request {

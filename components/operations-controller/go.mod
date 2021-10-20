@@ -36,7 +36,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a5435ac7a
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20211019162432-5a561e37874c
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20211020121059-e1767123c58e
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
