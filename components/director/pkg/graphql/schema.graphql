@@ -253,9 +253,13 @@ input ApplicationRegisterInput {
 	**Validation:** valid URL, max=256
 	"""
 	healthCheckURL: String
-	bundles: [BundleCreateInput!]
+	"""
+	**Validation:** valid URL, max=256
+	"""
+	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	bundles: [BundleCreateInput!]
 }
 
 """
@@ -689,6 +693,7 @@ type Application {
 	id: ID!
 	name: String!
 	systemNumber: String
+	baseUrl: String
 	providerName: String
 	description: String
 	integrationSystemID: ID
