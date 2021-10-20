@@ -505,7 +505,7 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsDeleteAn
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.FailedStatusCallCount)
 }
 
-func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsNotDeleteAndInProgress_ShouldResultNoRequeueError(t *testing.T) {
+func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsNotDeleteNorInProgress_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to fetch application")
 	defer func() { ctrl.Log = &originalLogger }()
