@@ -29,7 +29,7 @@ func TestAsyncAPIUnpairApplicationWithAppWebhook(t *testing.T) {
 	appInput := graphql.ApplicationRegisterInput{
 		Name:         appName,
 		ProviderName: ptr.String("compass"),
-		Webhooks:     []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
+		Webhooks:     []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnpairApplication)},
 	}
 
 	t.Log(fmt.Sprintf("Registering application: %s", appName))
