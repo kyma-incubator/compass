@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
@@ -93,9 +94,8 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return r.handleFetchApplicationError(ctx, operation, err)
 	}
 
-	if app == nil && operation.Spec.OperationType == v1alpha1.OperationTypeDelete && operation.Status.Phase == v1alpha1.StateInProgress {
-		log.C(ctx).Info(fmt.Sprintf("Application with ID %s is already deleted in Director", operation.Spec.ResourceID))
-		return r.finalizeStatus(ctx, operation, nil, nil)
+	if app == nil {
+		return r.handleMissingApplication(ctx, operation)
 	}
 
 	if app.Result.Ready {
@@ -351,6 +351,15 @@ func (r *OperationReconciler) determineTimeout(webhook *graphql.Webhook) time.Du
 	}
 
 	return time.Duration(*webhook.Timeout) * time.Second
+}
+
+func (r *OperationReconciler) handleMissingApplication(ctx context.Context, operation *v1alpha1.Operation) (ctrl.Result, error) {
+	if operation.Spec.OperationType == v1alpha1.OperationTypeDelete && operation.Status.Phase == v1alpha1.StateInProgress {
+		log.C(ctx).Info(fmt.Sprintf("Application with ID %s is already deleted in Director", operation.Spec.ResourceID))
+		return r.finalizeStatus(ctx, operation, nil, nil)
+	}
+
+	return r.finalizeStatus(ctx, operation, str.Ptr("application is missing in Director"), nil)
 }
 
 func prepareDirectorRequest(operation *v1alpha1.Operation) *director.Request {

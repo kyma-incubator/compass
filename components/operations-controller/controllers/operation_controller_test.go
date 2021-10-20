@@ -466,7 +466,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
 
-func TestReconcile_FetchApplicationReturnsNilApplication_ShouldResultNoRequeueNoError(t *testing.T) {
+func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsDeleteAndInProgress_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), fmt.Sprintf("Application with ID %s is already deleted in Director", appGUID))
 	defer func() { ctrl.Log = &originalLogger }()
@@ -503,6 +503,40 @@ func TestReconcile_FetchApplicationReturnsNilApplication_ShouldResultNoRequeueNo
 	assertStatusManagerSuccessStatusCalledWithOperation(t, statusMgrClient, &operation)
 	assertZeroInvocations(t, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.FailedStatusCallCount)
+}
+
+func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsNotDeleteAndInProgress_ShouldResultNoRequeueError(t *testing.T) {
+	// GIVEN:
+	stubLoggerAssertion(t, mockedErr.Error(), "Unable to fetch application")
+	defer func() { ctrl.Log = &originalLogger }()
+
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
+	k8sClient.GetReturns(mockedOperation, nil)
+
+	statusMgrClient := &controllersfakes.FakeStatusManager{}
+	statusMgrClient.InitializeReturns(nil)
+
+	directorClient := &controllersfakes.FakeDirectorClient{}
+	directorClient.FetchApplicationReturns(nil, nil)
+
+	// WHEN:
+	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
+
+	// THEN:
+	// GENERAL ASSERTIONS:
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	// SPECIFIC CLIENT ASSERTIONS:
+	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, mockedOperation, "application is missing in Director")
+	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
+		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
 
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
