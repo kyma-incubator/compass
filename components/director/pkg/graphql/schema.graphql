@@ -258,7 +258,6 @@ input ApplicationRegisterInput {
 	"""
 	baseUrl: String
 	integrationSystemID: ID
-	systemNumber: String
 	statusCondition: ApplicationStatusCondition
 	bundles: [BundleCreateInput!]
 }

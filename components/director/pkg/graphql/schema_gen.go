@@ -3738,7 +3738,6 @@ input ApplicationRegisterInput {
 	"""
 	baseUrl: String
 	integrationSystemID: ID
-	systemNumber: String
 	statusCondition: ApplicationStatusCondition
 	bundles: [BundleCreateInput!]
 }
@@ -21847,12 +21846,6 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 		case "integrationSystemID":
 			var err error
 			it.IntegrationSystemID, err = ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "systemNumber":
-			var err error
-			it.SystemNumber, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

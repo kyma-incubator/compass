@@ -2,13 +2,13 @@ package application_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/mock"
-
 	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/require"
 
@@ -363,35 +363,26 @@ func TestConverter_CreateInputJSONToGQL(t *testing.T) {
 func TestConverter_CreateInputJSONToModelL(t *testing.T) {
 	t.Run("Successful conversion", func(t *testing.T) {
 		// GIVEN
-		allPropsInput := fixGQLApplicationRegisterInput("foo", "Lorem ipsum")
-		allPropsExpected := fixModelApplicationRegisterInput("foo", "Lorem ipsum")
+		cond := model.ApplicationStatusConditionInitial
+		appInput := model.ApplicationRegisterInput{
+			Name:            "test",
+			Description:     str.Ptr("test description"),
+			StatusCondition: &cond,
+			Labels: map[string]interface{}{
+				"key": "value",
+			},
+		}
+		appInputJSON := fmt.Sprintf(`{"name": "%s","description": "%s","statusCondition": "%s","labels": {"key": "value"}}`,
+			appInput.Name, *appInput.Description, string(cond))
 
-		whConv := &automock.WebhookConverter{}
-		whConv.On("MultipleInputFromGraphQL", allPropsInput.Webhooks).Return(allPropsExpected.Webhooks, nil)
-		bndlConv := &automock.BundleConverter{}
-		bndlConv.On("MultipleCreateInputFromGraphQL", allPropsInput.Bundles).Return(allPropsExpected.Bundles, nil)
-		defer mock.AssertExpectationsForObjects(t, whConv, bndlConv)
-
-		conv := application.NewConverter(whConv, bndlConv)
-
-		inputGQL := fixGQLApplicationRegisterInput("name", "description")
-		inputGQL.Labels = graphql.Labels{"test": "test"}
+		conv := application.NewConverter(nil, nil)
 
 		// WHEN
-		// GQL -> JSON
-		json, err := conv.CreateInputGQLToJSON(&inputGQL)
-		require.NoError(t, err)
-
-		// GQL -> Model
-		expected, err := conv.CreateInputFromGraphQL(context.TODO(), inputGQL)
-		require.NoError(t, err)
-
-		// JSON -> Model
-		outputModel, err := conv.CreateInputJSONToModel(context.TODO(), json)
-		require.NoError(t, err)
+		outputModel, err := conv.CreateInputJSONToModel(context.TODO(), appInputJSON)
 
 		// THEN
-		require.Equal(t, expected, outputModel)
+		require.NoError(t, err)
+		require.Equal(t, appInput, outputModel)
 	})
 	t.Run("Error while JSON to GQL conversion", func(t *testing.T) {
 		// GIVEN

@@ -163,7 +163,6 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 		Name:                in.Name,
 		Description:         in.Description,
 		Labels:              labels,
-		SystemNumber:        in.SystemNumber,
 		BaseURL:             in.BaseURL,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
@@ -203,11 +202,11 @@ func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegister
 
 // CreateInputJSONToModel converts a JSON input to an application model.
 func (c *converter) CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error) {
-	gqlInput, err := c.CreateInputJSONToGQL(in)
-	if err != nil {
-		return model.ApplicationRegisterInput{}, err
+	modelIn := model.ApplicationRegisterInput{}
+	if err := json.Unmarshal([]byte(in), &modelIn); err != nil {
+		return modelIn, errors.Wrap(err, "while unmarshalling application input JSON")
 	}
-	return c.CreateInputFromGraphQL(ctx, gqlInput)
+	return modelIn, nil
 }
 
 // CreateInputGQLToJSON missing godoc

@@ -100,7 +100,6 @@ type ApplicationRegisterInput struct {
 	// **Validation:** valid URL, max=256
 	BaseURL             *string                     `json:"baseUrl"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
-	SystemNumber        *string                     `json:"systemNumber"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
 	Bundles             []*BundleCreateInput        `json:"bundles"`
 }
