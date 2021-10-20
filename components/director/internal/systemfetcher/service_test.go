@@ -14,16 +14,32 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	appType = "type-1"
+)
+
 func TestSyncSystems(t *testing.T) {
+	const appTemplateID = "appTmp1"
+	testErr := errors.New("testErr")
+	setupSuccessfulTemplateRenderer := func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+		svc := &automock.TemplateRenderer{}
+		for i := range appsInputs {
+			svc.On("ApplicationRegisterInputFromTemplate", txtest.CtxWithDBMatcher(), systems[i]).Return(&appsInputs[i], nil).Once()
+		}
+		return svc
+	}
+
 	type testCase struct {
-		name                string
-		mockTransactioner   func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner)
-		fixTestSystems      func() []systemfetcher.System
-		fixAppInputs        func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate
-		setupTenantSvc      func() systemfetcher.TenantService
-		setupSystemSvc      func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.SystemsService
-		setupSysAPIClient   func(testSystems []systemfetcher.System) systemfetcher.SystemsAPIClient
-		setupDirectorClient func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.DirectorClient
+		name                     string
+		mockTransactioner        func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner)
+		fixTestSystems           func() []systemfetcher.System
+		fixAppInputs             func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate
+		setupTenantSvc           func() *automock.TenantService
+		setupTemplateRendererSvc func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer
+		setupSystemSvc           func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService
+		setupSysAPIClient        func(testSystems []systemfetcher.System) *automock.SystemsAPIClient
+		setupDirectorClient      func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient
+		expectedErr              error
 	}
 	tests := []testCase{
 		{
@@ -34,13 +50,13 @@ func TestSyncSystems(t *testing.T) {
 			},
 			fixTestSystems: func() []systemfetcher.System {
 				systems := fixSystems()
-				systems[0].TemplateID = "appTmp1"
+				systems[0].TemplateID = appTemplateID
 				return systems
 			},
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
-				return fixAppsInputsBySystems(systems)
+				return fixAppsInputsWithTemplatesBySystems(systems)
 			},
-			setupTenantSvc: func() systemfetcher.TenantService {
+			setupTenantSvc: func() *automock.TenantService {
 				tenants := []*model.BusinessTenantMapping{
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
@@ -48,17 +64,53 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.SystemsService {
+			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), appsInputs).Return(nil).Once()
 				return systemSvc
 			},
-			setupSysAPIClient: func(testSystems []systemfetcher.System) systemfetcher.SystemsAPIClient {
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return(testSystems, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.DirectorClient {
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+		},
+		{
+			name: "Success with one tenant and one system without template",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(2)
+				return mockedTx, transactioner
+			},
+			fixTestSystems: fixSystems,
+			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
+				return fixAppsInputsWithTemplatesBySystems(systems)
+			},
+			setupTenantSvc: func() *automock.TenantService {
+				tenants := []*model.BusinessTenantMapping{
+					newModelBusinessTenantMapping("t1", "tenant1"),
+				}
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				return tenantSvc
+			},
+			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+				return &automock.TemplateRenderer{}
+			},
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
+				systemSvc := &automock.SystemsService{}
+				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), appsInputs).Return(nil).Once()
+				return systemSvc
+			},
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
+				sysAPIClient := &automock.SystemsAPIClient{}
+				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return(testSystems, nil).Once()
+				return sysAPIClient
+			},
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
 				return &automock.DirectorClient{}
 			},
 		},
@@ -70,7 +122,7 @@ func TestSyncSystems(t *testing.T) {
 			},
 			fixTestSystems: func() []systemfetcher.System {
 				systems := fixSystems()
-				systems[0].TemplateID = "appTmp1"
+				systems[0].TemplateID = appTemplateID
 				systems = append(systems, systemfetcher.System{
 					SystemBase: systemfetcher.SystemBase{
 						DisplayName:            "System2",
@@ -83,9 +135,9 @@ func TestSyncSystems(t *testing.T) {
 				return systems
 			},
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
-				return fixAppsInputsBySystems(systems)
+				return fixAppsInputsWithTemplatesBySystems(systems)
 			},
-			setupTenantSvc: func() systemfetcher.TenantService {
+			setupTenantSvc: func() *automock.TenantService {
 				tenants := []*model.BusinessTenantMapping{
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
@@ -93,17 +145,18 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.SystemsService {
+			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), appsInputs).Return(nil).Once()
 				return systemSvc
 			},
-			setupSysAPIClient: func(testSystems []systemfetcher.System) systemfetcher.SystemsAPIClient {
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return(testSystems, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.DirectorClient {
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
 				return &automock.DirectorClient{}
 			},
 		},
@@ -115,7 +168,7 @@ func TestSyncSystems(t *testing.T) {
 			},
 			fixTestSystems: func() []systemfetcher.System {
 				systems := fixSystems()
-				systems[0].TemplateID = "appTmp1"
+				systems[0].TemplateID = appTemplateID
 				systems = append(systems, systemfetcher.System{
 					SystemBase: systemfetcher.SystemBase{
 						DisplayName:            "System2",
@@ -128,9 +181,9 @@ func TestSyncSystems(t *testing.T) {
 				return systems
 			},
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
-				return fixAppsInputsBySystems(systems)
+				return fixAppsInputsWithTemplatesBySystems(systems)
 			},
-			setupTenantSvc: func() systemfetcher.TenantService {
+			setupTenantSvc: func() *automock.TenantService {
 				tenants := []*model.BusinessTenantMapping{
 					newModelBusinessTenantMapping("t1", "tenant1"),
 					newModelBusinessTenantMapping("t2", "tenant2"),
@@ -139,21 +192,116 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.SystemsService {
+			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[0]}).Return(nil).Once()
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[1]}).Return(nil).Once()
 				return systemSvc
 			},
-			setupSysAPIClient: func(testSystems []systemfetcher.System) systemfetcher.SystemsAPIClient {
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return([]systemfetcher.System{testSystems[0]}, nil).Once()
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return([]systemfetcher.System{testSystems[1]}, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.DirectorClient {
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
 				return &automock.DirectorClient{}
 			},
+		},
+		{
+			name: "Fail when tenant fetching fails",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+
+				return mockedTx, transactioner
+			},
+			fixTestSystems: fixSystems,
+			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
+				return fixAppsInputsWithTemplatesBySystems(systems)
+			},
+			setupTenantSvc: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, testErr).Once()
+				return tenantSvc
+			},
+			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+				return &automock.TemplateRenderer{}
+			},
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
+				return &automock.SystemsService{}
+			},
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
+				return &automock.SystemsAPIClient{}
+			},
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+			expectedErr: testErr,
+		},
+		{
+			name: "Fail when transaction cannot be started",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(testErr).ThatFailsOnBegin()
+
+				return mockedTx, transactioner
+			},
+			fixTestSystems: fixSystems,
+			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
+				return fixAppsInputsWithTemplatesBySystems(systems)
+			},
+			setupTenantSvc: func() *automock.TenantService {
+				return &automock.TenantService{}
+			},
+			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+				return &automock.TemplateRenderer{}
+			},
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
+				return &automock.SystemsService{}
+			},
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
+				return &automock.SystemsAPIClient{}
+			},
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+			expectedErr: testErr,
+		},
+		{
+			name: "Fail when commit fails",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(testErr).ThatFailsOnCommit()
+				return mockedTx, transactioner
+			},
+			fixTestSystems: func() []systemfetcher.System {
+				systems := fixSystems()
+				systems[0].TemplateID = appTemplateID
+				return systems
+			},
+			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
+				return fixAppsInputsWithTemplatesBySystems(systems)
+			},
+			setupTenantSvc: func() *automock.TenantService {
+				tenants := []*model.BusinessTenantMapping{
+					newModelBusinessTenantMapping("t1", "tenant1"),
+				}
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				return tenantSvc
+			},
+			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+				return &automock.TemplateRenderer{}
+			},
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
+				return &automock.SystemsService{}
+			},
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
+				return &automock.SystemsAPIClient{}
+			},
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+			expectedErr: testErr,
 		},
 		{
 			name: "Fail when client fails to fetch systems",
@@ -166,9 +314,9 @@ func TestSyncSystems(t *testing.T) {
 				return fixSystems()
 			},
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
-				return fixAppsInputsBySystems(systems)
+				return fixAppsInputsWithTemplatesBySystems(systems)
 			},
-			setupTenantSvc: func() systemfetcher.TenantService {
+			setupTenantSvc: func() *automock.TenantService {
 				tenants := []*model.BusinessTenantMapping{
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
@@ -176,16 +324,18 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.SystemsService {
-				systemSvc := &automock.SystemsService{}
-				return systemSvc
+			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+				return &automock.TemplateRenderer{}
 			},
-			setupSysAPIClient: func(testSystems []systemfetcher.System) systemfetcher.SystemsAPIClient {
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
+				return &automock.SystemsService{}
+			},
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return(nil, errors.New("expected")).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.DirectorClient {
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
 				return &automock.DirectorClient{}
 			},
 		},
@@ -202,13 +352,13 @@ func TestSyncSystems(t *testing.T) {
 			},
 			fixTestSystems: func() []systemfetcher.System {
 				systems := fixSystems()
-				systems[0].TemplateID = "appTmp1"
+				systems[0].TemplateID = appTemplateID
 				return systems
 			},
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
-				return fixAppsInputsBySystems(systems)
+				return fixAppsInputsWithTemplatesBySystems(systems)
 			},
-			setupTenantSvc: func() systemfetcher.TenantService {
+			setupTenantSvc: func() *automock.TenantService {
 				tenants := []*model.BusinessTenantMapping{
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
@@ -216,17 +366,64 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.SystemsService {
+			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[0]}).Return(errors.New("expected")).Once()
 				return systemSvc
 			},
-			setupSysAPIClient: func(testSystems []systemfetcher.System) systemfetcher.SystemsAPIClient {
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return([]systemfetcher.System{testSystems[0]}, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.DirectorClient {
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+		},
+		{
+			name: "Fail when application from template cannot be rendered",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+				persistTx := &pAutomock.PersistenceTx{}
+
+				transactioner.On("Begin").Return(persistTx, nil).Once()
+				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
+
+				return mockedTx, transactioner
+			},
+			fixTestSystems: func() []systemfetcher.System {
+				systems := fixSystems()
+				systems[0].TemplateID = appTemplateID
+				return systems
+			},
+			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
+				return fixAppsInputsWithTemplatesBySystems(systems)
+			},
+			setupTenantSvc: func() *automock.TenantService {
+				tenants := []*model.BusinessTenantMapping{
+					newModelBusinessTenantMapping("t1", "tenant1"),
+				}
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				return tenantSvc
+			},
+			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+				svc := &automock.TemplateRenderer{}
+				for i := range appsInputs {
+					svc.On("ApplicationRegisterInputFromTemplate", txtest.CtxWithDBMatcher(), systems[i]).Return(nil, testErr).Once()
+				}
+				return svc
+			},
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
+				return &automock.SystemsService{}
+			},
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
+				sysAPIClient := &automock.SystemsAPIClient{}
+				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return([]systemfetcher.System{testSystems[0]}, nil).Once()
+				return sysAPIClient
+			},
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
 				return &automock.DirectorClient{}
 			},
 		},
@@ -252,9 +449,9 @@ func TestSyncSystems(t *testing.T) {
 				return systems
 			},
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
-				return fixAppsInputsBySystems(systems)
+				return fixAppsInputsWithTemplatesBySystems(systems)
 			},
-			setupTenantSvc: func() systemfetcher.TenantService {
+			setupTenantSvc: func() *automock.TenantService {
 				tenants := []*model.BusinessTenantMapping{
 					newModelBusinessTenantMapping("t1", "tenant1"),
 					newModelBusinessTenantMapping("t2", "tenant2"),
@@ -264,20 +461,21 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.SystemsService {
+			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[0]}).Return(nil).Once()
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[1]}).Return(nil).Once()
 				return systemSvc
 			},
-			setupSysAPIClient: func(testSystems []systemfetcher.System) systemfetcher.SystemsAPIClient {
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return([]systemfetcher.System{testSystems[0]}, nil).Once()
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return(nil, errors.New("expected")).Once()
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return([]systemfetcher.System{testSystems[1]}, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.DirectorClient {
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
 				return &automock.DirectorClient{}
 			},
 		},
@@ -307,9 +505,9 @@ func TestSyncSystems(t *testing.T) {
 				return systems
 			},
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
-				return fixAppsInputsBySystems(systems)
+				return fixAppsInputsWithTemplatesBySystems(systems)
 			},
-			setupTenantSvc: func() systemfetcher.TenantService {
+			setupTenantSvc: func() *automock.TenantService {
 				tenants := []*model.BusinessTenantMapping{
 					newModelBusinessTenantMapping("t1", "tenant1"),
 					newModelBusinessTenantMapping("t3", "tenant3"),
@@ -318,7 +516,13 @@ func TestSyncSystems(t *testing.T) {
 				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
 				return tenantSvc
 			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.SystemsService {
+			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+				svc := &automock.TemplateRenderer{}
+				appInput := appsInputs[0] // appsInputs[1] belongs to a system with status "DELETED"
+				svc.On("ApplicationRegisterInputFromTemplate", txtest.CtxWithDBMatcher(), systems[0]).Return(&appInput, nil)
+				return svc
+			},
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 
 				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[0]}).Return(nil).Once()
@@ -329,13 +533,13 @@ func TestSyncSystems(t *testing.T) {
 				}, nil)
 				return systemSvc
 			},
-			setupSysAPIClient: func(testSystems []systemfetcher.System) systemfetcher.SystemsAPIClient {
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return([]systemfetcher.System{testSystems[0]}, nil).Once()
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return([]systemfetcher.System{testSystems[1]}, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) systemfetcher.DirectorClient {
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
 				directorClient.On("DeleteSystemAsync", mock.Anything, "id", "t1").Return(nil).Once()
 				return directorClient
@@ -350,27 +554,35 @@ func TestSyncSystems(t *testing.T) {
 			testSystems := testCase.fixTestSystems()
 			appsInputs := testCase.fixAppInputs(testSystems)
 			systemSvc := testCase.setupSystemSvc(testSystems, appsInputs)
+			appInputsWithoutTemplates := make([]model.ApplicationRegisterInput, 0)
+			for _, in := range appsInputs {
+				appInputsWithoutTemplates = append(appInputsWithoutTemplates, in.ApplicationRegisterInput)
+			}
+			templateAppResolver := testCase.setupTemplateRendererSvc(testSystems, appInputsWithoutTemplates)
 			sysAPIClient := testCase.setupSysAPIClient(testSystems)
 			directorClient := testCase.setupDirectorClient(testSystems, appsInputs)
+			defer mock.AssertExpectationsForObjects(t, tenantSvc, sysAPIClient, systemSvc, templateAppResolver, mockedTx, transactioner)
 
-			svc := systemfetcher.NewSystemFetcher(transactioner, tenantSvc, systemSvc, sysAPIClient, directorClient, systemfetcher.Config{
+			svc := systemfetcher.NewSystemFetcher(transactioner, tenantSvc, systemSvc, templateAppResolver, sysAPIClient, directorClient, systemfetcher.Config{
 				SystemsQueueSize:     100,
 				FetcherParallellism:  30,
 				EnableSystemDeletion: true,
 			})
 			err := svc.SyncSystems(context.TODO())
-			require.NoError(t, err)
-
-			mock.AssertExpectationsForObjects(t, tenantSvc, sysAPIClient, systemSvc, mockedTx, transactioner)
+			if testCase.expectedErr != nil {
+				require.ErrorIs(t, err, testCase.expectedErr)
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }
 
-func fixAppsInputsBySystems(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
+func fixAppsInputsWithTemplatesBySystems(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
 	initStatusCond := model.ApplicationStatusConditionInitial
 	result := make([]model.ApplicationRegisterInputWithTemplate, 0, len(systems))
 	for i := range systems {
-		result = append(result, model.ApplicationRegisterInputWithTemplate{
+		input := model.ApplicationRegisterInputWithTemplate{
 			ApplicationRegisterInput: model.ApplicationRegisterInput{
 				Name:            systems[i].DisplayName,
 				Description:     &systems[i].ProductDescription,
@@ -383,7 +595,11 @@ func fixAppsInputsBySystems(systems []systemfetcher.System) []model.ApplicationR
 				},
 			},
 			TemplateID: systems[i].TemplateID,
-		})
+		}
+		if len(input.TemplateID) > 0 {
+			input.Labels["applicationType"] = appType
+		}
+		result = append(result, input)
 	}
 	return result
 }

@@ -38,8 +38,15 @@ type config struct {
 	ORDServiceURL                      string
 	AggregatorSchedule                 string
 	ExternalServicesMockBaseURL        string
+	ExternalServicesMockUnsecuredURL   string
 	ExternalServicesMockAbsoluteURL    string
 	ExternalServicesMockCertSecuredURL string
+	ExternalServicesMockOauthURL       string
+	ClientID                           string
+	ClientSecret                       string
+	ExternalServicesMockBasicURL       string
+	BasicUsername                      string
+	BasicPassword                      string
 	ORDServiceDefaultResponseType      string
 }
 

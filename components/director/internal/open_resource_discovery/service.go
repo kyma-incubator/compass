@@ -94,25 +94,27 @@ func (s *Service) listAppPage(ctx context.Context, pageSize int, cursor string) 
 		return nil, err
 	}
 
-	applicationIDs := make([]string, 0, page.TotalCount)
-	for _, app := range page.Data {
-		applicationIDs = append(applicationIDs, app.ID)
-	}
+	if len(page.Data) > 0 {
+		applicationIDs := make([]string, 0, page.TotalCount)
+		for _, app := range page.Data {
+			applicationIDs = append(applicationIDs, app.ID)
+		}
 
-	labels, err := s.labelRepo.ListGlobalByKeyAndObjects(ctx, model.ApplicationLabelableObject, applicationIDs, applicationTypeLabel)
-	if err != nil {
-		return nil, err
-	}
+		labels, err := s.labelRepo.ListGlobalByKeyAndObjects(ctx, model.ApplicationLabelableObject, applicationIDs, applicationTypeLabel)
+		if err != nil {
+			return nil, err
+		}
 
-	appLabelsMap := make(map[string]interface{}, page.TotalCount)
-	for i := range labels {
-		appLabelsMap[labels[i].ObjectID] = labels[i].Value
-	}
+		appLabelsMap := make(map[string]interface{}, page.TotalCount)
+		for i := range labels {
+			appLabelsMap[labels[i].ObjectID] = labels[i].Value
+		}
 
-	for i := range page.Data {
-		appType, ok := appLabelsMap[page.Data[i].ID].(string)
-		if ok {
-			page.Data[i].Type = appType
+		for i := range page.Data {
+			appType, ok := appLabelsMap[page.Data[i].ID].(string)
+			if ok {
+				page.Data[i].Type = appType
+			}
 		}
 	}
 
@@ -140,13 +142,9 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
 			ctx = addFieldToLogger(ctx, "app_id", app.ID)
-			documents, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, wh)
+			documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, wh)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", wh.ID, err)
-			}
-			baseURL, err = stripRelativePathFromURL(*wh.URL)
-			if err != nil {
-				log.C(ctx).WithError(err).Error(err)
 			}
 			break
 		}
