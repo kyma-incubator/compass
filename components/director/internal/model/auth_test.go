@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var accessStrategy = "accessStrategy"
+
 func TestAuthInput_ToAuth(t *testing.T) {
 	// given
 	testCases := []struct {
@@ -23,6 +25,7 @@ func TestAuthInput_ToAuth(t *testing.T) {
 						Username: "test",
 					},
 				},
+				AccessStrategy: &accessStrategy,
 				AdditionalQueryParams: map[string][]string{
 					"key": {"value1", "value2"},
 				},
@@ -41,6 +44,7 @@ func TestAuthInput_ToAuth(t *testing.T) {
 						Username: "test",
 					},
 				},
+				AccessStrategy: &accessStrategy,
 				AdditionalQueryParams: map[string][]string{
 					"key": {"value1", "value2"},
 				},
