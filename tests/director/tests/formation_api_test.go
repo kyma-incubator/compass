@@ -6,13 +6,14 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestFormationFlow(t *testing.T) {
+func TestApplicationFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	labelKey := "scenarios"
@@ -104,4 +105,58 @@ func TestFormationFlow(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, deleteUnusedRequest, &deleteUnusedFormation)
 	assert.NoError(t, err)
 	assert.Equal(t, unusedFormationName, deleteUnusedFormation.Name)
+}
+
+func TestTenantFormationFlow(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	defaultValue := conf.DefaultScenario
+	firstFormation := "FIRST"
+	secondFormation := "SECOND"
+	expectedFormations := []string{firstFormation, secondFormation}
+	if conf.DefaultScenarioEnabled {
+		expectedFormations = append(expectedFormations, defaultValue)
+	}
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	t.Logf("Should create formation: %s", firstFormation)
+	var formation graphql.Formation
+	createReq := fixtures.FixCreateFormationRequest(firstFormation)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &formation)
+	require.NoError(t, err)
+	require.Equal(t, firstFormation, formation.Name)
+
+	t.Logf("Should create formation: %s", secondFormation)
+	var unusedFormation graphql.Formation
+	createUnusedReq := fixtures.FixCreateFormationRequest(secondFormation)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createUnusedReq, &unusedFormation)
+	require.NoError(t, err)
+	require.Equal(t, secondFormation, unusedFormation.Name)
+
+	t.Log("Should match expected formations")
+	ld, err := fixtures.ListLabelDefinitionByKeyWithinTenant(ctx, dexGraphQLClient, ScenariosLabel, tenantId)
+	require.NoError(t, err)
+	require.NotNil(t, ld)
+	schemaVal, ok := (json.UnmarshalJSONSchema(t, ld.Schema)).(map[string]interface{})
+	require.True(t, ok)
+	items, ok := schemaVal["items"].(map[string]interface{})
+	require.True(t, ok)
+	formations, ok := items["enum"].([]string)
+	require.True(t, ok)
+	require.ElementsMatch(t, expectedFormations, formations)
+
+	t.Logf("Should be able to delete formation %s", firstFormation)
+	deleteRequest := fixtures.FixDeleteFormationRequest(firstFormation)
+	var deleteFormation graphql.Formation
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, deleteRequest, &deleteFormation)
+	assert.NoError(t, err)
+	assert.Equal(t, firstFormation, deleteFormation.Name)
+
+	t.Logf("Should be able to delete formation %s", secondFormation)
+	deleteUnusedRequest := fixtures.FixDeleteFormationRequest(secondFormation)
+	var deleteUnusedFormation graphql.Formation
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, deleteUnusedRequest, &deleteUnusedFormation)
+	assert.NoError(t, err)
+	assert.Equal(t, secondFormation, deleteUnusedFormation.Name)
 }
