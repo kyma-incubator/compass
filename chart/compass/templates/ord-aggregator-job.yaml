@@ -108,9 +108,9 @@ spec:
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_ISSUER_LOCALITY
                   value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.issuerLocality }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_RETRY_ATTEMPTS
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.retryAttempts }}
+                  value: "{{ .Values.global.ordAggregator.accessStrategies.cmpMtls.retryAttempts }}"
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_RETRY_DELAY
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.retryDelay }}
+                  value: "{{ .Values.global.ordAggregator.accessStrategies.cmpMtls.retryDelay }}"
               {{ end }}
               command:
                 - "/bin/sh"
