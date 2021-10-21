@@ -142,8 +142,14 @@ func TestTenantFormationFlow(t *testing.T) {
 	require.True(t, ok)
 	items, ok := schemaVal["items"].(map[string]interface{})
 	require.True(t, ok)
-	formations, ok := items["enum"].([]string)
+	enum, ok := items["enum"].([]interface{})
 	require.True(t, ok)
+	formations := make([]string, 0, len(enum))
+	for _, e := range enum {
+		f, ok := e.(string)
+		require.True(t, ok)
+		formations = append(formations, f)
+	}
 	require.ElementsMatch(t, expectedFormations, formations)
 
 	t.Logf("Should be able to delete formation %s", firstFormation)
