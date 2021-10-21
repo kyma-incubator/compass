@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy/automock"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -18,6 +19,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
+
+const testAccessStrategy = "accessStrategy"
 
 type RoundTripFunc func(req *http.Request) *http.Response
 
@@ -68,25 +71,26 @@ var successfulRoundTripFunc = func(t *testing.T) func(req *http.Request) *http.R
 }
 
 func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
+	testErr := errors.New("test")
+
 	testCases := []struct {
-		Name               string
-		SecuredSystemTypes []string
-		Credentials        *model.Auth
-		RoundTripFunc      func(req *http.Request) *http.Response
-		ExpectedResult     ord.Documents
-		ExpectedErr        error
+		Name                 string
+		Credentials          *model.Auth
+		AccessStrategy       string
+		RoundTripFunc        func(req *http.Request) *http.Response
+		ExecutorProviderFunc func() accessstrategy.ExecutorProvider
+		ExpectedResult       ord.Documents
+		ExpectedErr          error
 	}{
 		{
-			Name:               "Success",
-			SecuredSystemTypes: []string{},
-			RoundTripFunc:      successfulRoundTripFunc(t),
+			Name:          "Success",
+			RoundTripFunc: successfulRoundTripFunc(t),
 			ExpectedResult: ord.Documents{
 				fixORDDocument(),
 			},
 		},
 		{
-			Name:               "Success with secured system type configured and basic credentials",
-			SecuredSystemTypes: []string{testApplicationType},
+			Name: "Success with secured system type configured and basic credentials",
 			Credentials: &model.Auth{
 				Credential: model.CredentialData{
 					Basic: &model.BasicCredentialData{
@@ -101,8 +105,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Success with secured system type configured and oauth credentials",
-			SecuredSystemTypes: []string{testApplicationType},
+			Name: "Success with secured system type configured and oauth credentials",
 			Credentials: &model.Auth{
 				Credential: model.CredentialData{
 					Oauth: &model.OAuthCredentialData{
@@ -118,13 +121,73 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Error fetching well-known config due to missing credentials",
-			SecuredSystemTypes: []string{testApplicationType},
-			ExpectedErr:        errors.New("error while fetching open resource discovery well-known configuration with webhook credentials: Invalid data [reason=Credentials not provided]"),
+			Name: "Well-known config success fetch with access strategy",
+			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
+				data, err := json.Marshal(fixWellKnownConfig())
+				require.NoError(t, err)
+
+				executor := &automock.Executor{}
+				executor.On("Execute", mock.Anything, mock.Anything, baseURL+ord.WellKnownEndpoint).Return(&http.Response{
+					StatusCode: http.StatusOK,
+					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+				}, nil).Once()
+
+				executorProvider := &automock.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
+				executorProvider.On("Provide", accessstrategy.OpenAccessStrategy).Return(accessstrategy.NewOpenAccessStrategyExecutor(), nil).Once()
+				return executorProvider
+			},
+			AccessStrategy: testAccessStrategy,
+			RoundTripFunc:  successfulRoundTripFunc(t),
+			ExpectedResult: ord.Documents{
+				fixORDDocument(),
+			},
 		},
 		{
-			Name:               "Error fetching well-known config due to invalid credentials",
-			SecuredSystemTypes: []string{testApplicationType},
+			Name: "Well-known config fetch with access strategy fails when access strategy provider returns error",
+			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
+				executorProvider := &automock.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(nil, testErr).Once()
+				return executorProvider
+			},
+			AccessStrategy: testAccessStrategy,
+			RoundTripFunc:  successfulRoundTripFunc(t),
+			ExpectedErr:    errors.Errorf("cannot find executor for access strategy %q as part of webhook processing: test", testAccessStrategy),
+		},
+		{
+			Name: "Well-known config fetch with access strategy fails when access strategy executor returns error",
+			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
+				executor := &automock.Executor{}
+				executor.On("Execute", mock.Anything, mock.Anything, baseURL+ord.WellKnownEndpoint).Return(nil, testErr).Once()
+
+				executorProvider := &automock.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
+				return executorProvider
+			},
+			AccessStrategy: testAccessStrategy,
+			RoundTripFunc:  successfulRoundTripFunc(t),
+			ExpectedErr:    errors.Errorf("error while fetching open resource discovery well-known configuration with access strategy %q: test", testAccessStrategy),
+		},
+		{
+			Name:        "Error fetching well-known config due to missing basic credentials",
+			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration with webhook credentials: Invalid data [reason=Credentials not provided]"),
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: nil,
+				},
+			},
+		},
+		{
+			Name:        "Error fetching well-known config due to missing oauth credentials",
+			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration with webhook credentials: Invalid data [reason=Credentials not provided]"),
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
+					Oauth: nil,
+				},
+			},
+		},
+		{
+			Name: "Error fetching well-known config due to invalid credentials",
 			Credentials: &model.Auth{
 				Credential: model.CredentialData{
 					Basic: &model.BasicCredentialData{
@@ -142,8 +205,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration: status code 401"),
 		},
 		{
-			Name:               "Error fetching well-known config",
-			SecuredSystemTypes: []string{},
+			Name: "Error fetching well-known config",
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				statusCode := http.StatusNotFound
@@ -158,8 +220,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration: status code 500"),
 		},
 		{
-			Name:               "Error when well-known config is not proper json",
-			SecuredSystemTypes: []string{},
+			Name: "Error when well-known config is not proper json",
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				statusCode := http.StatusNotFound
@@ -175,8 +236,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedErr: errors.New("error unmarshaling json body"),
 		},
 		{
-			Name:               "Document with unsupported access strategy is skipped",
-			SecuredSystemTypes: []string{},
+			Name: "Document with unsupported access strategy is skipped",
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				var err error
@@ -200,8 +260,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedResult: ord.Documents{},
 		},
 		{
-			Name:               "Error fetching document",
-			SecuredSystemTypes: []string{},
+			Name: "Error fetching document",
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				var err error
@@ -223,8 +282,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedErr:    errors.Errorf("error while fetching open resource discovery document %q: status code %d", baseURL+ordDocURI, 500),
 		},
 		{
-			Name:               "Error when document is not proper json",
-			SecuredSystemTypes: []string{},
+			Name: "Error when document is not proper json",
 			RoundTripFunc: func(req *http.Request) *http.Response {
 				var data []byte
 				var err error
@@ -251,20 +309,26 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
-			client := ord.NewClient(testHTTPClient, test.SecuredSystemTypes, accessstrategy.NewDefaultExecutorProvider())
+			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider()
+			if test.ExecutorProviderFunc != nil {
+				executorProviderMock = test.ExecutorProviderFunc()
+			}
+
+			client := ord.NewClient(testHTTPClient, executorProviderMock)
 
 			testApp := fixApplicationPage().Data[0]
 			testWebhook := fixWebhooks()[0]
 
-			if len(test.SecuredSystemTypes) != 0 {
-				testApp.Labels = []byte(fmt.Sprintf(`{"%s": "%s"}`, applicationTypeLabel, test.SecuredSystemTypes[0]))
+			testWebhook.Auth = test.Credentials
+
+			if len(test.AccessStrategy) > 0 {
+				if testWebhook.Auth == nil {
+					testWebhook.Auth = &model.Auth{}
+				}
+				testWebhook.Auth.AccessStrategy = &test.AccessStrategy
 			}
 
-			if test.Credentials != nil {
-				testWebhook.Auth = test.Credentials
-			}
-
-			docs, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testApp, testWebhook)
+			docs, actualBaseURL, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testApp, testWebhook)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -272,7 +336,12 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.Len(t, docs, len(test.ExpectedResult))
+				require.Equal(t, baseURL, actualBaseURL)
 				require.Equal(t, test.ExpectedResult, docs)
+			}
+
+			if test.ExecutorProviderFunc != nil {
+				mock.AssertExpectationsForObjects(t, executorProviderMock)
 			}
 		})
 	}

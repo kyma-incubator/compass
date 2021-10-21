@@ -4,8 +4,8 @@ package ord_aggregator
 // If any breaking/validation change is applied to the fixture's WellKnownConfig structure, it must be applied here as well. Otherwise, the aggregator e2e test will fail.
 const ordConfig = `{
     "$schema": "../spec/v1/generated/Configuration.schema.json",
-    "openResourceDiscoveryV1": {
-		%s
+    %s
+	"openResourceDiscoveryV1": {
         "documents": [
             {
                 "url": "/open-resource-discovery/v1/documents/example1",
@@ -286,10 +286,10 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"application/json",
-               "url":"/external-api/unsecured/spec/flapping",
+               "url":"/external-api/spec/flapping",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -302,7 +302,7 @@ const ordDocument = `{
                "url":"https://test.com/odata/1.0/catalog",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -315,7 +315,7 @@ const ordDocument = `{
                "url":"https://TEST:443//odata/$metadata",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -422,7 +422,7 @@ const ordDocument = `{
                "url":"https://TEST:443//odata/$metadata",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -435,7 +435,7 @@ const ordDocument = `{
                "url":"/odata/1.0/catalog.svc/$value?type=json",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -523,7 +523,7 @@ const ordDocument = `{
                "url":"http://localhost:8080/asyncApi2.json",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }
@@ -611,7 +611,7 @@ const ordDocument = `{
                "url":"/api/eventCatalog.json",
                "accessStrategies":[
                   {
-                     "type":"open",
+                     "type":"%[2]s",
                      "customType":"",
                      "customDescription":""
                   }

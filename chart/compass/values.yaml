@@ -66,13 +66,13 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2060"
+      version: "PR-2082"
     connectivity_adapter:
       dir:
-      version: "PR-2027"
+      version: "PR-2082"
     pairing_adapter:
       dir:
-      version: "PR-2027"
+      version: "PR-2082"
     director:
       dir:
       version: "PR-2077"
@@ -81,16 +81,16 @@ global:
       version: "PR-2077"
     operations_controller:
       dir:
-      version: "PR-2027"
+      version: "PR-2082"
     ord_service:
       dir:
-      version: "PR-42"
+      version: "PR-45"
     schema_migrator:
       dir:
-      version: "PR-2050"
+      version: "PR-2072"
     system_broker:
       dir:
-      version: "PR-2027"
+      version: "PR-2082"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -98,13 +98,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2057"
+      version: "PR-2080"
     console:
       dir:
       version: "PR-45"
     e2e_tests:
       dir:
-      version: "PR-2060"
+      version: "PR-2080"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -317,7 +317,7 @@ global:
               give_up_after: 6s
               max_delay: 2000ms
       authenticationMappingServices:
-        tenantFetcher:
+        tenant-fetcher:
           cfg:
             config:
               api:
@@ -326,7 +326,6 @@ global:
                   give_up_after: 6s
                   max_delay: 2000ms
           authenticator:
-            name: "tenant-fetcher" # we need this property because the ory-rule name should be FQDN compliant, and we cannot rename the parent property tenantFetcher to tenant-fetcher because Helm does not support it https://helm.sh/docs/chart_best_practices/values/
             enabled: false
             createRule: true
             gatewayHost: "compass-gateway"
@@ -343,7 +342,6 @@ global:
                   give_up_after: 6s
                   max_delay: 2000ms
           authenticator:
-            name: "subscriber"
             enabled: false
             createRule: false
             gatewayHost: "compass-gateway-sap-mtls"
@@ -419,7 +417,6 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    securedApplicationTypes: "sample-app-type" # comma-separated values are used for specifying multiple application types
     accessStrategies:
       cmpMtls:
         certSvcApiPath: "/cert"
@@ -440,7 +437,7 @@ global:
     manageSecrets: true
     # enableSystemDeletion - whether systems in deleted state should be deleted from director database
     enableSystemDeletion: true
-    # fetchParallellism - shows how many http calls will be made in parallel to fetch systems
+    # fetchParallelism - shows how many http calls will be made in parallel to fetch systems
     fetchParallellism: 30
     # queueSize - shows how many system fetches (individual requests may fetch more than 1 system)
     # can be put in the queue for processing before blocking. It is best for the queue to be about 2 times bigger than the parallellism
@@ -460,6 +457,8 @@ global:
     systemsAPIFilterTenantCriteriaPattern: ""
     # systemToTemplateMappings - how to map system properties to an existing application template
     systemToTemplateMappings: '{}'
+    templatePlaceholderToSystemKeyMappings: '[{"placeholder_name": "name","system_key": "displayName"},{"placeholder_name": "display-name","system_key": "displayName"},{"placeholder_name": "systemNumber","system_key": "systemNumber"},{"placeholder_name": "description","system_key": "productDescription", "optional": true},{"placeholder_name": "baseUrl","system_key": "baseUrl", "optional":true},{"placeholder_name": "providerName","system_key": "infrastructureProvider", "optional": true}]'
+    templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true"},"baseUrl": "{{baseUrl}}"}'
     http:
       client:
         skipSSLValidation: false
@@ -537,6 +536,9 @@ global:
     enabled: false
     auditlog: false
     certSecuredPort: 8081
+    unsecuredPort: 8082
+    basicSecuredPort: 8083
+    oauthSecuredPort: 8084
     certSecuredHost: compass-external-services-mock-sap-mtls
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials
