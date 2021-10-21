@@ -219,12 +219,15 @@ func (c *client) IssueClientCert(ctx context.Context) (*tls.Certificate, error) 
 		}
 
 		// By doc, the first element is always the "leaf"/client cert
-		parsedClientCert, err := x509.ParseCertificate(cert.Certificate[0])
-		if err != nil {
-			return err
+		var parsedClientCert *x509.Certificate
+		if len(cert.Certificate) > 0 {
+			parsedClientCert, err = x509.ParseCertificate(cert.Certificate[0])
+			if err != nil {
+				return err
+			}
 		}
 
-		if len(parsedClientCert.Issuer.Locality) > 0 {
+		if parsedClientCert != nil && len(parsedClientCert.Issuer.Locality) > 0 {
 			issuerLocality := parsedClientCert.Issuer.Locality[0]
 			if issuerLocality != c.config.IssuerLocality {
 				log.C(ctx).Errorf("Issuer locality of the client cert: %s is not the desired one: %s. Will try issuing a certificate again...", issuerLocality, c.config.IssuerLocality)
