@@ -422,6 +422,9 @@ global:
         csrEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
         certSvcApiPath: "/cert"
         tokenPath: "/secured/oauth/token"
+        issuerLocality: "local"
+        retryAttempts: 8
+        retryDelay: 250ms
         oauthSecret:
           name: cert-svc-oauth-secret
           managed: true
