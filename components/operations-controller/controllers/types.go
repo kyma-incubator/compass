@@ -19,12 +19,13 @@ package controllers
 import (
 	"context"
 
-	"github.com/pkg/errors"
+	"errors"
 
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+	directorclient "github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	typesbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -62,12 +63,6 @@ type WebhookClient interface {
 }
 
 func isNotFoundError(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	nfe, ok := errors.Cause(err).(interface {
-		NotFound() bool
-	})
-	return ok && nfe.NotFound()
+	expected := &directorclient.NotFoundError{}
+	return errors.As(err, &expected)
 }
