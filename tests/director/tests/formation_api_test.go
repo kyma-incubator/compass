@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/assert"
@@ -109,10 +110,21 @@ func TestApplicationFormationFlow(t *testing.T) {
 
 func TestTenantFormationFlow(t *testing.T) {
 	// GIVEN
+	const (
+		firstFormation  = "FIRST"
+		secondFormation = "SECOND"
+		targetTenantID  = "3cdf1346-9d23-4c22-93dc-144d71e0f335"
+	)
 	ctx := context.Background()
 	defaultValue := conf.DefaultScenario
-	firstFormation := "FIRST"
-	secondFormation := "SECOND"
+	assignment := graphql.AutomaticScenarioAssignmentSetInput{
+		ScenarioName: firstFormation,
+		Selector: &graphql.LabelSelectorInput{
+			Key:   "global_subaccount_id",
+			Value: targetTenantID,
+		},
+	}
+
 	expectedFormations := []string{firstFormation, secondFormation}
 	if conf.DefaultScenarioEnabled {
 		expectedFormations = append(expectedFormations, defaultValue)
@@ -134,23 +146,28 @@ func TestTenantFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, secondFormation, unusedFormation.Name)
 
-	t.Log("Should match expected formations")
-	ld, err := fixtures.ListLabelDefinitionByKeyWithinTenant(ctx, dexGraphQLClient, ScenariosLabel, tenantId)
+	t.Logf("Assign tenant %s to formation %s", targetTenantID, firstFormation)
+	assignReq := fixtures.FixAssignFormationRequest(targetTenantID, "TENANT", firstFormation)
+	var assignFormation graphql.Formation
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, assignReq, &assignFormation)
 	require.NoError(t, err)
-	require.NotNil(t, ld)
-	schemaVal, ok := (json.UnmarshalJSONSchema(t, ld.Schema)).(map[string]interface{})
-	require.True(t, ok)
-	items, ok := schemaVal["items"].(map[string]interface{})
-	require.True(t, ok)
-	enum, ok := items["enum"].([]interface{})
-	require.True(t, ok)
-	formations := make([]string, 0, len(enum))
-	for _, e := range enum {
-		f, ok := e.(string)
-		require.True(t, ok)
-		formations = append(formations, f)
-	}
-	require.ElementsMatch(t, expectedFormations, formations)
+	require.Equal(t, firstFormation, assignFormation.Name)
+
+	t.Log("Should match expected ASA")
+	asaPage := fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, dexGraphQLClient, tenantId)
+	require.Equal(t, 1, len(asaPage.Data))
+	assertions.AssertAutomaticScenarioAssignment(t, assignment, *asaPage.Data[0])
+
+	t.Logf("Unassign tenant %s from formation %s", targetTenantID, firstFormation)
+	unassignReq := fixtures.FixUnassignFormationRequest(targetTenantID, "TENANT", firstFormation)
+	var unassignFormation graphql.Formation
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, unassignReq, &unassignFormation)
+	require.NoError(t, err)
+	require.Equal(t, firstFormation, unassignFormation.Name)
+
+	t.Log("Should match expected ASA")
+	asaPage = fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, dexGraphQLClient, tenantId)
+	require.Equal(t, 0, len(asaPage.Data))
 
 	t.Logf("Should be able to delete formation %s", firstFormation)
 	deleteRequest := fixtures.FixDeleteFormationRequest(firstFormation)
