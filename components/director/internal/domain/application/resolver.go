@@ -376,7 +376,7 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 	return deletedApp, nil
 }
 
-// UnpairApplication missing godoc
+// UnpairApplication Sets the UpdatedAt property for the given application, deletes associated []model.SystemAuth, deletes the hydra oauth clients.
 func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.Application, error) {
 	log.C(ctx).Infof("Unpairing Application with id %s", id)
 

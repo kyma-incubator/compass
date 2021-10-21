@@ -3,9 +3,10 @@ package application
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -49,7 +50,6 @@ type ApplicationRepository interface {
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
-	Unpair(ctx context.Context, app *model.Application) error
 }
 
 // LabelRepository missing godoc
@@ -366,8 +366,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	_, err = s.IsApplicationInScenarios(ctx, appTenant, id)
-	if err != nil {
+	if err := s.ensureApplicationNotPartOfScenarioWithRuntime(ctx, appTenant, id); err != nil {
 		return err
 	}
 
@@ -379,15 +378,15 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// Unpair missing godoc
+// Unpair Checks if the given application is in a scenario with a runtime. Fails if it is.
+// When the operation mode is sync, it sets the status condition to model.ApplicationStatusConditionInitial and does a db update, otherwise it only makes an "empty" db update.
 func (s *service) Unpair(ctx context.Context, id string) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	_, err = s.IsApplicationInScenarios(ctx, appTenant, id)
-	if err != nil {
+	if err := s.ensureApplicationNotPartOfScenarioWithRuntime(ctx, appTenant, id); err != nil {
 		return err
 	}
 
@@ -396,8 +395,14 @@ func (s *service) Unpair(ctx context.Context, id string) error {
 		return err
 	}
 
-	err = s.appRepo.Unpair(ctx, app)
-	if err != nil {
+	if opMode := operation.ModeFromCtx(ctx); opMode == graphql.OperationModeSync {
+		app.Status = &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionInitial,
+			Timestamp: s.timestampGen(),
+		}
+	}
+
+	if err = s.appRepo.Update(ctx, app); err != nil {
 		return err
 	}
 
@@ -497,33 +502,33 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	return nil
 }
 
-// IsApplicationInScenarios Checks if an application has scenarios associated with it. If the scenarios are part of a runtime, then the application is considered being used by that runtime.
-func (s *service) IsApplicationInScenarios(ctx context.Context, tenant, appID string) (bool, error) {
+// ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. If the scenarios are part of a runtime, then the application is considered being used by that runtime.
+func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Context, tenant, appID string) error {
 	scenarios, err := s.getScenarioNamesForApplication(ctx, appID)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	validScenarios := removeDefaultScenario(scenarios)
 	if len(validScenarios) > 0 {
 		runtimes, err := s.getRuntimeNamesForScenarios(ctx, tenant, validScenarios)
 		if err != nil {
-			return false, err
+			return err
 		}
 
 		if len(runtimes) > 0 {
 			application, err := s.appRepo.GetByID(ctx, tenant, appID)
 			if err != nil {
-				return true, errors.Wrapf(err, "while getting application with id %s", appID)
+				return errors.Wrapf(err, "while getting application with id %s", appID)
 			}
 			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
-			return true, apperrors.NewInvalidOperationError(msg)
+			return apperrors.NewInvalidOperationError(msg)
 		}
 
-		return false, nil
+		return nil
 	}
 
-	return false, nil
+	return nil
 }
 
 func (s *service) createRelatedResources(ctx context.Context, in model.ApplicationRegisterInput, tenant string, applicationID string) error {

@@ -56,9 +56,9 @@ type OperationType string
 const (
 	// OperationTypeCreate missing godoc
 	OperationTypeCreate OperationType = "Create"
-	// OperationTypeUpdate missing godoc
+	// OperationTypeUpdate Operation type used for Update and Unpair flows
 	OperationTypeUpdate OperationType = "Update"
-	// OperationTypeDelete Operation type for indicating the Update or Unpair flow
+	// OperationTypeDelete missing godoc
 	OperationTypeDelete OperationType = "Delete"
 )
 

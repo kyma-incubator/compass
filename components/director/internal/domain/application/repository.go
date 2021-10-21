@@ -113,16 +113,6 @@ func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 	return r.globalDeleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// Unpair Does an "empty" Update so we can update application's UpdatedAt property when the operation type is graphql.OperationModeAsync.
-// Unpairs can be multiple on a single application and we we want to track when are unpairings happening. That's why we are doing this update.
-func (r *pgRepository) Unpair(ctx context.Context, app *model.Application) error {
-	opMode := operation.ModeFromCtx(ctx)
-	if opMode == graphql.OperationModeAsync {
-		return r.Update(ctx, app)
-	}
-	return nil
-}
-
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Application, error) {
 	var appEnt Entity

@@ -202,14 +202,14 @@ func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationTy
 		return apperrors.NewInternalError("failed to fetch resource with id %s", resourceID)
 	}
 
-	if app.GetDeletedAt().IsZero() && app.GetUpdatedAt().IsZero() && !app.GetReady() && isErrored(app) { // CREATING
+	if app.GetDeletedAt().IsZero() && app.GetUpdatedAt().IsZero() && !app.GetReady() && hasNoErrors(app) { // CREATING
 		return apperrors.NewConcurrentOperationInProgressError("create operation is in progress")
 	}
-	if !app.GetDeletedAt().IsZero() && isErrored(app) { // DELETING
+	if !app.GetDeletedAt().IsZero() && hasNoErrors(app) { // DELETING
 		return apperrors.NewConcurrentOperationInProgressError("delete operation is in progress")
 	}
 
-	if app.GetDeletedAt().IsZero() && app.GetUpdatedAt().After(app.GetCreatedAt()) && !app.GetReady() && isErrored(app) { // UPDATING or UNPAIRING
+	if app.GetDeletedAt().IsZero() && app.GetUpdatedAt().After(app.GetCreatedAt()) && !app.GetReady() && hasNoErrors(app) { // UPDATING or UNPAIRING
 		return apperrors.NewConcurrentOperationInProgressError("another operation is in progress")
 	}
 
@@ -309,7 +309,7 @@ func executeSyncOperation(ctx context.Context, next gqlgen.Resolver, tx persiste
 	return resp, nil
 }
 
-func isErrored(app model.Entity) bool {
+func hasNoErrors(app model.Entity) bool {
 	return (app.GetError() == nil || *app.GetError() == "")
 }
 

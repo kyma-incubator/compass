@@ -3,6 +3,8 @@ package application_test
 import (
 	"context"
 	"errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"testing"
 	"time"
 
@@ -2531,11 +2533,28 @@ func TestService_Unpair(t *testing.T) {
 		Value: []interface{}{},
 	}
 
+	timestamp := time.Now()
+
 	applicationModel := &model.Application{
 		Name:        "foo",
 		Description: &desc,
 		Tenant:      tnt,
-		BaseEntity:  &model.BaseEntity{ID: id},
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionConnected,
+			Timestamp: timestamp,
+		},
+		BaseEntity: &model.BaseEntity{ID: id},
+	}
+
+	applicationModelWithInitialStatus := &model.Application{
+		Name:        "foo",
+		Description: &desc,
+		Tenant:      tnt,
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionInitial,
+			Timestamp: timestamp,
+		},
+		BaseEntity: &model.BaseEntity{ID: id},
 	}
 
 	runtimeModel := &model.Runtime{
@@ -2543,7 +2562,7 @@ func TestService_Unpair(t *testing.T) {
 		Tenant: tnt,
 	}
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
@@ -2552,6 +2571,7 @@ func TestService_Unpair(t *testing.T) {
 		LabelRepoFn        func() *automock.LabelRepository
 		RuntimeRepoFn      func() *automock.RuntimeRepository
 		Input              model.ApplicationRegisterInput
+		ContextFn          func() context.Context
 		InputID            string
 		ExpectedErrMessage string
 	}{
@@ -2559,9 +2579,9 @@ func TestService_Unpair(t *testing.T) {
 			Name: "Success",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Unpair", ctx, applicationModel).Return(nil).Once()
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
-				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				repo.On("Update", ctx, applicationModelWithInitialStatus).Return(nil).Once()
+				repo.On("Exists", ctx, applicationModelWithInitialStatus.Tenant, applicationModelWithInitialStatus.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, applicationModelWithInitialStatus.Tenant, applicationModelWithInitialStatus.ID).Return(applicationModelWithInitialStatus, nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -2571,8 +2591,13 @@ func TestService_Unpair(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				repo.AssertNotCalled(t, "ListAll")
 				return repo
+			},
+			ContextFn: func() context.Context {
+				ctx := context.Background()
+
+				return ctx
 			},
 			InputID:            id,
 			ExpectedErrMessage: "",
@@ -2581,7 +2606,34 @@ func TestService_Unpair(t *testing.T) {
 			Name: "Success when application is part of a scenario but not in runtime",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Unpair", ctx, applicationModel).Return(nil).Once()
+				repo.On("Update", ctx, applicationModel).Return(nil).Once()
+				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			ContextFn: func() context.Context {
+				ctx := context.Background()
+
+				return ctx
+			},
+			InputID:            id,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Success when operation type is SYNC and sets the application status to INITIAL",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Update", mock.Anything, applicationModelWithInitialStatus).Return(nil).Once()
 				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
@@ -2598,6 +2650,39 @@ func TestService_Unpair(t *testing.T) {
 			},
 			InputID:            id,
 			ExpectedErrMessage: "",
+			ContextFn: func() context.Context {
+				backgroundCtx := context.Background()
+				//backgroundCtx = operation.SaveModeToContext(ctx, graphql.OperationModeSync)
+
+				return backgroundCtx
+			},
+		},
+		{
+			Name: "Success when operation type is ASYNC and does not change the application status",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Update", mock.Anything, applicationModel).Return(nil).Once()
+				repo.On("Exists", mock.Anything, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", mock.Anything, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", mock.Anything, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", mock.Anything, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			InputID:            id,
+			ExpectedErrMessage: "",
+			ContextFn: func() context.Context {
+				backgroundCtx := context.Background()
+				backgroundCtx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
+				return backgroundCtx
+			},
 		},
 		{
 			Name: "Returns error when application fetch failed",
@@ -2605,7 +2690,7 @@ func TestService_Unpair(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil, testErr).Once()
 				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
-				repo.AssertNotCalled(t, "Unpair")
+				repo.AssertNotCalled(t, "Update")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -2615,8 +2700,13 @@ func TestService_Unpair(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				repo.AssertNotCalled(t, "ListAll")
 				return repo
+			},
+			ContextFn: func() context.Context {
+				ctx := context.Background()
+
+				return ctx
 			},
 			InputID:            id,
 			ExpectedErrMessage: testErr.Error(),
@@ -2628,7 +2718,7 @@ func TestService_Unpair(t *testing.T) {
 				repo.AssertNotCalled(t, "Delete")
 				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
-				repo.AssertNotCalled(t, "Unpair")
+				repo.AssertNotCalled(t, "Update")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -2641,15 +2731,20 @@ func TestService_Unpair(t *testing.T) {
 				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{runtimeModel}, nil)
 				return repo
 			},
+			ContextFn: func() context.Context {
+				ctx := context.Background()
+
+				return ctx
+			},
 			InputID:            id,
 			ExpectedErrMessage: formationAndRuntimeError.Error(),
 		},
 		{
-			Name: "Returns error when unpair fails",
+			Name: "Returns error when update fails",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
-				repo.On("Unpair", ctx, applicationModel).Return(testErr).Once()
+				repo.On("Update", ctx, applicationModel).Return(testErr).Once()
 				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
@@ -2661,8 +2756,13 @@ func TestService_Unpair(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				repo.AssertNotCalled(t, "ListAll")
 				return repo
+			},
+			ContextFn: func() context.Context {
+				ctx := context.Background()
+
+				return ctx
 			},
 			InputID:            id,
 			ExpectedErrMessage: testErr.Error(),
@@ -2674,8 +2774,10 @@ func TestService_Unpair(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			labelRepo := testCase.LabelRepoFn()
 			runtimeRepo := testCase.RuntimeRepoFn()
+			ctx := testCase.ContextFn()
+			ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
-
+			svc.SetTimestampGen(func() time.Time { return timestamp })
 			// when
 			err := svc.Unpair(ctx, testCase.InputID)
 
@@ -2688,6 +2790,8 @@ func TestService_Unpair(t *testing.T) {
 			}
 
 			appRepo.AssertExpectations(t)
+			labelRepo.AssertExpectations(t)
+			runtimeRepo.AssertExpectations(t)
 		})
 	}
 }

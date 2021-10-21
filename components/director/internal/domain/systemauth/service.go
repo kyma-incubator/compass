@@ -190,7 +190,7 @@ func (s *service) DeleteByIDForObject(ctx context.Context, objectType model.Syst
 	return nil
 }
 
-// DeleteMultipleByIDForObject missing godoc
+// DeleteMultipleByIDForObject Deletes multiple system auths at a time
 func (s *service) DeleteMultipleByIDForObject(ctx context.Context, systemAuths []model.SystemAuth) error {
 	for _, auth := range systemAuths {
 		referenceType, err := auth.GetReferenceObjectType()

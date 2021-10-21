@@ -113,7 +113,7 @@ func triggerAsyncUnpair(t *testing.T, ctx context.Context, app graphql.Applicati
 }
 
 func isOperationUnpairCompleted(operation *v1alpha1.Operation) bool {
-	if operation.Status.Phase == v1alpha1.StateSuccess || operation.Status.Phase == v1alpha1.StateFailed {
+	if operation.Status.Phase == v1alpha1.StateSuccess {
 		return true
 	}
 	return false
