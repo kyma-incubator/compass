@@ -44,6 +44,8 @@ type testConfig struct {
 	SubscriptionCallbackScope string
 	TenantProviderConfig
 	ExternalServicesMockURL          string
+	ClientID                         string
+	ClientSecret                     string
 	TenantFetcherFullURL             string `envconfig:"-"`
 	TenantFetcherFullRegionalURL     string `envconfig:"-"`
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`

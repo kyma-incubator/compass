@@ -23,7 +23,7 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 		{
 			Name: "Success without credentials",
 			FetchRequest: &graphql.FetchRequestInput{
-				URL: testConfig.ExternalServicesMockBaseURL + "external-api/unsecured/spec",
+				URL: testConfig.ExternalServicesMockBaseURL + "external-api/spec",
 			},
 		},
 		{
@@ -49,7 +49,7 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 						Oauth: &graphql.OAuthCredentialDataInput{
 							ClientID:     testConfig.AppClientID,
 							ClientSecret: testConfig.AppClientSecret,
-							URL:          testConfig.ExternalServicesMockBaseURL + "oauth/token",
+							URL:          testConfig.ExternalServicesMockBaseURL + "secured/oauth/token",
 						},
 					},
 				},

@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
@@ -158,7 +159,7 @@ func NewRootResolver(
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider())
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)

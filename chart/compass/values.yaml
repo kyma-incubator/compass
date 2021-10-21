@@ -98,7 +98,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2082"
+      version: "PR-2080"
     console:
       dir:
       version: "PR-45"
@@ -521,6 +521,9 @@ global:
     enabled: false
     auditlog: false
     certSecuredPort: 8081
+    unsecuredPort: 8082
+    basicSecuredPort: 8083
+    oauthSecuredPort: 8084
     certSecuredHost: compass-external-services-mock-sap-mtls
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials

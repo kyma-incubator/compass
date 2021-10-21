@@ -129,12 +129,14 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	tombstoneRepo := tombstone.NewRepository(tombstoneConverter)
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 
+	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider()
+
 	uidSvc := uid.NewService()
 	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessStrategyExecutorProvider)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
@@ -147,8 +149,6 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
-
-	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider()
 
 	ordClient := ord.NewClient(httpClient, accessStrategyExecutorProvider)
 

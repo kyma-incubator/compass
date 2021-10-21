@@ -66,6 +66,7 @@ func (c *converter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 
 	return &graphql.Auth{
 		Credential:                      c.credentialToGraphQL(in.Credential),
+		AccessStrategy:                  in.AccessStrategy,
 		AdditionalHeaders:               headers,
 		AdditionalHeadersSerialized:     headersSerialized,
 		AdditionalQueryParams:           params,
@@ -120,6 +121,7 @@ func (c *converter) InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, e
 
 	return &model.AuthInput{
 		Credential:            credential,
+		AccessStrategy:        in.AccessStrategy,
 		AdditionalHeaders:     additionalHeaders,
 		AdditionalQueryParams: additionalQueryParams,
 		RequestAuth:           reqAuth,

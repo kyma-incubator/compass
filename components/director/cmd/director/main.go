@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/internal/info"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
@@ -584,7 +586,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	apiRepo := api.NewRepository(apiConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider())
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
 	specRepo := spec.NewRepository(specConverter)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
