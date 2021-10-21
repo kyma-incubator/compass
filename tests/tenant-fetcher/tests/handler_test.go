@@ -17,7 +17,6 @@
 package tests
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -27,10 +26,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/ptr"
-	tenant_utils "github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -54,8 +50,8 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assertTenant(t, tenant, tenantWithCustomer.TenantID, tenantWithCustomer.Subdomain)
-		assertTenant(t, parent, tenantWithCustomer.CustomerID, "")
+		tenantfetcher.AssertTenant(t, tenant, tenantWithCustomer.TenantID, tenantWithCustomer.Subdomain)
+		tenantfetcher.AssertTenant(t, parent, tenantWithCustomer.CustomerID, "")
 	})
 
 	t.Run("Success with only tenant", func(t *testing.T) {
@@ -71,7 +67,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
+		tenantfetcher.AssertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
 	})
 
 	t.Run("Successful account tenant creation with matching account and subaccount tenant IDs", func(t *testing.T) {
@@ -89,7 +85,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
+		tenantfetcher.AssertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
 	})
 
 	t.Run("Successful account tenant creation with matching customer and account tenant IDs", func(t *testing.T) {
@@ -107,7 +103,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assertTenant(t, tnt, tenant.TenantID, tenant.Subdomain)
+		tenantfetcher.AssertTenant(t, tnt, tenant.TenantID, tenant.Subdomain)
 	})
 
 	t.Run("Should not add already existing tenants", func(t *testing.T) {
@@ -209,7 +205,7 @@ func TestOnboardingHandler(t *testing.T) {
 
 		parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
 		require.NoError(t, err)
-		assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+		tenantfetcher.AssertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
 
 		// THEN
 		addTenantExpectStatusCode(t, childTenant, http.StatusInternalServerError)
@@ -255,7 +251,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, tenant, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
+			tenantfetcher.AssertTenant(t, tenant, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
 		})
 	})
@@ -279,7 +275,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 
 			parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+			tenantfetcher.AssertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, parent.Labels[tenantfetcher.RegionKey])
 
 			// WHEN
@@ -288,12 +284,12 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, childTenant.SubaccountID)
 			require.NoError(t, err)
-			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
+			tenantfetcher.AssertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
 
 			parentTenantAfterInsert, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, parentTenantAfterInsert, parentTenant.TenantID, parentTenant.Subdomain)
+			tenantfetcher.AssertTenant(t, parentTenantAfterInsert, parentTenant.TenantID, parentTenant.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, parentTenantAfterInsert.Labels[tenantfetcher.RegionKey])
 		})
 
@@ -313,17 +309,17 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			childTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.SubaccountID)
 			require.NoError(t, err)
-			assertTenant(t, childTenant, providedTenantIDs.SubaccountID, providedTenantIDs.Subdomain)
+			tenantfetcher.AssertTenant(t, childTenant, providedTenantIDs.SubaccountID, providedTenantIDs.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, childTenant.Labels[tenantfetcher.RegionKey])
 
 			parentTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, parentTenant, providedTenantIDs.TenantID, "")
+			tenantfetcher.AssertTenant(t, parentTenant, providedTenantIDs.TenantID, "")
 			require.Empty(t, parentTenant.Labels)
 
 			customerTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.CustomerID)
 			require.NoError(t, err)
-			assertTenant(t, customerTenant, providedTenantIDs.CustomerID, "")
+			tenantfetcher.AssertTenant(t, customerTenant, providedTenantIDs.CustomerID, "")
 			require.Empty(t, customerTenant.Labels)
 		})
 
@@ -347,7 +343,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
 			parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+			tenantfetcher.AssertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
 
 			// WHEN
 			for i := 0; i < 10; i++ {
@@ -361,7 +357,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			require.NoError(t, err)
 
 			// THEN
-			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
+			tenantfetcher.AssertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
 			assert.Equal(t, len(oldTenantState)+2, len(tenants))
 		})
 
@@ -424,82 +420,6 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			assert.Equal(t, len(oldTenantState), len(tenants))
 		})
 	})
-
-	t.Run("Regional subaccount tenant subscription flows", func(t *testing.T) {
-		consumerSubaccountIDsLabelKey := config.ConsumerSubaccountIDsLabelKey
-		t.Run("Subscribe tenant for correct consumer", func(t *testing.T) {
-			// GIVEN
-			ctx := context.Background()
-			subscriptionConsumerID := uuid.New().String()
-			subaccountID := uuid.New().String()
-			accountID := uuid.New().String()
-
-			tenantId := tenant_utils.TestTenants.GetDefaultTenantID()
-
-			subscribedRuntime := registerRuntime(t, ctx, "subscribed-runtime", subscriptionConsumerID)
-			defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &subscribedRuntime)
-
-			notSubscribedRuntime := registerRuntime(t, ctx, "not-subscribed-runtime", "fake_subscrioption_id")
-			defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &notSubscribedRuntime)
-
-			// WHEN
-			providedTenantIDs := tenantfetcher.Tenant{
-				TenantID:               accountID,
-				SubaccountID:           subaccountID,
-				Subdomain:              tenantfetcher.DefaultSubdomain,
-				SubscriptionProviderID: subscriptionConsumerID,
-			}
-
-			addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
-
-			// THEN
-			tenantfetcher.AssertRuntimeSubscription(t, ctx, subscribedRuntime.ID, providedTenantIDs, dexGraphQLClient, consumerSubaccountIDsLabelKey)
-
-			assertNoRuntimeSubscription(t, ctx, notSubscribedRuntime.ID)
-		})
-
-		t.Run("Unsubscribe tenant from correct consumer", func(t *testing.T) {
-			// GIVEN
-			ctx := context.Background()
-			subscriptionConsumerID := uuid.New().String()
-			secondSubscriptionConsumerID := uuid.New().String()
-			subaccountID := uuid.New().String()
-			accountID := uuid.New().String()
-
-			tenantId := tenant_utils.TestTenants.GetDefaultTenantID()
-
-			subscribedRuntime := registerRuntime(t, ctx, "subscribed-runtime", subscriptionConsumerID)
-			defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &subscribedRuntime)
-
-			secondSubscribedRuntime := registerRuntime(t, ctx, "second-subscribed-runtime", secondSubscriptionConsumerID)
-			defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &secondSubscribedRuntime)
-
-			providedTenantIDs := tenantfetcher.Tenant{
-				TenantID:               accountID,
-				SubaccountID:           subaccountID,
-				Subdomain:              tenantfetcher.DefaultSubdomain,
-				SubscriptionProviderID: subscriptionConsumerID,
-			}
-			addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
-			tenantfetcher.AssertRuntimeSubscription(t, ctx, subscribedRuntime.ID, providedTenantIDs, dexGraphQLClient, consumerSubaccountIDsLabelKey)
-
-			tenantSecondSubscription := tenantfetcher.Tenant{
-				TenantID:               accountID,
-				SubaccountID:           subaccountID,
-				Subdomain:              tenantfetcher.DefaultSubdomain,
-				SubscriptionProviderID: secondSubscriptionConsumerID,
-			}
-			addRegionalTenantExpectStatusCode(t, tenantSecondSubscription, http.StatusOK)
-			tenantfetcher.AssertRuntimeSubscription(t, ctx, secondSubscribedRuntime.ID, tenantSecondSubscription, dexGraphQLClient, consumerSubaccountIDsLabelKey)
-
-			// WHEN
-			removeRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
-
-			// THEN
-			assertNoRuntimeSubscription(t, ctx, subscribedRuntime.ID)
-			tenantfetcher.AssertRuntimeSubscription(t, ctx, secondSubscribedRuntime.ID, tenantSecondSubscription, dexGraphQLClient, consumerSubaccountIDsLabelKey)
-		})
-	})
 }
 
 func TestGetDependenciesHandler(t *testing.T) {
@@ -539,10 +459,6 @@ func removeTenantExpectStatusCode(t *testing.T, providedTenantIDs tenantfetcher.
 	makeTenantRequestExpectStatusCode(t, providedTenantIDs, http.MethodDelete, config.TenantFetcherFullURL, expectedStatusCode)
 }
 
-func removeRegionalTenantExpectStatusCode(t *testing.T, providedTenantIDs tenantfetcher.Tenant, expectedStatusCode int) {
-	makeTenantRequestExpectStatusCode(t, providedTenantIDs, http.MethodDelete, config.TenantFetcherFullRegionalURL, expectedStatusCode)
-}
-
 func makeTenantRequestExpectStatusCode(t *testing.T, providedTenantIDs tenantfetcher.Tenant, httpMethod, url string, expectedStatusCode int) {
 	tenantProperties := tenantfetcher.TenantIDProperties{
 		TenantIDProperty:               config.TenantIDProperty,
@@ -560,13 +476,6 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenantIDs tenantfet
 	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
-func assertTenant(t *testing.T, tenant *graphql.Tenant, tenantID, subdomain string) {
-	require.Equal(t, tenantID, tenant.ID)
-	if len(subdomain) > 0 {
-		require.Equal(t, subdomain, tenant.Labels["subdomain"])
-	}
-}
-
 func assertTenantExists(t *testing.T, tenants []*graphql.Tenant, tenantID string) {
 	for _, tenant := range tenants {
 		if tenant.ID == tenantID {
@@ -575,32 +484,4 @@ func assertTenantExists(t *testing.T, tenants []*graphql.Tenant, tenantID string
 	}
 
 	require.Fail(t, fmt.Sprintf("Tenant with ID %q not found in %v", tenantID, tenants))
-}
-
-func registerRuntime(t *testing.T, ctx context.Context, name, subscriptionConsumerID string) graphql.RuntimeExt {
-	runtimeInput := graphql.RuntimeInput{
-		Name:        name,
-		Description: ptr.String(name),
-		Labels:      graphql.Labels{tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, config.SubscriptionProviderLabelKey: subscriptionConsumerID},
-	}
-	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
-	require.NoError(t, err)
-	actualRuntime := graphql.RuntimeExt{}
-
-	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &actualRuntime)
-	require.NoError(t, err)
-	return actualRuntime
-}
-
-func assertNoRuntimeSubscription(t *testing.T, ctx context.Context, runtimeID string) {
-	notSubscribedRuntime := graphql.RuntimeExt{}
-	getNotSubscribedReq := fixtures.FixGetRuntimeRequest(runtimeID)
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getNotSubscribedReq, &notSubscribedRuntime)
-	require.NoError(t, err)
-
-	if _, ok := notSubscribedRuntime.Labels[config.ConsumerSubaccountIDsLabelKey]; !ok {
-		return
-	}
-	require.Len(t, notSubscribedRuntime.Labels[config.ConsumerSubaccountIDsLabelKey], 0)
 }

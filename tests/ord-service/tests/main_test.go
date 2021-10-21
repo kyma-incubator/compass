@@ -67,6 +67,7 @@ type config struct {
 	CA ConnectorCAConfig
 
 	DirectorURL                      string
+	DirectorExternalCertSecuredURL   string
 	ORDServiceURL                    string
 	ORDExternalCertSecuredServiceURL string
 	ORDServiceStaticPrefix           string

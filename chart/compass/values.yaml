@@ -60,6 +60,9 @@ global:
     - name: TestDeleteApplicationIfInScenario
       id: 0d597250-6b2d-4d89-9c54-e23cb497cd01
       type: account
+    - name: TestProviderSubaccount
+      id: f8075207-1478-4a80-bd26-24a4785a2bfd
+      type: subaccount
 
   images:
     containerRegistry:

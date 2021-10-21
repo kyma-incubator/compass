@@ -37,6 +37,27 @@ spec:
             - {{ . }}
             {{- end }}
     - match:
+      - uri:
+          exact: {{ .Values.global.director.prefix }}
+      redirect:
+        uri: {{ .Values.global.director.prefix }}/
+      headers:
+        request:
+          remove:
+            {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+            {{- end }}
+      corsPolicy:
+        allowOrigins:
+          - regex: ".*"
+        allowHeaders:
+          - "authorization"
+          - "content-type"
+          - "tenant"
+          - {{ .Values.global.director.clientIDHeaderKey }}
+        allowMethods:
+          - "GET"
+    - match:
         - uri:
             regex: /.*
       headers:

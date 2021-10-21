@@ -10,8 +10,19 @@ type DirectorConfig struct {
 	DefaultScenarioEnabled     bool   `envconfig:"default=true"`
 	DefaultNormalizationPrefix string `envconfig:"default=mp-"`
 	GatewayOauth               string
+	DirectorExternalCertSecuredURL string
+	CA ConnectorCAConfig
 }
 
 type BaseDirectorConfig struct {
 	DefaultScenario string `envconfig:"default=DEFAULT"`
+}
+
+type ConnectorCAConfig struct {
+	Certificate          []byte `envconfig:"-"`
+	Key                  []byte `envconfig:"-"`
+	SecretName           string
+	SecretNamespace      string
+	SecretCertificateKey string
+	SecretKeyKey         string
 }
