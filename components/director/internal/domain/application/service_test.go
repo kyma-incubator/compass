@@ -2653,8 +2653,6 @@ func TestService_Unpair(t *testing.T) {
 			ExpectedErrMessage: "",
 			ContextFn: func() context.Context {
 				backgroundCtx := context.Background()
-				//backgroundCtx = operation.SaveModeToContext(ctx, graphql.OperationModeSync)
-
 				return backgroundCtx
 			},
 		},
@@ -2681,7 +2679,7 @@ func TestService_Unpair(t *testing.T) {
 			ExpectedErrMessage: "",
 			ContextFn: func() context.Context {
 				backgroundCtx := context.Background()
-				backgroundCtx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
+				backgroundCtx = operation.SaveModeToContext(backgroundCtx, graphql.OperationModeAsync)
 				return backgroundCtx
 			},
 		},
