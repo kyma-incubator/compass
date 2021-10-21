@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	httptransport "github.com/go-openapi/runtime/client"
@@ -154,7 +156,7 @@ func NewRootResolver(
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider())
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)

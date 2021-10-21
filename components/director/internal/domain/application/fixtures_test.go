@@ -142,6 +142,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        str.Ptr("provider name"),
+		BaseURL:             str.Ptr("base_url"),
 		BaseEntity: &graphql.BaseEntity{
 			ID:        id,
 			Ready:     true,

@@ -96,10 +96,12 @@ type ApplicationRegisterInput struct {
 	Labels   Labels          `json:"labels"`
 	Webhooks []*WebhookInput `json:"webhooks"`
 	// **Validation:** valid URL, max=256
-	HealthCheckURL      *string                     `json:"healthCheckURL"`
-	Bundles             []*BundleCreateInput        `json:"bundles"`
+	HealthCheckURL *string `json:"healthCheckURL"`
+	// **Validation:** valid URL, max=256
+	BaseURL             *string                     `json:"baseUrl"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
+	Bundles             []*BundleCreateInput        `json:"bundles"`
 }
 
 type ApplicationStatus struct {
@@ -150,6 +152,7 @@ type ApplicationUpdateInput struct {
 
 type Auth struct {
 	Credential                      CredentialData         `json:"credential"`
+	AccessStrategy                  *string                `json:"accessStrategy"`
 	AdditionalHeaders               HTTPHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized     *HTTPHeadersSerialized `json:"additionalHeadersSerialized"`
 	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
@@ -160,7 +163,8 @@ type Auth struct {
 }
 
 type AuthInput struct {
-	Credential *CredentialDataInput `json:"credential"`
+	Credential     *CredentialDataInput `json:"credential"`
+	AccessStrategy *string              `json:"accessStrategy"`
 	// **Validation:** if provided, headers name and value required
 	AdditionalHeaders           HTTPHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized *HTTPHeadersSerialized `json:"additionalHeadersSerialized"`

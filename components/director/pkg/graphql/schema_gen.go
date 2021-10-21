@@ -96,6 +96,7 @@ type ComplexityRoot struct {
 	Application struct {
 		ApplicationTemplateID func(childComplexity int) int
 		Auths                 func(childComplexity int) int
+		BaseURL               func(childComplexity int) int
 		Bundle                func(childComplexity int, id string) int
 		Bundles               func(childComplexity int, first *int, after *PageCursor) int
 		CreatedAt             func(childComplexity int) int
@@ -147,6 +148,7 @@ type ComplexityRoot struct {
 	}
 
 	Auth struct {
+		AccessStrategy                  func(childComplexity int) int
 		AdditionalHeaders               func(childComplexity int) int
 		AdditionalHeadersSerialized     func(childComplexity int) int
 		AdditionalQueryParams           func(childComplexity int) int
@@ -861,6 +863,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Application.Auths(childComplexity), true
 
+	case "Application.baseUrl":
+		if e.complexity.Application.BaseURL == nil {
+			break
+		}
+
+		return e.complexity.Application.BaseURL(childComplexity), true
+
 	case "Application.bundle":
 		if e.complexity.Application.Bundle == nil {
 			break
@@ -1106,6 +1115,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationTemplatePage.TotalCount(childComplexity), true
+
+	case "Auth.accessStrategy":
+		if e.complexity.Auth.AccessStrategy == nil {
+			break
+		}
+
+		return e.complexity.Auth.AccessStrategy(childComplexity), true
 
 	case "Auth.additionalHeaders":
 		if e.complexity.Auth.AdditionalHeaders == nil {
@@ -3742,9 +3758,13 @@ input ApplicationRegisterInput {
 	**Validation:** valid URL, max=256
 	"""
 	healthCheckURL: String
-	bundles: [BundleCreateInput!]
+	"""
+	**Validation:** valid URL, max=256
+	"""
+	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	bundles: [BundleCreateInput!]
 }
 
 """
@@ -3798,6 +3818,7 @@ input ApplicationUpdateInput {
 
 input AuthInput {
 	credential: CredentialDataInput
+	accessStrategy: String
 	"""
 	**Validation:** if provided, headers name and value required
 	"""
@@ -4177,6 +4198,7 @@ type Application {
 	id: ID!
 	name: String!
 	systemNumber: String
+	baseUrl: String
 	providerName: String
 	description: String
 	integrationSystemID: ID
@@ -4228,6 +4250,7 @@ type ApplicationTemplatePage implements Pageable {
 
 type Auth {
 	credential: CredentialData
+	accessStrategy: String
 	additionalHeaders: HttpHeaders
 	additionalHeadersSerialized: HttpHeadersSerialized
 	additionalQueryParams: QueryParams
@@ -7891,6 +7914,37 @@ func (ec *executionContext) _Application_systemNumber(ctx context.Context, field
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Application_baseUrl(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BaseURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Application_providerName(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -9026,6 +9080,37 @@ func (ec *executionContext) _Auth_credential(ctx context.Context, field graphql.
 	res := resTmp.(CredentialData)
 	fc.Result = res
 	return ec.marshalOCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Auth_accessStrategy(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Auth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AccessStrategy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_additionalHeaders(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -21916,9 +22001,9 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
-		case "bundles":
+		case "baseUrl":
 			var err error
-			it.Bundles, err = ec.unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInputᚄ(ctx, v)
+			it.BaseURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -21931,6 +22016,12 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 		case "statusCondition":
 			var err error
 			it.StatusCondition, err = ec.unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "bundles":
+			var err error
+			it.Bundles, err = ec.unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -22081,6 +22172,12 @@ func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj int
 		case "credential":
 			var err error
 			it.Credential, err = ec.unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "accessStrategy":
+			var err error
+			it.AccessStrategy, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -23350,6 +23447,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			}
 		case "systemNumber":
 			out.Values[i] = ec._Application_systemNumber(ctx, field, obj)
+		case "baseUrl":
+			out.Values[i] = ec._Application_baseUrl(ctx, field, obj)
 		case "providerName":
 			out.Values[i] = ec._Application_providerName(ctx, field, obj)
 		case "description":
@@ -23656,6 +23755,8 @@ func (ec *executionContext) _Auth(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = graphql.MarshalString("Auth")
 		case "credential":
 			out.Values[i] = ec._Auth_credential(ctx, field, obj)
+		case "accessStrategy":
+			out.Values[i] = ec._Auth_accessStrategy(ctx, field, obj)
 		case "additionalHeaders":
 			out.Values[i] = ec._Auth_additionalHeaders(ctx, field, obj)
 		case "additionalHeadersSerialized":
