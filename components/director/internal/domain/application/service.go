@@ -3,10 +3,11 @@ package application
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 

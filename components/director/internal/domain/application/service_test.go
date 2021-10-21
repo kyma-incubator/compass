@@ -3,10 +3,11 @@ package application_test
 import (
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
