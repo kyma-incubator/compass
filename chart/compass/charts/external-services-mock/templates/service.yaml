@@ -17,6 +17,18 @@ spec:
       targetPort: {{ .Values.global.externalServicesMock.certSecuredPort }}
       protocol: TCP
       name: http-mtls
+    - port: {{ .Values.global.externalServicesMock.unsecuredPort }}
+      targetPort: {{ .Values.global.externalServicesMock.unsecuredPort }}
+      protocol: TCP
+      name: http-unsecured
+    - port: {{ .Values.global.externalServicesMock.basicSecuredPort }}
+      targetPort: {{ .Values.global.externalServicesMock.basicSecuredPort }}
+      protocol: TCP
+      name: http-basic
+    - port: {{ .Values.global.externalServicesMock.oauthSecuredPort }}
+      targetPort: {{ .Values.global.externalServicesMock.oauthSecuredPort }}
+      protocol: TCP
+      name: http-oauth
     selector:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
