@@ -131,7 +131,7 @@ spec:
               - name: APP_MAPPING_FIELD_SUBDOMAIN
                 value: {{ $config.fieldMapping.subdomainField }}
               - name: APP_MAPPING_FIELD_REGION
-                value: {{ $config.fieldMapping.regionField }}
+                value: {{  default "region" $config.fieldMapping.regionField }}
               - name: APP_MAPPING_FIELD_ENTITY_TYPE
                 value: {{ $config.fieldMapping.entityTypeField }}
               - name: APP_MAPPING_FIELD_DISCRIMINATOR
@@ -141,7 +141,7 @@ spec:
               - name: APP_MAPPING_FIELD_DETAILS
                 value: {{ $config.fieldMapping.detailsField}}
               - name: APP_MAPPING_FIELD_PARENT_ID
-                value: {{ $config.fieldMapping.parentIDField}}
+                value: {{ default "parentGuid" $config.fieldMapping.parentIDField}}
               - name: APP_SYNC_SUBACCOUNTS
                 value: {{ $config.shouldSyncSubaccounts | quote }}
               - name: APP_TENANT_TOTAL_PAGES_FIELD
@@ -155,7 +155,7 @@ spec:
               - name: APP_QUERY_PAGE_SIZE_FIELD
                 value: {{ $config.queryMapping.pageSizeField}}
               - name: APP_QUERY_REGION_FIELD
-                value: {{ $config.queryMapping.regionField }}
+                value: {{ default "region" $config.queryMapping.regionField }}
               - name: APP_QUERY_TIMESTAMP_FIELD
                 value: {{ $config.queryMapping.timestampField}}
               - name: APP_QUERY_PAGE_START
@@ -165,9 +165,9 @@ spec:
               - name: APP_DEFAULT_SCENARIO_ENABLED
                 value: {{ $.Values.global.enableCompassDefaultScenarioAssignment | quote }}
               - name: APP_MOVED_RUNTIME_BY_LABEL_SOURCE_TENANT_FIELD
-                value: {{ default "sourceGlobalAccountGUID" $config.queryMapping.movedRuntimeByLabelSourceField }}
+                value: {{ default "sourceGlobalAccountGUID" $config.fieldMapping.movedRuntimeByLabelSourceField }}
               - name: APP_MOVED_RUNTIME_BY_LABEL_TARGET_TENANT_FIELD
-                value: {{ default "targetGlobalAccountGUID" $config.queryMapping.movedRuntimeByLabelTargetField }}
+                value: {{ default "targetGlobalAccountGUID" $config.fieldMapping.movedRuntimeByLabelTargetField }}
               - name: APP_MOVED_RUNTIME_LABEL_KEY
                 value: {{ default "movedRuntimeLabelKey" $config.movedRuntimeLabelKey }}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}

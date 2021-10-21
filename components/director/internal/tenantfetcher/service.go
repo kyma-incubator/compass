@@ -39,16 +39,16 @@ type TenantFieldMapping struct {
 	DiscriminatorField     string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
 	DiscriminatorValue     string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
 
-	RegionField     string `envconfig:"default=region,APP_MAPPING_FIELD_REGION"`
+	RegionField     string `envconfig:"APP_MAPPING_FIELD_REGION"`
 	EntityTypeField string `envconfig:"default=entityType,APP_MAPPING_FIELD_ENTITY_TYPE"`
-	ParentIDField   string `envconfig:"default=parentId,APP_MAPPING_FIELD_PARENT_ID"`
+	ParentIDField   string `envconfig:"APP_MAPPING_FIELD_PARENT_ID"`
 }
 
 // MovedRuntimeByLabelFieldMapping missing godoc
 type MovedRuntimeByLabelFieldMapping struct {
-	LabelValue   string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
-	SourceTenant string `envconfig:"default=sourceTenant,APP_MOVED_RUNTIME_BY_LABEL_SOURCE_TENANT_FIELD"`
-	TargetTenant string `envconfig:"default=targetTenant,APP_MOVED_RUNTIME_BY_LABEL_TARGET_TENANT_FIELD"`
+	LabelValue   string `envconfig:"APP_MAPPING_FIELD_ID"`
+	SourceTenant string `envconfig:"APP_MOVED_RUNTIME_BY_LABEL_SOURCE_TENANT_FIELD"`
+	TargetTenant string `envconfig:"APP_MOVED_RUNTIME_BY_LABEL_TARGET_TENANT_FIELD"`
 }
 
 // QueryConfig contains the name of query parameters fields and default/start values
@@ -56,7 +56,7 @@ type QueryConfig struct {
 	PageNumField   string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`
 	PageSizeField  string `envconfig:"default=pageSize,APP_QUERY_PAGE_SIZE_FIELD"`
 	TimestampField string `envconfig:"default=timestamp,APP_QUERY_TIMESTAMP_FIELD"`
-	RegionField    string `envconfig:"default=region,APP_QUERY_REGION_FIELD"`
+	RegionField    string `envconfig:"APP_QUERY_REGION_FIELD"`
 	PageStartValue string `envconfig:"default=0,APP_QUERY_PAGE_START"`
 	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
 }
