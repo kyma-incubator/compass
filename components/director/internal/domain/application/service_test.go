@@ -2423,7 +2423,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Success when application is part of a scenario but not in runtime",
+			Name: "Success when application is part of a scenario but not with runtime",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil).Once()
@@ -2604,7 +2604,7 @@ func TestService_Unpair(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Success when application is part of a scenario but not in runtime",
+			Name: "Success when application is part of a scenario but not with runtime",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Update", ctx, applicationModel).Return(nil).Once()
