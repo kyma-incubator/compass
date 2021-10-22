@@ -444,13 +444,13 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Tran
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, defaultScenarioEnabled)
-	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	runtimeConv := runtime.NewConverter()
 	runtimeRepo := runtime.NewRepository(runtimeConv)
 
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo)
 
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
 
 	tenantConv := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConv)

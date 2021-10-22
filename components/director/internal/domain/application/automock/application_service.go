@@ -196,6 +196,20 @@ func (_m *ApplicationService) SetLabel(ctx context.Context, label *model.LabelIn
 	return r0
 }
 
+// Unpair provides a mock function with given fields: ctx, id
+func (_m *ApplicationService) Unpair(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Update provides a mock function with given fields: ctx, id, in
 func (_m *ApplicationService) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
 	ret := _m.Called(ctx, id, in)

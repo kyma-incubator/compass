@@ -253,7 +253,7 @@ func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {
 	return clientcredentials.Config{
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
-		TokenURL:     cfg.OAuthURL,
+		TokenURL:     cfg.OAuthURL + cfg.TokenPath,
 		AuthStyle:    oauth2.AuthStyleAutoDetect,
 	}
 }

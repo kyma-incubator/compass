@@ -192,19 +192,19 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	labelRepo := label.NewRepository(labelConv)
 	labelDefConv := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConv)
-	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 
 	converter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(converter)
-	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 
 	runtimeConverter := runtime.NewConverter()
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, cfg.DefaultScenarioEnabled)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, cfg.ProtectedLabelPattern)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, cfg.ProtectedLabelPattern)
 
 	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc, cfg.TenantProvider)
 	subscriber := tenantfetcher.NewSubscriber(provisioner, runtimeSvc, cfg.SubscriptionProviderLabelKey, cfg.ConsumerSubaccountIDsLabelKey)

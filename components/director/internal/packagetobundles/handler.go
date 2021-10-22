@@ -62,11 +62,11 @@ func NewHandler(transact persistence.Transactioner) *Handler {
 	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
 
 	uidSvc := uid.NewService()
-	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 
 	return &Handler{
 		transact:           transact,
-		labelUpsertService: labelUpsertSvc,
+		labelUpsertService: labelSvc,
 	}
 }
 

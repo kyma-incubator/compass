@@ -38,6 +38,7 @@ type ApplicationService interface {
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
+	Unpair(ctx context.Context, id string) error
 }
 
 // ApplicationConverter missing godoc
@@ -71,6 +72,7 @@ type WebhookService interface {
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
+	DeleteMultipleByIDForObject(ctx context.Context, systemAuths []model.SystemAuth) error
 }
 
 // WebhookConverter missing godoc
@@ -372,6 +374,38 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 
 	log.C(ctx).Infof("Successfully unregistered Application with id %s", id)
 	return deletedApp, nil
+}
+
+// UnpairApplication Sets the UpdatedAt property for the given application, deletes associated []model.SystemAuth, deletes the hydra oauth clients.
+func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.Application, error) {
+	log.C(ctx).Infof("Unpairing Application with id %s", id)
+
+	if err := r.appSvc.Unpair(ctx, id); err != nil {
+		return nil, err
+	}
+
+	app, err := r.appSvc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	auths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, app.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = r.sysAuthSvc.DeleteMultipleByIDForObject(ctx, auths); err != nil {
+		return nil, err
+	}
+
+	if err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths); err != nil {
+		return nil, err
+	}
+
+	gqlApp := r.appConverter.ToGraphQL(app)
+
+	log.C(ctx).Infof("Successfully Unpaired Application with id %s", id)
+	return gqlApp, nil
 }
 
 // SetApplicationLabel missing godoc

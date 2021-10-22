@@ -47,7 +47,7 @@ func NewLabelService(labelRepo LabelRepository, labelDefinitionRepo LabelDefinit
 	return &labelService{labelRepo: labelRepo, labelDefinitionRepo: labelDefinitionRepo, uidService: uidService}
 }
 
-// UpsertMultipleLabels missing godoc
+// UpsertMultipleLabels upserts multiple labels for a given tenant and object
 func (s *labelService) UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error {
 	for key, val := range labels {
 		err := s.UpsertLabel(ctx, tenant, &model.LabelInput{
@@ -122,6 +122,11 @@ func (s *labelService) GetLabel(ctx context.Context, tenant string, labelInput *
 	return label, nil
 }
 
+// GetByKey returns label for a given tenant, object and key
+func (s *labelService) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
+	return s.labelRepo.GetByKey(ctx, tenant, objectType, objectID, key)
+}
+
 func (s *labelService) validateLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
 	var labelDef *model.LabelDefinition
 
@@ -139,15 +144,13 @@ func (s *labelService) validateLabel(ctx context.Context, tenant string, labelIn
 			Key:    labelInput.Key,
 			Schema: nil,
 		}
-		err := s.labelDefinitionRepo.Create(ctx, *labelDef)
-		if err != nil {
+		if err := s.labelDefinitionRepo.Create(ctx, *labelDef); err != nil {
 			return errors.Wrapf(err, "while creating a new LabelDefinition for Label with key: '%s'", labelInput.Key)
 		}
 		log.C(ctx).Debugf("Successfully created LabelDefinition with id %s and key %s for Label with key %s", labelDef.ID, labelDef.Key, labelInput.Key)
 	}
 
-	err = s.validateLabelInputValue(labelInput, labelDef)
-	if err != nil {
+	if err := s.validateLabelInputValue(labelInput, labelDef); err != nil {
 		return errors.Wrapf(err, "while validating Label value for '%s'", labelInput.Key)
 	}
 	return nil

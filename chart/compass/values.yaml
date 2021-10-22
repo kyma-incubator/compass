@@ -78,10 +78,10 @@ global:
       version: "PR-2085"
     gateway:
       dir:
-      version: "PR-2082"
+      version: "PR-2077"
     operations_controller:
       dir:
-      version: "PR-2082"
+      version: "PR-2063"
     ord_service:
       dir:
       version: "PR-45"
@@ -101,7 +101,7 @@ global:
       version: "PR-2080"
     console:
       dir:
-      version: "PR-45"
+      version: "PR-46"
     e2e_tests:
       dir:
       version: "PR-2085"
@@ -143,9 +143,12 @@ global:
 
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
-    secretName: "compass-gateway-auditlog-secret"
-    script:
-      configMapName: "auditlog-script"
+    tokenPath: "/oauth/token"
+    secret:
+      name: "compass-gateway-auditlog-secret"
+      urlKey: url
+      clientIdKey: client-id
+      clientSecretKey: client-secret
 
   log:
     format: "kibana"
@@ -381,7 +384,6 @@ global:
       subdomainProperty: "subdomain"
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderId"
-
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
@@ -417,16 +419,16 @@ global:
       maxIdleConnections: 2
     accessStrategies:
       cmpMtls:
-        policy: "compass-local-clients"
-        csrEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
         certSvcApiPath: "/cert"
         tokenPath: "/secured/oauth/token"
-        oauthSecret:
-          name: cert-svc-oauth-secret
-          managed: true
-          urlKey: url
+        secret:
+          name: cert-svc-secret
+          manage: true
+          oauthUrlKey: url
           clientIdKey: client-id
           clientSecretKey: client-secret
+          csrEndpointKey: csr-endpoint
+          policyKey: policy
 
   systemFetcher:
     enabled: false
@@ -463,9 +465,16 @@ global:
     oauth:
       client: ""
       secret: ""
-      tokenURLPattern: ""
+      tokenEndpointProtocol: ""
+      tokenBaseUrl: ""
+      tokenPath: ""
       scopesClaim: ""
       tenantHeaderName: ""
+    secret:
+      name: "compass-system-fetcher-secret"
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      oauthUrlKey: url
     paging:
       pageSize: 200
       sizeParam: "$top"
@@ -487,10 +496,20 @@ global:
         client: ""
         secret: ""
         tokenURL: ""
+        tokenPath: ""
+      secret:
+        name: "compass-tenant-fetcher-secret-job1"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
       endpoints:
-        tenantCreated: "127.0.0.1/events?type=created"
-        tenantDeleted: "127.0.0.1/events?type=deleted"
-        tenantUpdated: "127.0.0.1/events?type=updated"
+        accountCreated: "127.0.0.1/events?type=account-created"
+        accountDeleted: "127.0.0.1/events?type=account-deleted"
+        accountUpdated: "127.0.0.1/events?type=account-updated"
+        subaccountCreated: "127.0.0.1/events?type=subaccount-created"
+        subaccountDeleted: "127.0.0.1/events?type=subaccount-deleted"
+        subaccountUpdated: "127.0.0.1/events?type=subaccount-updated"
+        subaccountMoved: "127.0.0.1/events?type=subaccount-moved"
       fieldMapping:
         totalPagesField: "totalPages"
         totalResultsField: "totalResults"
@@ -502,6 +521,12 @@ global:
         discriminatorField: ""
         discriminatorValue: ""
         detailsField: "details"
+        entityTypeField: "entityType"
+        parentIDField: "parentGuid"
+        regionField: "region"
+        movedRuntimeLabelKey: "global_subaccount_id"
+        movedRuntimeByLabelTargetField: "targetGlobalAccountGUID"
+        movedRuntimeByLabelSourceField: "sourceGlobalAccountGUID"
       queryMapping:
         pageNumField: "pageNum"
         pageSizeField: "pageSize"
@@ -509,6 +534,7 @@ global:
       query:
         startPage: "0"
         pageSize: "100"
+      shouldSyncSubaccounts: "false"
       dbPool:
         maxOpenConnections: 1
         maxIdleConnections: 1

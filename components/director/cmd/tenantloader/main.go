@@ -44,11 +44,11 @@ func main() {
 	labelRepo := label.NewRepository(labelConv)
 	labelDefConv := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConv)
-	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, UIDSvc)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, UIDSvc)
 
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
-	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, UIDSvc, labelRepo, labelUpsertSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, UIDSvc, labelRepo, labelSvc)
 
 	tenants, err := externaltenant.MapTenants(tenantsDirectoryPath)
 	exitOnError(err, "error while mapping tenants from file")
