@@ -75,7 +75,7 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2063"
+      version: "PR-2047"
     gateway:
       dir:
       version: "PR-2082"
@@ -87,7 +87,7 @@ global:
       version: "PR-45"
     schema_migrator:
       dir:
-      version: "PR-2063"
+      version: "PR-2047"
     system_broker:
       dir:
       version: "PR-2082"
@@ -488,9 +488,13 @@ global:
         secret: ""
         tokenURL: ""
       endpoints:
-        tenantCreated: "127.0.0.1/events?type=created"
-        tenantDeleted: "127.0.0.1/events?type=deleted"
-        tenantUpdated: "127.0.0.1/events?type=updated"
+        accountCreated: "127.0.0.1/events?type=account-created"
+        accountDeleted: "127.0.0.1/events?type=account-deleted"
+        accountUpdated: "127.0.0.1/events?type=account-updated"
+        subaccountCreated: "127.0.0.1/events?type=subaccount-created"
+        subaccountDeleted: "127.0.0.1/events?type=subaccount-deleted"
+        subaccountUpdated: "127.0.0.1/events?type=subaccount-updated"
+        subaccountMoved: "127.0.0.1/events?type=subaccount-moved"
       fieldMapping:
         totalPagesField: "totalPages"
         totalResultsField: "totalResults"
@@ -502,6 +506,12 @@ global:
         discriminatorField: ""
         discriminatorValue: ""
         detailsField: "details"
+        entityTypeField: "entityType"
+        parentIDField: "parentGuid"
+        regionField: "region"
+        movedRuntimeLabelKey: "global_subaccount_id"
+        movedRuntimeByLabelTargetField: "targetGlobalAccountGUID"
+        movedRuntimeByLabelSourceField: "sourceGlobalAccountGUID"
       queryMapping:
         pageNumField: "pageNum"
         pageSizeField: "pageSize"
@@ -509,6 +519,7 @@ global:
       query:
         startPage: "0"
         pageSize: "100"
+      shouldSyncSubaccounts: "false"
       dbPool:
         maxOpenConnections: 1
         maxIdleConnections: 1
