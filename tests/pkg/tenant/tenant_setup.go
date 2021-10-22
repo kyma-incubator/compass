@@ -178,7 +178,6 @@ func (mgr *TestTenantsManager) Init() {
 		},
 		TestProviderSubaccount: {
 			Name:           TestProviderSubaccount,
-			ID:             "f8075207-1478-4a80-bd26-24a4785a2bfd",
 			ExternalTenant: "f8075207-1478-4a80-bd26-24a4785a2bfd",
 			ProviderName:   testProvider,
 			Type:           Subaccount,
