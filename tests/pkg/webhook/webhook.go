@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func BuildMockedWebhook(externalSystemURL string) *graphql.WebhookInput {
+func BuildMockedWebhook(externalSystemURL string, webhookType graphql.WebhookType) *graphql.WebhookInput {
 	operationFullPath := BuildOperationFullPath(externalSystemURL)
 	deleteFullPath := BuildDeleteFullPath(externalSystemURL)
 
 	return &graphql.WebhookInput{
-		Type:           graphql.WebhookTypeUnregisterApplication,
+		Type:           webhookType,
 		Mode:           webhookModePtr(graphql.WebhookModeAsync),
 		URLTemplate:    str.Ptr(fmt.Sprintf("{ \\\"method\\\": \\\"DELETE\\\", \\\"path\\\": \\\"%s\\\" }", deleteFullPath)),
 		RetryInterval:  intPtr(5),
