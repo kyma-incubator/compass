@@ -2,6 +2,7 @@ package tenantmapping
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"

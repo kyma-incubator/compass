@@ -30,7 +30,7 @@ func TestService_Create(t *testing.T) {
 	labels := map[string]interface{}{
 		model.ScenariosKey:          "DEFAULT",
 		"protected_defaultEventing": "true",
-		"consumer_subaccount_ids": []string{"subaccountID-1", "subaccountID-2"},
+		"consumer_subaccount_ids":   []string{"subaccountID-1", "subaccountID-2"},
 	}
 	labelsForDBMock := map[string]interface{}{
 		model.ScenariosKey:        []interface{}{"DEFAULT"},
@@ -302,7 +302,7 @@ func TestService_Update(t *testing.T) {
 	}
 	protectedLabels := map[string]interface{}{
 		"protected_defaultEventing": "true",
-		"consumer_subaccount_ids": []string{"subaccountID-1", "subaccountID-2"},
+		"consumer_subaccount_ids":   []string{"subaccountID-1", "subaccountID-2"},
 		"label1":                    "val1",
 	}
 	modelInput := model.RuntimeInput{

@@ -63,7 +63,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Register provider runtime with the necessary label
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, &runtimeInput) // TODO: Once we start storing subaccounts as tenants use the directorCertSecuredClient from above
-		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, defaultTenantId, &runtime) // TODO: Once we start storing subaccounts as tenants use the directorCertSecuredClient from above
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, defaultTenantId, &runtime)                                      // TODO: Once we start storing subaccounts as tenants use the directorCertSecuredClient from above
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 
