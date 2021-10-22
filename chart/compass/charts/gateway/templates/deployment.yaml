@@ -55,12 +55,12 @@ spec:
             - name: APP_AUDITLOG_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.auditlog.secretName }}
+                  name: {{ .Values.global.auditlog.secret.name }}
                   key: auditlog-user
             - name: APP_AUDITLOG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.auditlog.secretName }}
+                  name: {{ .Values.global.auditlog.secret.name }}
                   key: auditlog-password
             - name: APP_AUDITLOG_TENANT
               valueFrom:
@@ -73,18 +73,20 @@ spec:
             - name: APP_AUDITLOG_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.auditlog.secretName }}
-                  key: auditlog-client-id
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.clientIdKey }}
             - name: APP_AUDITLOG_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.auditlog.secretName }}
-                  key: auditlog-client-secret
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.clientSecretKey }}
             - name: APP_AUDITLOG_OAUTH_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.auditlog.secretName }}
-                  key: auditlog-oauth-url
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.urlKey }}
+            - name: APP_AUDITLOG_TOKEN_PATH
+              value: {{ .Values.global.auditlog.tokenPath }}
             - name: APP_AUDITLOG_OAUTH_USER
               valueFrom:
                 configMapKeyRef:

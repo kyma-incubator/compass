@@ -83,24 +83,30 @@ spec:
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_LOCALITY
                   value: {{ $.Values.global.mtlsClient.locality }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_POLICY
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.policy }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
+                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.policyKey }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CSR_ENDPOINT
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.csrEndpoint }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
+                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.csrEndpointKey }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.oauthSecret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.oauthSecret.clientIdKey }}
+                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
+                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.clientIdKey }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CLIENT_SECRET
                   valueFrom:
                     secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.oauthSecret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.oauthSecret.clientSecretKey }}
+                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
+                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.clientSecretKey }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_OAUTHURL
                   valueFrom:
                     secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.oauthSecret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.oauthSecret.urlKey }}
+                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
+                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.oauthUrlKey }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_TOKEN_PATH
                   value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.tokenPath }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CERT_SVC_API_PATH
