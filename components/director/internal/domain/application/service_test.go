@@ -2466,7 +2466,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when application is part of a scenario and a runtime",
+			Name: "Returns error when application is part of a scenario with runtime",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
@@ -2600,8 +2600,7 @@ func TestService_Unpair(t *testing.T) {
 
 				return ctx
 			},
-			InputID:            id,
-			ExpectedErrMessage: "",
+			InputID: id,
 		},
 		{
 			Name: "Success when application is part of a scenario but not with runtime",
@@ -2627,8 +2626,7 @@ func TestService_Unpair(t *testing.T) {
 
 				return ctx
 			},
-			InputID:            id,
-			ExpectedErrMessage: "",
+			InputID: id,
 		},
 		{
 			Name: "Success when operation type is SYNC and sets the application status to INITIAL",
@@ -2649,8 +2647,7 @@ func TestService_Unpair(t *testing.T) {
 				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
-			InputID:            id,
-			ExpectedErrMessage: "",
+			InputID: id,
 			ContextFn: func() context.Context {
 				backgroundCtx := context.Background()
 				return backgroundCtx
@@ -2675,8 +2672,7 @@ func TestService_Unpair(t *testing.T) {
 				repo.On("ListAll", mock.Anything, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
-			InputID:            id,
-			ExpectedErrMessage: "",
+			InputID: id,
 			ContextFn: func() context.Context {
 				backgroundCtx := context.Background()
 				backgroundCtx = operation.SaveModeToContext(backgroundCtx, graphql.OperationModeAsync)
@@ -2711,7 +2707,7 @@ func TestService_Unpair(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when application is part of a scenario and a runtime",
+			Name: "Returns error when application is part of a scenario with runtime",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")

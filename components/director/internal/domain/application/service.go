@@ -503,7 +503,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	return nil
 }
 
-// ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. If the scenarios are part of a runtime, then the application is considered being used by that runtime.
+// ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. if a runtime is part of any scenario, then the application is considered being used by that runtime.
 func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Context, tenant, appID string) error {
 	scenarios, err := s.getScenarioNamesForApplication(ctx, appID)
 	if err != nil {
