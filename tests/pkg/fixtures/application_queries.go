@@ -98,6 +98,11 @@ func UnregisterAsyncApplicationInTenant(t require.TestingT, ctx context.Context,
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
 }
 
+func UnpairAsyncApplicationInTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
+	req := FixAsyncUnpairApplicationRequest(id)
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
+}
+
 func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, app *graphql.ApplicationExt) {
 	if app == nil || app.Application.BaseEntity == nil || app.ID == "" {
 		return
