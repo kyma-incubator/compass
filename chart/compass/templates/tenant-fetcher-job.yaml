@@ -80,17 +80,25 @@ spec:
               - name: APP_DB_MAX_IDLE_CONNECTIONS
                 value: "{{ $config.dbPool.maxIdleConnections }}"
               - name: APP_ENDPOINT_TENANT_CREATED
-                value: {{ $config.endpoints.tenantCreated }}
+                value: {{ default "127.0.0.1/events?type=account-created" $config.endpoints.accountCreated }}
               - name: APP_ENDPOINT_TENANT_DELETED
-                value: {{ $config.endpoints.tenantDeleted }}
+                value: {{ default "127.0.0.1/events?type=account-deleted" $config.endpoints.accountDeleted }}
               - name: APP_ENDPOINT_TENANT_UPDATED
-                value: {{ $config.endpoints.tenantUpdated }}
-              - name: APP_ENDPOINT_RUNTIME_MOVED_BY_LABEL
-                value: {{ $config.endpoints.movedRuntimeByLabel }}
+                value: {{ default "127.0.0.1/events?type=account-updated" $config.endpoints.accountUpdated }}
+              - name: APP_ENDPOINT_SUBACCOUNT_CREATED
+                value: {{ default "127.0.0.1/events?type=subaccount-created" $config.endpoints.subaccountCreated }}
+              - name: APP_ENDPOINT_SUBACCOUNT_DELETED
+                value: {{ default "127.0.0.1/events?type=subaccount-deleted" $config.endpoints.subaccountDeleted }}
+              - name: APP_ENDPOINT_SUBACCOUNT_UPDATED
+                value: {{ default "127.0.0.1/events?type=subaccount-updated" $config.endpoints.subaccountUpdated }}
+              - name: APP_ENDPOINT_SUBACCOUNT_MOVED
+                value: {{ default "127.0.0.1/events?type=subaccount-moved" $config.endpoints.subaccountMoved }}
               - name: APP_TENANT_PROVIDER
                 value: {{ $config.providerName }}
-              - name: APP_TENANTS_REGION
-                value: {{ $config.tenantsRegion }}
+              - name: APP_ACCOUNT_REGION
+                value: {{ default "central" $config.accountRegion }}
+              - name: APP_SUBACCOUNT_REGIONS
+                value: {{ default "central" $config.subaccountRegions | quote }}
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
@@ -124,24 +132,34 @@ spec:
                 value: {{ $config.fieldMapping.customerIdField }}
               - name: APP_MAPPING_FIELD_SUBDOMAIN
                 value: {{ $config.fieldMapping.subdomainField }}
+              - name: APP_MAPPING_FIELD_REGION
+                value: {{  default "region" $config.fieldMapping.regionField }}
+              - name: APP_MAPPING_FIELD_ENTITY_TYPE
+                value: {{ $config.fieldMapping.entityTypeField }}
               - name: APP_MAPPING_FIELD_DISCRIMINATOR
                 value: {{ $config.fieldMapping.discriminatorField }}
               - name: APP_MAPPING_VALUE_DISCRIMINATOR
                 value: {{ $config.fieldMapping.discriminatorValue }}
               - name: APP_MAPPING_FIELD_DETAILS
-                value: {{ $config.fieldMapping.detailsField}}
+                value: {{ $config.fieldMapping.detailsField }}
+              - name: APP_MAPPING_FIELD_PARENT_ID
+                value: {{ default "parentGuid" $config.fieldMapping.parentIDField }}
+              - name: APP_SYNC_SUBACCOUNTS
+                value: {{ $config.shouldSyncSubaccounts | quote }}
               - name: APP_TENANT_TOTAL_PAGES_FIELD
-                value: {{ $config.fieldMapping.totalPagesField}}
+                value: {{ $config.fieldMapping.totalPagesField }}
               - name: APP_TENANT_TOTAL_RESULTS_FIELD
-                value: {{ $config.fieldMapping.totalResultsField}}
+                value: {{ $config.fieldMapping.totalResultsField }}
               - name: APP_TENANT_EVENTS_FIELD
-                value: {{ $config.fieldMapping.tenantEventsField}}
+                value: {{ $config.fieldMapping.tenantEventsField }}
               - name: APP_QUERY_PAGE_NUM_FIELD
-                value: {{ $config.queryMapping.pageNumField}}
+                value: {{ $config.queryMapping.pageNumField }}
               - name: APP_QUERY_PAGE_SIZE_FIELD
-                value: {{ $config.queryMapping.pageSizeField}}
+                value: {{ $config.queryMapping.pageSizeField }}
+              - name: APP_QUERY_REGION_FIELD
+                value: {{ default "region" $config.queryMapping.regionField }}
               - name: APP_QUERY_TIMESTAMP_FIELD
-                value: {{ $config.queryMapping.timestampField}}
+                value: {{ $config.queryMapping.timestampField }}
               - name: APP_QUERY_PAGE_START
                 value: "{{ $config.query.startPage}}"
               - name: APP_QUERY_PAGE_SIZE
@@ -149,11 +167,11 @@ spec:
               - name: APP_DEFAULT_SCENARIO_ENABLED
                 value: {{ $.Values.global.enableCompassDefaultScenarioAssignment | quote }}
               - name: APP_MOVED_RUNTIME_BY_LABEL_SOURCE_TENANT_FIELD
-                value: {{ $config.queryMapping.movedRuntimeByLabelSourceField }}
+                value: {{ default "sourceGlobalAccountGUID" $config.fieldMapping.movedRuntimeByLabelSourceField }}
               - name: APP_MOVED_RUNTIME_BY_LABEL_TARGET_TENANT_FIELD
-                value: {{ $config.queryMapping.movedRuntimeByLabelTargetField }}
+                value: {{ default "targetGlobalAccountGUID" $config.fieldMapping.movedRuntimeByLabelTargetField }}
               - name: APP_MOVED_RUNTIME_LABEL_KEY
-                value: {{ $config.movedRuntimeLabelKey }}
+                value: {{ default "movedRuntimeLabelKey" $config.fieldMapping.movedRuntimeLabelKey }}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
               - name: APP_METRICS_PUSH_ENDPOINT
                 value: {{ $.Values.global.metrics.pushEndpoint}}

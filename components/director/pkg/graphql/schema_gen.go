@@ -378,6 +378,7 @@ type ComplexityRoot struct {
 		SetBundleInstanceAuth                         func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
+		UnpairApplication                             func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterApplication                         func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
 		UnregisterRuntime                             func(childComplexity int, id string) int
@@ -586,6 +587,7 @@ type MutationResolver interface {
 	RegisterApplication(ctx context.Context, in ApplicationRegisterInput, mode *OperationMode) (*Application, error)
 	UpdateApplication(ctx context.Context, id string, in ApplicationUpdateInput) (*Application, error)
 	UnregisterApplication(ctx context.Context, id string, mode *OperationMode) (*Application, error)
+	UnpairApplication(ctx context.Context, id string, mode *OperationMode) (*Application, error)
 	CreateApplicationTemplate(ctx context.Context, in ApplicationTemplateInput) (*ApplicationTemplate, error)
 	RegisterApplicationFromTemplate(ctx context.Context, in ApplicationFromTemplateInput) (*Application, error)
 	UpdateApplicationTemplate(ctx context.Context, id string, in ApplicationTemplateUpdateInput) (*ApplicationTemplate, error)
@@ -2465,6 +2467,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SetRuntimeLabel(childComplexity, args["runtimeID"].(string), args["key"].(string), args["value"].(interface{})), true
 
+	case "Mutation.unpairApplication":
+		if e.complexity.Mutation.UnpairApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unpairApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnpairApplication(childComplexity, args["id"].(string), args["mode"].(*OperationMode)), true
+
 	case "Mutation.unregisterApplication":
 		if e.complexity.Mutation.UnregisterApplication == nil {
 			break
@@ -3552,6 +3566,8 @@ enum ApplicationStatusCondition {
 	DELETING
 	DELETE_FAILED
 	DELETE_SUCCEEDED
+	UNPAIRING
+	UNPAIR_FAILED
 }
 
 enum ApplicationTemplateAccessLevel {
@@ -3646,6 +3662,7 @@ enum WebhookType {
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
+	UNPAIR_APPLICATION
 }
 
 interface OneTimeToken {
@@ -4703,6 +4720,7 @@ type Mutation {
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
 	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(operationType: DELETE, idField: "id", webhookType: UNREGISTER_APPLICATION)
+	unpairApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unpairApplication") @async(operationType: UPDATE, idField: "id", webhookType: UNPAIR_APPLICATION)
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
@@ -6147,6 +6165,28 @@ func (ec *executionContext) field_Mutation_setRuntimeLabel_args(ctx context.Cont
 		}
 	}
 	args["value"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unpairApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 *OperationMode
+	if tmp, ok := rawArgs["mode"]; ok {
+		arg1, err = ec.unmarshalOOperationMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["mode"] = arg1
 	return args, nil
 }
 
@@ -13190,6 +13230,89 @@ func (ec *executionContext) _Mutation_unregisterApplication(ctx context.Context,
 				return nil, err
 			}
 			webhookType, err := ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "UNREGISTER_APPLICATION")
+			if err != nil {
+				return nil, err
+			}
+			idField, err := ec.unmarshalOString2ᚖstring(ctx, "id")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Async == nil {
+				return nil, errors.New("directive async is not implemented")
+			}
+			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType, idField)
+		}
+
+		tmp, err := directive2(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Application); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Application`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Application)
+	fc.Result = res
+	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_unpairApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_unpairApplication_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UnpairApplication(rctx, args["id"].(string), args["mode"].(*OperationMode))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unpairApplication")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "UPDATE")
+			if err != nil {
+				return nil, err
+			}
+			webhookType, err := ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "UNPAIR_APPLICATION")
 			if err != nil {
 				return nil, err
 			}
@@ -24670,6 +24793,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "unregisterApplication":
 			out.Values[i] = ec._Mutation_unregisterApplication(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "unpairApplication":
+			out.Values[i] = ec._Mutation_unpairApplication(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

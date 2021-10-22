@@ -32,7 +32,7 @@ func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
 	appInput := graphql.ApplicationRegisterInput{
 		Name:         appName,
 		ProviderName: ptr.String("compass"),
-		Webhooks:     []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
+		Webhooks:     []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
 	}
 
 	t.Log(fmt.Sprintf("Registering application: %s", appName))
@@ -63,7 +63,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
 			Name: appName,
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
-		Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
+		Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
 	}
 
 	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
@@ -108,7 +108,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 			Name: appName,
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
-		Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL)},
+		Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
 	}
 
 	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
@@ -141,7 +141,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 	nearCreationTime := time.Now().Add(-1 * time.Second)
 
 	t.Log(fmt.Sprintf("Registering webhook for application: %s", appName))
-	appWebhookInputGQL, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL))
+	appWebhookInputGQL, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication))
 	require.NoError(t, err)
 
 	registerAppWebhookRequest := fixtures.FixAddWebhookRequest(app.ID, appWebhookInputGQL)
