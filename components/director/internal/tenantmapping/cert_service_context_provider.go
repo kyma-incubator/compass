@@ -38,7 +38,7 @@ func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oat
 	externalTenantID := authDetails.AuthID
 
 	// TODO add tenant:read scope when we start storing subaccounts as tenants and the below comment for tenant conversion is used in production
-	scopes := "runtime:read runtime:write tenant:read"
+	scopes := "runtime:read runtime:write"
 
 	// TODO: Uncomment once we start storing subaccounts as tenants and ord views work with internal tenant IDs
 	//log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)

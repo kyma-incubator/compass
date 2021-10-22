@@ -17,6 +17,7 @@ import (
 func TestCertServiceContextProvider(t *testing.T) {
 	subaccount := uuid.New().String()
 	authDetails := oathkeeper.AuthDetails{AuthID: subaccount, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
+	expectedScopes := "runtime:read runtime:write"
 
 	tenantRepo := &tenantmappingmock.TenantRepository{}
 	provider := tenantmapping.NewCertServiceContextProvider(tenantRepo)
@@ -28,7 +29,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 	require.Equal(t, subaccount, objectCtx.ConsumerID)
 	require.Equal(t, subaccount, objectCtx.TenantContext.TenantID)
 	require.Equal(t, subaccount, objectCtx.TenantContext.ExternalTenantID)
-	require.Empty(t, objectCtx.Scopes)
+	require.Equal(t, expectedScopes, objectCtx.Scopes)
 
 	tenantRepo.AssertExpectations(t)
 }
