@@ -41,19 +41,19 @@ func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oat
 	scopes := "runtime:read runtime:write"
 
 	// TODO: Uncomment once we start storing subaccounts as tenants and ord views work with internal tenant IDs
-	//log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
-	//tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
-	//if err != nil {
-	//	if apperrors.IsNotFoundError(err) {
-	//		log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
+	// log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
+	// tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
+	// if err != nil {
+	// 	if apperrors.IsNotFoundError(err) {
+	// 		log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 	//
-	//		log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-	//		return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider), nil
-	//	}
-	//	return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
-	//}
+	// 		log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
+	// 		return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider), nil
+	// 	}
+	// 	return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
+	// }
 	//
-	//objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
+	// objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
 
