@@ -102,18 +102,20 @@ spec:
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
-                    name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
-                    key: oauth-client
+                    name: {{ $config.secret.name }}
+                    key: {{ $config.secret.clientIdKey }}
               - name: APP_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
-                    name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
-                    key: oauth-secret
+                    name: {{ $config.secret.name }}
+                    key: {{ $config.secret.clientSecretKey }}
               - name: APP_OAUTH_TOKEN_ENDPOINT
                 valueFrom:
                   secretKeyRef:
-                    name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
-                    key: oauth-token-endpoint
+                    name: {{ $config.secret.name }}
+                    key: {{ $config.secret.oauthUrlKey }}
+              - name: APP_OAUTH_TOKEN_PATH
+                value: {{ $config.oauth.tokenPath }}
               - name: APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME
                 value: {{ $configmapName }}
               - name: APP_CONFIGMAP_NAMESPACE
