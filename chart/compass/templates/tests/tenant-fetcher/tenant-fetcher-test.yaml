@@ -55,6 +55,16 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_EXTERNAL_SERVICES_MOCK_URL
               value: {{ .Values.global.tests.externalServicesMockFQDN }}:8080
+            - name: APP_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
+                  key: client-id
+            - name: APP_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
+                  key: client-secret
             - name: APP_TENANT_FETCHER_HEALTHZ_URL
               value: "{{ .Values.global.tests.tenantFetcherFQDN }}:{{ .Values.global.tenantFetcher.port }}{{ .Values.global.tenantFetcher.prefix }}/healthz"
             - name: APP_ROOT_API

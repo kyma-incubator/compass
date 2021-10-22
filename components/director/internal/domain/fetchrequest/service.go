@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -21,9 +23,10 @@ import (
 )
 
 type service struct {
-	repo         FetchRequestRepository
-	client       *http.Client
-	timestampGen timestamp.Generator
+	repo                           FetchRequestRepository
+	client                         *http.Client
+	timestampGen                   timestamp.Generator
+	accessStrategyExecutorProvider accessstrategy.ExecutorProvider
 }
 
 // FetchRequestRepository missing godoc
@@ -33,11 +36,12 @@ type FetchRequestRepository interface {
 }
 
 // NewService missing godoc
-func NewService(repo FetchRequestRepository, client *http.Client) *service {
+func NewService(repo FetchRequestRepository, client *http.Client, executorProvider accessstrategy.ExecutorProvider) *service {
 	return &service{
-		repo:         repo,
-		client:       client,
-		timestampGen: timestamp.DefaultGenerator,
+		repo:                           repo,
+		client:                         client,
+		timestampGen:                   timestamp.DefaultGenerator,
+		accessStrategyExecutorProvider: executorProvider,
 	}
 }
 
@@ -62,7 +66,16 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 	}
 
 	var resp *http.Response
-	if fr.Auth != nil {
+	if fr.Auth != nil && fr.Auth.AccessStrategy != nil && len(*fr.Auth.AccessStrategy) > 0 {
+		log.C(ctx).Infof("Fetch Request with id %s is configured with %s access strategy.", fr.ID, *fr.Auth.AccessStrategy)
+		var executor accessstrategy.Executor
+		executor, err = s.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*fr.Auth.AccessStrategy))
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("Cannot find executor for access strategy %q as part of fetch request %s processing: %v", *fr.Auth.AccessStrategy, fr.ID, err)
+			return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching Spec: %s", err.Error())), s.timestampGen())
+		}
+		resp, err = executor.Execute(ctx, s.client, fr.URL)
+	} else if fr.Auth != nil {
 		resp, err = httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, fr.Auth)
 	} else {
 		resp, err = httputil.GetRequestWithoutCredentials(s.client, fr.URL)
@@ -82,15 +95,15 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		}
 	}()
 
-	if resp.StatusCode != http.StatusOK {
-		log.C(ctx).WithError(err).Errorf("Failed to execute fetch request for %s with id %q: status code: %d: %v", fr.ObjectType, fr.ObjectID, resp.StatusCode, err)
-		return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching Spec status code: %d", resp.StatusCode)), s.timestampGen())
-	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while reading Spec: %v", err)
 		return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While reading Spec: %s", err.Error())), s.timestampGen())
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.C(ctx).Errorf("Failed to execute fetch request for %s with id %q: status code: %d body: %s", fr.ObjectType, fr.ObjectID, resp.StatusCode, string(body))
+		return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching Spec status code: %d", resp.StatusCode)), s.timestampGen())
 	}
 
 	spec := string(body)

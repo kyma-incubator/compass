@@ -55,7 +55,7 @@ type TenantIDProperties struct {
 }
 
 // CreateTenantRequest returns a prepared tenant request with token in the header with the necessary tenant-fetcher claims
-func CreateTenantRequest(t *testing.T, tenantIDs Tenant, tenantProperties TenantIDProperties, httpMethod, tenantFetcherUrl, externalServicesMockURL string) *http.Request {
+func CreateTenantRequest(t *testing.T, tenantIDs Tenant, tenantProperties TenantIDProperties, httpMethod, tenantFetcherUrl, externalServicesMockURL, clientID, clientSecret string) *http.Request {
 	var (
 		body = "{}"
 		err  error
@@ -85,7 +85,7 @@ func CreateTenantRequest(t *testing.T, tenantIDs Tenant, tenantProperties Tenant
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
 	require.NoError(t, err)
 
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, externalServicesMockURL, DefaultClaims(externalServicesMockURL))))
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, externalServicesMockURL, clientID, clientSecret, DefaultClaims(externalServicesMockURL))))
 
 	return request
 }

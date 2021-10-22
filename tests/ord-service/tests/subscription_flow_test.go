@@ -118,7 +118,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		}
 
 		// Build a request for consumer subscription
-		subscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL)
+		subscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret)
 
 		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenantIDs), runtime.Name, subscriptionProviderSubaccountID))
 		subscribeResp, err := httpClient.Do(subscribeReq)
@@ -137,7 +137,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			"iss":            testConfig.ExternalServicesMockURL,
 			"exp":            time.Now().Unix() + int64(time.Minute.Seconds()),
 		}
-		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, testConfig.ExternalServicesMockURL, claims))}}
+		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret, claims))}}
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
@@ -146,7 +146,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 
 		// Build unsubscribe request
-		unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL)
+		unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret)
 
 		t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenantIDs), runtime.Name, subscriptionProviderSubaccountID))
 		unsubscribeResp, err := httpClient.Do(unsubscribeReq)

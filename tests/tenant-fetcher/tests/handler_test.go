@@ -429,7 +429,7 @@ func TestGetDependenciesHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		externalSvcMockUrl := config.ExternalServicesMockURL
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, externalSvcMockUrl, tenantfetcher.DefaultClaims(externalSvcMockUrl))))
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, externalSvcMockUrl, config.ClientID, config.ClientSecret, tenantfetcher.DefaultClaims(externalSvcMockUrl))))
 
 		// WHEN
 		response, err := httpClient.Do(request)
@@ -468,7 +468,7 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenantIDs tenantfet
 		SubscriptionProviderIDProperty: config.SubscriptionProviderIDProperty,
 	}
 
-	request := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, httpMethod, url, config.ExternalServicesMockURL)
+	request := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, httpMethod, url, config.ExternalServicesMockURL, config.ClientID, config.ClientSecret)
 
 	t.Log(fmt.Sprintf("Provisioning tenant with ID %s", tenantfetcher.ActualTenantID(providedTenantIDs)))
 	response, err := httpClient.Do(request)
