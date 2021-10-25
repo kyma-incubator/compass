@@ -118,6 +118,7 @@ func TestSubscribeGlobalTenant(t *testing.T) {
 		Region                    string
 		TenantProvisionerFn       func() *automock.TenantProvisioner
 		RuntimeServiceFn          func() *automock.RuntimeService
+		LabelUpsertServiceFn      func() *automock.LabelUpsertService
 		TenantSubscriptionRequest tenantfetchersvc.TenantSubscriptionRequest
 		ExpectedErrorOutput       string
 	}{
@@ -134,6 +135,9 @@ func TestSubscribeGlobalTenant(t *testing.T) {
 				provisioner.On("ListByFiltersGlobal", context.TODO(), globalFilters).Return([]*model.Runtime{}, nil).Once()
 				return provisioner
 			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
 			TenantSubscriptionRequest: accountProvisioningRequest,
 		},
 		{
@@ -145,6 +149,9 @@ func TestSubscribeGlobalTenant(t *testing.T) {
 				return provisioner
 			},
 			RuntimeServiceFn:          func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
 			TenantSubscriptionRequest: accountProvisioningRequest,
 			ExpectedErrorOutput:       testError.Error(),
 		},
@@ -161,6 +168,9 @@ func TestSubscribeGlobalTenant(t *testing.T) {
 				provisioner.On("ListByFiltersGlobal", context.TODO(), globalFilters).Return(nil, testError).Once()
 				return provisioner
 			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
 			TenantSubscriptionRequest: accountProvisioningRequest,
 			ExpectedErrorOutput:       testError.Error(),
 		},
@@ -170,11 +180,12 @@ func TestSubscribeGlobalTenant(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			provisioner := testCase.TenantProvisionerFn()
 			runtimeSvc := testCase.RuntimeServiceFn()
+			labelUpsertSvc := testCase.LabelUpsertServiceFn()
 			defer mock.AssertExpectationsForObjects(t, provisioner, runtimeSvc)
 
-			subscriber := tenantfetchersvc.NewSubscriber(provisioner, runtimeSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
+			subscriber := tenantfetchersvc.NewSubscriber(provisioner, runtimeSvc, labelUpsertSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
-			//WHEN
+			// WHEN
 			err := subscriber.Subscribe(context.TODO(), &testCase.TenantSubscriptionRequest, testCase.Region)
 
 			// THEN
@@ -205,6 +216,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 		Region                    string
 		TenantProvisionerFn       func() *automock.TenantProvisioner
 		RuntimeServiceFn          func() *automock.RuntimeService
+		LabelUpsertServiceFn      func() *automock.LabelUpsertService
 		TenantSubscriptionRequest tenantfetchersvc.TenantSubscriptionRequest
 		ExpectedErrorOutput       string
 	}{
@@ -221,6 +233,9 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{}, nil).Once()
 				return provisioner
 			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
 			TenantSubscriptionRequest: regionalTenant,
 		},
 		{
@@ -232,6 +247,9 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				return provisioner
 			},
 			RuntimeServiceFn:          func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
 		},
@@ -247,6 +265,9 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, notFoundErr).Once()
 				return provisioner
 			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 		},
@@ -261,6 +282,9 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, testError).Once()
 				return provisioner
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
 			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
@@ -279,6 +303,9 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				provisioner.On("GetLabel", ctxWithTenant, testRuntime.ID, consumerSubaccountIDsLabelKey).Return(nil, testError).Once()
 				return provisioner
 			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
@@ -296,6 +323,9 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				provisioner.On("GetLabel", ctxWithTenant, testRuntime.ID, consumerSubaccountIDsLabelKey).Return(&invalidTestLabel, nil).Once()
 				return provisioner
 			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       "Failed to parse label values for label ",
@@ -311,8 +341,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				provisioner.On("GetLabel", ctxWithTenant, testRuntime.ID, consumerSubaccountIDsLabelKey).Return(&testLabel, nil).Once()
-				provisioner.On("SetLabel", ctxWithTenant, &updateLabelInput).Return(testError).Once()
+				//provisioner.On("SetLabel", ctxWithTenant, &updateLabelInput).Return(testError).Once()
 				return provisioner
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				labelSvc := &automock.LabelUpsertService{}
+				labelSvc.On("UpsertLabel", ctxWithTenant, testRuntime.Tenant, &updateLabelInput).Return(testError).Once()
+				return labelSvc
 			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
@@ -329,8 +364,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				provisioner.On("GetLabel", ctxWithTenant, testRuntime.ID, consumerSubaccountIDsLabelKey).Return(nil, notFoundErr).Once()
-				provisioner.On("SetLabel", ctxWithTenant, &createLabelInput).Return(nil).Once()
+				//provisioner.On("SetLabel", ctxWithTenant, &createLabelInput).Return(nil).Once()
 				return provisioner
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				labelSvc := &automock.LabelUpsertService{}
+				labelSvc.On("UpsertLabel", ctxWithTenant, testRuntime.Tenant, &createLabelInput).Return(nil).Once()
+				return labelSvc
 			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
@@ -346,8 +386,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				provisioner.On("GetLabel", ctxWithTenant, testRuntime.ID, consumerSubaccountIDsLabelKey).Return(&testLabel, nil).Once()
-				provisioner.On("SetLabel", ctxWithTenant, &updateLabelInput).Return(nil).Once()
+				//provisioner.On("SetLabel", ctxWithTenant, &updateLabelInput).Return(nil).Once()
 				return provisioner
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				labelSvc := &automock.LabelUpsertService{}
+				labelSvc.On("UpsertLabel", ctxWithTenant, testRuntime.Tenant, &updateLabelInput).Return(nil).Once()
+				return labelSvc
 			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
@@ -358,11 +403,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			provisioner := testCase.TenantProvisionerFn()
 			runtimeSvc := testCase.RuntimeServiceFn()
+			labelUpsertSvc := testCase.LabelUpsertServiceFn()
+
 			defer mock.AssertExpectationsForObjects(t, provisioner, runtimeSvc)
 
-			subscriber := tenantfetchersvc.NewSubscriber(provisioner, runtimeSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
+			subscriber := tenantfetchersvc.NewSubscriber(provisioner, runtimeSvc, labelUpsertSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
-			//WHEN
+			// WHEN
 			err := subscriber.Subscribe(context.TODO(), &testCase.TenantSubscriptionRequest, testCase.Region)
 
 			// THEN
@@ -391,6 +438,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 		Name                      string
 		Region                    string
 		RuntimeServiceFn          func() *automock.RuntimeService
+		LabelUpsertServiceFn      func() *automock.LabelUpsertService
 		TenantSubscriptionRequest tenantfetchersvc.TenantSubscriptionRequest
 		ExpectedErrorOutput       string
 	}{
@@ -402,6 +450,9 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{}, nil).Once()
 				return provisioner
 			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
 			TenantSubscriptionRequest: regionalTenant,
 		},
 		{
@@ -410,6 +461,9 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, notFoundErr).Once()
 				return provisioner
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
 			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
@@ -420,6 +474,9 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, testError).Once()
 				return provisioner
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
 			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
@@ -433,6 +490,9 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				provisioner.On("GetLabel", ctxWithTenant, testRuntime.ID, consumerSubaccountIDsLabelKey).Return(nil, testError).Once()
 				return provisioner
 			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
@@ -445,6 +505,9 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				provisioner.On("GetLabel", ctxWithTenant, testRuntime.ID, consumerSubaccountIDsLabelKey).Return(&invalidTestLabel, nil).Once()
 				return provisioner
 			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				return &automock.LabelUpsertService{}
+			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       "Failed to parse label values for label ",
@@ -455,8 +518,13 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				provisioner.On("GetLabel", ctxWithTenant, testRuntime.ID, consumerSubaccountIDsLabelKey).Return(&testLabel, nil).Once()
-				provisioner.On("SetLabel", ctxWithTenant, &removeLabelInput).Return(testError).Once()
+				//provisioner.On("SetLabel", ctxWithTenant, &removeLabelInput).Return(testError).Once()
 				return provisioner
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				labelSvc := &automock.LabelUpsertService{}
+				labelSvc.On("UpsertLabel", ctxWithTenant, testRuntime.Tenant, &removeLabelInput).Return(testError).Once()
+				return labelSvc
 			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
@@ -468,8 +536,13 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				provisioner.On("GetLabel", ctxWithTenant, testRuntime.ID, consumerSubaccountIDsLabelKey).Return(nil, notFoundErr).Once()
-				provisioner.On("SetLabel", ctxWithTenant, &emptyLabelInput).Return(nil).Once()
+				//provisioner.On("SetLabel", ctxWithTenant, &emptyLabelInput).Return(nil).Once()
 				return provisioner
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				labelSvc := &automock.LabelUpsertService{}
+				labelSvc.On("UpsertLabel", ctxWithTenant, testRuntime.Tenant, &emptyLabelInput).Return(nil).Once()
+				return labelSvc
 			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
@@ -480,8 +553,13 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				provisioner.On("GetLabel", ctxWithTenant, testRuntime.ID, consumerSubaccountIDsLabelKey).Return(&testLabel, nil).Once()
-				provisioner.On("SetLabel", ctxWithTenant, &removeLabelInput).Return(nil).Once()
+				//provisioner.On("SetLabel", ctxWithTenant, &removeLabelInput).Return(nil).Once()
 				return provisioner
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				labelSvc := &automock.LabelUpsertService{}
+				labelSvc.On("UpsertLabel", ctxWithTenant, testRuntime.Tenant, &removeLabelInput).Return(nil).Once()
+				return labelSvc
 			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
@@ -491,11 +569,12 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			runtimeSvc := testCase.RuntimeServiceFn()
+			labelSvc := testCase.LabelUpsertServiceFn()
 			defer mock.AssertExpectationsForObjects(t, runtimeSvc)
 
-			subscriber := tenantfetchersvc.NewSubscriber(&automock.TenantProvisioner{}, runtimeSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
+			subscriber := tenantfetchersvc.NewSubscriber(&automock.TenantProvisioner{}, runtimeSvc, labelSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
-			//WHEN
+			// WHEN
 			err := subscriber.Unsubscribe(context.TODO(), &testCase.TenantSubscriptionRequest, testCase.Region)
 
 			// THEN

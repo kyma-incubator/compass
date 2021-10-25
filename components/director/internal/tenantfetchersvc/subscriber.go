@@ -26,6 +26,11 @@ type RuntimeService interface {
 	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
+type LabelUpsertService interface {
+	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
+}
+
 type subscriptionFunc func(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest, region string) error
 
 type sliceMutationFunc func([]string, string) []string
@@ -33,15 +38,17 @@ type sliceMutationFunc func([]string, string) []string
 type subscriber struct {
 	provisioner TenantProvisioner
 	RuntimeService
+	LabelUpsertService
 	SubscriptionProviderLabelKey  string
 	ConsumerSubaccountIDsLabelKey string
 }
 
 // NewSubscriber creates new subscriber
-func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, subscriptionProviderLabelKey, consumerSubaccountIDsLabelKey string) *subscriber {
+func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, labelUpsertService LabelUpsertService, subscriptionProviderLabelKey, consumerSubaccountIDsLabelKey string) *subscriber {
 	return &subscriber{
 		provisioner:                   provisioner,
 		RuntimeService:                service,
+		LabelUpsertService:            labelUpsertService,
 		SubscriptionProviderLabelKey:  subscriptionProviderLabelKey,
 		ConsumerSubaccountIDsLabelKey: consumerSubaccountIDsLabelKey,
 	}
@@ -94,7 +101,23 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 
 		var labelNewValue = mutateLabelsFunc(labelOldValue, subaccountTenantID)
 
-		if err := s.SetLabel(ctx, &model.LabelInput{
+		//if err := s.SetLabel(ctx, &model.LabelInput{
+		//	Key:        s.ConsumerSubaccountIDsLabelKey,
+		//	Value:      labelNewValue,
+		//	ObjectType: model.RuntimeLabelableObject,
+		//	ObjectID:   runtime.ID,
+		//}); err != nil {
+		//	return errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", runtime.ID))
+		//}
+
+		rtmTenant, err := tenant.LoadFromContext(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "while loading tenant from context")
+		}
+
+		fmt.Printf("\n runtime ID: --> %s <--- and runtime tenant: ---> %s <---\n", runtime.ID, rtmTenant)
+		fmt.Printf("\n subscription call in tenatn-fetcher for runtime with ID: --> %s <---\n", runtime.ID)
+		if err := s.UpsertLabel(ctx, rtmTenant, &model.LabelInput{
 			Key:        s.ConsumerSubaccountIDsLabelKey,
 			Value:      labelNewValue,
 			ObjectType: model.RuntimeLabelableObject,
