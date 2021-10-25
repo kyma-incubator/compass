@@ -18,6 +18,7 @@ import (
 // Updater missing godoc
 type Updater interface {
 	UpdateSingle(ctx context.Context, dbEntity interface{}) error
+	UpdateSingleWithVersion(ctx context.Context, dbEntity interface{}) error
 	SetIDColumns(idColumns []string)
 	SetUpdatableColumns(updatableColumns []string)
 	Clone() Updater
@@ -70,12 +71,30 @@ func (u *universalUpdater) SetUpdatableColumns(updatableColumns []string) {
 
 // UpdateSingle missing godoc
 func (u *universalUpdater) UpdateSingle(ctx context.Context, dbEntity interface{}) error {
-	return u.unsafeUpdateSingle(ctx, dbEntity, false, false)
+	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, u.buildFieldsToSet(), false)
 }
 
 // UpdateSingleGlobal missing godoc
 func (u *universalUpdater) UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error {
-	return u.unsafeUpdateSingle(ctx, dbEntity, true, false)
+	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, u.buildFieldsToSet(), true)
+}
+
+// UpdateSingle missing godoc
+func (u *universalUpdater) UpdateSingleWithVersion(ctx context.Context, dbEntity interface{}) error {
+	fieldsToSet := u.buildFieldsToSet()
+	fieldsToSet = append(fieldsToSet, "version = version+1")
+
+	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, fieldsToSet, false)
+}
+
+// TechnicalUpdate missing godoc
+func (u *universalUpdater) TechnicalUpdate(ctx context.Context, dbEntity interface{}) error {
+	entity, ok := dbEntity.(Entity)
+	if ok && entity.GetDeletedAt().IsZero() {
+		entity.SetUpdatedAt(time.Now())
+		dbEntity = entity
+	}
+	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, u.buildFieldsToSet(), false)
 }
 
 // Clone missing godoc
@@ -91,12 +110,7 @@ func (u *universalUpdater) Clone() Updater {
 	return &clonedUpdater
 }
 
-// TechnicalUpdate missing godoc
-func (u *universalUpdater) TechnicalUpdate(ctx context.Context, dbEntity interface{}) error {
-	return u.unsafeUpdateSingle(ctx, dbEntity, false, true)
-}
-
-func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity interface{}, isGlobal, isTechnical bool) error {
+func (u *universalUpdater) unsafeUpdateSingleWithFields(ctx context.Context, dbEntity interface{}, fieldsToSet []string, isGlobal bool) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -106,41 +120,13 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 		return err
 	}
 
-	fieldsToSet := make([]string, 0, len(u.updatableColumns))
-	for _, c := range u.updatableColumns {
-		fieldsToSet = append(fieldsToSet, fmt.Sprintf("%s = :%s", c, c))
+	query, err := u.buildQuery(fieldsToSet, isGlobal)
+	if err != nil {
+		return err
 	}
 
-	var stmtBuilder strings.Builder
-
-	stmtBuilder.WriteString(fmt.Sprintf("UPDATE %s SET %s", u.tableName, strings.Join(fieldsToSet, ", ")))
-	if !isGlobal || len(u.idColumns) > 0 {
-		stmtBuilder.WriteString(" WHERE")
-	}
-	if !isGlobal {
-		if err := writeEnumeratedConditions(&stmtBuilder, Conditions{NewTenantIsolationConditionWithPlaceholder(*u.tenantColumn, fmt.Sprintf(":%s", *u.tenantColumn), nil)}); err != nil {
-			return errors.Wrap(err, "while writing enumerated conditions")
-		}
-		if len(u.idColumns) > 0 {
-			stmtBuilder.WriteString(" AND")
-		}
-	}
-	if len(u.idColumns) > 0 {
-		var preparedIDColumns []string
-		for _, idCol := range u.idColumns {
-			preparedIDColumns = append(preparedIDColumns, fmt.Sprintf("%s = :%s", idCol, idCol))
-		}
-		stmtBuilder.WriteString(fmt.Sprintf(" %s", strings.Join(preparedIDColumns, " AND ")))
-	}
-
-	entity, ok := dbEntity.(Entity)
-	if ok && entity.GetDeletedAt().IsZero() && !isTechnical {
-		entity.SetUpdatedAt(time.Now())
-		dbEntity = entity
-	}
-
-	log.C(ctx).Debugf("Executing DB query: %s", stmtBuilder.String())
-	res, err := persist.NamedExecContext(ctx, stmtBuilder.String(), dbEntity)
+	log.C(ctx).Debugf("Executing DB query: %s", query)
+	res, err := persist.NamedExecContext(ctx, query, dbEntity)
 	if err = persistence.MapSQLError(ctx, err, u.resourceType, resource.Update, "while updating single entity from '%s' table", u.tableName); err != nil {
 		return err
 	}
@@ -157,4 +143,38 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 	}
 
 	return nil
+}
+
+func (u *universalUpdater) buildFieldsToSet() []string {
+	fieldsToSet := make([]string, 0, len(u.updatableColumns)+1)
+	for _, c := range u.updatableColumns {
+		fieldsToSet = append(fieldsToSet, fmt.Sprintf("%s = :%s", c, c))
+	}
+	return fieldsToSet
+}
+
+func (u *universalUpdater) buildQuery(fieldsToSet []string, isGlobal bool) (string, error) {
+	var stmtBuilder strings.Builder
+
+	stmtBuilder.WriteString(fmt.Sprintf("UPDATE %s SET %s", u.tableName, strings.Join(fieldsToSet, ", ")))
+	if !isGlobal || len(u.idColumns) > 0 {
+		stmtBuilder.WriteString(" WHERE")
+	}
+	if !isGlobal {
+		if err := writeEnumeratedConditions(&stmtBuilder, Conditions{NewTenantIsolationConditionWithPlaceholder(*u.tenantColumn, fmt.Sprintf(":%s", *u.tenantColumn), nil)}); err != nil {
+			return "", errors.Wrap(err, "while writing enumerated conditions")
+		}
+		if len(u.idColumns) > 0 {
+			stmtBuilder.WriteString(" AND")
+		}
+	}
+	if len(u.idColumns) > 0 {
+		var preparedIDColumns []string
+		for _, idCol := range u.idColumns {
+			preparedIDColumns = append(preparedIDColumns, fmt.Sprintf("%s = :%s", idCol, idCol))
+		}
+		stmtBuilder.WriteString(fmt.Sprintf(" %s", strings.Join(preparedIDColumns, " AND ")))
+	}
+
+	return stmtBuilder.String(), nil
 }

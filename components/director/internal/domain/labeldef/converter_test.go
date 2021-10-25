@@ -83,10 +83,11 @@ func TestToEntity(t *testing.T) {
 	sut := labeldef.NewConverter()
 	// WHEN
 	actual, err := sut.ToEntity(model.LabelDefinition{
-		Key:    "some-key",
-		Tenant: "tenant",
-		ID:     "id",
-		Schema: &schema,
+		Key:     "some-key",
+		Tenant:  "tenant",
+		ID:      "id",
+		Schema:  &schema,
+		Version: 0,
 	})
 	// THEN
 	require.NoError(t, err)
@@ -95,6 +96,7 @@ func TestToEntity(t *testing.T) {
 	assert.Equal(t, "id", actual.ID)
 	assert.True(t, actual.SchemaJSON.Valid)
 	assert.Equal(t, `{"$id":"id","title":"title"}`, actual.SchemaJSON.String)
+	assert.Equal(t, 0, actual.Version)
 }
 
 func TestToEntityWhenNoSchema(t *testing.T) {
@@ -102,13 +104,18 @@ func TestToEntityWhenNoSchema(t *testing.T) {
 	sut := labeldef.NewConverter()
 	// WHEN
 	actual, err := sut.ToEntity(model.LabelDefinition{
-		Key:    "key",
-		Tenant: "tenant",
-		ID:     "id",
+		Key:     "key",
+		Tenant:  "tenant",
+		ID:      "id",
+		Version: 0,
 	})
 	// THENr
 	require.NoError(t, err)
 	assert.Empty(t, actual.SchemaJSON)
+	assert.Equal(t, "key", actual.Key)
+	assert.Equal(t, "tenant", actual.TenantID)
+	assert.Equal(t, "id", actual.ID)
+	assert.Equal(t, 0, actual.Version)
 }
 
 func TestFromEntityWhenNoSchema(t *testing.T) {
@@ -117,6 +124,7 @@ func TestFromEntityWhenNoSchema(t *testing.T) {
 		ID:       "id",
 		Key:      "key",
 		TenantID: "tenant",
+		Version:  0,
 	}
 	sut := labeldef.NewConverter()
 	// WHEN
@@ -126,6 +134,7 @@ func TestFromEntityWhenNoSchema(t *testing.T) {
 	assert.Equal(t, "id", actual.ID)
 	assert.Equal(t, "key", actual.Key)
 	assert.Equal(t, "tenant", actual.Tenant)
+	assert.Equal(t, 0, actual.Version)
 	assert.Nil(t, actual.Schema)
 }
 
@@ -139,6 +148,7 @@ func TestFromEntityWhenSchemaProvided(t *testing.T) {
 			Valid:  true,
 			String: `{"$id":"xxx","title":"title"}`,
 		},
+		Version: 0,
 	}
 	sut := labeldef.NewConverter()
 	// WHEN
@@ -148,6 +158,7 @@ func TestFromEntityWhenSchemaProvided(t *testing.T) {
 	assert.Equal(t, "id", actual.ID)
 	assert.Equal(t, "key", actual.Key)
 	assert.Equal(t, "tenant", actual.Tenant)
+	assert.Equal(t, 0, actual.Version)
 	assert.NotNil(t, actual.Schema)
 	// converting to specific type
 	b, err := json.Marshal(actual.Schema)

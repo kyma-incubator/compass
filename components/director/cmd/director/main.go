@@ -437,17 +437,17 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) func(writer http.ResponseWriter, request *http.Request) {
 	uidSvc := uid.NewService()
 
+	assignmentConv := scenarioassignment.NewConverter()
 	labelConv := label.NewConverter()
 	labelRepo := label.NewRepository(labelConv)
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, defaultScenarioEnabled)
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, defaultScenarioEnabled)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	runtimeConv := runtime.NewConverter()
 	runtimeRepo := runtime.NewRepository(runtimeConv)
 
-	scenarioAssignmentConv := scenarioassignment.NewConverter()
-	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo)
 
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
@@ -550,6 +550,7 @@ func webhookService() webhook.WebhookService {
 
 func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHTTPClient *http.Client, pairingAdapters map[string]string) oathkeeper.OneTimeTokenService {
 	uidSvc := uid.NewService()
+	assignmentConv := scenarioassignment.NewConverter()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
@@ -579,7 +580,8 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	bundleRepo := bundle.NewRepository(packageConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	docRepo := document.NewRepository(docConverter)
