@@ -421,6 +421,9 @@ global:
       cmpMtls:
         certSvcApiPath: "/cert"
         tokenPath: "/secured/oauth/token"
+        issuerLocality: "local"
+        retryAttempts: "8"
+        retryDelay: "250ms"
         secret:
           name: cert-svc-secret
           manage: true
