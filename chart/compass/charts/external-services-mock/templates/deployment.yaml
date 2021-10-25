@@ -23,9 +23,9 @@ spec:
               imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
               env:
               - name: APP_ADDRESS
-                value: "127.0.0.1:{{ .Values.deployment.port }}"
+                value: ":{{ .Values.deployment.port }}"
               - name: APP_CERT_SECURED_SERVER_ADDRESS
-                value: "127.0.0.1:{{ .Values.global.externalServicesMock.certSecuredPort }}"
+                value: ":{{ .Values.global.externalServicesMock.certSecuredPort }}"
               - name: APP_CERT_SECURED_BASE_URL
                 value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
               {{- if eq .Values.global.externalServicesMock.auditlog true }}
