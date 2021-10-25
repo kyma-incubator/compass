@@ -3,12 +3,18 @@ package cert_test
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/pkg/errors"
@@ -37,11 +43,47 @@ type crtResponse struct {
 }
 
 func TestIssueClientCert(t *testing.T) {
-	encryptedCrtContent, err := pkcs7.Encrypt([]byte("cert"), nil)
+	// Issue a mock test client cert
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	tenant := "test-tenant"
+	testCert := x509.Certificate{
+		SerialNumber: big.NewInt(2),
+		Subject: pkix.Name{
+			Country:            []string{"DE"},
+			Organization:       []string{"SAP SE"},
+			OrganizationalUnit: []string{"SAP Cloud Platform Clients", "Region", tenant},
+			Locality:           []string{"local"},
+			CommonName:         "compass",
+		},
+		NotBefore:   time.Now(),
+		NotAfter:    time.Now().Add(time.Hour),
+		KeyUsage:    x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+
+	testCrtRaw, err := x509.CreateCertificate(rand.Reader, &testCert, &testCert, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	encryptedCrtContent, err := pkcs7.DegenerateCertificate(testCrtRaw)
 	require.NoError(t, err)
 
 	crt := pem.EncodeToMemory(&pem.Block{
 		Type: "PKCS7", Bytes: encryptedCrtContent,
+	})
+
+	// Issue a mock test client cert with invalid Locality
+	wrongLocalityTestCert := testCert
+	wrongLocalityTestCert.Subject.Locality = []string{"not-local"}
+	wrongLocalityTestCrtRaw, err := x509.CreateCertificate(rand.Reader, &wrongLocalityTestCert, &wrongLocalityTestCert, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	encryptedWrongLocalityCrtContent, err := pkcs7.DegenerateCertificate(wrongLocalityTestCrtRaw)
+	require.NoError(t, err)
+
+	wrongLocalityCrt := pem.EncodeToMemory(&pem.Block{
+		Type: "PKCS7", Bytes: encryptedWrongLocalityCrtContent,
 	})
 
 	oAuthURL := "http://oauth"
@@ -60,6 +102,9 @@ func TestIssueClientCert(t *testing.T) {
 		ClientID:       clientID,
 		ClientSecret:   clientSecret,
 		OAuthURL:       oAuthURL,
+		IssuerLocality: "local",
+		RetryAttempts:  2,
+		RetryDelay:     100 * time.Millisecond,
 	}
 
 	successfulClient := newTestClient(func(req *http.Request) (*http.Response, error) {
@@ -93,6 +138,78 @@ func TestIssueClientCert(t *testing.T) {
 		}, nil
 	})
 
+	var isCertWithWrongLocality = true
+	successfulClientAfterOneRetry := newTestClient(func(req *http.Request) (*http.Response, error) {
+		bodyBytes, err := ioutil.ReadAll(req.Body)
+		require.NoError(t, err)
+		body := string(bodyBytes)
+
+		var data []byte
+
+		if strings.Contains(req.URL.String(), oAuthURL) && strings.Contains(body, clientSecret) && strings.Contains(body, clientID) {
+			data, err = json.Marshal(struct {
+				AccessToken string `json:"access_token"`
+			}{
+				AccessToken: "test-tkn",
+			})
+			require.NoError(t, err)
+		} else if strings.Contains(req.URL.String(), csrEndpoint) && strings.Contains(body, policy) && isCertWithWrongLocality {
+			token := req.Header.Get("Authorization")
+			require.Equal(t, "Bearer test-tkn", token)
+			data, err = json.Marshal(csrResponse{
+				CrtResponse: crtResponse{
+					Crt: string(wrongLocalityCrt),
+				},
+			})
+			require.NoError(t, err)
+			isCertWithWrongLocality = !isCertWithWrongLocality
+		} else if strings.Contains(req.URL.String(), csrEndpoint) && strings.Contains(body, policy) && !isCertWithWrongLocality {
+			token := req.Header.Get("Authorization")
+			require.Equal(t, "Bearer test-tkn", token)
+			data, err = json.Marshal(csrResponse{
+				CrtResponse: crtResponse{
+					Crt: string(crt),
+				},
+			})
+			require.NoError(t, err)
+		}
+
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+		}, nil
+	})
+
+	unsuccessfulClientAfterAllRetries := newTestClient(func(req *http.Request) (*http.Response, error) {
+		bodyBytes, err := ioutil.ReadAll(req.Body)
+		require.NoError(t, err)
+		body := string(bodyBytes)
+
+		var data []byte
+
+		if strings.Contains(req.URL.String(), oAuthURL) && strings.Contains(body, clientSecret) && strings.Contains(body, clientID) {
+			data, err = json.Marshal(struct {
+				AccessToken string `json:"access_token"`
+			}{
+				AccessToken: "test-tkn",
+			})
+			require.NoError(t, err)
+		} else if strings.Contains(req.URL.String(), csrEndpoint) && strings.Contains(body, policy) {
+			token := req.Header.Get("Authorization")
+			require.Equal(t, "Bearer test-tkn", token)
+			data, err = json.Marshal(csrResponse{
+				CrtResponse: crtResponse{
+					Crt: string(wrongLocalityCrt),
+				},
+			})
+			require.NoError(t, err)
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+		}, nil
+	})
+
 	assertNotCalledClient := newTestClient(func(req *http.Request) (*http.Response, error) {
 		t.FailNow()
 		return nil, nil
@@ -108,6 +225,17 @@ func TestIssueClientCert(t *testing.T) {
 			Name:   "Success",
 			Config: fullConfig,
 			Client: successfulClient,
+		},
+		{
+			Name:   "Success with one retry",
+			Config: fullConfig,
+			Client: successfulClientAfterOneRetry,
+		},
+		{
+			Name:        "Unsuccessful after all retries are exhausted",
+			Config:      fullConfig,
+			Client:      unsuccessfulClientAfterAllRetries,
+			ExpectedErr: "issuer locality of the client cert does not match the expected one",
 		},
 		{
 			Name:        "Invalid config should return err",
