@@ -148,7 +148,7 @@ func TestSubscribeGlobalTenant(t *testing.T) {
 				provisioner.On("ProvisionTenants", context.TODO(), &accountProvisioningRequest, "").Return(testError).Once()
 				return provisioner
 			},
-			RuntimeServiceFn:          func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			RuntimeServiceFn: func() *automock.RuntimeService { return &automock.RuntimeService{} },
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				return &automock.LabelUpsertService{}
 			},
@@ -246,7 +246,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant, tenantRegion).Return(testError).Once()
 				return provisioner
 			},
-			RuntimeServiceFn:          func() *automock.RuntimeService { return &automock.RuntimeService{} },
+			RuntimeServiceFn: func() *automock.RuntimeService { return &automock.RuntimeService{} },
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				return &automock.LabelUpsertService{}
 			},
