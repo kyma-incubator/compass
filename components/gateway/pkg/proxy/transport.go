@@ -16,6 +16,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	consumerTenant = "consumerTenant"
+)
+
 var emptyQuery error = errors.New("empty graphql query")
 
 //go:generate mockery --name=RoundTrip --output=automock --outpkg=automock --case=underscore
@@ -143,10 +147,12 @@ func checkQueryType(requestBody []byte, typee string) (bool, error) {
 }
 
 type Claims struct {
-	Tenant       string `json:"tenant"`
-	Scopes       string `json:"scopes"`
-	ConsumerID   string `json:"consumerID"`
-	ConsumerType string `json:"consumerType"`
+	Tenant         string `json:"tenant"`
+	ConsumerTenant string `json:"consumerTenant"`
+	Scopes         string `json:"scopes"`
+	ConsumerID     string `json:"consumerID"`
+	ConsumerType   string `json:"consumerType"`
+	OnBehalfOf     string `json:"onBehalfOf"`
 }
 
 func (c Claims) Valid() error {
@@ -154,6 +160,15 @@ func (c Claims) Valid() error {
 }
 
 func (t *Transport) getClaims(headers http.Header) (Claims, error) {
+	tokenClaims := struct {
+		TenantString string `json:"tenant"`
+		Scopes       string `json:"scopes"`
+		ConsumerID   string `json:"consumerID"`
+		ConsumerType string `json:"consumerType"`
+		OnBehalfOf   string `json:"onBehalfOf"`
+		jwt.StandardClaims
+	}{}
+
 	token := headers.Get("Authorization")
 	if token == "" {
 		return Claims{}, errors.New("no bearer token")
@@ -161,10 +176,31 @@ func (t *Transport) getClaims(headers http.Header) (Claims, error) {
 	token = strings.TrimPrefix(token, "Bearer ")
 
 	parser := jwt.Parser{SkipClaimsValidation: true}
-	claims := Claims{}
-	_, _, err := parser.ParseUnverified(token, &claims)
+
+	_, _, err := parser.ParseUnverified(token, &tokenClaims)
+
 	if err != nil {
-		return claims, errors.Wrap(err, "while parsing beaerer token")
+		return Claims{}, errors.Wrap(err, "while parsing bearer token")
 	}
+
+	tenants := make(map[string]string, 0)
+	err = json.Unmarshal([]byte(tokenClaims.TenantString), &tenants)
+	if err != nil {
+		return Claims{}, errors.Wrap(err, "while extracting tenants from token")
+	}
+
+	claims := Claims{
+		Tenant:         tenants[consumerTenant],
+		ConsumerTenant: tenants[consumerTenant],
+		Scopes:         tokenClaims.Scopes,
+		ConsumerID:     tokenClaims.ConsumerID,
+		ConsumerType:   tokenClaims.ConsumerType,
+		OnBehalfOf:     tokenClaims.OnBehalfOf,
+	}
+
+	if provider, exists := tenants["providerTenant"]; exists {
+		claims.Tenant = provider
+	}
+
 	return claims, nil
 }

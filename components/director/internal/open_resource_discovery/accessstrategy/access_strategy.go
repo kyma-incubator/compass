@@ -3,6 +3,9 @@ package accessstrategy
 import (
 	"context"
 	"net/http"
+	"regexp"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 
 	"github.com/pkg/errors"
 )
@@ -20,6 +23,16 @@ type AccessStrategy struct {
 	Type              Type   `json:"type"`
 	CustomType        Type   `json:"customType"`
 	CustomDescription string `json:"customDescription"`
+}
+
+// Validate validates a given access strategy
+func (as AccessStrategy) Validate() error {
+	const CustomTypeRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	return validation.ValidateStruct(&as,
+		validation.Field(&as.Type, validation.Required, validation.In(OpenAccessStrategy, CMPmTLSAccessStrategy, CustomAccessStrategy), validation.When(as.CustomType != "", validation.In("custom"))),
+		validation.Field(&as.CustomType, validation.When(as.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
+		validation.Field(&as.CustomDescription, validation.When(as.Type != "custom", validation.Empty)),
+	)
 }
 
 // Type represents the possible type of the AccessStrategy
@@ -59,11 +72,13 @@ func (as AccessStrategies) GetSupported() (Type, bool) {
 }
 
 // Executor defines an interface for execution of different access strategies
+//go:generate mockery --name=Executor --output=automock --outpkg=automock --case=underscore
 type Executor interface {
 	Execute(ctx context.Context, client *http.Client, url string) (*http.Response, error)
 }
 
 // ExecutorProvider defines an interface for access strategy executor provider
+//go:generate mockery --name=ExecutorProvider --output=automock --outpkg=automock --case=underscore
 type ExecutorProvider interface {
 	Provide(accessStrategyType Type) (Executor, error)
 }

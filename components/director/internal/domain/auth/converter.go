@@ -2,11 +2,31 @@ package auth
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
 )
 
+// TokenConverter missing godoc
+//go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore
+type TokenConverter interface {
+	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)
+}
+
 type converter struct {
+}
+
+type converterOTT struct {
+	*converter
+	tokenConverter TokenConverter
+}
+
+// NewConverterWithOTT is meant to be used for converting system auth with the one time token also converted
+func NewConverterWithOTT(tokenConverter TokenConverter) *converterOTT {
+	return &converterOTT{
+		converter:      &converter{},
+		tokenConverter: tokenConverter,
+	}
 }
 
 // NewConverter missing godoc
@@ -46,12 +66,34 @@ func (c *converter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 
 	return &graphql.Auth{
 		Credential:                      c.credentialToGraphQL(in.Credential),
+		AccessStrategy:                  in.AccessStrategy,
 		AdditionalHeaders:               headers,
 		AdditionalHeadersSerialized:     headersSerialized,
 		AdditionalQueryParams:           params,
 		AdditionalQueryParamsSerialized: paramsSerialized,
 		RequestAuth:                     c.requestAuthToGraphQL(in.RequestAuth),
+		CertCommonName:                  &in.CertCommonName,
 	}, nil
+}
+
+func (c *converterOTT) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
+	auth, err := c.converter.ToGraphQL(in)
+	if err != nil {
+		return nil, err
+	}
+	if auth == nil {
+		return nil, nil
+	}
+
+	if in.OneTimeToken != nil && in.OneTimeToken.Type == tokens.ApplicationToken {
+		oneTimeToken, err := c.tokenConverter.ToGraphQLForApplication(*in.OneTimeToken)
+		if err != nil {
+			return nil, err
+		}
+		auth.OneTimeToken = &oneTimeToken
+	}
+
+	return auth, nil
 }
 
 // InputFromGraphQL missing godoc
@@ -79,6 +121,7 @@ func (c *converter) InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, e
 
 	return &model.AuthInput{
 		Credential:            credential,
+		AccessStrategy:        in.AccessStrategy,
 		AdditionalHeaders:     additionalHeaders,
 		AdditionalQueryParams: additionalQueryParams,
 		RequestAuth:           reqAuth,

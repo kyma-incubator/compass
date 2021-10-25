@@ -157,7 +157,7 @@ func TestLabelUpsertService_UpsertMultipleLabels(t *testing.T) {
 			labelDefRepo := testCase.LabelDefRepoFn()
 			uidService := testCase.UIDServiceFn()
 
-			svc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidService)
+			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
 			// when
 			err := svc.UpsertMultipleLabels(ctx, tnt, testCase.InputObjectType, testCase.InputObjectID, testCase.InputLabels)
@@ -421,7 +421,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 			labelDefRepo := testCase.LabelDefRepoFn()
 			uidService := testCase.UIDServiceFn()
 
-			svc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidService)
+			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
 			// when
 			err := svc.UpsertLabel(ctx, tnt, testCase.LabelInput)

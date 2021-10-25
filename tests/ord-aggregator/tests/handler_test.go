@@ -1,13 +1,9 @@
 package tests
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"strings"
 	"testing"
@@ -41,11 +37,13 @@ const (
 	expectedThirdSystemInstanceName         = "third-test-app"
 	expectedFourthSystemInstanceName        = "fourth-test-app"
 	expectedFifthSystemInstanceName         = "fifth-test-app"
+	expectedSixthSystemInstanceName         = "sixth-test-app"
 	expectedSystemInstanceDescription       = "test-app1-description"
 	expectedSecondSystemInstanceDescription = "test-app2-description"
 	expectedThirdSystemInstanceDescription  = "test-app3-description"
 	expectedFourthSystemInstanceDescription = "test-app4-description"
 	expectedFifthSystemInstanceDescription  = "test-app5-description"
+	expectedSixthSystemInstanceDescription  = "test-app6-description"
 	expectedBundleTitle                     = "BUNDLE TITLE"
 	secondExpectedBundleTitle               = "BUNDLE TITLE 2"
 	expectedBundleDescription               = "lorem ipsum dolor nsq sme"
@@ -63,15 +61,15 @@ const (
 	expectedTombstoneOrdID                  = "ns:apiResource:API_ID2:v1"
 	expectedVendorTitle                     = "SAP"
 
-	expectedNumberOfSystemInstances           = 5
-	expectedNumberOfPackages                  = 5
-	expectedNumberOfBundles                   = 10
-	expectedNumberOfProducts                  = 5
-	expectedNumberOfAPIs                      = 5
+	expectedNumberOfSystemInstances           = 6
+	expectedNumberOfPackages                  = 6
+	expectedNumberOfBundles                   = 12
+	expectedNumberOfProducts                  = 6
+	expectedNumberOfAPIs                      = 6
 	expectedNumberOfResourceDefinitionsPerAPI = 3
-	expectedNumberOfEvents                    = 10
-	expectedNumberOfTombstones                = 5
-	expectedNumberOfVendors                   = 10
+	expectedNumberOfEvents                    = 12
+	expectedNumberOfTombstones                = 6
+	expectedNumberOfVendors                   = 12
 
 	expectedNumberOfAPIsInFirstBundle    = 1
 	expectedNumberOfAPIsInSecondBundle   = 1
@@ -81,44 +79,36 @@ const (
 	testTimeoutAdditionalBuffer = 5 * time.Minute
 )
 
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
-func randString(n int) string {
-	buffer := make([]rune, n)
-	for i := range buffer {
-		buffer[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(buffer)
-}
-
 func TestORDAggregator(t *testing.T) {
 	basicORDConfigSecurity := &fixtures.ORDConfigSecurity{
-		Enabled:  true,
-		Username: randString(8),
-		Password: randString(8),
+		Username: testConfig.BasicUsername,
+		Password: testConfig.BasicPassword,
 	}
 
 	oauthORDConfigSecurity := &fixtures.ORDConfigSecurity{
-		Enabled:  true,
-		Username: randString(8),
-		Password: randString(8),
-		TokenURL: testConfig.ExternalServicesMockBaseURL + "/oauth/token",
+		Username: testConfig.ClientID,
+		Password: testConfig.ClientSecret,
+		TokenURL: testConfig.ExternalServicesMockBaseURL + "/secured/oauth/token",
 	}
 
-	toggleORDConfigSecurity(t, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/basic/configure", basicORDConfigSecurity)
-	toggleORDConfigSecurity(t, testConfig.ExternalServicesMockBaseURL+"/.well-known/open-resource-discovery/oauth/configure", oauthORDConfigSecurity)
+	accessStrategyConfigSecurity := &fixtures.ORDConfigSecurity{
+		AccessStrategy: "sap:cmp-mtls:v1",
+	}
 
-	var appInput, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput directorSchema.ApplicationRegisterInput
+	var appInput, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput, sixthAppInput directorSchema.ApplicationRegisterInput
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
-		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, &fixtures.ORDConfigSecurity{})
-		secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL, &fixtures.ORDConfigSecurity{})
-		thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/basic/.well-known/open-resource-discovery", basicORDConfigSecurity)
-		fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/oauth/.well-known/open-resource-discovery", oauthORDConfigSecurity)
-		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/cert/.well-known/open-resource-discovery", &fixtures.ORDConfigSecurity{})
+		// Unsecured config endpoint with full absolute URL in the webhook; unsecured document; doc baseURL from the webhook
+		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, nil)
+		// Unsecured config endpoint with automatic .well-known/open-resource-discovery; unsecured document; doc baseURL from the webhook
+		secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredURL, nil)
+		// Basic secured config endpoint; unsecured document; doc baseURL from the webhook
+		thirdAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedThirdSystemInstanceName, expectedThirdSystemInstanceDescription, testConfig.ExternalServicesMockBasicURL, basicORDConfigSecurity)
+		// Oauth secured config endpoint; unsecured document; doc baseURL from the webhook
+		fourthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFourthSystemInstanceName, expectedFourthSystemInstanceDescription, testConfig.ExternalServicesMockOauthURL, oauthORDConfigSecurity)
+		// Unsecured config endpoint with full absolute URL in the webhook; cert secured document; doc baseURL configured in the config response
+		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/cert/.well-known/open-resource-discovery", nil)
+		// Cert secured config endpoint with automatic .well-known/open-resource-discovery; cert secured document; doc baseURL from the webhook
+		sixthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSixthSystemInstanceName, expectedSixthSystemInstanceDescription, testConfig.ExternalServicesMockCertSecuredURL, accessStrategyConfigSecurity)
 
 		systemInstancesMap := make(map[string]string)
 		systemInstancesMap[expectedSystemInstanceName] = expectedSystemInstanceDescription
@@ -126,6 +116,7 @@ func TestORDAggregator(t *testing.T) {
 		systemInstancesMap[expectedThirdSystemInstanceName] = expectedThirdSystemInstanceDescription
 		systemInstancesMap[expectedFourthSystemInstanceName] = expectedFourthSystemInstanceDescription
 		systemInstancesMap[expectedFifthSystemInstanceName] = expectedFifthSystemInstanceDescription
+		systemInstancesMap[expectedSixthSystemInstanceName] = expectedSixthSystemInstanceDescription
 
 		eventsMap := make(map[string]string)
 		eventsMap[firstEventTitle] = firstEventDescription
@@ -165,16 +156,16 @@ func TestORDAggregator(t *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
 		require.NoError(t, err)
 
-		fixtures.SetApplicationLabelWithTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdApp.ID, applicationTypeLabelKey, testConfig.SecuredApplicationTypes[0])
-
 		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
 		require.NoError(t, err)
 
-		fixtures.SetApplicationLabelWithTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthApp.ID, applicationTypeLabelKey, testConfig.SecuredApplicationTypes[0])
-
 		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
+		require.NoError(t, err)
+
+		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
 		require.NoError(t, err)
 
 		t.Log("Create integration system")
@@ -348,23 +339,4 @@ func verifyORDDocument(interval time.Duration, timeout time.Duration, conditiona
 
 func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, headers map[string][]string) string {
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
-}
-
-func toggleORDConfigSecurity(t *testing.T, url string, ordSecurityConfig *fixtures.ORDConfigSecurity) {
-	body, err := json.Marshal(ordSecurityConfig)
-	require.NoError(t, err)
-
-	reader := bytes.NewReader(body)
-	response, err := http.DefaultClient.Post(url, "application/json", reader)
-	require.NoError(t, err)
-	defer func() {
-		if err := response.Body.Close(); err != nil {
-			t.Logf("Could not close response body %s", err)
-		}
-	}()
-	if response.StatusCode != http.StatusOK {
-		bytes, err := ioutil.ReadAll(response.Body)
-		require.NoError(t, err)
-		t.Fatalf("Failed to toggle ORD Config security to %t: %s", ordSecurityConfig.Enabled, string(bytes))
-	}
 }

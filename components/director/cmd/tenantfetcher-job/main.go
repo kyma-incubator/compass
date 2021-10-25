@@ -35,11 +35,14 @@ type config struct {
 	Features features.Config
 
 	TenantProvider       string        `envconfig:"APP_TENANT_PROVIDER"`
-	TenantsRegion        string        `envconfig:"default=central,APP_TENANTS_REGION"`
+	AccountsRegion       string        `envconfig:"default=central,APP_ACCOUNT_REGION"`
+	SubaccountRegions    []string      `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
 	MetricsPushEndpoint  string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 	MovedRuntimeLabelKey string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
 	ClientTimeout        time.Duration `envconfig:"default=60s"`
 	FullResyncInterval   time.Duration `envconfig:"default=12h"`
+
+	ShouldSyncSubaccounts bool `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
 }
 
 func main() {
@@ -85,8 +88,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kubeClient tenantfetcher.KubeClient,
-	metricsPusher *metrics.Pusher) *tenantfetcher.Service {
+func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kubeClient tenantfetcher.KubeClient, metricsPusher *metrics.Pusher) tenantfetcher.TenantSyncService {
 	uidSvc := uid.NewService()
 
 	labelDefConverter := labeldef.NewConverter()
@@ -94,29 +96,32 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 
 	labelConverter := label.NewConverter()
 	labelRepository := label.NewRepository(labelConverter)
-	labelUpsertService := label.NewLabelUpsertService(labelRepository, labelDefRepository, uidSvc)
+	labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
 
 	tenantStorageConv := tenant.NewConverter()
 	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
-	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelUpsertService)
+	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
 
 	scenariosService := labeldef.NewScenariosService(labelDefRepository, uidSvc, cfg.Features.DefaultScenarioEnabled)
 
 	scenarioAssignConv := scenarioassignment.NewConverter()
 	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)
-	scenarioAssignEngine := scenarioassignment.NewEngine(labelUpsertService, labelRepository, scenarioAssignRepo)
+	scenarioAssignEngine := scenarioassignment.NewEngine(labelService, labelRepository, scenarioAssignRepo)
 
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
 	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, scenariosService, uidSvc)
 
 	runtimeConverter := runtime.NewConverter()
 	runtimeRepository := runtime.NewRepository(runtimeConverter)
-	runtimeService := runtime.NewService(runtimeRepository, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern)
+	runtimeService := runtime.NewService(runtimeRepository, labelRepository, scenariosService, labelService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern)
 
 	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, cfg.ClientTimeout)
 	if metricsPusher != nil {
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.TenantsRegion, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
+	if cfg.ShouldSyncSubaccounts {
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
+	}
+	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval)
 }

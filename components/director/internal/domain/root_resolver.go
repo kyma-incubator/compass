@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	httptransport "github.com/go-openapi/runtime/client"
@@ -105,7 +107,8 @@ func NewRootResolver(
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
 
-	authConverter := auth.NewConverter()
+	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
+	authConverter := auth.NewConverterWithOTT(tokenConverter)
 	runtimeConverter := runtime.NewConverter()
 	runtimeContextConverter := runtimectx.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
@@ -117,7 +120,6 @@ func NewRootResolver(
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
-	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	intSysConverter := integrationsystem.NewConverter()
 	tenantConverter := tenant.NewConverter()
@@ -150,37 +152,37 @@ func NewRootResolver(
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 
 	uidSvc := uid.NewService()
-	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider())
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc, scenarioAssignmentEngine)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, featuresConfig.ProtectedLabelPattern)
-	runtimeCtxSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelUpsertSvc, uidSvc)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, featuresConfig.ProtectedLabelPattern)
+	runtimeCtxSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, scenariosSvc, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.Admin)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
-	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
+	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc)
 	timeService := time.NewService()
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
-		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, tokenConverter, tokenSvc),
+		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter),
 		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter),
 		api:                api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter),
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
@@ -473,6 +475,11 @@ func (r *mutationResolver) UnregisterApplication(ctx context.Context, id string,
 	return r.app.UnregisterApplication(ctx, id)
 }
 
+// UnpairApplication removes system auths, hydra client credentials and performs the "unpair" flow in the database
+func (r *mutationResolver) UnpairApplication(ctx context.Context, id string, _ *graphql.OperationMode) (*graphql.Application, error) {
+	return r.app.UnpairApplication(ctx, id)
+}
+
 // CreateApplicationTemplate missing godoc
 func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
 	return r.appTemplate.CreateApplicationTemplate(ctx, in)
@@ -609,13 +616,13 @@ func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID str
 }
 
 // RequestOneTimeTokenForApplication missing godoc
-func (r *mutationResolver) RequestOneTimeTokenForApplication(ctx context.Context, id string) (*graphql.OneTimeTokenForApplication, error) {
-	return r.token.RequestOneTimeTokenForApplication(ctx, id)
+func (r *mutationResolver) RequestOneTimeTokenForApplication(ctx context.Context, id string, systemAuthID *string) (*graphql.OneTimeTokenForApplication, error) {
+	return r.token.RequestOneTimeTokenForApplication(ctx, id, systemAuthID)
 }
 
 // RequestOneTimeTokenForRuntime missing godoc
-func (r *mutationResolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*graphql.OneTimeTokenForRuntime, error) {
-	return r.token.RequestOneTimeTokenForRuntime(ctx, id)
+func (r *mutationResolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string, systemAuthID *string) (*graphql.OneTimeTokenForRuntime, error) {
+	return r.token.RequestOneTimeTokenForRuntime(ctx, id, systemAuthID)
 }
 
 // RequestClientCredentialsForRuntime missing godoc

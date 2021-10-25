@@ -22,24 +22,28 @@ spec:
               image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.external_services_mock.dir }}compass-external-services-mock:{{ .Values.global.images.external_services_mock.version }}
               imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
               env:
-              - name: APP_ADDRESS
-                value: ":{{ .Values.deployment.port }}"
-              - name: APP_CERT_SECURED_SERVER_ADDRESS
-                value: ":{{ .Values.global.externalServicesMock.certSecuredPort }}"
-              - name: APP_CERT_SECURED_BASE_URL
+              - name: APP_PORT
+                value: "{{ .Values.deployment.port }}"
+              - name: APP_ORD_SERVERS_CERT_PORT
+                value: "{{ .Values.global.externalServicesMock.certSecuredPort }}"
+              - name: APP_ORD_SERVERS_UNSECURED_PORT
+                value: "{{ .Values.global.externalServicesMock.unsecuredPort }}"
+              - name: APP_ORD_SERVERS_BASIC_PORT
+                value: "{{ .Values.global.externalServicesMock.basicSecuredPort }}"
+              - name: APP_ORD_SERVERS_OAUTH_PORT
+                value: "{{ .Values.global.externalServicesMock.oauthSecuredPort }}"
+              - name: APP_ORD_SERVERS_CERT_SECURED_BASE_URL
                 value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
-              {{- if eq .Values.global.externalServicesMock.auditlog true }}
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
-                    name: {{ .Values.global.auditlog.secretName }}
-                    key: auditlog-client-id
+                    name: {{ .Values.global.externalServicesMock.oauthSecretName }}
+                    key: client-id
               - name: APP_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
-                    name: {{ .Values.global.auditlog.secretName }}
-                    key: auditlog-client-secret
-              {{- end }}
+                    name: {{ .Values.global.externalServicesMock.oauthSecretName }}
+                    key: client-secret
               - name: BASIC_USERNAME
                 valueFrom:
                   secretKeyRef:
@@ -68,6 +72,15 @@ spec:
                 protocol: TCP
               - name: http-mtls
                 containerPort: {{ .Values.global.externalServicesMock.certSecuredPort }}
+                protocol: TCP
+              - name: http-unsecured
+                containerPort: {{ .Values.global.externalServicesMock.unsecuredPort }}
+                protocol: TCP
+              - name: http-basic
+                containerPort: {{ .Values.global.externalServicesMock.basicSecuredPort }}
+                protocol: TCP
+              - name: http-oauth
+                containerPort: {{ .Values.global.externalServicesMock.oauthSecuredPort }}
                 protocol: TCP
               resources:
                 {{- toYaml .Values.deployment.resources | nindent 16 }}

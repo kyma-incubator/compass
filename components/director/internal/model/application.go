@@ -75,8 +75,6 @@ type ApplicationStatusCondition string
 const (
 	// ApplicationStatusConditionInitial missing godoc
 	ApplicationStatusConditionInitial ApplicationStatusCondition = "INITIAL"
-	// ApplicationStatusConditionManaged missing godoc
-	ApplicationStatusConditionManaged ApplicationStatusCondition = "MANAGED"
 	// ApplicationStatusConditionConnected missing godoc
 	ApplicationStatusConditionConnected ApplicationStatusCondition = "CONNECTED"
 	// ApplicationStatusConditionFailed missing godoc
@@ -99,6 +97,10 @@ const (
 	ApplicationStatusConditionDeleteFailed ApplicationStatusCondition = "DELETE_FAILED"
 	// ApplicationStatusConditionDeleteSucceeded missing godoc
 	ApplicationStatusConditionDeleteSucceeded ApplicationStatusCondition = "DELETE_SUCCEEDED"
+	// ApplicationStatusConditionUnpairing Status condition when an application is being unpairing
+	ApplicationStatusConditionUnpairing ApplicationStatusCondition = "UNPAIRING"
+	// ApplicationStatusConditionUnpairFailed Status condition when an application has failed to unpair
+	ApplicationStatusConditionUnpairFailed ApplicationStatusCondition = "UNPAIR_FAILED"
 )
 
 // ApplicationPage missing godoc

@@ -18,7 +18,7 @@ import (
 var (
 	testTenant           = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	testExternalTenant   = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	testMarshalledSchema = "{\"Credential\":{\"Basic\":{\"Username\":\"foo\",\"Password\":\"bar\"},\"Oauth\":null},\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]},\"RequestAuth\":{\"Csrf\":{\"TokenEndpointURL\":\"foo.url\",\"Credential\":{\"Basic\":{\"Username\":\"boo\",\"Password\":\"far\"},\"Oauth\":null},\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]}}},\"OneTimeToken\":null}"
+	testMarshalledSchema = "{\"Credential\":{\"Basic\":{\"Username\":\"foo\",\"Password\":\"bar\"},\"Oauth\":null},\"AccessStrategy\":null,\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]},\"RequestAuth\":{\"Csrf\":{\"TokenEndpointURL\":\"foo.url\",\"Credential\":{\"Basic\":{\"Username\":\"boo\",\"Password\":\"far\"},\"Oauth\":null},\"AdditionalHeaders\":{\"test\":[\"foo\",\"bar\"]},\"AdditionalQueryParams\":{\"test\":[\"foo\",\"bar\"]}}},\"OneTimeToken\":null,\"CertCommonName\":\"\"}"
 	testErr              = errors.New("test error")
 )
 
@@ -137,6 +137,7 @@ func fixModelAuth() *model.Auth {
 				AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
 			},
 		},
+		CertCommonName: "",
 	}
 }
 

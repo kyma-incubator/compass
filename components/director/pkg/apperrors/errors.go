@@ -294,6 +294,15 @@ func NewCannotReadClientUserError() error {
 	}
 }
 
+// NewConsumerProviderFlowNotSupportedError missing godoc
+func NewConsumerProviderFlowNotSupportedError() error {
+	return Error{
+		errorCode: InternalError,
+		Message:   ConsumerProviderFlowNotSupportedMsg,
+		arguments: map[string]string{},
+	}
+}
+
 // NewUnauthorizedError missing godoc
 func NewUnauthorizedError(msg string) error {
 	return Error{

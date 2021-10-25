@@ -64,6 +64,8 @@ enum ApplicationStatusCondition {
 	DELETING
 	DELETE_FAILED
 	DELETE_SUCCEEDED
+	UNPAIRING
+	UNPAIR_FAILED
 }
 
 enum ApplicationTemplateAccessLevel {
@@ -158,11 +160,14 @@ enum WebhookType {
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
+	UNPAIR_APPLICATION
 }
 
 interface OneTimeToken {
 	token: String!
 	connectorURL: String!
+	used: Boolean!
+	expiresAt: Timestamp!
 	raw: String
 	rawEncoded: String
 }
@@ -251,9 +256,13 @@ input ApplicationRegisterInput {
 	**Validation:** valid URL, max=256
 	"""
 	healthCheckURL: String
-	bundles: [BundleCreateInput!]
+	"""
+	**Validation:** valid URL, max=256
+	"""
+	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	bundles: [BundleCreateInput!]
 }
 
 """
@@ -307,6 +316,7 @@ input ApplicationUpdateInput {
 
 input AuthInput {
 	credential: CredentialDataInput
+	accessStrategy: String
 	"""
 	**Validation:** if provided, headers name and value required
 	"""
@@ -686,6 +696,7 @@ type Application {
 	id: ID!
 	name: String!
 	systemNumber: String
+	baseUrl: String
 	providerName: String
 	description: String
 	integrationSystemID: ID
@@ -737,12 +748,14 @@ type ApplicationTemplatePage implements Pageable {
 
 type Auth {
 	credential: CredentialData
+	accessStrategy: String
 	additionalHeaders: HttpHeaders
 	additionalHeadersSerialized: HttpHeadersSerialized
 	additionalQueryParams: QueryParams
 	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuth
 	oneTimeToken: OneTimeToken
+	certCommonName: String
 }
 
 type AutomaticScenarioAssignment {
@@ -964,6 +977,8 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	token: String!
 	connectorURL: String!
 	legacyConnectorURL: String!
+	used: Boolean!
+	expiresAt: Timestamp!
 	raw: String
 	rawEncoded: String
 }
@@ -971,6 +986,8 @@ type OneTimeTokenForApplication implements OneTimeToken {
 type OneTimeTokenForRuntime implements OneTimeToken {
 	token: String!
 	connectorURL: String!
+	used: Boolean!
+	expiresAt: Timestamp!
 	raw: String
 	rawEncoded: String
 }
@@ -1201,6 +1218,7 @@ type Mutation {
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
 	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(operationType: DELETE, idField: "id", webhookType: UNREGISTER_APPLICATION)
+	unpairApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unpairApplication") @async(operationType: UPDATE, idField: "id", webhookType: UNPAIR_APPLICATION)
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
@@ -1289,8 +1307,8 @@ type Mutation {
 	- [refetch api spec](examples/refetch-api-spec/refetch-api-spec.graphql)
 	"""
 	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
-	requestOneTimeTokenForRuntime(id: ID!): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
-	requestOneTimeTokenForApplication(id: ID!): OneTimeTokenForApplication! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
+	requestOneTimeTokenForRuntime(id: ID!, systemAuthID: ID): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
+	requestOneTimeTokenForApplication(id: ID!, systemAuthID: ID): OneTimeTokenForApplication! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
 	requestClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForRuntime")
 	requestClientCredentialsForApplication(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForApplication")
 	requestClientCredentialsForIntegrationSystem(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForIntegrationSystem")

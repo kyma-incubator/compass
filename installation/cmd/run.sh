@@ -11,7 +11,8 @@ SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 source $SCRIPTS_DIR/utils.sh
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
-MIGRATOR_FILE=$(cat $ROOT_PATH/chart/compass/templates/migrator-job.yaml)
+MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
+UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml)
 
 MINIKUBE_MEMORY=8192
 MINIKUBE_TIMEOUT=25m
@@ -89,7 +90,8 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 function revert_migrator_file() {
-    echo "$MIGRATOR_FILE" > $ROOT_PATH/chart/compass/templates/migrator-job.yaml
+    echo "$MIGRATOR_FILE" > "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml
+    echo "$UPDATE_EXPECTED_SCHEMA_VERSION_FILE" > "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml
 }
 
 function mount_minikube_ca_to_oathkeeper() {
@@ -127,8 +129,10 @@ if [[ ${DUMP_DB} ]]; then
 
     if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines, reference issue: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
         sed -i '' 's/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
+        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
     else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
         sed -i 's/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
+        sed -i 's/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
     fi
 
 
@@ -156,6 +160,7 @@ NODE=$(kubectl get nodes | tail -n 1 | cut -d ' ' -f 1)
 kubectl label node "$NODE" benchmark=true || true
 
 if [[ ${DUMP_DB} ]]; then
+    echo -e "${YELLOW}DUMP_DB option is selected. Building an image for the schema-migrator using local files...${NC}"
     export DOCKER_TAG=$DUMP_IMAGE_TAG
     make -C ${ROOT_PATH}/components/schema-migrator build-to-minikube
 fi

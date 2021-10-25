@@ -18,10 +18,10 @@ const (
 )
 
 type ORDConfigSecurity struct {
-	Enabled  bool   `json:"enabled"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	TokenURL string `json:"-"`
+	AccessStrategy string
+	Username       string
+	Password       string
+	TokenURL       string
 }
 
 func FixSampleApplicationRegisterInputWithName(placeholder, name string) graphql.ApplicationRegisterInput {
@@ -62,8 +62,12 @@ func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, w
 		}},
 	}
 
-	if ordConfigSecurity != nil && ordConfigSecurity.Enabled {
-		if ordConfigSecurity.TokenURL != "" {
+	if ordConfigSecurity != nil {
+		if len(ordConfigSecurity.AccessStrategy) > 0 {
+			appRegisterInput.Webhooks[0].Auth = &graphql.AuthInput{
+				AccessStrategy: &ordConfigSecurity.AccessStrategy,
+			}
+		} else if ordConfigSecurity.TokenURL != "" {
 			appRegisterInput.Webhooks[0].Auth = &graphql.AuthInput{
 				Credential: &graphql.CredentialDataInput{
 					Oauth: &graphql.OAuthCredentialDataInput{
@@ -185,6 +189,24 @@ func FixAsyncUnregisterApplicationRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 		unregisterApplication(id: "%s" mode: ASYNC) {
+			%s
+		}
+	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
+func FixUnpairApplicationRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		unpairApplication(id: "%s") {
+			%s
+		}	
+	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
+func FixAsyncUnpairApplicationRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+		unpairApplication(id: "%s" mode: ASYNC) {
 			%s
 		}
 	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))

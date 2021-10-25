@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -365,31 +367,44 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	scenarios, err := s.getScenarioNamesForApplication(ctx, id)
-	if err != nil {
+	if err := s.ensureApplicationNotPartOfScenarioWithRuntime(ctx, appTenant, id); err != nil {
 		return err
-	}
-
-	validScenarios := removeDefaultScenario(scenarios)
-	if len(validScenarios) > 0 {
-		runtimes, err := s.getRuntimeNamesForScenarios(ctx, appTenant, validScenarios)
-		if err != nil {
-			return err
-		}
-
-		if len(runtimes) > 0 {
-			application, err := s.appRepo.GetByID(ctx, appTenant, id)
-			if err != nil {
-				return errors.Wrapf(err, "while getting application with id %s", id)
-			}
-			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
-			return apperrors.NewInvalidOperationError(msg)
-		}
 	}
 
 	err = s.appRepo.Delete(ctx, appTenant, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Application with id %s", id)
+	}
+
+	return nil
+}
+
+// Unpair Checks if the given application is in a scenario with a runtime. Fails if it is.
+// When the operation mode is sync, it sets the status condition to model.ApplicationStatusConditionInitial and does a db update, otherwise it only makes an "empty" db update.
+func (s *service) Unpair(ctx context.Context, id string) error {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	if err := s.ensureApplicationNotPartOfScenarioWithRuntime(ctx, appTenant, id); err != nil {
+		return err
+	}
+
+	app, err := s.appRepo.GetByID(ctx, appTenant, id)
+	if err != nil {
+		return err
+	}
+
+	if opMode := operation.ModeFromCtx(ctx); opMode == graphql.OperationModeSync {
+		app.Status = &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionInitial,
+			Timestamp: s.timestampGen(),
+		}
+	}
+
+	if err = s.appRepo.Update(ctx, app); err != nil {
+		return err
 	}
 
 	return nil
@@ -483,6 +498,35 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	err = s.labelRepo.Delete(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Application label")
+	}
+
+	return nil
+}
+
+// ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. if a runtime is part of any scenario, then the application is considered being used by that runtime.
+func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Context, tenant, appID string) error {
+	scenarios, err := s.getScenarioNamesForApplication(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	validScenarios := removeDefaultScenario(scenarios)
+	if len(validScenarios) > 0 {
+		runtimes, err := s.getRuntimeNamesForScenarios(ctx, tenant, validScenarios)
+		if err != nil {
+			return err
+		}
+
+		if len(runtimes) > 0 {
+			application, err := s.appRepo.GetByID(ctx, tenant, appID)
+			if err != nil {
+				return errors.Wrapf(err, "while getting application with id %s", appID)
+			}
+			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
+			return apperrors.NewInvalidOperationError(msg)
+		}
+
+		return nil
 	}
 
 	return nil

@@ -158,7 +158,12 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encryptedCrtContent, err := pkcs7.Encrypt(clientCrtRaw, nil)
+	encryptedCrtContent, err := pkcs7.DegenerateCertificate(clientCrtRaw)
+	if err != nil {
+		httphelpers.WriteError(writer, err, http.StatusInternalServerError)
+		return
+	}
+
 	crt := pem.EncodeToMemory(&pem.Block{
 		Type: "PKCS7", Bytes: encryptedCrtContent,
 	})

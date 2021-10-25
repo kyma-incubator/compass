@@ -18,6 +18,7 @@ var (
 	authHeadersSerialized = graphql.HTTPHeadersSerialized(authMapSerialized)
 	authParams            = graphql.QueryParams(authMap)
 	authParamsSerialized  = graphql.QueryParamsSerialized(authMapSerialized)
+	accessStrategy        = "testAccessStrategy"
 )
 
 func fixDetailedAuth() *model.Auth {
@@ -29,6 +30,7 @@ func fixDetailedAuth() *model.Auth {
 			},
 			Oauth: nil,
 		},
+		AccessStrategy:        &accessStrategy,
 		AdditionalHeaders:     authMap,
 		AdditionalQueryParams: authMap,
 		RequestAuth: &model.CredentialRequestAuth{
@@ -49,11 +51,13 @@ func fixDetailedAuth() *model.Auth {
 }
 
 func fixDetailedGQLAuth() *graphql.Auth {
+	emptyCertCommonName := ""
 	return &graphql.Auth{
 		Credential: graphql.BasicCredentialData{
 			Username: authUsername,
 			Password: authPassword,
 		},
+		AccessStrategy:                  &accessStrategy,
 		AdditionalHeaders:               authHeaders,
 		AdditionalHeadersSerialized:     &authHeadersSerialized,
 		AdditionalQueryParams:           authParams,
@@ -69,6 +73,7 @@ func fixDetailedGQLAuth() *graphql.Auth {
 				AdditionalQueryParams: authParams,
 			},
 		},
+		CertCommonName: &emptyCertCommonName,
 	}
 }
 
@@ -81,6 +86,7 @@ func fixDetailedAuthInput() *model.AuthInput {
 			},
 			Oauth: nil,
 		},
+		AccessStrategy:        &accessStrategy,
 		AdditionalHeaders:     authMap,
 		AdditionalQueryParams: authMap,
 		RequestAuth: &model.CredentialRequestAuthInput{
@@ -109,6 +115,7 @@ func fixDetailedGQLAuthInput() *graphql.AuthInput {
 			},
 			Oauth: nil,
 		},
+		AccessStrategy:                  &accessStrategy,
 		AdditionalHeadersSerialized:     &authHeadersSerialized,
 		AdditionalQueryParamsSerialized: &authParamsSerialized,
 		RequestAuth: &graphql.CredentialRequestAuthInput{
@@ -137,6 +144,7 @@ func fixDetailedGQLAuthInputDeprecated() *graphql.AuthInput {
 			},
 			Oauth: nil,
 		},
+		AccessStrategy:        &accessStrategy,
 		AdditionalHeaders:     authHeaders,
 		AdditionalQueryParams: authParams,
 		RequestAuth: &graphql.CredentialRequestAuthInput{

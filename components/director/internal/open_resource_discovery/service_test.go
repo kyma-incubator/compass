@@ -336,7 +336,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulClientFetch := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{fixORDDocument()}, nil)
+		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
 		return client
 	}
 
@@ -548,7 +548,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			webhookSvcFn:    successfulWebhookList,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(nil, testErr)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(nil, "", testErr)
 				return client
 			},
 		},
@@ -562,7 +562,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Vendors[0].OrdID = "" // invalid document
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 			apiSvcFn:     successfulEmptyAPIList,
@@ -1400,7 +1400,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = packageORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 		},
@@ -1440,7 +1440,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = event1ORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 		},
@@ -1479,7 +1479,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = vendorORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 		},
@@ -1517,7 +1517,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = productORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 		},
@@ -1555,7 +1555,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Tombstones[0].OrdID = bundleORDID
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 		},
@@ -1594,7 +1594,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Vendors = nil
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 		},
@@ -1634,7 +1634,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client := &automock.Client{}
 				doc := fixORDDocument()
 				doc.Vendors = nil
-				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
 		},

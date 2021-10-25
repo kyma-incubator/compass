@@ -78,10 +78,7 @@ func (as *cmpMTLSAccessStrategyExecutor) initialize(ctx context.Context, baseCli
 			tr = baseClient.Transport.(*http.Transport).Clone()
 		}
 
-		tr.TLSClientConfig = &tls.Config{
-			Certificates: []tls.Certificate{*clientCert},
-			ClientAuth:   tls.RequireAndVerifyClientCert,
-		}
+		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCert}
 
 		as.client = &http.Client{
 			Timeout:   baseClient.Timeout,

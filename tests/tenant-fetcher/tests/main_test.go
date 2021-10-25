@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -42,6 +44,8 @@ type testConfig struct {
 	SubscriptionCallbackScope string
 	TenantProviderConfig
 	ExternalServicesMockURL          string
+	ClientID                         string
+	ClientSecret                     string
 	TenantFetcherFullURL             string `envconfig:"-"`
 	TenantFetcherFullRegionalURL     string `envconfig:"-"`
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`
@@ -78,12 +82,10 @@ func TestMain(m *testing.M) {
 		},
 	}
 
-	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
+	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantfetcher.TenantPathParamValue, 1)
 	config.TenantFetcherFullURL = config.TenantFetcherURL + config.RootAPI + endpoint
 
-	regionalEndpoint := strings.Replace(config.RegionalHandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantPathParamValue, 1)
-	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", config.RegionPathParam), regionPathParamValue, 1)
-	config.TenantFetcherFullRegionalURL = config.TenantFetcherURL + config.RootAPI + regionalEndpoint
+	config.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(config.RegionalHandlerEndpoint, config.TenantPathParam, config.RegionPathParam, config.TenantFetcherURL, config.RootAPI)
 
 	config.TenantFetcherFullDependenciesURL = config.TenantFetcherURL + config.RootAPI + config.DependenciesEndpoint
 

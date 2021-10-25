@@ -28,6 +28,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -37,6 +38,20 @@ import (
 var (
 	dexGraphQLClient *graphql.Client
 )
+
+type TenantConfig struct {
+	TenantIDProperty               string
+	SubaccountTenantIDProperty     string
+	CustomerIDProperty             string
+	SubdomainProperty              string
+	SubscriptionProviderIDProperty string
+	TenantFetcherURL               string
+	RootAPI                        string
+	RegionalHandlerEndpoint        string
+	TenantPathParam                string
+	RegionPathParam                string
+	TenantFetcherFullRegionalURL   string `envconfig:"-"`
+}
 
 type ConnectorCAConfig struct {
 	Certificate          []byte `envconfig:"-"`
@@ -48,6 +63,7 @@ type ConnectorCAConfig struct {
 }
 
 type config struct {
+	TenantConfig
 	CA ConnectorCAConfig
 
 	DirectorURL                      string
@@ -56,6 +72,11 @@ type config struct {
 	ORDServiceStaticPrefix           string
 	ORDServiceDefaultResponseType    string
 	DefaultScenarioEnabled           bool `envconfig:"default=true"`
+	ExternalServicesMockURL          string
+	ClientID                         string
+	ClientSecret                     string
+	SubscriptionProviderLabelKey     string
+	ConsumerSubaccountIdsLabelKey    string
 }
 
 var testConfig config
@@ -81,6 +102,8 @@ func TestMain(m *testing.M) {
 
 	testConfig.CA.Certificate = secret.Data[testConfig.CA.SecretCertificateKey]
 	testConfig.CA.Key = secret.Data[testConfig.CA.SecretKeyKey]
+
+	testConfig.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(testConfig.RegionalHandlerEndpoint, testConfig.TenantPathParam, testConfig.RegionPathParam, testConfig.TenantFetcherURL, testConfig.RootAPI)
 
 	dexToken := server.Token()
 

@@ -27,6 +27,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 
 	"github.com/tidwall/gjson"
@@ -108,10 +110,14 @@ func NewHandler(reqDataParser tenantmapping.ReqDataParser, httpClient *http.Clie
 	}
 }
 
+type authenticationError struct {
+	Message string `json:"message"`
+}
+
 // ServeHTTP missing godoc
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
-		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusBadRequest)
+		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusOK)
 		return
 	}
 
@@ -120,20 +126,33 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while parsing the request.")
-		http.Error(writer, "Unable to parse request data", http.StatusUnauthorized)
+		http.Error(writer, "Unable to parse request data", http.StatusOK)
 		return
 	}
 
-	claims, authCoordinates, err := h.verifyToken(ctx, reqData)
+	vars := mux.Vars(req)
+	matchedAuthenticator, ok := vars["authenticator"]
+	if !ok {
+		h.logError(ctx, errors.New("authenticator not found in path"), "An error has occurred while extracting authenticator name.")
+		reqData.Body.Extra["error"] = authenticationError{Message: "Missing authenticator"}
+		h.respond(ctx, writer, reqData.Body)
+		return
+	}
+
+	log.C(ctx).Infof("Matched authenticator is %s", matchedAuthenticator)
+
+	claims, authCoordinates, err := h.verifyToken(ctx, reqData, matchedAuthenticator)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while processing the request.")
-		http.Error(writer, "Token validation failed", http.StatusUnauthorized)
+		reqData.Body.Extra["error"] = authenticationError{Message: "Token validation failed"}
+		h.respond(ctx, writer, reqData.Body)
 		return
 	}
 
 	if err := claims.Claims(&reqData.Body.Extra); err != nil {
 		h.logError(ctx, err, "An error has occurred while extracting claims to request body.extra")
-		http.Error(writer, "Token claims extraction failed", http.StatusUnauthorized)
+		reqData.Body.Extra["error"] = authenticationError{Message: "Token claims extraction failed"}
+		h.respond(ctx, writer, reqData.Body)
 		return
 	}
 	reqData.Body.Extra[authenticator.CoordinatesKey] = authCoordinates
@@ -141,7 +160,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	h.respond(ctx, writer, reqData.Body)
 }
 
-func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (TokenData, authenticator.Coordinates, error) {
+func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, authenticatorName string) (TokenData, authenticator.Coordinates, error) {
 	authorizationHeader := reqData.Header.Get("Authorization")
 	if authorizationHeader == "" || !strings.HasPrefix(strings.ToLower(authorizationHeader), "bearer ") {
 		return nil, authenticator.Coordinates{}, errors.Errorf("unexpected or empty authorization header with length %d", len(authorizationHeader))
@@ -159,16 +178,9 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 		return nil, authenticator.Coordinates{}, errors.Wrap(err, "error while extracting token issuer subdomain")
 	}
 
-	matchedAuthenticator, ok := reqData.Body.Header[authenticator.HeaderName]
-	if !ok || len(matchedAuthenticator) == 0 {
-		return nil, authenticator.Coordinates{}, errors.New("empty matched authenticator header")
-	}
-
-	log.C(ctx).Infof("Matched authenticator is %s", matchedAuthenticator[0])
-
-	config, err := h.getAuthenticatorConfig(matchedAuthenticator[0], tokenPayload)
+	config, err := h.getAuthenticatorConfig(authenticatorName, tokenPayload)
 	if err != nil {
-		return nil, authenticator.Coordinates{}, errors.Wrapf(err, "while getting mathched authenticator config")
+		return nil, authenticator.Coordinates{}, errors.Wrapf(err, "while getting matched authenticator config")
 	}
 
 	index := -1

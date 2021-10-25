@@ -29,10 +29,10 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210922143733-cb93bcfd3cd6
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210922113925-7ff5909fa72b
+	github.com/kyma-incubator/compass/components/director v0.0.0-20211021100659-630a1f1f9489
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210922140924-1dc663c3ed24
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20211014123116-dd19192a2e8f
 	github.com/lib/pq v1.10.3 // indirect
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/copystructure v1.1.2 // indirect
@@ -50,18 +50,19 @@ require (
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/gjson v1.9.1
-	github.com/tidwall/match v1.0.3 // indirect
+	github.com/tidwall/gjson v1.9.4
+	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/sjson v1.2.2
 	github.com/vektah/gqlparser/v2 v2.1.0 // indirect
+	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed
-	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
+	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1
 	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.6 // indirect
@@ -82,4 +83,4 @@ require (
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
-require golang.org/x/perf v0.0.0-20210220033136-40a54f11e909 // indirect
+require go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect

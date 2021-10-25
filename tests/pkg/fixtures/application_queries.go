@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -58,6 +60,18 @@ func RegisterApplicationFromInput(t require.TestingT, ctx context.Context, gqlCl
 	return app, err
 }
 
+func AppsForRuntime(ctx context.Context, gqlClient *gcli.Client, tenantID, runtimeID string) (graphql.ApplicationPageExt, error) {
+	req := FixApplicationForRuntimeRequest(runtimeID)
+	var applicationPage graphql.ApplicationPageExt
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &applicationPage)
+	if err != nil {
+		return graphql.ApplicationPageExt{}, errors.Wrapf(err, "Failed to get Applications for Runtime with id %q", runtimeID)
+	}
+
+	return applicationPage, nil
+}
+
 func RequestClientCredentialsForApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.AppSystemAuth {
 	req := FixRequestClientCredentialsForApplication(id)
 	systemAuth := graphql.AppSystemAuth{}
@@ -81,6 +95,11 @@ func UnregisterApplication(t require.TestingT, ctx context.Context, gqlClient *g
 
 func UnregisterAsyncApplicationInTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
 	req := FixAsyncUnregisterApplicationRequest(id)
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
+}
+
+func UnpairAsyncApplicationInTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
+	req := FixAsyncUnpairApplicationRequest(id)
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
 }
 

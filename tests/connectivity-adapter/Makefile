@@ -26,7 +26,7 @@ run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-connectivity-adapter-local-0 -c connectivity-adapter-tests -- ./connectivity-adapter.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
-	env GOOS=linux GOARCH=arm go test -c ./tests -o connectivity-adapter.test
+	env GOOS=linux go test -c ./tests -o connectivity-adapter.test
 	kubectl cp ./connectivity-adapter.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-connectivity-adapter-local-0:/ -c connectivity-adapter-tests
 	rm ./connectivity-adapter.test
 
