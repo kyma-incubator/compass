@@ -124,7 +124,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, apperrors.NewInternalError("Failed to process operation")
 	}
 
-	appConditionStatus, err := determineApplicationInProgressStatus(operationType)
+	appConditionStatus, err := determineApplicationInProgressStatus(operation)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("While determining the application status condition: %v", err)
 		return nil, err
@@ -202,16 +202,16 @@ func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationTy
 		return apperrors.NewInternalError("failed to fetch resource with id %s", resourceID)
 	}
 
-	if app.GetDeletedAt().IsZero() && app.GetUpdatedAt().IsZero() && !app.GetReady() && isErrored(app) { // CREATING
+	if app.GetDeletedAt().IsZero() && app.GetUpdatedAt().IsZero() && !app.GetReady() && hasNoErrors(app) { // CREATING
 		return apperrors.NewConcurrentOperationInProgressError("create operation is in progress")
 	}
-	if !app.GetDeletedAt().IsZero() && isErrored(app) { // DELETING
+	if !app.GetDeletedAt().IsZero() && hasNoErrors(app) { // DELETING
 		return apperrors.NewConcurrentOperationInProgressError("delete operation is in progress")
 	}
-	// Note: This will be needed when there is async UPDATE supported
-	// if app.DeletedAt.IsZero() && app.UpdatedAt.After(app.CreatedAt) && !app.Ready && *app.Error == "" { // UPDATING
-	// 	return nil, apperrors.NewInvalidData	Error("another operation is in progress")
-	// }
+
+	if app.GetDeletedAt().IsZero() && app.GetUpdatedAt().After(app.GetCreatedAt()) && !app.GetReady() && hasNoErrors(app) { // UPDATING or UNPAIRING
+		return apperrors.NewConcurrentOperationInProgressError("another operation is in progress")
+	}
 
 	return nil
 }
@@ -309,18 +309,22 @@ func executeSyncOperation(ctx context.Context, next gqlgen.Resolver, tx persiste
 	return resp, nil
 }
 
-func isErrored(app model.Entity) bool {
+func hasNoErrors(app model.Entity) bool {
 	return (app.GetError() == nil || *app.GetError() == "")
 }
 
-func determineApplicationInProgressStatus(opType graphql.OperationType) (*model.ApplicationStatusCondition, error) {
+func determineApplicationInProgressStatus(op *Operation) (*model.ApplicationStatusCondition, error) {
 	var appStatusCondition model.ApplicationStatusCondition
-	switch opType {
-	case graphql.OperationTypeCreate:
+	switch op.OperationType {
+	case OperationTypeCreate:
 		appStatusCondition = model.ApplicationStatusConditionCreating
-	case graphql.OperationTypeUpdate:
-		appStatusCondition = model.ApplicationStatusConditionUpdating
-	case graphql.OperationTypeDelete:
+	case OperationTypeUpdate:
+		if op.OperationCategory == OperationCategoryUnpairApplication {
+			appStatusCondition = model.ApplicationStatusConditionUnpairing
+		} else {
+			appStatusCondition = model.ApplicationStatusConditionUpdating
+		}
+	case OperationTypeDelete:
 		appStatusCondition = model.ApplicationStatusConditionDeleting
 	default:
 		return nil, apperrors.NewInvalidStatusCondition(resource.Application)

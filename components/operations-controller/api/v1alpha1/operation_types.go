@@ -31,7 +31,7 @@ func init() {
 	SchemeBuilder.Register(&Operation{}, &OperationList{})
 }
 
-// +kubebuilder:validation:Enum=Create;Update;Delete
+// +kubebuilder:validation:Enum=Create;Update;Delete;Unpair
 type OperationType string
 
 const (

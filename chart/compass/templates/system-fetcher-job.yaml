@@ -1,6 +1,4 @@
 {{if .Values.global.systemFetcher.enabled }}
-{{ $configmapName := printf "%s-%s-config" $.Chart.Name .Values.global.systemFetcher.name }}
-{{ $secretName := printf "%s-%s-secret" $.Chart.Name .Values.global.systemFetcher.name }}
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -58,6 +56,10 @@ spec:
                   value: {{ .Values.global.systemFetcher.systemsAPIFilterCriteria | quote }}
                 - name: APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS
                   value: {{ .Values.global.systemFetcher.systemToTemplateMappings | quote }}
+                - name: APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT
+                  value: {{ .Values.global.systemFetcher.templateOverrideApplicationInput | quote }}
+                - name: APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS
+                  value: {{ .Values.global.systemFetcher.templatePlaceholderToSystemKeyMappings | quote }}
                 - name: APP_SYSTEM_INFORMATION_PAGE_SIZE
                   value: "{{ .Values.global.systemFetcher.paging.pageSize }}"
                 - name: APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM
@@ -71,18 +73,22 @@ spec:
                 - name: APP_OAUTH_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
-                      name: "{{ $secretName }}"
-                      key: oauth-client-id
+                      name: {{ .Values.global.systemFetcher.secret.name }}
+                      key: {{ .Values.global.systemFetcher.secret.clientIdKey }}
                 - name: APP_OAUTH_CLIENT_SECRET
                   valueFrom:
                     secretKeyRef:
-                      name: "{{ $secretName }}"
-                      key: oauth-client-secret
-                - name: APP_OAUTH_TOKEN_ENDPOINT_PATTERN
+                      name: {{ .Values.global.systemFetcher.secret.name }}
+                      key: {{ .Values.global.systemFetcher.secret.clientSecretKey }}
+                - name: APP_OAUTH_TOKEN_BASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: "{{ $secretName }}"
-                      key: oauth-token-endpoint-pattern
+                      name: {{ .Values.global.systemFetcher.secret.name }}
+                      key: {{ .Values.global.systemFetcher.secret.oauthUrlKey }}
+                - name: APP_OAUTH_TOKEN_PATH
+                  value: {{ .Values.global.systemFetcher.oauth.tokenPath }}
+                - name: APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL
+                  value: {{ .Values.global.systemFetcher.oauth.tokenEndpointProtocol }}
                 - name: APP_DB_USER
                   valueFrom:
                     secretKeyRef:
@@ -155,11 +161,11 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ $secretName }}
+  name: {{ .Values.global.systemFetcher.secret.name }}
   namespace: {{ .Release.Namespace }}
 data:
-  oauth-client-id: {{ .Values.global.systemFetcher.oauth.client | b64enc | quote }}
-  oauth-client-secret: {{ .Values.global.systemFetcher.oauth.secret | b64enc | quote }}
-  oauth-token-endpoint-pattern: {{ .Values.global.systemFetcher.oauth.tokenURLPattern | b64enc | quote }}
+  {{ .Values.global.systemFetcher.secret.clientIdKey }}: {{ .Values.global.systemFetcher.oauth.client | b64enc | quote }}
+  {{ .Values.global.systemFetcher.secret.clientSecretKey }}: {{ .Values.global.systemFetcher.oauth.secret | b64enc | quote }}
+  {{ .Values.global.systemFetcher.secret.oauthUrlKey }}: {{ .Values.global.systemFetcher.oauth.tokenBaseUrl | b64enc | quote }}
 {{ end }}
 {{ end }}

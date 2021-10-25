@@ -123,7 +123,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			events := make([][]byte, 0, len(test.detailsPairs))
 			for i, detailPair := range test.detailsPairs {
-				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), constructJSONObject(detailPair...), fieldMapping))
+				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", constructJSONObject(detailPair...), fieldMapping))
 			}
 			page := eventsPage{
 				fieldMapping: fieldMapping,
@@ -150,12 +150,14 @@ func Test_getTenantMappings(t *testing.T) {
 	subdomainField := "subdomain"
 	subdomain := "test-subdomain"
 	providerName := "test-provider"
+	entityTypeField := "type"
+	entityType := "account"
 
 	expectedTenantMapping := model.BusinessTenantMappingInput{
 		ExternalTenant: id,
 		Name:           name,
 		Subdomain:      subdomain,
-		Type:           tenant.TypeToStr(tenant.Account),
+		Type:           entityType,
 		Provider:       providerName,
 	}
 
@@ -169,11 +171,12 @@ func Test_getTenantMappings(t *testing.T) {
 		{
 			name: "successfully gets businessTenantMappingInputs for correct eventPage format",
 			fieldMapping: TenantFieldMapping{
-				NameField:      nameField,
-				IDField:        idField,
-				SubdomainField: subdomainField,
-				EventsField:    "events",
-				DetailsField:   "details",
+				NameField:       nameField,
+				IDField:         idField,
+				SubdomainField:  subdomainField,
+				EventsField:     "events",
+				DetailsField:    "details",
+				EntityTypeField: entityTypeField,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
@@ -200,6 +203,7 @@ func Test_getTenantMappings(t *testing.T) {
 				SubdomainField:     "subdomain",
 				DiscriminatorField: discriminatorField,
 				DiscriminatorValue: "discriminator-value",
+				EntityTypeField:    entityTypeField,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
@@ -214,6 +218,7 @@ func Test_getTenantMappings(t *testing.T) {
 					{nameField, name},
 					{discriminatorField, "discriminator-value"},
 					{subdomainField, subdomain},
+					{entityTypeField, tenant.TypeToStr(tenant.Account)},
 				},
 			},
 		},
@@ -226,6 +231,7 @@ func Test_getTenantMappings(t *testing.T) {
 				DetailsField:       "details",
 				DiscriminatorField: discriminatorField,
 				DiscriminatorValue: "discriminator-value",
+				EntityTypeField:    entityTypeField,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
@@ -295,14 +301,14 @@ func Test_getTenantMappings(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			events := make([][]byte, 0, len(test.detailsPairs))
 			for i, detailPair := range test.detailsPairs {
-				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), constructJSONObject(detailPair...), test.fieldMapping))
+				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", constructJSONObject(detailPair...), test.fieldMapping))
 			}
 			page := eventsPage{
 				fieldMapping: test.fieldMapping,
 				providerName: providerName,
 				payload:      []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
-			tenantMappings := page.getTenantMappings(CreatedEventsType)
+			tenantMappings := page.getTenantMappings(CreatedAccountType)
 			test.assertTenantMappingFunc(t, tenantMappings)
 		})
 	}
@@ -319,7 +325,7 @@ func constructJSONObject(pairs ...Pair) string {
 		jsonObjectTemplate = `{
 		{{ $n := (len .) }}
 		{{range $i, $e := .}}
-   		"{{$e.Key}}": "{{$e.Value}}"{{if ne (plus1 $i) $n }},{{end}}
+  		"{{$e.Key}}": "{{$e.Value}}"{{if ne (plus1 $i) $n }},{{end}}
 		{{end}}
 	}`
 		funcMap = template.FuncMap{
@@ -335,8 +341,8 @@ func constructJSONObject(pairs ...Pair) string {
 	return buffer.String()
 }
 
-func fixEventWithDetails(id, name, details string, fieldMapping TenantFieldMapping) []byte {
-	return []byte(fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":%s}`, fieldMapping.IDField, id, fieldMapping.NameField, name, fieldMapping.DetailsField, details))
+func fixEventWithDetails(id, name, entityType, details string, fieldMapping TenantFieldMapping) []byte {
+	return []byte(fmt.Sprintf(`{"%s":"%s", "%s":"%s", "%s":"%s","%s":%s}`, fieldMapping.IDField, id, fieldMapping.NameField, name, fieldMapping.EntityTypeField, entityType, fieldMapping.DetailsField, details))
 }
 
 func fixTenantEventsResponse(events []byte, total, pages int) TenantEventsResponse {

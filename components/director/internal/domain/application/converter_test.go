@@ -2,11 +2,13 @@ package application_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-
 	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/require"
 
@@ -91,16 +93,20 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 	allPropsInput := fixGQLApplicationRegisterInput("foo", "Lorem ipsum")
 	allPropsExpected := fixModelApplicationRegisterInput("foo", "Lorem ipsum")
 
+	webhooksErr := errors.New("wh err")
+	bndlsErr := errors.New("bndl err")
+
 	// given
 	testCases := []struct {
 		Name               string
 		Input              graphql.ApplicationRegisterInput
 		Expected           model.ApplicationRegisterInput
+		ExpectedErr        error
 		WebhookConverterFn func() *automock.WebhookConverter
 		BundleConverterFn  func() *automock.BundleConverter
 	}{
 		{
-			Name:     "All properties given",
+			Name:     "Succeeds when all properties are given",
 			Input:    allPropsInput,
 			Expected: allPropsExpected,
 			WebhookConverterFn: func() *automock.WebhookConverter {
@@ -115,7 +121,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			},
 		},
 		{
-			Name:     "Empty",
+			Name:     "Succeeds when empty",
 			Input:    graphql.ApplicationRegisterInput{},
 			Expected: model.ApplicationRegisterInput{},
 			WebhookConverterFn: func() *automock.WebhookConverter {
@@ -126,6 +132,33 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			BundleConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
 				conv.On("MultipleCreateInputFromGraphQL", []*graphql.BundleCreateInput(nil)).Return(nil, nil)
+				return conv
+			},
+		},
+		{
+			Name:        "Returns error when webhook conversion fails",
+			Input:       graphql.ApplicationRegisterInput{},
+			ExpectedErr: webhooksErr,
+
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return(nil, webhooksErr)
+				return conv
+			},
+			BundleConverterFn: func() *automock.BundleConverter { return &automock.BundleConverter{} },
+		},
+		{
+			Name:        "Returns error when bundles conversion fails",
+			Input:       graphql.ApplicationRegisterInput{},
+			ExpectedErr: bndlsErr,
+			WebhookConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return(nil, nil)
+				return conv
+			},
+			BundleConverterFn: func() *automock.BundleConverter {
+				conv := &automock.BundleConverter{}
+				conv.On("MultipleCreateInputFromGraphQL", []*graphql.BundleCreateInput(nil)).Return(nil, bndlsErr)
 				return conv
 			},
 		},
@@ -141,8 +174,13 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			res, err := converter.CreateInputFromGraphQL(context.TODO(), testCase.Input)
 
 			// then
-			assert.NoError(t, err)
-			assert.Equal(t, testCase.Expected, res)
+			if testCase.ExpectedErr != nil {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, testCase.ExpectedErr)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.Expected, res)
+			}
 		})
 	}
 }
@@ -290,7 +328,7 @@ func TestConverter_FromEntity(t *testing.T) {
 	})
 }
 
-func TestConverter_CreateInputGQLJSONConversion(t *testing.T) {
+func TestConverter_CreateInputJSONToGQL(t *testing.T) {
 	// GIVEN
 	conv := application.NewConverter(nil, nil)
 
@@ -319,6 +357,42 @@ func TestConverter_CreateInputGQLJSONConversion(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), expectedErr)
+	})
+}
+
+func TestConverter_CreateInputJSONToModelL(t *testing.T) {
+	t.Run("Successful conversion", func(t *testing.T) {
+		// GIVEN
+		cond := model.ApplicationStatusConditionInitial
+		appInput := model.ApplicationRegisterInput{
+			Name:            "test",
+			Description:     str.Ptr("test description"),
+			StatusCondition: &cond,
+			Labels: map[string]interface{}{
+				"key": "value",
+			},
+		}
+		appInputJSON := fmt.Sprintf(`{"name": "%s","description": "%s","statusCondition": "%s","labels": {"key": "value"}}`,
+			appInput.Name, *appInput.Description, string(cond))
+
+		conv := application.NewConverter(nil, nil)
+
+		// WHEN
+		outputModel, err := conv.CreateInputJSONToModel(context.TODO(), appInputJSON)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, appInput, outputModel)
+	})
+	t.Run("Error while JSON to GQL conversion", func(t *testing.T) {
+		// GIVEN
+		conv := application.NewConverter(nil, nil)
+
+		// WHEN
+		_, err := conv.CreateInputJSONToModel(context.TODO(), "test")
+
+		// THEN
+		require.Error(t, err)
 	})
 }
 
