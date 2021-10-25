@@ -18,7 +18,12 @@ const (
 	tenantColumn string = "tenant_id"
 )
 
-var tableColumns = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "key", "value"}
+var (
+	tableColumns       = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "key", "value", "version"}
+	updatableColumns   = []string{"value"}
+	idColumns          = []string{"id"}
+	versionedIDColumns = append(idColumns, "version")
+)
 
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
@@ -28,25 +33,29 @@ type Converter interface {
 }
 
 type repository struct {
-	upserter     repo.Upserter
-	lister       repo.Lister
-	listerGlobal repo.ListerGlobal
-	deleter      repo.Deleter
-	getter       repo.SingleGetter
-	queryBuilder repo.QueryBuilder
-	conv         Converter
+	lister           repo.Lister
+	listerGlobal     repo.ListerGlobal
+	deleter          repo.Deleter
+	getter           repo.SingleGetter
+	queryBuilder     repo.QueryBuilder
+	creator          repo.Creator
+	updater          repo.Updater
+	versionedUpdater repo.Updater
+	conv             Converter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		upserter:     repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_context_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
-		lister:       repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
-		listerGlobal: repo.NewListerGlobal(resource.Label, tableName, tableColumns),
-		deleter:      repo.NewDeleter(resource.Label, tableName, tenantColumn),
-		getter:       repo.NewSingleGetter(resource.Label, tableName, tenantColumn, tableColumns),
-		queryBuilder: repo.NewQueryBuilder(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
-		conv:         conv,
+		lister:           repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
+		listerGlobal:     repo.NewListerGlobal(resource.Label, tableName, tableColumns),
+		deleter:          repo.NewDeleter(resource.Label, tableName, tenantColumn),
+		getter:           repo.NewSingleGetter(resource.Label, tableName, tenantColumn, tableColumns),
+		queryBuilder:     repo.NewQueryBuilder(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
+		creator:          repo.NewCreator(resource.Label, tableName, tableColumns),
+		updater:          repo.NewUpdater(resource.Label, tableName, updatableColumns, tenantColumn, idColumns),
+		versionedUpdater: repo.NewUpdater(resource.Label, tableName, updatableColumns, tenantColumn, versionedIDColumns),
+		conv:             conv,
 	}
 }
 
@@ -56,12 +65,45 @@ func (r *repository) Upsert(ctx context.Context, label *model.Label) error {
 		return apperrors.NewInternalError("item can not be empty")
 	}
 
+	l, err := r.GetByKey(ctx, label.Tenant, label.ObjectType, label.ObjectID, label.Key)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return r.Create(ctx, label)
+		}
+		return err
+	}
+
+	l.Value = label.Value
+	labelEntity, err := r.conv.ToEntity(*l)
+	if err != nil {
+		return errors.Wrap(err, "while creating label entity from model")
+	}
+	return r.updater.UpdateSingleWithVersion(ctx, labelEntity)
+}
+
+// UpsertWithVersion missing godoc
+func (r *repository) UpdateWithVersion(ctx context.Context, label *model.Label) error {
+	if label == nil {
+		return apperrors.NewInternalError("item can not be empty")
+	}
 	labelEntity, err := r.conv.ToEntity(*label)
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
+	return r.versionedUpdater.UpdateSingleWithVersion(ctx, labelEntity)
+}
 
-	return r.upserter.Upsert(ctx, labelEntity)
+// Create missing godoc
+func (r *repository) Create(ctx context.Context, label *model.Label) error {
+	if label == nil {
+		return apperrors.NewInternalError("item can not be empty")
+	}
+
+	labelEntity, err := r.conv.ToEntity(*label)
+	if err != nil {
+		return errors.Wrap(err, "while creating label entity from model")
+	}
+	return r.creator.Create(ctx, labelEntity)
 }
 
 // GetByKey missing godoc

@@ -12,6 +12,9 @@ import (
 	"encoding/pem"
 	"io/ioutil"
 	"net/http"
+	"time"
+
+	"github.com/avast/retry-go"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -32,8 +35,11 @@ type CertSvcConfig struct {
 	ClientSecret string
 	OAuthURL     string
 
-	TokenPath      string `envconfig:"default=/oauth/token"`
-	CertSvcAPIPath string `envconfig:"default=/v3/synchronous/certificate"`
+	TokenPath      string        `envconfig:"default=/oauth/token"`
+	CertSvcAPIPath string        `envconfig:"default=/v3/synchronous/certificate"`
+	IssuerLocality string        `envconfig:"default=local"`
+	RetryAttempts  uint          `envconfig:"default=2"`
+	RetryDelay     time.Duration `envconfig:"default=100ms"`
 }
 
 // Validate validates a cert service config
@@ -155,14 +161,6 @@ func (c *client) IssueClientCert(ctx context.Context) (*tls.Certificate, error) 
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, c.config.CSREndpoint+c.config.CertSvcAPIPath, bytes.NewBuffer(body))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
 	ctxWithClient := context.WithValue(ctx, oauth2.HTTPClient, c.Client)
 	ccConf := clientcredentials.Config{
 		ClientID:     c.config.ClientID,
@@ -170,46 +168,79 @@ func (c *client) IssueClientCert(ctx context.Context) (*tls.Certificate, error) 
 		TokenURL:     c.config.OAuthURL + c.config.TokenPath,
 		AuthStyle:    oauth2.AuthStyleAutoDetect,
 	}
-
 	client := ccConf.Client(ctxWithClient)
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		err := resp.Body.Close()
+	cert := &tls.Certificate{}
+	err = retry.Do(func() error {
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, c.config.CSREndpoint+c.config.CertSvcAPIPath, bytes.NewBuffer(body))
 		if err != nil {
-			log.C(ctx).Info("Failed to close HTTP response body")
+			return err
 		}
-	}()
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Accept", "application/json")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+
+		defer func() {
+			err := resp.Body.Close()
+			if err != nil {
+				log.C(ctx).Info("Failed to close HTTP response body")
+			}
+		}()
+
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			log.C(ctx).Errorf("Unexpected status code while issuing client cert: Status Code: %d Body: %s", resp.StatusCode, bodyBytes)
+			return errors.Errorf("unexpected status code while issuing client cert %d", resp.StatusCode)
+		}
+
+		csrResp := &csrResponse{}
+		err = json.Unmarshal(bodyBytes, csrResp)
+		if err != nil {
+			return err
+		}
+
+		pemCert, err := c.decodePem(csrResp.CrtResponse.Crt)
+		if err != nil {
+			return err
+		}
+
+		cert = &tls.Certificate{
+			Certificate: pemCert,
+			PrivateKey:  privateKey,
+		}
+
+		// By doc, the first element is always the "leaf"/client cert
+		var parsedClientCert *x509.Certificate
+		if len(cert.Certificate) > 0 {
+			parsedClientCert, err = x509.ParseCertificate(cert.Certificate[0])
+			if err != nil {
+				return err
+			}
+		}
+
+		if parsedClientCert != nil && len(parsedClientCert.Issuer.Locality) > 0 {
+			issuerLocality := parsedClientCert.Issuer.Locality[0]
+			if issuerLocality != c.config.IssuerLocality {
+				log.C(ctx).Errorf("Issuer locality of the client cert: %s is not the desired one: %s. Will try issuing a certificate again...", issuerLocality, c.config.IssuerLocality)
+				return errors.Errorf("issuer locality of the client cert does not match the expected one: %s", c.config.IssuerLocality)
+			}
+		}
+		return nil
+	}, retry.Attempts(c.config.RetryAttempts), retry.Delay(c.config.RetryDelay))
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		log.C(ctx).Errorf("Unexpected status code while issuing client cert: Status Code: %d Body: %s", resp.StatusCode, bodyBytes)
-		return nil, errors.Errorf("unexpected status code while issuing client cert %d", resp.StatusCode)
-	}
-
-	csrResp := &csrResponse{}
-	err = json.Unmarshal(bodyBytes, csrResp)
-	if err != nil {
-		return nil, err
-	}
-
-	pemCert, err := c.decodePem(csrResp.CrtResponse.Crt)
-	if err != nil {
-		return nil, err
-	}
-
-	return &tls.Certificate{
-		Certificate: pemCert,
-		PrivateKey:  privateKey,
-	}, nil
+	return cert, nil
 }
 
 func (c *client) decodePem(chain string) ([][]byte, error) {

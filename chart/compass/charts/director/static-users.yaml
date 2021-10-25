@@ -29,3 +29,4 @@
   - "runtime.auths:read"
   - "fetch-request.auth:read"
   - "webhooks.auth:read"
+  - "formation:write"
