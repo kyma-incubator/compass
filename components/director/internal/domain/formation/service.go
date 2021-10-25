@@ -199,7 +199,10 @@ func (s *service) modifyAssignedFormationsForApplication(ctx context.Context, tn
 
 	labelInput.Value = modificationFunc(existingFormations, formation.Name)
 	labelInput.Version = existingLabel.Version
-	return &formation, s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
+	if err := s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput); err != nil {
+		return nil, err
+	}
+	return &formation, nil
 }
 
 type modificationFunc func([]string, string) []string

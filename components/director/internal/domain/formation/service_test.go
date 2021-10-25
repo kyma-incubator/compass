@@ -949,6 +949,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			} else {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				require.Nil(t, actual)
 			}
 			mock.AssertExpectationsForObjects(t, uidService, labelService, asaService)
 		})
