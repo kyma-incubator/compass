@@ -39,6 +39,8 @@ const (
 	InvalidStatusCondition ErrorType = 33
 	// CannotUpdateObjectInManyBundles missing godoc
 	CannotUpdateObjectInManyBundles ErrorType = 34
+	// ConcurrentUpdate missing godoc
+	ConcurrentUpdate ErrorType = 35
 )
 
 const (
@@ -88,4 +90,10 @@ const (
 	InvalidStatusConditionMsg = "Invalid status condition"
 	// CannotUpdateObjectInManyBundlesMsg missing godoc
 	CannotUpdateObjectInManyBundlesMsg = "Can not update object that is part of more than one bundle"
+	// ConcurrentUpdateMsg missing godoc
+	ConcurrentUpdateMsg = "Could not update object due to concurrent update"
+	// ShouldUpdateSingleRowButUpdatedMsg missing godoc
+	ShouldUpdateSingleRowButUpdatedMsg = "should update single row, but updated"
+	// ShouldUpdateSingleRowButUpdatedMsgF missing godoc
+	ShouldUpdateSingleRowButUpdatedMsgF = "should update single row, but updated %d rows"
 )

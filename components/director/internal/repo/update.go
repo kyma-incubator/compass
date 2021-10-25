@@ -84,7 +84,13 @@ func (u *universalUpdater) UpdateSingleWithVersion(ctx context.Context, dbEntity
 	fieldsToSet := u.buildFieldsToSet()
 	fieldsToSet = append(fieldsToSet, "version = version+1")
 
-	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, fieldsToSet, false)
+	if err := u.unsafeUpdateSingleWithFields(ctx, dbEntity, fieldsToSet, false); err != nil {
+		if apperrors.IsConcurrentUpdate(err) {
+			return apperrors.NewConcurrentUpdate()
+		}
+		return err
+	}
+	return nil
 }
 
 // TechnicalUpdate missing godoc
@@ -139,7 +145,7 @@ func (u *universalUpdater) unsafeUpdateSingleWithFields(ctx context.Context, dbE
 		if u.resourceType == resource.BundleReference {
 			return apperrors.NewCannotUpdateObjectInManyBundles()
 		}
-		return apperrors.NewInternalError("should update single row, but updated %d rows", affected)
+		return apperrors.NewInternalError(apperrors.ShouldUpdateSingleRowButUpdatedMsgF, affected)
 	}
 
 	return nil
