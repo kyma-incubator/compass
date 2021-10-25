@@ -106,8 +106,6 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 			return errors.Wrapf(err, "while loading tenant from context")
 		}
 
-		fmt.Printf("\n runtime ID: --> %s <--- and runtime tenant: ---> %s <---\n", runtime.ID, rtmTenant)
-		fmt.Printf("\n subscription call in tenatn-fetcher for runtime with ID: --> %s <---\n", runtime.ID)
 		if err := s.UpsertLabel(ctx, rtmTenant, &model.LabelInput{
 			Key:        s.ConsumerSubaccountIDsLabelKey,
 			Value:      labelNewValue,
