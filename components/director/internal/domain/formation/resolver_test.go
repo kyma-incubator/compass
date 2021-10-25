@@ -29,15 +29,11 @@ func TestCreateFormation(t *testing.T) {
 	t.Run("successfully created formation", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatSucceeds()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockConverter := &automock.Converter{}
 		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormation}).Return(&model.Formation{Name: testFormation}, nil)
 
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation})
 
@@ -50,6 +46,7 @@ func TestCreateFormation(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, testFormation, actual.Name)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 	t.Run("returns error when can not load tenant from context", func(t *testing.T) {
 		// GIVEN
@@ -67,8 +64,6 @@ func TestCreateFormation(t *testing.T) {
 	t.Run("returns error when can not start db transaction", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatFailsOnBegin()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, nil, nil)
@@ -79,19 +74,16 @@ func TestCreateFormation(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact)
 	})
 	t.Run("returns error when commit fails", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatFailsOnCommit()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormation}).Return(&model.Formation{Name: testFormation}, nil)
 
 		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -103,19 +95,16 @@ func TestCreateFormation(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 	t.Run("returns error when create formation fails", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatDoesntExpectCommit()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormation}).Return(nil, testErr)
 
 		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -128,6 +117,7 @@ func TestCreateFormation(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		require.Nil(t, actual)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 }
 
@@ -144,15 +134,11 @@ func TestDeleteFormation(t *testing.T) {
 	t.Run("successfully delete formation", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatSucceeds()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormation}).Return(&model.Formation{Name: testFormation}, nil)
 
 		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation})
 
@@ -165,6 +151,7 @@ func TestDeleteFormation(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, testFormation, actual.Name)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 	t.Run("returns error when can not load tenant from context", func(t *testing.T) {
 		// GIVEN
@@ -181,8 +168,6 @@ func TestDeleteFormation(t *testing.T) {
 	t.Run("returns error when can not start db transaction", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatFailsOnBegin()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, nil, nil)
@@ -193,19 +178,16 @@ func TestDeleteFormation(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact)
 	})
 	t.Run("returns error when commit fails", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatFailsOnCommit()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormation}).Return(&model.Formation{Name: testFormation}, nil)
 
 		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -217,19 +199,16 @@ func TestDeleteFormation(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 	t.Run("returns error when create formation fails", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatDoesntExpectCommit()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormation}).Return(nil, testErr)
 
 		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -242,6 +221,7 @@ func TestDeleteFormation(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		require.Nil(t, actual)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 }
 
@@ -258,15 +238,11 @@ func TestAssignFormation(t *testing.T) {
 	t.Run("successfully assigned formation", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatSucceeds()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockConverter := &automock.Converter{}
 		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, model.Formation{Name: testFormation}).Return(&model.Formation{Name: testFormation}, nil)
 
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation})
 
@@ -279,6 +255,7 @@ func TestAssignFormation(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, testFormation, actual.Name)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 	t.Run("returns error when can not load tenant from context", func(t *testing.T) {
 		// GIVEN
@@ -296,8 +273,6 @@ func TestAssignFormation(t *testing.T) {
 	t.Run("returns error when can not start db transaction", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatFailsOnBegin()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, nil, nil)
@@ -308,19 +283,16 @@ func TestAssignFormation(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact)
 	})
 	t.Run("returns error when commit fails", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatFailsOnCommit()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, model.Formation{Name: testFormation}).Return(&model.Formation{Name: testFormation}, nil)
 
 		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -332,19 +304,16 @@ func TestAssignFormation(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 	t.Run("returns error when assign formation fails", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatDoesntExpectCommit()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, model.Formation{Name: testFormation}).Return(nil, testErr)
 
 		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -357,6 +326,7 @@ func TestAssignFormation(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		require.Nil(t, actual)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 }
 
@@ -373,15 +343,11 @@ func TestUnassignFormation(t *testing.T) {
 	t.Run("successfully unassigned formation", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatSucceeds()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockConverter := &automock.Converter{}
 		mockService.On("UnassignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, model.Formation{Name: testFormation}).Return(&model.Formation{Name: testFormation}, nil)
 
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation})
 
@@ -394,6 +360,7 @@ func TestUnassignFormation(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, testFormation, actual.Name)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 	t.Run("returns error when can not load tenant from context", func(t *testing.T) {
 		// GIVEN
@@ -411,8 +378,6 @@ func TestUnassignFormation(t *testing.T) {
 	t.Run("returns error when can not start db transaction", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatFailsOnBegin()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, nil, nil)
@@ -423,19 +388,16 @@ func TestUnassignFormation(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact)
 	})
 	t.Run("returns error when commit fails", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatFailsOnCommit()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockService.On("UnassignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, model.Formation{Name: testFormation}).Return(&model.Formation{Name: testFormation}, nil)
 
 		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -447,19 +409,16 @@ func TestUnassignFormation(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 	t.Run("returns error when assign formation fails", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatDoesntExpectCommit()
-		defer persist.AssertExpectations(t)
-		defer transact.AssertExpectations(t)
 
 		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
 		mockService.On("UnassignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, model.Formation{Name: testFormation}).Return(nil, testErr)
 
 		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -472,6 +431,7 @@ func TestUnassignFormation(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		require.Nil(t, actual)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
 	})
 }
 

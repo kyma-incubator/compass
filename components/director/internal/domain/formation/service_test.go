@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,1193 +24,935 @@ const (
 )
 
 func TestServiceCreateFormation(t *testing.T) {
-	t.Run("success when no labeldef exists", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
-		in := model.Formation{
-			Name: testFormation,
-		}
-		expected := &model.Formation{
-			Name: testFormation,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	testErr := errors.New("Test error")
 
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.LabelDefinition, ""))
-		mockLabelDefService.On("CreateWithFormations", ctx, tnt, []string{testFormation}).Return(nil)
+	in := model.Formation{
+		Name: testFormation,
+	}
+	expected := &model.Formation{
+		Name: testFormation,
+	}
 
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.CreateFormation(ctx, tnt, in)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
-	t.Run("success when labeldef exists", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
+	defaultSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
+	assert.NoError(t, err)
+	defaultSchemaLblDef := fixDefaultScenariosLabelDefinition(tnt, defaultSchema)
 
-		in := model.Formation{
-			Name: testFormation,
-		}
+	newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
+	assert.NoError(t, err)
+	newSchemaLblDef := fixDefaultScenariosLabelDefinition(tnt, newSchema)
 
-		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
-		assert.NoError(t, err)
-		lblDef := fixDefaultScenariosLabelDefinition(tnt, schema)
+	emptySchemaLblDef := fixDefaultScenariosLabelDefinition(tnt, defaultSchema)
+	emptySchemaLblDef.Schema = nil
 
-		expectedSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
-		assert.NoError(t, err)
-		expectedLblDef := fixDefaultScenariosLabelDefinition(tnt, expectedSchema)
+	testCases := []struct {
+		Name                 string
+		LabelDefRepositoryFn func() *automock.LabelDefRepository
+		LabelDefServiceFn    func() *automock.LabelDefService
+		ExpectedFormation    *model.Formation
+		ExpectedErrMessage   string
+	}{
+		{
+			Name: "success when no labeldef exists",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.LabelDefinition, ""))
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("CreateWithFormations", ctx, tnt, []string{testFormation}).Return(nil)
+				return labelDefService
+			},
+			ExpectedFormation:  expected,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "success when labeldef exists",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(nil)
+				return labelDefService
+			},
+			ExpectedFormation:  expected,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "error when labeldef is missing and can not create it",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.LabelDefinition, ""))
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("CreateWithFormations", ctx, tnt, []string{testFormation}).Return(testErr)
+				return labelDefService
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when can not get labeldef",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(nil, testErr)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				return &automock.LabelDefService{}
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when labeldef's schema is missing",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&emptySchemaLblDef, nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				return &automock.LabelDefService{}
+			},
+			ExpectedErrMessage: "missing schema",
+		},
+		{
+			Name: "error when validating existing labels against the schema",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, defaultSchemaLblDef.Key).Return(testErr)
+				return labelDefService
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when validating automatic scenario assignment against the schema",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, defaultSchemaLblDef.Key).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, tnt, defaultSchemaLblDef.Key).Return(testErr)
+				return labelDefService
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when update with version fails",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(testErr)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, defaultSchemaLblDef.Key).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, tnt, defaultSchemaLblDef.Key).Return(nil)
+				return labelDefService
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
 
-		expected := &model.Formation{
-			Name: testFormation,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			lblDefRepo := testCase.LabelDefRepositoryFn()
+			lblDefService := testCase.LabelDefServiceFn()
 
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&lblDef, nil)
-		mockLabelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, expectedSchema, tnt, model.ScenariosKey).Return(nil)
-		mockLabelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, expectedSchema, tnt, model.ScenariosKey).Return(nil)
-		mockLabelDefRepository.On("UpdateWithVersion", ctx, expectedLblDef).Return(nil)
+			svc := formation.NewService(lblDefRepo, nil, nil, lblDefService, nil)
 
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.CreateFormation(ctx, tnt, in)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
-	t.Run("error when labeldef is missing and can not create it", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
+			// WHEN
+			actual, err := svc.CreateFormation(ctx, tnt, in)
 
-		in := model.Formation{
-			Name: testFormation,
-		}
-		testErr := errors.New("Test error")
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedFormation, actual)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				require.Nil(t, actual)
+			}
 
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.LabelDefinition, ""))
-		mockLabelDefService.On("CreateWithFormations", ctx, tnt, []string{testFormation}).Return(testErr)
-
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.CreateFormation(ctx, tnt, in)
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), testErr.Error())
-		require.Nil(t, actual)
-	})
-	t.Run("error when can not get labeldef", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		testErr := errors.New("Test error")
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(nil, testErr)
-
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.CreateFormation(ctx, tnt, in)
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), testErr.Error())
-		require.Nil(t, actual)
-	})
-	t.Run("error when labeldef's schema is missing", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-
-		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
-		assert.NoError(t, err)
-		lblDef := fixDefaultScenariosLabelDefinition(tnt, schema)
-		lblDef.Schema = nil
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&lblDef, nil)
-
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.CreateFormation(ctx, tnt, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), "missing schema")
-	})
-	t.Run("error when validating existing labels against the schema", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		testErr := errors.New("test error")
-		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
-		assert.NoError(t, err)
-		lblDef := fixDefaultScenariosLabelDefinition(tnt, schema)
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
-		assert.NoError(t, err)
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&lblDef, nil)
-		mockLabelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, lblDef.Key).Return(testErr)
-
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.CreateFormation(ctx, tnt, in)
-		// THEN
-		require.Error(t, err)
-		assert.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
-	t.Run("error when validating automatic scenario assignment against the schema", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		testErr := errors.New("test error")
-		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
-		assert.NoError(t, err)
-		lblDef := fixDefaultScenariosLabelDefinition(tnt, schema)
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
-		assert.NoError(t, err)
-
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&lblDef, nil)
-		mockLabelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, lblDef.Key).Return(nil)
-		mockLabelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, tnt, lblDef.Key).Return(testErr)
-
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.CreateFormation(ctx, tnt, in)
-		// THEN
-		require.Error(t, err)
-		assert.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
-	t.Run("error when update with version fails", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		testErr := errors.New("test error")
-		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
-		assert.NoError(t, err)
-		lblDef := fixDefaultScenariosLabelDefinition(tnt, schema)
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
-		assert.NoError(t, err)
-		expectedLblDef := fixDefaultScenariosLabelDefinition(tnt, newSchema)
-
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&lblDef, nil)
-		mockLabelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, lblDef.Key).Return(nil)
-		mockLabelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, tnt, lblDef.Key).Return(nil)
-		mockLabelDefRepository.On("UpdateWithVersion", ctx, expectedLblDef).Return(testErr)
-
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.CreateFormation(ctx, tnt, in)
-		// THEN
-		require.Error(t, err)
-		assert.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
+			mock.AssertExpectationsForObjects(t, lblDefRepo, lblDefService)
+		})
+	}
 }
 
 func TestServiceDeleteFormation(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
-		in := model.Formation{
-			Name: testFormation,
-		}
+	testErr := errors.New("Test error")
 
-		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
-		assert.NoError(t, err)
-		lblDef := fixDefaultScenariosLabelDefinition(tnt, schema)
+	in := model.Formation{
+		Name: testFormation,
+	}
 
-		expected := &model.Formation{
-			Name: testFormation,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	expected := &model.Formation{
+		Name: testFormation,
+	}
 
-		newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
-		assert.NoError(t, err)
-		expectedLblDef := fixDefaultScenariosLabelDefinition(tnt, newSchema)
+	defaultSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
+	assert.NoError(t, err)
+	defaultSchemaLblDef := fixDefaultScenariosLabelDefinition(tnt, defaultSchema)
 
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&lblDef, nil)
-		mockLabelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(nil)
-		mockLabelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(nil)
-		mockLabelDefRepository.On("UpdateWithVersion", ctx, expectedLblDef).Return(nil)
+	newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
+	assert.NoError(t, err)
+	newSchemaLblDef := fixDefaultScenariosLabelDefinition(tnt, newSchema)
 
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.DeleteFormation(ctx, tnt, in)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
-	t.Run("error when can not get labeldef", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
+	emptySchemaLblDef := fixDefaultScenariosLabelDefinition(tnt, defaultSchema)
+	emptySchemaLblDef.Schema = nil
 
-		in := model.Formation{
-			Name: testFormation,
-		}
-		testErr := errors.New("Test error")
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	testCases := []struct {
+		Name                 string
+		LabelDefRepositoryFn func() *automock.LabelDefRepository
+		LabelDefServiceFn    func() *automock.LabelDefService
+		ExpectedFormation    *model.Formation
+		ExpectedErrMessage   string
+	}{
+		{
+			Name: "success",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(nil)
+				return labelDefService
+			},
+			ExpectedFormation:  expected,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "error when can not get labeldef",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(nil, testErr)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				return &automock.LabelDefService{}
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when labeldef's schema is missing",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&emptySchemaLblDef, nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				return &automock.LabelDefService{}
+			},
+			ExpectedErrMessage: "missing schema",
+		},
+		{
+			Name: "error when validating existing labels against the schema",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(testErr)
+				return labelDefService
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when validating automatic scenario assignment against the schema",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(testErr)
+				return labelDefService
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when update with version fails",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&newSchemaLblDef, nil)
+				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(testErr)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, newSchemaLblDef.Key).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, tnt, newSchemaLblDef.Key).Return(nil)
+				return labelDefService
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
 
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(nil, testErr)
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			lblDefRepo := testCase.LabelDefRepositoryFn()
+			lblDefService := testCase.LabelDefServiceFn()
 
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.DeleteFormation(ctx, tnt, in)
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), testErr.Error())
-		require.Nil(t, actual)
-	})
-	t.Run("error when labeldef's schema is missing", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
+			svc := formation.NewService(lblDefRepo, nil, nil, lblDefService, nil)
 
-		in := model.Formation{
-			Name: testFormation,
-		}
+			// WHEN
+			actual, err := svc.DeleteFormation(ctx, tnt, in)
 
-		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
-		assert.NoError(t, err)
-		lblDef := fixDefaultScenariosLabelDefinition(tnt, schema)
-		lblDef.Schema = nil
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedFormation, actual)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				require.Nil(t, actual)
+			}
 
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&lblDef, nil)
-
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.DeleteFormation(ctx, tnt, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), "missing schema")
-	})
-	t.Run("error when validating existing labels against the schema", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		testErr := errors.New("test error")
-		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
-		assert.NoError(t, err)
-		lblDef := fixDefaultScenariosLabelDefinition(tnt, schema)
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
-		assert.NoError(t, err)
-
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&lblDef, nil)
-		mockLabelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(testErr)
-
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.DeleteFormation(ctx, tnt, in)
-		// THEN
-		require.Error(t, err)
-		assert.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
-	t.Run("error when validating automatic scenario assignment against the schema", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		testErr := errors.New("test error")
-		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
-		assert.NoError(t, err)
-		lblDef := fixDefaultScenariosLabelDefinition(tnt, schema)
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
-		assert.NoError(t, err)
-
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&lblDef, nil)
-		mockLabelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(nil)
-		mockLabelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, tnt, model.ScenariosKey).Return(testErr)
-
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.DeleteFormation(ctx, tnt, in)
-		// THEN
-		require.Error(t, err)
-		assert.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
-	t.Run("error when update with version fails", func(t *testing.T) {
-		//GIVEN
-		mockLabelDefRepository := &automock.LabelDefRepository{}
-		mockLabelDefService := &automock.LabelDefService{}
-		defer mockLabelDefRepository.AssertExpectations(t)
-		defer mockLabelDefService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		testErr := errors.New("test error")
-		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
-		assert.NoError(t, err)
-		lblDef := fixDefaultScenariosLabelDefinition(tnt, schema)
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
-		assert.NoError(t, err)
-		expectedLblDef := fixDefaultScenariosLabelDefinition(tnt, newSchema)
-
-		mockLabelDefRepository.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&lblDef, nil)
-		mockLabelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, tnt, lblDef.Key).Return(nil)
-		mockLabelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, tnt, lblDef.Key).Return(nil)
-		mockLabelDefRepository.On("UpdateWithVersion", ctx, expectedLblDef).Return(testErr)
-
-		sut := formation.NewService(mockLabelDefRepository, nil, nil, mockLabelDefService, nil)
-		// WHEN
-		actual, err := sut.DeleteFormation(ctx, tnt, in)
-		// THEN
-		require.Error(t, err)
-		assert.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
+			mock.AssertExpectationsForObjects(t, lblDefRepo, lblDefService)
+		})
+	}
 }
 
 func TestServiceAssignFormation(t *testing.T) {
-	t.Run("success for application if label does not exist", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		mockUIDService := &automock.UIDService{}
-		defer mockUIDService.AssertExpectations(t)
-		defer mockLabelService.AssertExpectations(t)
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		lblInput := model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		expected := &model.Formation{
-			Name: testFormation,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	testErr := errors.New("test error")
 
-		mockUIDService.On("Generate").Return(fixUUID())
-		mockLabelService.On("GetLabel", ctx, tnt, &lblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
-		mockLabelService.On("CreateLabel", ctx, tnt, fixUUID(), &lblInput).Return(nil)
+	inputFormation := model.Formation{
+		Name: testFormation,
+	}
+	expectedFormation := &model.Formation{
+		Name: testFormation,
+	}
 
-		sut := formation.NewService(nil, mockLabelService, mockUIDService, nil, nil)
-		// WHEN
-		actual, err := sut.AssignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
+	inputSecondFormation := model.Formation{
+		Name: "test-formation-2",
+	}
+	expectedSecondFormation := &model.Formation{
+		Name: "test-formation-2",
+	}
 
-	t.Run("success for application if formation is already added", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
+	objectID := "123"
+	lbl := &model.Label{
+		ID:         "123",
+		Tenant:     tnt,
+		Key:        model.ScenariosKey,
+		Value:      []interface{}{testFormation},
+		ObjectID:   objectID,
+		ObjectType: model.ApplicationLabelableObject,
+		Version:    0,
+	}
+	lblInput := model.LabelInput{
+		Key:        model.ScenariosKey,
+		Value:      []string{testFormation},
+		ObjectID:   objectID,
+		ObjectType: model.ApplicationLabelableObject,
+		Version:    0,
+	}
 
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		lbl := &model.Label{
-			ID:         "123",
-			Tenant:     tnt,
-			Key:        model.ScenariosKey,
-			Value:      []interface{}{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		lblInput := &model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		expected := &model.Formation{
-			Name: testFormation,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	asa := model.AutomaticScenarioAssignment{
+		ScenarioName: testFormation,
+		Tenant:       tnt,
+		Selector: model.LabelSelector{
+			Key:   "global_subaccount_id",
+			Value: objectID,
+		},
+	}
 
-		mockLabelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
-		mockLabelService.On("UpdateLabel", ctx, tnt, lbl.ID, lblInput).Return(nil)
-
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.AssignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
-
-	t.Run("success for application with new formation", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: "test-formation-2",
-		}
-		objectID := "123"
-		lbl := &model.Label{
-			ID:         "123",
-			Tenant:     tnt,
-			Key:        model.ScenariosKey,
-			Value:      []interface{}{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    1,
-		}
-		lblInput := &model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{"test-formation-2"},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		expected := &model.Formation{
-			Name: "test-formation-2",
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		mockLabelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
-		mockLabelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation, "test-formation-2"},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    1,
-		}).Return(nil)
-
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.AssignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
-
-	t.Run("success for tenant", func(t *testing.T) {
-		//GIVEN
-		mockAsaService := &automock.AutomaticFormationAssignmentService{}
-		defer mockAsaService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		expected := &model.Formation{
-			Name: testFormation,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		asa := model.AutomaticScenarioAssignment{
-			ScenarioName: testFormation,
-			Tenant:       tnt,
-			Selector: model.LabelSelector{
-				Key:   "global_subaccount_id",
-				Value: objectID,
+	testCases := []struct {
+		Name               string
+		UIDServiceFn       func() *automock.UIDService
+		LabelServiceFn     func() *automock.LabelService
+		AsaServiceFN       func() *automock.AutomaticFormationAssignmentService
+		ObjectType         graphql.FormationObjectType
+		InputFormation     model.Formation
+		ExpectedFormation  *model.Formation
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "success for application if label does not exist",
+			UIDServiceFn: func() *automock.UIDService {
+				uidService := &automock.UIDService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
 			},
-		}
-
-		mockAsaService.On("Create", ctx, asa).Return(asa, nil)
-
-		sut := formation.NewService(nil, nil, nil, nil, mockAsaService)
-		// WHEN
-		actual, err := sut.AssignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeTenant, in)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
-
-	t.Run("error for application when label does not exist and can't create it", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		mockUIDService := &automock.UIDService{}
-		defer mockUIDService.AssertExpectations(t)
-		defer mockLabelService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		lblInput := model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		testErr := errors.New("test error")
-
-		mockUIDService.On("Generate").Return(fixUUID())
-		mockLabelService.On("GetLabel", ctx, tnt, &lblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
-		mockLabelService.On("CreateLabel", ctx, tnt, fixUUID(), &lblInput).Return(testErr)
-
-		sut := formation.NewService(nil, mockLabelService, mockUIDService, nil, nil)
-		// WHEN
-		actual, err := sut.AssignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
-
-	t.Run("error for application while getting label", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		lblInput := model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		testErr := errors.New("test error")
-
-		mockLabelService.On("GetLabel", ctx, tnt, &lblInput).Return(nil, testErr)
-
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.AssignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
-
-	t.Run("error for application while converting label values to string slice", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		lblInput := model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		lbl := &model.Label{
-			ID:         "123",
-			Tenant:     tnt,
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-
-		mockLabelService.On("GetLabel", ctx, tnt, &lblInput).Return(lbl, nil)
-
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.AssignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), "cannot convert label value to slice of strings")
-	})
-
-	t.Run("error for application while converting label value to string", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		lblInput := model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		lbl := &model.Label{
-			ID:         "123",
-			Tenant:     tnt,
-			Key:        model.ScenariosKey,
-			Value:      []interface{}{5},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-
-		mockLabelService.On("GetLabel", ctx, tnt, &lblInput).Return(lbl, nil)
-
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.AssignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), "cannot cast label value as a string")
-	})
-
-	t.Run("error for application when updating label fails", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		lbl := &model.Label{
-			ID:         "123",
-			Tenant:     tnt,
-			Key:        model.ScenariosKey,
-			Value:      []interface{}{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		lblInput := &model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		testErr := errors.New("test error")
-
-		mockLabelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
-		mockLabelService.On("UpdateLabel", ctx, tnt, lbl.ID, lblInput).Return(testErr)
-
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.AssignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
-
-	t.Run("error for tenant when create fails", func(t *testing.T) {
-		//GIVEN
-		mockAsaService := &automock.AutomaticFormationAssignmentService{}
-		defer mockAsaService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		asa := model.AutomaticScenarioAssignment{
-			ScenarioName: testFormation,
-			Tenant:       tnt,
-			Selector: model.LabelSelector{
-				Key:   "global_subaccount_id",
-				Value: objectID,
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, tnt, fixUUID(), &lblInput).Return(nil)
+				return labelService
 			},
-		}
-		testErr := errors.New("test error")
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputFormation,
+			ExpectedFormation:  expectedFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "success for application if formation is already added",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(lbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &lblInput).Return(nil)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputFormation,
+			ExpectedFormation:  expectedFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "success for application with new formation",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{"test-formation-2"},
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(lbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation, "test-formation-2"},
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(nil)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputSecondFormation,
+			ExpectedFormation:  expectedSecondFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "success for tenant",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				asaService := &automock.AutomaticFormationAssignmentService{}
+				asaService.On("Create", ctx, asa).Return(asa, nil)
+				return asaService
 
-		mockAsaService.On("Create", ctx, asa).Return(asa, testErr)
+			},
+			ObjectType:         graphql.FormationObjectTypeTenant,
+			InputFormation:     inputFormation,
+			ExpectedFormation:  expectedFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "error for application when label does not exist and can't create it",
+			UIDServiceFn: func() *automock.UIDService {
+				uidService := &automock.UIDService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, tnt, fixUUID(), &lblInput).Return(testErr)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for application while getting label",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(nil, testErr)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for application while converting label values to string slice",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation},
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(&model.Label{
+					ID:         "123",
+					Tenant:     tnt,
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation},
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}, nil)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: "cannot convert label value to slice of strings",
+		},
+		{
+			Name: "error for application while converting label value to string",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(&model.Label{
+					ID:         "123",
+					Tenant:     tnt,
+					Key:        model.ScenariosKey,
+					Value:      []interface{}{5},
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}, nil)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: "cannot cast label value as a string",
+		},
+		{
+			Name: "error for application when updating label fails",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(lbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &lblInput).Return(testErr)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for tenant when create fails",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				asaService := &automock.AutomaticFormationAssignmentService{}
+				asaService.On("Create", ctx, asa).Return(asa, testErr)
+				return asaService
+			},
+			ObjectType:         graphql.FormationObjectTypeTenant,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when object type is unknown",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         "UNKNOWN",
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: "unknown formation type",
+		},
+	}
 
-		sut := formation.NewService(nil, nil, nil, nil, mockAsaService)
-		// WHEN
-		actual, err := sut.AssignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeTenant, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			uidService := testCase.UIDServiceFn()
+			labelService := testCase.LabelServiceFn()
+			asaService := testCase.AsaServiceFN()
 
-	t.Run("error when object type is unknown", func(t *testing.T) {
-		//GIVEN
-		sut := formation.NewService(nil, nil, nil, nil, nil)
-		// WHEN
-		actual, err := sut.AssignFormation(context.TODO(), "", "", "UNKNOWN", model.Formation{})
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), "unknown formation type")
-	})
+			svc := formation.NewService(nil, labelService, uidService, nil, asaService)
+
+			// WHEN
+			actual, err := svc.AssignFormation(ctx, tnt, objectID, testCase.ObjectType, testCase.InputFormation)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedFormation, actual)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				require.Nil(t, actual)
+			}
+
+			mock.AssertExpectationsForObjects(t, uidService, labelService, asaService)
+		})
+	}
 }
 
 func TestServiceUnassignFormation(t *testing.T) {
-	t.Run("success for application", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		lbl := &model.Label{
-			ID:         "123",
-			Tenant:     tnt,
-			Key:        model.ScenariosKey,
-			Value:      []interface{}{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		lblInput := &model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		expected := &model.Formation{
-			Name: testFormation,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	testErr := errors.New("test error")
 
-		mockLabelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
-		mockLabelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}).Return(nil)
+	in := model.Formation{
+		Name: testFormation,
+	}
+	expected := &model.Formation{
+		Name: testFormation,
+	}
 
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.UnassignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
+	objectID := "123"
+	lbl := &model.Label{
+		ID:         "123",
+		Tenant:     tnt,
+		Key:        model.ScenariosKey,
+		Value:      []interface{}{testFormation},
+		ObjectID:   objectID,
+		ObjectType: model.ApplicationLabelableObject,
+		Version:    0,
+	}
+	lblInput := &model.LabelInput{
+		Key:        model.ScenariosKey,
+		Value:      []string{testFormation},
+		ObjectID:   objectID,
+		ObjectType: model.ApplicationLabelableObject,
+		Version:    0,
+	}
 
-	t.Run("success for application if formation do not exist", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
+	asa := model.AutomaticScenarioAssignment{
+		ScenarioName: testFormation,
+		Tenant:       tnt,
+		Selector: model.LabelSelector{
+			Key:   "global_subaccount_id",
+			Value: objectID,
+		},
+	}
 
-		in := model.Formation{
-			Name: "test-formation-2",
-		}
-		objectID := "123"
-		lbl := &model.Label{
-			ID:         "123",
-			Tenant:     tnt,
-			Key:        model.ScenariosKey,
-			Value:      []interface{}{testFormation, "test-formation-2"},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		lblInput := &model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{"test-formation-2"},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		expected := &model.Formation{
-			Name: "test-formation-2",
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		mockLabelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
-		mockLabelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}).Return(nil)
-
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.UnassignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
-
-	t.Run("success for tenant", func(t *testing.T) {
-		//GIVEN
-		mockAsaService := &automock.AutomaticFormationAssignmentService{}
-		defer mockAsaService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		expected := &model.Formation{
-			Name: testFormation,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		asa := model.AutomaticScenarioAssignment{
-			ScenarioName: testFormation,
-			Tenant:       tnt,
-			Selector: model.LabelSelector{
-				Key:   "global_subaccount_id",
-				Value: objectID,
+	testCases := []struct {
+		Name               string
+		UIDServiceFn       func() *automock.UIDService
+		LabelServiceFn     func() *automock.LabelService
+		AsaServiceFN       func() *automock.AutomaticFormationAssignmentService
+		ObjectType         graphql.FormationObjectType
+		InputFormation     model.Formation
+		ExpectedFormation  *model.Formation
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "success for application",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
 			},
-		}
-
-		mockAsaService.On("GetForScenarioName", ctx, testFormation).Return(asa, nil)
-		mockAsaService.On("Delete", ctx, asa).Return(nil)
-
-		sut := formation.NewService(nil, nil, nil, nil, mockAsaService)
-		// WHEN
-		actual, err := sut.UnassignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeTenant, in)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
-
-	t.Run("error for application while getting label", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		lblInput := model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		testErr := errors.New("test error")
-
-		mockLabelService.On("GetLabel", ctx, tnt, &lblInput).Return(nil, testErr)
-
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.UnassignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
-
-	t.Run("error for application while converting label values to string slice", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		lblInput := model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		lbl := &model.Label{
-			ID:         "123",
-			Tenant:     tnt,
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-
-		mockLabelService.On("GetLabel", ctx, tnt, &lblInput).Return(lbl, nil)
-
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.UnassignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), "cannot convert label value to slice of strings")
-	})
-
-	t.Run("error for application while converting label value to string", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		lblInput := model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		lbl := &model.Label{
-			ID:         "123",
-			Tenant:     tnt,
-			Key:        model.ScenariosKey,
-			Value:      []interface{}{5},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-
-		mockLabelService.On("GetLabel", ctx, tnt, &lblInput).Return(lbl, nil)
-
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.UnassignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), "cannot cast label value as a string")
-	})
-
-	t.Run("error for application when updating label fails", func(t *testing.T) {
-		//GIVEN
-		mockLabelService := &automock.LabelService{}
-		defer mockLabelService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		expected := &model.Formation{
-			Name: testFormation,
-		}
-		lbl := &model.Label{
-			ID:         "123",
-			Tenant:     tnt,
-			Key:        model.ScenariosKey,
-			Value:      []interface{}{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		lblInput := &model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{testFormation},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		testErr := errors.New("test error")
-
-		mockLabelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
-		mockLabelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
-			Key:        model.ScenariosKey,
-			Value:      []string{},
-			ObjectID:   objectID,
-			ObjectType: model.ApplicationLabelableObject,
-			Version:    0,
-		}).Return(testErr)
-
-		sut := formation.NewService(nil, mockLabelService, nil, nil, nil)
-		// WHEN
-		actual, err := sut.UnassignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeApplication, in)
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), testErr.Error())
-		require.Equal(t, expected, actual)
-	})
-
-	t.Run("error for tenant when delete fails", func(t *testing.T) {
-		//GIVEN
-		mockAsaService := &automock.AutomaticFormationAssignmentService{}
-		defer mockAsaService.AssertExpectations(t)
-
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		asa := model.AutomaticScenarioAssignment{
-			ScenarioName: testFormation,
-			Tenant:       tnt,
-			Selector: model.LabelSelector{
-				Key:   "global_subaccount_id",
-				Value: objectID,
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{},
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(nil)
+				return labelService
 			},
-		}
-		testErr := errors.New("test error")
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     in,
+			ExpectedFormation:  expected,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "success for application if formation do not exist",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{},
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(nil)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     in,
+			ExpectedFormation:  expected,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "success for tenant",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				asaService := &automock.AutomaticFormationAssignmentService{}
+				asaService.On("GetForScenarioName", ctx, testFormation).Return(asa, nil)
+				asaService.On("Delete", ctx, asa).Return(nil)
+				return asaService
+			},
+			ObjectType:         graphql.FormationObjectTypeTenant,
+			InputFormation:     in,
+			ExpectedFormation:  expected,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "error for application while getting label",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, lblInput).Return(nil, testErr)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for application while converting label values to string slice",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation},
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(&model.Label{
+					ID:         "123",
+					Tenant:     tnt,
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation},
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}, nil)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     in,
+			ExpectedErrMessage: "cannot convert label value to slice of strings",
+		},
+		{
+			Name: "error for application while converting label value to string",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, lblInput).Return(&model.Label{
+					ID:         "123",
+					Tenant:     tnt,
+					Key:        model.ScenariosKey,
+					Value:      []interface{}{5},
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}, nil)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     in,
+			ExpectedErrMessage: "cannot cast label value as a string",
+		},
+		{
+			Name: "error for application when updating label fails",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{},
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(testErr)
+				return labelService
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for tenant when delete fails",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				asaService := &automock.AutomaticFormationAssignmentService{}
+				asaService.On("GetForScenarioName", ctx, testFormation).Return(asa, nil)
+				asaService.On("Delete", ctx, asa).Return(testErr)
+				return asaService
+			},
+			ObjectType:         graphql.FormationObjectTypeTenant,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for tenant when delete fails",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				asaService := &automock.AutomaticFormationAssignmentService{}
+				asaService.On("GetForScenarioName", ctx, testFormation).Return(model.AutomaticScenarioAssignment{}, testErr)
+				return asaService
+			},
+			ObjectType:         graphql.FormationObjectTypeTenant,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when object type is unknown",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				return &automock.AutomaticFormationAssignmentService{}
+			},
+			ObjectType:         "UNKNOWN",
+			InputFormation:     in,
+			ExpectedErrMessage: "unknown formation type",
+		},
+	}
 
-		mockAsaService.On("GetForScenarioName", ctx, testFormation).Return(asa, nil)
-		mockAsaService.On("Delete", ctx, asa).Return(testErr)
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			uidService := testCase.UIDServiceFn()
+			labelService := testCase.LabelServiceFn()
+			asaService := testCase.AsaServiceFN()
 
-		sut := formation.NewService(nil, nil, nil, nil, mockAsaService)
-		// WHEN
-		actual, err := sut.UnassignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeTenant, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
+			svc := formation.NewService(nil, labelService, uidService, nil, asaService)
 
-	t.Run("error for tenant when getting automatic assignment scenario fails", func(t *testing.T) {
-		//GIVEN
-		mockAsaService := &automock.AutomaticFormationAssignmentService{}
-		defer mockAsaService.AssertExpectations(t)
+			// WHEN
+			actual, err := svc.UnassignFormation(ctx, tnt, objectID, testCase.ObjectType, testCase.InputFormation)
 
-		in := model.Formation{
-			Name: testFormation,
-		}
-		objectID := "123"
-		ctx := context.TODO()
-		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-		testErr := errors.New("test error")
-
-		mockAsaService.On("GetForScenarioName", ctx, testFormation).Return(model.AutomaticScenarioAssignment{}, testErr)
-
-		sut := formation.NewService(nil, nil, nil, nil, mockAsaService)
-		// WHEN
-		actual, err := sut.UnassignFormation(ctx, tnt, objectID, graphql.FormationObjectTypeTenant, in)
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), testErr.Error())
-	})
-
-	t.Run("error when object type is unknown", func(t *testing.T) {
-		//GIVEN
-		sut := formation.NewService(nil, nil, nil, nil, nil)
-		// WHEN
-		actual, err := sut.AssignFormation(context.TODO(), "", "", "UNKNOWN", model.Formation{})
-		// THEN
-		require.Error(t, err)
-		require.Nil(t, actual)
-		require.Contains(t, err.Error(), "unknown formation type")
-	})
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedFormation, actual)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+			mock.AssertExpectationsForObjects(t, uidService, labelService, asaService)
+		})
+	}
 }
 
 func fixUUID() string {
