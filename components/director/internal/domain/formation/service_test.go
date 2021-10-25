@@ -483,7 +483,6 @@ func TestServiceAssignFormation(t *testing.T) {
 				asaService := &automock.AutomaticFormationAssignmentService{}
 				asaService.On("Create", ctx, asa).Return(asa, nil)
 				return asaService
-
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
 			InputFormation:     inputFormation,
