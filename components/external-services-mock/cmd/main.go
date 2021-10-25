@@ -154,7 +154,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/cert/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
 
 	return &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", cfg.Port),
+		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: router,
 	}
 }
@@ -179,7 +179,7 @@ func initCertSecuredORDServer(cfg config) *http.Server {
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
 	return &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", cfg.ORDServers.CertPort),
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.CertPort),
 		Handler: router,
 	}
 }
@@ -196,7 +196,7 @@ func initUnsecuredORDServer(cfg config) *http.Server {
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
 	return &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", cfg.ORDServers.UnsecuredPort),
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.UnsecuredPort),
 		Handler: router,
 	}
 }
@@ -214,7 +214,7 @@ func initBasicSecuredORDServer(cfg config) *http.Server {
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
 	return &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", cfg.ORDServers.BasicPort),
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.BasicPort),
 		Handler: router,
 	}
 }
@@ -232,7 +232,7 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
 	return &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", cfg.ORDServers.OauthPort),
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.OauthPort),
 		Handler: router,
 	}
 }
