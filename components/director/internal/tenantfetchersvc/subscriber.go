@@ -101,15 +101,6 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 
 		var labelNewValue = mutateLabelsFunc(labelOldValue, subaccountTenantID)
 
-		//if err := s.SetLabel(ctx, &model.LabelInput{
-		//	Key:        s.ConsumerSubaccountIDsLabelKey,
-		//	Value:      labelNewValue,
-		//	ObjectType: model.RuntimeLabelableObject,
-		//	ObjectID:   runtime.ID,
-		//}); err != nil {
-		//	return errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", runtime.ID))
-		//}
-
 		rtmTenant, err := tenant.LoadFromContext(ctx)
 		if err != nil {
 			return errors.Wrapf(err, "while loading tenant from context")
