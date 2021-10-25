@@ -26,6 +26,7 @@ type RuntimeService interface {
 	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
+// LabelUpsertService is responsible for creating, or updating already existing labels, and their label definitions.
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
