@@ -102,18 +102,16 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
 
-	scenariosService := labeldef.NewScenariosService(labelDefRepository, uidSvc, cfg.Features.DefaultScenarioEnabled)
-
 	scenarioAssignConv := scenarioassignment.NewConverter()
 	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)
 	scenarioAssignEngine := scenarioassignment.NewEngine(labelService, labelRepository, scenarioAssignRepo)
 
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
-	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, scenariosService, uidSvc)
+	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 
 	runtimeConverter := runtime.NewConverter()
 	runtimeRepository := runtime.NewRepository(runtimeConverter)
-	runtimeService := runtime.NewService(runtimeRepository, labelRepository, scenariosService, labelService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern)
+	runtimeService := runtime.NewService(runtimeRepository, labelRepository, labelDefService, labelService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern)
 
 	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, cfg.ClientTimeout)
 	if metricsPusher != nil {

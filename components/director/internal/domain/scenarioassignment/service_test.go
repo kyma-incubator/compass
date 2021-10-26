@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -96,7 +98,7 @@ func TestService_Create(t *testing.T) {
 		_, err := sut.Create(fixCtxWithTenant(), fixModel())
 
 		// THEN
-		require.EqualError(t, err, "scenario `scenario-A` does not exist")
+		require.EqualError(t, err, apperrors.NewNotFoundError(resource.AutomaticScenarioAssigment, fixModel().ScenarioName).Error())
 	})
 
 	t.Run("returns error on persisting in DB", func(t *testing.T) {

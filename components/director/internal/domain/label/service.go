@@ -16,7 +16,9 @@ import (
 // LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
+	Create(ctx context.Context, label *model.Label) error
 	Upsert(ctx context.Context, label *model.Label) error
+	UpdateWithVersion(ctx context.Context, label *model.Label) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
@@ -62,8 +64,70 @@ func (s *labelService) UpsertMultipleLabels(ctx context.Context, tenant string, 
 	return nil
 }
 
-// UpsertLabel upserts label for a given tenant
+// CreateLabel missing godoc
+func (s *labelService) CreateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error {
+	if err := s.validateLabel(ctx, tenant, labelInput); err != nil {
+		return err
+	}
+	label := labelInput.ToLabel(id, tenant)
+
+	err := s.labelRepo.Create(ctx, label)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+	}
+	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+
+	return nil
+}
+
+// UpsertLabel missing godoc
 func (s *labelService) UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
+	if err := s.validateLabel(ctx, tenant, labelInput); err != nil {
+		return err
+	}
+
+	label := labelInput.ToLabel(s.uidService.Generate(), tenant)
+
+	err := s.labelRepo.Upsert(ctx, label)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+	}
+	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+
+	return nil
+}
+
+// UpsertLabel missing godoc
+func (s *labelService) UpdateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error {
+	if err := s.validateLabel(ctx, tenant, labelInput); err != nil {
+		return err
+	}
+	label := labelInput.ToLabel(id, tenant)
+
+	err := s.labelRepo.UpdateWithVersion(ctx, label)
+	if err != nil {
+		return errors.Wrapf(err, "while updating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+	}
+	log.C(ctx).Debugf("Successfully updated Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+
+	return nil
+}
+
+// UpsertLabel missing godoc
+func (s *labelService) GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error) {
+	label, err := s.labelRepo.GetByKey(ctx, tenant, labelInput.ObjectType, labelInput.ObjectID, labelInput.Key)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Label with key %s for %s with id %s", labelInput.Key, labelInput.ObjectType, labelInput.ObjectID)
+	}
+	return label, nil
+}
+
+// GetByKey returns label for a given tenant, object and key
+func (s *labelService) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
+	return s.labelRepo.GetByKey(ctx, tenant, objectType, objectID, key)
+}
+
+func (s *labelService) validateLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
 	var labelDef *model.LabelDefinition
 
 	labelDef, err := s.labelDefinitionRepo.GetByKey(ctx, tenant, labelInput.Key)
@@ -89,20 +153,7 @@ func (s *labelService) UpsertLabel(ctx context.Context, tenant string, labelInpu
 	if err := s.validateLabelInputValue(labelInput, labelDef); err != nil {
 		return errors.Wrapf(err, "while validating Label value for '%s'", labelInput.Key)
 	}
-
-	label := labelInput.ToLabel(s.uidService.Generate(), tenant)
-
-	if err := s.labelRepo.Upsert(ctx, label); err != nil {
-		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
-	}
-	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
-
 	return nil
-}
-
-// GetByKey returns label for a given tenant, object and key
-func (s *labelService) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
-	return s.labelRepo.GetByKey(ctx, tenant, objectType, objectID, key)
 }
 
 func (s *labelService) validateLabelInputValue(labelInput *model.LabelInput, labelDef *model.LabelDefinition) error {

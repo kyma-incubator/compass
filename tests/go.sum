@@ -666,8 +666,12 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20211019121328-e415
 github.com/kyma-incubator/compass/components/director v0.0.0-20211019121328-e415520d6226/go.mod h1:C+Vzw+Mc5IiFw2xL5xr7JkRz29HGVeqUa1cRNVoD1XQ=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211020152333-56abefffa114 h1:qviNXva2pvypxzDsnrHgAF/CXIKvvRanYVPXkigbl1w=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211020152333-56abefffa114/go.mod h1:C+Vzw+Mc5IiFw2xL5xr7JkRz29HGVeqUa1cRNVoD1XQ=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211021063201-e5f9b7c41a71 h1:CedJG0PT8AQN2lUeAbBytnOozjBVMy7h5PLZzKY91V4=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211021063201-e5f9b7c41a71/go.mod h1:MY3i4JREorRR4hvaHHFGwP2h6jC0iDsSqXQXYGNgZwE=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211021100659-630a1f1f9489 h1:NpdERsgQohUbcWcuV7yCPzDTxP43TViNS3wTvBgcHc8=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211021100659-630a1f1f9489/go.mod h1:K+8B7PprAqpO9GEenlOLyJ+qsd4P9wDCDvrP7OLTFVA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211022125007-080192a5068e h1:LJXeTQK1ZM+OKg4ElgJ1KjKE8RqzF0IiFXhoZ1pCjcQ=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211022125007-080192a5068e/go.mod h1:IyRVAVl9xMTxBrd+tUumo7L3r4T8UQQHZNqOx3AerMk=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f h1:FvflJncP+u6Z2KqtZkAuD7wCDgMh8+kZPcE1xp9mQrg=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f/go.mod h1:jD4pOTINIMZlScN8KxgnxJ73PQV3JUKy0E+GwnFf2ww=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36 h1:/BmeBQXQWwsRm6mBmgDYAkukecCd6TPBrYLXrl85H1g=
@@ -1270,7 +1274,6 @@ golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602/go.mod h1:KelEdhl1UZF7XfJ
 golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
 golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
 golang.org/x/oauth2 v0.0.0-20210805134026-6f1e6394065a/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
-golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f h1:Qmd2pbz05z7z6lm0DrgQVVPuBm92jqujBKMHMOlOQEw=
 golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
 golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1 h1:B333XXssMuKQeBwiNODx4TupZy7bf4sxFZnN2ZOcvUE=
 golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
