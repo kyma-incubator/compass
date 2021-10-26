@@ -32,3 +32,10 @@ Each component test directory contains local Makefile that comprises the followi
 - `run` - Runs the specified test. For example: `make testName=TestFullConnectorFlow run`.
 - `sandbox-deploy-test` - Creates new binary for the components tests and pushes it into the cluster.
 - `sandbox-test-clean` - Deletes the cluster-test-suite and test-definition created by `sandbox-test`.
+
+### Execution steps for sandbox tests
+The sandbox tests give us a possibility to run a single e2e test and in case of error we can modify that test and rerun it again without waiting the new image to be build. That way we can easily and fast iterate and test different scenarios. In the [Local Makefile](#local-makefile) section you can find a brief description for each command. Execution steps:
+1. `make sandbox-test`, executed once in the beginning to setup the environment
+2. `make run testName=<test-name>` to run a specific test. For example `make run testName=TestConsumerProviderFlow` will run the whole test suite but if there are any nested tests inside the suite you can specify which one of them you want to execute. The test suite is separated from the inner tests with `/`. If the test run name containts spaces they need to be replaces with `_`. Example: `make run testName=TestConsumerProviderFlow/ConsumerProvider_flow:_calls_with_provider_certificate_and_consumer_token_are_successful_when_valid_subscription_exists`
+3. Optionally, you can modify the existing test and redeploy it using the following command: `make sandbox-deploy-test`. Step 2 and 3 can repeat as much as needed.
+4. Finally, to tear down the setup execute `make sandbox-test-clean`
