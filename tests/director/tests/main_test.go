@@ -33,12 +33,13 @@ func TestMain(m *testing.M) {
 
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 
-	k8sClientSet, err := clients.NewK8SClientSet(context.Background(), time.Second, time.Minute, time.Minute)
+	ctx := context.Background()
+	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
 	}
 
-	secret, err := k8sClientSet.CoreV1().Secrets(conf.CA.SecretNamespace).Get(context.Background(), conf.CA.SecretName, metav1.GetOptions{})
+	secret, err := k8sClientSet.CoreV1().Secrets(conf.CA.SecretNamespace).Get(ctx, conf.CA.SecretName, metav1.GetOptions{})
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
 	}

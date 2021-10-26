@@ -69,7 +69,6 @@ func NewCertAuthorizedHTTPClient(key *rsa.PrivateKey, rawCertChain [][]byte) *ht
 
 	tlsConfig := &tls.Config{
 		Certificates:       []tls.Certificate{tlsCert},
-		ClientAuth:         tls.RequireAndVerifyClientCert,
 		InsecureSkipVerify: true,
 	}
 

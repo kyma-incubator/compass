@@ -54,7 +54,6 @@ spec:
           - "authorization"
           - "content-type"
           - "tenant"
-          - {{ .Values.global.director.clientIDHeaderKey }}
         allowMethods:
           - "GET"
     - match:

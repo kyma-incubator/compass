@@ -19,7 +19,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var labelsWithNormalization = map[string]interface{}{runtime.IsNormalizedLabel: "true"}
+var (
+	labelsWithNormalization = map[string]interface{}{runtime.IsNormalizedLabel: "true"}
+	protectedLabelPattern   = ".*_defaultEventing$|^consumer_subaccount_ids$"
+)
 
 func TestService_Create(t *testing.T) {
 	// given
@@ -253,7 +256,7 @@ func TestService_Create(t *testing.T) {
 			labelSvc := testCase.LabelUpsertServiceFn()
 			scenariosSvc := testCase.ScenariosServiceFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, nil, scenariosSvc, labelSvc, idSvc, engineSvc, ".*_defaultEventing$|^consumer_subaccount_ids$")
+			svc := runtime.NewService(repo, nil, scenariosSvc, labelSvc, idSvc, engineSvc, protectedLabelPattern)
 
 			// when
 			result, err := svc.Create(ctx, testCase.Input)
@@ -277,7 +280,7 @@ func TestService_Create(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$|^consumer_subaccount_ids$")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, protectedLabelPattern)
 		// when
 		_, err := svc.Create(context.TODO(), model.RuntimeInput{})
 		// then
@@ -587,7 +590,7 @@ func TestService_Update(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			labelSvc := testCase.LabelUpsertServiceFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, labelRepo, nil, labelSvc, nil, engineSvc, ".*_defaultEventing$|^consumer_subaccount_ids$")
+			svc := runtime.NewService(repo, labelRepo, nil, labelSvc, nil, engineSvc, protectedLabelPattern)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -1325,7 +1328,7 @@ func TestService_ListLabels(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, ".*_defaultEventing$|^consumer_subaccount_ids$")
+			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, protectedLabelPattern)
 
 			// when
 			l, err := svc.ListLabels(ctx, testCase.InputRuntimeID)
@@ -1829,7 +1832,7 @@ func TestService_SetLabel(t *testing.T) {
 			labelSvc := testCase.LabelUpsertServiceFn()
 			labelRepo := testCase.LabelRepositoryFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, labelRepo, nil, labelSvc, nil, engineSvc, ".*_defaultEventing$|^consumer_subaccount_ids$")
+			svc := runtime.NewService(repo, labelRepo, nil, labelSvc, nil, engineSvc, protectedLabelPattern)
 
 			// when
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -1850,7 +1853,7 @@ func TestService_SetLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$|^consumer_subaccount_ids$")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, protectedLabelPattern)
 		// when
 		err := svc.SetLabel(context.TODO(), &model.LabelInput{})
 		// then
@@ -2391,7 +2394,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			labelUpsertSvc := testCase.LabelUpsertServiceFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, labelRepo, nil, labelUpsertSvc, nil, engineSvc, ".*_defaultEventing$|^consumer_subaccount_ids$")
+			svc := runtime.NewService(repo, labelRepo, nil, labelUpsertSvc, nil, engineSvc, protectedLabelPattern)
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputRuntimeID, testCase.InputKey)
@@ -2413,7 +2416,7 @@ func TestService_DeleteLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$|^consumer_subaccount_ids$")
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, protectedLabelPattern)
 		// when
 		err := svc.DeleteLabel(context.TODO(), "id", "key")
 		// then
@@ -2464,7 +2467,7 @@ func TestService_UpdateTenantID(t *testing.T) {
 			scenariosService := &automock.ScenariosService{}
 			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
 			uidSvc := &automock.UIDService{}
-			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$|^consumer_subaccount_ids$")
+			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
 
 			// when
 			err := svc.UpdateTenantID(ctx, runtimeID, tntID)
@@ -2534,7 +2537,7 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 			scenariosService := &automock.ScenariosService{}
 			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
 			uidSvc := &automock.UIDService{}
-			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$|^consumer_subaccount_ids$")
+			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
 
 			// when
 			actualRuntime, err := svc.GetByFiltersGlobal(ctx, filters)
@@ -2603,7 +2606,7 @@ func TestService_ListByFiltersGlobal(t *testing.T) {
 			scenariosService := &automock.ScenariosService{}
 			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
 			uidSvc := &automock.UIDService{}
-			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$|^consumer_subaccount_ids$")
+			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
 
 			// when
 			actualRuntimes, err := svc.ListByFiltersGlobal(ctx, filters)
