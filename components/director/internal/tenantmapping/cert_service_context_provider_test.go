@@ -17,19 +17,20 @@ import (
 func TestCertServiceContextProvider(t *testing.T) {
 	subaccount := uuid.New().String()
 	authDetails := oathkeeper.AuthDetails{AuthID: subaccount, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
-	expectedScopes := "runtime:read runtime:write"
 
 	tenantRepo := &tenantmappingmock.TenantRepository{}
 	provider := tenantmapping.NewCertServiceContextProvider(tenantRepo)
 
-	objectCtx, err := provider.GetObjectContext(context.TODO(), oathkeeper.ReqData{}, authDetails)
+	headers := map[string][]string{"X-Component-Name": {"ord"}}
+	reqData := oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: headers}}
+	objectCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 	require.NoError(t, err)
 
 	require.Equal(t, consumer.Runtime, objectCtx.ConsumerType)
 	require.Equal(t, subaccount, objectCtx.ConsumerID)
 	require.Equal(t, subaccount, objectCtx.TenantContext.TenantID)
 	require.Equal(t, subaccount, objectCtx.TenantContext.ExternalTenantID)
-	require.Equal(t, expectedScopes, objectCtx.Scopes)
+	require.Empty(t, objectCtx.Scopes)
 
 	tenantRepo.AssertExpectations(t)
 }
