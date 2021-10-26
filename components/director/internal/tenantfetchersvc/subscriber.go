@@ -108,9 +108,9 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 				return errors.Wrap(err, fmt.Sprintf("Failed to create label with key: %s", s.ConsumerSubaccountIDsLabelKey))
 			}
 		} else {
-			labelOldValue := make([]string, 0)
-			if labelOldValue, err = labelutils.ValueToStringsSlice(label.Value); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Failed to parse label values for label with id: %s", label.ID))
+			labelOldValue, err := labelutils.ValueToStringsSlice(label.Value)
+			if err != nil {
+				 return errors.Wrap(err, fmt.Sprintf("Failed to parse label values for label with id: %s", label.ID))
 			}
 			labelNewValue := mutateLabelsFunc(labelOldValue, subaccountTenantID)
 
