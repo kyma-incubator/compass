@@ -20,8 +20,10 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/k8s"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -92,7 +94,10 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	k8sClientSet := k8s.CreateClient(ctx)
+	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
+	}
 
 	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CA.SecretNamespace).Get(ctx, testConfig.CA.SecretName, metav1.GetOptions{})
 	if err != nil {

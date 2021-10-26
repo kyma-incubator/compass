@@ -2,13 +2,7 @@ package k8s
 
 import (
 	"context"
-	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/pkg/errors"
-	"k8s.io/client-go/kubernetes"
-
-	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
@@ -52,12 +46,4 @@ func (c *ConfigmapCleaner) CleanRevocationList(ctx context.Context, hash string)
 	})
 
 	return err
-}
-
-func CreateClient(ctx context.Context) *kubernetes.Clientset {
-	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
-	}
-	return k8sClientSet
 }
