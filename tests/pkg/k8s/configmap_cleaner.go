@@ -2,10 +2,11 @@ package k8s
 
 import (
 	"context"
+	"time"
+
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"

@@ -2,11 +2,12 @@ package tests
 
 import (
 	"context"
+	"os"
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"

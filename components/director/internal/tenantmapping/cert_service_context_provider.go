@@ -46,6 +46,8 @@ func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, errors.New("empty matched component header")
 	}
 
+	// This if is needed to separate the director from ord flow because for the director flow we need to use the internal ID of the subaccount
+	// whereas in the ord flow we expect external IDs in order ord views to work properly(using Automatic Scenario Assignments)
 	log.C(ctx).Infof("Matched component name is %s", matchedComponentName[0])
 	if matchedComponentName[0] == "director" { // Director Flow, do the tenant conversion
 		scopes := "runtime:read runtime:write tenant:read"
