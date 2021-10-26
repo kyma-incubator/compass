@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -566,8 +570,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	assertions.AssertRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled)
 }
 
-// TODO: Uncomment this test once we start storing subaccounts as tenants and ord views work with internal tenant IDs
-/*func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
+func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 	subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
@@ -697,10 +700,9 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-}*/
+}
 
-// TODO: Uncomment this test once we start storing subaccounts as tenants and ord views work with internal tenant IDs
-/*func TestQueryRuntimesWithCertificate(t *testing.T) {
+func TestQueryRuntimesWithCertificate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
@@ -763,10 +765,9 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 		}
 		assert.True(t, found)
 	}
-}*/
+}
 
-// TODO: Uncomment this test once we start storing subaccounts as tenants and ord views work with internal tenant IDs
-/*func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
+func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
@@ -799,4 +800,4 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	assert.Equal(t, createdRuntime.ID, queriedRuntime.ID)
 	assert.Equal(t, createdRuntime.Name, queriedRuntime.Name)
 	assert.Equal(t, createdRuntime.Description, queriedRuntime.Description)
-}*/
+}

@@ -24,6 +24,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
@@ -50,10 +53,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 		subscriptionConsumerSubaccountID := "1f538f34-30bf-4d3d-aeaa-02e69eef84ae"
 
-		// TODO: Uncomment once we start storing subaccounts as tenants and ord views work with internal tenant IDs
-		//// Build graphql director client configured with certificate
-		//clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subscriptionProviderSubaccountID)
-		//directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
+		// Build graphql director client configured with certificate
+		clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subscriptionProviderSubaccountID)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
 
 		runtimeInput := graphql.RuntimeInput{
 			Name:        "providerRuntime",
@@ -62,8 +64,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		}
 
 		// Register provider runtime with the necessary label
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, &runtimeInput) // TODO: Once we start storing subaccounts as tenants use the directorCertSecuredClient from above
-		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, defaultTenantId, &runtime)                                      // TODO: Once we start storing subaccounts as tenants use the directorCertSecuredClient from above
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, defaultTenantId, &runtimeInput)
+		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, defaultTenantId, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 

@@ -306,7 +306,7 @@ spec:
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
 metadata:
-  name: compass-gateway-external-certs
+  name: compass-gateway-director-external-certs
 spec:
   # Configuration of oathkeeper for endpoint secured with certificates issued by external trusted root CA
   upstream:
@@ -319,6 +319,10 @@ spec:
   authorizer:
     handler: allow
   mutators:
+  - handler: header
+    config:
+      headers:
+        x-component-name: "director"
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator

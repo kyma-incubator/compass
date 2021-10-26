@@ -24,7 +24,6 @@ import (
 	"testing"
 	"time"
 
-	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/sjson"
@@ -103,13 +102,6 @@ func BuildTenantFetcherRegionalURL(regionalHandlerEndpoint, tenantPathParam, reg
 	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", regionPathParam), RegionPathParamValue, 1)
 	tenantFetcherFullRegionalURL := tenantFetcherURL + rootAPI + regionalEndpoint
 	return tenantFetcherFullRegionalURL
-}
-
-func AssertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdomain string) {
-	require.Equal(t, tenantID, tenant.ID)
-	if len(subdomain) > 0 {
-		require.Equal(t, subdomain, tenant.Labels["subdomain"])
-	}
 }
 
 func DefaultClaims(externalServicesMockURL string) map[string]interface{} {

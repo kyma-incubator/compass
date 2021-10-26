@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -50,8 +50,8 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		tenantfetcher.AssertTenant(t, tenant, tenantWithCustomer.TenantID, tenantWithCustomer.Subdomain)
-		tenantfetcher.AssertTenant(t, parent, tenantWithCustomer.CustomerID, "")
+		assertTenant(t, tenant, tenantWithCustomer.TenantID, tenantWithCustomer.Subdomain)
+		assertTenant(t, parent, tenantWithCustomer.CustomerID, "")
 	})
 
 	t.Run("Success with only tenant", func(t *testing.T) {
@@ -67,7 +67,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		tenantfetcher.AssertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
+		assertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
 	})
 
 	t.Run("Successful account tenant creation with matching account and subaccount tenant IDs", func(t *testing.T) {
@@ -85,7 +85,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		tenantfetcher.AssertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
+		assertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
 	})
 
 	t.Run("Successful account tenant creation with matching customer and account tenant IDs", func(t *testing.T) {
@@ -103,7 +103,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		tenantfetcher.AssertTenant(t, tnt, tenant.TenantID, tenant.Subdomain)
+		assertTenant(t, tnt, tenant.TenantID, tenant.Subdomain)
 	})
 
 	t.Run("Should not add already existing tenants", func(t *testing.T) {
@@ -205,7 +205,7 @@ func TestOnboardingHandler(t *testing.T) {
 
 		parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
 		require.NoError(t, err)
-		tenantfetcher.AssertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+		assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
 
 		// THEN
 		addTenantExpectStatusCode(t, childTenant, http.StatusInternalServerError)
@@ -251,7 +251,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.TenantID)
 			require.NoError(t, err)
-			tenantfetcher.AssertTenant(t, tenant, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
+			assertTenant(t, tenant, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
 		})
 	})
@@ -275,7 +275,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 
 			parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
-			tenantfetcher.AssertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, parent.Labels[tenantfetcher.RegionKey])
 
 			// WHEN
@@ -284,12 +284,12 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, childTenant.SubaccountID)
 			require.NoError(t, err)
-			tenantfetcher.AssertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
+			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
 
 			parentTenantAfterInsert, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
-			tenantfetcher.AssertTenant(t, parentTenantAfterInsert, parentTenant.TenantID, parentTenant.Subdomain)
+			assertTenant(t, parentTenantAfterInsert, parentTenant.TenantID, parentTenant.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, parentTenantAfterInsert.Labels[tenantfetcher.RegionKey])
 		})
 
@@ -309,17 +309,17 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			childTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.SubaccountID)
 			require.NoError(t, err)
-			tenantfetcher.AssertTenant(t, childTenant, providedTenantIDs.SubaccountID, providedTenantIDs.Subdomain)
+			assertTenant(t, childTenant, providedTenantIDs.SubaccountID, providedTenantIDs.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, childTenant.Labels[tenantfetcher.RegionKey])
 
 			parentTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.TenantID)
 			require.NoError(t, err)
-			tenantfetcher.AssertTenant(t, parentTenant, providedTenantIDs.TenantID, "")
+			assertTenant(t, parentTenant, providedTenantIDs.TenantID, "")
 			require.Empty(t, parentTenant.Labels)
 
 			customerTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.CustomerID)
 			require.NoError(t, err)
-			tenantfetcher.AssertTenant(t, customerTenant, providedTenantIDs.CustomerID, "")
+			assertTenant(t, customerTenant, providedTenantIDs.CustomerID, "")
 			require.Empty(t, customerTenant.Labels)
 		})
 
@@ -343,7 +343,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
 			parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
-			tenantfetcher.AssertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
 
 			// WHEN
 			for i := 0; i < 10; i++ {
@@ -357,7 +357,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			require.NoError(t, err)
 
 			// THEN
-			tenantfetcher.AssertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
+			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
 			assert.Equal(t, len(oldTenantState)+2, len(tenants))
 		})
 
@@ -476,7 +476,7 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenantIDs tenantfet
 	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
-func assertTenantExists(t *testing.T, tenants []*graphql.Tenant, tenantID string) {
+func assertTenantExists(t *testing.T, tenants []*directorSchema.Tenant, tenantID string) {
 	for _, tenant := range tenants {
 		if tenant.ID == tenantID {
 			return
@@ -484,4 +484,11 @@ func assertTenantExists(t *testing.T, tenants []*graphql.Tenant, tenantID string
 	}
 
 	require.Fail(t, fmt.Sprintf("Tenant with ID %q not found in %v", tenantID, tenants))
+}
+
+func assertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdomain string) {
+	require.Equal(t, tenantID, tenant.ID)
+	if len(subdomain) > 0 {
+		require.Equal(t, subdomain, tenant.Labels["subdomain"])
+	}
 }
