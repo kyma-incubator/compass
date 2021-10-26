@@ -110,7 +110,7 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 		} else {
 			labelOldValue, err := labelutils.ValueToStringsSlice(label.Value)
 			if err != nil {
-				 return errors.Wrap(err, fmt.Sprintf("Failed to parse label values for label with id: %s", label.ID))
+				return errors.Wrap(err, fmt.Sprintf("Failed to parse label values for label with id: %s", label.ID))
 			}
 			labelNewValue := mutateLabelsFunc(labelOldValue, subaccountTenantID)
 
