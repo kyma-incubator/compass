@@ -47,7 +47,7 @@ spec:
             - name: APP_LOG_FORMAT
               value: {{.Values.global.log.format | quote }}
             - name: APP_AUDITLOG_ENABLED
-              value: "false"
+              value: "{{ .Values.gateway.auditlog.enabled }}"
             {{ if .Values.gateway.auditlog.enabled }}
             {{ if eq .Values.gateway.auditlog.authMode "basic"}}
             - name: APP_AUDITLOG_AUTH_MODE
