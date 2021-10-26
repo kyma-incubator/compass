@@ -343,7 +343,7 @@ func TestUpdateSingleWithVersion(t *testing.T) {
 		err := sut.UpdateSingleWithVersion(ctx, givenUser)
 		// THEN
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "should update single row, but updated 157 rows")
+		require.Contains(t, err.Error(), "Could not update object due to concurrent update")
 	})
 
 	t.Run("returns error if does not modified any row", func(t *testing.T) {
@@ -358,7 +358,7 @@ func TestUpdateSingleWithVersion(t *testing.T) {
 		err := sut.UpdateSingleWithVersion(ctx, givenUser)
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "should update single row, but updated 0 rows")
+		assert.Contains(t, err.Error(), "Could not update object due to concurrent update")
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
