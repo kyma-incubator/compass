@@ -26,7 +26,7 @@ const CoordinatesKey = "authenticator_coordinates"
 // HeaderName missing godoc
 const HeaderName = "X-Authenticator-Name"
 
-// ComponentName to be able to separate the ord from director flow using external certificate authentication
+// ComponentName is used to differentiate the ord from director flow using external certificate authentication
 const ComponentName = "X-Component-Name"
 
 // Config holds all configuration related to an additional authenticator provided to the Director
