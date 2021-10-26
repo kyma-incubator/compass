@@ -339,7 +339,7 @@ func NewCannotUpdateObjectInManyBundles() error {
 	}
 }
 
-// NewConcurrentUpdate missing godoc
+// NewConcurrentUpdate returns ConcurrentUpdate error
 func NewConcurrentUpdate() error {
 	return Error{
 		errorCode: ConcurrentUpdate,
@@ -372,7 +372,7 @@ func IsCannotReadTenant(err error) bool {
 	return false
 }
 
-// IsConcurrentUpdate missing godoc
+// IsConcurrentUpdate indicates if the provided error is thrown in case of concurrent update
 func IsConcurrentUpdate(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == InternalError && strings.Contains(customErr.Message, ShouldUpdateSingleRowButUpdatedMsg)
