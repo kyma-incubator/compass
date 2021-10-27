@@ -1,6 +1,7 @@
 package gql
 
 import (
+	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -17,6 +18,11 @@ func NewAuthorizedGraphQLClient(bearerToken string) *gcli.Client {
 func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Client {
 	authorizedClient := NewAuthorizedHTTPClient(bearerToken)
 	return gcli.NewClient(url, gcli.WithHTTPClient(authorizedClient))
+}
+
+func NewCertAuthorizedGraphQLClientWithCustomURL(url string, key *rsa.PrivateKey, rawCertChain [][]byte) *gcli.Client {
+	certAuthorizedClient := NewCertAuthorizedHTTPClient(key, rawCertChain)
+	return gcli.NewClient(url, gcli.WithHTTPClient(certAuthorizedClient))
 }
 
 func GetDirectorGraphQLURL() string {
@@ -53,4 +59,24 @@ func NewAuthorizedHTTPClient(bearerToken string) *http.Client {
 func (t *authenticatedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.token))
 	return t.Transport.RoundTrip(req)
+}
+
+func NewCertAuthorizedHTTPClient(key *rsa.PrivateKey, rawCertChain [][]byte) *http.Client {
+	tlsCert := tls.Certificate{
+		Certificate: rawCertChain,
+		PrivateKey:  key,
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates:       []tls.Certificate{tlsCert},
+		InsecureSkipVerify: true,
+	}
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+	}
+
+	return httpClient
 }

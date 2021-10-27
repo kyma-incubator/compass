@@ -18,15 +18,9 @@ package tests
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
 	"errors"
 	"fmt"
-	"math/big"
 	"net/http"
 	urlpkg "net/url"
 	"testing"
@@ -771,45 +765,7 @@ func integrationSystemClient(t require.TestingT, ctx context.Context, base *http
 // extIssuerCertClient returns http client configured with client certificate manually signed by connector's CA
 // and a subject matching external issuer's subject contract.
 func extIssuerCertClient(t require.TestingT, subTenantID string) *http.Client {
-	// Parse the CA cert
-	pemBlock, _ := pem.Decode(testConfig.CA.Certificate)
-	require.NotNil(t, pemBlock)
-
-	caCRT, err := x509.ParseCertificate(pemBlock.Bytes)
-	require.NoError(t, err)
-
-	// Parse the CA key
-	keyPemBlock, _ := pem.Decode(testConfig.CA.Key)
-	require.NotNil(t, keyPemBlock)
-
-	caPrivateKey, err := x509.ParsePKCS1PrivateKey(keyPemBlock.Bytes)
-	if err != nil {
-		caPrivateKeyPKCS8, err := x509.ParsePKCS8PrivateKey(keyPemBlock.Bytes)
-		require.NoError(t, err)
-		var ok bool
-		caPrivateKey, ok = caPrivateKeyPKCS8.(*rsa.PrivateKey)
-		require.True(t, ok)
-	}
-
-	clientCert := x509.Certificate{
-		SerialNumber: big.NewInt(2),
-		Subject: pkix.Name{
-			Country:            []string{"DE"},
-			Organization:       []string{"SAP SE"},
-			OrganizationalUnit: []string{"SAP Cloud Platform Clients", "Region", subTenantID},
-			Locality:           []string{"locality"},
-			CommonName:         "common-name",
-		},
-		NotBefore:   time.Now(),
-		NotAfter:    time.Now().Add(time.Hour),
-		KeyUsage:    x509.KeyUsageDigitalSignature,
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
-	}
-
-	clientKey := certs.CreateKey(t)
-
-	clientCrtRaw, err := x509.CreateCertificate(rand.Reader, &clientCert, caCRT, &clientKey.PublicKey, caPrivateKey)
-	require.NoError(t, err)
+	clientKey, certChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subTenantID)
 
 	return &http.Client{
 		Timeout: 10 * time.Second,
@@ -817,7 +773,7 @@ func extIssuerCertClient(t require.TestingT, subTenantID string) *http.Client {
 			TLSClientConfig: &tls.Config{
 				Certificates: []tls.Certificate{
 					{
-						Certificate: [][]byte{clientCrtRaw, caCRT.Raw},
+						Certificate: certChain,
 						PrivateKey:  clientKey,
 					},
 				},
