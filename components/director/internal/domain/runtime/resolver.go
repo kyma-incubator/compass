@@ -4,7 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
+	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
@@ -50,6 +52,8 @@ type RuntimeService interface {
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error)
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
+	PrepareRuntimeForSelfRegistration(ctx context.Context, in *graphql.RuntimeInput) error
+	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string) error
 }
 
 // ScenarioAssignmentService missing godoc
@@ -189,11 +193,25 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	convertedIn := r.converter.InputFromGraphQL(in)
 
+	if err := r.runtimeService.PrepareRuntimeForSelfRegistration(ctx, &in); err != nil {
+		return nil, err
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	defer func() {
+		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
+		if didRollback {
+			//TODO: Get label name form configuration
+			labelVal, _ := str.Cast(in.Labels["clone-name"])
+			if err := r.runtimeService.CleanupSelfRegisteredRuntime(ctx, labelVal); err != nil {
+				log.C(ctx).Errorf("while cleaning up self-registered runtime")
+			}
+		}
+	}()
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -251,11 +269,19 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 
 // DeleteRuntime missing godoc
 func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
+	var selfRegLabelVal string
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+	defer func() {
+		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
+		if !didRollback { // if we did rollback we should not try to execute the cleanup
+			if err := r.runtimeService.CleanupSelfRegisteredRuntime(ctx, selfRegLabelVal); err != nil {
+				log.C(ctx).Errorf("An error occured during cleanup of self-registered runtime: %v", err)
+			}
+		}
+	}()
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -268,6 +294,13 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	if err != nil {
 		return nil, err
 	}
+
+	//TODO: Get label name form configuration
+	selfRegLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, "clone-name")
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return nil, errors.Wrapf(err, "while getting self register info label")
+	}
+	selfRegLabelVal, _ = str.Cast(selfRegLabel.Value)
 
 	currentTimestamp := timestamp.DefaultGenerator
 	for _, auth := range bundleInstanceAuths {
@@ -538,7 +571,7 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 		return nil
 	}
 
-	scenarios, err := label.ValueToStringsSlice(scenariosLbl.Value)
+	scenarios, err := labelPkg.ValueToStringsSlice(scenariosLbl.Value)
 	if err != nil {
 		return err
 	}

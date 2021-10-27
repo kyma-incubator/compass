@@ -39,7 +39,7 @@ func FromCtx(ctx context.Context) (PersistenceOp, error) {
 //go:generate mockery --name=Transactioner --output=automock --outpkg=automock --case=underscore
 type Transactioner interface {
 	Begin() (PersistenceTx, error)
-	RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx)
+	RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) (didRollback bool)
 	PingContext(ctx context.Context) error
 	Stats() sql.DBStats
 }
@@ -69,16 +69,18 @@ func (db *db) Begin() (PersistenceTx, error) {
 }
 
 // RollbackUnlessCommitted missing godoc
-func (db *db) RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) {
+func (db *db) RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) (didRollback bool) {
 	customTx, ok := tx.(*Transaction)
 	if !ok {
 		log.C(ctx).Warn("State aware transaction is not in use")
 		db.rollback(ctx, tx)
+		return true
 	}
 	if customTx.committed {
-		return
+		return false
 	}
 	db.rollback(ctx, customTx)
+	return true
 }
 
 func (db *db) rollback(ctx context.Context, tx PersistenceTx) {

@@ -130,6 +130,8 @@ type config struct {
 
 	Features features.Config
 
+	RtmConfig runtime.ServiceConfig
+
 	OperationsNamespace string `envconfig:"default=compass-system"`
 
 	DisableAsyncMode bool `envconfig:"default=false"`
@@ -207,6 +209,7 @@ func main() {
 		metricsCollector,
 		httpClient,
 		internalHTTPClient,
+		cfg.RtmConfig,
 		cfg.OneTimeToken.Length,
 		adminURL,
 	)
@@ -278,7 +281,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, transact, cfg.JWKSSyncPeriod, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern)
+	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, transact, cfg.RtmConfig, cfg.JWKSSyncPeriod, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern)
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
 
@@ -434,7 +437,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	return tenantmapping.NewHandler(reqDataParser, transact, objectContextProviders, metricsCollector).ServeHTTP, nil
 }
 
-func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) func(writer http.ResponseWriter, request *http.Request) {
+func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, rtmConfig runtime.ServiceConfig, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) func(writer http.ResponseWriter, request *http.Request) {
 	uidSvc := uid.NewService()
 
 	assignmentConv := scenarioassignment.NewConverter()
@@ -450,7 +453,7 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Tran
 
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo)
 
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, rtmConfig, protectedLabelPattern)
 
 	tenantConv := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConv)

@@ -3,9 +3,19 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/tidwall/gjson"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
+
+	"github.com/kyma-incubator/compass/components/director/internal/secure_http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -75,11 +85,13 @@ type UIDService interface {
 type service struct {
 	repo      RuntimeRepository
 	labelRepo LabelRepository
+	cfg       ServiceConfig
 
 	labelUpsertService       LabelUpsertService
 	uidService               UIDService
 	scenariosService         ScenariosService
 	scenarioAssignmentEngine ScenarioAssignmentEngine
+	caller                   *secure_http.Caller
 
 	protectedLabelPattern string
 }
@@ -91,7 +103,13 @@ func NewService(repo RuntimeRepository,
 	labelUpsertService LabelUpsertService,
 	uidService UIDService,
 	scenarioAssignmentEngine ScenarioAssignmentEngine,
+	cfg ServiceConfig,
 	protectedLabelPattern string) *service {
+	caller, _ := secure_http.NewCaller(&graphql.OAuthCredentialData{
+		ClientID:     cfg.ClientID,
+		ClientSecret: cfg.ClientSecret,
+		URL:          cfg.TokenURL,
+	})
 	return &service{
 		repo:                     repo,
 		labelRepo:                labelRepo,
@@ -99,8 +117,11 @@ func NewService(repo RuntimeRepository,
 		labelUpsertService:       labelUpsertService,
 		uidService:               uidService,
 		scenarioAssignmentEngine: scenarioAssignmentEngine,
+		caller:                   caller,
+		cfg:                      cfg,
 		protectedLabelPattern:    protectedLabelPattern,
 	}
+
 }
 
 // List missing godoc
@@ -459,6 +480,82 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 		}
 	}
 
+	return nil
+}
+
+//TODO: Extract configrable values
+//PrepareRuntimeForSelfRegistration executes the prerequisite calls for self-registration in case the runtime is being self-registered
+func (s *service) PrepareRuntimeForSelfRegistration(ctx context.Context, in *graphql.RuntimeInput) error {
+	//consumerInfo, err := consumer.LoadFromContext(ctx)
+	//if err != nil {
+	//	return errors.Wrapf(err, "while loading consumer")
+	//}
+	if _, exists := in.Labels["xsappname"]; exists /*&& consumerInfo.Flow.IsCertFlow()*/ { //this means that the runtime is being self-registered
+
+		var body = `{
+		   "xsappname": "lasmagi-jasmagi",
+		 	"authorities": [
+				"$XSAPPNAME.application:write",
+				"$XSAPPNAME.application:read",
+				"$XSAPPNAME.label_definition:write",
+				"$XSAPPNAME.label_definition:read",
+				"$XSAPPNAME.automatic_scenario_assignment:write",
+				"$XSAPPNAME.automatic_scenario_assignment:read",
+				"$XSAPPNAME.application_template:read"
+		],
+		   "oauth2-configuration": {
+		         "credential-types": ["binding-secret"]
+		   }
+		}`
+		url := "https://cmp.authentication.sap.hana.ondemand.com" + "/sap/rest/broker/clones?serviceinstanceid=" + "lasmagi-jasmagi" + "&subaccountid=92936559-9275-4da0-a7c8-fe4c6b8aa659"
+		request, err := http.NewRequest(http.MethodPost, url, strings.NewReader(body))
+		if err != nil {
+			return errors.Wrapf(err, "while preparing request for self regisstered runtime")
+		}
+		request.Header.Set("Content-Type", "application/json")
+
+		response, err := s.caller.Call(request)
+		if err != nil {
+			return errors.Wrapf(err, "while executing preparation of self registered runtime")
+		}
+		defer httputils.Close(ctx, response.Body)
+
+		respBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return errors.Wrapf(err, "while reading response body")
+		}
+
+		if response.StatusCode != http.StatusCreated {
+			return errors.New(fmt.Sprintf("recieved unexpected status %d while preparing self-registered runtime: %s", response.StatusCode, string(respBytes)))
+		}
+
+		selfRegLabelVal := gjson.GetBytes(respBytes, "appid")
+		in.Labels["clone-name"] = selfRegLabelVal.Str
+
+		log.C(ctx).Infof("successfully executed prep for self-registered runtime with label value %s", selfRegLabelVal.Str)
+	}
+	return nil
+}
+
+//TODO: Extract configrable values
+//CleanupSelfRegisteredRuntime executes cleanup calls for self-registered runtimes
+func (s *service) CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string) error {
+	if selfRegisterLabelValue != "" {
+		url := "https://cmp.authentication.sap.hana.ondemand.com" + "/sap/rest/broker/clones/" + selfRegisterLabelValue
+		request, err := http.NewRequest(http.MethodDelete, url, nil)
+		if err != nil {
+			return errors.Wrapf(err, "while preparing request for cleanup of self-registered runtime with label value %s", selfRegisterLabelValue)
+		}
+		request.Header.Set("Content-Type", "application/json")
+		resp, err := s.caller.Call(request)
+		if err != nil {
+			return errors.Wrapf(err, "while executing cleanup of self-registered runtime with label value %s", selfRegisterLabelValue)
+		}
+		if resp.StatusCode != http.StatusOK {
+			return errors.New(fmt.Sprintf("recieved unexpected status code %d while cleaning up self-registered runtime with label value %s", resp.StatusCode, selfRegisterLabelValue))
+		}
+		log.C(ctx).Infof("Successfully executed clean-up self-registered runtime with label value %s", selfRegisterLabelValue)
+	}
 	return nil
 }
 
