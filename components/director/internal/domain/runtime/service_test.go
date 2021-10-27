@@ -2645,6 +2645,7 @@ func TestService_ListByFilters(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.RuntimeRepository
+		Context            context.Context
 		ExpectedErrMessage string
 	}{
 		{
@@ -2654,7 +2655,7 @@ func TestService_ListByFilters(t *testing.T) {
 				repo.On("ListAll", contextThatHasTenant(tnt), tnt, filters).Return(modelRuntimes, nil).Once()
 				return repo
 			},
-
+			Context:            ctx,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -2664,8 +2665,16 @@ func TestService_ListByFilters(t *testing.T) {
 				repo.On("ListAll", contextThatHasTenant(tnt), tnt, filters).Return(nil, testErr).Once()
 				return repo
 			},
-
+			Context:            ctx,
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Fails when no tenant in the context",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				return &automock.RuntimeRepository{}
+			},
+			Context:            context.TODO(),
+			ExpectedErrMessage: "while loading tenant from context",
 		},
 	}
 
@@ -2680,7 +2689,7 @@ func TestService_ListByFilters(t *testing.T) {
 			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$")
 
 			// when
-			actualRuntimes, err := svc.ListByFilters(ctx, filters)
+			actualRuntimes, err := svc.ListByFilters(testCase.Context, filters)
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)

@@ -47,7 +47,7 @@ func (v *validator) Validate(ctx context.Context, claims Claims) error {
 	}
 
 	if claims.OnBehalfOf != "" {
-		log.C(ctx).Infof("Consumer-Provider call by %s on behalf of %s. Proceeding with doube authentication crosscheck...", claims.Tenant[tenantmapping.ProviderTenantKey], claims.Tenant[tenantmapping.ConsumerTenantKey])
+		log.C(ctx).Infof("Consumer-Provider call by %s on behalf of %s. Proceeding with double authentication crosscheck...", claims.Tenant[tenantmapping.ProviderTenantKey], claims.Tenant[tenantmapping.ConsumerTenantKey])
 
 		if len(claims.TokenClientID) == 0 {
 			log.C(ctx).Errorf("Could not find consumer token client ID")
