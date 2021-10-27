@@ -29,10 +29,10 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210922143733-cb93bcfd3cd6
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
-	github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a5435ac7a
+	github.com/kyma-incubator/compass/components/director v0.0.0-20211022125007-080192a5068e
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210922140924-1dc663c3ed24
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20211014123116-dd19192a2e8f
 	github.com/lib/pq v1.10.3 // indirect
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/copystructure v1.1.2 // indirect
@@ -81,3 +81,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.0.2 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
+
+require go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect

@@ -20,6 +20,8 @@ func TestConverter_ToEntity(t *testing.T) {
 	marshalledArrayValue, err := json.Marshal(arrayValue)
 	require.NoError(t, err)
 
+	version := 0
+
 	// given
 	testCases := []struct {
 		Name               string
@@ -29,27 +31,29 @@ func TestConverter_ToEntity(t *testing.T) {
 	}{
 		{
 			Name:               "All properties given",
-			Input:              fixLabelModel("1", arrayValue),
-			Expected:           fixLabelEntity("1", marshalledArrayValue),
+			Input:              fixLabelModel("1", arrayValue, version),
+			Expected:           fixLabelEntity("1", marshalledArrayValue, version),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name:               "String value",
-			Input:              fixLabelModel("1", stringValue),
-			Expected:           fixLabelEntity("1", marshalledStringValue),
+			Input:              fixLabelModel("1", stringValue, version),
+			Expected:           fixLabelEntity("1", marshalledStringValue, version),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Empty value",
 			Input: model.Label{
-				ID:     "2",
-				Key:    "foo",
-				Tenant: "tenant",
+				ID:      "2",
+				Key:     "foo",
+				Tenant:  "tenant",
+				Version: version,
 			},
 			Expected: label.Entity{
 				ID:       "2",
 				Key:      "foo",
 				TenantID: "tenant",
+				Version:  version,
 			},
 			ExpectedErrMessage: "",
 		},
@@ -69,7 +73,6 @@ func TestConverter_ToEntity(t *testing.T) {
 
 			// when
 			res, err := conv.ToEntity(testCase.Input)
-
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)
 				assert.Equal(t, testCase.ExpectedErrMessage, err.Error())
@@ -90,6 +93,8 @@ func TestConverter_FromEntity(t *testing.T) {
 	marshalledArrayValue, err := json.Marshal(arrayValue)
 	require.NoError(t, err)
 
+	version := 0
+
 	// given
 	testCases := []struct {
 		Name               string
@@ -99,14 +104,14 @@ func TestConverter_FromEntity(t *testing.T) {
 	}{
 		{
 			Name:               "All properties given",
-			Input:              fixLabelEntity("1", marshalledArrayValue),
-			Expected:           fixLabelModel("1", arrayValue),
+			Input:              fixLabelEntity("1", marshalledArrayValue, version),
+			Expected:           fixLabelModel("1", arrayValue, version),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name:               "String value",
-			Input:              fixLabelEntity("1", marshalledStringValue),
-			Expected:           fixLabelModel("1", stringValue),
+			Input:              fixLabelEntity("1", marshalledStringValue, version),
+			Expected:           fixLabelModel("1", stringValue, version),
 			ExpectedErrMessage: "",
 		},
 		{
@@ -115,17 +120,19 @@ func TestConverter_FromEntity(t *testing.T) {
 				ID:       "2",
 				Key:      "foo",
 				TenantID: "tenant",
+				Version:  version,
 			},
 			Expected: model.Label{
-				ID:     "2",
-				Key:    "foo",
-				Tenant: "tenant",
+				ID:      "2",
+				Key:     "foo",
+				Tenant:  "tenant",
+				Version: version,
 			},
 			ExpectedErrMessage: "",
 		},
 		{
 			Name:               "Error",
-			Input:              fixLabelEntity("1", []byte("{json")),
+			Input:              fixLabelEntity("1", []byte("{json"), version),
 			Expected:           model.Label{},
 			ExpectedErrMessage: "while unmarshalling Value: invalid character 'j' looking for beginning of object key string",
 		},
@@ -137,7 +144,6 @@ func TestConverter_FromEntity(t *testing.T) {
 
 			// when
 			res, err := conv.FromEntity(testCase.Input)
-
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)
 				assert.Equal(t, testCase.ExpectedErrMessage, err.Error())
@@ -149,7 +155,7 @@ func TestConverter_FromEntity(t *testing.T) {
 	}
 }
 
-func fixLabelEntity(id string, value []byte) label.Entity {
+func fixLabelEntity(id string, value []byte, version int) label.Entity {
 	return label.Entity{
 		ID:       id,
 		TenantID: "tenant",
@@ -158,12 +164,12 @@ func fixLabelEntity(id string, value []byte) label.Entity {
 			String: "321",
 			Valid:  true,
 		},
-		Key:   "test",
-		Value: string(value),
+		Key:     "test",
+		Value:   string(value),
+		Version: version,
 	}
 }
-
-func fixLabelModel(id string, value interface{}) model.Label {
+func fixLabelModel(id string, value interface{}, version int) model.Label {
 	return model.Label{
 		ID:         id,
 		Tenant:     "tenant",
@@ -171,5 +177,6 @@ func fixLabelModel(id string, value interface{}) model.Label {
 		ObjectType: model.RuntimeLabelableObject,
 		ObjectID:   "321",
 		Value:      value,
+		Version:    version,
 	}
 }

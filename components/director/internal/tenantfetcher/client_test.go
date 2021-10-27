@@ -31,43 +31,77 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		"timestamp": "1",
 	}
 
+	subaccountQueryParams := tenantfetcher.QueryParams{
+		"pageSize":  "1",
+		"pageNum":   "1",
+		"timestamp": "1",
+		"region":    "test-region",
+	}
+
 	apiCfg := tenantfetcher.APIConfig{
-		EndpointTenantCreated:       endpoint + "/created",
-		EndpointTenantDeleted:       endpoint + "/deleted",
-		EndpointTenantUpdated:       endpoint + "/updated",
-		EndpointRuntimeMovedByLabel: endpoint + "/moved",
+		EndpointTenantCreated:     endpoint + "/ga-created",
+		EndpointTenantDeleted:     endpoint + "/ga-deleted",
+		EndpointTenantUpdated:     endpoint + "/ga-updated",
+		EndpointSubaccountCreated: endpoint + "/sub-created",
+		EndpointSubaccountDeleted: endpoint + "/sub-deleted",
+		EndpointSubaccountUpdated: endpoint + "/sub-updated",
+		EndpointSubaccountMoved:   endpoint + "/sub-moved",
 	}
 	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
-	t.Run("Success fetching creation events", func(t *testing.T) {
+	t.Run("Success fetching account creation events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
 	})
 
-	t.Run("Success fetching update events", func(t *testing.T) {
+	t.Run("Success fetching account update events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
 	})
 
-	t.Run("Success fetching deletion events", func(t *testing.T) {
+	t.Run("Success fetching account deletion events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
 	})
 
-	t.Run("Success fetching moved runtime events", func(t *testing.T) {
+	t.Run("Success fetching subaccount creation events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedRuntimeByLabelEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedSubaccountType, subaccountQueryParams)
+		// THEN
+		require.NoError(t, err)
+		assert.NotEmpty(t, res)
+	})
+
+	t.Run("Success fetching subaccount update events", func(t *testing.T) {
+		// WHEN
+		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedSubaccountType, subaccountQueryParams)
+		// THEN
+		require.NoError(t, err)
+		assert.NotEmpty(t, res)
+	})
+
+	t.Run("Success fetching subaccount deletion events", func(t *testing.T) {
+		// WHEN
+		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedSubaccountType, subaccountQueryParams)
+		// THEN
+		require.NoError(t, err)
+		assert.NotEmpty(t, res)
+	})
+
+	t.Run("Success fetching moved subaccount events", func(t *testing.T) {
+		// WHEN
+		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedSubaccountType, subaccountQueryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -93,7 +127,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success when no content", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		require.Empty(t, res)
@@ -101,7 +135,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when endpoint not parsable", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, "parse \"___ :// ___ \": first path segment in URL cannot contain colon")
 		assert.Empty(t, res)
@@ -109,7 +143,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when bad path", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, "while sending get request: Get \"http://127.0.0.1:8111/badpath?pageNum=1&pageSize=1&timestamp=1\": dial tcp 127.0.0.1:8111: connect: connection refused")
 		assert.Empty(t, res)
@@ -127,7 +161,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when status code not equal to 200 OK and 204 No Content is returned", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("request to \"%s/badRequest?pageNum=1&pageSize=1&timestamp=1\" returned status code 400 and body \"\"", endpoint))
 		assert.Empty(t, res)
@@ -135,15 +169,15 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	// GIVEN
 	apiCfg = tenantfetcher.APIConfig{
-		EndpointRuntimeMovedByLabel: "",
+		EndpointSubaccountMoved: "",
 	}
 	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
-	t.Run("Skip fetching moved runtime events when endpoint is not provided", func(t *testing.T) {
+	t.Run("Skip fetching moved subaccount events when endpoint is not provided", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedRuntimeByLabelEventsType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedSubaccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		require.Nil(t, res)
@@ -153,30 +187,50 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 func fixHTTPClient(t *testing.T) (*http.Client, func(), string) {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/created", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/ga-created", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, err := io.WriteString(w, fixCreatedTenantsJSON())
 		require.NoError(t, err)
 	})
-	mux.HandleFunc("/deleted", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/ga-deleted", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, err := io.WriteString(w, fixDeletedTenantsJSON())
+		_, err := io.WriteString(w, fixDeletedAccountsJSON())
 		require.NoError(t, err)
 	})
-	mux.HandleFunc("/updated", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/ga-updated", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, err := io.WriteString(w, fixUpdatedTenantsJSON())
+		_, err := io.WriteString(w, fixUpdatedAccountsJSON())
 		require.NoError(t, err)
 	})
-	mux.HandleFunc("/moved", func(w http.ResponseWriter, r *http.Request) {
+
+	mux.HandleFunc("/sub-created", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, err := io.WriteString(w, fixMovedRuntimeJSON())
+		_, err := io.WriteString(w, fixCreatedSubaccountsJSON())
 		require.NoError(t, err)
 	})
+	mux.HandleFunc("/sub-deleted", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, err := io.WriteString(w, fixDeletedSubaccountsJSON())
+		require.NoError(t, err)
+	})
+	mux.HandleFunc("/sub-updated", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, err := io.WriteString(w, fixUpdatedSubaccountsJSON())
+		require.NoError(t, err)
+	})
+	mux.HandleFunc("/sub-moved", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, err := io.WriteString(w, fixMovedSubaccountsJSON())
+		require.NoError(t, err)
+	})
+
 	mux.HandleFunc("/empty", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -191,103 +245,195 @@ func fixHTTPClient(t *testing.T) (*http.Client, func(), string) {
 
 func fixCreatedTenantsJSON() string {
 	return `{
-  "events": [
-    {
-      "id": 5,
-      "type": "CREATION",
-      "timestamp": "1579771215736",
-      "eventData": "{\"id\":\"55\",\"displayName\":\"TEN5\",\"model\":\"default\"}"
-    },
-    {
-      "id": 4,
-      "type": "CREATION",
-      "timestamp": "1579771215636",
-      "eventData": "{\"id\":\"44\",\"displayName\":\"TEN4\",\"model\":\"default\"}"
-    },
+ "events": [
+   {
+     "id": 5,
+     "type": "GLOBALACCOUNT_CREATION",
+     "timestamp": "1579771215736",
+     "eventData": "{\"id\":\"55\",\"displayName\":\"TEN5\",\"model\":\"default\"}"
+   },
+   {
+     "id": 4,
+     "type": "GLOBALACCOUNT_CREATION",
+     "timestamp": "1579771215636",
+     "eventData": "{\"id\":\"44\",\"displayName\":\"TEN4\",\"model\":\"default\"}"
+   },
 	{
-      "id": 3,
-      "type": "CREATION",
-      "timestamp": "1579771215536",
-      "eventData": "{\"id\":\"33\",\"displayName\":\"TEN3\",\"model\":\"default\"}"
-    },
+     "id": 3,
+     "type": "GLOBALACCOUNT_CREATION",
+     "timestamp": "1579771215536",
+     "eventData": "{\"id\":\"33\",\"displayName\":\"TEN3\",\"model\":\"default\"}"
+   },
 	{
-      "id": 2,
-      "type": "CREATION",
-      "timestamp": "1579771215436",
-      "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
-    },
+     "id": 2,
+     "type": "GLOBALACCOUNT_CREATION",
+     "timestamp": "1579771215436",
+     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+   },
 	{
-      "id": 1,
-      "type": "CREATION",
-      "timestamp": "1579771215336",
-      "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
-    }
-  ],
-  "totalResults": 5,
-  "totalPages": 1
+     "id": 1,
+     "type": "GLOBALACCOUNT_CREATION",
+     "timestamp": "1579771215336",
+     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+   }
+ ],
+ "totalResults": 5,
+ "totalPages": 1
 }`
 }
 
-func fixUpdatedTenantsJSON() string {
+func fixUpdatedAccountsJSON() string {
 	return `{
-  "events": [
+ "events": [
 	{
-      "id": 2,
-      "type": "UPDATE",
-      "timestamp": "1579771215436",
-      "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
-    },
+     "id": 2,
+     "type": "GLOBALACCOUNT_UPDATE",
+     "timestamp": "1579771215436",
+     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+   },
 	{
-      "id": 1,
-      "type": "UPDATE",
-      "timestamp": "1579771215336",
-      "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
-    }
-  ],
-  "totalResults": 2,
-  "totalPages": 1
+     "id": 1,
+     "type": "GLOBALACCOUNT_UPDATE",
+     "timestamp": "1579771215336",
+     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+   }
+ ],
+ "totalResults": 2,
+ "totalPages": 1
 }`
 }
 
-func fixDeletedTenantsJSON() string {
+func fixDeletedAccountsJSON() string {
 	return `{
-  "events": [
+ "events": [
 	{
-      "id": 2,
-      "type": "DELETION",
-      "timestamp": "1579771215436",
-      "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
-    },
+     "id": 2,
+     "type": "GLOBALACCOUNT_DELETION",
+     "timestamp": "1579771215436",
+     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+   },
 	{
-      "id": 1,
-      "type": "DELETION",
-      "timestamp": "1579771215336",
-      "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
-    }
-  ],
-  "totalResults": 2,
-  "totalPages": 1
+     "id": 1,
+     "type": "GLOBALACCOUNT_DELETION",
+     "timestamp": "1579771215336",
+     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+   }
+ ],
+ "totalResults": 2,
+ "totalPages": 1
 }`
 }
 
-func fixMovedRuntimeJSON() string {
+func fixCreatedSubaccountsJSON() string {
 	return `{
-  "events": [
+ "events": [
+   {
+     "id": 5,
+     "type": "SUBACCOUNT_CREATION",
+	 "region": "test-region",
+     "timestamp": "1579771215736",
+     "eventData": "{\"id\":\"55\",\"displayName\":\"TEN5\",\"model\":\"default\"}"
+   },
+   {
+     "id": 4,
+     "type": "SUBACCOUNT_CREATION",
+	 "region": "test-region",
+     "timestamp": "1579771215636",
+     "eventData": "{\"id\":\"44\",\"displayName\":\"TEN4\",\"model\":\"default\"}"
+   },
 	{
-      "id": 2,
-      "type": "MOVED",
-      "timestamp": "1579771215436",
-      "eventData": "{\"id\":\"22\",\"source\":\"TEN1\",\"target\":\"TEN2\"}"
-    },
+     "id": 3,
+     "type": "SUBACCOUNT_CREATION",
+	 "region": "test-region",
+     "timestamp": "1579771215536",
+     "eventData": "{\"id\":\"33\",\"displayName\":\"TEN3\",\"model\":\"default\"}"
+   },
 	{
-      "id": 1,
-      "type": "MOVED",
-      "timestamp": "1579771215336",
-      "eventData": "{\"id\":\"11\",\"source\":\"TEN3\",\"target\":\"TEN4\"}"
-    }
-  ],
-  "totalResults": 2,
-  "totalPages": 1
+     "id": 2,
+     "type": "SUBACCOUNT_CREATION",
+	 "region": "test-region",
+     "timestamp": "1579771215436",
+     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+   },
+	{
+     "id": 1,
+     "type": "SUBACCOUNT_CREATION",
+	 "region": "test-region",
+     "timestamp": "1579771215336",
+     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+   }
+ ],
+ "totalResults": 5,
+ "totalPages": 1
+}`
+}
+
+func fixUpdatedSubaccountsJSON() string {
+	return `{
+ "events": [
+	{
+     "id": 2,
+     "type": "SUBACCOUNT_UPDATE",
+	 "region": "test-region",
+     "timestamp": "1579771215436",
+     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+   },
+	{
+     "id": 1,
+     "type": "SUBACCOUNT_UPDATE",
+	 "region": "test-region",
+     "timestamp": "1579771215336",
+     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+   }
+ ],
+ "totalResults": 2,
+ "totalPages": 1
+}`
+}
+
+func fixDeletedSubaccountsJSON() string {
+	return `{
+ "events": [
+	{
+     "id": 2,
+     "type": "SUBACCOUNT_DELETION",
+	 "region": "test-region",
+     "timestamp": "1579771215436",
+     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+   },
+	{
+     "id": 1,
+     "type": "SUBACCOUNT_DELETION",
+	 "region": "test-region",
+     "timestamp": "1579771215336",
+     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+   }
+ ],
+ "totalResults": 2,
+ "totalPages": 1
+}`
+}
+
+func fixMovedSubaccountsJSON() string {
+	return `{
+ "events": [
+	{
+     "id": 2,
+     "type": "SUBACCOUNT_MOVED",
+	 "region": "test-region",
+     "timestamp": "1579771215436",
+     "eventData": "{\"id\":\"22\",\"source\":\"TEN1\",\"target\":\"TEN2\"}"
+   },
+	{
+     "id": 1,
+     "type": "SUBACCOUNT_MOVED",
+	 "region": "test-region",
+     "timestamp": "1579771215336",
+     "eventData": "{\"id\":\"11\",\"source\":\"TEN3\",\"target\":\"TEN4\"}"
+   }
+ ],
+ "totalResults": 2,
+ "totalPages": 1
 }`
 }
 

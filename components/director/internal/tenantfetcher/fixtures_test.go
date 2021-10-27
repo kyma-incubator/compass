@@ -22,36 +22,20 @@ func fixTenantEventsResponse(events []byte, total, pages int) tenantfetcher.Tena
 	}`, string(events), total, pages))
 }
 
-func fixEvent(t require.TestingT, fields map[string]string) []byte {
+func fixEvent(t require.TestingT, eventType string, fields map[string]string) []byte {
 	eventData, err := json.Marshal(fields)
 	if err != nil {
 		require.NoError(t, err)
 	}
-	return wrapIntoEventPageJSON(string(eventData))
+	return wrapIntoEventPageJSON(string(eventData), eventType)
 }
 
-func fixMovedRuntimeByLabelEvent(id, source, target string, fieldMapping tenantfetcher.MovedRuntimeByLabelFieldMapping) []byte {
-	eventData := fmt.Sprintf(`{"%s":"%s","%s":"%s","%s":"%s"}`, fieldMapping.LabelValue, id, fieldMapping.SourceTenant, source, fieldMapping.TargetTenant, target)
-
-	return wrapIntoEventPageJSON(eventData)
-}
-
-func fixEventWithDiscriminator(id, name, discriminator string, fieldMapping tenantfetcher.TenantFieldMapping) []byte {
-	discriminatorData := ""
-	if fieldMapping.DiscriminatorField != "" {
-		discriminatorData = fmt.Sprintf(`"%s": "%s",`, fieldMapping.DiscriminatorField, discriminator)
-	}
-
-	eventData := fmt.Sprintf(`{"%s":"%s",%s"%s":"%s"}`, fieldMapping.IDField, id, discriminatorData, fieldMapping.NameField, name)
-
-	return wrapIntoEventPageJSON(eventData)
-}
-
-func wrapIntoEventPageJSON(eventData string) []byte {
+func wrapIntoEventPageJSON(eventData, eventType string) []byte {
 	return []byte(fmt.Sprintf(`{
-		"id":        %s,
+		"id":        "%s",
+		"type" "%s",
 		"eventData": %s,
-	}`, fixID(), eventData))
+	}`, fixID(), eventType, eventData))
 }
 
 func fixBusinessTenantMappingInput(name, externalTenant, provider, subdomain, region, parent string, tenantType tenant.Type) model.BusinessTenantMappingInput {

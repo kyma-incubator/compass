@@ -77,6 +77,8 @@ func (fp *GqlFieldsProvider) OmitForApplication(omittedProperties []string) stri
 		"name":                  "name",
 		"providerName":          "providerName",
 		"description":           "description",
+		"baseUrl":               "baseUrl",
+		"systemNumber":          "systemNumber",
 		"integrationSystemID":   "integrationSystemID",
 		"applicationTemplateID": "applicationTemplateID",
 		"labels":                "labels",
@@ -96,10 +98,13 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		name
 		providerName
 		description
+		baseUrl
+		systemNumber
 		integrationSystemID
 		applicationTemplateID
 		labels
 		deletedAt
+		updatedAt
 		error
 		status {condition timestamp}
 		webhooks {%s}

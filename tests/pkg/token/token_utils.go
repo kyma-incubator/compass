@@ -81,11 +81,12 @@ func HttpRequestBodyCloser(t *testing.T, resp *http.Response) {
 	require.NoError(t, err)
 }
 
-func FromExternalServicesMock(t *testing.T, externalServicesMockURL string, claims map[string]interface{}) string {
+func FromExternalServicesMock(t *testing.T, externalServicesMockURL string, clientID string, clientSecret string, claims map[string]interface{}) string {
 	data, err := json.Marshal(claims)
 	require.NoError(t, err)
 
-	req, err := http.NewRequest(http.MethodPost, externalServicesMockURL+"/oauth/token", bytes.NewBuffer(data))
+	req, err := http.NewRequest(http.MethodPost, externalServicesMockURL+"/secured/oauth/token", bytes.NewBuffer(data))
+	req.SetBasicAuth(clientID, clientSecret)
 	require.NoError(t, err)
 
 	httpClient := &http.Client{

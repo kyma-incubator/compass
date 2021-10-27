@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	gcli "github.com/machinebox/graphql"
 
@@ -42,20 +45,26 @@ import (
 )
 
 type config struct {
-	APIConfig                      systemfetcher.APIConfig
-	OAuth2Config                   systemfetcher.OAuth2Config
-	SystemFetcher                  systemfetcher.Config
-	Database                       persistence.DatabaseConfig
-	SystemToTemplateMappingsString string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
+	APIConfig      systemfetcher.APIConfig
+	OAuth2Config   systemfetcher.OAuth2Config
+	SystemFetcher  systemfetcher.Config
+	Database       persistence.DatabaseConfig
+	TemplateConfig appTemplateConfig
 
 	Log log.Config
 
 	Features features.Config
 
-	ConfigurationFile       string
-	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
+	ConfigurationFile string
 
-	ClientTimeout time.Duration `envconfig:"default=60s"`
+	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
+	ClientTimeout           time.Duration `envconfig:"default=60s"`
+}
+
+type appTemplateConfig struct {
+	SystemToTemplateMappingsString string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
+	OverrideApplicationInput       string `envconfig:"APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT"`
+	PlaceholderToSystemKeyMappings string `envconfig:"APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS"`
 }
 
 func main() {
@@ -87,16 +96,19 @@ func main() {
 		log.D().Fatal(err)
 	}
 
-	sf := createSystemFetcher(cfg, cfgProvider, transact, &http.Client{Timeout: cfg.ClientTimeout})
-	err = sf.SyncSystems(ctx)
+	sf, err := createSystemFetcher(cfg, cfgProvider, transact, &http.Client{Timeout: cfg.ClientTimeout})
 	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
+	}
+
+	if err = sf.SyncSystems(ctx); err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to sync systems"))
 	}
 }
 
 func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner) error {
 	var systemToTemplateMappings []systemfetcher.TemplateMapping
-	if err := json.Unmarshal([]byte(cfg.SystemToTemplateMappingsString), &systemToTemplateMappings); err != nil {
+	if err := json.Unmarshal([]byte(cfg.TemplateConfig.SystemToTemplateMappingsString), &systemToTemplateMappings); err != nil {
 		return errors.Wrap(err, "failed to read system template mappings")
 	}
 
@@ -140,7 +152,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	return nil
 }
 
-func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient *http.Client) *systemfetcher.SystemFetcher {
+func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient *http.Client) (*systemfetcher.SystemFetcher, error) {
 	uidSvc := uid.NewService()
 
 	tenantConv := tenant.NewConverter()
@@ -177,16 +189,21 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	bundleRepo := bundleutil.NewRepository(bundleConverter)
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 
-	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	assignmentConv := scenarioassignment.NewConverter()
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider())
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc)
+	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, cfg.OAuth2Config, systemfetcher.DefaultClientCreator)
 
@@ -209,7 +226,17 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
-	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsAPIClient, directorClient, cfg.SystemFetcher)
+	var placeholdersMapping []systemfetcher.PlaceholderMapping
+	if err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping); err != nil {
+		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
+	}
+
+	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while creating template renderer")
+	}
+
+	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

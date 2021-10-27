@@ -330,6 +330,15 @@ func NewCannotUpdateObjectInManyBundles() error {
 	}
 }
 
+// NewConcurrentUpdate returns ConcurrentUpdate error
+func NewConcurrentUpdate() error {
+	return Error{
+		errorCode: ConcurrentUpdate,
+		Message:   ConcurrentUpdateMsg,
+		arguments: map[string]string{},
+	}
+}
+
 // IsValueNotFoundInConfiguration missing godoc
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
@@ -350,6 +359,14 @@ func IsKeyDoesNotExist(err error) bool {
 func IsCannotReadTenant(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == InternalError && customErr.Message == CannotReadTenantMsg
+	}
+	return false
+}
+
+// IsConcurrentUpdate indicates if the provided error is thrown in case of concurrent update
+func IsConcurrentUpdate(err error) bool {
+	if customErr, ok := err.(Error); ok {
+		return customErr.errorCode == InternalError && strings.Contains(customErr.Message, ShouldUpdateSingleRowButUpdatedMsg)
 	}
 	return false
 }

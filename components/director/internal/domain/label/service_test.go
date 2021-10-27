@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLabelUpsertService_UpsertMultipleLabels(t *testing.T) {
+func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 	// given
 	tnt := "tenant"
 	externalTnt := "external-tenant"
@@ -157,7 +157,7 @@ func TestLabelUpsertService_UpsertMultipleLabels(t *testing.T) {
 			labelDefRepo := testCase.LabelDefRepoFn()
 			uidService := testCase.UIDServiceFn()
 
-			svc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidService)
+			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
 			// when
 			err := svc.UpsertMultipleLabels(ctx, tnt, testCase.InputObjectType, testCase.InputObjectID, testCase.InputLabels)
@@ -177,18 +177,20 @@ func TestLabelUpsertService_UpsertMultipleLabels(t *testing.T) {
 	}
 }
 
-func TestLabelUpsertService_UpsertLabel(t *testing.T) {
+func TestLabelService_UpsertLabel(t *testing.T) {
 	// given
 	tnt := "tenant"
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 	id := "foo"
+	version := 0
 	emptyStringSchema := &model.LabelDefinition{
-		Key:    "string",
-		Tenant: tnt,
-		ID:     "foo",
-		Schema: nil,
+		Key:     "string",
+		Tenant:  tnt,
+		ID:      "foo",
+		Schema:  nil,
+		Version: version,
 	}
 	var jsonSchema interface{} = map[string]interface{}{
 		"$id":   "https://foo.com/bar.schema.json",
@@ -203,10 +205,11 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 		"required": []interface{}{"foo"},
 	}
 	objectSchema := &model.LabelDefinition{
-		Key:    "object",
-		Tenant: tnt,
-		ID:     "foo",
-		Schema: &jsonSchema,
+		Key:     "object",
+		Tenant:  tnt,
+		ID:      "foo",
+		Schema:  &jsonSchema,
+		Version: version,
 	}
 
 	testErr := errors.New("Test error")
@@ -232,6 +235,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 				Value:      "string",
 				ObjectType: model.ApplicationLabelableObject,
 				ObjectID:   "appID",
+				Version:    version,
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
@@ -242,6 +246,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 					ObjectID:   "appID",
 					Tenant:     tnt,
 					ID:         id,
+					Version:    version,
 				}).Return(nil).Once()
 				return repo
 			},
@@ -250,10 +255,11 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, "test").Return(nil, nil).Once()
 
 				repo.On("Create", ctx, model.LabelDefinition{
-					ID:     id,
-					Tenant: tnt,
-					Key:    "test",
-					Schema: nil,
+					ID:      id,
+					Tenant:  tnt,
+					Key:     "test",
+					Schema:  nil,
+					Version: version,
 				}).Return(nil).Once()
 				return repo
 			},
@@ -271,6 +277,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 				Value:      "string",
 				ObjectType: model.ApplicationLabelableObject,
 				ObjectID:   "appID",
+				Version:    version,
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
@@ -281,6 +288,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 					ObjectID:   "appID",
 					Tenant:     tnt,
 					ID:         id,
+					Version:    version,
 				}).Return(nil).Once()
 				return repo
 			},
@@ -303,6 +311,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 				Value:      "string",
 				ObjectType: model.ApplicationLabelableObject,
 				ObjectID:   "appID",
+				Version:    version,
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
@@ -313,6 +322,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 					ObjectID:   "appID",
 					Tenant:     tnt,
 					ID:         id,
+					Version:    version,
 				}).Return(nil).Once()
 				return repo
 			},
@@ -335,6 +345,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 				Value:      objectValue,
 				ObjectType: model.ApplicationLabelableObject,
 				ObjectID:   "appID",
+				Version:    version,
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
@@ -345,6 +356,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 					ObjectID:   "appID",
 					Tenant:     tnt,
 					ID:         id,
+					Version:    version,
 				}).Return(nil).Once()
 				return repo
 			},
@@ -367,6 +379,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 				Value:      []interface{}{"test"},
 				ObjectType: model.ApplicationLabelableObject,
 				ObjectID:   "appID",
+				Version:    version,
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
@@ -390,6 +403,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 				Value:      []interface{}{"test"},
 				ObjectType: model.ApplicationLabelableObject,
 				ObjectID:   "appID",
+				Version:    version,
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
@@ -399,10 +413,11 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 				repo := &automock.LabelDefinitionRepository{}
 				repo.On("GetByKey", ctx, tnt, "test").Return(nil, nil).Once()
 				repo.On("Create", ctx, model.LabelDefinition{
-					ID:     id,
-					Tenant: tnt,
-					Key:    "test",
-					Schema: nil,
+					ID:      id,
+					Tenant:  tnt,
+					Key:     "test",
+					Schema:  nil,
+					Version: version,
 				}).Return(testErr).Once()
 				return repo
 			},
@@ -421,7 +436,7 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 			labelDefRepo := testCase.LabelDefRepoFn()
 			uidService := testCase.UIDServiceFn()
 
-			svc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidService)
+			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
 			// when
 			err := svc.UpsertLabel(ctx, tnt, testCase.LabelInput)
@@ -431,6 +446,742 @@ func TestLabelUpsertService_UpsertLabel(t *testing.T) {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			labelRepo.AssertExpectations(t)
+			labelDefRepo.AssertExpectations(t)
+			uidService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestLabelService_CreateLabel(t *testing.T) {
+	// given
+	tnt := "tenant"
+	externalTnt := "external-tenant"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	id := "foo"
+	version := 0
+	emptyStringSchema := &model.LabelDefinition{
+		Key:     "string",
+		Tenant:  tnt,
+		ID:      "foo",
+		Schema:  nil,
+		Version: version,
+	}
+	var jsonSchema interface{} = map[string]interface{}{
+		"$id":   "https://foo.com/bar.schema.json",
+		"title": "foobarbaz",
+		"type":  "object",
+		"properties": map[string]interface{}{
+			"foo": map[string]interface{}{
+				"type":        "string",
+				"description": "foo",
+			},
+		},
+		"required": []interface{}{"foo"},
+	}
+	objectSchema := &model.LabelDefinition{
+		Key:     "object",
+		Tenant:  tnt,
+		ID:      "foo",
+		Schema:  &jsonSchema,
+		Version: version,
+	}
+
+	testErr := errors.New("Test error")
+
+	objectValue := map[string]interface{}{
+		"foo": "bar",
+	}
+
+	testCases := []struct {
+		Name           string
+		LabelRepoFn    func() *automock.LabelRepository
+		LabelDefRepoFn func() *automock.LabelDefinitionRepository
+		UIDServiceFn   func() *automock.UIDService
+
+		LabelInput *model.LabelInput
+
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success - No LabelDefinition exists",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      "string",
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("Create", ctx, &model.Label{
+					Key:        "test",
+					Value:      "string",
+					ObjectType: model.ApplicationLabelableObject,
+					ObjectID:   "appID",
+					Tenant:     tnt,
+					ID:         id,
+					Version:    version,
+				}).Return(nil).Once()
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(nil, nil).Once()
+
+				repo.On("Create", ctx, model.LabelDefinition{
+					ID:      id,
+					Tenant:  tnt,
+					Key:     "test",
+					Schema:  nil,
+					Version: version,
+				}).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Success - LabelDefinition exists and is with empty schema",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      "string",
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("Create", ctx, &model.Label{
+					Key:        "test",
+					Value:      "string",
+					ObjectType: model.ApplicationLabelableObject,
+					ObjectID:   "appID",
+					Tenant:     tnt,
+					ID:         id,
+					Version:    version,
+				}).Return(nil).Once()
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(emptyStringSchema, nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Success - LabelDefinition exists and schema is valid",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      objectValue,
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("Create", ctx, &model.Label{
+					Key:        "test",
+					Value:      objectValue,
+					ObjectType: model.ApplicationLabelableObject,
+					ObjectID:   "appID",
+					Tenant:     tnt,
+					ID:         id,
+					Version:    version,
+				}).Return(nil).Once()
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(objectSchema, nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Error - labelInput is not valid against schema",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      []interface{}{"test"},
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(objectSchema, nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			ExpectedErrMessage: "Invalid type",
+		},
+		{
+			Name: "Error - Creating new LabelDefinition",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      []interface{}{"test"},
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(nil, nil).Once()
+				repo.On("Create", ctx, model.LabelDefinition{
+					ID:      id,
+					Tenant:  tnt,
+					Key:     "test",
+					Schema:  nil,
+					Version: version,
+				}).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			ExpectedErrMessage: "Test error",
+		},
+		{
+			Name: "Error - Creating new Label",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      []interface{}{"test"},
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("Create", ctx, &model.Label{
+					Key:        "test",
+					Value:      []interface{}{"test"},
+					ObjectType: model.ApplicationLabelableObject,
+					ObjectID:   "appID",
+					Tenant:     tnt,
+					ID:         id,
+					Version:    version,
+				}).Return(testErr)
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(nil, nil).Once()
+				repo.On("Create", ctx, model.LabelDefinition{
+					ID:      id,
+					Tenant:  tnt,
+					Key:     "test",
+					Schema:  nil,
+					Version: version,
+				}).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			ExpectedErrMessage: "Test error",
+		},
+		{
+			Name: "Error while reading LabelDefinition value",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      []interface{}{"test"},
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(nil, testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			ExpectedErrMessage: "while reading LabelDefinition",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			labelRepo := testCase.LabelRepoFn()
+			labelDefRepo := testCase.LabelDefRepoFn()
+			uidService := testCase.UIDServiceFn()
+
+			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
+
+			// when
+			err := svc.CreateLabel(ctx, tnt, id, testCase.LabelInput)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			labelRepo.AssertExpectations(t)
+			labelDefRepo.AssertExpectations(t)
+			uidService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestLabelService_UpdateLabel(t *testing.T) {
+	// given
+	tnt := "tenant"
+	externalTnt := "external-tenant"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	id := "foo"
+	version := 0
+	emptyStringSchema := &model.LabelDefinition{
+		Key:     "string",
+		Tenant:  tnt,
+		ID:      "foo",
+		Schema:  nil,
+		Version: version,
+	}
+	var jsonSchema interface{} = map[string]interface{}{
+		"$id":   "https://foo.com/bar.schema.json",
+		"title": "foobarbaz",
+		"type":  "object",
+		"properties": map[string]interface{}{
+			"foo": map[string]interface{}{
+				"type":        "string",
+				"description": "foo",
+			},
+		},
+		"required": []interface{}{"foo"},
+	}
+	objectSchema := &model.LabelDefinition{
+		Key:     "object",
+		Tenant:  tnt,
+		ID:      "foo",
+		Schema:  &jsonSchema,
+		Version: version,
+	}
+
+	testErr := errors.New("Test error")
+
+	objectValue := map[string]interface{}{
+		"foo": "bar",
+	}
+
+	testCases := []struct {
+		Name           string
+		LabelRepoFn    func() *automock.LabelRepository
+		LabelDefRepoFn func() *automock.LabelDefinitionRepository
+		UIDServiceFn   func() *automock.UIDService
+
+		LabelInput *model.LabelInput
+
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success - No LabelDefinition exists",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      "string",
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("UpdateWithVersion", ctx, &model.Label{
+					Key:        "test",
+					Value:      "string",
+					ObjectType: model.ApplicationLabelableObject,
+					ObjectID:   "appID",
+					Tenant:     tnt,
+					ID:         id,
+					Version:    version,
+				}).Return(nil).Once()
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(nil, nil).Once()
+
+				repo.On("Create", ctx, model.LabelDefinition{
+					ID:      id,
+					Tenant:  tnt,
+					Key:     "test",
+					Schema:  nil,
+					Version: version,
+				}).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Success - LabelDefinition exists and is with empty schema",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      "string",
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("UpdateWithVersion", ctx, &model.Label{
+					Key:        "test",
+					Value:      "string",
+					ObjectType: model.ApplicationLabelableObject,
+					ObjectID:   "appID",
+					Tenant:     tnt,
+					ID:         id,
+					Version:    version,
+				}).Return(nil).Once()
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(emptyStringSchema, nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Success - LabelDefinition exists and schema is valid",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      objectValue,
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("UpdateWithVersion", ctx, &model.Label{
+					Key:        "test",
+					Value:      objectValue,
+					ObjectType: model.ApplicationLabelableObject,
+					ObjectID:   "appID",
+					Tenant:     tnt,
+					ID:         id,
+					Version:    version,
+				}).Return(nil).Once()
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(objectSchema, nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Error - labelInput is not valid against schema",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      []interface{}{"test"},
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(objectSchema, nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			ExpectedErrMessage: "Invalid type",
+		},
+		{
+			Name: "Error - Creating new LabelDefinition",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      []interface{}{"test"},
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(nil, nil).Once()
+				repo.On("Create", ctx, model.LabelDefinition{
+					ID:      id,
+					Tenant:  tnt,
+					Key:     "test",
+					Schema:  nil,
+					Version: version,
+				}).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			ExpectedErrMessage: "Test error",
+		},
+		{
+			Name: "Error - Updating Label",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      []interface{}{"test"},
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("UpdateWithVersion", ctx, &model.Label{
+					Key:        "test",
+					Value:      []interface{}{"test"},
+					ObjectType: model.ApplicationLabelableObject,
+					ObjectID:   "appID",
+					Tenant:     tnt,
+					ID:         id,
+					Version:    version,
+				}).Return(testErr)
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(nil, nil).Once()
+				repo.On("Create", ctx, model.LabelDefinition{
+					ID:      id,
+					Tenant:  tnt,
+					Key:     "test",
+					Schema:  nil,
+					Version: version,
+				}).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			ExpectedErrMessage: "Test error",
+		},
+		{
+			Name: "Error while reading LabelDefinition value",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      []interface{}{"test"},
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				repo.On("GetByKey", ctx, tnt, "test").Return(nil, testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			ExpectedErrMessage: "while reading LabelDefinition",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			labelRepo := testCase.LabelRepoFn()
+			labelDefRepo := testCase.LabelDefRepoFn()
+			uidService := testCase.UIDServiceFn()
+
+			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
+
+			// when
+			err := svc.UpdateLabel(ctx, tnt, id, testCase.LabelInput)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			labelRepo.AssertExpectations(t)
+			labelDefRepo.AssertExpectations(t)
+			uidService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestLabelService_GetLabel(t *testing.T) {
+	// given
+	tnt := "tenant"
+	externalTnt := "external-tenant"
+	id := "foo"
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	version := 0
+
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name           string
+		LabelRepoFn    func() *automock.LabelRepository
+		LabelDefRepoFn func() *automock.LabelDefinitionRepository
+		UIDServiceFn   func() *automock.UIDService
+
+		LabelInput *model.LabelInput
+
+		ExpectedLabel      *model.Label
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      []interface{}{"test"},
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, "appID", "test").Return(&model.Label{
+					ID:         id,
+					Tenant:     tnt,
+					Key:        "test",
+					Value:      []interface{}{"test"},
+					ObjectID:   "appID",
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    version,
+				}, nil)
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+
+			ExpectedLabel: &model.Label{
+				ID:         id,
+				Tenant:     tnt,
+				Key:        "test",
+				Value:      []interface{}{"test"},
+				ObjectID:   "appID",
+				ObjectType: model.ApplicationLabelableObject,
+				Version:    version,
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Error while getting Label",
+			LabelInput: &model.LabelInput{
+				Key:        "test",
+				Value:      []interface{}{"test"},
+				ObjectType: model.ApplicationLabelableObject,
+				ObjectID:   "appID",
+				Version:    version,
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, "appID", "test").Return(nil, testErr)
+				return repo
+			},
+			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
+				repo := &automock.LabelDefinitionRepository{}
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+
+			ExpectedLabel:      nil,
+			ExpectedErrMessage: "Test error",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			labelRepo := testCase.LabelRepoFn()
+			labelDefRepo := testCase.LabelDefRepoFn()
+			uidService := testCase.UIDServiceFn()
+
+			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
+
+			// when
+			lbl, err := svc.GetLabel(ctx, tnt, testCase.LabelInput)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedLabel, lbl)
+			} else {
+				require.Error(t, err)
+				require.Nil(t, lbl)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 

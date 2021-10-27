@@ -13,6 +13,7 @@ type Entity struct {
 	RuntimeID        sql.NullString `db:"runtime_id"`
 	RuntimeContextID sql.NullString `db:"runtime_context_id"`
 	Value            string         `db:"value"`
+	Version          int            `db:"version"`
 }
 
 // Collection missing godoc

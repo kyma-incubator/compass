@@ -96,10 +96,12 @@ type ApplicationRegisterInput struct {
 	Labels   Labels          `json:"labels"`
 	Webhooks []*WebhookInput `json:"webhooks"`
 	// **Validation:** valid URL, max=256
-	HealthCheckURL      *string                     `json:"healthCheckURL"`
-	Bundles             []*BundleCreateInput        `json:"bundles"`
+	HealthCheckURL *string `json:"healthCheckURL"`
+	// **Validation:** valid URL, max=256
+	BaseURL             *string                     `json:"baseUrl"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
+	Bundles             []*BundleCreateInput        `json:"bundles"`
 }
 
 type ApplicationStatus struct {
@@ -150,6 +152,7 @@ type ApplicationUpdateInput struct {
 
 type Auth struct {
 	Credential                      CredentialData         `json:"credential"`
+	AccessStrategy                  *string                `json:"accessStrategy"`
 	AdditionalHeaders               HTTPHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized     *HTTPHeadersSerialized `json:"additionalHeadersSerialized"`
 	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
@@ -160,7 +163,8 @@ type Auth struct {
 }
 
 type AuthInput struct {
-	Credential *CredentialDataInput `json:"credential"`
+	Credential     *CredentialDataInput `json:"credential"`
+	AccessStrategy *string              `json:"accessStrategy"`
 	// **Validation:** if provided, headers name and value required
 	AdditionalHeaders           HTTPHeaders            `json:"additionalHeaders"`
 	AdditionalHeadersSerialized *HTTPHeadersSerialized `json:"additionalHeadersSerialized"`
@@ -401,6 +405,10 @@ type FetchRequestStatus struct {
 	Condition FetchRequestStatusCondition `json:"condition"`
 	Message   *string                     `json:"message"`
 	Timestamp Timestamp                   `json:"timestamp"`
+}
+
+type FormationInput struct {
+	Name string `json:"name"`
 }
 
 type HealthCheck struct {
@@ -686,6 +694,8 @@ const (
 	ApplicationStatusConditionDeleting        ApplicationStatusCondition = "DELETING"
 	ApplicationStatusConditionDeleteFailed    ApplicationStatusCondition = "DELETE_FAILED"
 	ApplicationStatusConditionDeleteSucceeded ApplicationStatusCondition = "DELETE_SUCCEEDED"
+	ApplicationStatusConditionUnpairing       ApplicationStatusCondition = "UNPAIRING"
+	ApplicationStatusConditionUnpairFailed    ApplicationStatusCondition = "UNPAIR_FAILED"
 )
 
 var AllApplicationStatusCondition = []ApplicationStatusCondition{
@@ -701,11 +711,13 @@ var AllApplicationStatusCondition = []ApplicationStatusCondition{
 	ApplicationStatusConditionDeleting,
 	ApplicationStatusConditionDeleteFailed,
 	ApplicationStatusConditionDeleteSucceeded,
+	ApplicationStatusConditionUnpairing,
+	ApplicationStatusConditionUnpairFailed,
 }
 
 func (e ApplicationStatusCondition) IsValid() bool {
 	switch e {
-	case ApplicationStatusConditionInitial, ApplicationStatusConditionConnected, ApplicationStatusConditionFailed, ApplicationStatusConditionCreating, ApplicationStatusConditionCreateFailed, ApplicationStatusConditionCreateSucceeded, ApplicationStatusConditionUpdating, ApplicationStatusConditionUpdateFailed, ApplicationStatusConditionUpdateSucceeded, ApplicationStatusConditionDeleting, ApplicationStatusConditionDeleteFailed, ApplicationStatusConditionDeleteSucceeded:
+	case ApplicationStatusConditionInitial, ApplicationStatusConditionConnected, ApplicationStatusConditionFailed, ApplicationStatusConditionCreating, ApplicationStatusConditionCreateFailed, ApplicationStatusConditionCreateSucceeded, ApplicationStatusConditionUpdating, ApplicationStatusConditionUpdateFailed, ApplicationStatusConditionUpdateSucceeded, ApplicationStatusConditionDeleting, ApplicationStatusConditionDeleteFailed, ApplicationStatusConditionDeleteSucceeded, ApplicationStatusConditionUnpairing, ApplicationStatusConditionUnpairFailed:
 		return true
 	}
 	return false
@@ -1020,6 +1032,47 @@ func (e *FetchRequestStatusCondition) UnmarshalGQL(v interface{}) error {
 }
 
 func (e FetchRequestStatusCondition) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type FormationObjectType string
+
+const (
+	FormationObjectTypeApplication FormationObjectType = "APPLICATION"
+	FormationObjectTypeTenant      FormationObjectType = "TENANT"
+)
+
+var AllFormationObjectType = []FormationObjectType{
+	FormationObjectTypeApplication,
+	FormationObjectTypeTenant,
+}
+
+func (e FormationObjectType) IsValid() bool {
+	switch e {
+	case FormationObjectTypeApplication, FormationObjectTypeTenant:
+		return true
+	}
+	return false
+}
+
+func (e FormationObjectType) String() string {
+	return string(e)
+}
+
+func (e *FormationObjectType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FormationObjectType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FormationObjectType", str)
+	}
+	return nil
+}
+
+func (e FormationObjectType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1368,6 +1421,7 @@ const (
 	WebhookTypeRegisterApplication   WebhookType = "REGISTER_APPLICATION"
 	WebhookTypeUnregisterApplication WebhookType = "UNREGISTER_APPLICATION"
 	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
+	WebhookTypeUnpairApplication     WebhookType = "UNPAIR_APPLICATION"
 )
 
 var AllWebhookType = []WebhookType{
@@ -1375,11 +1429,12 @@ var AllWebhookType = []WebhookType{
 	WebhookTypeRegisterApplication,
 	WebhookTypeUnregisterApplication,
 	WebhookTypeOpenResourceDiscovery,
+	WebhookTypeUnpairApplication,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery:
+	case WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeUnpairApplication:
 		return true
 	}
 	return false

@@ -344,16 +344,16 @@ func TestCreateScenariosLabel(t *testing.T) {
 	t.Log("Check if app was labeled with scenarios=default")
 
 	getApp := fixtures.FixGetApplicationRequest(app.ID)
-	actualApp := graphql.Application{}
+	actualApp := graphql.ApplicationExt{}
 	// WHEN
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getApp, &actualApp)
 
 	//THEN
 	require.NoError(t, err)
-	require.NotEmpty(t, app)
+	require.NotEmpty(t, actualApp)
 	if conf.DefaultScenarioEnabled {
-		assert.Contains(t, app.Labels, labelKey)
-		scenariosLabel, ok := app.Labels[labelKey].([]interface{})
+		assert.Contains(t, actualApp.Labels, labelKey)
+		scenariosLabel, ok := actualApp.Labels[labelKey].([]interface{})
 		require.True(t, ok)
 
 		var scenariosEnum []string

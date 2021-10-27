@@ -18,19 +18,13 @@ package tenantfetcher
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
-	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-
 	"github.com/kyma-incubator/compass/tests/pkg/token"
-	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/sjson"
 )
@@ -60,7 +54,7 @@ type TenantIDProperties struct {
 }
 
 // CreateTenantRequest returns a prepared tenant request with token in the header with the necessary tenant-fetcher claims
-func CreateTenantRequest(t *testing.T, tenantIDs Tenant, tenantProperties TenantIDProperties, httpMethod, tenantFetcherUrl, externalServicesMockURL string) *http.Request {
+func CreateTenantRequest(t *testing.T, tenantIDs Tenant, tenantProperties TenantIDProperties, httpMethod, tenantFetcherUrl, externalServicesMockURL, clientID, clientSecret string) *http.Request {
 	var (
 		body = "{}"
 		err  error
@@ -90,7 +84,7 @@ func CreateTenantRequest(t *testing.T, tenantIDs Tenant, tenantProperties Tenant
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
 	require.NoError(t, err)
 
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, externalServicesMockURL, DefaultClaims(externalServicesMockURL))))
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, externalServicesMockURL, clientID, clientSecret, DefaultClaims(externalServicesMockURL))))
 
 	return request
 }
@@ -108,31 +102,6 @@ func BuildTenantFetcherRegionalURL(regionalHandlerEndpoint, tenantPathParam, reg
 	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", regionPathParam), RegionPathParamValue, 1)
 	tenantFetcherFullRegionalURL := tenantFetcherURL + rootAPI + regionalEndpoint
 	return tenantFetcherFullRegionalURL
-}
-
-func AssertRuntimeSubscription(t *testing.T, ctx context.Context, runtimeID string, providedTenantIDs Tenant, dexGraphQLClient *graphql.Client, consumerSubaccountIDsLabelKey string) {
-	actualTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.SubaccountID)
-	require.NoError(t, err)
-	assertTenant(t, actualTenant, providedTenantIDs.SubaccountID, providedTenantIDs.Subdomain)
-	require.Equal(t, RegionPathParamValue, actualTenant.Labels[RegionKey])
-
-	subscribedRuntime := directorSchema.RuntimeExt{}
-	getSubscribedReq := fixtures.FixGetRuntimeRequest(runtimeID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getSubscribedReq, &subscribedRuntime)
-	require.NoError(t, err)
-	consumerSubaccountIDsLabel, ok := subscribedRuntime.Labels[consumerSubaccountIDsLabelKey].([]interface{})
-	require.Equal(t, true, ok)
-	require.Len(t, consumerSubaccountIDsLabel, 1)
-	labelValue, ok := consumerSubaccountIDsLabel[0].(string)
-	require.Equal(t, true, ok)
-	require.Equal(t, providedTenantIDs.SubaccountID, labelValue)
-}
-
-func assertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdomain string) {
-	require.Equal(t, tenantID, tenant.ID)
-	if len(subdomain) > 0 {
-		require.Equal(t, subdomain, tenant.Labels["subdomain"])
-	}
 }
 
 func DefaultClaims(externalServicesMockURL string) map[string]interface{} {
