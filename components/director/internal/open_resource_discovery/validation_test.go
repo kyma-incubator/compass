@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
@@ -326,6 +328,133 @@ var (
 	invalidSuccessorsDueToInvalidAPIRegex   = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2", "invalid-api-successor"]`
 	invalidSuccessorsDueToInvalidEventRegex = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1", "invalid-event-successor"]`
 )
+
+func TestConfig_ValidateConfig(t *testing.T) {
+	var tests = []struct {
+		Name              string
+		ConfigProvider    func() ord.WellKnownConfig
+		WebhookURL        string
+		ExpectedToBeValid bool
+	}{
+		{
+			Name: "Invalid 'baseURL' field for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.BaseURL = baseURL + "/full/path"
+				return *config
+			},
+		},
+		{
+			Name: "Missing 'OpenResourceDiscoveryV1' field for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1 = ord.OpenResourceDiscoveryV1{}
+				return *config
+			},
+		},
+		{
+			Name: "Missing 'url' field for document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].URL = ""
+				return *config
+			},
+		},
+		{
+			Name: "Missing 'accessStrategies' field for document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies = nil
+				return *config
+			},
+		},
+		{
+			Name: "Missing 'type' field for 'accessStrategies' field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = ""
+				return *config
+			},
+		},
+		{
+			Name: "Invalid field `type` for `accessStrategies` field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = invalidType
+				return *config
+			},
+		},
+		{
+			Name: "Invalid field `customType` when field `type` is not `custom` for `accessStrategies` field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = accessstrategy.OpenAccessStrategy
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomType = "foo"
+
+				return *config
+			},
+		},
+		{
+			Name: "Invalid field `customType` when field `type` is `custom` for `accessStrategies` field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = accessstrategy.CustomAccessStrategy
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomType = invalidCustomType
+
+				return *config
+			},
+		},
+		{
+			Name: "Field `type` is not `custom` when `customType` is valid for `accessStrategies` field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = accessstrategy.OpenAccessStrategy
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomType = "sap:custom-definition-format:v1"
+
+				return *config
+			},
+		},
+		{
+			Name: "Invalid field `customDescription` when field `type` is not `custom` for `accessStrategies` field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = accessstrategy.OpenAccessStrategy
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomDescription = "foo"
+
+				return *config
+			},
+		},
+		{
+			Name: "Invalid when webhookURL is not a proper URL",
+			ConfigProvider: func() ord.WellKnownConfig {
+				return *fixWellKnownConfig()
+			},
+			WebhookURL: "not-a-url",
+		},
+		{
+			Name: "Invalid when webhookURL is not /well-known, no config baseURL is set and documents have relative URLs",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.BaseURL = ""
+
+				return *config
+			},
+			WebhookURL: customWebhookConfigURL,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			cfg := test.ConfigProvider()
+			err := cfg.Validate(test.WebhookURL)
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
 
 func TestDocuments_ValidateSystemInstance(t *testing.T) {
 	var tests = []struct {

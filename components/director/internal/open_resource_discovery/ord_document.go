@@ -3,6 +3,10 @@ package ord
 import (
 	"encoding/json"
 	"net/url"
+	"regexp"
+	"strings"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 
@@ -56,18 +60,51 @@ type Document struct {
 	Vendors            []*model.VendorInput          `json:"vendors"`
 }
 
+func (c WellKnownConfig) Validate(webhookURL string) error {
+	if err := validation.Validate(c.BaseURL, validation.Match(regexp.MustCompile(ConfigBaseURLRegex))); err != nil {
+		return err
+	}
+
+	if err := validation.Validate(c.OpenResourceDiscoveryV1.Documents, validation.Required); err != nil {
+		return err
+	}
+
+	for _, docDetails := range c.OpenResourceDiscoveryV1.Documents {
+		if err := validateDocDetails(docDetails); err != nil {
+			return err
+		}
+	}
+
+	parsedWebhookURL, err := url.ParseRequestURI(webhookURL)
+	if err != nil {
+		return errors.Wrap(err, "while parsing input webhook url")
+	}
+
+	hasWellKnownSuffix := strings.HasSuffix(parsedWebhookURL.Path, WellKnownEndpoint)
+	areDocsWithRelativeURLs, err := checkForRelativeDocURLs(c.OpenResourceDiscoveryV1.Documents)
+	if err != nil {
+		return err
+	}
+
+	if !hasWellKnownSuffix && c.BaseURL == "" && areDocsWithRelativeURLs {
+		return errors.New("there are relative document URls but no baseURL provided neither in config nor through /well-known endpoint")
+	}
+
+	return nil
+}
+
 // Documents is a slice of Document objects
 type Documents []*Document
 
 // Validate validates all the documents for a system instance
-func (docs Documents) Validate(webhookURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
+func (docs Documents) Validate(baseURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
 	for _, doc := range docs {
 		if doc.DescribedSystemInstance != nil {
 			if err := ValidateSystemInstanceInput(doc.DescribedSystemInstance); err != nil {
 				return errors.Wrap(err, "error validating system instance")
 			}
 		}
-		if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != webhookURL {
+		if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != baseURL {
 			return errors.New("describedSystemInstance should be the same as the one providing the documents")
 		}
 	}
@@ -396,6 +433,38 @@ func mergeJSONArraysOfStrings(arr1, arr2 json.RawMessage) (json.RawMessage, erro
 	}
 	result = deduplicate(result)
 	return json.Marshal(result)
+}
+
+func validateDocDetails(docDetails DocumentDetails) error {
+	if err := validation.Validate(docDetails.URL, validation.Required); err != nil {
+		return err
+	}
+
+	if err := validation.Validate(docDetails.AccessStrategies, validation.Required); err != nil {
+		return err
+	}
+
+	for _, as := range docDetails.AccessStrategies {
+		if err := as.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func checkForRelativeDocURLs(docs []DocumentDetails) (bool, error) {
+	for _, doc := range docs {
+		parsedDocURL, err := url.ParseRequestURI(doc.URL)
+		if err != nil {
+			return false, errors.New("error while parsing document url")
+		}
+
+		if parsedDocURL.Host == "" {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func deduplicate(s []string) []string {

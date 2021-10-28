@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 
@@ -44,14 +45,14 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 		return nil, "", err
 	}
 
-	whBaseURL, err := stripRelativePathFromURL(*webhook.URL)
+	err = config.Validate(*webhook.URL)
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.Wrap(err, "while validating ORD config")
 	}
 
-	baseURL := whBaseURL
-	if len(config.BaseURL) > 0 {
-		baseURL = config.BaseURL
+	baseURL, err := calculateBaseURL(*webhook.URL, *config)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "while calculating baseURL")
 	}
 
 	docs := make([]*Document, 0)
@@ -113,31 +114,27 @@ func closeBody(ctx context.Context, body io.ReadCloser) {
 }
 
 func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook) (*WellKnownConfig, error) {
-	configURL, err := buildWellKnownEndpoint(*webhook.URL)
-	if err != nil {
-		return nil, err
-	}
-
 	var resp *http.Response
+	var err error
 	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) ORD webhook is configured with %q access strategy.", app.Name, app.ID, app.Type, *webhook.Auth.AccessStrategy)
 		executor, err := c.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*webhook.Auth.AccessStrategy))
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", *webhook.Auth.AccessStrategy)
 		}
-		resp, err = executor.Execute(ctx, c.Client, configURL)
+		resp, err = executor.Execute(ctx, c.Client, *webhook.URL)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", *webhook.Auth.AccessStrategy)
 		}
 	} else if webhook.Auth != nil {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is secured and webhook credentials will be used", app.Name, app.ID, app.Type)
-		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, configURL, webhook.Auth)
+		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, *webhook.URL, webhook.Auth)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration with webhook credentials")
 		}
 	} else {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is not secured", app.Name, app.ID, app.Type)
-		resp, err = httputil.GetRequestWithoutCredentials(c.Client, configURL)
+		resp, err = httputil.GetRequestWithoutCredentials(c.Client, *webhook.URL)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
 		}
@@ -162,7 +159,7 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 	return &config, nil
 }
 
-func buildDocumentURL(docURL, baseURL string) (string, error) { // TODO: tests when the whole algorithm is implemented
+func buildDocumentURL(docURL, baseURL string) (string, error) {
 	docURLParsed, err := url.Parse(docURL)
 	if err != nil {
 		return "", err
@@ -173,24 +170,47 @@ func buildDocumentURL(docURL, baseURL string) (string, error) { // TODO: tests w
 	return baseURL + docURL, nil
 }
 
-func buildWellKnownEndpoint(u string) (string, error) {
-	parsedURL, err := url.ParseRequestURI(u)
+func calculateBaseURL(webhookURL string, config WellKnownConfig) (string, error) {
+	parsedWebhookURL, err := url.ParseRequestURI(webhookURL)
 	if err != nil {
 		return "", errors.New("error while parsing input webhook url")
 	}
 
-	if parsedURL.Path != "" {
-		return parsedURL.String(), nil
+	hasWellKnownSuffix := strings.HasSuffix(parsedWebhookURL.Path, WellKnownEndpoint)
+
+	// if webhookURL is /well-known, strip the suffix and use it as baseURL. In case both are provided - the config baseURL is used.
+	// if webhookURL is not /well-known, but there is a valid baseURL provided in the config - use it
+	if hasWellKnownSuffix && config.BaseURL == "" {
+		strippedPath := strings.ReplaceAll(parsedWebhookURL.Path, WellKnownEndpoint, "")
+		parsedWebhookURL.Path = strippedPath
+		return parsedWebhookURL.String(), nil
+	} else if config.BaseURL != "" {
+		return config.BaseURL, nil
 	}
-	return parsedURL.String() + WellKnownEndpoint, nil
+
+	// if webhookURL is not /well-known, there is no baseURL provided in the config - use the host of the absolute paths of the doc.URLs if it's the same for all of them
+	// we are sure that all docs have absolute URLs because if they didn't the Validate() of the config would have failed
+	documentHost, err := extractDocumentsURLHost(config.OpenResourceDiscoveryV1.Documents)
+	if err != nil {
+		return "", err
+	}
+
+	return documentHost, nil
 }
 
-func stripRelativePathFromURL(u string) (string, error) {
-	parsedURL, err := url.ParseRequestURI(u)
-	if err != nil {
-		return "", errors.New("error while parsing input webhook url")
-	}
+func extractDocumentsURLHost(docs []DocumentDetails) (string, error) {
+	var documentHost string
+	for _, doc := range docs {
+		parsedDocURL, err := url.ParseRequestURI(doc.URL)
+		if err != nil {
+			return "", errors.New("error while parsing document url")
+		}
 
-	parsedURL.Path = ""
-	return parsedURL.String(), nil
+		if documentHost == "" {
+			documentHost = parsedDocURL.Scheme + "://" + parsedDocURL.Host
+		} else if documentHost != parsedDocURL.Host {
+			return "", errors.New("no baseURL was provided and documents have different URL host")
+		}
+	}
+	return documentHost, nil
 }
