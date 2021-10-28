@@ -60,6 +60,7 @@ type Document struct {
 	Vendors            []*model.VendorInput          `json:"vendors"`
 }
 
+// Validate validates if the Config object complies with the spec requirements
 func (c WellKnownConfig) Validate(webhookURL string) error {
 	if err := validation.Validate(c.BaseURL, validation.Match(regexp.MustCompile(ConfigBaseURLRegex))); err != nil {
 		return err
