@@ -52,8 +52,6 @@ type RuntimeService interface {
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error)
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
-	PrepareRuntimeForSelfRegistration(ctx context.Context, in *graphql.RuntimeInput) error
-	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string) error
 }
 
 // ScenarioAssignmentService missing godoc
@@ -90,6 +88,14 @@ type BundleInstanceAuthService interface {
 	Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error
 }
 
+// BundleInstanceAuthService missing godoc
+//go:generate mockery --name=SelfRegisterHandler --output=automock --outpkg=automock --case=underscore
+type SelfRegisterManager interface {
+	PrepareRuntimeForSelfRegistration(ctx context.Context, in *graphql.RuntimeInput) error
+	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string) error
+	GetSelfRegDistinguishingLabelKey() string
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact                  persistence.Transactioner
@@ -101,10 +107,11 @@ type Resolver struct {
 	oAuth20Svc                OAuth20Service
 	eventingSvc               EventingService
 	bundleInstanceAuthSvc     BundleInstanceAuthService
+	selfRegManager            SelfRegisterManager
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService) *Resolver {
+func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -115,6 +122,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		sysAuthConv:               sysAuthConv,
 		eventingSvc:               eventingSvc,
 		bundleInstanceAuthSvc:     bundleInstanceAuthSvc,
+		selfRegManager:            selfRegManager,
 	}
 }
 
@@ -122,7 +130,6 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 // TODO: Proper error handling
 func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	labelFilter := labelfilter.MultipleFromGraphQL(filter)
-
 	var cursor string
 	if after != nil {
 		cursor = string(*after)
@@ -193,7 +200,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	convertedIn := r.converter.InputFromGraphQL(in)
 
-	if err := r.runtimeService.PrepareRuntimeForSelfRegistration(ctx, &in); err != nil {
+	if err := r.selfRegManager.PrepareRuntimeForSelfRegistration(ctx, &in); err != nil {
 		return nil, err
 	}
 
@@ -205,9 +212,8 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 	defer func() {
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
 		if didRollback {
-			//TODO: Get label name form configuration
-			labelVal, _ := str.Cast(in.Labels["clone-name"])
-			if err := r.runtimeService.CleanupSelfRegisteredRuntime(ctx, labelVal); err != nil {
+			labelVal, _ := str.Cast(in.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
+			if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, labelVal); err != nil {
 				log.C(ctx).Errorf("while cleaning up self-registered runtime")
 			}
 		}
@@ -277,7 +283,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	defer func() {
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
 		if !didRollback { // if we did rollback we should not try to execute the cleanup
-			if err := r.runtimeService.CleanupSelfRegisteredRuntime(ctx, selfRegLabelVal); err != nil {
+			if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, selfRegLabelVal); err != nil {
 				log.C(ctx).Errorf("An error occured during cleanup of self-registered runtime: %v", err)
 			}
 		}
@@ -295,8 +301,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 		return nil, err
 	}
 
-	//TODO: Get label name form configuration
-	selfRegLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, "clone-name")
+	selfRegLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "while getting self register info label")
 	}

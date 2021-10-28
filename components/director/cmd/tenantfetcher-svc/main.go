@@ -204,7 +204,7 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, cfg.DefaultScenarioEnabled)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, cfg.ServiceConfig, cfg.ProtectedLabelPattern)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, cfg.ProtectedLabelPattern)
 
 	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc, cfg.TenantProvider)
 	subscriber := tenantfetcher.NewSubscriber(provisioner, runtimeSvc, labelSvc, uidSvc, cfg.SubscriptionProviderLabelKey, cfg.ConsumerSubaccountIDsLabelKey)
