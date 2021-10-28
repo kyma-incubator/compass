@@ -78,7 +78,7 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2088"
+      version: "PR-2091"
     gateway:
       dir:
       version: "PR-2077"
@@ -107,7 +107,7 @@ global:
       version: "PR-46"
     e2e_tests:
       dir:
-      version: "PR-2088"
+      version: "PR-2091"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -562,6 +562,8 @@ global:
 
   tests:
     ordService:
+      skipPattern: ""
+    director:
       skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local

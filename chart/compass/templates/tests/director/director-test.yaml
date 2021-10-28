@@ -122,6 +122,8 @@ spec:
               value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
             - name: APP_CA_SECRET_KEY_KEY
               value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.director.skipPattern }}
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
