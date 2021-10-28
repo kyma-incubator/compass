@@ -20,17 +20,18 @@ import (
 )
 
 type SelfRegConfig struct {
-	SelfRegisterLabelKey            string `envconfig:"default=cmp-xsappname"`
-	SelfRegisterLabelValuePrefix    string `envconfig:"default=clone-cmp-"`
-	SelfRegisterResponseKey         string `envconfig:"default=appid"`
-	SelfRegisterDistinguishLabelKey string `envconfig:"default=xsappname"`
-	ClientID                        string `envconfig:"APP_RUNTIME_SVC_CLIENT_ID"`
-	ClientSecret                    string `envconfig:"APP_RUNTIME_SVC_CLIENT_SECRET"`
-	URL                             string `envconfig:"APP_RUNTIME_SVC_TOKEN_URL"`
-	SelfRegisterPath                string
-	SelfRegisterNameQueryParam      string
-	SelfRegisterTenantQueryParam    string
-	SelfRegisterRequestBodyPattern  string
+	ClientID     string `envconfig:"APP_SELF_REGISTER_CLIENT_ID"`
+	ClientSecret string `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET"`
+	URL          string `envconfig:"APP_SELF_REGISTER_URL"`
+
+	SelfRegisterLabelKey            string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
+	SelfRegisterLabelValuePrefix    string `envconfig:"APP_SELF_REGISTER_LABEL_VALUE_PREFIX"`
+	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
+	SelfRegisterResponseKey         string `envconfig:"APP_SELF_REGISTER_RESPONSE_KEY"`
+	SelfRegisterPath                string `envconfig:"APP_SELF_REGISTER_PATH"`
+	SelfRegisterNameQueryParam      string `envconfig:"APP_SELF_REGISTER_NAME_QUERY_PARAM"`
+	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM"`
+	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN"`
 }
 
 type selfRegisterManager struct {
