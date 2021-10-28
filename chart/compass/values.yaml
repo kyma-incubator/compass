@@ -140,6 +140,21 @@ global:
       lastOperationPath: "/last_operation"
     info:
       path: "/v1/info"
+    selfRegister:
+      secret:
+        manage: true
+        name: "self-register-secret"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        urlKey: url
+      distinguishLabel: "self-register-inexistent-distinguish-label"
+      label: ""
+      labelValuePrefix: ""
+      responseKey: ""
+      path: ""
+      nameQueryParam: ""
+      tenantQueryParam: ""
+      requestBodyPattern: ""
 
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
