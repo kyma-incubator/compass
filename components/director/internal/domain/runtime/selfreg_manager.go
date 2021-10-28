@@ -91,20 +91,24 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 
 //CleanupSelfRegisteredRuntime executes cleanup calls for self-registered runtimes
 func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterDistinguishLabelValue string) error {
-	if selfRegisterDistinguishLabelValue != "" {
-		request, err := s.createSelfRegDelRequest(selfRegisterDistinguishLabelValue)
-		if err != nil {
-			return err
-		}
-		resp, err := s.caller.Call(request)
-		if err != nil {
-			return errors.Wrapf(err, "while executing cleanup of self-registered runtime with label value %s", selfRegisterDistinguishLabelValue)
-		}
-		if resp.StatusCode != http.StatusOK {
-			return errors.New(fmt.Sprintf("recieved unexpected status code %d while cleaning up self-registered runtime with label value %s", resp.StatusCode, selfRegisterDistinguishLabelValue))
-		}
-		log.C(ctx).Infof("Successfully executed clean-up self-registered runtime with distinguishing label value %s", selfRegisterDistinguishLabelValue)
+	if selfRegisterDistinguishLabelValue == "" {
+		return nil
 	}
+	request, err := s.createSelfRegDelRequest(selfRegisterDistinguishLabelValue)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.caller.Call(request)
+	if err != nil {
+		return errors.Wrapf(err, "while executing cleanup of self-registered runtime with label value %s", selfRegisterDistinguishLabelValue)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New(fmt.Sprintf("recieved unexpected status code %d while cleaning up self-registered runtime with label value %s", resp.StatusCode, selfRegisterDistinguishLabelValue))
+	}
+
+	log.C(ctx).Infof("Successfully executed clean-up self-registered runtime with distinguishing label value %s", selfRegisterDistinguishLabelValue)
 	return nil
 }
 
@@ -115,24 +119,23 @@ func (s *selfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 }
 
 func (s *selfRegisterManager) createSelfRegPrepRequest(distinguishingVal, tenant string) (*http.Request, error) {
+	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + distinguishingVal
 	url, err := urlpkg.Parse(s.cfg.URL + s.cfg.SelfRegisterPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating url for preparation of self-registered runtime")
 	}
-	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + distinguishingVal
 
 	q := url.Query()
 	q.Add(s.cfg.SelfRegisterNameQueryParam, selfRegLabelVal)
 	q.Add(s.cfg.SelfRegisterTenantQueryParam, tenant)
 	url.RawQuery = q.Encode()
 
-	fmt.Println(">>>>   ", url.String())
-
 	request, err := http.NewRequest(http.MethodPost, url.String(), strings.NewReader(fmt.Sprintf(s.cfg.SelfRegisterRequestBodyPattern, distinguishingVal)))
 	if err != nil {
 		return nil, errors.Wrapf(err, "while preparing request for self-registered runtime")
 	}
 	request.Header.Set("Content-Type", "application/json")
+
 	return request, nil
 }
 
@@ -148,5 +151,6 @@ func (s *selfRegisterManager) createSelfRegDelRequest(distinguishingVal string) 
 		return nil, errors.Wrapf(err, "while preparing request for cleanup of self-registered runtime")
 	}
 	request.Header.Set("Content-Type", "application/json")
+
 	return request, nil
 }
