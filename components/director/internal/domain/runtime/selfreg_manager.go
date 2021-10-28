@@ -8,9 +8,10 @@ import (
 	urlpkg "net/url"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+
 	"github.com/kyma-incubator/compass/components/director/internal/secure_http"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -20,18 +21,18 @@ import (
 )
 
 type SelfRegConfig struct {
-	ClientID     string `envconfig:"APP_SELF_REGISTER_CLIENT_ID"`
-	ClientSecret string `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET"`
-	URL          string `envconfig:"APP_SELF_REGISTER_URL"`
-
-	SelfRegisterLabelKey            string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
-	SelfRegisterLabelValuePrefix    string `envconfig:"APP_SELF_REGISTER_LABEL_VALUE_PREFIX"`
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
-	SelfRegisterResponseKey         string `envconfig:"APP_SELF_REGISTER_RESPONSE_KEY"`
-	SelfRegisterPath                string `envconfig:"APP_SELF_REGISTER_PATH"`
-	SelfRegisterNameQueryParam      string `envconfig:"APP_SELF_REGISTER_NAME_QUERY_PARAM"`
-	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM"`
-	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN"`
+	SelfRegisterLabelKey            string `envconfig:"APP_SELF_REGISTER_LABEL_KEY,optional"`
+	SelfRegisterLabelValuePrefix    string `envconfig:"APP_SELF_REGISTER_LABEL_VALUE_PREFIX,optional"`
+	SelfRegisterResponseKey         string `envconfig:"APP_SELF_REGISTER_RESPONSE_KEY,optional"`
+	SelfRegisterPath                string `envconfig:"APP_SELF_REGISTER_PATH,optional"`
+	SelfRegisterNameQueryParam      string `envconfig:"APP_SELF_REGISTER_NAME_QUERY_PARAM,optional"`
+	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM,optional"`
+	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN,optional"`
+
+	ClientID     string `envconfig:"APP_SELF_REGISTER_CLIENT_ID,optional"`
+	ClientSecret string `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
+	URL          string `envconfig:"APP_SELF_REGISTER_URL,optional"`
 }
 
 type selfRegisterManager struct {
@@ -39,6 +40,8 @@ type selfRegisterManager struct {
 	caller *secure_http.Caller
 }
 
+//NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
+//self-registration of runtimes configured with values from cfg.
 func NewSelfRegisterManager(cfg SelfRegConfig) *selfRegisterManager {
 	caller, _ := secure_http.NewCaller(&graphql.OAuthCredentialData{
 		ClientID:     cfg.ClientID,
@@ -48,7 +51,8 @@ func NewSelfRegisterManager(cfg SelfRegConfig) *selfRegisterManager {
 	return &selfRegisterManager{cfg: cfg, caller: caller}
 }
 
-//PrepareRuntimeForSelfRegistration executes the prerequisite calls for self-registration in case the runtime is being self-registered
+//PrepareRuntimeForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
+//is being self-registered
 func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in *graphql.RuntimeInput) error {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
@@ -80,7 +84,7 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
 		in.Labels[s.cfg.SelfRegisterLabelKey] = selfRegLabelVal.Str
 
-		log.C(ctx).Infof("successfully executed prep for self-registered runtime with label value %s", selfRegLabelVal.Str)
+		log.C(ctx).Infof("Successfully executed prep for self-registered runtime with distinguishing label value %s", distinguishLabelVal)
 	}
 	return nil
 }
@@ -99,11 +103,13 @@ func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, 
 		if resp.StatusCode != http.StatusOK {
 			return errors.New(fmt.Sprintf("recieved unexpected status code %d while cleaning up self-registered runtime with label value %s", resp.StatusCode, selfRegisterDistinguishLabelValue))
 		}
-		log.C(ctx).Infof("Successfully executed clean-up self-registered runtime with label value %s", selfRegisterDistinguishLabelValue)
+		log.C(ctx).Infof("Successfully executed clean-up self-registered runtime with distinguishing label value %s", selfRegisterDistinguishLabelValue)
 	}
 	return nil
 }
 
+//GetSelfRegDistinguishingLabelKey returns the label key to be used in order to determine whether a runtime
+//is being self-registered.
 func (s *selfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	return s.cfg.SelfRegisterDistinguishLabelKey
 }
@@ -114,8 +120,13 @@ func (s *selfRegisterManager) createSelfRegPrepRequest(distinguishingVal, tenant
 		return nil, errors.Wrapf(err, "while creating url for preparation of self-registered runtime")
 	}
 	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + distinguishingVal
-	url.Query().Add(s.cfg.SelfRegisterNameQueryParam, selfRegLabelVal)
-	url.Query().Add(s.cfg.SelfRegisterTenantQueryParam, tenant)
+
+	q := url.Query()
+	q.Add(s.cfg.SelfRegisterNameQueryParam, selfRegLabelVal)
+	q.Add(s.cfg.SelfRegisterTenantQueryParam, tenant)
+	url.RawQuery = q.Encode()
+
+	fmt.Println(">>>>   ", url.String())
 
 	request, err := http.NewRequest(http.MethodPost, url.String(), strings.NewReader(fmt.Sprintf(s.cfg.SelfRegisterRequestBodyPattern, distinguishingVal)))
 	if err != nil {

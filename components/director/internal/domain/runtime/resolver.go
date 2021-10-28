@@ -213,9 +213,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
 		if didRollback {
 			labelVal, _ := str.Cast(in.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
-			if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, labelVal); err != nil {
-				log.C(ctx).Errorf("while cleaning up self-registered runtime")
-			}
+			r.cleanupAndLogOnError(ctx, labelVal)
 		}
 	}()
 
@@ -283,9 +281,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	defer func() {
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
 		if !didRollback { // if we did rollback we should not try to execute the cleanup
-			if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, selfRegLabelVal); err != nil {
-				log.C(ctx).Errorf("An error occured during cleanup of self-registered runtime: %v", err)
-			}
+			r.cleanupAndLogOnError(ctx, selfRegLabelVal)
 		}
 	}()
 
@@ -302,10 +298,14 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	}
 
 	selfRegLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
-	if err != nil && !apperrors.IsNotFoundError(err) {
-		return nil, errors.Wrapf(err, "while getting self register info label")
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return nil, errors.Wrapf(err, "while getting self register info label")
+		}
+		selfRegLabelVal = "" // the deferred cleanup will do nothing
+	} else {
+		selfRegLabelVal, _ = str.Cast(selfRegLabel.Value)
 	}
-	selfRegLabelVal, _ = str.Cast(selfRegLabel.Value)
 
 	currentTimestamp := timestamp.DefaultGenerator
 	for _, auth := range bundleInstanceAuths {
@@ -598,4 +598,10 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 	}
 
 	return nil
+}
+
+func (r *Resolver) cleanupAndLogOnError(ctx context.Context, labelVal string) {
+	if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, labelVal); err != nil {
+		log.C(ctx).Errorf("An error occured during cleanup of self-registered runtime: %v", err)
+	}
 }
