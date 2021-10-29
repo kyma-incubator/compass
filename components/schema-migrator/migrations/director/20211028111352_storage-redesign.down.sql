@@ -91,7 +91,7 @@ SET tenant_id = (SELECT tenant_id FROM tenant_applications ta
                           OR
                       (NOT EXISTS (SELECT 1 FROM tenant_applications ta2
                                             WHERE ta2.resource_id = a.id AND
-                                                  tenant_id = (SELECT id FROM business_tenant_mappings WHERE parent = ta.tenant_id))) -- the child has no access
+                                                  tenant_id IN (SELECT id FROM business_tenant_mappings WHERE parent = ta.tenant_id))) -- there is no child that has access
                        ));
 
 UPDATE api_definitions SET tenant_id = (SELECT tenant_id FROM applications WHERE id = app_id);
@@ -115,11 +115,14 @@ SET tenant_id = (SELECT tenant_id FROM tenant_runtimes tr
                          OR
                       (NOT EXISTS (SELECT 1 FROM tenant_runtimes tr2
                                    WHERE tr2.resource_id = r.id AND
-                                           tenant_id = (SELECT id FROM business_tenant_mappings WHERE parent = tr.tenant_id))) -- the child has no access
+                                           tenant_id IN (SELECT id FROM business_tenant_mappings WHERE parent = tr.tenant_id))) -- there is no child that has access
                          ));
 
 UPDATE webhooks SET tenant_id = (SELECT tenant_id FROM applications WHERE id = app_id) WHERE app_id IS NOT NULL;
 UPDATE webhooks SET tenant_id = (SELECT tenant_id FROM runtimes WHERE id = runtime_id) WHERE runtime_id IS NOT NULL;
+
+UPDATE labels SET tenant_id = (SELECT tenant_id FROM applications WHERE id = app_id) WHERE app_id IS NOT NULL;
+UPDATE labels SET tenant_id = (SELECT tenant_id FROM runtimes WHERE id = runtime_id) WHERE runtime_id IS NOT NULL;
 
 UPDATE runtime_contexts SET tenant_id = (SELECT tenant_id FROM runtimes WHERE id = runtime_id);
 
@@ -153,6 +156,9 @@ ALTER TABLE documents ADD CONSTRAINT documents_tenant_id_id_unique UNIQUE (tenan
 ALTER TABLE runtimes ADD CONSTRAINT runtimes_tenant_id_id_unique UNIQUE (tenant_id, id);
 ALTER TABLE api_definitions ADD CONSTRAINT api_defs_tenant_id_id_unique UNIQUE (tenant_id, id);
 ALTER TABLE event_api_definitions ADD CONSTRAINT event_api_defs_tenant_id_id_unique UNIQUE (tenant_id, id);
+
+ALTER TABLE labels ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE labels DROP CONSTRAINT check_scenario_label_is_tenant_scoped;
 
 DROP INDEX fetch_requests_tenant_id_coalesce_coalesce1_coalesce2_idx;
 CREATE UNIQUE INDEX fetch_requests_tenant_id_coalesce_coalesce1_coalesce2_idx ON fetch_requests (tenant_id,
@@ -206,14 +212,6 @@ ALTER TABLE system_auths ADD  CONSTRAINT  system_auths_tenant_id_fkey1 FOREIGN K
 ALTER TABLE runtimes ADD CONSTRAINT runtimes_tenant_constraint FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id) ON DELETE CASCADE;
 ALTER TABLE runtime_contexts ADD CONSTRAINT runtime_contexts_tenant_id_fkey FOREIGN KEY (tenant_id, runtime_id) REFERENCES runtimes (tenant_id, id) ON UPDATE CASCADE ON DELETE CASCADE;
 ALTER TABLE runtime_contexts ADD CONSTRAINT runtime_contexts_tenant_id_fkey1 FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id) ON DELETE CASCADE;
-
-UPDATE labels
-SET tenant_id = (SELECT tenant_id FROM applications WHERE id = app_id)
-WHERE app_id IS NOT NULL;
-
-UPDATE labels
-SET tenant_id = (SELECT tenant_id FROM runtimes WHERE id = runtime_id)
-WHERE runtime_id IS NOT NULL;
 
 DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;

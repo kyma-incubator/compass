@@ -229,8 +229,10 @@ ALTER TABLE webhooks ADD CONSTRAINT webhook_owner_id_unique
         OR (app_template_id IS NULL AND app_id IS NULL AND runtime_id IS NOT NULL AND integration_system_id IS NULL)
         OR (app_template_id IS NULL AND app_id IS NULL AND runtime_id IS NULL AND integration_system_id IS  NOT NULL));
 
+ALTER TABLE labels ALTER COLUMN tenant_id DROP NOT NULL;
+ALTER TABLE labels ADD CONSTRAINT check_scenario_label_is_tenant_scoped CHECK ((key = 'scenarios' AND tenant_id IS NOT NULL) OR key <> 'scenarios');
 
-UPDATE labels SET tenant_id = NULL::uuid WHERE (app_id IS NOT NULL AND key <> 'scenario') OR (runtime_id IS NOT NULL AND key <> 'scenario');
+UPDATE labels SET tenant_id = NULL::uuid WHERE (app_id IS NOT NULL AND key <> 'scenarios') OR (runtime_id IS NOT NULL AND key <> 'scenarios');
 
 -- APIs
 CREATE OR REPLACE VIEW api_definitions_tenants AS
@@ -365,8 +367,8 @@ CREATE CONSTRAINT TRIGGER tenant_id_is_direct_parent_of_target_tenant_id AFTER I
 
 -- Label Definitions restrictions
 
-DELETE FROM label_definitions WHERE key <> 'scenario';
-ALTER TABLE label_definitions ADD CONSTRAINT key_is_scenario CHECK(key = 'scenario');
+DELETE FROM label_definitions WHERE key <> 'scenarios';
+ALTER TABLE label_definitions ADD CONSTRAINT key_is_scenario CHECK(key = 'scenarios');
 
 -- TODO: ORD Service Views
 
