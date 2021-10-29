@@ -175,12 +175,13 @@ func TestService_CreateToBundle(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	id := "foo"
+	appID := "appID"
 	bundleID := "foo"
 	frURL := "foo.bar"
 	frID := "fr-id"
 	timestamp := time.Now()
 	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
-	modelDoc := modelInput.ToDocumentWithinBundle(id, tnt, bundleID)
+	modelDoc := modelInput.ToDocumentWithinBundle(id, tnt, bundleID, appID)
 
 	testCases := []struct {
 		Name               string
@@ -262,7 +263,7 @@ func TestService_CreateToBundle(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			result, err := svc.CreateInBundle(ctx, bundleID, testCase.Input)
+			result, err := svc.CreateInBundle(ctx, appID, bundleID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)
@@ -282,7 +283,7 @@ func TestService_CreateToBundle(t *testing.T) {
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := document.NewService(nil, nil, nil)
 		// when
-		_, err := svc.CreateInBundle(context.TODO(), "Dd", model.DocumentInput{})
+		_, err := svc.CreateInBundle(context.TODO(), "appID", "bndlID", model.DocumentInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }

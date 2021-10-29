@@ -10,6 +10,7 @@ import (
 type Entity struct {
 	TenantID    string         `db:"tenant_id"`
 	BndlID      string         `db:"bundle_id"`
+	AppID       string         `db:"app_id"`
 	Title       string         `db:"title"`
 	DisplayName string         `db:"display_name"`
 	Description string         `db:"description"`

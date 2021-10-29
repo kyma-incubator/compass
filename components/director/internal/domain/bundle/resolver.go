@@ -86,7 +86,7 @@ type EventConverter interface {
 //go:generate mockery --name=DocumentService --output=automock --outpkg=automock --case=underscore
 type DocumentService interface {
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error)
-	CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error)
+	CreateInBundle(ctx context.Context, appID, bundleID string, in model.DocumentInput) (string, error)
 	ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
 }
 

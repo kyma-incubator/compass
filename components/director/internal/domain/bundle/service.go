@@ -217,7 +217,7 @@ func (s *service) createRelatedResources(ctx context.Context, in model.BundleCre
 	}
 
 	for _, document := range in.Documents {
-		_, err := s.documentSvc.CreateInBundle(ctx, bundleID, *document)
+		_, err := s.documentSvc.CreateInBundle(ctx, appID, bundleID, *document)
 		if err != nil {
 			return errors.Wrapf(err, "while creating Document for bundle with id %q", bundleID)
 		}

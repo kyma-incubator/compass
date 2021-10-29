@@ -21,6 +21,7 @@ var (
 	docDisplayName = "foodisplay"
 	docDescription = "foodesc"
 	docCLOB        = graphql.CLOB(docData)
+	appID          = "appID"
 	fixedTimestamp = time.Now()
 )
 
@@ -149,6 +150,22 @@ func fixGQLDocumentInput(id string) *graphql.DocumentInput {
 		Format:      graphql.DocumentFormatMarkdown,
 		Kind:        &docKind,
 		Data:        &docCLOB,
+	}
+}
+
+func fixModelBundle(id string) *model.Bundle {
+	return &model.Bundle{
+		TenantID:      docTenant,
+		ApplicationID: appID,
+		Name:          "name",
+		BaseEntity: &model.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+		},
 	}
 }
 

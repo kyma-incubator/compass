@@ -114,8 +114,8 @@ func TestService_Create(t *testing.T) {
 			},
 			DocumentServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", ctx, id, *modelInput.Documents[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, id, *modelInput.Documents[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.Documents[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.Documents[1]).Return("", nil).Once()
 				return svc
 			},
 			Input:       modelInput,
@@ -229,7 +229,7 @@ func TestService_Create(t *testing.T) {
 			},
 			DocumentServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", ctx, id, *modelInput.Documents[0]).Return("", testErr).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.Documents[0]).Return("", testErr).Once()
 				return svc
 			},
 			Input:       modelInput,

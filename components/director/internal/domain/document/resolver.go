@@ -20,7 +20,7 @@ import (
 // DocumentService missing godoc
 //go:generate mockery --name=DocumentService --output=automock --outpkg=automock --case=underscore
 type DocumentService interface {
-	CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error)
+	CreateInBundle(ctx context.Context, appID, bundleID string, in model.DocumentInput) (string, error)
 	Get(ctx context.Context, id string) (*model.Document, error)
 	Delete(ctx context.Context, id string) error
 	ListFetchRequests(ctx context.Context, documentIDs []string) ([]*model.FetchRequest, error)
@@ -51,7 +51,7 @@ type ApplicationService interface {
 // BundleService missing godoc
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
-	Exist(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
 // Resolver missing godoc
@@ -91,16 +91,15 @@ func (r *Resolver) AddDocumentToBundle(ctx context.Context, bundleID string, in 
 		return nil, errors.Wrap(err, "while converting DocumentInput from GraphQL")
 	}
 
-	found, err := r.bndlSvc.Exist(ctx, bundleID)
+	bndl, err := r.bndlSvc.Get(ctx, bundleID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while checking existence of Bundle")
+		if apperrors.IsNotFoundError(err) {
+			return nil, apperrors.NewInvalidDataError("cannot add Document to not existing Bundle")
+		}
+		return nil, errors.Wrapf(err, "while getting bundle %s", bundleID)
 	}
 
-	if !found {
-		return nil, apperrors.NewInvalidDataError("cannot add Document to not existing Bundle")
-	}
-
-	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn)
+	id, err := r.svc.CreateInBundle(ctx, bndl.ApplicationID, bundleID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}

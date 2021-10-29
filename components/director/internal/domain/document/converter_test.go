@@ -158,6 +158,7 @@ func TestToEntity(t *testing.T) {
 	modelWithRequiredFields := model.Document{
 		Tenant:      "givenTenant",
 		BundleID:    "givenBundleID",
+		AppID:       "givenAppID",
 		Title:       "givenTitle",
 		Description: "givenDescription",
 		DisplayName: "givenDisplayName",
@@ -181,6 +182,7 @@ func TestToEntity(t *testing.T) {
 		assert.Equal(t, &document.Entity{
 			TenantID:    givenModel.Tenant,
 			BndlID:      givenModel.BundleID,
+			AppID:       givenModel.AppID,
 			Title:       givenModel.Title,
 			Description: givenModel.Description,
 			DisplayName: givenModel.DisplayName,
@@ -215,6 +217,7 @@ func TestFromEntity(t *testing.T) {
 	entityWithRequiredFields := document.Entity{
 		TenantID:    "givenTenant",
 		BndlID:      "givenBundleID",
+		AppID:       "givenAppID",
 		Title:       "givenTitle",
 		DisplayName: "givenDisplayName",
 		Description: "givenDescription",
@@ -233,6 +236,7 @@ func TestFromEntity(t *testing.T) {
 		assert.Equal(t, model.Document{
 			Tenant:      "givenTenant",
 			BundleID:    "givenBundleID",
+			AppID:       "givenAppID",
 			Title:       "givenTitle",
 			DisplayName: "givenDisplayName",
 			Description: "givenDescription",

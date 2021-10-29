@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -35,6 +37,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 
 	bundleID := "bar"
 	id := "bar"
+	modelBundle := fixModelBundle(bundleID)
 	modelDocument := fixModelDocument(id, bundleID)
 	gqlDocument := fixGQLDocument(id, bundleID)
 	gqlInput := fixGQLDocumentInput(id)
@@ -66,13 +69,13 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", contextParam, bundleID, *modelInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", contextParam, appID, bundleID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(modelDocument, nil).Once()
 				return svc
 			},
 			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
-				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
+				appSvc.On("Get", contextParam, bundleID).Return(modelBundle, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -85,7 +88,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			ExpectedErr:      nil,
 		},
 		{
-			Name: "Returns error when application not exits",
+			Name: "Returns error when bundle does not exits",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
@@ -103,7 +106,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			},
 			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
-				appSvc.On("Exist", contextParam, bundleID).Return(false, nil)
+				appSvc.On("Get", contextParam, bundleID).Return(nil, apperrors.NewNotFoundError(resource.Bundle, bundleID))
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -134,7 +137,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			},
 			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
-				appSvc.On("Exist", contextParam, bundleID).Return(false, testErr)
+				appSvc.On("Get", contextParam, bundleID).Return(modelBundle, testErr)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -161,12 +164,12 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", contextParam, bundleID, *modelInput).Return("", testErr).Once()
+				svc.On("CreateInBundle", contextParam, appID, bundleID, *modelInput).Return("", testErr).Once()
 				return svc
 			},
 			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
-				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
+				appSvc.On("Get", contextParam, bundleID).Return(modelBundle, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -192,13 +195,13 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", contextParam, bundleID, *modelInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", contextParam, appID, bundleID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
 			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
-				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
+				appSvc.On("Get", contextParam, bundleID).Return(modelBundle, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {

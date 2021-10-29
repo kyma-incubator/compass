@@ -85,7 +85,7 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 }
 
 // CreateInBundle missing godoc
-func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error) {
+func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.DocumentInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -93,7 +93,7 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 
 	id := s.uidService.Generate()
 
-	document := in.ToDocumentWithinBundle(id, tnt, bundleID)
+	document := in.ToDocumentWithinBundle(id, tnt, bundleID, appID)
 	err = s.repo.Create(ctx, document)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Document")
