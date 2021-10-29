@@ -34,6 +34,8 @@ type SelfRegConfig struct {
 	ClientID     string `envconfig:"APP_SELF_REGISTER_CLIENT_ID,optional"`
 	ClientSecret string `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
 	URL          string `envconfig:"APP_SELF_REGISTER_URL,optional"`
+
+	ClientTimeout time.Duration `envconfig:"default=30s"`
 }
 
 //go:generate mockery --name=ExternalSvcCaller --output=automock --outpkg=automock --case=underscore
@@ -48,12 +50,12 @@ type selfRegisterManager struct {
 
 //NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 //self-registration of runtimes configured with values from cfg.
-func NewSelfRegisterManager(cfg SelfRegConfig, clientTimeout time.Duration) *selfRegisterManager {
+func NewSelfRegisterManager(cfg SelfRegConfig) *selfRegisterManager {
 	caller, _ := secure_http.NewCaller(&graphql.OAuthCredentialData{
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
 		URL:          cfg.URL + oauthTokenPath,
-	}, clientTimeout)
+	}, cfg.ClientTimeout)
 	return &selfRegisterManager{cfg: cfg, caller: caller}
 }
 

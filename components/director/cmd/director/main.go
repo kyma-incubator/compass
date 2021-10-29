@@ -187,6 +187,7 @@ func main() {
 		Timeout:   cfg.ClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
+	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
 
 	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
