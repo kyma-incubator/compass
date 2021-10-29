@@ -109,6 +109,7 @@ func NewRootResolver(
 	hydra := hydraClient.New(transport, nil)
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
+	selfRegisterManager := runtime.NewSelfRegisterManager(selfRegConfig, httpClient.Timeout)
 
 	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
 	authConverter := auth.NewConverterWithOTT(tokenConverter)
@@ -193,7 +194,7 @@ func NewRootResolver(
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		formation:          formation.NewResolver(transact, formationSvc, formationConv),
-		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, runtime.NewSelfRegisterManager(selfRegConfig)),
+		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager),
 		runtimeContext:     runtimectx.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),

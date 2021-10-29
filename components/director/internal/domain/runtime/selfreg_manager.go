@@ -7,6 +7,7 @@ import (
 	"net/http"
 	urlpkg "net/url"
 	"strings"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
@@ -35,19 +36,24 @@ type SelfRegConfig struct {
 	URL          string `envconfig:"APP_SELF_REGISTER_URL,optional"`
 }
 
+//go:generate mockery --name=ExternalSvcCaller --output=automock --outpkg=automock --case=underscore
+type ExternalSvcCaller interface {
+	Call(*http.Request) (*http.Response, error)
+}
+
 type selfRegisterManager struct {
 	cfg    SelfRegConfig
-	caller *secure_http.Caller
+	caller ExternalSvcCaller
 }
 
 //NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 //self-registration of runtimes configured with values from cfg.
-func NewSelfRegisterManager(cfg SelfRegConfig) *selfRegisterManager {
+func NewSelfRegisterManager(cfg SelfRegConfig, clientTimeout time.Duration) *selfRegisterManager {
 	caller, _ := secure_http.NewCaller(&graphql.OAuthCredentialData{
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
 		URL:          cfg.URL + oauthTokenPath,
-	})
+	}, clientTimeout)
 	return &selfRegisterManager{cfg: cfg, caller: caller}
 }
 

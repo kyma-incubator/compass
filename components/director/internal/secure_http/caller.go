@@ -3,6 +3,7 @@ package secure_http
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	director_http "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -17,10 +18,10 @@ type Caller struct {
 	client   *http.Client
 }
 
-func NewCaller(credentials graphql.CredentialData) (*Caller, error) {
+func NewCaller(credentials graphql.CredentialData, clientTimeout time.Duration) (*Caller, error) {
 	c := &Caller{
 		credentials: credentials,
-		client:      &http.Client{},
+		client:      &http.Client{Timeout: clientTimeout},
 	}
 
 	switch credentials.(type) {
