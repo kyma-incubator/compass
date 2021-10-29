@@ -584,12 +584,6 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 		return "", err
 	}
 
-	log.C(ctx).Debugf("Ensuring Scenarios label definition exists for Tenant %s", appTenant)
-	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, appTenant)
-	if err != nil {
-		return "", err
-	}
-
 	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
 
 	if in.Labels == nil {

@@ -80,9 +80,7 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				return repo
+				return &automock.ScenariosService{}
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -111,7 +109,6 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Once()
 				return repo
 			},
@@ -132,34 +129,6 @@ func TestService_Create(t *testing.T) {
 			},
 			Input:       modelInputWithoutLabels,
 			ExpectedErr: nil,
-		},
-		{
-			Name: "Returns error when ensuring default label definition failed",
-			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
-				return repo
-			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(testErr).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
-				svc := &automock.ScenarioAssignmentEngine{}
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
 		},
 		{
 			Name: "Returns error when runtime creation failed",
@@ -196,9 +165,7 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				return repo
+				return &automock.ScenariosService{}
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -225,9 +192,7 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				return repo
+				return &automock.ScenariosService{}
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}

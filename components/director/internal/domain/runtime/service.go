@@ -200,11 +200,6 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return "", errors.Wrapf(err, "while creating Runtime")
 	}
 
-	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, rtmTenant)
-	if err != nil {
-		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
-	}
-
 	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, in.Labels)
 	if err != nil {
 		return "", errors.Wrap(err, "while merging scenarios from input and assignments")
