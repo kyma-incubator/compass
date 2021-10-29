@@ -89,7 +89,7 @@ type BundleInstanceAuthService interface {
 }
 
 // BundleInstanceAuthService missing godoc
-//go:generate mockery --name=SelfRegisterHandler --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore
 type SelfRegisterManager interface {
 	PrepareRuntimeForSelfRegistration(ctx context.Context, in *graphql.RuntimeInput) error
 	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string) error
