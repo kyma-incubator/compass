@@ -37,6 +37,11 @@ func TransactionerThatDoesARollback(persistTx *automock.PersistenceTx) *automock
 	return transact
 }
 
+// TransactionerThatDoesARollback missing godoc
+func NoopTransactioner(_ *automock.PersistenceTx) *automock.Transactioner {
+	return &automock.Transactioner{}
+}
+
 // CtxWithDBMatcher missing godoc
 func CtxWithDBMatcher() interface{} {
 	return mock.MatchedBy(func(ctx context.Context) bool {
