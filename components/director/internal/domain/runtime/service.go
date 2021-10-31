@@ -55,7 +55,7 @@ type LabelUpsertService interface {
 //go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
+	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
 }
 
 // ScenarioAssignmentEngine missing godoc
@@ -208,7 +208,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	if len(scenarios) > 0 {
 		in.Labels[model.ScenariosKey] = scenarios
 	} else {
-		s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
+		s.scenariosService.AddDefaultScenarioIfEnabled(ctx, rtmTenant, &in.Labels)
 	}
 
 	if in.Labels == nil || in.Labels[IsNormalizedLabel] == nil {

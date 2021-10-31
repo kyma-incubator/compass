@@ -109,7 +109,7 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {

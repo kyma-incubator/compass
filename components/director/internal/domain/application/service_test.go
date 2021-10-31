@@ -174,8 +174,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -223,8 +223,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -272,8 +272,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -356,8 +356,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &normalizedModelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &normalizedModelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -439,7 +439,7 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -480,8 +480,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						model.ScenariosKey: model.ScenariosDefaultValue,
@@ -527,7 +527,7 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &defaultLabelsWithoutIntSys).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &defaultLabelsWithoutIntSys).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -718,8 +718,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -936,8 +936,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -985,8 +985,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -1034,8 +1034,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -1118,8 +1118,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &normalizedModelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &normalizedModelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -1201,7 +1201,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -1242,8 +1242,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						model.ScenariosKey: model.ScenariosDefaultValue,
@@ -1289,7 +1289,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &defaultLabelsWithoutIntSys).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &defaultLabelsWithoutIntSys).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -1480,8 +1480,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -1632,7 +1632,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, tnt, mock.Anything)
 				return scenarioSvc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -1688,7 +1688,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, tnt, mock.Anything)
 				return scenarioSvc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -1749,7 +1749,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, tnt, mock.Anything)
 				return scenarioSvc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -1837,7 +1837,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, tnt, mock.Anything)
 				return scenarioSvc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
