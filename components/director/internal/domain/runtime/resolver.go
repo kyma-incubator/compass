@@ -88,7 +88,7 @@ type BundleInstanceAuthService interface {
 	Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error
 }
 
-// BundleInstanceAuthService missing godoc
+// SelfRegisterManager missing godoc
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore
 type SelfRegisterManager interface {
 	PrepareRuntimeForSelfRegistration(ctx context.Context, in *graphql.RuntimeInput) error
@@ -602,6 +602,6 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 
 func (r *Resolver) cleanupAndLogOnError(ctx context.Context, labelVal string) {
 	if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, labelVal); err != nil {
-		log.C(ctx).Errorf("An error occured during cleanup of self-registered runtime: %v", err)
+		log.C(ctx).Errorf("An error occurred during cleanup of self-registered runtime: %v", err)
 	}
 }

@@ -1,4 +1,4 @@
-package secure_http
+package securehttp
 
 import (
 	"net/http"
@@ -10,8 +10,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// OauthTokenPath is the default path for oauth tokens
 const OauthTokenPath = "/oauth/token"
 
+// Caller can be used to call secured http endpoints with given credentials
 type Caller struct {
 	credentials graphql.CredentialData
 
@@ -19,6 +21,7 @@ type Caller struct {
 	client   *http.Client
 }
 
+// NewCaller creates a new Caller
 func NewCaller(credentials graphql.CredentialData, clientTimeout time.Duration) *Caller {
 	c := &Caller{
 		credentials: credentials,
@@ -35,6 +38,7 @@ func NewCaller(credentials graphql.CredentialData, clientTimeout time.Duration) 
 	return c
 }
 
+// Call executes a http call with the configured credentials
 func (c *Caller) Call(req *http.Request) (*http.Response, error) {
 	req = c.addCredentialsToContext(req)
 	return c.client.Do(req)

@@ -8,26 +8,32 @@ import (
 )
 
 const (
+	// TestDistinguishLabel is a test distinguishing label key
 	TestDistinguishLabel = "test-distinguish-label"
-	SelfRegErrorMsg      = "error during self-reg prep"
+	// SelfRegErrorMsg is a test error message
+	SelfRegErrorMsg = "error during self-reg prep"
 )
 
+// NoopSelfRegManager missing godoc
 func NoopSelfRegManager() *automock.SelfRegisterManager {
 	return &automock.SelfRegisterManager{}
 }
 
+// SelfRegManagerThatDoesPrepWithNoErrors missing godoc
 func SelfRegManagerThatDoesPrepWithNoErrors() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything).Return(nil).Once()
 	return srm
 }
 
+// SelfRegManagerThatReturnsErrorOnPrep missing godoc
 func SelfRegManagerThatReturnsErrorOnPrep() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything).Return(errors.New(SelfRegErrorMsg)).Once()
 	return srm
 }
 
+// SelfRegManagerThatDoesCleanupWithNoErrors missing godoc
 func SelfRegManagerThatDoesCleanupWithNoErrors() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
@@ -35,6 +41,7 @@ func SelfRegManagerThatDoesCleanupWithNoErrors() *automock.SelfRegisterManager {
 	return srm
 }
 
+// SelfRegManagerThatReturnsErrorOnCleanup missing godoc
 func SelfRegManagerThatReturnsErrorOnCleanup() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
@@ -42,12 +49,14 @@ func SelfRegManagerThatReturnsErrorOnCleanup() *automock.SelfRegisterManager {
 	return srm
 }
 
+// SelfRegManagerReturnsDistinguishingLabel missing godoc
 func SelfRegManagerReturnsDistinguishingLabel() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
 	return srm
 }
 
+// SelfRegManagerThatReturnsNoErrors missing godoc
 func SelfRegManagerThatReturnsNoErrors() *automock.SelfRegisterManager {
 	srm := SelfRegManagerThatDoesPrepWithNoErrors()
 	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()

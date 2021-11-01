@@ -37,7 +37,7 @@ func TransactionerThatDoesARollback(persistTx *automock.PersistenceTx) *automock
 	return transact
 }
 
-// TransactionerThatDoesARollback missing godoc
+// NoopTransactioner missing godoc
 func NoopTransactioner(_ *automock.PersistenceTx) *automock.Transactioner {
 	return &automock.Transactioner{}
 }

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kyma-incubator/compass/components/director/internal/secure_http"
+	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
@@ -106,10 +106,10 @@ func NewRootResolver(
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 	}
-	caller := secure_http.NewCaller(&graphql.OAuthCredentialData{
+	caller := securehttp.NewCaller(&graphql.OAuthCredentialData{
 		ClientID:     selfRegConfig.ClientID,
 		ClientSecret: selfRegConfig.ClientSecret,
-		URL:          selfRegConfig.URL + secure_http.OauthTokenPath,
+		URL:          selfRegConfig.URL + securehttp.OauthTokenPath,
 	}, selfRegConfig.ClientTimeout)
 
 	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)

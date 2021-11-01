@@ -19,6 +19,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// SelfRegConfig is configuration for the runtime self-registration flow
 type SelfRegConfig struct {
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 	SelfRegisterLabelKey            string `envconfig:"APP_SELF_REGISTER_LABEL_KEY,optional"`
@@ -36,6 +37,7 @@ type SelfRegConfig struct {
 	ClientTimeout time.Duration `envconfig:"default=30s"`
 }
 
+// ExternalSvcCaller is used to call external services with given authentication
 //go:generate mockery --name=ExternalSvcCaller --output=automock --outpkg=automock --case=underscore
 type ExternalSvcCaller interface {
 	Call(*http.Request) (*http.Response, error)
@@ -46,20 +48,20 @@ type selfRegisterManager struct {
 	caller ExternalSvcCaller
 }
 
-//NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
-//self-registration of runtimes configured with values from cfg.
+// NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
+// self-registration of runtimes configured with values from cfg.
 func NewSelfRegisterManager(cfg SelfRegConfig, caller ExternalSvcCaller) *selfRegisterManager {
 	return &selfRegisterManager{cfg: cfg, caller: caller}
 }
 
-//PrepareRuntimeForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
-//is being self-registered
+// PrepareRuntimeForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
+// is being self-registered
 func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in *graphql.RuntimeInput) error {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading consumer")
 	}
-	if distinguishLabel, exists := in.Labels[s.cfg.SelfRegisterDistinguishLabelKey]; exists && consumerInfo.Flow.IsCertFlow() { //this means that the runtime is being self-registered
+	if distinguishLabel, exists := in.Labels[s.cfg.SelfRegisterDistinguishLabelKey]; exists && consumerInfo.Flow.IsCertFlow() { // this means that the runtime is being self-registered
 		distinguishLabelVal := str.CastOrEmpty(distinguishLabel)
 
 		request, err := s.createSelfRegPrepRequest(distinguishLabelVal, consumerInfo.ConsumerID)
@@ -79,7 +81,7 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 		}
 
 		if response.StatusCode != http.StatusCreated {
-			return errors.New(fmt.Sprintf("recieved unexpected status %d while preparing self-registered runtime: %s", response.StatusCode, string(respBytes)))
+			return errors.New(fmt.Sprintf("received unexpected status %d while preparing self-registered runtime: %s", response.StatusCode, string(respBytes)))
 		}
 
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
@@ -90,7 +92,7 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 	return nil
 }
 
-//CleanupSelfRegisteredRuntime executes cleanup calls for self-registered runtimes
+// CleanupSelfRegisteredRuntime executes cleanup calls for self-registered runtimes
 func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterDistinguishLabelValue string) error {
 	if selfRegisterDistinguishLabelValue == "" {
 		return nil
@@ -113,8 +115,8 @@ func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, 
 	return nil
 }
 
-//GetSelfRegDistinguishingLabelKey returns the label key to be used in order to determine whether a runtime
-//is being self-registered.
+// GetSelfRegDistinguishingLabelKey returns the label key to be used in order to determine whether a runtime
+// is being self-registered.
 func (s *selfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	return s.cfg.SelfRegisterDistinguishLabelKey
 }

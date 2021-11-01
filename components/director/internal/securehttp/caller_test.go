@@ -1,4 +1,4 @@
-package secure_http_test
+package securehttp_test
 
 import (
 	"encoding/base64"
@@ -13,13 +13,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-incubator/compass/components/director/internal/secure_http"
+	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 const (
-	testClientId        = "client-id"
+	testClientID        = "client-id"
 	testClientSecret    = "client-secret"
 	testUser            = "user"
 	testPassword        = "pass"
@@ -32,7 +32,7 @@ const (
 func TestCaller_Call(t *testing.T) {
 	oauthServer := httptest.NewServer(getTestOauthServer(t))
 	oauthCredentials := &graphql.OAuthCredentialData{
-		ClientID:     testClientId,
+		ClientID:     testClientID,
 		ClientSecret: testClientSecret,
 		URL:          oauthServer.URL,
 	}
@@ -73,7 +73,7 @@ func TestCaller_Call(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			caller := secure_http.NewCaller(testCase.Credentials, time.Second)
+			caller := securehttp.NewCaller(testCase.Credentials, time.Second)
 			request, err := http.NewRequest(http.MethodGet, testCase.Server.URL, nil)
 			require.NoError(t, err)
 
@@ -91,7 +91,7 @@ func TestCaller_Call(t *testing.T) {
 func getTestOauthServer(t *testing.T) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		credsStr := getBase64EncodedCredentials(t, req, basicPrefix)
-		require.Equal(t, testClientId+":"+testClientSecret, credsStr)
+		require.Equal(t, testClientID+":"+testClientSecret, credsStr)
 
 		err := json.NewEncoder(w).Encode(oauth2.Token{
 			AccessToken: testToken,

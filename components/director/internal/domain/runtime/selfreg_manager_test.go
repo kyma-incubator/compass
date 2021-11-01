@@ -119,7 +119,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			InputAssert: noopAssert,
 			Input:       lblInput,
 			Context:     ctxWithCertConsumer,
-			ExpectedErr: errors.New("recieved unexpected status"),
+			ExpectedErr: errors.New("received unexpected status"),
 		},
 	}
 

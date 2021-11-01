@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/secure_http"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -82,7 +80,6 @@ type service struct {
 	uidService               UIDService
 	scenariosService         ScenariosService
 	scenarioAssignmentEngine ScenarioAssignmentEngine
-	caller                   *secure_http.Caller
 
 	protectedLabelPattern string
 }
@@ -104,7 +101,6 @@ func NewService(repo RuntimeRepository,
 		scenarioAssignmentEngine: scenarioAssignmentEngine,
 		protectedLabelPattern:    protectedLabelPattern,
 	}
-
 }
 
 // List missing godoc

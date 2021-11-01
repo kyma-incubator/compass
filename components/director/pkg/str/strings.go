@@ -95,7 +95,7 @@ func NewNullString(s string) sql.NullString {
 	}
 }
 
-// Cast missing godoc
+// CastOrEmpty casts the given value to string and returns the empty string otherwise
 func CastOrEmpty(i interface{}) string {
 	if s, ok := i.(string); ok {
 		return s
