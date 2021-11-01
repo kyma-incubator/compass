@@ -106,7 +106,7 @@ func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New(fmt.Sprintf("recieved unexpected status code %d while cleaning up self-registered runtime with label value %s", resp.StatusCode, selfRegisterDistinguishLabelValue))
+		return errors.New(fmt.Sprintf("received unexpected status code %d while cleaning up self-registered runtime with label value %s", resp.StatusCode, selfRegisterDistinguishLabelValue))
 	}
 
 	log.C(ctx).Infof("Successfully executed clean-up self-registered runtime with distinguishing label value %s", selfRegisterDistinguishLabelValue)

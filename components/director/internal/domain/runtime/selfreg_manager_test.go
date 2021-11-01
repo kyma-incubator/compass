@@ -3,6 +3,7 @@ package runtime_test
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
@@ -16,7 +17,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const selfRegisterDistinguishLabelKey = "test-distinguish-label-key"
+const (
+	selfRegisterDistinguishLabelKey = "test-distinguish-label-key"
+	distinguishLblVal               = "test-value"
+)
 
 var testConfig = runtime.SelfRegConfig{
 	SelfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
@@ -42,7 +46,6 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		ConsumerID: "test-consumer-id",
 		Flow:       oathkeeper.CertificateFlow,
 	}
-	distinguishLblVal := "test-value"
 	lblInput := &graphql.RuntimeInput{
 		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal},
 	}
@@ -66,7 +69,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Name:   "Success",
 			Config: testConfig,
 			Input:  lblInput,
-			Caller: rtmtest.CallerThatGetsCalledOnce,
+			Caller: rtmtest.CallerThatGetsCalledOnce(http.StatusCreated),
 			InputAssert: func(t *testing.T, in *graphql.RuntimeInput) {
 				assert.Equal(t, distinguishLblVal, in.Labels[selfRegisterDistinguishLabelKey])
 			},
@@ -139,59 +142,73 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 	}
 }
 
-//func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
-//	//distinguishedLabelVal := "self-registered-runtime"
-//	ctx := context.TODO()
-//	//testErr := errors.New("test error")
-//
-//	testCases := []struct {
-//		Name        string
-//		Config      runtime.SelfRegConfig
-//		SelfRegisteredDistinguishLabelValue      string
-//		Context     context.Context
-//		ExpectedErr error
-//	}{
-//		{
-//			Name:        "Success when runtime is not self-registered",
-//			Config:      testConfig,
-//			SelfRegisteredDistinguishLabelValue: "",
-//			Context:     ctx,
-//			ExpectedErr: nil,
-//		},
-//		{
-//			Name:        "Error when can't create URL for cleanup of self-registered runtime",
-//			Config:      testConfig,
-//			SelfRegisteredDistinguishLabelValue: "invalid value",
-//			Context:     ctx,
-//			ExpectedErr: errors.New("while creating url for cleanup of self-registered runtime"),
-//		},
-//		{
-//			Name:        "Error when can't create http request for cleanup of self-registered runtime",
-//			Config:      testConfig,
-//			SelfRegisteredDistinguishLabelValue: "invalid value",
-//			Context:     ctx,
-//			ExpectedErr: errors.New("while creating url for cleanup of self-registered runtime"),
-//		},
-//		//{
-//		//	Name:        "Success",
-//		//	Config:      ctxWithCertConsumer,
-//		//	ExpectedErr: nil,
-//		//},
-//	}
-//
-//	for _, testCase := range testCases {
-//		t.Run(testCase.Name, func(t *testing.T) {
-//			manager := runtime.NewSelfRegisterManager(testCase.Config)
-//
-//			err := manager.CleanupSelfRegisteredRuntime(testCase.Context, testCase.SelfRegisteredDistinguishLabelValue)
-//			if testCase.ExpectedErr != nil {
-//				require.Error(t, err)
-//				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
-//			} else {
-//				require.NoError(t, err)
-//			}
-//		})
-//	}
-//}
+func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name                                string
+		Config                              runtime.SelfRegConfig
+		Caller                              func(*testing.T) *automock.ExternalSvcCaller
+		SelfRegisteredDistinguishLabelValue string
+		Context                             context.Context
+		ExpectedErr                         error
+	}{
+		{
+			Name:                                "Success",
+			Caller:                              rtmtest.CallerThatGetsCalledOnce(http.StatusOK),
+			Config:                              testConfig,
+			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
+			Context:                             ctx,
+			ExpectedErr:                         nil,
+		},
+		{
+			Name:                                "Success when runtime is not self-registered",
+			Caller:                              rtmtest.CallerThatDoesNotGetCalled,
+			Config:                              testConfig,
+			SelfRegisteredDistinguishLabelValue: "",
+			Context:                             ctx,
+			ExpectedErr:                         nil,
+		},
+		{
+			Name:                                "Error when can't create URL for cleanup of self-registered runtime",
+			Caller:                              rtmtest.CallerThatDoesNotGetCalled,
+			Config:                              testConfig,
+			SelfRegisteredDistinguishLabelValue: "invalid value",
+			Context:                             ctx,
+			ExpectedErr:                         errors.New("while creating url for cleanup of self-registered runtime"),
+		},
+		{
+			Name:                                "Error when Call doesn't succeed",
+			Caller:                              rtmtest.CallerThatDoesNotSucceed,
+			Config:                              testConfig,
+			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
+			Context:                             ctx,
+			ExpectedErr:                         rtmtest.TestError,
+		},
+		{
+			Name:                                "Error when Call doesn't succeed",
+			Caller:                              rtmtest.CallerThatReturnsBadStatus,
+			Config:                              testConfig,
+			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
+			Context:                             ctx,
+			ExpectedErr:                         errors.New("received unexpected status code"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			svcCaller := testCase.Caller(t)
+			manager := runtime.NewSelfRegisterManager(testCase.Config, svcCaller)
+
+			err := manager.CleanupSelfRegisteredRuntime(testCase.Context, testCase.SelfRegisteredDistinguishLabelValue)
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
 
 func noopAssert(*testing.T, *graphql.RuntimeInput) {}

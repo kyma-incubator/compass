@@ -25,23 +25,13 @@ func CallerThatDoesNotGetCalled(t *testing.T) *automock.ExternalSvcCaller {
 	return svcCaller
 }
 
-func CallerThatGetsCalledOnce(t *testing.T) *automock.ExternalSvcCaller {
-	svcCaller := &automock.ExternalSvcCaller{}
-	response := httptest.ResponseRecorder{
-		Code: http.StatusCreated,
-		Body: bytes.NewBufferString(fmt.Sprintf(`{"%s":"%s"}`, ResponseLabelKey, ResponseLabelValue)),
-	}
-	svcCaller.On("Call", mock.Anything).Return(response.Result(), nil).Once()
-	return svcCaller
-}
-
-func CallerThatDoesNotSucceed(t *testing.T) *automock.ExternalSvcCaller {
+func CallerThatDoesNotSucceed(*testing.T) *automock.ExternalSvcCaller {
 	svcCaller := &automock.ExternalSvcCaller{}
 	svcCaller.On("Call", mock.Anything).Return(nil, TestError).Once()
 	return svcCaller
 }
 
-func CallerThatReturnsBadStatus(t *testing.T) *automock.ExternalSvcCaller {
+func CallerThatReturnsBadStatus(*testing.T) *automock.ExternalSvcCaller {
 	svcCaller := &automock.ExternalSvcCaller{}
 	response := httptest.ResponseRecorder{
 		Code: http.StatusBadRequest,
@@ -49,4 +39,16 @@ func CallerThatReturnsBadStatus(t *testing.T) *automock.ExternalSvcCaller {
 	}
 	svcCaller.On("Call", mock.Anything).Return(response.Result(), nil).Once()
 	return svcCaller
+}
+
+func CallerThatGetsCalledOnce(statusCode int) func(*testing.T) *automock.ExternalSvcCaller {
+	return func(t *testing.T) *automock.ExternalSvcCaller {
+		svcCaller := &automock.ExternalSvcCaller{}
+		response := httptest.ResponseRecorder{
+			Code: statusCode,
+			Body: bytes.NewBufferString(fmt.Sprintf(`{"%s":"%s"}`, ResponseLabelKey, ResponseLabelValue)),
+		}
+		svcCaller.On("Call", mock.Anything).Return(response.Result(), nil).Once()
+		return svcCaller
+	}
 }
