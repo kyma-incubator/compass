@@ -63,6 +63,7 @@ global:
     - name: TestProviderSubaccount
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
 
   images:
     containerRegistry:
@@ -78,7 +79,7 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2091"
+      version: "PR-2095"
     gateway:
       dir:
       version: "PR-2077"
@@ -107,7 +108,7 @@ global:
       version: "PR-46"
     e2e_tests:
       dir:
-      version: "PR-2091"
+      version: "PR-2095"
   isLocalEnv: false
   oauth2:
     host: oauth2

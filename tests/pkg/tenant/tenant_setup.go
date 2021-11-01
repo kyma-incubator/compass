@@ -183,6 +183,7 @@ func (mgr *TestTenantsManager) Init() {
 			ProviderName:   testProvider,
 			Type:           Subaccount,
 			Status:         Active,
+			Parent:         testDefaultTenant,
 		},
 		TestSelfRegisterSubaccount: {
 			Name:           TestSelfRegisterSubaccount,
