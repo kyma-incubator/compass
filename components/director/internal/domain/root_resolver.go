@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/secure_http"
 	"net/http"
 	"net/url"
 
@@ -104,12 +105,18 @@ func NewRootResolver(
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 	}
+	// TODO handle error
+	caller, _ := secure_http.NewCaller(&graphql.OAuthCredentialData{
+		ClientID:     selfRegConfig.ClientID,
+		ClientSecret: selfRegConfig.ClientSecret,
+		URL:          selfRegConfig.URL + secure_http.OauthTokenPath,
+	}, selfRegConfig.ClientTimeout)
 
 	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)
 	hydra := hydraClient.New(transport, nil)
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
-	selfRegisterManager := runtime.NewSelfRegisterManager(selfRegConfig)
+	selfRegisterManager := runtime.NewSelfRegisterManager(selfRegConfig, caller)
 
 	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
 	authConverter := auth.NewConverterWithOTT(tokenConverter)

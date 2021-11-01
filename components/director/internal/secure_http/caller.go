@@ -11,6 +11,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+const OauthTokenPath = "/oauth/token"
+
 type Caller struct {
 	credentials graphql.CredentialData
 

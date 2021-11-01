@@ -21,7 +21,6 @@ import (
 
 // IsNormalizedLabel missing godoc
 const IsNormalizedLabel = "isNormalized"
-const oauthTokenPath = "/oauth/token"
 
 // RuntimeRepository missing godoc
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore

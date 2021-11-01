@@ -11,8 +11,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
-	"github.com/kyma-incubator/compass/components/director/internal/secure_http"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -50,12 +48,7 @@ type selfRegisterManager struct {
 
 //NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 //self-registration of runtimes configured with values from cfg.
-func NewSelfRegisterManager(cfg SelfRegConfig) *selfRegisterManager {
-	caller, _ := secure_http.NewCaller(&graphql.OAuthCredentialData{
-		ClientID:     cfg.ClientID,
-		ClientSecret: cfg.ClientSecret,
-		URL:          cfg.URL + oauthTokenPath,
-	}, cfg.ClientTimeout)
+func NewSelfRegisterManager(cfg SelfRegConfig, caller ExternalSvcCaller) *selfRegisterManager {
 	return &selfRegisterManager{cfg: cfg, caller: caller}
 }
 
