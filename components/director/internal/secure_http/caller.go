@@ -1,7 +1,6 @@
 package secure_http
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -20,7 +19,7 @@ type Caller struct {
 	client   *http.Client
 }
 
-func NewCaller(credentials graphql.CredentialData, clientTimeout time.Duration) (*Caller, error) {
+func NewCaller(credentials graphql.CredentialData, clientTimeout time.Duration) *Caller {
 	c := &Caller{
 		credentials: credentials,
 		client:      &http.Client{Timeout: clientTimeout},
@@ -31,12 +30,9 @@ func NewCaller(credentials graphql.CredentialData, clientTimeout time.Duration) 
 		c.provider = auth.NewBasicAuthorizationProvider()
 	case *graphql.OAuthCredentialData:
 		c.provider = auth.NewTokenAuthorizationProvider(http.DefaultClient)
-	default:
-		return nil, errors.New("unsupported credentials type")
 	}
 	c.client.Transport = director_http.NewSecuredTransport(http.DefaultTransport, c.provider)
-
-	return c, nil
+	return c
 }
 
 func (c *Caller) Call(req *http.Request) (*http.Response, error) {

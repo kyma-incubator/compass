@@ -106,8 +106,7 @@ func NewRootResolver(
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 	}
-	// TODO handle error
-	caller, _ := secure_http.NewCaller(&graphql.OAuthCredentialData{
+	caller := secure_http.NewCaller(&graphql.OAuthCredentialData{
 		ClientID:     selfRegConfig.ClientID,
 		ClientSecret: selfRegConfig.ClientSecret,
 		URL:          selfRegConfig.URL + secure_http.OauthTokenPath,

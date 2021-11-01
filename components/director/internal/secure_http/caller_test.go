@@ -73,8 +73,7 @@ func TestCaller_Call(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			caller, err := secure_http.NewCaller(testCase.Credentials, time.Second)
-			require.NoError(t, err)
+			caller := secure_http.NewCaller(testCase.Credentials, time.Second)
 			request, err := http.NewRequest(http.MethodGet, testCase.Server.URL, nil)
 			require.NoError(t, err)
 

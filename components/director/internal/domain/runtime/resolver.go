@@ -212,7 +212,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 	defer func() {
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
 		if didRollback {
-			labelVal, _ := str.Cast(in.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
+			labelVal := str.CastOrEmpty(in.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			r.cleanupAndLogOnError(ctx, labelVal)
 		}
 	}()
@@ -304,7 +304,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 		}
 		selfRegLabelVal = "" // the deferred cleanup will do nothing
 	} else {
-		selfRegLabelVal, _ = str.Cast(selfRegLabel.Value)
+		selfRegLabelVal = str.CastOrEmpty(selfRegLabel.Value)
 	}
 
 	currentTimestamp := timestamp.DefaultGenerator

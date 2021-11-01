@@ -60,7 +60,7 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 		return errors.Wrapf(err, "while loading consumer")
 	}
 	if distinguishLabel, exists := in.Labels[s.cfg.SelfRegisterDistinguishLabelKey]; exists && consumerInfo.Flow.IsCertFlow() { //this means that the runtime is being self-registered
-		distinguishLabelVal, _ := str.Cast(distinguishLabel)
+		distinguishLabelVal := str.CastOrEmpty(distinguishLabel)
 
 		request, err := s.createSelfRegPrepRequest(distinguishLabelVal, consumerInfo.ConsumerID)
 		if err != nil {
