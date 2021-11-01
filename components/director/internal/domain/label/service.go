@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 
@@ -128,24 +128,31 @@ func (s *labelService) GetByKey(ctx context.Context, tenant string, objectType m
 }
 
 func (s *labelService) validateLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
-	var labelDef *model.LabelDefinition
+	// we should validate only scenario labels
+	if labelInput.Key != model.ScenariosKey {
+		return nil
+	}
 
+	var labelDef *model.LabelDefinition
 	labelDef, err := s.labelDefinitionRepo.GetByKey(ctx, tenant, labelInput.Key)
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return errors.Wrapf(err, "while reading LabelDefinition for key '%s'", labelInput.Key)
 	}
 
 	if labelDef == nil {
-		// Create new LabelDefinition
-		labelDefinitionID := s.uidService.Generate()
-		labelDef = &model.LabelDefinition{
-			ID:     labelDefinitionID,
-			Tenant: tenant,
-			Key:    labelInput.Key,
-			Schema: nil,
+		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
+		if err != nil {
+			return errors.Wrapf(err, "while creaing new schema for key %s", model.ScenariosKey)
 		}
-		if err := s.labelDefinitionRepo.Create(ctx, *labelDef); err != nil {
-			return errors.Wrapf(err, "while creating a new LabelDefinition for Label with key: '%s'", labelInput.Key)
+		labelDef = &model.LabelDefinition{
+			ID:      s.uidService.Generate(),
+			Tenant:  tenant,
+			Key:     model.ScenariosKey,
+			Schema:  &schema,
+			Version: 0,
+		}
+		if err = s.labelDefinitionRepo.Create(ctx, *labelDef); err != nil {
+			return errors.Wrap(err, "while creating LabelDefinition for scenarios")
 		}
 		log.C(ctx).Debugf("Successfully created LabelDefinition with id %s and key %s for Label with key %s", labelDef.ID, labelDef.Key, labelInput.Key)
 	}

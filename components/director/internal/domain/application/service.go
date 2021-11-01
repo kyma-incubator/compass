@@ -92,7 +92,7 @@ type LabelUpsertService interface {
 //go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
+	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
 }
 
 // UIDService missing godoc
@@ -584,13 +584,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 		return "", err
 	}
 
-	log.C(ctx).Debugf("Ensuring Scenarios label definition exists for Tenant %s", appTenant)
-	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, appTenant)
-	if err != nil {
-		return "", err
-	}
-
-	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
+	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, appTenant, &in.Labels)
 
 	if in.Labels == nil {
 		in.Labels = map[string]interface{}{}

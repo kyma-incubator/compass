@@ -52,7 +52,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled)
+	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled, false)
 
 	// add Label
 	actualLabel := graphql.Label{}
@@ -156,7 +156,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled)
+	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled, false)
 
 	// update label definition
 	const defaultValue = "DEFAULT"
@@ -267,7 +267,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, firstRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, firstRuntime, conf.DefaultScenarioEnabled)
+	assertions.AssertRuntime(t, givenInput, firstRuntime, conf.DefaultScenarioEnabled, false)
 
 	// try to create second runtime with first runtime name
 	//GIVEN
@@ -307,7 +307,7 @@ func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, secondRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, secondRuntime, conf.DefaultScenarioEnabled)
+	assertions.AssertRuntime(t, givenInput, secondRuntime, conf.DefaultScenarioEnabled, false)
 
 	//Update first runtime with second runtime name, failed
 
@@ -507,7 +507,7 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
-	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime, conf.DefaultScenarioEnabled)
+	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime, conf.DefaultScenarioEnabled, false)
 
 	//GIVEN
 	secondRuntime := graphql.RuntimeExt{}
@@ -525,7 +525,7 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assertions.AssertRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled)
+	assertions.AssertRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled, false)
 }
 
 func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
@@ -550,7 +550,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
-	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime, conf.DefaultScenarioEnabled)
+	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime, conf.DefaultScenarioEnabled, false)
 
 	//GIVEN
 	secondRuntime := graphql.RuntimeExt{}
@@ -568,7 +568,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assertions.AssertRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled)
+	assertions.AssertRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled, false)
 }
 
 func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(stdT *testing.T) {
@@ -629,7 +629,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(stdT *testing.T) {
 		//THEN
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		assertions.AssertRuntime(t, runtimeInput, actualRuntime, conf.DefaultScenarioEnabled)
+		assertions.AssertRuntime(t, runtimeInput, actualRuntime, conf.DefaultScenarioEnabled, true)
 
 		t.Log("Successfully set regular runtime label using certificate")
 		// GIVEN
@@ -664,9 +664,9 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(stdT *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
 		if conf.DefaultScenarioEnabled {
-			assert.Len(t, actualRuntime.Labels, 5)
-		} else {
 			assert.Len(t, actualRuntime.Labels, 4)
+		} else {
+			assert.Len(t, actualRuntime.Labels, 3)
 		}
 
 		t.Log("Successfully update runtime and validate the protected labels are excluded")
