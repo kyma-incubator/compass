@@ -138,7 +138,7 @@ func (s *selfRegisterManager) createSelfRegPrepRequest(distinguishingVal, tenant
 	q.Add(s.cfg.SelfRegisterTenantQueryParam, tenant)
 	url.RawQuery = q.Encode()
 
-	request, err := http.NewRequest(http.MethodPost, url.String(), strings.NewReader(fmt.Sprintf(s.cfg.SelfRegisterRequestBodyPattern, distinguishingVal)))
+	request, err := http.NewRequest(http.MethodPost, url.String(), strings.NewReader(fmt.Sprintf(s.cfg.SelfRegisterRequestBodyPattern, selfRegLabelVal)))
 	if err != nil {
 		return nil, errors.Wrapf(err, "while preparing request for self-registered runtime")
 	}
