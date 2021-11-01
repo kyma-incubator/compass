@@ -5,13 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 )
 
@@ -44,6 +42,12 @@ type LabelRepository interface {
 	DeleteByKey(ctx context.Context, tenant string, key string) error
 }
 
+// TenantRepository missing godoc
+//go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore
+type TenantRepository interface {
+	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
 // UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
@@ -55,16 +59,18 @@ type service struct {
 	repo                     Repository
 	labelRepo                LabelRepository
 	scenarioAssignmentLister ScenarioAssignmentLister
+	tenantRepo               TenantRepository
 	uidService               UIDService
 }
 
 // NewService creates new label definition service
-func NewService(repo Repository, labelRepo LabelRepository, scenarioAssignmentLister ScenarioAssignmentLister, uidService UIDService, defaultScenarioEnabled bool) *service {
+func NewService(repo Repository, labelRepo LabelRepository, scenarioAssignmentLister ScenarioAssignmentLister, tenantRepo TenantRepository, uidService UIDService, defaultScenarioEnabled bool) *service {
 	return &service{
 		defaultScenarioEnabled:   defaultScenarioEnabled,
 		repo:                     repo,
 		labelRepo:                labelRepo,
 		scenarioAssignmentLister: scenarioAssignmentLister,
+		tenantRepo:               tenantRepo,
 		uidService:               uidService,
 	}
 }
@@ -234,8 +240,19 @@ func (s *service) GetAvailableScenarios(ctx context.Context, tenantID string) ([
 }
 
 // AddDefaultScenarioIfEnabled adds DEFAULT scenario if defaultScenarioEnabled
-func (s *service) AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{}) {
+func (s *service) AddDefaultScenarioIfEnabled(ctx context.Context, tnt string, labels *map[string]interface{}) {
 	if labels == nil || !s.defaultScenarioEnabled {
+		return
+	}
+
+	// do not add scenario to subaccounts
+	btm, err := s.tenantRepo.Get(ctx, tnt)
+	if err != nil {
+		log.C(ctx).Errorf("Could not get tenant from db: %v", err)
+		return
+	}
+	if btm.Type == tenant.Subaccount {
+		log.C(ctx).Infof("Will not add DEFAULT scenario for tenant: %s with type %s", btm.ID, btm.Type)
 		return
 	}
 
