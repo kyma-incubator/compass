@@ -51,6 +51,11 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		Context     context.Context
 		ExpectedErr error
 	}{
+		//{
+		//	Name:        "Success",
+		//	Config:      ctxWithCertConsumer,
+		//	ExpectedErr: nil,
+		//},
 		{
 			Name:        "Success for non-matching consumer",
 			Config:      testConfig,
@@ -58,11 +63,13 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Context:     ctxWithTokenConsumer,
 			ExpectedErr: nil,
 		},
-		//{
-		//	Name:        "Success",
-		//	Config:      ctxWithCertConsumer,
-		//	ExpectedErr: nil,
-		//},
+		{
+			Name:        "Error when context does not contain consumer",
+			Config:      testConfig,
+			Input:       &graphql.RuntimeInput{},
+			Context:     context.TODO(),
+			ExpectedErr: consumer.NoConsumerError,
+		},
 	}
 
 	for _, testCase := range testCases {
