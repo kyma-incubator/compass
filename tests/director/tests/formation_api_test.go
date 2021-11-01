@@ -93,6 +93,14 @@ func TestApplicationFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, unassignFormation.Name)
 
+	if conf.DefaultScenarioEnabled {
+		unassignDefaultReq := fixtures.FixUnassignFormationRequest(app.ID, "APPLICATION", defaultValue)
+		var unassignDefaultFormation graphql.Formation
+		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, unassignDefaultReq, &unassignDefaultFormation)
+		require.NoError(t, err)
+		require.Equal(t, defaultValue, unassignDefaultFormation.Name)
+	}
+
 	t.Log("Should be able to delete formation after application is unassigned")
 	deleteRequest = fixtures.FixDeleteFormationRequest(newFormation)
 	var deleteFormation graphql.Formation

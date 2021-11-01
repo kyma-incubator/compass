@@ -9,7 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testFormation = "test-formation"
+const (
+	testFormation       = "test-formation"
+	secondTestFormation = "second-formation"
+)
 
 func TestFromGraphQL(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
