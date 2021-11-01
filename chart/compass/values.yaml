@@ -142,19 +142,18 @@ global:
       path: "/v1/info"
     selfRegister:
       secret:
-        manage: true
-        name: "self-register-secret"
+        name: "compass-external-services-mock-oauth-credentials"
         clientIdKey: client-id
         clientSecretKey: client-secret
         urlKey: url
-      distinguishLabel: "self-register-inexistent-distinguish-label"
-      label: ""
-      labelValuePrefix: ""
-      responseKey: ""
-      path: ""
-      nameQueryParam: ""
-      tenantQueryParam: ""
-      requestBodyPattern: ""
+      distinguishLabel: "distinguishing-label"
+      label: "self-reg-label"
+      labelValuePrefix: "self-reg-prefix"
+      responseKey: "self-reg-key"
+      path: "/external-api/self-reg"
+      nameQueryParam: "name"
+      tenantQueryParam: "tenant"
+      requestBodyPattern: '{"key":"%s"}'
 
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token

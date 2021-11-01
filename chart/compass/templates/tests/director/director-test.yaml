@@ -124,6 +124,10 @@ spec:
               value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.director.skipPattern }}
+            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.distinguishLabel }}
+            - name: APP_SELF_REGISTER_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.label }}
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
