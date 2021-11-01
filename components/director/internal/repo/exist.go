@@ -43,9 +43,9 @@ func NewExistQuerierGlobal(resourceType resource.Type, tableName string) ExistQu
 
 // Exists missing godoc
 func (g *universalExistQuerier) Exists(ctx context.Context, tenant string, conditions Conditions) (bool, error) {
-	if tenant == "" {
+	/*if tenant == "" {
 		return false, apperrors.NewTenantRequiredError()
-	}
+	}*/
 	//conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeExists(ctx, conditions)
 }

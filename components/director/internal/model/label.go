@@ -5,7 +5,7 @@ import "github.com/google/uuid"
 // Label missing godoc
 type Label struct {
 	ID         string
-	Tenant     string
+	Tenant     *string
 	Key        string
 	Value      interface{}
 	ObjectID   string
@@ -24,9 +24,9 @@ type LabelInput struct {
 
 // ToLabel missing godoc
 func (i *LabelInput) ToLabel(id, tenant string) *Label {
-	var tenantID string
+	var tenantID *string
 	if i.Key == ScenariosKey || i.ObjectType == TenantLabelableObject {
-		tenantID = tenant
+		tenantID = &tenant
 	}
 
 	return &Label{
@@ -56,9 +56,9 @@ const (
 
 // NewLabelForRuntimeContext missing godoc
 func NewLabelForRuntimeContext(runtimeCtxID, tenant, key string, value interface{}) *Label {
-	var tenantID string
+	var tenantID *string
 	if key == ScenariosKey {
-		tenantID = tenant
+		tenantID = &tenant
 	}
 	return &Label{
 		ID:         uuid.New().String(),
@@ -73,9 +73,9 @@ func NewLabelForRuntimeContext(runtimeCtxID, tenant, key string, value interface
 
 // NewLabelForRuntime missing godoc
 func NewLabelForRuntime(runtimeID, tenant, key string, value interface{}) *Label {
-	var tenantID string
+	var tenantID *string
 	if key == ScenariosKey {
-		tenantID = tenant
+		tenantID = &tenant
 	}
 	return &Label{
 		ID:         uuid.New().String(),
@@ -90,9 +90,9 @@ func NewLabelForRuntime(runtimeID, tenant, key string, value interface{}) *Label
 
 // NewLabelForApplication missing godoc
 func NewLabelForApplication(appID, tenant, key string, value interface{}) *Label {
-	var tenantID string
+	var tenantID *string
 	if key == ScenariosKey {
-		tenantID = tenant
+		tenantID = &tenant
 	}
 	return &Label{
 		ID:         uuid.New().String(),

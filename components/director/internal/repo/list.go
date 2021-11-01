@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
@@ -68,9 +67,9 @@ func NewListerGlobal(resourceType resource.Type, tableName string, selectedColum
 
 // List missing godoc
 func (l *universalLister) List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error {
-	if tenant == "" {
+	/*if tenant == "" {
 		return apperrors.NewTenantRequiredError()
-	}
+	}*/
 	//additionalConditions = append(Conditions{NewTenantIsolationCondition(*l.tenantColumn, tenant)}, additionalConditions...)
 	return l.unsafeList(ctx, dest, additionalConditions...)
 }

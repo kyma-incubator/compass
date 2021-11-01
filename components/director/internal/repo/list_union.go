@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -55,9 +54,9 @@ func (l *unionLister) Clone() UnionLister {
 
 // List missing godoc
 func (l *unionLister) List(ctx context.Context, tenant string, ids []string, idscolumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error) {
-	if tenant == "" {
+	/*if tenant == "" {
 		return nil, apperrors.NewTenantRequiredError()
-	}
+	}*/
 	//additionalConditions = append(Conditions{NewTenantIsolationCondition(*l.tenantColumn, tenant)}, additionalConditions...)
 	return l.unsafeList(ctx, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
 }

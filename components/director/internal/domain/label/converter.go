@@ -3,6 +3,7 @@ package label
 import (
 	"database/sql"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -50,7 +51,7 @@ func (c *converter) ToEntity(in model.Label) (*Entity, error) {
 
 	return &Entity{
 		ID:               in.ID,
-		TenantID:         in.Tenant,
+		TenantID:         repo.NewNullableString(in.Tenant),
 		AppID:            appID,
 		RuntimeID:        rtmID,
 		RuntimeContextID: rtmCtxID,
@@ -86,7 +87,7 @@ func (c *converter) FromEntity(in Entity) (model.Label, error) {
 
 	return model.Label{
 		ID:         in.ID,
-		Tenant:     in.TenantID,
+		Tenant:     repo.StringPtrFromNullableString(in.TenantID),
 		ObjectID:   objectID,
 		ObjectType: objectType,
 		Key:        in.Key,

@@ -116,7 +116,7 @@ var parentRelation = map[Type]Type{
 	SpecFetchRequest:    Specification,
 	APISpecification:    API,
 	EventSpecification:  EventDefinition,
-	Document:            Application,
+	Document:            Bundle,
 	BundleInstanceAuth:  Bundle,
 	API:                 Application,
 	EventDefinition:     Application,

@@ -189,7 +189,8 @@ func (e *engine) appendMissingScenarioLabelsForRuntimes(tenantID string, runtime
 }
 
 func (e *engine) createNewEmptyScenarioLabel(tenantID string, rtmID string) model.Label {
-	return model.Label{Tenant: tenantID,
+	return model.Label{
+		Tenant:     &tenantID,
 		Key:        model.ScenariosKey,
 		Value:      []string{},
 		ObjectID:   rtmID,

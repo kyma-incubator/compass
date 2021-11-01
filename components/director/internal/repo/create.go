@@ -37,9 +37,6 @@ type universalCreator struct {
 	resourceType       resource.Type
 	columns            []string
 	matcherColumns     []string
-	m2mTable           string
-	m2mColumns         []string
-	isTopLevelEntity   bool
 	ownerCheckRequired bool
 }
 
@@ -48,7 +45,6 @@ type creatorBuilder struct {
 	resourceType   resource.Type
 	columns        []string
 	matcherColumns []string
-	m2mTable       string
 	ownerCheck     bool
 }
 
@@ -80,32 +76,22 @@ func (cb *creatorBuilder) WithoutOwnerCheck() *creatorBuilder {
 }
 
 func (cb *creatorBuilder) Build() Creator {
-	m2mTable, _ := cb.resourceType.TenantAccessTable()
-	_, hasParent := cb.resourceType.Parent()
 	return &universalCreator{
 		tableName:          cb.tableName,
 		resourceType:       cb.resourceType,
 		columns:            cb.columns,
 		matcherColumns:     cb.matcherColumns,
-		m2mTable:           m2mTable,
-		m2mColumns:         m2mColumns,
-		isTopLevelEntity:   !hasParent,
 		ownerCheckRequired: cb.ownerCheck,
 	}
 }
 
 // NewCreator is a simplified constructor for child entities
 func NewCreator(resourceType resource.Type, tableName string, columns []string) Creator {
-	m2mTable, _ := resourceType.TenantAccessTable()
-	_, hasParent := resourceType.Parent()
 	return &universalCreator{
 		resourceType:       resourceType,
 		tableName:          tableName,
 		columns:            columns,
 		ownerCheckRequired: true,
-		m2mTable:           m2mTable,
-		m2mColumns:         m2mColumns,
-		isTopLevelEntity:   !hasParent,
 	}
 }
 
@@ -147,14 +133,19 @@ func (c *universalCreator) Create(ctx context.Context, tenant string, dbEntity i
 		dbEntity = entity
 	}
 
-	if c.isTopLevelEntity {
-		return c.unsafeCreateTopLevelEntity(ctx, id, tenant, dbEntity)
+	resourceType := c.resourceType
+	if multiRefEntity, ok := dbEntity.(MultiRefEntity); ok {
+		resourceType = multiRefEntity.GetRefSpecificResourceType()
 	}
 
-	return c.unsafeCreateChildEntity(ctx, id, tenant, dbEntity)
+	if _, hasParent := resourceType.Parent(); !hasParent {
+		return c.unsafeCreateTopLevelEntity(ctx, id, tenant, dbEntity, resourceType)
+	}
+
+	return c.unsafeCreateChildEntity(ctx, id, tenant, dbEntity, resourceType)
 }
 
-func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id string, tenant string, dbEntity interface{}) error {
+func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id string, tenant string, dbEntity interface{}, resourceType resource.Type) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -173,7 +164,7 @@ func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id st
 	log.C(ctx).Debugf("Executing DB query: %s", stmt)
 	res, err := persist.NamedExecContext(ctx, stmt, dbEntity)
 	if err != nil {
-		return persistence.MapSQLError(ctx, err, c.resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
+		return persistence.MapSQLError(ctx, err, resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
 	}
 
 	affected, err := res.RowsAffected()
@@ -182,14 +173,20 @@ func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id st
 	}
 
 	if affected == 0 {
-		log.C(ctx).Infof("%s top level entity already exists based on matcher columns [%s]. Will proceed with only creating access record for tenant %s...", c.resourceType, strings.Join(c.matcherColumns, ", "), tenant)
+		log.C(ctx).Infof("%s top level entity already exists based on matcher columns [%s]. Will proceed with only creating access record for tenant %s...", resourceType, strings.Join(c.matcherColumns, ", "), tenant)
 	}
 
-	vals := make([]string, 0, len(c.m2mColumns))
-	for _, c := range c.m2mColumns {
+	vals := make([]string, 0, len(m2mColumns))
+	for _, c := range m2mColumns {
 		vals = append(vals, fmt.Sprintf(":%s", c))
 	}
-	insertTenantAccessStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.m2mTable, strings.Join(c.m2mColumns, ", "), strings.Join(vals, ", "))
+
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return errors.Errorf("entity %s does not have access table", resourceType)
+	}
+
+	insertTenantAccessStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", m2mTable, strings.Join(m2mColumns, ", "), strings.Join(vals, ", "))
 
 	log.C(ctx).Debugf("Executing DB query: %s", insertTenantAccessStmt)
 	_, err = persist.NamedExecContext(ctx, insertTenantAccessStmt, &TenantAccess{
@@ -198,12 +195,12 @@ func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id st
 		Owner:      true,
 	})
 
-	return persistence.MapSQLError(ctx, err, c.resourceType, resource.Create, "while inserting tenant access record to '%s' table", c.m2mTable)
+	return persistence.MapSQLError(ctx, err, resourceType, resource.Create, "while inserting tenant access record to '%s' table", m2mTable)
 }
 
-func (c *universalCreator) unsafeCreateChildEntity(ctx context.Context, id string, tenant string, dbEntity interface{}) error {
-	if err := c.checkParentAccess(ctx, tenant, dbEntity); err != nil {
-		return apperrors.NewUnauthorizedError(fmt.Sprintf("Tenant %s does not have access to the parent of the currently created %s: %v", tenant, c.resourceType, err))
+func (c *universalCreator) unsafeCreateChildEntity(ctx context.Context, id string, tenant string, dbEntity interface{}, resourceType resource.Type) error {
+	if err := c.checkParentAccess(ctx, tenant, dbEntity, resourceType); err != nil {
+		return apperrors.NewUnauthorizedError(fmt.Sprintf("Tenant %s does not have access to the parent of the currently created %s: %v", tenant, resourceType, err))
 	}
 
 	persist, err := persistence.FromCtx(ctx)
@@ -221,15 +218,10 @@ func (c *universalCreator) unsafeCreateChildEntity(ctx context.Context, id strin
 	log.C(ctx).Debugf("Executing DB query: %s", insertStmt)
 	_, err = persist.NamedExecContext(ctx, insertStmt, dbEntity)
 
-	return persistence.MapSQLError(ctx, err, c.resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
+	return persistence.MapSQLError(ctx, err, resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
 }
 
-func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string, dbEntity interface{}) error {
-	resourceType := c.resourceType
-	if multiRefEntity, ok := dbEntity.(MultiRefEntity); ok {
-		resourceType = multiRefEntity.GetRefSpecificResourceType()
-	}
-
+func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
 	parentResourceType, ok := resourceType.Parent()
 	if !ok {
 		return errors.Errorf("entity %s does not have parent", resourceType)
@@ -249,7 +241,7 @@ func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string,
 		return errors.Errorf("Unkonw parentID for entity type %s and parentType %s", resourceType, parentResourceType)
 	}
 
-	conditions := Conditions{NewEqualCondition(M2MResourceIDColumn, parentID)}
+	conditions := Conditions{NewEqualCondition(M2MResourceIDColumn, parentID), NewEqualCondition(M2MTenantIDColumn, tenant)} // TODO: <storage-redesing> check if the tenant isolation subquery is needed here when we rework the exister
 	if c.ownerCheckRequired {
 		conditions = append(conditions, NewEqualCondition(M2MOwnerColumn, true))
 	}

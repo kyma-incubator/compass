@@ -65,7 +65,7 @@ func (r *repository) Upsert(ctx context.Context, tenant string, label *model.Lab
 		return apperrors.NewInternalError("item can not be empty")
 	}
 
-	l, err := r.GetByKey(ctx, label.Tenant, label.ObjectType, label.ObjectID, label.Key)
+	l, err := r.GetByKey(ctx, tenant, label.ObjectType, label.ObjectID, label.Key)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return r.Create(ctx, tenant, label)

@@ -55,9 +55,9 @@ func (g *universalDeleter) DeleteOne(ctx context.Context, tenant string, conditi
 
 // DeleteMany missing godoc
 func (g *universalDeleter) DeleteMany(ctx context.Context, tenant string, conditions Conditions) error {
-	if tenant == "" {
+	/*if tenant == "" {
 		return apperrors.NewTenantRequiredError()
-	}
+	}*/
 	//conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeDelete(ctx, conditions, false)
 }

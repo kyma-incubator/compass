@@ -8,7 +8,7 @@ import (
 // Entity missing godoc
 type Entity struct {
 	ID               string         `db:"id"`
-	TenantID         string         `db:"tenant_id"`
+	TenantID         sql.NullString `db:"tenant_id"`
 	Key              string         `db:"key"`
 	AppID            sql.NullString `db:"app_id"`
 	RuntimeID        sql.NullString `db:"runtime_id"`
@@ -18,13 +18,13 @@ type Entity struct {
 }
 
 func (e *Entity) GetID() string {
-    return e.ID
+	return e.ID
 }
 
 func (e *Entity) GetParentID() string {
-    if e.AppID.Valid {
-        return e.AppID.String
-    } else if e.RuntimeID.Valid {
+	if e.AppID.Valid {
+		return e.AppID.String
+	} else if e.RuntimeID.Valid {
 		return e.RuntimeID.String
 	}
 	return e.RuntimeContextID.String

@@ -52,9 +52,9 @@ func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selecte
 
 // Get missing godoc
 func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	if tenant == "" {
+	/*if tenant == "" {
 		return apperrors.NewTenantRequiredError()
-	}
+	}*/
 	//conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeGet(ctx, conditions, orderByParams, dest)
 }
