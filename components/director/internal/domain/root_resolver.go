@@ -3,9 +3,10 @@ package domain
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/secure_http"
 	"net/http"
 	"net/url"
+
+	"github.com/kyma-incubator/compass/components/director/internal/secure_http"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
