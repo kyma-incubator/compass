@@ -14,8 +14,8 @@ import (
 const tombstoneTable string = `public.tombstones`
 
 var (
-	tenantColumn     = "tenant_id"
-	tombstoneColumns = []string{"ord_id", tenantColumn, "app_id", "removal_date", "id"}
+	tenantColumn     = "tenant_id" // TODO: <storage-redesign> delete this
+	tombstoneColumns = []string{"ord_id", "app_id", "removal_date", "id"}
 	updatableColumns = []string{"removal_date"}
 )
 
@@ -50,13 +50,13 @@ func NewRepository(conv EntityConverter) *pgRepository {
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, model *model.Tombstone) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.Tombstone) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
 
 	log.C(ctx).Debugf("Persisting Tombstone entity with id %q", model.ID)
-	return r.creator.Create(ctx, r.conv.ToEntity(model))
+	return r.creator.Create(ctx, tenant, r.conv.ToEntity(model))
 }
 
 // Update missing godoc

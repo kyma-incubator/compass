@@ -20,8 +20,8 @@ import (
 const documentTable = "public.documents"
 
 var (
-	documentColumns = []string{"id", "tenant_id", "bundle_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
-	tenantColumn    = "tenant_id"
+	documentColumns = []string{"id", "bundle_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	tenantColumn    = "tenant_id" // TODO: <storage-redesign> delete
 	bundleIDColumn  = "bundle_id"
 	orderByColumns  = repo.OrderByParams{repo.NewAscOrderBy("bundle_id"), repo.NewAscOrderBy("id")}
 )
@@ -106,7 +106,7 @@ func (r *repository) GetForBundle(ctx context.Context, tenant string, id string,
 }
 
 // Create missing godoc
-func (r *repository) Create(ctx context.Context, item *model.Document) error {
+func (r *repository) Create(ctx context.Context, tenant string, item *model.Document) error {
 	if item == nil {
 		return apperrors.NewInternalError("Document cannot be empty")
 	}
@@ -117,16 +117,16 @@ func (r *repository) Create(ctx context.Context, item *model.Document) error {
 	}
 
 	log.C(ctx).Debugf("Persisting Document entity with id %s to db", item.ID)
-	return r.creator.Create(ctx, entity)
+	return r.creator.Create(ctx, tenant, entity)
 }
 
 // CreateMany missing godoc
-func (r *repository) CreateMany(ctx context.Context, items []*model.Document) error {
+func (r *repository) CreateMany(ctx context.Context, tenant string, items []*model.Document) error {
 	for _, item := range items {
 		if item == nil {
 			return apperrors.NewInternalError("Document cannot be empty")
 		}
-		err := r.Create(ctx, item)
+		err := r.Create(ctx, tenant, item)
 		if err != nil {
 			return errors.Wrapf(err, "while creating Document with ID %s", item.ID)
 		}

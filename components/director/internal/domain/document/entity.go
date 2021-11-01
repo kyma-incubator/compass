@@ -8,7 +8,6 @@ import (
 
 // Entity missing godoc
 type Entity struct {
-	TenantID    string         `db:"tenant_id"`
 	BndlID      string         `db:"bundle_id"`
 	AppID       string         `db:"app_id"`
 	Title       string         `db:"title"`
@@ -18,6 +17,10 @@ type Entity struct {
 	Kind        sql.NullString `db:"kind"`
 	Data        sql.NullString `db:"data"`
 	*repo.BaseEntity
+}
+
+func (e *Entity) GetParentID() string {
+    return e.BndlID
 }
 
 // Collection missing godoc

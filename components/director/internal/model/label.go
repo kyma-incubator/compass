@@ -24,9 +24,14 @@ type LabelInput struct {
 
 // ToLabel missing godoc
 func (i *LabelInput) ToLabel(id, tenant string) *Label {
+	var tenantID string
+	if i.Key == ScenariosKey || i.ObjectType == TenantLabelableObject {
+		tenantID = tenant
+	}
+
 	return &Label{
 		ID:         id,
-		Tenant:     tenant,
+		Tenant:     tenantID,
 		ObjectType: i.ObjectType,
 		ObjectID:   i.ObjectID,
 		Key:        i.Key,
@@ -50,12 +55,16 @@ const (
 )
 
 // NewLabelForRuntimeContext missing godoc
-func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value interface{}) *Label {
+func NewLabelForRuntimeContext(runtimeCtxID, tenant, key string, value interface{}) *Label {
+	var tenantID string
+	if key == ScenariosKey {
+		tenantID = tenant
+	}
 	return &Label{
 		ID:         uuid.New().String(),
-		Tenant:     runtimeCtx.Tenant,
+		Tenant:     tenantID,
 		ObjectType: RuntimeContextLabelableObject,
-		ObjectID:   runtimeCtx.ID,
+		ObjectID:   runtimeCtxID,
 		Key:        key,
 		Value:      value,
 		Version:    0,
@@ -63,12 +72,16 @@ func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value inte
 }
 
 // NewLabelForRuntime missing godoc
-func NewLabelForRuntime(runtime Runtime, key string, value interface{}) *Label {
+func NewLabelForRuntime(runtimeID, tenant, key string, value interface{}) *Label {
+	var tenantID string
+	if key == ScenariosKey {
+		tenantID = tenant
+	}
 	return &Label{
 		ID:         uuid.New().String(),
-		Tenant:     runtime.Tenant,
+		Tenant:     tenantID,
 		ObjectType: RuntimeLabelableObject,
-		ObjectID:   runtime.ID,
+		ObjectID:   runtimeID,
 		Key:        key,
 		Value:      value,
 		Version:    0,
@@ -76,12 +89,16 @@ func NewLabelForRuntime(runtime Runtime, key string, value interface{}) *Label {
 }
 
 // NewLabelForApplication missing godoc
-func NewLabelForApplication(app Application, key string, value interface{}) *Label {
+func NewLabelForApplication(appID, tenant, key string, value interface{}) *Label {
+	var tenantID string
+	if key == ScenariosKey {
+		tenantID = tenant
+	}
 	return &Label{
 		ID:         uuid.New().String(),
-		Tenant:     app.Tenant,
+		Tenant:     tenantID,
 		ObjectType: ApplicationLabelableObject,
-		ObjectID:   app.ID,
+		ObjectID:   appID,
 		Key:        key,
 		Value:      value,
 		Version:    0,

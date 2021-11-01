@@ -19,8 +19,8 @@ import (
 const runtimeContextsTable string = `public.runtime_contexts`
 
 var (
-	runtimeContextColumns = []string{"id", "runtime_id", "tenant_id", "key", "value"}
-	tenantColumn          = "tenant_id"
+	runtimeContextColumns = []string{"id", "runtime_id", "key", "value"}
+	tenantColumn          = "tenant_id" // TODO: <storage-redesign> delete this column
 )
 
 type pgRepository struct {
@@ -157,11 +157,11 @@ func (r *pgRepository) List(ctx context.Context, runtimeID string, tenant string
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, item *model.RuntimeContext) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.RuntimeContext) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
-	return r.creator.Create(ctx, EntityFromRuntimeContextModel(item))
+	return r.creator.Create(ctx, tenant, EntityFromRuntimeContextModel(item))
 }
 
 // Update missing godoc

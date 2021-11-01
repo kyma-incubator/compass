@@ -75,14 +75,14 @@ func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) (*model.Fetc
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
+func (c *converter) ToEntity(in model.FetchRequest) (*Entity, error) {
 	if in.Status == nil {
-		return Entity{}, apperrors.NewInvalidDataError("Invalid input model")
+		return nil, apperrors.NewInvalidDataError("Invalid input model")
 	}
 
 	auth, err := c.authToEntity(in.Auth)
 	if err != nil {
-		return Entity{}, errors.Wrap(err, "while converting Auth")
+		return nil, errors.Wrap(err, "while converting Auth")
 	}
 
 	filter := repo.NewNullableString(in.Filter)
@@ -98,9 +98,8 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 		documentID = refID
 	}
 
-	return Entity{
+	return &Entity{
 		ID:              in.ID,
-		TenantID:        in.Tenant,
 		URL:             in.URL,
 		Auth:            auth,
 		SpecID:          specID,
@@ -127,7 +126,6 @@ func (c *converter) FromEntity(in Entity) (model.FetchRequest, error) {
 
 	return model.FetchRequest{
 		ID:         in.ID,
-		Tenant:     in.TenantID,
 		ObjectID:   objectID,
 		ObjectType: objectType,
 		Status: &model.FetchRequestStatus{

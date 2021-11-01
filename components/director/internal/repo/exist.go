@@ -46,7 +46,7 @@ func (g *universalExistQuerier) Exists(ctx context.Context, tenant string, condi
 	if tenant == "" {
 		return false, apperrors.NewTenantRequiredError()
 	}
-	conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
+	//conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeExists(ctx, conditions)
 }
 

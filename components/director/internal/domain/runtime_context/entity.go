@@ -8,9 +8,16 @@ import (
 type RuntimeContext struct {
 	ID        string `db:"id"`
 	RuntimeID string `db:"runtime_id"`
-	TenantID  string `db:"tenant_id"`
 	Key       string `db:"key"`
 	Value     string `db:"value"`
+}
+
+func (e *RuntimeContext) GetID() string {
+	return e.ID
+}
+
+func (e *RuntimeContext) GetParentID() string {
+	return e.RuntimeID
 }
 
 // EntityFromRuntimeContextModel converts RuntimeContext model to RuntimeContext entity
@@ -18,7 +25,6 @@ func EntityFromRuntimeContextModel(model *model.RuntimeContext) *RuntimeContext 
 	return &RuntimeContext{
 		ID:        model.ID,
 		RuntimeID: model.RuntimeID,
-		TenantID:  model.Tenant,
 		Key:       model.Key,
 		Value:     model.Value,
 	}
@@ -29,7 +35,6 @@ func (e RuntimeContext) ToModel() *model.RuntimeContext {
 	return &model.RuntimeContext{
 		ID:        e.ID,
 		RuntimeID: e.RuntimeID,
-		Tenant:    e.TenantID,
 		Key:       e.Key,
 		Value:     e.Value,
 	}

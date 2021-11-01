@@ -35,7 +35,7 @@ type UIDService interface {
 // WebhookRepository missing godoc
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
 type WebhookRepository interface {
-	CreateMany(ctx context.Context, items []*model.Webhook) error
+	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
 type service struct {
@@ -67,9 +67,9 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 
 	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
 	for _, item := range in.Webhooks {
-		webhooks = append(webhooks, item.ToApplicationTemplateWebhook(s.uidService.Generate(), nil, appTemplateID))
+		webhooks = append(webhooks, item.ToApplicationTemplateWebhook(s.uidService.Generate(), appTemplateID))
 	}
-	err = s.webhookRepo.CreateMany(ctx, webhooks)
+	err = s.webhookRepo.CreateMany(ctx, "", webhooks)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
 	}

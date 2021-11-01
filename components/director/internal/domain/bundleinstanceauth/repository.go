@@ -31,7 +31,7 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	creator      repo.Creator
+	creator      repo.GlobalCreator
 	singleGetter repo.SingleGetter
 	lister       repo.Lister
 	updater      repo.Updater
@@ -42,7 +42,16 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:      repo.NewCreator(resource.BundleInstanceAuth, tableName, tableColumns),
+		// TODO: We will use the default creator which does not ensures parent access. This is because in order to ensure that the caller
+		// tenant has access to the parent for BIAs we need to check for either owner or non-owner access. The straight-forward
+		// scenario will be to have a non-owner access to the bundle once a formation is created. Then we check for whatever access
+		// the caller has to the parent and allow it.
+		// However, this cannot be done before formations redesign and due to this the formation check will still take place
+		// in the pkg/scenario/directive.go. Once formation redesign in in place we can remove this directive and here we can use:
+		//
+		// creator: repo.NewCreatorBuilderFor(resource.BundleInstanceAuth).WithTable(tableName).WithColumns(tableColumns...).WithoutOwnerCheck().Build(),
+		//
+		creator:      repo.NewGlobalCreator(resource.BundleInstanceAuth, tableName, tableColumns),
 		singleGetter: repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
 		lister:       repo.NewLister(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
 		deleter:      repo.NewDeleter(resource.BundleInstanceAuth, tableName, tenantColumn),

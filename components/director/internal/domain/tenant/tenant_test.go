@@ -52,6 +52,47 @@ func TestLoadFromContext(t *testing.T) {
 	}
 }
 
+func TestLoadTenantPairFromContext(t *testing.T) {
+	value := "foo"
+	tenants := tenant.TenantCtx{InternalID: value, ExternalID: value}
+
+	testCases := []struct {
+		Name    string
+		Context context.Context
+
+		ExpectedResult     tenant.TenantCtx
+		ExpectedErrMessage string
+	}{
+		{
+			Name:               "Success",
+			Context:            context.WithValue(context.TODO(), tenant.TenantContextKey, tenants),
+			ExpectedResult:     tenants,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:               "Error",
+			Context:            context.TODO(),
+			ExpectedResult:     tenant.TenantCtx{},
+			ExpectedErrMessage: "cannot read tenant from context",
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+			// when
+			result, err := tenant.LoadTenantPairFromContext(testCase.Context)
+
+			// then
+			if testCase.ExpectedErrMessage != "" {
+				require.Equal(t, testCase.ExpectedErrMessage, err.Error())
+				return
+			}
+
+			assert.Equal(t, testCase.ExpectedResult, result)
+		})
+	}
+}
+
 func TestSaveToLoadFromContext(t *testing.T) {
 	// given
 	value := "foo"

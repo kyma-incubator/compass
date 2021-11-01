@@ -21,15 +21,15 @@ const (
 )
 
 var (
-	specificationsColumns = []string{"id", "tenant_id", apiDefIDColumn, eventAPIDefIDColumn, "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "custom_type"}
+	specificationsColumns = []string{"id", apiDefIDColumn, eventAPIDefIDColumn, "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "custom_type"}
 	orderByColumns        = repo.OrderByParams{repo.NewAscOrderBy("created_at"), repo.NewAscOrderBy("id")}
-	tenantColumn          = "tenant_id"
+	tenantColumn          = "tenant_id" // TODO: <storage-redesign> delete this column
 )
 
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in model.Spec) Entity
+	ToEntity(in model.Spec) *Entity
 	FromEntity(in Entity) (model.Spec, error)
 }
 
@@ -80,14 +80,14 @@ func (r *repository) GetByID(ctx context.Context, tenantID string, id string) (*
 }
 
 // Create missing godoc
-func (r *repository) Create(ctx context.Context, item *model.Spec) error {
+func (r *repository) Create(ctx context.Context, tenant string, item *model.Spec) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
 
 	entity := r.conv.ToEntity(*item)
 
-	return r.creator.Create(ctx, entity)
+	return r.creator.Create(ctx, tenant, entity)
 }
 
 // ListByReferenceObjectID missing godoc

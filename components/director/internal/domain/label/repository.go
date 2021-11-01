@@ -28,7 +28,7 @@ var (
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in model.Label) (Entity, error)
+	ToEntity(in model.Label) (*Entity, error)
 	FromEntity(in Entity) (model.Label, error)
 }
 
@@ -60,7 +60,7 @@ func NewRepository(conv Converter) *repository {
 }
 
 // Upsert missing godoc
-func (r *repository) Upsert(ctx context.Context, label *model.Label) error {
+func (r *repository) Upsert(ctx context.Context, tenant string, label *model.Label) error {
 	if label == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
@@ -68,7 +68,7 @@ func (r *repository) Upsert(ctx context.Context, label *model.Label) error {
 	l, err := r.GetByKey(ctx, label.Tenant, label.ObjectType, label.ObjectID, label.Key)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return r.Create(ctx, label)
+			return r.Create(ctx, tenant, label)
 		}
 		return err
 	}
@@ -94,7 +94,7 @@ func (r *repository) UpdateWithVersion(ctx context.Context, label *model.Label) 
 }
 
 // Create missing godoc
-func (r *repository) Create(ctx context.Context, label *model.Label) error {
+func (r *repository) Create(ctx context.Context, tenant string, label *model.Label) error {
 	if label == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
@@ -103,7 +103,7 @@ func (r *repository) Create(ctx context.Context, label *model.Label) error {
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
-	return r.creator.Create(ctx, labelEntity)
+	return r.creator.Create(ctx, tenant, labelEntity)
 }
 
 // GetByKey missing godoc

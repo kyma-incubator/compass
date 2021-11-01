@@ -3,6 +3,7 @@ package tenant
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -49,7 +50,6 @@ type Converter interface {
 }
 
 type pgRepository struct {
-	creator            repo.Creator
 	upserter           repo.Upserter
 	unsafeCreator      repo.UnsafeCreator
 	existQuerierGlobal repo.ExistQuerierGlobal
@@ -64,7 +64,6 @@ type pgRepository struct {
 // NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		creator:            repo.NewCreator(resource.Tenant, tableName, insertColumns),
 		upserter:           repo.NewUpserter(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
 		unsafeCreator:      repo.NewUnsafeCreator(resource.Tenant, tableName, insertColumns, conflictingColumns),
 		existQuerierGlobal: repo.NewExistQuerierGlobal(resource.Tenant, tableName),
@@ -170,3 +169,72 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 
 	return r.deleterGlobal.DeleteManyGlobal(ctx, conditions)
 }
+
+// GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
+func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
+	rawStmt := `(SELECT %s FROM %s ta
+                WHERE ta.%s = ? AND ta.%s = true AND
+                      (NOT EXISTS(SELECT 1 FROM %s WHERE %s = ta.%[1]s) -- the tenant has no children
+                          OR
+                      (NOT EXISTS (SELECT 1 FROM %[2]s ta2
+                                            WHERE ta2.%[3]s = ? AND ta.%[4]s = true AND
+                                                  %[1]s IN (SELECT %s FROM %[5]s WHERE %[6]s = ta.%[1]s))) -- there is no child that has owner access
+                       ))`
+
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return "", errors.Errorf("No tenant access table for %s", resourceType)
+	}
+
+	stmt := fmt.Sprintf(rawStmt, repo.M2MTenantIDColumn, m2mTable, repo.M2MResourceIDColumn, repo.M2MOwnerColumn, tableName, parentColumn, idColumn)
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	log.C(ctx).Debugf("Executing DB query: %s", stmt)
+
+	dest := struct {
+		TenantID string `db:"tenant_id"`
+	}{}
+
+	if err := persist.GetContext(ctx, &dest, stmt, objectID, objectID); err != nil {
+		return "", persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Get, "while getting lowest tenant from %s table for resource %s with id %s", m2mTable, resourceType, objectID)
+	}
+
+	return dest.TenantID, nil
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

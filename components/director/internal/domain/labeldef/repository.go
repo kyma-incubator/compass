@@ -34,7 +34,7 @@ var (
 
 type repository struct {
 	conv             EntityConverter
-	creator          repo.Creator
+	creator          repo.GlobalCreator
 	getter           repo.SingleGetter
 	lister           repo.Lister
 	existQuerier     repo.ExistQuerier
@@ -47,7 +47,7 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{conv: conv,
-		creator:          repo.NewCreator(resource.LabelDefinition, tableName, labeldefColumns),
+		creator:          repo.NewGlobalCreator(resource.LabelDefinition, tableName, labeldefColumns),
 		getter:           repo.NewSingleGetter(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
 		existQuerier:     repo.NewExistQuerier(resource.LabelDefinition, tableName, tenantColumn),
 		lister:           repo.NewLister(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),

@@ -71,13 +71,8 @@ func (s *service) GetBundleIDsForObject(ctx context.Context, objectType model.Bu
 
 // CreateByReferenceObjectID creates a BundleReference between a Bundle and object(APIDefinition/EventDefinition).
 func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
 	id := s.uidService.Generate()
-	bundleReference, err := in.ToBundleReference(id, tnt, objectType, bundleID, objectID)
+	bundleReference, err := in.ToBundleReference(id, objectType, bundleID, objectID)
 	if err != nil {
 		return err
 	}
@@ -102,7 +97,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.Bundle
 		return err
 	}
 
-	bundleReference, err = in.ToBundleReference(bundleReference.ID, tnt, objectType, bundleID, objectID)
+	bundleReference, err = in.ToBundleReference(bundleReference.ID, objectType, bundleID, objectID)
 	if err != nil {
 		return err
 	}

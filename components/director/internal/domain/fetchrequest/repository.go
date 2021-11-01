@@ -18,14 +18,14 @@ const documentIDColumn = "document_id"
 const specIDColumn = "spec_id"
 
 var (
-	fetchRequestColumns = []string{"id", "tenant_id", documentIDColumn, "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", specIDColumn}
-	tenantColumn        = "tenant_id"
+	fetchRequestColumns = []string{"id", documentIDColumn, "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", specIDColumn}
+	tenantColumn        = "tenant_id" // TODO: <storage-redesign> delete
 )
 
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in model.FetchRequest) (Entity, error)
+	ToEntity(in model.FetchRequest) (*Entity, error)
 	FromEntity(in Entity) (model.FetchRequest, error)
 }
 
@@ -51,7 +51,7 @@ func NewRepository(conv Converter) *repository {
 }
 
 // Create missing godoc
-func (r *repository) Create(ctx context.Context, item *model.FetchRequest) error {
+func (r *repository) Create(ctx context.Context, tenant string, item *model.FetchRequest) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
@@ -61,7 +61,7 @@ func (r *repository) Create(ctx context.Context, item *model.FetchRequest) error
 		return errors.Wrap(err, "while creating FetchRequest entity from model")
 	}
 
-	return r.creator.Create(ctx, entity)
+	return r.creator.Create(ctx, tenant, entity)
 }
 
 // GetByReferenceObjectID missing godoc

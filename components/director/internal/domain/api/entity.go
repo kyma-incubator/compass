@@ -9,7 +9,6 @@ import (
 
 // Entity missing godoc
 type Entity struct {
-	TenantID                                string         `db:"tenant_id"`
 	ApplicationID                           string         `db:"app_id"`
 	PackageID                               sql.NullString `db:"package_id"`
 	Name                                    string         `db:"name"`
@@ -42,4 +41,8 @@ type Entity struct {
 
 	*repo.BaseEntity
 	version.Version
+}
+
+func (e *Entity) GetParentID() string {
+	return e.ApplicationID
 }

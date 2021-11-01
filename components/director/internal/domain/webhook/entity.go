@@ -1,11 +1,13 @@
 package webhook
 
-import "database/sql"
+import (
+	"database/sql"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+)
 
 // Entity missing godoc
 type Entity struct {
 	ID                    string         `db:"id"`
-	TenantID              sql.NullString `db:"tenant_id"`
 	ApplicationID         sql.NullString `db:"app_id"`
 	ApplicationTemplateID sql.NullString `db:"app_template_id"`
 	RuntimeID             sql.NullString `db:"runtime_id"`
@@ -22,6 +24,28 @@ type Entity struct {
 	HeaderTemplate        sql.NullString `db:"header_template"`
 	OutputTemplate        sql.NullString `db:"output_template"`
 	StatusTemplate        sql.NullString `db:"status_template"`
+}
+
+func (e *Entity) GetID() string {
+	return e.ID
+}
+
+func (e *Entity) GetParentID() string {
+	if e.RuntimeID.Valid {
+		return e.RuntimeID.String
+	} else if e.ApplicationID.Valid {
+		return e.ApplicationID.String
+	}
+	return ""
+}
+
+func (e *Entity) GetRefSpecificResourceType() resource.Type {
+	if e.RuntimeID.Valid {
+		return resource.RuntimeWebhook
+	} else if e.ApplicationID.Valid {
+		return resource.AppWebhook
+	}
+	return resource.Webhook
 }
 
 // Collection missing godoc

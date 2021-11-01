@@ -135,7 +135,6 @@ func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 	return model.EventDefinition{
 		ApplicationID:       entity.ApplicationID,
 		PackageID:           repo.StringPtrFromNullableString(entity.PackageID),
-		Tenant:              entity.TenantID,
 		Name:                entity.Name,
 		Description:         repo.StringPtrFromNullableString(entity.Description),
 		Group:               repo.StringPtrFromNullableString(entity.GroupName),
@@ -170,9 +169,8 @@ func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(eventModel model.EventDefinition) Entity {
-	return Entity{
-		TenantID:            eventModel.Tenant,
+func (c *converter) ToEntity(eventModel model.EventDefinition) *Entity {
+	return &Entity{
 		ApplicationID:       eventModel.ApplicationID,
 		PackageID:           repo.NewNullableString(eventModel.PackageID),
 		Name:                eventModel.Name,

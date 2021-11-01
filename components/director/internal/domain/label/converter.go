@@ -16,14 +16,14 @@ func NewConverter() *converter {
 type converter struct{}
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.Label) (Entity, error) {
+func (c *converter) ToEntity(in model.Label) (*Entity, error) {
 	var valueMarshalled []byte
 	var err error
 
 	if in.Value != nil {
 		valueMarshalled, err = json.Marshal(in.Value)
 		if err != nil {
-			return Entity{}, errors.Wrap(err, "while marshalling Value")
+			return nil, errors.Wrap(err, "while marshalling Value")
 		}
 	}
 
@@ -48,7 +48,7 @@ func (c *converter) ToEntity(in model.Label) (Entity, error) {
 		}
 	}
 
-	return Entity{
+	return &Entity{
 		ID:               in.ID,
 		TenantID:         in.Tenant,
 		AppID:            appID,

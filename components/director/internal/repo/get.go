@@ -55,7 +55,7 @@ func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditio
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
 	}
-	conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
+	//conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeGet(ctx, conditions, orderByParams, dest)
 }
 

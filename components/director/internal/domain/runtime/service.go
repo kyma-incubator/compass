@@ -28,9 +28,9 @@ type RuntimeRepository interface {
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
-	Create(ctx context.Context, item *model.Runtime) error
+	Create(ctx context.Context, tenant string, item *model.Runtime) error
 	Update(ctx context.Context, item *model.Runtime) error
-	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
+	// UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
 	Delete(ctx context.Context, tenant, id string) error
 }
 
@@ -193,9 +193,9 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 	id := s.uidService.Generate()
-	rtm := in.ToRuntime(id, rtmTenant, time.Now(), time.Now())
+	rtm := in.ToRuntime(id, time.Now(), time.Now())
 
-	err = s.repo.Create(ctx, rtm)
+	err = s.repo.Create(ctx, rtmTenant, rtm)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating Runtime")
 	}
@@ -250,9 +250,9 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		return errors.Wrapf(err, "while getting Runtime with id %s", id)
 	}
 
-	rtm = in.ToRuntime(id, rtm.Tenant, rtm.CreationTimestamp, time.Now())
+	rtm = in.ToRuntime(id, rtm.CreationTimestamp, time.Now())
 
-	err = s.repo.Update(ctx, rtm)
+	err = s.repo.Update(ctx, rtm) // TODO: <storage-redesign> add tenant
 	if err != nil {
 		return errors.Wrap(err, "while updating Runtime")
 	}
@@ -408,13 +408,13 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 	return extractUnProtectedLabels(labels, s.protectedLabelPattern)
 }
 
-// UpdateTenantID missing godoc
-func (s *service) UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error {
-	if err := s.repo.UpdateTenantID(ctx, runtimeID, newTenantID); err != nil {
-		return errors.Wrapf(err, "while updating tenant_id for runtime with ID %s", runtimeID)
-	}
-	return nil
-}
+//// UpdateTenantID missing godoc
+//func (s *service) UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error {
+//	if err := s.repo.UpdateTenantID(ctx, runtimeID, newTenantID); err != nil {
+//		return errors.Wrapf(err, "while updating tenant_id for runtime with ID %s", runtimeID)
+//	}
+//	return nil
+//}
 
 // DeleteLabel missing godoc
 func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string) error {

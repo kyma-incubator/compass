@@ -7,7 +7,6 @@ import (
 // FetchRequest compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
 	ID         string
-	Tenant     string
 	URL        string
 	Auth       *Auth
 	Mode       FetchMode
@@ -67,7 +66,7 @@ type FetchRequestInput struct {
 }
 
 // ToFetchRequest missing godoc
-func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time, id, tenant string, objectType FetchRequestReferenceObjectType, objectID string) *FetchRequest {
+func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time, id string, objectType FetchRequestReferenceObjectType, objectID string) *FetchRequest {
 	if f == nil {
 		return nil
 	}
@@ -79,7 +78,6 @@ func (f *FetchRequestInput) ToFetchRequest(timestamp time.Time, id, tenant strin
 
 	return &FetchRequest{
 		ID:     id,
-		Tenant: tenant,
 		URL:    f.URL,
 		Auth:   f.Auth.ToAuth(),
 		Mode:   fetchMode,

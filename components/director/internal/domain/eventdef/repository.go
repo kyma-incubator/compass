@@ -21,10 +21,10 @@ const eventAPIDefTable string = `"public"."event_api_definitions"`
 
 var (
 	idColumn        = "id"
-	tenantColumn    = "tenant_id"
+	tenantColumn    = "tenant_id" // TODO: <storage-redesign> delete
 	appColumn       = "app_id"
 	bundleColumn    = "bundle_id"
-	eventDefColumns = []string{idColumn, tenantColumn, appColumn, "package_id", "name", "description", "group_name", "ord_id",
+	eventDefColumns = []string{idColumn, appColumn, "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash"}
@@ -39,7 +39,7 @@ var (
 //go:generate mockery --name=EventAPIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type EventAPIDefinitionConverter interface {
 	FromEntity(entity Entity) model.EventDefinition
-	ToEntity(apiModel model.EventDefinition) Entity
+	ToEntity(apiModel model.EventDefinition) *Entity
 }
 
 type pgRepository struct {
@@ -158,7 +158,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, item *model.EventDefinition) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.EventDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -166,7 +166,7 @@ func (r *pgRepository) Create(ctx context.Context, item *model.EventDefinition) 
 	entity := r.conv.ToEntity(*item)
 
 	log.C(ctx).Debugf("Persisting Event-Definition entity with id %s to db", item.ID)
-	err := r.creator.Create(ctx, entity)
+	err := r.creator.Create(ctx, tenant, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
 	}
@@ -175,10 +175,10 @@ func (r *pgRepository) Create(ctx context.Context, item *model.EventDefinition) 
 }
 
 // CreateMany missing godoc
-func (r *pgRepository) CreateMany(ctx context.Context, items []*model.EventDefinition) error {
+func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*model.EventDefinition) error {
 	for index, item := range items {
 		entity := r.conv.ToEntity(*item)
-		err := r.creator.Create(ctx, entity)
+		err := r.creator.Create(ctx, tenant, entity)
 		if err != nil {
 			return errors.Wrapf(err, "while persisting %d item", index)
 		}

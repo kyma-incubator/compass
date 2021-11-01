@@ -3,7 +3,6 @@ package model
 // Webhook missing godoc
 type Webhook struct {
 	ID                    string
-	TenantID              *string
 	ApplicationID         *string
 	ApplicationTemplateID *string
 	RuntimeID             *string
@@ -65,22 +64,21 @@ const (
 )
 
 // WebhookConverterFunc missing godoc
-type WebhookConverterFunc func(i *WebhookInput, id string, tenant *string, resourceID string) *Webhook
+type WebhookConverterFunc func(i *WebhookInput, id string, resourceID string) *Webhook
 
 // ToApplicationWebhook missing godoc
-func (i *WebhookInput) ToApplicationWebhook(id string, tenant *string, applicationID string) *Webhook {
+func (i *WebhookInput) ToApplicationWebhook(id string, applicationID string) *Webhook {
 	if i == nil {
 		return nil
 	}
 
 	webhook := i.toGenericWebhook(id)
 	webhook.ApplicationID = &applicationID
-	webhook.TenantID = tenant
 	return webhook
 }
 
 // ToApplicationTemplateWebhook missing godoc
-func (i *WebhookInput) ToApplicationTemplateWebhook(id string, tenant *string, appTemplateID string) *Webhook {
+func (i *WebhookInput) ToApplicationTemplateWebhook(id string, appTemplateID string) *Webhook {
 	if i == nil {
 		return nil
 	}

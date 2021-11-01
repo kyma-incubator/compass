@@ -9,7 +9,6 @@ import (
 
 // Entity missing godoc
 type Entity struct {
-	TenantID              string         `db:"tenant_id"`
 	ApplicationTemplateID sql.NullString `db:"app_template_id"`
 	Name                  string         `db:"name"`
 	ProviderName          sql.NullString `db:"provider_name"`

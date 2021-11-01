@@ -21,7 +21,7 @@ type Converter interface {
 }
 
 type pgRepository struct {
-	creator               repo.Creator
+	creator               repo.GlobalCreator
 	existQuerierGlobal    repo.ExistQuerierGlobal
 	singleGetterGlobal    repo.SingleGetterGlobal
 	pageableQuerierGlobal repo.PageableQuerierGlobal
@@ -34,7 +34,7 @@ type pgRepository struct {
 // NewRepository missing godoc
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		creator:               repo.NewCreator(resource.IntegrationSystem, tableName, tableColumns),
+		creator:               repo.NewGlobalCreator(resource.IntegrationSystem, tableName, tableColumns),
 		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.IntegrationSystem, tableName),
 		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.IntegrationSystem, tableName, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.IntegrationSystem, tableName, tableColumns),

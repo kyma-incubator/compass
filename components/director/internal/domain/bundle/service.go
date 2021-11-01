@@ -15,7 +15,7 @@ import (
 // BundleRepository missing godoc
 //go:generate mockery --name=BundleRepository --output=automock --outpkg=automock --case=underscore
 type BundleRepository interface {
-	Create(ctx context.Context, item *model.Bundle) error
+	Create(ctx context.Context, tenant string, item *model.Bundle) error
 	Update(ctx context.Context, item *model.Bundle) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -59,9 +59,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Bun
 	}
 
 	id := s.uidService.Generate()
-	bndl := in.ToBundle(id, applicationID, tnt)
+	bndl := in.ToBundle(id, applicationID)
 
-	err = s.bndlRepo.Create(ctx, bndl)
+	err = s.bndlRepo.Create(ctx, tnt, bndl)
 	if err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Bundle with id %s and name %s for Application with id %s", id, bndl.Name, applicationID)
 	}

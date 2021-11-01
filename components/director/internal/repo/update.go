@@ -167,7 +167,7 @@ func (u *universalUpdater) buildQuery(fieldsToSet []string, isGlobal bool) (stri
 		stmtBuilder.WriteString(" WHERE")
 	}
 	if !isGlobal {
-		if err := writeEnumeratedConditions(&stmtBuilder, Conditions{NewTenantIsolationConditionWithPlaceholder(*u.tenantColumn, fmt.Sprintf(":%s", *u.tenantColumn), nil)}); err != nil {
+		if err := writeEnumeratedConditions(&stmtBuilder, Conditions{/*NewTenantIsolationConditionWithPlaceholder(*u.tenantColumn, fmt.Sprintf(":%s", *u.tenantColumn), nil)*/}); err != nil {
 			return "", errors.Wrap(err, "while writing enumerated conditions")
 		}
 		if len(u.idColumns) > 0 {

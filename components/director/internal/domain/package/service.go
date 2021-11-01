@@ -12,7 +12,7 @@ import (
 // PackageRepository missing godoc
 //go:generate mockery --name=PackageRepository --output=automock --outpkg=automock --case=underscore
 type PackageRepository interface {
-	Create(ctx context.Context, item *model.Package) error
+	Create(ctx context.Context, tenant string, item *model.Package) error
 	Update(ctx context.Context, item *model.Package) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -48,9 +48,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pac
 	}
 
 	id := s.uidService.Generate()
-	pkg := in.ToPackage(id, tnt, applicationID, pkgHash)
+	pkg := in.ToPackage(id, applicationID, pkgHash)
 
-	err = s.pkgRepo.Create(ctx, pkg)
+	err = s.pkgRepo.Create(ctx, tnt, pkg)
 	if err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Package with id %s and title %s for Application with id %s", id, pkg.Title, applicationID)
 	}

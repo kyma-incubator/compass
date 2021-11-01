@@ -71,7 +71,7 @@ func (l *universalLister) List(ctx context.Context, tenant string, dest Collecti
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
 	}
-	additionalConditions = append(Conditions{NewTenantIsolationCondition(*l.tenantColumn, tenant)}, additionalConditions...)
+	//additionalConditions = append(Conditions{NewTenantIsolationCondition(*l.tenantColumn, tenant)}, additionalConditions...)
 	return l.unsafeList(ctx, dest, additionalConditions...)
 }
 

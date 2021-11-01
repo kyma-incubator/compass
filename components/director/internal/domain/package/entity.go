@@ -7,7 +7,6 @@ import (
 // Entity missing godoc
 type Entity struct {
 	ID                string         `db:"id"`
-	TenantID          string         `db:"tenant_id"`
 	ApplicationID     string         `db:"app_id"`
 	OrdID             string         `db:"ord_id"`
 	Vendor            sql.NullString `db:"vendor"`
@@ -27,4 +26,12 @@ type Entity struct {
 	LineOfBusiness    sql.NullString `db:"line_of_business"`
 	Industry          sql.NullString `db:"industry"`
 	ResourceHash      sql.NullString `db:"resource_hash"`
+}
+
+func (e *Entity) GetID() string {
+	return e.ID
+}
+
+func (e *Entity) GetParentID() string {
+	return e.ApplicationID
 }

@@ -19,14 +19,14 @@ type DocumentRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Document, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.Document, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
-	Create(ctx context.Context, item *model.Document) error
+	Create(ctx context.Context, tenant string, item *model.Document) error
 	Delete(ctx context.Context, tenant, id string) error
 }
 
 // FetchRequestRepository missing godoc
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
-	Create(ctx context.Context, item *model.FetchRequest) error
+	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
 	Delete(ctx context.Context, tenant, id string) error
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
@@ -93,8 +93,8 @@ func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in
 
 	id := s.uidService.Generate()
 
-	document := in.ToDocumentWithinBundle(id, tnt, bundleID, appID)
-	err = s.repo.Create(ctx, document)
+	document := in.ToDocumentWithinBundle(id, bundleID, appID)
+	err = s.repo.Create(ctx, tnt, document)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Document")
 	}
@@ -102,8 +102,8 @@ func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in
 	if in.FetchRequest != nil {
 		generatedID := s.uidService.Generate()
 		fetchRequestID := &generatedID
-		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, tnt, model.DocumentFetchRequestReference, id)
-		err := s.fetchRequestRepo.Create(ctx, fetchRequestModel)
+		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, model.DocumentFetchRequestReference, id)
+		err := s.fetchRequestRepo.Create(ctx, tnt, fetchRequestModel)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for Document %s", id)
 		}

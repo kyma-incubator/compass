@@ -15,7 +15,7 @@ import (
 // SpecRepository missing godoc
 //go:generate mockery --name=SpecRepository --output=automock --outpkg=automock --case=underscore
 type SpecRepository interface {
-	Create(ctx context.Context, item *model.Spec) error
+	Create(ctx context.Context, tenant string, item *model.Spec) error
 	GetByID(ctx context.Context, tenantID string, id string) (*model.Spec, error)
 	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
@@ -28,7 +28,7 @@ type SpecRepository interface {
 // FetchRequestRepository missing godoc
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
-	Create(ctx context.Context, item *model.FetchRequest) error
+	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
@@ -115,12 +115,12 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 	}
 
 	id := s.uidService.Generate()
-	spec, err := in.ToSpec(id, tnt, objectType, objectID)
+	spec, err := in.ToSpec(id, objectType, objectID)
 	if err != nil {
 		return "", err
 	}
 
-	err = s.repo.Create(ctx, spec)
+	err = s.repo.Create(ctx, tnt, spec)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating spec for %q with id %q", objectType, objectID)
 	}
@@ -159,7 +159,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		return errors.Wrapf(err, "while deleting FetchRequest for Specification with id %q", id)
 	}
 
-	spec, err := in.ToSpec(id, tnt, objectType, objectID)
+	spec, err := in.ToSpec(id, objectType, objectID)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 	}
 
-	err = s.repo.Update(ctx, spec)
+	err = s.repo.Update(ctx, spec) // TODO: <storage-redesign> add tenant to update
 	if err != nil {
 		return errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
 	}
@@ -265,8 +265,8 @@ func (s *service) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, ten
 
 func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*model.FetchRequest, error) {
 	id := s.uidService.Generate()
-	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, model.SpecFetchRequestReference, parentObjectID)
-	err := s.fetchRequestRepo.Create(ctx, fr)
+	fr := in.ToFetchRequest(s.timestampGen(), id, model.SpecFetchRequestReference, parentObjectID)
+	err := s.fetchRequestRepo.Create(ctx, tenant, fr)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating FetchRequest for %q with id %q", model.SpecFetchRequestReference, parentObjectID)
 	}

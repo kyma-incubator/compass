@@ -2,12 +2,12 @@ package spec
 
 import (
 	"database/sql"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity missing godoc
 type Entity struct {
 	ID            string         `db:"id"`
-	TenantID      string         `db:"tenant_id"`
 	APIDefID      sql.NullString `db:"api_def_id"`
 	EventAPIDefID sql.NullString `db:"event_def_id"`
 	SpecData      sql.NullString `db:"spec_data"`
@@ -19,4 +19,22 @@ type Entity struct {
 	EventSpecType   sql.NullString `db:"event_spec_type"`
 
 	CustomType sql.NullString `db:"custom_type"`
+}
+
+func (e *Entity) GetID() string {
+	return e.ID
+}
+
+func (e *Entity) GetParentID() string {
+	if e.APIDefID.Valid {
+		return e.APIDefID.String
+	}
+	return e.EventAPIDefID.String
+}
+
+func (e *Entity) GetRefSpecificResourceType() resource.Type {
+	if e.APIDefID.Valid {
+		return resource.APISpecification
+	}
+	return resource.EventSpecification
 }

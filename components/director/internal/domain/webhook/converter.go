@@ -138,10 +138,10 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*mod
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
+func (c *converter) ToEntity(in model.Webhook) (*Entity, error) {
 	optionalAuth, err := c.toAuthEntity(in)
 	if err != nil {
-		return Entity{}, err
+		return nil, err
 	}
 
 	var webhookMode sql.NullString
@@ -150,9 +150,8 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 		webhookMode.Valid = true
 	}
 
-	return Entity{
+	return &Entity{
 		ID:                    in.ID,
-		TenantID:              repo.NewNullableString(in.TenantID),
 		ApplicationID:         repo.NewNullableString(in.ApplicationID),
 		ApplicationTemplateID: repo.NewNullableString(in.ApplicationTemplateID),
 		RuntimeID:             repo.NewNullableString(in.RuntimeID),
@@ -204,7 +203,6 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 
 	return model.Webhook{
 		ID:                    in.ID,
-		TenantID:              repo.StringPtrFromNullableString(in.TenantID),
 		ApplicationID:         repo.StringPtrFromNullableString(in.ApplicationID),
 		ApplicationTemplateID: repo.StringPtrFromNullableString(in.ApplicationTemplateID),
 		RuntimeID:             repo.StringPtrFromNullableString(in.RuntimeID),

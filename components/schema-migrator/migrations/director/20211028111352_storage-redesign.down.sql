@@ -28,11 +28,10 @@ DROP VIEW IF EXISTS packages_tenants;
 DROP VIEW IF EXISTS runtime_contexts_tenants;
 DROP VIEW IF EXISTS runtime_labels_tenants;
 DROP VIEW IF EXISTS application_labels_tenants;
-DROP VIEW IF EXISTS event_specifications_fetch_requests_tenants;
-DROP VIEW IF EXISTS api_specifications_fetch_requests_tenants;
+DROP VIEW IF EXISTS runtime_contexts_labels_tenants;
+DROP VIEW IF EXISTS specifications_fetch_requests_tenants;
 DROP VIEW IF EXISTS document_fetch_requests_tenants;
-DROP VIEW IF EXISTS event_specifications_tenants;
-DROP VIEW IF EXISTS api_specifications_tenants;
+DROP VIEW IF EXISTS specifications_tenants;
 DROP VIEW IF EXISTS event_api_definitions_tenants;
 DROP VIEW IF EXISTS documents_tenants;
 DROP VIEW IF EXISTS bundles_tenants;
@@ -86,11 +85,11 @@ ALTER TABLE runtime_contexts ADD COLUMN tenant_id UUID;
 
 UPDATE applications a
 SET tenant_id = (SELECT tenant_id FROM tenant_applications ta
-                WHERE ta.resource_id = a.id AND
+                WHERE ta.id = a.id AND
                       (NOT EXISTS(SELECT 1 FROM business_tenant_mappings WHERE parent = ta.tenant_id) -- the tenant has no children
                           OR
                       (NOT EXISTS (SELECT 1 FROM tenant_applications ta2
-                                            WHERE ta2.resource_id = a.id AND
+                                            WHERE ta2.id = a.id AND
                                                   tenant_id IN (SELECT id FROM business_tenant_mappings WHERE parent = ta.tenant_id))) -- there is no child that has access
                        ));
 
@@ -110,11 +109,11 @@ UPDATE vendors SET tenant_id = (SELECT tenant_id FROM applications WHERE id = ap
 
 UPDATE runtimes r
 SET tenant_id = (SELECT tenant_id FROM tenant_runtimes tr
-                 WHERE tr.resource_id = r.id AND
+                 WHERE tr.id = r.id AND
                      (NOT EXISTS(SELECT 1 FROM business_tenant_mappings WHERE parent = tr.tenant_id) -- the tenant has no children
                          OR
                       (NOT EXISTS (SELECT 1 FROM tenant_runtimes tr2
-                                   WHERE tr2.resource_id = r.id AND
+                                   WHERE tr2.id = r.id AND
                                            tenant_id IN (SELECT id FROM business_tenant_mappings WHERE parent = tr.tenant_id))) -- there is no child that has access
                          ));
 

@@ -3,11 +3,28 @@ package repo
 import (
 	"database/sql"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"time"
 )
 
+// MultiRefEntity is an interface for multi reference entities which can be used to obtain the reference specific entity
+// Example: We have a resource.Label type. Labels can be for apps and runtimes. This will return the concrete resource.Type - resource.RuntimeLabel or resource.ApplicationLabel
+type MultiRefEntity interface {
+	GetRefSpecificResourceType() resource.Type
+}
+
+type ChildEntity interface {
+	GetParentID() string
+}
+
+type Identifiable interface {
+    GetID() string
+}
+
 // Entity denotes an DB-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values
 type Entity interface {
+	Identifiable
+
 	GetReady() bool
 	SetReady(ready bool)
 
@@ -32,6 +49,10 @@ type BaseEntity struct {
 	UpdatedAt *time.Time     `db:"updated_at"`
 	DeletedAt *time.Time     `db:"deleted_at"`
 	Error     sql.NullString `db:"error"`
+}
+
+func (e *BaseEntity) GetID() string {
+    return e.ID
 }
 
 // GetReady missing godoc

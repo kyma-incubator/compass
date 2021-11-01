@@ -8,7 +8,6 @@ import (
 type RuntimeContext struct {
 	ID        string
 	RuntimeID string
-	Tenant    string
 	Key       string
 	Value     string
 }
@@ -22,7 +21,7 @@ type RuntimeContextInput struct {
 }
 
 // ToRuntimeContext missing godoc
-func (i *RuntimeContextInput) ToRuntimeContext(id, tenant string) *RuntimeContext {
+func (i *RuntimeContextInput) ToRuntimeContext(id string) *RuntimeContext {
 	if i == nil {
 		return nil
 	}
@@ -30,7 +29,6 @@ func (i *RuntimeContextInput) ToRuntimeContext(id, tenant string) *RuntimeContex
 	return &RuntimeContext{
 		ID:        id,
 		RuntimeID: i.RuntimeID,
-		Tenant:    tenant,
 		Key:       i.Key,
 		Value:     i.Value,
 	}

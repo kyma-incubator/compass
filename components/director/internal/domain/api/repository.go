@@ -16,10 +16,10 @@ import (
 const apiDefTable string = `"public"."api_definitions"`
 
 var (
-	tenantColumn  = "tenant_id"
+	tenantColumn  = "tenant_id" // TODO: <storage-redesign> delete this
 	bundleColumn  = "bundle_id"
 	idColumn      = "id"
-	apiDefColumns = []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
+	apiDefColumns = []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash"}
@@ -157,13 +157,13 @@ func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id strin
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.APIDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity := r.conv.ToEntity(*item)
-	err := r.creator.Create(ctx, entity)
+	err := r.creator.Create(ctx, tenant, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
 	}
@@ -172,11 +172,11 @@ func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) er
 }
 
 // CreateMany missing godoc
-func (r *pgRepository) CreateMany(ctx context.Context, items []*model.APIDefinition) error {
+func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*model.APIDefinition) error {
 	for index, item := range items {
 		entity := r.conv.ToEntity(*item)
 
-		err := r.creator.Create(ctx, entity)
+		err := r.creator.Create(ctx, tenant, entity)
 		if err != nil {
 			return errors.Wrapf(err, "while persisting %d item", index)
 		}

@@ -7,7 +7,6 @@ import (
 // Spec missing godoc
 type Spec struct {
 	ID         string
-	Tenant     string
 	ObjectType SpecReferenceObjectType
 	ObjectID   string
 
@@ -111,7 +110,7 @@ type SpecInput struct {
 }
 
 // ToSpec missing godoc
-func (s *SpecInput) ToSpec(id, tenant string, objectType SpecReferenceObjectType, objectID string) (*Spec, error) {
+func (s *SpecInput) ToSpec(id string, objectType SpecReferenceObjectType, objectID string) (*Spec, error) {
 	if s == nil {
 		return nil, nil
 	}
@@ -126,7 +125,6 @@ func (s *SpecInput) ToSpec(id, tenant string, objectType SpecReferenceObjectType
 
 	return &Spec{
 		ID:         id,
-		Tenant:     tenant,
 		ObjectType: objectType,
 		ObjectID:   objectID,
 		Data:       s.Data,

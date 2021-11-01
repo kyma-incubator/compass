@@ -14,8 +14,8 @@ import (
 const productTable string = `public.products`
 
 var (
-	tenantColumn     = "tenant_id"
-	productColumns   = []string{"ord_id", tenantColumn, "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id"}
+	tenantColumn     = "tenant_id" // TODO: <storage-redesign> delete this column
+	productColumns   = []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id"}
 	updatableColumns = []string{"title", "short_description", "vendor", "parent", "labels", "correlation_ids"}
 )
 
@@ -50,13 +50,13 @@ func NewRepository(conv EntityConverter) *pgRepository {
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, model *model.Product) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.Product) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
 
 	log.C(ctx).Debugf("Persisting Product entity with id %q", model.ID)
-	return r.creator.Create(ctx, r.conv.ToEntity(model))
+	return r.creator.Create(ctx, tenant, r.conv.ToEntity(model))
 }
 
 // Update missing godoc

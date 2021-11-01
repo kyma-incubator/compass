@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"net/http"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -31,6 +32,7 @@ type RuntimeService interface {
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
 type TenantService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
+	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 }
 
 // ReqDataParser missing godoc
@@ -122,7 +124,12 @@ func (h *Handler) processRequest(ctx context.Context, reqData *oathkeeper.ReqDat
 		return errors.Wrap(err, "when getting the runtime")
 	}
 
-	extTenantID, err := h.tenantSvc.GetExternalTenant(ctx, runtime.Tenant)
+	internalTenantID, err := h.tenantSvc.GetLowestOwnerForResource(ctx, resource.Runtime, runtime.ID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting lowest tenant for runtime %s", runtime.ID)
+	}
+
+	extTenantID, err := h.tenantSvc.GetExternalTenant(ctx, internalTenantID)
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch external tenant based on runtime tenant")
 	}

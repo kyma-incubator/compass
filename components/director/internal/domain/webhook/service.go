@@ -20,7 +20,7 @@ type WebhookRepository interface {
 	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
 	ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
 	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
-	Create(ctx context.Context, item *model.Webhook) error
+	Create(ctx context.Context, tenant string, item *model.Webhook) error
 	Update(ctx context.Context, item *model.Webhook) error
 	Delete(ctx context.Context, id string) error
 }
@@ -103,9 +103,9 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 		return "", err
 	}
 	id := s.uidSvc.Generate()
-	webhook := converterFunc(&in, id, &tnt, owningResourceID)
+	webhook := converterFunc(&in, id, owningResourceID)
 
-	if err = s.webhookRepo.Create(ctx, webhook); err != nil {
+	if err = s.webhookRepo.Create(ctx, tnt, webhook); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", id, webhook.Type, owningResourceID)
 	}
 	log.C(ctx).Infof("Successfully created Webhook with type %s and id %s for Application with id %s", id, webhook.Type, owningResourceID)
@@ -121,14 +121,14 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) 
 	}
 
 	if webhook.ApplicationID != nil {
-		webhook = in.ToApplicationWebhook(id, webhook.TenantID, *webhook.ApplicationID)
+		webhook = in.ToApplicationWebhook(id, *webhook.ApplicationID)
 	} else if webhook.ApplicationTemplateID != nil {
-		webhook = in.ToApplicationTemplateWebhook(id, webhook.TenantID, *webhook.ApplicationTemplateID)
+		webhook = in.ToApplicationTemplateWebhook(id, *webhook.ApplicationTemplateID)
 	} else {
 		return errors.New("while updating Webhook: webhook doesn't have neither of application_id and application_template_id")
 	}
 
-	err = s.webhookRepo.Update(ctx, webhook)
+	err = s.webhookRepo.Update(ctx, webhook) // TODO: <storage-redesign> add tenant to update
 	if err != nil {
 		return errors.Wrapf(err, "while updating Webhook")
 	}

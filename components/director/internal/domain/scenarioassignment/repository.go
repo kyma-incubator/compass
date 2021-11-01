@@ -25,7 +25,7 @@ var (
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:         repo.NewCreator(resource.AutomaticScenarioAssigment, tableName, columns),
+		creator:         repo.NewGlobalCreator(resource.AutomaticScenarioAssigment, tableName, columns),
 		lister:          repo.NewLister(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
 		singleGetter:    repo.NewSingleGetter(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
 		pageableQuerier: repo.NewPageableQuerier(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
@@ -35,7 +35,7 @@ func NewRepository(conv EntityConverter) *repository {
 }
 
 type repository struct {
-	creator         repo.Creator
+	creator         repo.GlobalCreator
 	singleGetter    repo.SingleGetter
 	lister          repo.Lister
 	pageableQuerier repo.PageableQuerier

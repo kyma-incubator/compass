@@ -51,7 +51,6 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 	}
 
 	output := &Entity{
-		TenantID:                      in.TenantID,
 		ApplicationID:                 in.ApplicationID,
 		Name:                          in.Name,
 		Description:                   repo.NewNullableString(in.Description),
@@ -87,7 +86,6 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 	}
 
 	output := &model.Bundle{
-		TenantID:                       entity.TenantID,
 		ApplicationID:                  entity.ApplicationID,
 		Name:                           entity.Name,
 		Description:                    repo.StringPtrFromNullableString(entity.Description),

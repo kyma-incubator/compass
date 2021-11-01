@@ -4,7 +4,6 @@ package model
 type Tombstone struct {
 	ID            string
 	OrdID         string
-	TenantID      string
 	ApplicationID string
 	RemovalDate   string
 }
@@ -16,7 +15,7 @@ type TombstoneInput struct {
 }
 
 // ToTombstone missing godoc
-func (i *TombstoneInput) ToTombstone(id, tenantID, appID string) *Tombstone {
+func (i *TombstoneInput) ToTombstone(id, appID string) *Tombstone {
 	if i == nil {
 		return nil
 	}
@@ -24,7 +23,6 @@ func (i *TombstoneInput) ToTombstone(id, tenantID, appID string) *Tombstone {
 	return &Tombstone{
 		ID:            id,
 		OrdID:         i.OrdID,
-		TenantID:      tenantID,
 		ApplicationID: appID,
 		RemovalDate:   i.RemovalDate,
 	}

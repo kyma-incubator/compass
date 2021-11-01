@@ -20,8 +20,8 @@ type EventAPIRepository interface {
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error)
-	Create(ctx context.Context, item *model.EventDefinition) error
-	CreateMany(ctx context.Context, items []*model.EventDefinition) error
+	Create(ctx context.Context, tenant string, item *model.EventDefinition) error
+	CreateMany(ctx context.Context, tenant string, items []*model.EventDefinition) error
 	Update(ctx context.Context, item *model.EventDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
@@ -145,9 +145,9 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	}
 
 	id := s.uidService.Generate()
-	eventAPI := in.ToEventDefinition(id, appID, packageID, tnt, eventHash)
+	eventAPI := in.ToEventDefinition(id, appID, packageID, eventHash)
 
-	err = s.eventAPIRepo.Create(ctx, eventAPI)
+	err = s.eventAPIRepo.Create(ctx, tnt, eventAPI)
 	if err != nil {
 		return "", err
 	}
@@ -186,7 +186,7 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 
 // UpdateInManyBundles missing godoc
 func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsForCreation []string, bundleIDsForDeletion []string, eventHash uint64) error {
-	tnt, err := tenant.LoadFromContext(ctx)
+	_, err := tenant.LoadFromContext(ctx) // TODO: <storage-redesign> adapt
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
@@ -196,7 +196,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 		return err
 	}
 
-	event = in.ToEventDefinition(id, event.ApplicationID, event.PackageID, tnt, eventHash)
+	event = in.ToEventDefinition(id, event.ApplicationID, event.PackageID, eventHash)
 
 	err = s.eventAPIRepo.Update(ctx, event)
 	if err != nil {

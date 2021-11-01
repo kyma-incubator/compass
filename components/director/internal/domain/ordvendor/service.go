@@ -12,7 +12,7 @@ import (
 // VendorRepository missing godoc
 //go:generate mockery --name=VendorRepository --output=automock --outpkg=automock --case=underscore
 type VendorRepository interface {
-	Create(ctx context.Context, item *model.Vendor) error
+	Create(ctx context.Context, tenant string, item *model.Vendor) error
 	Update(ctx context.Context, item *model.Vendor) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -47,9 +47,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Ven
 	}
 
 	id := s.uidService.Generate()
-	vendor := in.ToVendor(id, tnt, applicationID)
+	vendor := in.ToVendor(id, applicationID)
 
-	err = s.vendorRepo.Create(ctx, vendor)
+	err = s.vendorRepo.Create(ctx, tnt, vendor)
 	if err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Vendor with id %s and title %s for Application with id %s", id, vendor.Title, applicationID)
 	}

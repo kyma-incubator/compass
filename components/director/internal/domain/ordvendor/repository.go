@@ -14,8 +14,8 @@ import (
 const vendorTable string = `public.vendors`
 
 var (
-	tenantColumn     = "tenant_id"
-	vendorColumns    = []string{"ord_id", tenantColumn, "app_id", "title", "labels", "partners", "id"}
+	tenantColumn     = "tenant_id" // TODO: <storage-redesign> delete this column
+	vendorColumns    = []string{"ord_id", "app_id", "title", "labels", "partners", "id"}
 	updatableColumns = []string{"title", "labels", "partners"}
 )
 
@@ -50,13 +50,13 @@ func NewRepository(conv EntityConverter) *pgRepository {
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, model *model.Vendor) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.Vendor) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
 
 	log.C(ctx).Debugf("Persisting Vendor entity with id %q", model.ID)
-	return r.creator.Create(ctx, r.conv.ToEntity(model))
+	return r.creator.Create(ctx, tenant, r.conv.ToEntity(model))
 }
 
 // Update missing godoc

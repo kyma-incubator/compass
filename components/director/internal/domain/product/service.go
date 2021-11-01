@@ -12,7 +12,7 @@ import (
 // ProductRepository missing godoc
 //go:generate mockery --name=ProductRepository --output=automock --outpkg=automock --case=underscore
 type ProductRepository interface {
-	Create(ctx context.Context, item *model.Product) error
+	Create(ctx context.Context, tenant string, item *model.Product) error
 	Update(ctx context.Context, item *model.Product) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -47,9 +47,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pro
 	}
 
 	id := s.uidService.Generate()
-	product := in.ToProduct(id, tnt, applicationID)
+	product := in.ToProduct(id, applicationID)
 
-	err = s.productRepo.Create(ctx, product)
+	err = s.productRepo.Create(ctx, tnt, product)
 	if err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for Application with id %s", id, product.Title, applicationID)
 	}

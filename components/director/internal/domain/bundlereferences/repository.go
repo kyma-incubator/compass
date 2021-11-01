@@ -23,8 +23,8 @@ const (
 )
 
 var (
-	tenantColumn                    = "tenant_id"
-	bundleReferencesColumns         = []string{"tenant_id", "api_def_id", "event_def_id", "bundle_id", "api_def_url", "id"}
+	tenantColumn                    = "tenant_id" // TODO: <storage-redesign> delete
+	bundleReferencesColumns         = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url", "id"}
 	updatableColumns                = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url"}
 	updatableColumnsWithoutBundleID = []string{"api_def_id", "event_def_id", "api_def_url"}
 )
@@ -37,7 +37,7 @@ type BundleReferenceConverter interface {
 }
 
 type repository struct {
-	creator     repo.Creator
+	creator     repo.GlobalCreator
 	unionLister repo.UnionLister
 	lister      repo.Lister
 	getter      repo.SingleGetter
@@ -49,7 +49,7 @@ type repository struct {
 // NewRepository returns a new entity responsible for repo-layer BundleReference operations.
 func NewRepository(conv BundleReferenceConverter) *repository {
 	return &repository{
-		creator:     repo.NewCreator(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
+		creator:     repo.NewGlobalCreator(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
 		unionLister: repo.NewUnionLister(resource.BundleReference, BundleReferenceTable, tenantColumn, []string{}),
 		lister:      repo.NewLister(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
 		getter:      repo.NewSingleGetter(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),

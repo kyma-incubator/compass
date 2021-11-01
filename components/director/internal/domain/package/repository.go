@@ -14,8 +14,8 @@ import (
 const packageTable string = `public.packages`
 
 var (
-	tenantColumn   = "tenant_id"
-	packageColumns = []string{"id", tenantColumn, "app_id", "ord_id", "vendor", "title", "short_description",
+	tenantColumn   = "tenant_id" // TODO: <storage-redesign> delete this column
+	packageColumns = []string{"id", "app_id", "ord_id", "vendor", "title", "short_description",
 		"description", "version", "package_links", "links", "licence_type", "tags", "countries", "labels", "policy_level",
 		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash"}
 	updatableColumns = []string{"vendor", "title", "short_description", "description", "version", "package_links", "links",
@@ -53,13 +53,13 @@ func NewRepository(conv EntityConverter) *pgRepository {
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, model *model.Package) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.Package) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
 
 	log.C(ctx).Debugf("Persisting Package entity with id %q", model.ID)
-	return r.creator.Create(ctx, r.conv.ToEntity(model))
+	return r.creator.Create(ctx, tenant, r.conv.ToEntity(model))
 }
 
 // Update missing godoc

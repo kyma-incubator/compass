@@ -33,7 +33,7 @@ const (
 	nameKey   = "name"
 )
 
-type repoCreatorFunc func(ctx context.Context, application *model.Application) error
+type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
 
 // ApplicationRepository missing godoc
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
@@ -46,7 +46,7 @@ type ApplicationRepository interface {
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
 	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
-	Create(ctx context.Context, item *model.Application) error
+	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
@@ -65,7 +65,7 @@ type LabelRepository interface {
 // WebhookRepository missing godoc
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
 type WebhookRepository interface {
-	CreateMany(ctx context.Context, items []*model.Webhook) error
+	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
 // RuntimeRepository missing godoc
@@ -270,8 +270,8 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 
 // Create missing godoc
 func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
-	creator := func(ctx context.Context, application *model.Application) (err error) {
-		err = s.appRepo.Create(ctx, application)
+	creator := func(ctx context.Context, tenant string, application *model.Application) (err error) {
+		err = s.appRepo.Create(ctx, tenant, application)
 		if err != nil {
 			return errors.Wrapf(err, "while creating Application with name %s", application.Name)
 		}
@@ -283,9 +283,9 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 
 // CreateFromTemplate missing godoc
 func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error) {
-	creator := func(ctx context.Context, application *model.Application) (err error) {
+	creator := func(ctx context.Context, tenant string, application *model.Application) (err error) {
 		application.ApplicationTemplateID = appTemplateID
-		err = s.appRepo.Create(ctx, application)
+		err = s.appRepo.Create(ctx, tenant, application)
 		if err != nil {
 			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
 		}
@@ -536,9 +536,9 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 	var err error
 	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
 	for _, item := range in.Webhooks {
-		webhooks = append(webhooks, item.ToApplicationWebhook(s.uidService.Generate(), &tenant, applicationID))
+		webhooks = append(webhooks, item.ToApplicationWebhook(s.uidService.Generate(), applicationID))
 	}
-	err = s.webhookRepo.CreateMany(ctx, webhooks)
+	err = s.webhookRepo.CreateMany(ctx, tenant, webhooks)
 	if err != nil {
 		return errors.Wrapf(err, "while creating Webhooks for application")
 	}
@@ -577,9 +577,9 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	id := s.uidService.Generate()
 	log.C(ctx).Debugf("ID %s generated for Application with name %s", id, in.Name)
 
-	app := in.ToApplication(s.timestampGen(), id, appTenant)
+	app := in.ToApplication(s.timestampGen(), id)
 
-	err = repoCreatorFunc(ctx, app)
+	err = repoCreatorFunc(ctx, appTenant, app)
 	if err != nil {
 		return "", err
 	}
@@ -606,7 +606,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 		return id, errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
 	}
 
-	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
+	err = s.createRelatedResources(ctx, in, appTenant, app.ID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", id)
 	}

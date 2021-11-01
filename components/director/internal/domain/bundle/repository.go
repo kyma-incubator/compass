@@ -19,8 +19,8 @@ import (
 const bundleTable string = `public.bundles`
 
 var (
-	bundleColumns    = []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
-	tenantColumn     = "tenant_id"
+	bundleColumns    = []string{"id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	tenantColumn     = "tenant_id" // TODO: <storage-redesign> delete this
 	updatableColumns = []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	orderByColumns   = repo.OrderByParams{repo.NewAscOrderBy("app_id"), repo.NewAscOrderBy("id")}
 )
@@ -66,7 +66,7 @@ func (r BundleCollection) Len() int {
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, model *model.Bundle) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.Bundle) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
@@ -77,7 +77,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Bundle) error {
 	}
 
 	log.C(ctx).Debugf("Persisting Bundle entity with id %s to db", model.ID)
-	return r.creator.Create(ctx, bndlEnt)
+	return r.creator.Create(ctx, tenant, bndlEnt)
 }
 
 // Update missing godoc

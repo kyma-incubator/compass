@@ -21,8 +21,8 @@ type APIRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error)
-	CreateMany(ctx context.Context, item []*model.APIDefinition) error
-	Create(ctx context.Context, item *model.APIDefinition) error
+	CreateMany(ctx context.Context, tenant string, item []*model.APIDefinition) error
+	Create(ctx context.Context, tenant string, item *model.APIDefinition) error
 	Update(ctx context.Context, item *model.APIDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
@@ -147,9 +147,9 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	}
 
 	id := s.uidService.Generate()
-	api := in.ToAPIDefinition(id, appID, packageID, tnt, apiHash)
+	api := in.ToAPIDefinition(id, appID, packageID, apiHash)
 
-	err = s.repo.Create(ctx, api)
+	err = s.repo.Create(ctx, tnt, api)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating api")
 	}
@@ -194,7 +194,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 
 // UpdateInManyBundles missing godoc
 func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64) error {
-	tnt, err := tenant.LoadFromContext(ctx)
+	_, err := tenant.LoadFromContext(ctx) // TODO: <storage-redesign>
 	if err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 		return err
 	}
 
-	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, tnt, apiHash)
+	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, apiHash)
 
 	err = s.repo.Update(ctx, api)
 	if err != nil {

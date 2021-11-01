@@ -21,17 +21,17 @@ const (
 )
 
 var (
-	webhookColumns         = []string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
+	webhookColumns         = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 	updatableColumns       = []string{"type", "url", "auth", "mode", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 	missingInputModelError = apperrors.NewInternalError("model has to be provided")
-	tenantColumn           = "tenant_id"
+	tenantColumn           = "tenant_id" // TODO: <storage-redesign> delete this
 )
 
 // EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	FromEntity(in Entity) (model.Webhook, error)
-	ToEntity(in model.Webhook) (Entity, error)
+	ToEntity(in model.Webhook) (*Entity, error)
 }
 
 type repository struct {
@@ -40,6 +40,7 @@ type repository struct {
 	updater            repo.Updater
 	updaterGlobal      repo.UpdaterGlobal
 	creator            repo.Creator
+	globalCreator      repo.GlobalCreator
 	deleterGlobal      repo.DeleterGlobal
 	deleter            repo.Deleter
 	lister             repo.Lister
@@ -53,6 +54,7 @@ func NewRepository(conv EntityConverter) *repository {
 		singleGetter:       repo.NewSingleGetter(resource.Webhook, tableName, tenantColumn, webhookColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
 		creator:            repo.NewCreator(resource.Webhook, tableName, webhookColumns),
+		globalCreator:      repo.NewGlobalCreator(resource.Webhook, tableName, webhookColumns),
 		updater:            repo.NewUpdater(resource.Webhook, tableName, updatableColumns, tenantColumn, []string{"id", "app_id"}),
 		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id"}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),
@@ -138,7 +140,7 @@ func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicatio
 }
 
 // Create missing godoc
-func (r *repository) Create(ctx context.Context, item *model.Webhook) error {
+func (r *repository) Create(ctx context.Context, tenant string, item *model.Webhook) error {
 	if item == nil {
 		return missingInputModelError
 	}
@@ -148,13 +150,16 @@ func (r *repository) Create(ctx context.Context, item *model.Webhook) error {
 	}
 
 	log.C(ctx).Debugf("Persisting Webhook entity with type %s and id %s for %s to db", item.Type, item.ID, PrintOwnerInfo(item))
-	return r.creator.Create(ctx, entity)
+	if len(tenant) == 0 {
+		return r.globalCreator.Create(ctx, entity)
+	}
+	return r.creator.Create(ctx, tenant, entity)
 }
 
 // CreateMany missing godoc
-func (r *repository) CreateMany(ctx context.Context, items []*model.Webhook) error {
+func (r *repository) CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error {
 	for _, item := range items {
-		if err := r.Create(ctx, item); err != nil {
+		if err := r.Create(ctx, tenant, item); err != nil {
 			return errors.Wrapf(err, "while creating Webhook with type %s and id %s for %s", item.Type, item.ID, PrintOwnerInfo(item))
 		}
 		log.C(ctx).Infof("Successfully created Webhook with type %s and id %s for %s", item.Type, item.ID, PrintOwnerInfo(item))
@@ -171,7 +176,7 @@ func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
 	}
-	if item.TenantID == nil {
+	if entity.GetRefSpecificResourceType() == resource.Webhook { // Global resource webhook
 		return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 	}
 	return r.updater.UpdateSingle(ctx, entity)

@@ -3,23 +3,23 @@ BEGIN;
 CREATE TABLE tenant_applications
 (
     tenant_id   uuid NOT NULL,
-    resource_id uuid NOT NULL,
+    id uuid NOT NULL,
     owner       bool,
 
-    FOREIGN KEY (resource_id) REFERENCES applications (id) ON DELETE CASCADE,
+    FOREIGN KEY (id) REFERENCES applications (id) ON DELETE CASCADE,
     FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE,
-    PRIMARY KEY (tenant_id, resource_id)
+    PRIMARY KEY (tenant_id, id)
 );
 
 CREATE TABLE tenant_runtimes
 (
     tenant_id   uuid NOT NULL,
-    resource_id uuid NOT NULL,
+    id uuid NOT NULL,
     owner       bool,
 
-    FOREIGN KEY (resource_id) REFERENCES runtimes (id) ON DELETE CASCADE,
+    FOREIGN KEY (id) REFERENCES runtimes (id) ON DELETE CASCADE,
     FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE,
-    PRIMARY KEY (tenant_id, resource_id)
+    PRIMARY KEY (tenant_id, id)
 );
 
 CREATE OR REPLACE FUNCTION on_insert_new_parent() RETURNS TRIGGER AS
@@ -32,7 +32,7 @@ BEGIN
         FOREACH tenant_table IN ARRAY TG_ARGV -- for each top level resource
             LOOP
                 -- mark him as owner to everything that is owned by its child
-                EXECUTE format('INSERT INTO %I (SELECT %L, resource_id, owner FROM %I WHERE owner = true AND tenant_id = %L) ON CONFLICT DO NOTHING;', tenant_table, NEW.parent, tenant_table, NEW.id);
+                EXECUTE format('INSERT INTO %I (SELECT %L, id, owner FROM %I WHERE owner = true AND tenant_id = %L) ON CONFLICT DO NOTHING;', tenant_table, NEW.parent, tenant_table, NEW.id);
             END LOOP;
     END IF;
     RETURN NULL;
@@ -47,9 +47,9 @@ DECLARE
     resource_table TEXT;
 BEGIN
     resource_table := TG_ARGV[0];
-    EXECUTE format('SELECT 1 FROM %I WHERE resource_id = %L AND owner = true', TG_TABLE_NAME, OLD.resource_id);
+    EXECUTE format('SELECT 1 FROM %I WHERE id = %L AND owner = true', TG_TABLE_NAME, OLD.id);
     IF NOT FOUND THEN
-        EXECUTE format('DELETE FROM %I WHERE id = %L;', resource_table, OLD.resource_id);
+        EXECUTE format('DELETE FROM %I WHERE id = %L;', resource_table, OLD.id);
     END IF;
     RETURN NULL;
 END
@@ -65,7 +65,7 @@ DECLARE
 BEGIN
     SELECT parent INTO parent_id FROM business_tenant_mappings WHERE id = NEW.tenant_id;
     IF (parent_id IS NOT NULL) THEN
-        EXECUTE format('INSERT INTO %I VALUES (%L, %L, true) ON CONFLICT DO NOTHING;', TG_TABLE_NAME, parent_id, NEW.resource_id);
+        EXECUTE format('INSERT INTO %I VALUES (%L, %L, true) ON CONFLICT DO NOTHING;', TG_TABLE_NAME, parent_id, NEW.id);
     END IF;
     RETURN NULL;
 END
@@ -195,7 +195,7 @@ ALTER TABLE runtime_contexts DROP COLUMN tenant_id;
 ALTER TABLE bundle_instance_auths RENAME COLUMN  tenant_id to owner_id;
 
 -- Create indices
-CREATE INDEX tenant_applications_app_id ON tenant_applications(resource_id);
+CREATE INDEX tenant_applications_app_id ON tenant_applications(id);
 CREATE INDEX api_definitions_app_id ON api_definitions(app_id);
 CREATE INDEX bundle_instance_auths_bundle_id ON bundle_instance_auths(bundle_id);
 CREATE INDEX bundle_instance_auths_owner_id ON bundle_instance_auths(owner_id);
@@ -218,7 +218,7 @@ CREATE INDEX webhooks_runtime_id ON webhooks(runtime_id) WHERE webhooks.runtime_
 CREATE INDEX system_auths_app_id ON system_auths(app_id) WHERE system_auths.app_id IS NOT NULL;
 CREATE INDEX system_auths_runtime_id ON system_auths(runtime_id) WHERE system_auths.runtime_id IS NOT NULL;
 
-CREATE INDEX tenant_runtimes_runtimes_id ON tenant_runtimes(resource_id);
+CREATE INDEX tenant_runtimes_runtimes_id ON tenant_runtimes(id);
 CREATE INDEX runtime_contexts_runtime_id ON runtime_contexts(runtime_id);
 
 CREATE UNIQUE INDEX fetch_requests_tenant_id_coalesce_coalesce1_coalesce2_idx ON fetch_requests (coalesce(document_id, '00000000-0000-0000-0000-000000000000'),
@@ -237,102 +237,106 @@ UPDATE labels SET tenant_id = NULL::uuid WHERE (app_id IS NOT NULL AND key <> 's
 -- APIs
 CREATE OR REPLACE VIEW api_definitions_tenants AS
 SELECT ad.*, ta.tenant_id, ta.owner FROM api_definitions AS ad
-                                             INNER JOIN tenant_applications ta ON ta.resource_id = ad.app_id;
+                                             INNER JOIN tenant_applications ta ON ta.id = ad.app_id;
 
 -- BundleInstanceAuth
 CREATE OR REPLACE VIEW bundle_instance_auths_tenants AS
 SELECT bia.*, ta.tenant_id, ta.owner  FROM bundle_instance_auths AS bia
                                                INNER JOIN bundles b ON b.id = bia.bundle_id
-                                               INNER JOIN tenant_applications ta ON ta.resource_id = b.app_id;
+                                               INNER JOIN tenant_applications ta ON ta.id = b.app_id;
 
 -- Bundles
 CREATE OR REPLACE VIEW bundles_tenants AS
 SELECT b.*, ta.tenant_id, ta.owner FROM bundles AS b
-                                            INNER JOIN tenant_applications ta ON ta.resource_id = b.app_id;
+                                            INNER JOIN tenant_applications ta ON ta.id = b.app_id;
 
 -- Docs
 CREATE OR REPLACE VIEW documents_tenants AS
 SELECT d.*, ta.tenant_id, ta.owner FROM documents AS d
-                                            INNER JOIN tenant_applications ta ON ta.resource_id = d.app_id;
+                                            INNER JOIN tenant_applications ta ON ta.id = d.app_id;
 
 -- Events
 CREATE OR REPLACE VIEW event_api_definitions_tenants AS
 SELECT e.*, ta.tenant_id, ta.owner FROM event_api_definitions AS e
-                                            INNER JOIN tenant_applications ta ON ta.resource_id = e.app_id;
+                                            INNER JOIN tenant_applications ta ON ta.id = e.app_id;
 
 -- Specs
-CREATE VIEW api_specifications_tenants AS
-SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
+CREATE VIEW specifications_tenants AS
+(SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                             INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
-                                            INNER JOIN tenant_applications ta on ta.resource_id = ad.app_id;
-
-CREATE VIEW event_specifications_tenants AS
-SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
+                                            INNER JOIN tenant_applications ta on ta.id = ad.app_id)
+UNION ALL
+(SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                             INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
-                                            INNER JOIN tenant_applications ta on ta.resource_id = ead.app_id;
+                                            INNER JOIN tenant_applications ta on ta.id = ead.app_id);
 
 -- Fetch Requests
 CREATE OR REPLACE VIEW document_fetch_requests_tenants AS
 SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                              INNER JOIN documents d ON fr.document_id = d.id
-                                             INNER JOIN tenant_applications ta ON ta.resource_id = d.app_id;
+                                             INNER JOIN tenant_applications ta ON ta.id = d.app_id;
 
-CREATE OR REPLACE VIEW api_specifications_fetch_requests_tenants AS
-SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
+CREATE OR REPLACE VIEW specifications_fetch_requests_tenants AS
+(SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                              INNER JOIN specifications s ON fr.spec_id = s.id
                                              INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
-                                             INNER JOIN tenant_applications ta on ta.resource_id = ad.app_id;
-
-CREATE OR REPLACE VIEW event_specifications_fetch_requests_tenants AS
-SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
+                                             INNER JOIN tenant_applications ta on ta.id = ad.app_id)
+UNION ALL
+(SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                              INNER JOIN specifications s ON fr.spec_id = s.id
                                              INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
-                                             INNER JOIN tenant_applications ta on ta.resource_id = ead.app_id;
+                                             INNER JOIN tenant_applications ta on ta.id = ead.app_id);
 
 -- Labels - since labels can be put on tenants we cannot get l.*, however this is
 -- not a problem because labels are not necessary for the ORD service which is the only component reading from the view
 CREATE OR REPLACE VIEW application_labels_tenants AS
 SELECT l.id, ta.tenant_id, ta.owner FROM labels AS l
                                              INNER JOIN tenant_applications ta
-                                                        ON l.app_id = ta.resource_id AND (l.tenant_id IS NULL OR l.tenant_id = ta.tenant_id);
+                                                        ON l.app_id = ta.id AND (l.tenant_id IS NULL OR l.tenant_id = ta.tenant_id);
 
 CREATE OR REPLACE VIEW runtime_labels_tenants AS
 SELECT l.id, tr.tenant_id, tr.owner FROM labels AS l
                                              INNER JOIN tenant_runtimes tr
-                                                        ON l.runtime_id = tr.resource_id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id);
+                                                        ON l.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id);
+
+CREATE OR REPLACE VIEW runtime_contexts_labels_tenants AS
+SELECT l.id, tr.tenant_id, tr.owner FROM labels AS l
+                                             INNER JOIN runtime_contexts rc ON l.runtime_context_id = rc.id
+                                             INNER JOIN tenant_runtimes tr ON rc.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id);
+
 -- Runtime Context
 CREATE OR REPLACE VIEW runtime_contexts_tenants AS
 SELECT rtc.*, tr.tenant_id, tr.owner FROM runtime_contexts AS rtc
-                                              INNER JOIN tenant_runtimes tr ON rtc.runtime_id = tr.resource_id;
+                                              INNER JOIN tenant_runtimes tr ON rtc.runtime_id = tr.id;
 
 -- Packages
 CREATE OR REPLACE VIEW packages_tenants AS
 SELECT p.*, ta.tenant_id, ta.owner FROM packages AS p
-                                            INNER JOIN tenant_applications AS ta ON ta.resource_id = p.app_id;
+                                            INNER JOIN tenant_applications AS ta ON ta.id = p.app_id;
 
 -- Products
 CREATE OR REPLACE VIEW products_tenants AS
 SELECT p.*, ta.tenant_id, ta.owner FROM products AS p
-                                            INNER JOIN tenant_applications AS ta ON ta.resource_id = p.app_id;
+                                            INNER JOIN tenant_applications AS ta ON ta.id = p.app_id;
 
 -- Tombstones
 CREATE OR REPLACE VIEW tombstones_tenants AS
 SELECT t.*, ta.tenant_id, ta.owner FROM tombstones AS t
-                                            INNER JOIN tenant_applications AS ta ON ta.resource_id = t.app_id;
+                                            INNER JOIN tenant_applications AS ta ON ta.id = t.app_id;
 
 -- Vendors
 CREATE OR REPLACE VIEW vendors_tenants AS
 SELECT v.*, ta.tenant_id, ta.owner FROM vendors AS v
-                                            INNER JOIN tenant_applications AS ta ON ta.resource_id = v.app_id;
+                                            INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
 
 -- Webhooks
 CREATE OR REPLACE VIEW application_webhooks_tenants AS
 SELECT w.*, ta.tenant_id, ta.owner FROM webhooks AS w
-                                            INNER JOIN tenant_applications ta ON w.app_id = ta.resource_id;
+                                            INNER JOIN tenant_applications ta ON w.app_id = ta.id;
 
 CREATE OR REPLACE VIEW runtime_webhooks_tenants AS
 SELECT w.*, tr.tenant_id, tr.owner FROM webhooks AS w
-                                            INNER JOIN tenant_runtimes tr ON w.runtime_id = tr.resource_id;
+                                            INNER JOIN tenant_runtimes tr ON w.runtime_id = tr.id;
 
 -- ASAs Redesign
 ALTER TABLE automatic_scenario_assignments ADD COLUMN target_tenant_id UUID REFERENCES business_tenant_mappings(id) ON DELETE CASCADE;

@@ -16,8 +16,8 @@ import (
 // LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
-	Create(ctx context.Context, label *model.Label) error
-	Upsert(ctx context.Context, label *model.Label) error
+	Create(ctx context.Context, tenant string, label *model.Label) error
+	Upsert(ctx context.Context, tenant string, label *model.Label) error
 	UpdateWithVersion(ctx context.Context, label *model.Label) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
@@ -71,7 +71,7 @@ func (s *labelService) CreateLabel(ctx context.Context, tenant, id string, label
 	}
 	label := labelInput.ToLabel(id, tenant)
 
-	err := s.labelRepo.Create(ctx, label)
+	err := s.labelRepo.Create(ctx, tenant, label)
 	if err != nil {
 		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}
@@ -88,7 +88,7 @@ func (s *labelService) UpsertLabel(ctx context.Context, tenant string, labelInpu
 
 	label := labelInput.ToLabel(s.uidService.Generate(), tenant)
 
-	err := s.labelRepo.Upsert(ctx, label)
+	err := s.labelRepo.Upsert(ctx, tenant, label)
 	if err != nil {
 		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}

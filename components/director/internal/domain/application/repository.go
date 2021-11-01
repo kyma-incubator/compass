@@ -23,9 +23,9 @@ import (
 const applicationTable string = `public.applications`
 
 var (
-	applicationColumns = []string{"id", "app_template_id", "tenant_id", "system_number", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
+	applicationColumns = []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
 	updatableColumns   = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
-	tenantColumn       = "tenant_id"
+	tenantColumn       = "tenant_id" // TODO: <storage-redesign> delete it
 )
 
 // EntityConverter missing godoc
@@ -276,7 +276,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, model *model.Application) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.Application) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
@@ -288,7 +288,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 	}
 
 	log.C(ctx).Debugf("Persisting Application entity with id %s to db", model.ID)
-	return r.creator.Create(ctx, appEnt)
+	return r.creator.Create(ctx, tenant, appEnt)
 }
 
 // Update missing godoc

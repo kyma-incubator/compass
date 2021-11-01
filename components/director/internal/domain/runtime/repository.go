@@ -18,8 +18,8 @@ import (
 const runtimeTable string = `public.runtimes`
 
 var (
-	runtimeColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}
-	tenantColumn   = "tenant_id"
+	runtimeColumns = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}
+	tenantColumn   = "tenant_id" // TODO: <storage-redesign> delete this column
 )
 
 // EntityConverter missing godoc
@@ -215,7 +215,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Runtime) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
@@ -225,7 +225,7 @@ func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
 
-	return r.creator.Create(ctx, runtimeEnt)
+	return r.creator.Create(ctx, tenant, runtimeEnt)
 }
 
 // Update missing godoc
@@ -237,16 +237,16 @@ func (r *pgRepository) Update(ctx context.Context, item *model.Runtime) error {
 	return r.updater.UpdateSingle(ctx, runtimeEnt)
 }
 
-// UpdateTenantID missing godoc
-func (r *pgRepository) UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error {
-	updaterGlobal := repo.NewUpdaterGlobal(resource.Runtime, runtimeTable, []string{tenantColumn}, []string{"id"})
-
-	runtimeEnt := &Runtime{
-		ID:       runtimeID,
-		TenantID: newTenantID,
-	}
-	return updaterGlobal.UpdateSingleGlobal(ctx, runtimeEnt)
-}
+//// UpdateTenantID missing godoc
+//func (r *pgRepository) UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error {
+//	updaterGlobal := repo.NewUpdaterGlobal(resource.Runtime, runtimeTable, []string{tenantColumn}, []string{"id"})
+//
+//	runtimeEnt := &Runtime{
+//		ID:       runtimeID,
+//		TenantID: newTenantID,
+//	}
+//	return updaterGlobal.UpdateSingleGlobal(ctx, runtimeEnt)
+//}
 
 // GetOldestForFilters missing godoc
 func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {

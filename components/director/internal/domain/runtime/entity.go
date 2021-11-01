@@ -10,12 +10,15 @@ import (
 // Runtime struct represents database entity for Runtime
 type Runtime struct {
 	ID                string         `db:"id"`
-	TenantID          string         `db:"tenant_id"`
 	Name              string         `db:"name"`
 	Description       sql.NullString `db:"description"`
 	StatusCondition   string         `db:"status_condition"`
 	StatusTimestamp   time.Time      `db:"status_timestamp"`
 	CreationTimestamp time.Time      `db:"creation_timestamp"`
+}
+
+func (e *Runtime) GetID() string {
+	return e.ID
 }
 
 // EntityFromRuntimeModel converts Runtime model to Runtime entity
@@ -30,7 +33,6 @@ func EntityFromRuntimeModel(model *model.Runtime) (*Runtime, error) {
 
 	return &Runtime{
 		ID:                model.ID,
-		TenantID:          model.Tenant,
 		Name:              model.Name,
 		Description:       nullDescription,
 		StatusCondition:   string(model.Status.Condition),
@@ -49,7 +51,6 @@ func (e Runtime) ToModel() *model.Runtime {
 
 	return &model.Runtime{
 		ID:          e.ID,
-		Tenant:      e.TenantID,
 		Name:        e.Name,
 		Description: description,
 		Status: &model.RuntimeStatus{
