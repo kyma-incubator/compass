@@ -203,7 +203,7 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo)
-	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, cfg.DefaultScenarioEnabled)
+	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.DefaultScenarioEnabled)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, cfg.ProtectedLabelPattern)
 
 	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc, cfg.TenantProvider)
