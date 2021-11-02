@@ -1,18 +1,92 @@
 package selfreg
 
-import "net/http"
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"reflect"
 
-type SelfRegisterHandler struct {
+	"github.com/pkg/errors"
+
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
+)
+
+const NamePath = "name"
+
+type Config struct {
+	Path               string `envconfig:"APP_SELF_REGISTER_PATH"`
+	NameQueryParam     string `envconfig:"APP_SELF_REGISTER_NAME_QUERY_PARAM"`
+	TenantQueryParam   string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM"`
+	ResponseKey        string `envconfig:"APP_SELF_REGISTER_RESPONSE_KEY"`
+	RequestBodyPattern string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN"`
 }
 
-func NewSelfRegisterHandler() *SelfRegisterHandler {
-	return &SelfRegisterHandler{}
+type Handler struct {
+	c Config
 }
 
-func (H *SelfRegisterHandler) HandleSelfRegPrep(rw http.ResponseWriter, req *http.Request) {
-
+func NewSelfRegisterHandler(c Config) *Handler {
+	return &Handler{c: c}
 }
 
-func (H *SelfRegisterHandler) HandleSelfRegCleanup(rw http.ResponseWriter, req *http.Request) {
+func (h *Handler) HandleSelfRegPrep(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get(h.c.NameQueryParam)
+	if name == "" {
+		err := errors.New(fmt.Sprintf("%s query param missing", h.c.NameQueryParam))
+		httphelpers.WriteError(w, err, http.StatusBadRequest)
+		return
+	}
+	if tenant := r.URL.Query().Get(h.c.TenantQueryParam); tenant == "" {
+		err := errors.New(fmt.Sprintf("%s query param missing", h.c.TenantQueryParam))
+		httphelpers.WriteError(w, err, http.StatusBadRequest)
+		return
+	}
 
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.WriteError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	expectedBody := fmt.Sprintf(h.c.RequestBodyPattern, name)
+	equalJSON, err := AreEqualJSON(expectedBody, string(body))
+	if err != nil {
+		httphelpers.WriteError(w, err, http.StatusBadRequest)
+		return
+	} else if !equalJSON {
+		err := errors.New("body does not have the expected structure")
+		httphelpers.WriteError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) HandleSelfRegCleanup(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	if name, ok := params[NamePath]; !ok || name == "" {
+		err := errors.New(fmt.Sprintf("%s is missing from path", NamePath))
+		httphelpers.WriteError(w, err, http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func AreEqualJSON(s1, s2 string) (bool, error) {
+	var o1 interface{}
+	var o2 interface{}
+
+	var err error
+	err = json.Unmarshal([]byte(s1), &o1)
+	if err != nil {
+		return false, fmt.Errorf("Error mashalling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(s2), &o2)
+	if err != nil {
+		return false, fmt.Errorf("Error mashalling string 2 :: %s", err.Error())
+	}
+
+	return reflect.DeepEqual(o1, o2), nil
 }

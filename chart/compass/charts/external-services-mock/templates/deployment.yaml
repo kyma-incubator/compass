@@ -66,6 +66,14 @@ spec:
                   secretKeyRef:
                     name: {{ .Values.global.connector.secrets.ca.name }}
                     key: {{ .Values.global.connector.secrets.ca.keyKey }}
+              - name: APP_SELF_REGISTER_PATH
+                value: {{ .Values.global.director.selfRegister.path }}
+              - name: APP_SELF_REGISTER_NAME_QUERY_PARAM
+                value: {{ .Values.global.director.selfRegister.nameQueryParam }}
+              - name: APP_SELF_REGISTER_TENANT_QUERY_PARAM
+                value: {{ .Values.global.director.selfRegister.tenantQueryParam }}
+              - name: APP_SELF_REGISTER_REQUEST_BODY_PATTERN
+                value: {{ .Values.global.director.selfRegister.requestBodyPattern }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}
