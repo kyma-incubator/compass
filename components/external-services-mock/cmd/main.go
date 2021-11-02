@@ -159,7 +159,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.SelfRegConfig)
 	selfRegRouter := router.PathPrefix(cfg.SelfRegConfig.Path).Subrouter()
 	selfRegRouter.Use(oauthMiddleware(&key.PublicKey))
-	selfRegRouter.HandleFunc("/", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
+	selfRegRouter.HandleFunc("", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
 	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
 
 	return &http.Server{

@@ -4,14 +4,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	director_http "github.com/kyma-incubator/compass/components/director/pkg/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
-
-// OauthTokenPath is the default path for oauth tokens
-const OauthTokenPath = "/oauth/token"
 
 // Caller can be used to call secured http endpoints with given credentials
 type Caller struct {
@@ -41,7 +40,11 @@ func NewCaller(credentials graphql.CredentialData, clientTimeout time.Duration) 
 // Call executes a http call with the configured credentials
 func (c *Caller) Call(req *http.Request) (*http.Response, error) {
 	req = c.addCredentialsToContext(req)
-	return c.client.Do(req)
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while executing call to %s: ", req.URL)
+	}
+	return resp, nil
 }
 
 func (c *Caller) addCredentialsToContext(req *http.Request) *http.Request {

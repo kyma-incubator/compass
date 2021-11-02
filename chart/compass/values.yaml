@@ -152,9 +152,9 @@ global:
         clientSecretKey: client-secret
         urlKey: url
       oauthTokenPath: "/secured/oauth/token"
-      distinguishLabel: "distinguishing-label"
-      label: "self-reg-label"
-      labelValuePrefix: "self-reg-prefix"
+      distinguishLabel: "distinguishingLabel"
+      label: "selfRegLabel"
+      labelValuePrefix: "self-reg-prefix-"
       responseKey: "self-reg-key"
       path: "/external-api/self-reg"
       nameQueryParam: "name"

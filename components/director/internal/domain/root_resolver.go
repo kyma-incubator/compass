@@ -109,7 +109,7 @@ func NewRootResolver(
 	caller := securehttp.NewCaller(&graphql.OAuthCredentialData{
 		ClientID:     selfRegConfig.ClientID,
 		ClientSecret: selfRegConfig.ClientSecret,
-		URL:          selfRegConfig.URL + securehttp.OauthTokenPath,
+		URL:          selfRegConfig.URL + selfRegConfig.OauthTokenPath,
 	}, selfRegConfig.ClientTimeout)
 
 	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)

@@ -64,13 +64,12 @@ func (h *Handler) HandleSelfRegPrep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusCreated)
 	response := fmt.Sprintf(responseFormat, h.c.ResponseKey, name)
 	if _, err := io.WriteString(w, response); err != nil {
 		httphelpers.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
-
-	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *Handler) HandleSelfRegCleanup(w http.ResponseWriter, r *http.Request) {
