@@ -688,8 +688,10 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 
+	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+
 	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
-	labelDefSvc := labeldef.NewService(labelDefRepo, lblRepo, scenarioAssignmentRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	labelDefSvc := labeldef.NewService(labelDefRepo, lblRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 
 	labelSvc := label.NewLabelService(lblRepo, labelDefRepo, uidSvc)
 
