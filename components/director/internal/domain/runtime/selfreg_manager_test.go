@@ -51,7 +51,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 	}
 
 	fakeConfig := testConfig
-	fakeConfig.SelfRegisterPath = "fake path"
+	fakeConfig.URL = "https://test-url    .com"
 
 	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
@@ -144,6 +144,8 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 
 func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 	ctx := context.TODO()
+	fakeConfig := testConfig
+	fakeConfig.URL = "https://test-url    .com"
 
 	testCases := []struct {
 		Name                                string
@@ -172,7 +174,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 		{
 			Name:                                "Error when can't create URL for cleanup of self-registered runtime",
 			Caller:                              rtmtest.CallerThatDoesNotGetCalled,
-			Config:                              testConfig,
+			Config:                              fakeConfig,
 			SelfRegisteredDistinguishLabelValue: "invalid value",
 			Context:                             ctx,
 			ExpectedErr:                         errors.New("while creating url for cleanup of self-registered runtime"),
