@@ -444,7 +444,8 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Tran
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
-	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, defaultScenarioEnabled)
+	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, defaultScenarioEnabled)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	runtimeConv := runtime.NewConverter()
 	runtimeRepo := runtime.NewRepository(runtimeConv)
@@ -453,8 +454,6 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Tran
 
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
 
-	tenantConv := tenant.NewConverter()
-	tenantRepo := tenant.NewRepository(tenantConv)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	reqDataParser := oathkeeper.NewReqDataParser()
@@ -582,7 +581,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
-	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	bundleRepo := bundle.NewRepository(packageConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	docRepo := document.NewRepository(docConverter)

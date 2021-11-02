@@ -236,13 +236,13 @@ func AssertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 	}
 }
 
-func AssertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt, defaultScenarioEnabled bool) {
+func AssertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt, defaultScenarioEnabled, isSubaccountTenant bool) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
-	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels, defaultScenarioEnabled)
+	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels, defaultScenarioEnabled, isSubaccountTenant)
 }
 
-func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels, defaultScenarioEnabled bool) {
+func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels, defaultScenarioEnabled, isSubaccountTenant bool) {
 	const (
 		scenariosKey    = "scenarios"
 		isNormalizedKey = "isNormalized"
@@ -258,7 +258,7 @@ func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels gr
 	}
 
 	_, inHasScenarios := (*inLabels)[scenariosKey]
-	if !inHasScenarios && defaultScenarioEnabled {
+	if !inHasScenarios && defaultScenarioEnabled && !isSubaccountTenant {
 		AssertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
 	}
 

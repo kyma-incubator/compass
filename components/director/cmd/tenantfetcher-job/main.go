@@ -107,7 +107,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	scenarioAssignEngine := scenarioassignment.NewEngine(labelService, labelRepository, scenarioAssignRepo)
 
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
-	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 
 	runtimeConverter := runtime.NewConverter()
 	runtimeRepository := runtime.NewRepository(runtimeConverter)
