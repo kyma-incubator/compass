@@ -73,7 +73,7 @@ spec:
               - name: APP_SELF_REGISTER_TENANT_QUERY_PARAM
                 value: {{ .Values.global.director.selfRegister.tenantQueryParam }}
               - name: APP_SELF_REGISTER_REQUEST_BODY_PATTERN
-                value: {{ .Values.global.director.selfRegister.requestBodyPattern }}
+                value: {{ .Values.global.director.selfRegister.requestBodyPattern | quote }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}

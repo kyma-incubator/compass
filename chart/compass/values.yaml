@@ -154,7 +154,7 @@ global:
       path: "/external-api/self-reg"
       nameQueryParam: "name"
       tenantQueryParam: "tenant"
-      requestBodyPattern: '{"key":"%s"}'
+      requestBodyPattern: '{"key": "%s"}'
 
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
