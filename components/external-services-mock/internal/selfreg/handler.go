@@ -15,7 +15,7 @@ import (
 
 const (
 	NamePath       = "name"
-	responseFormat = `{"%s": "test-self-reg-prep"}`
+	responseFormat = `{"%s": "test-preifx-%s"}`
 )
 
 type Config struct {
@@ -64,7 +64,7 @@ func (h *Handler) HandleSelfRegPrep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := fmt.Sprintf(responseFormat, h.c.ResponseKey)
+	response := fmt.Sprintf(responseFormat, h.c.ResponseKey, name)
 	if _, err := io.WriteString(w, response); err != nil {
 		httphelpers.WriteError(w, err, http.StatusBadRequest)
 		return

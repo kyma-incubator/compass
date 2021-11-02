@@ -17,13 +17,10 @@ import (
 )
 
 func TestSelfRegisterRuntime(t *testing.T) {
-	// GIVEN
 	ctx := context.Background()
 	distinguishLblValue := "test-distinguish-value"
-
 	selfRegisterSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestSelfRegisterSubaccount)
 
-	// Build graphql director client configured with certificate
 	clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, conf.CA.Certificate, conf.CA.Key, selfRegisterSubaccountID)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
 
@@ -32,19 +29,18 @@ func TestSelfRegisterRuntime(t *testing.T) {
 		Description: ptr.String("test description"),
 		Labels:      graphql.Labels{conf.SelfRegisterDistinguishLabelKey: distinguishLblValue},
 	}
-
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(input)
 	require.NoError(t, err)
-
-	// WHEN
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 
 	actualRtm := graphql.RuntimeExt{}
+
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, registerReq, &actualRtm)
 	defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, tenant.TestSelfRegisterSubaccount, &actualRtm)
 
 	require.NoError(t, err)
 	strLbl, ok := actualRtm.Labels[conf.SelfRegisterLabelKey].(string)
+
 	require.True(t, ok)
 	require.Contains(t, strLbl, distinguishLblValue)
 }
