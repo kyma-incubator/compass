@@ -44,7 +44,7 @@ type config struct {
 	JWKSPath   string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
-	selfRegConfig selfreg.Config
+	SelfRegConfig selfreg.Config
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
 
 	CACert string `envconfig:"APP_CA_CERT"`
@@ -156,8 +156,8 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	// Unsecured config pointing to cert secured document
 	router.HandleFunc("/cert/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
 
-	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.selfRegConfig)
-	selfRegRouter := router.PathPrefix(cfg.selfRegConfig.Path).Subrouter()
+	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.SelfRegConfig)
+	selfRegRouter := router.PathPrefix(cfg.SelfRegConfig.Path).Subrouter()
 	selfRegRouter.Use(oauthMiddleware(&key.PublicKey))
 	selfRegRouter.HandleFunc("/", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
 	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
