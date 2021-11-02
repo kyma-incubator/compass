@@ -186,6 +186,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.director.selfRegister.secret.name }}
                   key: {{ .Values.global.director.selfRegister.secret.urlKey }}
+            - name: APP_SELF_REGISTER_OAUTH_TOKEN_PATH
+              value: {{ .Values.global.director.selfRegister.oauthTokenPath }}
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.distinguishLabel }}
             - name: APP_SELF_REGISTER_LABEL_KEY

@@ -147,6 +147,7 @@ global:
         clientIdKey: client-id
         clientSecretKey: client-secret
         urlKey: url
+      oauthTokenPath: "/secured/oauth/token"
       distinguishLabel: "distinguishing-label"
       label: "self-reg-label"
       labelValuePrefix: "self-reg-prefix"

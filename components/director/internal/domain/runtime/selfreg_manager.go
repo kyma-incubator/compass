@@ -30,9 +30,10 @@ type SelfRegConfig struct {
 	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM,optional"`
 	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN,optional"`
 
-	ClientID     string `envconfig:"APP_SELF_REGISTER_CLIENT_ID,optional"`
-	ClientSecret string `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
-	URL          string `envconfig:"APP_SELF_REGISTER_URL,optional"`
+	ClientID       string `envconfig:"APP_SELF_REGISTER_CLIENT_ID,optional"`
+	ClientSecret   string `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
+	URL            string `envconfig:"APP_SELF_REGISTER_URL,optional"`
+	OauthTokenPath string `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
 
 	ClientTimeout time.Duration `envconfig:"default=30s"`
 }
