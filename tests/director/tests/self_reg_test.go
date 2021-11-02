@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 
@@ -26,8 +28,9 @@ func TestSelfRegisterRuntime(t *testing.T) {
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
 
 	input := graphql.RuntimeInput{
-		Name:   "runtime-self-register",
-		Labels: graphql.Labels{conf.SelfRegisterDistinguishLabelKey: distinguishLblValue},
+		Name:        "runtime-self-register",
+		Description: ptr.String("test description"),
+		Labels:      graphql.Labels{conf.SelfRegisterDistinguishLabelKey: distinguishLblValue},
 	}
 
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(input)

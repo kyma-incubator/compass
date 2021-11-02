@@ -13,7 +13,10 @@ import (
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 )
 
-const NamePath = "name"
+const (
+	NamePath       = "name"
+	responseFormat = `{"%s": "test-self-reg-prep"}`
+)
 
 type Config struct {
 	Path               string `envconfig:"APP_SELF_REGISTER_PATH"`
@@ -57,6 +60,12 @@ func (h *Handler) HandleSelfRegPrep(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if !equalJSON {
 		err := errors.New("body does not have the expected structure")
+		httphelpers.WriteError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	response := fmt.Sprintf(responseFormat, h.c.ResponseKey)
+	if _, err := io.WriteString(w, response); err != nil {
 		httphelpers.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
