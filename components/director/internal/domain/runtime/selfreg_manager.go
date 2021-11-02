@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	urlpkg "net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -124,11 +125,11 @@ func (s *selfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 
 func (s *selfRegisterManager) createSelfRegPrepRequest(distinguishingVal, tenant string) (*http.Request, error) {
 	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + distinguishingVal
-	url, err := urlpkg.Parse(s.cfg.URL + s.cfg.SelfRegisterPath)
+	url, err := urlpkg.Parse(s.cfg.URL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating url for preparation of self-registered runtime")
 	}
-
+	url.Path = path.Join(url.Path, s.cfg.SelfRegisterPath)
 	q := url.Query()
 	q.Add(s.cfg.SelfRegisterNameQueryParam, selfRegLabelVal)
 	q.Add(s.cfg.SelfRegisterTenantQueryParam, tenant)
@@ -145,10 +146,12 @@ func (s *selfRegisterManager) createSelfRegPrepRequest(distinguishingVal, tenant
 
 func (s *selfRegisterManager) createSelfRegDelRequest(distinguishingVal string) (*http.Request, error) {
 	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + distinguishingVal
-	url, err := urlpkg.Parse(s.cfg.URL + s.cfg.SelfRegisterPath + selfRegLabelVal)
+	url, err := urlpkg.Parse(s.cfg.URL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating url for cleanup of self-registered runtime")
 	}
+	url.Path = path.Join(url.Path, s.cfg.SelfRegisterPath)
+	url.Path = path.Join(url.Path, selfRegLabelVal)
 
 	request, err := http.NewRequest(http.MethodDelete, url.String(), nil)
 	if err != nil {

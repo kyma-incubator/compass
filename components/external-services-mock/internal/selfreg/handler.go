@@ -54,7 +54,7 @@ func (h *Handler) HandleSelfRegPrep(w http.ResponseWriter, r *http.Request) {
 	}
 
 	expectedBody := fmt.Sprintf(h.c.RequestBodyPattern, name)
-	equalJSON, err := AreEqualJSON(expectedBody, string(body))
+	equalJSON, err := areEqualJSON(expectedBody, string(body))
 	if err != nil {
 		httphelpers.WriteError(w, err, http.StatusBadRequest)
 		return
@@ -82,7 +82,7 @@ func (h *Handler) HandleSelfRegCleanup(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func AreEqualJSON(s1, s2 string) (bool, error) {
+func areEqualJSON(s1, s2 string) (bool, error) {
 	var o1 interface{}
 	var o2 interface{}
 

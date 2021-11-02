@@ -43,4 +43,8 @@ func TestSelfRegisterRuntime(t *testing.T) {
 
 	require.True(t, ok)
 	require.Contains(t, strLbl, distinguishLblValue)
+
+	delReq := fixtures.FixUnregisterRuntimeRequest(actualRtm.ID)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, delReq, &actualRtm)
+	require.NoError(t, err)
 }
