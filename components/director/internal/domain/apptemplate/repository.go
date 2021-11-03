@@ -44,7 +44,7 @@ func NewRepository(conv EntityConverter) *repository {
 		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.ApplicationTemplate, tableName),
 		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.ApplicationTemplate, tableName, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.ApplicationTemplate, tableName, tableColumns),
-		updaterGlobal:         repo.NewUpdaterGlobal(resource.ApplicationTemplate, tableName, updatableTableColumns, idTableColumns),
+		updaterGlobal:         repo.NewGlobalUpdaterBuilderFor(resource.ApplicationTemplate).WithTable(tableName).WithUpdatableColumns(updatableTableColumns...).WithIDColumns(idTableColumns...).Build(),
 		deleterGlobal:         repo.NewDeleterGlobal(resource.ApplicationTemplate, tableName),
 		conv:                  conv,
 	}
@@ -129,7 +129,7 @@ func (r *repository) Update(ctx context.Context, model model.ApplicationTemplate
 		return errors.Wrapf(err, "while converting Application Template with ID %s", model.ID)
 	}
 
-	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
+	return r.updaterGlobal.UpdateSingle(ctx, entity)
 }
 
 // Delete missing godoc

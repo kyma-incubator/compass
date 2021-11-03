@@ -42,7 +42,7 @@ func NewRepository() *pgRepository {
 		deleter:            repo.NewDeleter(resource.RuntimeContext, runtimeContextsTable, tenantColumn),
 		pageableQuerier:    repo.NewPageableQuerier(resource.RuntimeContext, runtimeContextsTable, tenantColumn, runtimeContextColumns),
 		creator:            repo.NewCreator(resource.RuntimeContext, runtimeContextsTable, runtimeContextColumns),
-		updater:            repo.NewUpdater(resource.RuntimeContext, runtimeContextsTable, []string{"key", "value"}, tenantColumn, []string{"id"}),
+		updater:            repo.NewUpdater(resource.RuntimeContext, runtimeContextsTable, []string{"key", "value"}, []string{"id"}),
 	}
 }
 
@@ -165,9 +165,9 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ru
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, item *model.RuntimeContext) error {
+func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.RuntimeContext) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
-	return r.updater.UpdateSingle(ctx, EntityFromRuntimeContextModel(item))
+	return r.updater.UpdateSingle(ctx, tenant, EntityFromRuntimeContextModel(item))
 }

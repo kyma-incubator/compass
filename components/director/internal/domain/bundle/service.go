@@ -16,7 +16,7 @@ import (
 //go:generate mockery --name=BundleRepository --output=automock --outpkg=automock --case=underscore
 type BundleRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Bundle) error
-	Update(ctx context.Context, item *model.Bundle) error
+	Update(ctx context.Context, tenant string, item *model.Bundle) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error)
@@ -110,7 +110,7 @@ func (s *service) Update(ctx context.Context, id string, in model.BundleUpdateIn
 
 	bndl.SetFromUpdateInput(in)
 
-	err = s.bndlRepo.Update(ctx, bndl)
+	err = s.bndlRepo.Update(ctx, tnt, bndl)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Bundle with id %s", id)
 	}

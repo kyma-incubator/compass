@@ -104,7 +104,7 @@ func (c *converter) ToEntity(in model.BundleInstanceAuth) (Entity, error) {
 	out := Entity{
 		ID:               in.ID,
 		BundleID:         in.BundleID,
-		TenantID:         in.Tenant,
+		OwnerID:          in.Owner,
 		RuntimeID:        repo.NewNullableString(in.RuntimeID),
 		RuntimeContextID: repo.NewNullableString(in.RuntimeContextID),
 		Context:          repo.NewNullableString(in.Context),
@@ -136,7 +136,7 @@ func (c *converter) FromEntity(in Entity) (model.BundleInstanceAuth, error) {
 	return model.BundleInstanceAuth{
 		ID:               in.ID,
 		BundleID:         in.BundleID,
-		Tenant:           in.TenantID,
+		Owner:            in.OwnerID,
 		RuntimeID:        repo.StringPtrFromNullableString(in.RuntimeID),
 		RuntimeContextID: repo.StringPtrFromNullableString(in.RuntimeContextID),
 		Context:          repo.StringPtrFromNullableString(in.Context),

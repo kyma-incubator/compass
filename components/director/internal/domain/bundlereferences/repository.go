@@ -42,7 +42,7 @@ type repository struct {
 	lister      repo.Lister
 	getter      repo.SingleGetter
 	deleter     repo.Deleter
-	updater     repo.Updater
+	updater     repo.UpdaterGlobal
 	conv        BundleReferenceConverter
 }
 
@@ -54,7 +54,7 @@ func NewRepository(conv BundleReferenceConverter) *repository {
 		lister:      repo.NewLister(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
 		getter:      repo.NewSingleGetter(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
 		deleter:     repo.NewDeleter(resource.BundleReference, BundleReferenceTable, tenantColumn),
-		updater:     repo.NewUpdater(resource.BundleReference, BundleReferenceTable, updatableColumns, tenantColumn, []string{}),
+		updater:     repo.NewGlobalUpdaterBuilderFor(resource.BundleReference).WithTable(BundleReferenceTable).WithUpdatableColumns(updatableColumns...).Build(),
 		conv:        conv,
 	}
 }

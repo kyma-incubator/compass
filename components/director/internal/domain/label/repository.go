@@ -33,29 +33,35 @@ type Converter interface {
 }
 
 type repository struct {
-	lister           repo.Lister
-	listerGlobal     repo.ListerGlobal
-	deleter          repo.Deleter
-	getter           repo.SingleGetter
-	queryBuilder     repo.QueryBuilder
-	creator          repo.Creator
-	updater          repo.Updater
-	versionedUpdater repo.Updater
-	conv             Converter
+	lister                 repo.Lister
+	listerGlobal           repo.ListerGlobal
+	deleter                repo.Deleter
+	getter                 repo.SingleGetter
+	queryBuilder           repo.QueryBuilder
+	creator                repo.Creator
+	globalCreator          repo.GlobalCreator
+	updater                repo.Updater
+	versionedUpdater       repo.Updater
+	globalUpdater          repo.UpdaterGlobal
+	versionedGlobalUpdater repo.UpdaterGlobal
+	conv                   Converter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		lister:           repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
-		listerGlobal:     repo.NewListerGlobal(resource.Label, tableName, tableColumns),
-		deleter:          repo.NewDeleter(resource.Label, tableName, tenantColumn),
-		getter:           repo.NewSingleGetter(resource.Label, tableName, tenantColumn, tableColumns),
-		queryBuilder:     repo.NewQueryBuilder(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
-		creator:          repo.NewCreator(resource.Label, tableName, tableColumns),
-		updater:          repo.NewUpdater(resource.Label, tableName, updatableColumns, tenantColumn, idColumns),
-		versionedUpdater: repo.NewUpdater(resource.Label, tableName, updatableColumns, tenantColumn, versionedIDColumns),
-		conv:             conv,
+		lister:                 repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
+		listerGlobal:           repo.NewListerGlobal(resource.Label, tableName, tableColumns),
+		deleter:                repo.NewDeleter(resource.Label, tableName, tenantColumn),
+		getter:                 repo.NewSingleGetter(resource.Label, tableName, tenantColumn, tableColumns),
+		queryBuilder:           repo.NewQueryBuilder(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
+		creator:                repo.NewCreator(resource.Label, tableName, tableColumns),
+		globalCreator:          repo.NewGlobalCreator(resource.Label, tableName, tableColumns),
+		updater:                repo.NewUpdater(resource.Label, tableName, updatableColumns, idColumns),
+		versionedUpdater:       repo.NewUpdater(resource.Label, tableName, updatableColumns, versionedIDColumns),
+		globalUpdater:          repo.NewGlobalUpdaterBuilderFor(resource.Label).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithIDColumns(idColumns...).WithTenantColumn(tenantColumn).Build(),
+		versionedGlobalUpdater: repo.NewGlobalUpdaterBuilderFor(resource.Label).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithIDColumns(versionedIDColumns...).WithTenantColumn(tenantColumn).Build(),
+		conv:                   conv,
 	}
 }
 
@@ -78,11 +84,14 @@ func (r *repository) Upsert(ctx context.Context, tenant string, label *model.Lab
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
-	return r.updater.UpdateSingleWithVersion(ctx, labelEntity)
+	if label.ObjectType == model.TenantLabelableObject {
+		return r.globalUpdater.UpdateSingleWithVersion(ctx, labelEntity)
+	}
+	return r.updater.UpdateSingleWithVersion(ctx, tenant, labelEntity)
 }
 
-// UpsertWithVersion missing godoc
-func (r *repository) UpdateWithVersion(ctx context.Context, label *model.Label) error {
+// UpdateWithVersion missing godoc
+func (r *repository) UpdateWithVersion(ctx context.Context, tenant string, label *model.Label) error {
 	if label == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
@@ -90,7 +99,10 @@ func (r *repository) UpdateWithVersion(ctx context.Context, label *model.Label) 
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
-	return r.versionedUpdater.UpdateSingleWithVersion(ctx, labelEntity)
+	if label.ObjectType == model.TenantLabelableObject {
+		return r.versionedGlobalUpdater.UpdateSingleWithVersion(ctx, labelEntity)
+	}
+	return r.versionedUpdater.UpdateSingleWithVersion(ctx, tenant, labelEntity)
 }
 
 // Create missing godoc
@@ -103,6 +115,11 @@ func (r *repository) Create(ctx context.Context, tenant string, label *model.Lab
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
+
+	if label.ObjectType == model.TenantLabelableObject {
+		return r.globalCreator.Create(ctx, labelEntity)
+	}
+
 	return r.creator.Create(ctx, tenant, labelEntity)
 }
 

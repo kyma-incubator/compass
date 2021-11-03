@@ -52,7 +52,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		lister:       repo.NewLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		unionLister:  repo.NewUnionLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		creator:      repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
-		updater:      repo.NewUpdater(resource.Bundle, bundleTable, updatableColumns, tenantColumn, []string{"id"}),
+		updater:      repo.NewUpdater(resource.Bundle, bundleTable, updatableColumns, []string{"id"}),
 		conv:         conv,
 	}
 }
@@ -81,7 +81,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.B
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, model *model.Bundle) error {
+func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.Bundle) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
@@ -92,7 +92,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Bundle) error {
 		return errors.Wrap(err, "while converting to Bundle entity")
 	}
 
-	return r.updater.UpdateSingle(ctx, bndlEnt)
+	return r.updater.UpdateSingle(ctx, tenant, bndlEnt)
 }
 
 // Delete missing godoc

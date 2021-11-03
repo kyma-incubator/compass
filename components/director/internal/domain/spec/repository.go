@@ -57,7 +57,7 @@ func NewRepository(conv Converter) *repository {
 		}),
 		unionLister:  repo.NewUnionLister(resource.Specification, specificationsTable, tenantColumn, specificationsColumns),
 		deleter:      repo.NewDeleter(resource.Specification, specificationsTable, tenantColumn),
-		updater:      repo.NewUpdater(resource.Specification, specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, tenantColumn, []string{"id"}),
+		updater:      repo.NewUpdater(resource.Specification, specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, []string{"id"}),
 		existQuerier: repo.NewExistQuerier(resource.Specification, specificationsTable, tenantColumn),
 		conv:         conv,
 	}
@@ -165,14 +165,14 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 }
 
 // Update missing godoc
-func (r *repository) Update(ctx context.Context, item *model.Spec) error {
+func (r *repository) Update(ctx context.Context, tenant string, item *model.Spec) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity := r.conv.ToEntity(*item)
 
-	return r.updater.UpdateSingle(ctx, entity)
+	return r.updater.UpdateSingle(ctx, tenant, entity)
 }
 
 // Exists missing godoc

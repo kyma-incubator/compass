@@ -18,7 +18,7 @@ import (
 type LabelRepository interface {
 	Create(ctx context.Context, tenant string, label *model.Label) error
 	Upsert(ctx context.Context, tenant string, label *model.Label) error
-	UpdateWithVersion(ctx context.Context, label *model.Label) error
+	UpdateWithVersion(ctx context.Context, tenant string, label *model.Label) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
@@ -104,7 +104,7 @@ func (s *labelService) UpdateLabel(ctx context.Context, tenant, id string, label
 	}
 	label := labelInput.ToLabel(id, tenant)
 
-	err := s.labelRepo.UpdateWithVersion(ctx, label)
+	err := s.labelRepo.UpdateWithVersion(ctx, tenant, label)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}

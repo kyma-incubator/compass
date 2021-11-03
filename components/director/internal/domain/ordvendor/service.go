@@ -13,7 +13,7 @@ import (
 //go:generate mockery --name=VendorRepository --output=automock --outpkg=automock --case=underscore
 type VendorRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Vendor) error
-	Update(ctx context.Context, item *model.Vendor) error
+	Update(ctx context.Context, tenant string, item *model.Vendor) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Vendor, error)
@@ -72,7 +72,7 @@ func (s *service) Update(ctx context.Context, id string, in model.VendorInput) e
 
 	vendor.SetFromUpdateInput(in)
 
-	err = s.vendorRepo.Update(ctx, vendor)
+	err = s.vendorRepo.Update(ctx, tnt, vendor)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Vendor with id %s", id)
 	}

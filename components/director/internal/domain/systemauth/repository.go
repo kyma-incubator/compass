@@ -34,7 +34,7 @@ type repository struct {
 	listerGlobal       repo.ListerGlobal
 	deleter            repo.Deleter
 	deleterGlobal      repo.DeleterGlobal
-	updater            repo.Updater
+	updater            repo.UpdaterGlobal
 
 	conv Converter
 }
@@ -49,7 +49,7 @@ func NewRepository(conv Converter) *repository {
 		listerGlobal:       repo.NewListerGlobal(resource.SystemAuth, tableName, tableColumns),
 		deleter:            repo.NewDeleter(resource.SystemAuth, tableName, tenantColumn),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.SystemAuth, tableName),
-		updater:            repo.NewUpdater(resource.SystemAuth, tableName, []string{"value"}, tenantColumn, []string{"id"}),
+		updater:            repo.NewGlobalUpdaterBuilderFor(resource.SystemAuth).WithTable(tableName).WithUpdatableColumns("value").WithTenantColumn(tenantColumn).WithIDColumns("id").Build(),
 		conv:               conv,
 	}
 }

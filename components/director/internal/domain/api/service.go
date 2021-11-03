@@ -23,7 +23,7 @@ type APIRepository interface {
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error)
 	CreateMany(ctx context.Context, tenant string, item []*model.APIDefinition) error
 	Create(ctx context.Context, tenant string, item *model.APIDefinition) error
-	Update(ctx context.Context, item *model.APIDefinition) error
+	Update(ctx context.Context, tenant string, item *model.APIDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
@@ -194,7 +194,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 
 // UpdateInManyBundles missing godoc
 func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64) error {
-	_, err := tenant.LoadFromContext(ctx) // TODO: <storage-redesign>
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 
 	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, apiHash)
 
-	err = s.repo.Update(ctx, api)
+	err = s.repo.Update(ctx, tnt, api)
 	if err != nil {
 		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
 	}

@@ -46,6 +46,7 @@ type pgRepository struct {
 	globalPageableQuerier repo.PageableQuerierGlobal
 	creator               repo.Creator
 	updater               repo.Updater
+	globalUpdater         repo.UpdaterGlobal
 	conv                  EntityConverter
 }
 
@@ -61,7 +62,8 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		pageableQuerier:       repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
 		creator:               repo.NewCreator(resource.Application, applicationTable, applicationColumns),
-		updater:               repo.NewUpdater(resource.Application, applicationTable, updatableColumns, tenantColumn, []string{"id"}),
+		updater:               repo.NewUpdater(resource.Application, applicationTable, updatableColumns, []string{"id"}),
+		globalUpdater:         repo.NewGlobalUpdaterBuilderFor(resource.Application).WithTable(applicationTable).WithUpdatableColumns(updatableColumns...).WithIDColumns("id").Build(),
 		conv:                  conv,
 	}
 }
@@ -86,7 +88,7 @@ func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 			app.SetDeletedAt(time.Now())
 		}
 
-		return r.Update(ctx, app)
+		return r.Update(ctx, tenant, app)
 	}
 
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
@@ -107,7 +109,7 @@ func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 			app.SetDeletedAt(time.Now())
 		}
 
-		return r.Update(ctx, app)
+		return r.globalUpdater.UpdateSingle(ctx, app)
 	}
 
 	return r.globalDeleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
@@ -292,16 +294,16 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.A
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, model *model.Application) error {
-	return r.updateSingle(ctx, model, false)
+func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.Application) error {
+	return r.updateSingle(ctx, tenant, model, false)
 }
 
 // TechnicalUpdate missing godoc
 func (r *pgRepository) TechnicalUpdate(ctx context.Context, model *model.Application) error {
-	return r.updateSingle(ctx, model, true)
+	return r.updateSingle(ctx, "", model, true)
 }
 
-func (r *pgRepository) updateSingle(ctx context.Context, model *model.Application, isTechnical bool) error {
+func (r *pgRepository) updateSingle(ctx context.Context, tenant string, model *model.Application, isTechnical bool) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
@@ -314,9 +316,9 @@ func (r *pgRepository) updateSingle(ctx context.Context, model *model.Applicatio
 
 	log.C(ctx).Debugf("Persisting updated Application entity with id %s to db", model.ID)
 	if isTechnical {
-		return r.updater.TechnicalUpdate(ctx, appEnt)
+		return r.globalUpdater.TechnicalUpdate(ctx, appEnt)
 	}
-	return r.updater.UpdateSingle(ctx, appEnt)
+	return r.updater.UpdateSingle(ctx, tenant, appEnt)
 }
 
 func (r *pgRepository) multipleFromEntities(entities EntityCollection) ([]*model.Application, error) {

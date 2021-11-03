@@ -45,7 +45,7 @@ func NewRepository(conv Converter) *repository {
 		singleGetter: repo.NewSingleGetter(resource.FetchRequest, fetchRequestTable, tenantColumn, fetchRequestColumns),
 		lister:       repo.NewLister(resource.FetchRequest, fetchRequestTable, tenantColumn, fetchRequestColumns),
 		deleter:      repo.NewDeleter(resource.FetchRequest, fetchRequestTable, tenantColumn),
-		updater:      repo.NewUpdater(resource.FetchRequest, fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, tenantColumn, []string{"id"}),
+		updater:      repo.NewUpdater(resource.FetchRequest, fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, []string{"id"}),
 		conv:         conv,
 	}
 }
@@ -100,12 +100,12 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 }
 
 // Update missing godoc
-func (r *repository) Update(ctx context.Context, item *model.FetchRequest) error {
+func (r *repository) Update(ctx context.Context, tenant string, item *model.FetchRequest) error {
 	entity, err := r.conv.ToEntity(*item)
 	if err != nil {
 		return err
 	}
-	return r.updater.UpdateSingle(ctx, entity)
+	return r.updater.UpdateSingle(ctx, tenant, entity)
 }
 
 // ListByReferenceObjectIDs missing godoc

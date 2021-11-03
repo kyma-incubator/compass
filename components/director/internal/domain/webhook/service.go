@@ -21,7 +21,7 @@ type WebhookRepository interface {
 	ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
 	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, tenant string, item *model.Webhook) error
-	Update(ctx context.Context, item *model.Webhook) error
+	Update(ctx context.Context, tenant string, item *model.Webhook) error
 	Delete(ctx context.Context, id string) error
 }
 
@@ -115,6 +115,12 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if apperrors.IsTenantRequired(err) {
+		log.C(ctx).Debugf("Creating Webhook with type %s without tenant", in.Type)
+	} else if err != nil {
+		return err
+	}
 	webhook, err := s.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "while getting Webhook")
@@ -128,7 +134,7 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) 
 		return errors.New("while updating Webhook: webhook doesn't have neither of application_id and application_template_id")
 	}
 
-	err = s.webhookRepo.Update(ctx, webhook) // TODO: <storage-redesign> add tenant to update
+	err = s.webhookRepo.Update(ctx, tnt, webhook)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Webhook")
 	}

@@ -39,8 +39,8 @@ type repository struct {
 	lister           repo.Lister
 	existQuerier     repo.ExistQuerier
 	deleter          repo.Deleter
-	updater          repo.Updater
-	versionedUpdater repo.Updater
+	updater          repo.UpdaterGlobal
+	versionedUpdater repo.UpdaterGlobal
 	upserter         repo.Upserter
 }
 
@@ -52,8 +52,8 @@ func NewRepository(conv EntityConverter) *repository {
 		existQuerier:     repo.NewExistQuerier(resource.LabelDefinition, tableName, tenantColumn),
 		lister:           repo.NewLister(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
 		deleter:          repo.NewDeleter(resource.LabelDefinition, tableName, tenantColumn),
-		updater:          repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
-		versionedUpdater: repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, versionedIDColumns),
+		updater:          repo.NewGlobalUpdaterBuilderFor(resource.LabelDefinition).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithTenantColumn(tenantColumn).WithIDColumns(idColumns...).Build(),
+		versionedUpdater: repo.NewGlobalUpdaterBuilderFor(resource.LabelDefinition).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithTenantColumn(tenantColumn).WithIDColumns(versionedIDColumns...).Build(),
 		upserter:         repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}),
 	}
 }

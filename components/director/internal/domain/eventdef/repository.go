@@ -60,7 +60,7 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 		queryBuilder: repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, tenantColumn, []string{bundlereferences.EventDefIDColumn}),
 		lister:       repo.NewLister(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
 		creator:      repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
-		updater:      repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
+		updater:      repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, idColumns),
 		deleter:      repo.NewDeleter(resource.EventDefinition, eventAPIDefTable, tenantColumn),
 		existQuerier: repo.NewExistQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn),
 		conv:         conv,
@@ -188,14 +188,14 @@ func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*m
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, item *model.EventDefinition) error {
+func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.EventDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity := r.conv.ToEntity(*item)
 
-	return r.updater.UpdateSingle(ctx, entity)
+	return r.updater.UpdateSingle(ctx, tenant, entity)
 }
 
 // Exists missing godoc

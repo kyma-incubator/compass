@@ -22,7 +22,7 @@ type EventAPIRepository interface {
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error)
 	Create(ctx context.Context, tenant string, item *model.EventDefinition) error
 	CreateMany(ctx context.Context, tenant string, items []*model.EventDefinition) error
-	Update(ctx context.Context, item *model.EventDefinition) error
+	Update(ctx context.Context, tenant string, item *model.EventDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
@@ -186,7 +186,7 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 
 // UpdateInManyBundles missing godoc
 func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsForCreation []string, bundleIDsForDeletion []string, eventHash uint64) error {
-	_, err := tenant.LoadFromContext(ctx) // TODO: <storage-redesign> adapt
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
@@ -198,7 +198,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 
 	event = in.ToEventDefinition(id, event.ApplicationID, event.PackageID, eventHash)
 
-	err = s.eventAPIRepo.Update(ctx, event)
+	err = s.eventAPIRepo.Update(ctx, tnt, event)
 	if err != nil {
 		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
 	}

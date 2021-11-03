@@ -21,7 +21,7 @@ type SpecRepository interface {
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) error
-	Update(ctx context.Context, item *model.Spec) error
+	Update(ctx context.Context, tenant string, item *model.Spec) error
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
 }
 
@@ -133,7 +133,7 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 
-		err = s.repo.Update(ctx, spec)
+		err = s.repo.Update(ctx, tnt, spec)
 		if err != nil {
 			return "", errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
 		}
@@ -173,7 +173,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 	}
 
-	err = s.repo.Update(ctx, spec) // TODO: <storage-redesign> add tenant to update
+	err = s.repo.Update(ctx, tnt, spec)
 	if err != nil {
 		return errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
 	}
@@ -227,7 +227,7 @@ func (s *service) RefetchSpec(ctx context.Context, id string) (*model.Spec, erro
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fetchRequest)
 	}
 
-	err = s.repo.Update(ctx, spec)
+	err = s.repo.Update(ctx, tnt, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while updating Specification with id %q", id)
 	}

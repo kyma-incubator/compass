@@ -45,7 +45,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		lister:       repo.NewLister(resource.Vendor, vendorTable, tenantColumn, vendorColumns),
 		deleter:      repo.NewDeleter(resource.Vendor, vendorTable, tenantColumn),
 		creator:      repo.NewCreator(resource.Vendor, vendorTable, vendorColumns),
-		updater:      repo.NewUpdater(resource.Vendor, vendorTable, updatableColumns, tenantColumn, []string{"id"}),
+		updater:      repo.NewUpdater(resource.Vendor, vendorTable, updatableColumns, []string{"id"}),
 	}
 }
 
@@ -60,12 +60,12 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.V
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, model *model.Vendor) error {
+func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.Vendor) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
 	log.C(ctx).Debugf("Updating Vendor entity with id %q", model.ID)
-	return r.updater.UpdateSingle(ctx, r.conv.ToEntity(model))
+	return r.updater.UpdateSingle(ctx, tenant, r.conv.ToEntity(model))
 }
 
 // Delete missing godoc

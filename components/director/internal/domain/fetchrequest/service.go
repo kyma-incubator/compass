@@ -3,6 +3,7 @@ package fetchrequest
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -32,7 +33,7 @@ type service struct {
 // FetchRequestRepository missing godoc
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
-	Update(ctx context.Context, item *model.FetchRequest) error
+	Update(ctx context.Context, tenant string, item *model.FetchRequest) error
 }
 
 // NewService missing godoc
@@ -47,10 +48,16 @@ func NewService(repo FetchRequestRepository, client *http.Client, executorProvid
 
 // HandleSpec missing godoc
 func (s *service) HandleSpec(ctx context.Context, fr *model.FetchRequest) *string {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error has occurred while getting tenant: %v", err)
+		return nil
+	}
+
 	var data *string
 	data, fr.Status = s.fetchSpec(ctx, fr)
 
-	if err := s.repo.Update(ctx, fr); err != nil {
+	if err := s.repo.Update(ctx, tnt, fr); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request status: %v", err)
 		return nil
 	}

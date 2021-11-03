@@ -45,7 +45,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		lister:       repo.NewLister(resource.Tombstone, tombstoneTable, tenantColumn, tombstoneColumns),
 		deleter:      repo.NewDeleter(resource.Tombstone, tombstoneTable, tenantColumn),
 		creator:      repo.NewCreator(resource.Tombstone, tombstoneTable, tombstoneColumns),
-		updater:      repo.NewUpdater(resource.Tombstone, tombstoneTable, updatableColumns, tenantColumn, []string{"id"}),
+		updater:      repo.NewUpdater(resource.Tombstone, tombstoneTable, updatableColumns, []string{"id"}),
 	}
 }
 
@@ -60,12 +60,12 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.T
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, model *model.Tombstone) error {
+func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.Tombstone) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
 	log.C(ctx).Debugf("Updating Tombstone entity with id %q", model.ID)
-	return r.updater.UpdateSingle(ctx, r.conv.ToEntity(model))
+	return r.updater.UpdateSingle(ctx, tenant, r.conv.ToEntity(model))
 }
 
 // Delete missing godoc

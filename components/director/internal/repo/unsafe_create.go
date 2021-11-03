@@ -36,6 +36,7 @@ func NewUnsafeCreator(resourceType resource.Type, tableName string, insertColumn
 }
 
 // UnsafeCreate adds a new entity in the Compass DB in case it does not exist. If it already exists, no action is taken.
+// This creator is not suitable for tenant scoped resources as it does not maintain tenant accesses. Use it for global scoped resources only.
 func (u *unsafeCreator) UnsafeCreate(ctx context.Context, dbEntity interface{}) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")

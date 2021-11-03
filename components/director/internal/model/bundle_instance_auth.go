@@ -12,7 +12,7 @@ type BundleInstanceAuth struct {
 	BundleID         string
 	RuntimeID        *string
 	RuntimeContextID *string
-	Tenant           string
+	Owner            string
 	Context          *string
 	InputParams      *string
 	Auth             *Auth
@@ -87,7 +87,7 @@ func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tena
 		BundleID:         bundleID,
 		RuntimeID:        runtimeID,
 		RuntimeContextID: runtimeContextID,
-		Tenant:           tenant,
+		Owner:            tenant,
 		Context:          ri.Context,
 		InputParams:      ri.InputParams,
 		Auth:             auth,

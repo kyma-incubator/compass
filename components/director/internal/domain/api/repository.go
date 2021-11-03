@@ -57,7 +57,7 @@ func NewRepository(conv APIDefinitionConverter) *pgRepository {
 		queryBuilder:    repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, tenantColumn, []string{bundlereferences.APIDefIDColumn}),
 		lister:          repo.NewLister(resource.API, apiDefTable, tenantColumn, apiDefColumns),
 		creator:         repo.NewCreator(resource.API, apiDefTable, apiDefColumns),
-		updater:         repo.NewUpdater(resource.API, apiDefTable, updatableColumns, tenantColumn, idColumns),
+		updater:         repo.NewUpdater(resource.API, apiDefTable, updatableColumns, idColumns),
 		deleter:         repo.NewDeleter(resource.API, apiDefTable, tenantColumn),
 		existQuerier:    repo.NewExistQuerier(resource.API, apiDefTable, tenantColumn),
 		conv:            conv,
@@ -186,14 +186,14 @@ func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*m
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, item *model.APIDefinition) error {
+func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.APIDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity := r.conv.ToEntity(*item)
 
-	return r.updater.UpdateSingle(ctx, entity)
+	return r.updater.UpdateSingle(ctx, tenant, entity)
 }
 
 // Exists missing godoc

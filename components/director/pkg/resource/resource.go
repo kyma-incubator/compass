@@ -22,6 +22,8 @@ const (
 	RuntimeContextLabel Type = "runtimeContextLabel"
 	// ApplicationLabel missing godoc
 	ApplicationLabel Type = "applicationLabel"
+	// TenantLabel missing godoc
+	TenantLabel Type = "tenantLabel"
 	// Bundle missing godoc
 	Bundle Type = "bundle"
 	// BundleReference missing godoc
@@ -93,7 +95,11 @@ var tenantAccessTable = map[Type]string{
 	Tombstone:           "tombstones_tenants",
 	DocFetchRequest:     "document_fetch_requests_tenants",
 	SpecFetchRequest:    "specifications_fetch_requests_tenants",
+
 	Specification:       "specifications_tenants",
+	APISpecification:    "specifications_tenants",
+	EventSpecification:  "specifications_tenants",
+
 	Document:            "documents_tenants",
 	BundleInstanceAuth:  "bundle_instance_auths_tenants",
 	API:                 "api_definitions_tenants",

@@ -13,7 +13,7 @@ import (
 //go:generate mockery --name=ProductRepository --output=automock --outpkg=automock --case=underscore
 type ProductRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Product) error
-	Update(ctx context.Context, item *model.Product) error
+	Update(ctx context.Context, tenant string, item *model.Product) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Product, error)
@@ -72,7 +72,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ProductInput) 
 
 	product.SetFromUpdateInput(in)
 
-	err = s.productRepo.Update(ctx, product)
+	err = s.productRepo.Update(ctx, tnt, product)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Product with id %s", id)
 	}

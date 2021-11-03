@@ -55,8 +55,8 @@ func NewRepository(conv EntityConverter) *repository {
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
 		creator:            repo.NewCreator(resource.Webhook, tableName, webhookColumns),
 		globalCreator:      repo.NewGlobalCreator(resource.Webhook, tableName, webhookColumns),
-		updater:            repo.NewUpdater(resource.Webhook, tableName, updatableColumns, tenantColumn, []string{"id", "app_id"}),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id"}),
+		updater:            repo.NewUpdater(resource.Webhook, tableName, updatableColumns, []string{"id", "app_id"}),
+		updaterGlobal:      repo.NewGlobalUpdaterBuilderFor(resource.Webhook).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithIDColumns("id").Build(),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),
 		deleter:            repo.NewDeleter(resource.Webhook, tableName, tenantColumn),
 		lister:             repo.NewLister(resource.Webhook, tableName, tenantColumn, webhookColumns),
@@ -168,7 +168,7 @@ func (r *repository) CreateMany(ctx context.Context, tenant string, items []*mod
 }
 
 // Update missing godoc
-func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
+func (r *repository) Update(ctx context.Context, tenant string, item *model.Webhook) error {
 	if item == nil {
 		return missingInputModelError
 	}
@@ -177,9 +177,9 @@ func (r *repository) Update(ctx context.Context, item *model.Webhook) error {
 		return errors.Wrap(err, "while converting model to entity")
 	}
 	if entity.GetRefSpecificResourceType() == resource.Webhook { // Global resource webhook
-		return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
+		return r.updaterGlobal.UpdateSingle(ctx, entity)
 	}
-	return r.updater.UpdateSingle(ctx, entity)
+	return r.updater.UpdateSingle(ctx, tenant, entity)
 }
 
 // Delete missing godoc

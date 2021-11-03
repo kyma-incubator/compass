@@ -29,8 +29,7 @@ type RuntimeRepository interface {
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Create(ctx context.Context, tenant string, item *model.Runtime) error
-	Update(ctx context.Context, item *model.Runtime) error
-	// UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
+	Update(ctx context.Context, tenant string, item *model.Runtime) error
 	Delete(ctx context.Context, tenant, id string) error
 }
 
@@ -247,7 +246,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 
 	rtm = in.ToRuntime(id, rtm.CreationTimestamp, time.Now())
 
-	err = s.repo.Update(ctx, rtm) // TODO: <storage-redesign> add tenant
+	err = s.repo.Update(ctx, rtmTenant, rtm)
 	if err != nil {
 		return errors.Wrap(err, "while updating Runtime")
 	}

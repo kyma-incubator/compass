@@ -47,7 +47,7 @@ type ApplicationRepository interface {
 	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
-	Update(ctx context.Context, item *model.Application) error
+	Update(ctx context.Context, tenant string, item *model.Application) error
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
@@ -321,6 +321,11 @@ func (s *service) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context,
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
 	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
 		return errors.Wrap(err, "while validating Integration System ID")
@@ -337,7 +342,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 
 	app.SetFromUpdateInput(in, s.timestampGen())
 
-	err = s.appRepo.Update(ctx, app)
+	err = s.appRepo.Update(ctx, appTenant, app)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application with id %s", id)
 	}
@@ -403,7 +408,7 @@ func (s *service) Unpair(ctx context.Context, id string) error {
 		}
 	}
 
-	if err = s.appRepo.Update(ctx, app); err != nil {
+	if err = s.appRepo.Update(ctx, appTenant, app); err != nil {
 		return err
 	}
 

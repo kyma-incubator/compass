@@ -52,7 +52,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		lister:             repo.NewLister(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.Runtime, runtimeTable, runtimeColumns),
 		creator:            repo.NewCreator(resource.Runtime, runtimeTable, runtimeColumns),
-		updater:            repo.NewUpdater(resource.Runtime, runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
+		updater:            repo.NewUpdater(resource.Runtime, runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, []string{"id"}),
 		conv:               conv,
 	}
 }
@@ -229,24 +229,13 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ru
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, item *model.Runtime) error {
+func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Runtime) error {
 	runtimeEnt, err := EntityFromRuntimeModel(item)
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
-	return r.updater.UpdateSingle(ctx, runtimeEnt)
+	return r.updater.UpdateSingle(ctx, tenant, runtimeEnt)
 }
-
-//// UpdateTenantID missing godoc
-//func (r *pgRepository) UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error {
-//	updaterGlobal := repo.NewUpdaterGlobal(resource.Runtime, runtimeTable, []string{tenantColumn}, []string{"id"})
-//
-//	runtimeEnt := &Runtime{
-//		ID:       runtimeID,
-//		TenantID: newTenantID,
-//	}
-//	return updaterGlobal.UpdateSingleGlobal(ctx, runtimeEnt)
-//}
 
 // GetOldestForFilters missing godoc
 func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {

@@ -23,7 +23,7 @@ type Repository interface {
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.BundleInstanceAuth, error)
 	ListByBundleID(ctx context.Context, tenantID string, bundleID string) ([]*model.BundleInstanceAuth, error)
 	ListByRuntimeID(ctx context.Context, tenantID string, runtimeID string) ([]*model.BundleInstanceAuth, error)
-	Update(ctx context.Context, item *model.BundleInstanceAuth) error
+	Update(ctx context.Context, tenant string, item *model.BundleInstanceAuth) error
 	Delete(ctx context.Context, tenantID string, id string) error
 }
 
@@ -150,7 +150,12 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID string) ([]*mod
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error {
-	err := s.repo.Update(ctx, instanceAuth)
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = s.repo.Update(ctx, tnt, instanceAuth)
 	if err != nil {
 		return errors.Wrap(err, "while updating Bundle Instance Auths")
 	}
@@ -182,7 +187,7 @@ func (s *service) SetAuth(ctx context.Context, id string, in model.BundleInstanc
 		return err
 	}
 
-	err = s.repo.Update(ctx, instanceAuth)
+	err = s.repo.Update(ctx, tnt, instanceAuth)
 	if err != nil {
 		return errors.Wrapf(err, "while updating BundleInstanceAuth with ID %s", id)
 	}
@@ -191,6 +196,10 @@ func (s *service) SetAuth(ctx context.Context, id string, in model.BundleInstanc
 
 // RequestDeletion missing godoc
 func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return false, err
+	}
 	if instanceAuth == nil {
 		return false, apperrors.NewInternalError("BundleInstanceAuth is required to request its deletion")
 	}
@@ -204,7 +213,7 @@ func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.Bundl
 		}
 		log.C(ctx).Infof("Status for BundleInstanceAuth with id %s set to '%s'. Credentials are ready for being deleted by Application or Integration System.", instanceAuth.ID, model.BundleInstanceAuthStatusConditionUnused)
 
-		err = s.repo.Update(ctx, instanceAuth)
+		err = s.repo.Update(ctx, tnt, instanceAuth)
 		if err != nil {
 			return false, errors.Wrapf(err, "while updating BundleInstanceAuth with id %s", instanceAuth.ID)
 		}
@@ -213,7 +222,7 @@ func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.Bundl
 	}
 
 	log.C(ctx).Debugf("Default credentials for BundleInstanceAuth with id %s are provided.", instanceAuth.ID)
-	err := s.Delete(ctx, instanceAuth.ID)
+	err = s.Delete(ctx, instanceAuth.ID)
 	if err != nil {
 		return false, err
 	}

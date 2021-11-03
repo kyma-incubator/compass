@@ -13,7 +13,7 @@ import (
 //go:generate mockery --name=PackageRepository --output=automock --outpkg=automock --case=underscore
 type PackageRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Package) error
-	Update(ctx context.Context, item *model.Package) error
+	Update(ctx context.Context, tenant string, item *model.Package) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Package, error)
@@ -73,7 +73,7 @@ func (s *service) Update(ctx context.Context, id string, in model.PackageInput, 
 
 	pkg.SetFromUpdateInput(in, pkgHash)
 
-	err = s.pkgRepo.Update(ctx, pkg)
+	err = s.pkgRepo.Update(ctx, tnt, pkg)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Package with id %s", id)
 	}
