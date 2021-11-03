@@ -29,12 +29,14 @@ func TestQueryTenants(t *testing.T) {
 
 	t.Log("Initializing one of the tenants")
 	initializedTenantID := tenant.TestTenants.GetIDByName(t, tenant.TenantsQueryInitializedTenantName)
-	unregisterApp := fixtures.RegisterSimpleApp(t, ctx, dexGraphQLClient, initializedTenantID)
-	defer unregisterApp()
+
+	// Listing scenarios for LabelDefinition creates a default record if there are no scenarios. This invocation is needed so that we can initialize the tenant.
+	_, err := fixtures.ListLabelDefinitionByKeyWithinTenant(ctx, dexGraphQLClient, "scenarios", initializedTenantID)
+	require.NoError(t, err)
 
 	// WHEN
 	t.Log("List tenants")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &output)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &output)
 	require.NoError(t, err)
 
 	//THEN
