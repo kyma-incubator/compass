@@ -333,7 +333,7 @@ func TestConfig_ValidateConfig(t *testing.T) {
 	var tests = []struct {
 		Name              string
 		ConfigProvider    func() ord.WellKnownConfig
-		WebhookURL        string
+		BaseURL           string
 		ExpectedToBeValid bool
 	}{
 		{
@@ -425,28 +425,21 @@ func TestConfig_ValidateConfig(t *testing.T) {
 			},
 		},
 		{
-			Name: "Invalid when webhookURL is not a proper URL",
-			ConfigProvider: func() ord.WellKnownConfig {
-				return *fixWellKnownConfig()
-			},
-			WebhookURL: "not-a-url",
-		},
-		{
-			Name: "Invalid when webhookURL is not /well-known, no config baseURL is set and documents have relative URLs",
+			Name: "Invalid when webhookURL is not /well-known, no config baseURL is set => empty baseURL and documents have relative URLs",
 			ConfigProvider: func() ord.WellKnownConfig {
 				config := fixWellKnownConfig()
 				config.BaseURL = ""
 
 				return *config
 			},
-			WebhookURL: customWebhookConfigURL,
+			BaseURL: "",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			cfg := test.ConfigProvider()
-			err := cfg.Validate(test.WebhookURL)
+			err := cfg.Validate(test.BaseURL)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -460,6 +453,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 	var tests = []struct {
 		Name              string
 		DocumentProvider  func() []*ord.Document
+		CalculatedBaseURL *string
 		ExpectedToBeValid bool
 	}{
 		{
@@ -511,13 +505,32 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "`baseUrl` of `DescribedSystemInstance` does not match the webhook Url",
+			Name: "`baseUrl` of `DescribedSystemInstance` does not match the calculated baseURL",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.DescribedSystemInstance.BaseURL = str.Ptr(baseURL2)
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "No `baseUrl` of `DescribedSystemInstance` is provided when the calculated baseURL is empty",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance = nil
+
+				return []*ord.Document{doc}
+			},
+			CalculatedBaseURL: str.Ptr(""),
+		}, {
+			Name: "`baseUrl` of `DescribedSystemInstance` is different for each document when the calculated baseURL is empty",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc2 := fixORDDocument()
+				doc2.DescribedSystemInstance.BaseURL = str.Ptr(baseURL2)
+
+				return []*ord.Document{doc, doc2}
+			},
+			CalculatedBaseURL: str.Ptr(""),
 		}, {
 			Name: "Invalid JSON `Labels` field for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
@@ -563,8 +576,21 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
+			docs := ord.Documents{}
+			if len(test.DocumentProvider()) == 0 {
+				docs = ord.Documents{test.DocumentProvider()[0]}
+			} else {
+				docs = test.DocumentProvider()
+			}
+
+			var url string
+			if test.CalculatedBaseURL != nil {
+				url = *test.CalculatedBaseURL
+			} else {
+				url = baseURL
+			}
+
+			err := docs.Validate(url, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {

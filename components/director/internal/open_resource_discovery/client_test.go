@@ -134,7 +134,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			ExpectedResult: ord.Documents{
 				fixORDDocument(),
 			},
-			ExpectedBaseURL: docHost,
+			ExpectedBaseURL: "",
 			WebhookURL:      customWebhookConfigURL,
 		},
 		{
@@ -310,30 +310,6 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			},
 			ExpectedResult:  ord.Documents{},
 			ExpectedBaseURL: baseURL,
-		},
-		{
-			Name: "Error when webhookURL is not /well-known, there is no baseURL provided in the config and document URLs are absolute but different",
-			RoundTripFunc: func(req *http.Request) *http.Response {
-				var data []byte
-				var err error
-				statusCode := http.StatusOK
-				if strings.Contains(req.URL.String(), customWebhookConfigURL) {
-					config := fixWellKnownConfig()
-					config.BaseURL = ""
-					config.OpenResourceDiscoveryV1.Documents[0].URL = absoluteDocURL
-					secondDoc := config.OpenResourceDiscoveryV1.Documents[0]
-					config.OpenResourceDiscoveryV1.Documents = append(config.OpenResourceDiscoveryV1.Documents, secondDoc)
-					config.OpenResourceDiscoveryV1.Documents[1].URL = absoluteDocURL2
-					data, err = json.Marshal(config)
-					require.NoError(t, err)
-				}
-				return &http.Response{
-					StatusCode: statusCode,
-					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
-				}
-			},
-			WebhookURL:  customWebhookConfigURL,
-			ExpectedErr: errors.New("no baseURL was provided and documents have different URL host"),
 		},
 		{
 			Name: "Error fetching document",

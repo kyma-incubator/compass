@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/url"
 	"regexp"
-	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
@@ -61,7 +60,7 @@ type Document struct {
 }
 
 // Validate validates if the Config object complies with the spec requirements
-func (c WellKnownConfig) Validate(webhookURL string) error {
+func (c WellKnownConfig) Validate(baseURL string) error {
 	if err := validation.Validate(c.BaseURL, validation.Match(regexp.MustCompile(ConfigBaseURLRegex))); err != nil {
 		return err
 	}
@@ -76,18 +75,12 @@ func (c WellKnownConfig) Validate(webhookURL string) error {
 		}
 	}
 
-	parsedWebhookURL, err := url.ParseRequestURI(webhookURL)
-	if err != nil {
-		return errors.Wrap(err, "while parsing input webhook url")
-	}
-
-	hasWellKnownSuffix := strings.HasSuffix(parsedWebhookURL.Path, WellKnownEndpoint)
 	areDocsWithRelativeURLs, err := checkForRelativeDocURLs(c.OpenResourceDiscoveryV1.Documents)
 	if err != nil {
 		return err
 	}
 
-	if !hasWellKnownSuffix && c.BaseURL == "" && areDocsWithRelativeURLs {
+	if baseURL == "" && areDocsWithRelativeURLs {
 		return errors.New("there are relative document URls but no baseURL provided neither in config nor through /well-known endpoint")
 	}
 
@@ -98,8 +91,18 @@ func (c WellKnownConfig) Validate(webhookURL string) error {
 type Documents []*Document
 
 // Validate validates all the documents for a system instance
-func (docs Documents) Validate(baseURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
+func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
+	baseURL := calculatedBaseURL
+	isBaseURLConfigured := len(calculatedBaseURL) > 0
 	for _, doc := range docs {
+		if !isBaseURLConfigured && (doc.DescribedSystemInstance == nil || doc.DescribedSystemInstance.BaseURL == nil) {
+			return errors.New("no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance")
+		}
+
+		if len(baseURL) == 0 {
+			baseURL = *doc.DescribedSystemInstance.BaseURL
+		}
+
 		if doc.DescribedSystemInstance != nil {
 			if err := ValidateSystemInstanceInput(doc.DescribedSystemInstance); err != nil {
 				return errors.Wrap(err, "error validating system instance")

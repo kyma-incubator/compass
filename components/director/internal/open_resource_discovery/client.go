@@ -45,14 +45,14 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 		return nil, "", err
 	}
 
-	err = config.Validate(*webhook.URL)
-	if err != nil {
-		return nil, "", errors.Wrap(err, "while validating ORD config")
-	}
-
 	baseURL, err := calculateBaseURL(*webhook.URL, *config)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "while calculating baseURL")
+	}
+
+	err = config.Validate(baseURL)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "while validating ORD config")
 	}
 
 	docs := make([]*Document, 0)
@@ -170,47 +170,22 @@ func buildDocumentURL(docURL, baseURL string) (string, error) {
 	return baseURL + docURL, nil
 }
 
+// if webhookURL is not /well-known, but there is a valid baseURL provided in the config - use it
+// if webhookURL is /well-known, strip the suffix and use it as baseURL. In case both are provided - the config baseURL is used.
 func calculateBaseURL(webhookURL string, config WellKnownConfig) (string, error) {
+	if config.BaseURL != "" {
+		return config.BaseURL, nil
+	}
+
 	parsedWebhookURL, err := url.ParseRequestURI(webhookURL)
 	if err != nil {
 		return "", errors.New("error while parsing input webhook url")
 	}
 
-	hasWellKnownSuffix := strings.HasSuffix(parsedWebhookURL.Path, WellKnownEndpoint)
-
-	// if webhookURL is /well-known, strip the suffix and use it as baseURL. In case both are provided - the config baseURL is used.
-	// if webhookURL is not /well-known, but there is a valid baseURL provided in the config - use it
-	if hasWellKnownSuffix && config.BaseURL == "" {
+	if strings.HasSuffix(parsedWebhookURL.Path, WellKnownEndpoint) {
 		strippedPath := strings.ReplaceAll(parsedWebhookURL.Path, WellKnownEndpoint, "")
 		parsedWebhookURL.Path = strippedPath
 		return parsedWebhookURL.String(), nil
-	} else if config.BaseURL != "" {
-		return config.BaseURL, nil
 	}
-
-	// if webhookURL is not /well-known, there is no baseURL provided in the config - use the host of the absolute paths of the doc.URLs if it's the same for all of them
-	// we are sure that all docs have absolute URLs because if they didn't the Validate() of the config would have failed
-	documentHost, err := extractDocumentsURLHost(config.OpenResourceDiscoveryV1.Documents)
-	if err != nil {
-		return "", err
-	}
-
-	return documentHost, nil
-}
-
-func extractDocumentsURLHost(docs []DocumentDetails) (string, error) {
-	var documentHost string
-	for _, doc := range docs {
-		parsedDocURL, err := url.ParseRequestURI(doc.URL)
-		if err != nil {
-			return "", errors.New("error while parsing document url")
-		}
-
-		if documentHost == "" {
-			documentHost = parsedDocURL.Scheme + "://" + parsedDocURL.Host
-		} else if documentHost != parsedDocURL.Host {
-			return "", errors.New("no baseURL was provided and documents have different URL host")
-		}
-	}
-	return documentHost, nil
+	return "", nil
 }
