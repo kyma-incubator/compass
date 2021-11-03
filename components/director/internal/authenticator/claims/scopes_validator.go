@@ -1,6 +1,7 @@
 package claims
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -12,15 +13,15 @@ type scopeBasedClaimsValidator struct {
 	requiredScopes []string
 }
 
-// NewScopesValidator missing godoc
+// NewScopesValidator creates new scopes validator for given scopes.
 func NewScopesValidator(requiredScopes []string) *scopeBasedClaimsValidator {
 	return &scopeBasedClaimsValidator{
 		requiredScopes: requiredScopes,
 	}
 }
 
-// Validate missing godoc
-func (v *scopeBasedClaimsValidator) Validate(claims Claims) error {
+// Validate validates the scopes in given token claims.
+func (v *scopeBasedClaimsValidator) Validate(_ context.Context, claims Claims) error {
 	if err := claims.Valid(); err != nil {
 		return errors.Wrapf(err, "while validating claims")
 	}

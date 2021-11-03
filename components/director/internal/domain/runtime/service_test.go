@@ -80,9 +80,7 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				return repo
+				return &automock.ScenariosService{}
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -111,8 +109,7 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -132,34 +129,6 @@ func TestService_Create(t *testing.T) {
 			},
 			Input:       modelInputWithoutLabels,
 			ExpectedErr: nil,
-		},
-		{
-			Name: "Returns error when ensuring default label definition failed",
-			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
-				return repo
-			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(testErr).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
-				svc := &automock.ScenarioAssignmentEngine{}
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
 		},
 		{
 			Name: "Returns error when runtime creation failed",
@@ -196,9 +165,7 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				return repo
+				return &automock.ScenariosService{}
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -225,9 +192,7 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				return repo
+				return &automock.ScenariosService{}
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -2610,6 +2575,86 @@ func TestService_ListByFiltersGlobal(t *testing.T) {
 
 			// when
 			actualRuntimes, err := svc.ListByFiltersGlobal(ctx, filters)
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				require.Equal(t, modelRuntimes, actualRuntimes)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+			labelRepository.AssertExpectations(t)
+			labelUpsertService.AssertExpectations(t)
+			scenariosService.AssertExpectations(t)
+			scenarioAssignmentEngine.AssertExpectations(t)
+			uidSvc.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListByFilters(t *testing.T) {
+	// given
+	tnt := "tenant"
+	testErr := errors.New("Test error")
+	filters := []*labelfilter.LabelFilter{
+		{Key: "test-key", Query: str.Ptr("test-filter")},
+	}
+	modelRuntimes := []*model.Runtime{
+		fixModelRuntime(t, "foo", tnt, "Foo", "Lorem Ipsum"),
+		fixModelRuntime(t, "bar", tnt, "Bar", "Lorem Ipsum"),
+	}
+	ctx := tenant.SaveToContext(context.TODO(), tnt, tnt)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeRepository
+		Context            context.Context
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", contextThatHasTenant(tnt), tnt, filters).Return(modelRuntimes, nil).Once()
+				return repo
+			},
+			Context:            ctx,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Fails on repository error",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", contextThatHasTenant(tnt), tnt, filters).Return(nil, testErr).Once()
+				return repo
+			},
+			Context:            ctx,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Fails when no tenant in the context",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				return &automock.RuntimeRepository{}
+			},
+			Context:            context.TODO(),
+			ExpectedErrMessage: "while loading tenant from context",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			labelRepository := &automock.LabelRepository{}
+			labelUpsertService := &automock.LabelUpsertService{}
+			scenariosService := &automock.ScenariosService{}
+			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
+			uidSvc := &automock.UIDService{}
+			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$")
+
+			// when
+			actualRuntimes, err := svc.ListByFilters(testCase.Context, filters)
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)

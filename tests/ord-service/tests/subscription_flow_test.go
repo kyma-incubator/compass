@@ -42,6 +42,58 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+func TestSelfRegisterFlow(stdT *testing.T) {
+	t := testingx.NewT(stdT)
+	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
+		ctx := context.Background()
+
+		// defaultTenantId is the parent of the subaccountID
+		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
+		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+
+		// Build graphql director client configured with certificate
+		clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subaccountID)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
+
+		// Register application
+		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", defaultTenantId)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTenantId, &app)
+		require.NoError(t, err)
+		require.NotEmpty(t, app.ID)
+
+		// Create label definition
+		scenarios := []string{"DEFAULT", "sr-test-scenario"}
+		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios)
+		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios[:1])
+
+		// Assign application to scenario
+		appLabelRequest := fixtures.FixSetApplicationLabelRequest(app.ID, scenariosLabel, scenarios[1:])
+		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, defaultTenantId, appLabelRequest, nil))
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, defaultTenantId, app.ID, testConfig.DefaultScenarioEnabled)
+
+		// Self register runtime
+		runtimeInput := graphql.RuntimeInput{
+			Name:        "selfRegisterRuntime",
+			Description: ptr.String("selfRegisterRuntime-description"),
+		}
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, defaultTenantId, &runtimeInput)
+		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, defaultTenantId, &runtime)
+		require.NoError(t, err)
+		require.NotEmpty(t, runtime.ID)
+
+		labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId)
+		require.NoError(t, err)
+		numOfScenarioLabelDefinitions := 0
+		for _, ld := range labelDefinitions {
+			if ld.Key == scenariosLabel {
+				numOfScenarioLabelDefinitions++
+			}
+		}
+		// the parent tenant should not see child label definitions
+		require.Equal(t, 1, numOfScenarioLabelDefinitions)
+	})
+}
+
 func TestConsumerProviderFlow(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
