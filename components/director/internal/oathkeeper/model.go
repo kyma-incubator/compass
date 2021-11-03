@@ -58,6 +58,7 @@ type AuthDetails struct {
 	CertIssuer    string
 	Authenticator *authenticator.Config
 	ScopePrefix   string
+	Region        string
 }
 
 // AuthFlow wraps possible flows of auth like OAuth2, JWT and certificate
