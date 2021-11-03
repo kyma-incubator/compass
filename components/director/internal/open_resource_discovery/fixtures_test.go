@@ -16,8 +16,6 @@ import (
 
 const (
 	absoluteDocURL         = "http://config.com/open-resource-discovery/v1/documents/example1"
-	absoluteDocURL2        = "http://config-second.com/open-resource-discovery/v1/documents/example1"
-	docHost                = "http://config.com"
 	ordDocURI              = "/open-resource-discovery/v1/documents/example1"
 	baseURL                = "http://test.com:8080"
 	baseURL2               = "http://second.com"
