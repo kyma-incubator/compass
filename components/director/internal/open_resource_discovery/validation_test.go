@@ -576,7 +576,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			docs := ord.Documents{}
+			var docs ord.Documents
 			if len(test.DocumentProvider()) == 0 {
 				docs = ord.Documents{test.DocumentProvider()[0]}
 			} else {
