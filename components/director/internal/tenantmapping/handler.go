@@ -273,6 +273,8 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 	reqData.Body.Extra["consumerType"] = consumer.ConsumerType
 	reqData.Body.Extra["flow"] = consumer.Flow
 	reqData.Body.Extra["onBehalfOf"] = consumer.OnBehalfOf
+	reqData.Body.Extra["region"] = getRegionFromConsumerToken(objectContexts)
+	reqData.Body.Extra["tokenClientID"] = getClientIDFromConsumerToken(objectContexts)
 }
 
 func getCertServiceObjectContextProviderConsumer(objectContexts []ObjectContext) consumer.Consumer {
@@ -291,6 +293,24 @@ func getOnBehalfConsumer(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
 		if objCtx.ContextProvider != CertServiceObjectContextProvider {
 			return objCtx.ConsumerID
+		}
+	}
+	return ""
+}
+
+func getRegionFromConsumerToken(objectContexts []ObjectContext) string {
+	for _, objCtx := range objectContexts {
+		if objCtx.ContextProvider == AuthenticatorObjectContextProvider {
+			return objCtx.Region
+		}
+	}
+	return ""
+}
+
+func getClientIDFromConsumerToken(objectContexts []ObjectContext) string {
+	for _, objCtx := range objectContexts {
+		if objCtx.ContextProvider == AuthenticatorObjectContextProvider {
+			return objCtx.OauthClientID
 		}
 	}
 	return ""

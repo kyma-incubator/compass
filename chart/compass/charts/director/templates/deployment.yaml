@@ -171,6 +171,10 @@ spec:
               value: {{ .Values.deployment.dataloaders.maxBatch | quote }}
             - name: APP_DATALOADER_WAIT
               value: {{ .Values.deployment.dataloaders.wait | quote }}
+            - name: APP_SUBSCRIPTION_PROVIDER_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

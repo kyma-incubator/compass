@@ -53,10 +53,13 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
+		clientIDAttributeKey := "clientid"
+		clientID := "client_id"
 		reqData := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					tenantAttributeKey:   expectedExternalTenantID.String(),
+					clientIDAttributeKey: clientID,
 					oathkeeper.ScopesKey: prefixedScopes,
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
@@ -85,6 +88,9 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 				TenantAttribute: authenticator.Attribute{
 					Key: tenantAttributeKey,
 				},
+				ClientID: authenticator.Attribute{
+					Key: clientIDAttributeKey,
+				},
 			},
 		}
 
@@ -97,6 +103,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, clientID, objCtx.OauthClientID)
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
@@ -407,6 +414,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 		uniqueAttributeValue string
 		identityAttributeKey string
 		username             string
+		region               string
 		authenticatorName    string
 		scopePrefix          string
 		domainURL            string
@@ -418,6 +426,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 		uniqueAttributeValue = "uniqueAttributeValue"
 		identityAttributeKey = "identity"
 		authenticatorName = "auth1"
+		region = "region"
 		scopePrefix = "prefix"
 		domainURL = "domain.com"
 		username = "some-username"
@@ -441,6 +450,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 					{
 						DomainURL:   domainURL,
 						ScopePrefix: scopePrefix,
+						Region:      region,
 					},
 				},
 				Attributes: authenticator.Attributes{
@@ -466,6 +476,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, username, authDetails.AuthID)
 		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
+		require.Equal(t, region, authDetails.Region)
 	})
 
 	t.Run("returns ID string and JWTAuthFlow when multiple authenticators configured", func(t *testing.T) {

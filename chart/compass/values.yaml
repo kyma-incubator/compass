@@ -102,13 +102,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2080"
+      version: "PR-2093"
     console:
       dir:
       version: "PR-46"
     e2e_tests:
       dir:
-      version: "PR-2095"
+      version: "PR-2093"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -310,7 +310,7 @@ global:
     port: 4455
     timeout_ms: 120000
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}"}'
+      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
       internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read","tenant":"{\"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\",\"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
