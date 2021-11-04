@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/rtmtest"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,19 +67,15 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		Config         runtime.SelfRegConfig
 		Caller         func(*testing.T) *automock.ExternalSvcCaller
 		Input          model.RuntimeInput
-		InputAssert    func(*testing.T, model.RuntimeInput)
 		Context        context.Context
 		ExpectedErr    error
 		ExpectedOutput model.RuntimeInput
 	}{
 		{
-			Name:   "Success",
-			Config: testConfig,
-			Input:  lblInput,
-			Caller: rtmtest.CallerThatGetsCalledOnce(http.StatusCreated),
-			InputAssert: func(t *testing.T, in model.RuntimeInput) {
-				assert.Equal(t, distinguishLblVal, in.Labels[selfRegisterDistinguishLabelKey])
-			},
+			Name:           "Success",
+			Config:         testConfig,
+			Input:          lblInput,
+			Caller:         rtmtest.CallerThatGetsCalledOnce(http.StatusCreated),
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    nil,
 			ExpectedOutput: lblInputAfterPrep,
@@ -89,7 +84,6 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Name:           "Success for non-matching consumer",
 			Config:         testConfig,
 			Caller:         rtmtest.CallerThatDoesNotGetCalled,
-			InputAssert:    noopAssert,
 			Input:          model.RuntimeInput{},
 			Context:        ctxWithTokenConsumer,
 			ExpectedErr:    nil,
@@ -99,7 +93,6 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Name:           "Error when context does not contain consumer",
 			Config:         testConfig,
 			Caller:         rtmtest.CallerThatDoesNotGetCalled,
-			InputAssert:    noopAssert,
 			Input:          model.RuntimeInput{},
 			Context:        context.TODO(),
 			ExpectedErr:    consumer.NoConsumerError,
@@ -109,7 +102,6 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Name:           "Error when can't create URL for preparation of self-registered runtime",
 			Config:         fakeConfig,
 			Caller:         rtmtest.CallerThatDoesNotGetCalled,
-			InputAssert:    noopAssert,
 			Input:          lblInvalidInput,
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    errors.New("while creating url for preparation of self-registered runtime"),
@@ -119,7 +111,6 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Name:           "Error when Call doesn't succeed",
 			Config:         testConfig,
 			Caller:         rtmtest.CallerThatDoesNotSucceed,
-			InputAssert:    noopAssert,
 			Input:          lblInput,
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    rtmtest.TestError,
@@ -129,7 +120,6 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Name:           "Error when status code is unexpected",
 			Config:         testConfig,
 			Caller:         rtmtest.CallerThatReturnsBadStatus,
-			InputAssert:    noopAssert,
 			Input:          lblInput,
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    errors.New("received unexpected status"),
@@ -151,7 +141,6 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			}
 			require.Equal(t, testCase.ExpectedOutput, output)
 
-			testCase.InputAssert(t, testCase.Input)
 			svcCaller.AssertExpectations(t)
 		})
 	}
@@ -227,5 +216,3 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 		})
 	}
 }
-
-func noopAssert(*testing.T, model.RuntimeInput) {}
