@@ -27,7 +27,7 @@ type Converter interface {
 }
 
 type repository struct {
-	creator            repo.GlobalCreator
+	creator            repo.CreatorGlobal
 	singleGetter       repo.SingleGetter
 	singleGetterGlobal repo.SingleGetterGlobal
 	lister             repo.Lister
@@ -42,7 +42,7 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		creator:            repo.NewGlobalCreator(resource.SystemAuth, tableName, tableColumns),
+		creator:            repo.NewCreatorGlobal(resource.SystemAuth, tableName, tableColumns),
 		singleGetter:       repo.NewSingleGetterWithEmbeddedTenant(resource.SystemAuth, tableName, tenantColumn, tableColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.SystemAuth, tableName, tableColumns),
 		lister:             repo.NewListerWithEmbeddedTenant(resource.SystemAuth, tableName, tenantColumn, tableColumns),

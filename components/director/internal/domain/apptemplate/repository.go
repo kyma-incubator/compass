@@ -28,7 +28,7 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	creator               repo.GlobalCreator
+	creator               repo.CreatorGlobal
 	existQuerierGlobal    repo.ExistQuerierGlobal
 	singleGetterGlobal    repo.SingleGetterGlobal
 	pageableQuerierGlobal repo.PageableQuerierGlobal
@@ -40,7 +40,7 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:               repo.NewGlobalCreator(resource.ApplicationTemplate, tableName, tableColumns),
+		creator:               repo.NewCreatorGlobal(resource.ApplicationTemplate, tableName, tableColumns),
 		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.ApplicationTemplate, tableName),
 		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.ApplicationTemplate, tableName, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.ApplicationTemplate, tableName, tableColumns),

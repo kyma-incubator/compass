@@ -45,7 +45,7 @@ type repository struct {
 	embeddedTenantQueryBuilder repo.QueryBuilder
 
 	creator                        repo.Creator
-	globalCreator                  repo.GlobalCreator
+	globalCreator                  repo.CreatorGlobal
 	updater                        repo.Updater
 	versionedUpdater               repo.Updater
 	embeddedTenantUpdater          repo.UpdaterGlobal
@@ -68,7 +68,7 @@ func NewRepository(conv Converter) *repository {
 		embeddedTenantQueryBuilder: repo.NewQueryBuilderWithEmbeddedTenant(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
 
 		creator:                        repo.NewCreator(resource.Label, tableName, tableColumns),
-		globalCreator:                  repo.NewGlobalCreator(resource.Label, tableName, tableColumns),
+		globalCreator:                  repo.NewCreatorGlobal(resource.Label, tableName, tableColumns),
 		updater:                        repo.NewUpdater(resource.Label, tableName, updatableColumns, idColumns),
 		versionedUpdater:               repo.NewUpdater(resource.Label, tableName, updatableColumns, versionedIDColumns),
 		embeddedTenantUpdater:          repo.NewUpdaterWithEmbeddedTenant(resource.Label, tableName, updatableColumns, tenantColumn, idColumns),

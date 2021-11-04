@@ -39,7 +39,7 @@ type repository struct {
 	updater            repo.Updater
 	updaterGlobal      repo.UpdaterGlobal
 	creator            repo.Creator
-	globalCreator      repo.GlobalCreator
+	globalCreator      repo.CreatorGlobal
 	deleterGlobal      repo.DeleterGlobal
 	deleter            repo.Deleter
 	lister             repo.Lister
@@ -53,7 +53,7 @@ func NewRepository(conv EntityConverter) *repository {
 		singleGetter:       repo.NewSingleGetter(resource.Webhook, tableName, webhookColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
 		creator:            repo.NewCreator(resource.Webhook, tableName, webhookColumns),
-		globalCreator:      repo.NewGlobalCreator(resource.Webhook, tableName, webhookColumns),
+		globalCreator:      repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
 		updater:            repo.NewUpdater(resource.Webhook, tableName, updatableColumns, []string{"id", "app_id"}),
 		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook,tableName,updatableColumns, []string{"id"}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),

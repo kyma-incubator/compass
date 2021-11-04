@@ -36,7 +36,7 @@ type BundleReferenceConverter interface {
 }
 
 type repository struct {
-	creator     repo.GlobalCreator
+	creator     repo.CreatorGlobal
 	unionLister repo.UnionListerGlobal
 	lister      repo.ListerGlobal
 	getter      repo.SingleGetterGlobal
@@ -48,7 +48,7 @@ type repository struct {
 // NewRepository returns a new entity responsible for repo-layer BundleReference operations.
 func NewRepository(conv BundleReferenceConverter) *repository {
 	return &repository{
-		creator:     repo.NewGlobalCreator(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
+		creator:     repo.NewCreatorGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
 		unionLister: repo.NewUnionListerGlobal(resource.BundleReference, BundleReferenceTable, []string{}),
 		lister:      repo.NewListerGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
 		getter:      repo.NewSingleGetterGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),

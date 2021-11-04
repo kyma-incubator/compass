@@ -71,16 +71,7 @@ func NewUpdaterWithEmbeddedTenant(resourceType resource.Type, tableName string, 
 
 // UpdateSingleWithVersion missing godoc
 func (u *updater) UpdateSingleWithVersion(ctx context.Context, tenant string, dbEntity interface{}) error {
-	fieldsToSet := u.buildFieldsToSet()
-	fieldsToSet = append(fieldsToSet, "version = version+1")
-
-	if err := u.unsafeUpdateSingleWithFields(ctx, dbEntity, tenant, fieldsToSet); err != nil {
-		if apperrors.IsConcurrentUpdate(err) {
-			return apperrors.NewConcurrentUpdate()
-		}
-		return err
-	}
-	return nil
+	return u.updateSingleWithVersion(ctx, tenant, dbEntity)
 }
 
 func (u *updater) UpdateSingle(ctx context.Context, tenant string, dbEntity interface{}) error {
@@ -92,16 +83,7 @@ func (u *updater) UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) 
 }
 
 func (u *updater) UpdateSingleWithVersionGlobal(ctx context.Context, dbEntity interface{}) error {
-	fieldsToSet := u.buildFieldsToSet()
-	fieldsToSet = append(fieldsToSet, "version = version+1")
-
-	if err := u.unsafeUpdateSingleWithFields(ctx, dbEntity, "", fieldsToSet); err != nil {
-		if apperrors.IsConcurrentUpdate(err) {
-			return apperrors.NewConcurrentUpdate()
-		}
-		return err
-	}
-	return nil
+	return u.updateSingleWithVersion(ctx, "", dbEntity)
 }
 
 // SetIDColumns missing godoc
@@ -135,6 +117,19 @@ func (u *updater) Clone() UpdaterGlobal {
 	clonedUpdater.idColumns = append(clonedUpdater.idColumns, u.idColumns...)
 
 	return &clonedUpdater
+}
+
+func (u *updater) updateSingleWithVersion(ctx context.Context, tenant string, dbEntity interface{}) error {
+	fieldsToSet := u.buildFieldsToSet()
+	fieldsToSet = append(fieldsToSet, "version = version+1")
+
+	if err := u.unsafeUpdateSingleWithFields(ctx, dbEntity, tenant, fieldsToSet); err != nil {
+		if apperrors.IsConcurrentUpdate(err) {
+			return apperrors.NewConcurrentUpdate()
+		}
+		return err
+	}
+	return nil
 }
 
 func (u *updater) unsafeUpdateSingleWithFields(ctx context.Context, dbEntity interface{}, tenant string, fieldsToSet []string) error {

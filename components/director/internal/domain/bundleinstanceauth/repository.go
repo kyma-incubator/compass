@@ -30,7 +30,7 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	creator      repo.GlobalCreator
+	creator      repo.CreatorGlobal
 	singleGetter repo.SingleGetter
 	lister       repo.Lister
 	updater      repo.Updater
@@ -49,7 +49,7 @@ func NewRepository(conv EntityConverter) *repository {
 		//  in the pkg/scenario/directive.go. Once formation redesign in in place we can remove this directive and here we can use:
 		//
 		// creator: repo.NewCreatorBuilderFor(resource.BundleInstanceAuth).WithTable(tableName).WithColumns(tableColumns...).WithoutOwnerCheck().Build(),
-		creator:      repo.NewGlobalCreator(resource.BundleInstanceAuth, tableName, tableColumns),
+		creator:      repo.NewCreatorGlobal(resource.BundleInstanceAuth, tableName, tableColumns),
 		singleGetter: repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tableColumns),
 		lister:       repo.NewLister(resource.BundleInstanceAuth, tableName, tableColumns),
 		deleter:      repo.NewDeleter(resource.BundleInstanceAuth, tableName),

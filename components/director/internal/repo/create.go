@@ -21,15 +21,9 @@ type Creator interface {
 	Create(ctx context.Context, tenant string, dbEntity interface{}) error
 }
 
-// GlobalCreator missing godoc
-type GlobalCreator interface {
+// CreatorGlobal missing godoc
+type CreatorGlobal interface {
 	Create(ctx context.Context, dbEntity interface{}) error
-}
-
-type globalCreator struct {
-	tableName    string
-	resourceType resource.Type
-	columns      []string
 }
 
 type universalCreator struct {
@@ -38,51 +32,6 @@ type universalCreator struct {
 	columns            []string
 	matcherColumns     []string
 	ownerCheckRequired bool
-}
-
-type creatorBuilder struct {
-	tableName      string
-	resourceType   resource.Type
-	columns        []string
-	matcherColumns []string
-	ownerCheck     bool
-}
-
-func NewCreatorBuilderFor(resType resource.Type) *creatorBuilder {
-	return &creatorBuilder{
-		resourceType: resType,
-		ownerCheck:   true,
-	}
-}
-
-func (cb *creatorBuilder) WithTable(tableName string) *creatorBuilder {
-	cb.tableName = tableName
-	return cb
-}
-
-func (cb *creatorBuilder) WithColumns(columns ...string) *creatorBuilder {
-	cb.columns = columns
-	return cb
-}
-
-func (cb *creatorBuilder) WithMatcherColumns(columns ...string) *creatorBuilder {
-	cb.matcherColumns = columns
-	return cb
-}
-
-func (cb *creatorBuilder) WithoutOwnerCheck() *creatorBuilder {
-	cb.ownerCheck = false
-	return cb
-}
-
-func (cb *creatorBuilder) Build() Creator {
-	return &universalCreator{
-		tableName:          cb.tableName,
-		resourceType:       cb.resourceType,
-		columns:            cb.columns,
-		matcherColumns:     cb.matcherColumns,
-		ownerCheckRequired: cb.ownerCheck,
-	}
 }
 
 // NewCreator is a simplified constructor for child entities
@@ -95,8 +44,8 @@ func NewCreator(resourceType resource.Type, tableName string, columns []string) 
 	}
 }
 
-// NewGlobalCreator missing godoc
-func NewGlobalCreator(resourceType resource.Type, tableName string, columns []string) GlobalCreator {
+// NewCreatorGlobal missing godoc
+func NewCreatorGlobal(resourceType resource.Type, tableName string, columns []string) CreatorGlobal {
 	return &globalCreator{
 		resourceType: resourceType,
 		tableName:    tableName,
@@ -259,7 +208,13 @@ func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string,
 	return nil
 }
 
-func (c *globalCreator) Create(ctx context.Context, dbEntity interface{}) error { // TODO: <storage-redesign> remove duplication
+type globalCreator struct {
+	tableName    string
+	resourceType resource.Type
+	columns      []string
+}
+
+func (c *globalCreator) Create(ctx context.Context, dbEntity interface{}) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
