@@ -52,7 +52,7 @@ func NewRepository(conv Converter) *repository {
 	return &repository{
 		lister:                 repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
 		listerGlobal:           repo.NewListerGlobal(resource.Label, tableName, tableColumns),
-		deleter:                repo.NewDeleter(resource.Label, tableName, tenantColumn),
+		deleter:                repo.NewDeleter(resource.Label, tableName),
 		getter:                 repo.NewSingleGetter(resource.Label, tableName, tenantColumn, tableColumns),
 		queryBuilder:           repo.NewQueryBuilder(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
 		creator:                repo.NewCreator(resource.Label, tableName, tableColumns),

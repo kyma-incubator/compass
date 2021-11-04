@@ -50,7 +50,7 @@ func NewRepository(conv Converter) *repository {
 		existQuerier:    repo.NewExistQuerier(resource.Document, documentTable, tenantColumn),
 		singleGetter:    repo.NewSingleGetter(resource.Document, documentTable, tenantColumn, documentColumns),
 		unionLister:     repo.NewUnionLister(resource.Document, documentTable, tenantColumn, documentColumns),
-		deleter:         repo.NewDeleter(resource.Document, documentTable, tenantColumn),
+		deleter:         repo.NewDeleter(resource.Document, documentTable),
 		pageableQuerier: repo.NewPageableQuerier(resource.Document, documentTable, tenantColumn, documentColumns),
 		creator:         repo.NewCreator(resource.Document, documentTable, documentColumns),
 		conv:            conv,

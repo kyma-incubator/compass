@@ -47,7 +47,7 @@ func NewRepository(conv Converter) *repository {
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.SystemAuth, tableName, tableColumns),
 		lister:             repo.NewLister(resource.SystemAuth, tableName, tenantColumn, tableColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.SystemAuth, tableName, tableColumns),
-		deleter:            repo.NewDeleter(resource.SystemAuth, tableName, tenantColumn),
+		deleter:            repo.NewDeleterWithEmbeddedTenant(resource.SystemAuth, tableName, tenantColumn),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.SystemAuth, tableName),
 		updater:            repo.NewGlobalUpdaterBuilderFor(resource.SystemAuth).WithTable(tableName).WithUpdatableColumns("value").WithTenantColumn(tenantColumn).WithIDColumns("id").Build(),
 		conv:               conv,

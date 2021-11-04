@@ -56,7 +56,7 @@ func NewRepository(conv Converter) *repository {
 			},
 		}),
 		unionLister:  repo.NewUnionLister(resource.Specification, specificationsTable, tenantColumn, specificationsColumns),
-		deleter:      repo.NewDeleter(resource.Specification, specificationsTable, tenantColumn),
+		deleter:      repo.NewDeleter(resource.Specification, specificationsTable),
 		updater:      repo.NewUpdater(resource.Specification, specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, []string{"id"}),
 		existQuerier: repo.NewExistQuerier(resource.Specification, specificationsTable, tenantColumn),
 		conv:         conv,

@@ -161,6 +161,7 @@ type updaterBuilder struct {
 	idColumns        []string
 }
 
+// TODO: <storage-redesign> refactor with two constructors as in the delete flow
 func NewGlobalUpdaterBuilderFor(resType resource.Type) *updaterBuilder {
 	return &updaterBuilder{
 		resourceType: resType,

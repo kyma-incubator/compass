@@ -46,7 +46,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		existQuerier: repo.NewExistQuerier(resource.Package, packageTable, tenantColumn),
 		lister:       repo.NewLister(resource.Package, packageTable, tenantColumn, packageColumns),
 		singleGetter: repo.NewSingleGetter(resource.Package, packageTable, tenantColumn, packageColumns),
-		deleter:      repo.NewDeleter(resource.Package, packageTable, tenantColumn),
+		deleter:      repo.NewDeleter(resource.Package, packageTable),
 		creator:      repo.NewCreator(resource.Package, packageTable, packageColumns),
 		updater:      repo.NewUpdater(resource.Package, packageTable, updatableColumns, []string{"id"}),
 	}

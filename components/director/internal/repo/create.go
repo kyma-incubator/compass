@@ -138,7 +138,7 @@ func (c *universalCreator) Create(ctx context.Context, tenant string, dbEntity i
 		resourceType = multiRefEntity.GetRefSpecificResourceType()
 	}
 
-	if _, hasParent := resourceType.Parent(); !hasParent {
+	if resourceType.IsTopLevel() {
 		return c.unsafeCreateTopLevelEntity(ctx, id, tenant, dbEntity, resourceType)
 	}
 

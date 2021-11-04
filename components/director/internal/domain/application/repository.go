@@ -57,7 +57,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		singleGetter:          repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
 		globalGetter:          repo.NewSingleGetterGlobal(resource.Application, applicationTable, applicationColumns),
 		globalDeleter:         repo.NewDeleterGlobal(resource.Application, applicationTable),
-		deleter:               repo.NewDeleter(resource.Application, applicationTable, tenantColumn),
+		deleter:               repo.NewDeleter(resource.Application, applicationTable),
 		lister:                repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
 		pageableQuerier:       repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),

@@ -43,7 +43,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		existQuerier: repo.NewExistQuerier(resource.Tombstone, tombstoneTable, tenantColumn),
 		singleGetter: repo.NewSingleGetter(resource.Tombstone, tombstoneTable, tenantColumn, tombstoneColumns),
 		lister:       repo.NewLister(resource.Tombstone, tombstoneTable, tenantColumn, tombstoneColumns),
-		deleter:      repo.NewDeleter(resource.Tombstone, tombstoneTable, tenantColumn),
+		deleter:      repo.NewDeleter(resource.Tombstone, tombstoneTable),
 		creator:      repo.NewCreator(resource.Tombstone, tombstoneTable, tombstoneColumns),
 		updater:      repo.NewUpdater(resource.Tombstone, tombstoneTable, updatableColumns, []string{"id"}),
 	}

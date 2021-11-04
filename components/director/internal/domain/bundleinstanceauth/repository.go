@@ -53,7 +53,7 @@ func NewRepository(conv EntityConverter) *repository {
 		creator:      repo.NewGlobalCreator(resource.BundleInstanceAuth, tableName, tableColumns),
 		singleGetter: repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
 		lister:       repo.NewLister(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
-		deleter:      repo.NewDeleter(resource.BundleInstanceAuth, tableName, tenantColumn),
+		deleter:      repo.NewDeleter(resource.BundleInstanceAuth, tableName),
 		updater:      repo.NewUpdater(resource.BundleInstanceAuth, tableName, updatableColumns, idColumns),
 		conv:         conv,
 	}

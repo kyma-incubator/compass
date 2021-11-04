@@ -58,7 +58,7 @@ func NewRepository(conv APIDefinitionConverter) *pgRepository {
 		lister:          repo.NewLister(resource.API, apiDefTable, tenantColumn, apiDefColumns),
 		creator:         repo.NewCreator(resource.API, apiDefTable, apiDefColumns),
 		updater:         repo.NewUpdater(resource.API, apiDefTable, updatableColumns, idColumns),
-		deleter:         repo.NewDeleter(resource.API, apiDefTable, tenantColumn),
+		deleter:         repo.NewDeleter(resource.API, apiDefTable),
 		existQuerier:    repo.NewExistQuerier(resource.API, apiDefTable, tenantColumn),
 		conv:            conv,
 	}

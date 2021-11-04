@@ -45,10 +45,11 @@ CREATE OR REPLACE FUNCTION delete_resource() RETURNS TRIGGER AS
 $$
 DECLARE
     resource_table TEXT;
+    count INTEGER;
 BEGIN
     resource_table := TG_ARGV[0];
-    EXECUTE format('SELECT 1 FROM %I WHERE id = %L AND owner = true', TG_TABLE_NAME, OLD.id);
-    IF NOT FOUND THEN
+    EXECUTE format('SELECT COUNT(1) FROM %I WHERE id = %L AND owner = true', TG_TABLE_NAME, OLD.id) INTO count;
+    IF count = 0 THEN
         EXECUTE format('DELETE FROM %I WHERE id = %L;', resource_table, OLD.id);
     END IF;
     RETURN NULL;
@@ -65,7 +66,7 @@ DECLARE
 BEGIN
     SELECT parent INTO parent_id FROM business_tenant_mappings WHERE id = NEW.tenant_id;
     IF (parent_id IS NOT NULL) THEN
-        EXECUTE format('INSERT INTO %I VALUES (%L, %L, true) ON CONFLICT DO NOTHING;', TG_TABLE_NAME, parent_id, NEW.id);
+        EXECUTE format('INSERT INTO %I VALUES (%L, %L, true) ON CONFLICT DO NOTHING', TG_TABLE_NAME, parent_id, NEW.id);
     END IF;
     RETURN NULL;
 END
@@ -73,6 +74,22 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER add_app_to_parent_tenants AFTER INSERT ON tenant_applications FOR EACH ROW EXECUTE PROCEDURE insert_parent_chain();
 CREATE TRIGGER add_runtime_to_parent_tenants AFTER INSERT ON tenant_runtimes FOR EACH ROW EXECUTE PROCEDURE insert_parent_chain();
+
+CREATE OR REPLACE FUNCTION delete_child_chain() RETURNS TRIGGER AS
+$$
+DECLARE
+    child_id UUID;
+BEGIN
+    FOR child_id IN SELECT id FROM business_tenant_mappings WHERE parent = OLD.tenant_id
+    LOOP
+        EXECUTE format('DELETE FROM %I WHERE id = %L AND tenant_id = %L', TG_TABLE_NAME, OLD.id, child_id);
+    END LOOP;
+    RETURN NULL;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER delete_app_from_child_tenants AFTER DELETE ON tenant_applications FOR EACH ROW EXECUTE PROCEDURE delete_child_chain();
+CREATE TRIGGER delete_runtime_from_child_tenants AFTER DELETE ON tenant_runtimes FOR EACH ROW EXECUTE PROCEDURE delete_child_chain();
 
 UPDATE runtimes
 SET tenant_id =
@@ -271,12 +288,11 @@ UNION ALL
                                             INNER JOIN tenant_applications ta on ta.id = ead.app_id);
 
 -- Fetch Requests
-CREATE OR REPLACE VIEW document_fetch_requests_tenants AS
-SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
+CREATE OR REPLACE VIEW fetch_requests_tenants AS
+(SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                              INNER JOIN documents d ON fr.document_id = d.id
-                                             INNER JOIN tenant_applications ta ON ta.id = d.app_id;
-
-CREATE OR REPLACE VIEW specifications_fetch_requests_tenants AS
+                                             INNER JOIN tenant_applications ta ON ta.id = d.app_id)
+UNION ALL
 (SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                              INNER JOIN specifications s ON fr.spec_id = s.id
                                              INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
@@ -289,20 +305,18 @@ UNION ALL
 
 -- Labels - since labels can be put on tenants we cannot get l.*, however this is
 -- not a problem because labels are not necessary for the ORD service which is the only component reading from the view
-CREATE OR REPLACE VIEW application_labels_tenants AS
-SELECT l.id, ta.tenant_id, ta.owner FROM labels AS l
+CREATE OR REPLACE VIEW labels_tenants AS
+(SELECT l.id, ta.tenant_id, ta.owner FROM labels AS l
                                              INNER JOIN tenant_applications ta
-                                                        ON l.app_id = ta.id AND (l.tenant_id IS NULL OR l.tenant_id = ta.tenant_id);
-
-CREATE OR REPLACE VIEW runtime_labels_tenants AS
-SELECT l.id, tr.tenant_id, tr.owner FROM labels AS l
+                                                        ON l.app_id = ta.id AND (l.tenant_id IS NULL OR l.tenant_id = ta.tenant_id))
+UNION ALL
+(SELECT l.id, tr.tenant_id, tr.owner FROM labels AS l
                                              INNER JOIN tenant_runtimes tr
-                                                        ON l.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id);
-
-CREATE OR REPLACE VIEW runtime_contexts_labels_tenants AS
-SELECT l.id, tr.tenant_id, tr.owner FROM labels AS l
+                                                        ON l.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id))
+UNION ALL
+(SELECT l.id, tr.tenant_id, tr.owner FROM labels AS l
                                              INNER JOIN runtime_contexts rc ON l.runtime_context_id = rc.id
-                                             INNER JOIN tenant_runtimes tr ON rc.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id);
+                                             INNER JOIN tenant_runtimes tr ON rc.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id));
 
 -- Runtime Context
 CREATE OR REPLACE VIEW runtime_contexts_tenants AS
@@ -330,13 +344,12 @@ SELECT v.*, ta.tenant_id, ta.owner FROM vendors AS v
                                             INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
 
 -- Webhooks
-CREATE OR REPLACE VIEW application_webhooks_tenants AS
-SELECT w.*, ta.tenant_id, ta.owner FROM webhooks AS w
-                                            INNER JOIN tenant_applications ta ON w.app_id = ta.id;
-
-CREATE OR REPLACE VIEW runtime_webhooks_tenants AS
-SELECT w.*, tr.tenant_id, tr.owner FROM webhooks AS w
-                                            INNER JOIN tenant_runtimes tr ON w.runtime_id = tr.id;
+CREATE OR REPLACE VIEW webhooks_tenants AS
+(SELECT w.*, ta.tenant_id, ta.owner FROM webhooks AS w
+                                            INNER JOIN tenant_applications ta ON w.app_id = ta.id)
+UNION ALL
+(SELECT w.*, tr.tenant_id, tr.owner FROM webhooks AS w
+                                            INNER JOIN tenant_runtimes tr ON w.runtime_id = tr.id);
 
 -- ASAs Redesign
 ALTER TABLE automatic_scenario_assignments ADD COLUMN target_tenant_id UUID REFERENCES business_tenant_mappings(id) ON DELETE CASCADE;

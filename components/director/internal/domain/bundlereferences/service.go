@@ -14,7 +14,7 @@ import (
 type BundleReferenceRepository interface {
 	Create(ctx context.Context, item *model.BundleReference) error
 	Update(ctx context.Context, item *model.BundleReference) error
-	DeleteByReferenceObjectID(ctx context.Context, tenant, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error
+	DeleteByReferenceObjectID(ctx context.Context, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error
 	GetByID(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, objectID, bundleID *string) (*model.BundleReference, error)
 	GetBundleIDsForObject(ctx context.Context, tenantID string, objectType model.BundleReferenceObjectType, objectID *string) (ids []string, err error)
 	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
@@ -112,12 +112,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.Bundle
 
 // DeleteByReferenceObjectID deletes a BundleReference for a specific object(APIDefinition/EventDefinition).
 func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	return s.repo.DeleteByReferenceObjectID(ctx, tnt, *bundleID, objectType, *objectID)
+	return s.repo.DeleteByReferenceObjectID(ctx, *bundleID, objectType, *objectID)
 }
 
 // ListByBundleIDs lists all BundleReferences for given array of bundle IDs. In addition, the number of records for each BundleReference is returned.

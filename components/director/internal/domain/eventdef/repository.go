@@ -61,7 +61,7 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 		lister:       repo.NewLister(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
 		creator:      repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		updater:      repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, idColumns),
-		deleter:      repo.NewDeleter(resource.EventDefinition, eventAPIDefTable, tenantColumn),
+		deleter:      repo.NewDeleter(resource.EventDefinition, eventAPIDefTable),
 		existQuerier: repo.NewExistQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn),
 		conv:         conv,
 	}

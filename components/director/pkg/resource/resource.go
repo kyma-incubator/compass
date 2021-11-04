@@ -85,27 +85,28 @@ var tenantAccessTable = map[Type]string{
 	// Views
 
 	RuntimeContext:      "runtime_contexts_tenants",
-	ApplicationLabel:    "application_labels_tenants",
-	RuntimeLabel:        "runtime_labels_tenants",
-	RuntimeContextLabel: "runtime_contexts_labels_tenants",
+	Label:               "labels_tenants",
+	ApplicationLabel:    "labels_tenants",
+	RuntimeLabel:        "labels_tenants",
+	RuntimeContextLabel: "labels_tenants",
 	Bundle:              "bundles_tenants",
 	Package:             "packages_tenants",
 	Product:             "products_tenants",
 	Vendor:              "vendors_tenants",
 	Tombstone:           "tombstones_tenants",
-	DocFetchRequest:     "document_fetch_requests_tenants",
-	SpecFetchRequest:    "specifications_fetch_requests_tenants",
-
+	FetchRequest:        "fetch_requests_tenants",
+	DocFetchRequest:     "fetch_requests_tenants",
+	SpecFetchRequest:    "fetch_requests_tenants",
 	Specification:       "specifications_tenants",
 	APISpecification:    "specifications_tenants",
 	EventSpecification:  "specifications_tenants",
-
 	Document:            "documents_tenants",
 	BundleInstanceAuth:  "bundle_instance_auths_tenants",
 	API:                 "api_definitions_tenants",
 	EventDefinition:     "event_api_definitions_tenants",
-	AppWebhook:          "application_webhooks_tenants",
-	RuntimeWebhook:      "runtime_webhooks_tenants",
+	Webhook:             "webhooks_tenants",
+	AppWebhook:          "webhooks_tenants",
+	RuntimeWebhook:      "webhooks_tenants",
 }
 
 var parentRelation = map[Type]Type{
@@ -138,6 +139,11 @@ func (t Type) TenantAccessTable() (string, bool) {
 func (t Type) Parent() (Type, bool) {
 	parent, ok := parentRelation[t]
 	return parent, ok
+}
+
+// IsTopLevel returns true only if the entity has a many-to-many relationship with the tenants.
+func (t Type) IsTopLevel() bool {
+	return t == Application || t == Runtime
 }
 
 // SQLOperation missing godoc

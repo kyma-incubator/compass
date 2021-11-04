@@ -51,7 +51,7 @@ func NewRepository(conv EntityConverter) *repository {
 		getter:           repo.NewSingleGetter(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
 		existQuerier:     repo.NewExistQuerier(resource.LabelDefinition, tableName, tenantColumn),
 		lister:           repo.NewLister(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
-		deleter:          repo.NewDeleter(resource.LabelDefinition, tableName, tenantColumn),
+		deleter:          repo.NewDeleterWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn),
 		updater:          repo.NewGlobalUpdaterBuilderFor(resource.LabelDefinition).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithTenantColumn(tenantColumn).WithIDColumns(idColumns...).Build(),
 		versionedUpdater: repo.NewGlobalUpdaterBuilderFor(resource.LabelDefinition).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithTenantColumn(tenantColumn).WithIDColumns(versionedIDColumns...).Build(),
 		upserter:         repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}),

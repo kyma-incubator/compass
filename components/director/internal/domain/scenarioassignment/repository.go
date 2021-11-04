@@ -29,7 +29,7 @@ func NewRepository(conv EntityConverter) *repository {
 		lister:          repo.NewLister(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
 		singleGetter:    repo.NewSingleGetter(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
 		pageableQuerier: repo.NewPageableQuerier(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
-		deleter:         repo.NewDeleter(resource.AutomaticScenarioAssigment, tableName, tenantColumn),
+		deleter:         repo.NewDeleterWithEmbeddedTenant(resource.AutomaticScenarioAssigment, tableName, tenantColumn),
 		conv:            conv,
 	}
 }

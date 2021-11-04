@@ -39,7 +39,7 @@ func NewRepository() *pgRepository {
 		existQuerier:       repo.NewExistQuerier(resource.RuntimeContext, runtimeContextsTable, tenantColumn),
 		singleGetter:       repo.NewSingleGetter(resource.RuntimeContext, runtimeContextsTable, tenantColumn, runtimeContextColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.RuntimeContext, runtimeContextsTable, runtimeContextColumns),
-		deleter:            repo.NewDeleter(resource.RuntimeContext, runtimeContextsTable, tenantColumn),
+		deleter:            repo.NewDeleter(resource.RuntimeContext, runtimeContextsTable),
 		pageableQuerier:    repo.NewPageableQuerier(resource.RuntimeContext, runtimeContextsTable, tenantColumn, runtimeContextColumns),
 		creator:            repo.NewCreator(resource.RuntimeContext, runtimeContextsTable, runtimeContextColumns),
 		updater:            repo.NewUpdater(resource.RuntimeContext, runtimeContextsTable, []string{"key", "value"}, []string{"id"}),

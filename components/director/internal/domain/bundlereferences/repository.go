@@ -41,7 +41,7 @@ type repository struct {
 	unionLister repo.UnionLister
 	lister      repo.Lister
 	getter      repo.SingleGetter
-	deleter     repo.Deleter
+	deleter     repo.DeleterGlobal
 	updater     repo.UpdaterGlobal
 	conv        BundleReferenceConverter
 }
@@ -53,7 +53,7 @@ func NewRepository(conv BundleReferenceConverter) *repository {
 		unionLister: repo.NewUnionLister(resource.BundleReference, BundleReferenceTable, tenantColumn, []string{}),
 		lister:      repo.NewLister(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
 		getter:      repo.NewSingleGetter(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
-		deleter:     repo.NewDeleter(resource.BundleReference, BundleReferenceTable, tenantColumn),
+		deleter:     repo.NewDeleterGlobal(resource.BundleReference, BundleReferenceTable),
 		updater:     repo.NewGlobalUpdaterBuilderFor(resource.BundleReference).WithTable(BundleReferenceTable).WithUpdatableColumns(updatableColumns...).Build(),
 		conv:        conv,
 	}
@@ -162,7 +162,7 @@ func (r *repository) Update(ctx context.Context, item *model.BundleReference) er
 }
 
 // DeleteByReferenceObjectID removes a BundleReference with matching objectID and bundleID from the Compass storage.
-func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error {
+func (r *repository) DeleteByReferenceObjectID(ctx context.Context, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
 		return err
@@ -173,7 +173,7 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant, bund
 		repo.NewEqualCondition(bundleIDColumn, bundleID),
 	}
 
-	return r.deleter.DeleteOne(ctx, tenant, conditions)
+	return r.deleter.DeleteOneGlobal(ctx, conditions)
 }
 
 // ListByBundleIDs retrieves all BundleReferences matching an array of bundleIDs from the Compass storage.
