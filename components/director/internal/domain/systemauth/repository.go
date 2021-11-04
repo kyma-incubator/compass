@@ -43,9 +43,9 @@ type repository struct {
 func NewRepository(conv Converter) *repository {
 	return &repository{
 		creator:            repo.NewGlobalCreator(resource.SystemAuth, tableName, tableColumns),
-		singleGetter:       repo.NewSingleGetter(resource.SystemAuth, tableName, tenantColumn, tableColumns),
+		singleGetter:       repo.NewSingleGetterWithEmbeddedTenant(resource.SystemAuth, tableName, tenantColumn, tableColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.SystemAuth, tableName, tableColumns),
-		lister:             repo.NewLister(resource.SystemAuth, tableName, tenantColumn, tableColumns),
+		lister:             repo.NewListerWithEmbeddedTenant(resource.SystemAuth, tableName, tenantColumn, tableColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.SystemAuth, tableName, tableColumns),
 		deleter:            repo.NewDeleterWithEmbeddedTenant(resource.SystemAuth, tableName, tenantColumn),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.SystemAuth, tableName),

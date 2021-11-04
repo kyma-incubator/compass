@@ -25,12 +25,20 @@ type universalQueryBuilder struct {
 	resourceType    resource.Type
 }
 
-// NewQueryBuilder missing godoc
-func NewQueryBuilder(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) QueryBuilder {
+// NewQueryBuilderWithEmbeddedTenant missing godoc
+func NewQueryBuilderWithEmbeddedTenant(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) QueryBuilder {
 	return &universalQueryBuilder{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    &tenantColumn,
+		resourceType:    resourceType,
+	}
+}
+
+func NewQueryBuilder(resourceType resource.Type, tableName string, selectedColumns []string) QueryBuilder {
+	return &universalQueryBuilder{
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
 		resourceType:    resourceType,
 	}
 }
@@ -40,13 +48,24 @@ func (b *universalQueryBuilder) BuildQuery(tenantID string, isRebindingNeeded bo
 	if tenantID == "" {
 		return "", nil, apperrors.NewTenantRequiredError()
 	}
-	//conditions = append(Conditions{NewTenantIsolationCondition(*b.tenantColumn, tenantID)}, conditions...)
 
-	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, isRebindingNeeded)
+	if b.tenantColumn != nil {
+		conditions = append(Conditions{NewEqualCondition(*b.tenantColumn, tenantID)}, conditions...)
+		return buildSelectQuery(b.resourceType, b.tableName, b.selectedColumns, tenantID, conditions, OrderByParams{}, isRebindingNeeded)
+	}
+
+	tenantIsolation, err := NewTenantIsolationCondition(b.resourceType, tenantID, false)
+	if err != nil {
+		return "", nil, err
+	}
+
+	conditions = append(conditions, tenantIsolation)
+
+	return buildSelectQuery(b.resourceType, b.tableName, b.selectedColumns, tenantID, conditions, OrderByParams{}, isRebindingNeeded)
 }
 
 // TODO: Refactor builder
-func buildSelectQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+func buildSelectQuery(resourceType resource.Type, tableName string, selectedColumns string, tenantID string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder
 
 	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
@@ -59,12 +78,17 @@ func buildSelectQuery(tableName string, selectedColumns string, conditions Condi
 		return "", nil, errors.Wrap(err, "while writing enumerated conditions.")
 	}
 
+	allArgs := getAllArgs(conditions)
+
+	if resourceType == resource.BundleInstanceAuth && len(tenantID) > 0 {
+		stmtBuilder.WriteString(" OR owner_id = ?")
+		allArgs = append(allArgs, tenantID)
+	}
+
 	err = writeOrderByPart(&stmtBuilder, orderByParams)
 	if err != nil {
 		return "", nil, errors.Wrap(err, "while writing order by part")
 	}
-
-	allArgs := getAllArgs(conditions)
 
 	if isRebindingNeeded {
 		return getQueryFromBuilder(stmtBuilder), allArgs, nil
@@ -128,8 +152,8 @@ func buildCountQuery(tableName string, idColumn string, conditions Conditions, g
 	return stmtBuilder.String(), allArgs, nil
 }
 
-func buildSelectQueryWithLimitAndOffset(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, limit, offset int, isRebindingNeeded bool) (string, []interface{}, error) {
-	query, args, err := buildSelectQuery(tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
+func buildSelectQueryWithLimitAndOffset(resourceType resource.Type, tableName string, selectedColumns string, tenant string, conditions Conditions, orderByParams OrderByParams, limit, offset int, isRebindingNeeded bool) (string, []interface{}, error) {
+	query, args, err := buildSelectQuery(resourceType, tableName, selectedColumns, tenant, conditions, orderByParams, isRebindingNeeded)
 	if err != nil {
 		return "", nil, err
 	}

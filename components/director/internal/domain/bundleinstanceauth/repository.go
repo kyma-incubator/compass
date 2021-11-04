@@ -17,7 +17,6 @@ import (
 const tableName string = `public.bundle_instance_auths`
 
 var (
-	tenantColumn     = "tenant_id"
 	idColumns        = []string{"id"}
 	updatableColumns = []string{"auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
 	tableColumns     = []string{"id", "owner_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
@@ -51,8 +50,8 @@ func NewRepository(conv EntityConverter) *repository {
 		//
 		// creator: repo.NewCreatorBuilderFor(resource.BundleInstanceAuth).WithTable(tableName).WithColumns(tableColumns...).WithoutOwnerCheck().Build(),
 		creator:      repo.NewGlobalCreator(resource.BundleInstanceAuth, tableName, tableColumns),
-		singleGetter: repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
-		lister:       repo.NewLister(resource.BundleInstanceAuth, tableName, tenantColumn, tableColumns),
+		singleGetter: repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tableColumns),
+		lister:       repo.NewLister(resource.BundleInstanceAuth, tableName, tableColumns),
 		deleter:      repo.NewDeleter(resource.BundleInstanceAuth, tableName),
 		updater:      repo.NewUpdater(resource.BundleInstanceAuth, tableName, updatableColumns, idColumns),
 		conv:         conv,

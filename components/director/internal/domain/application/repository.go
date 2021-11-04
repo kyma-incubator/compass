@@ -25,7 +25,6 @@ const applicationTable string = `public.applications`
 var (
 	applicationColumns = []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
 	updatableColumns   = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
-	tenantColumn       = "tenant_id" // TODO: <storage-redesign> delete it
 )
 
 // EntityConverter missing godoc
@@ -53,13 +52,13 @@ type pgRepository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:          repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
-		singleGetter:          repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		existQuerier:          repo.NewExistQuerier(resource.Application, applicationTable),
+		singleGetter:          repo.NewSingleGetter(resource.Application, applicationTable, applicationColumns),
 		globalGetter:          repo.NewSingleGetterGlobal(resource.Application, applicationTable, applicationColumns),
 		globalDeleter:         repo.NewDeleterGlobal(resource.Application, applicationTable),
 		deleter:               repo.NewDeleter(resource.Application, applicationTable),
-		lister:                repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
-		pageableQuerier:       repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		lister:                repo.NewLister(resource.Application, applicationTable, applicationColumns),
+		pageableQuerier:       repo.NewPageableQuerier(resource.Application, applicationTable, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
 		creator:               repo.NewCreator(resource.Application, applicationTable, applicationColumns),
 		updater:               repo.NewUpdater(resource.Application, applicationTable, updatableColumns, []string{"id"}),

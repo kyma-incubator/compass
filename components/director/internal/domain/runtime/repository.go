@@ -19,7 +19,6 @@ const runtimeTable string = `public.runtimes`
 
 var (
 	runtimeColumns = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}
-	tenantColumn   = "tenant_id" // TODO: <storage-redesign> delete this column
 )
 
 // EntityConverter missing godoc
@@ -44,12 +43,12 @@ type pgRepository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:       repo.NewExistQuerier(resource.Runtime, runtimeTable, tenantColumn),
-		singleGetter:       repo.NewSingleGetter(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
+		existQuerier:       repo.NewExistQuerier(resource.Runtime, runtimeTable),
+		singleGetter:       repo.NewSingleGetter(resource.Runtime, runtimeTable, runtimeColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Runtime, runtimeTable, runtimeColumns),
 		deleter:            repo.NewDeleter(resource.Runtime, runtimeTable),
-		pageableQuerier:    repo.NewPageableQuerier(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
-		lister:             repo.NewLister(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
+		pageableQuerier:    repo.NewPageableQuerier(resource.Runtime, runtimeTable, runtimeColumns),
+		lister:             repo.NewLister(resource.Runtime, runtimeTable, runtimeColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.Runtime, runtimeTable, runtimeColumns),
 		creator:            repo.NewCreator(resource.Runtime, runtimeTable, runtimeColumns),
 		updater:            repo.NewUpdater(resource.Runtime, runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, []string{"id"}),

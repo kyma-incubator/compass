@@ -21,7 +21,6 @@ const documentTable = "public.documents"
 
 var (
 	documentColumns = []string{"id", "bundle_id", "app_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
-	tenantColumn    = "tenant_id" // TODO: <storage-redesign> delete
 	bundleIDColumn  = "bundle_id"
 	orderByColumns  = repo.OrderByParams{repo.NewAscOrderBy("bundle_id"), repo.NewAscOrderBy("id")}
 )
@@ -47,11 +46,11 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		existQuerier:    repo.NewExistQuerier(resource.Document, documentTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(resource.Document, documentTable, tenantColumn, documentColumns),
-		unionLister:     repo.NewUnionLister(resource.Document, documentTable, tenantColumn, documentColumns),
+		existQuerier:    repo.NewExistQuerier(resource.Document, documentTable),
+		singleGetter:    repo.NewSingleGetter(resource.Document, documentTable, documentColumns),
+		unionLister:     repo.NewUnionLister(resource.Document, documentTable, documentColumns),
 		deleter:         repo.NewDeleter(resource.Document, documentTable),
-		pageableQuerier: repo.NewPageableQuerier(resource.Document, documentTable, tenantColumn, documentColumns),
+		pageableQuerier: repo.NewPageableQuerier(resource.Document, documentTable, documentColumns),
 		creator:         repo.NewCreator(resource.Document, documentTable, documentColumns),
 		conv:            conv,
 	}

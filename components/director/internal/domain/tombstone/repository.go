@@ -14,7 +14,6 @@ import (
 const tombstoneTable string = `public.tombstones`
 
 var (
-	tenantColumn     = "tenant_id" // TODO: <storage-redesign> delete this
 	tombstoneColumns = []string{"ord_id", "app_id", "removal_date", "id"}
 	updatableColumns = []string{"removal_date"}
 )
@@ -40,9 +39,9 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		conv:         conv,
-		existQuerier: repo.NewExistQuerier(resource.Tombstone, tombstoneTable, tenantColumn),
-		singleGetter: repo.NewSingleGetter(resource.Tombstone, tombstoneTable, tenantColumn, tombstoneColumns),
-		lister:       repo.NewLister(resource.Tombstone, tombstoneTable, tenantColumn, tombstoneColumns),
+		existQuerier: repo.NewExistQuerier(resource.Tombstone, tombstoneTable),
+		singleGetter: repo.NewSingleGetter(resource.Tombstone, tombstoneTable, tombstoneColumns),
+		lister:       repo.NewLister(resource.Tombstone, tombstoneTable, tombstoneColumns),
 		deleter:      repo.NewDeleter(resource.Tombstone, tombstoneTable),
 		creator:      repo.NewCreator(resource.Tombstone, tombstoneTable, tombstoneColumns),
 		updater:      repo.NewUpdater(resource.Tombstone, tombstoneTable, updatableColumns, []string{"id"}),

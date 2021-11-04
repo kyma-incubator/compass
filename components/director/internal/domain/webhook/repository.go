@@ -24,7 +24,6 @@ var (
 	webhookColumns         = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 	updatableColumns       = []string{"type", "url", "auth", "mode", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 	missingInputModelError = apperrors.NewInternalError("model has to be provided")
-	tenantColumn           = "tenant_id" // TODO: <storage-redesign> delete this
 )
 
 // EntityConverter missing godoc
@@ -51,7 +50,7 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		singleGetter:       repo.NewSingleGetter(resource.Webhook, tableName, tenantColumn, webhookColumns),
+		singleGetter:       repo.NewSingleGetter(resource.Webhook, tableName, webhookColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
 		creator:            repo.NewCreator(resource.Webhook, tableName, webhookColumns),
 		globalCreator:      repo.NewGlobalCreator(resource.Webhook, tableName, webhookColumns),
@@ -59,7 +58,7 @@ func NewRepository(conv EntityConverter) *repository {
 		updaterGlobal:      repo.NewGlobalUpdaterBuilderFor(resource.Webhook).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithIDColumns("id").Build(),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),
 		deleter:            repo.NewDeleter(resource.Webhook, tableName),
-		lister:             repo.NewLister(resource.Webhook, tableName, tenantColumn, webhookColumns),
+		lister:             repo.NewLister(resource.Webhook, tableName, webhookColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.Webhook, tableName, webhookColumns),
 		conv:               conv,
 	}

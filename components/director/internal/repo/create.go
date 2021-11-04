@@ -241,12 +241,12 @@ func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string,
 		return errors.Errorf("Unkonw parentID for entity type %s and parentType %s", resourceType, parentResourceType)
 	}
 
-	conditions := Conditions{NewEqualCondition(M2MResourceIDColumn, parentID), NewEqualCondition(M2MTenantIDColumn, tenant)} // TODO: <storage-redesing> check if the tenant isolation subquery is needed here when we rework the exister
+	conditions := Conditions{NewEqualCondition(M2MResourceIDColumn, parentID)}
 	if c.ownerCheckRequired {
 		conditions = append(conditions, NewEqualCondition(M2MOwnerColumn, true))
 	}
 
-	exister := NewExistQuerier(parentResourceType, parentAccessTable, M2MTenantIDColumn)
+	exister := NewExistQuerierWithEmbeddedTenant(parentResourceType, parentAccessTable, M2MTenantIDColumn)
 	exists, err := exister.Exists(ctx, tenant, conditions)
 	if err != nil {
 		return errors.Wrap(err, "while checking for tenant access")

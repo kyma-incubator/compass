@@ -31,12 +31,20 @@ type universalSingleGetter struct {
 	selectedColumns string
 }
 
-// NewSingleGetter missing godoc
-func NewSingleGetter(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) SingleGetter {
+// NewSingleGetterWithEmbeddedTenant missing godoc
+func NewSingleGetterWithEmbeddedTenant(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) SingleGetter {
 	return &universalSingleGetter{
 		resourceType:    resourceType,
 		tableName:       tableName,
 		tenantColumn:    &tenantColumn,
+		selectedColumns: strings.Join(selectedColumns, ", "),
+	}
+}
+
+func NewSingleGetter(resourceType resource.Type, tableName string, selectedColumns []string) SingleGetter {
+	return &universalSingleGetter{
+		resourceType:    resourceType,
+		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 	}
 }
@@ -52,19 +60,31 @@ func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selecte
 
 // Get missing godoc
 func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	/*if tenant == "" {
+	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
-	}*/
-	//conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
-	return g.unsafeGet(ctx, conditions, orderByParams, dest)
+	}
+
+	if g.tenantColumn != nil {
+		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
+		return g.unsafeGet(ctx, tenant, conditions, orderByParams, dest)
+	}
+
+	tenantIsolation, err := NewTenantIsolationCondition(g.resourceType, tenant, false)
+	if err != nil {
+		return err
+	}
+
+	conditions = append(conditions, tenantIsolation)
+
+	return g.unsafeGet(ctx, tenant, conditions, orderByParams, dest)
 }
 
 // GetGlobal missing godoc
 func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	return g.unsafeGet(ctx, conditions, orderByParams, dest)
+	return g.unsafeGet(ctx, "", conditions, orderByParams, dest)
 }
 
-func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if dest == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -73,7 +93,7 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Condit
 		return err
 	}
 
-	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, orderByParams, true)
+	query, args, err := buildSelectQuery(g.resourceType, g.tableName, g.selectedColumns, tenant, conditions, orderByParams, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}

@@ -48,9 +48,9 @@ type repository struct {
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{conv: conv,
 		creator:          repo.NewGlobalCreator(resource.LabelDefinition, tableName, labeldefColumns),
-		getter:           repo.NewSingleGetter(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
-		existQuerier:     repo.NewExistQuerier(resource.LabelDefinition, tableName, tenantColumn),
-		lister:           repo.NewLister(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
+		getter:           repo.NewSingleGetterWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
+		existQuerier:     repo.NewExistQuerierWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn),
+		lister:           repo.NewListerWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
 		deleter:          repo.NewDeleterWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn),
 		updater:          repo.NewGlobalUpdaterBuilderFor(resource.LabelDefinition).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithTenantColumn(tenantColumn).WithIDColumns(idColumns...).Build(),
 		versionedUpdater: repo.NewGlobalUpdaterBuilderFor(resource.LabelDefinition).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithTenantColumn(tenantColumn).WithIDColumns(versionedIDColumns...).Build(),

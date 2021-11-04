@@ -20,7 +20,6 @@ const bundleTable string = `public.bundles`
 
 var (
 	bundleColumns    = []string{"id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
-	tenantColumn     = "tenant_id" // TODO: <storage-redesign> delete this
 	updatableColumns = []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	orderByColumns   = repo.OrderByParams{repo.NewAscOrderBy("app_id"), repo.NewAscOrderBy("id")}
 )
@@ -46,11 +45,11 @@ type pgRepository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier: repo.NewExistQuerier(resource.Bundle, bundleTable, tenantColumn),
-		singleGetter: repo.NewSingleGetter(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
+		existQuerier: repo.NewExistQuerier(resource.Bundle, bundleTable),
+		singleGetter: repo.NewSingleGetter(resource.Bundle, bundleTable, bundleColumns),
 		deleter:      repo.NewDeleter(resource.Bundle, bundleTable),
-		lister:       repo.NewLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		unionLister:  repo.NewUnionLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
+		lister:       repo.NewLister(resource.Bundle, bundleTable, bundleColumns),
+		unionLister:  repo.NewUnionLister(resource.Bundle, bundleTable, bundleColumns),
 		creator:      repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
 		updater:      repo.NewUpdater(resource.Bundle, bundleTable, updatableColumns, []string{"id"}),
 		conv:         conv,

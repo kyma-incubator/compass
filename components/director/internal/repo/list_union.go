@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -15,7 +16,14 @@ type UnionLister interface {
 	// List stores the result into dest and returns the total count of tuples for each id from ids
 	List(ctx context.Context, tenant string, ids []string, idsColumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error)
 	SetSelectedColumns(selectedColumns []string)
-	Clone() UnionLister
+	Clone() *unionLister
+}
+
+// UnionListerGlobal missing godoc
+type UnionListerGlobal interface {
+	ListGlobal(ctx context.Context, ids []string, idsColumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error)
+	SetSelectedColumns(selectedColumns []string)
+	Clone() *unionLister
 }
 
 type unionLister struct {
@@ -25,12 +33,30 @@ type unionLister struct {
 	resourceType    resource.Type
 }
 
-// NewUnionLister missing godoc
-func NewUnionLister(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) UnionLister {
+// NewUnionListerWithEmbeddedTenant missing godoc
+func NewUnionListerWithEmbeddedTenant(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) UnionLister {
 	return &unionLister{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    &tenantColumn,
+		resourceType:    resourceType,
+	}
+}
+
+// NewUnionLister missing godoc
+func NewUnionLister(resourceType resource.Type, tableName string, selectedColumns []string) UnionLister {
+	return &unionLister{
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
+		resourceType:    resourceType,
+	}
+}
+
+// NewUnionLister missing godoc
+func NewUnionListerGlobal(resourceType resource.Type, tableName string, selectedColumns []string) UnionListerGlobal {
+	return &unionLister{
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
 		resourceType:    resourceType,
 	}
 }
@@ -41,7 +67,7 @@ func (l *unionLister) SetSelectedColumns(selectedColumns []string) {
 }
 
 // Clone missing godoc
-func (l *unionLister) Clone() UnionLister {
+func (l *unionLister) Clone() *unionLister {
 	var clonedLister unionLister
 
 	clonedLister.resourceType = l.resourceType
@@ -54,11 +80,27 @@ func (l *unionLister) Clone() UnionLister {
 
 // List missing godoc
 func (l *unionLister) List(ctx context.Context, tenant string, ids []string, idscolumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error) {
-	/*if tenant == "" {
+	if tenant == "" {
 		return nil, apperrors.NewTenantRequiredError()
-	}*/
-	//additionalConditions = append(Conditions{NewTenantIsolationCondition(*l.tenantColumn, tenant)}, additionalConditions...)
-	return l.unsafeList(ctx, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
+	}
+
+	if l.tenantColumn != nil {
+		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
+		return l.unsafeList(ctx, tenant, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
+	}
+
+	tenantIsolation, err := NewTenantIsolationCondition(l.resourceType, tenant, false)
+	if err != nil {
+		return nil, err
+	}
+
+	additionalConditions = append(additionalConditions, tenantIsolation)
+
+	return l.unsafeList(ctx, tenant, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
+}
+
+func (l *unionLister) ListGlobal(ctx context.Context, ids []string, idscolumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error) {
+	return l.unsafeList(ctx, "", pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
 }
 
 type queryStruct struct {
@@ -66,7 +108,7 @@ type queryStruct struct {
 	statement string
 }
 
-func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor string, orderBy OrderByParams, ids []string, idsColumn string, dest Collection, conditions ...Condition) (map[string]int, error) {
+func (l *unionLister) unsafeList(ctx context.Context, tenant string, pageSize int, cursor string, orderBy OrderByParams, ids []string, idsColumn string, dest Collection, conditions ...Condition) (map[string]int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -77,7 +119,7 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 		return nil, errors.Wrap(err, "while decoding page cursor")
 	}
 
-	queries, err := l.buildQueries(ids, idsColumn, conditions, orderBy, pageSize, offset)
+	queries, err := l.buildQueries(tenant, ids, idsColumn, conditions, orderBy, pageSize, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -107,10 +149,10 @@ func (l *unionLister) unsafeList(ctx context.Context, pageSize int, cursor strin
 	return totalCount, nil
 }
 
-func (l *unionLister) buildQueries(ids []string, idsColumn string, conditions []Condition, orderBy OrderByParams, limit int, offset int) ([]queryStruct, error) {
+func (l *unionLister) buildQueries(tenant string, ids []string, idsColumn string, conditions []Condition, orderBy OrderByParams, limit int, offset int) ([]queryStruct, error) {
 	queries := make([]queryStruct, 0, len(ids))
 	for _, id := range ids {
-		query, args, err := buildSelectQueryWithLimitAndOffset(l.tableName, l.selectedColumns, append(conditions, NewEqualCondition(idsColumn, id)), orderBy, limit, offset, false)
+		query, args, err := buildSelectQueryWithLimitAndOffset(l.resourceType, l.tableName, l.selectedColumns, tenant, append(conditions, NewEqualCondition(idsColumn, id)), orderBy, limit, offset, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "while building list query")
 		}

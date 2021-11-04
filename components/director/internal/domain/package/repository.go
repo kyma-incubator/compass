@@ -14,7 +14,6 @@ import (
 const packageTable string = `public.packages`
 
 var (
-	tenantColumn   = "tenant_id" // TODO: <storage-redesign> delete this column
 	packageColumns = []string{"id", "app_id", "ord_id", "vendor", "title", "short_description",
 		"description", "version", "package_links", "links", "licence_type", "tags", "countries", "labels", "policy_level",
 		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash"}
@@ -43,9 +42,9 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		conv:         conv,
-		existQuerier: repo.NewExistQuerier(resource.Package, packageTable, tenantColumn),
-		lister:       repo.NewLister(resource.Package, packageTable, tenantColumn, packageColumns),
-		singleGetter: repo.NewSingleGetter(resource.Package, packageTable, tenantColumn, packageColumns),
+		existQuerier: repo.NewExistQuerier(resource.Package, packageTable),
+		lister:       repo.NewLister(resource.Package, packageTable, packageColumns),
+		singleGetter: repo.NewSingleGetter(resource.Package, packageTable, packageColumns),
 		deleter:      repo.NewDeleter(resource.Package, packageTable),
 		creator:      repo.NewCreator(resource.Package, packageTable, packageColumns),
 		updater:      repo.NewUpdater(resource.Package, packageTable, updatableColumns, []string{"id"}),

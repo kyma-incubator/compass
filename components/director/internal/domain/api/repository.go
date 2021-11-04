@@ -16,7 +16,6 @@ import (
 const apiDefTable string = `"public"."api_definitions"`
 
 var (
-	tenantColumn  = "tenant_id" // TODO: <storage-redesign> delete this
 	bundleColumn  = "bundle_id"
 	idColumn      = "id"
 	apiDefColumns = []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
@@ -52,14 +51,14 @@ type pgRepository struct {
 // NewRepository missing godoc
 func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	return &pgRepository{
-		singleGetter:    repo.NewSingleGetter(resource.API, apiDefTable, tenantColumn, apiDefColumns),
-		pageableQuerier: repo.NewPageableQuerier(resource.API, apiDefTable, tenantColumn, apiDefColumns),
-		queryBuilder:    repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, tenantColumn, []string{bundlereferences.APIDefIDColumn}),
-		lister:          repo.NewLister(resource.API, apiDefTable, tenantColumn, apiDefColumns),
+		singleGetter:    repo.NewSingleGetter(resource.API, apiDefTable, apiDefColumns),
+		pageableQuerier: repo.NewPageableQuerier(resource.API, apiDefTable, apiDefColumns),
+		queryBuilder:    repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, []string{bundlereferences.APIDefIDColumn}),
+		lister:          repo.NewLister(resource.API, apiDefTable, apiDefColumns),
 		creator:         repo.NewCreator(resource.API, apiDefTable, apiDefColumns),
 		updater:         repo.NewUpdater(resource.API, apiDefTable, updatableColumns, idColumns),
 		deleter:         repo.NewDeleter(resource.API, apiDefTable),
-		existQuerier:    repo.NewExistQuerier(resource.API, apiDefTable, tenantColumn),
+		existQuerier:    repo.NewExistQuerier(resource.API, apiDefTable),
 		conv:            conv,
 	}
 }

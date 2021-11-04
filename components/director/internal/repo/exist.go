@@ -32,7 +32,12 @@ type universalExistQuerier struct {
 }
 
 // NewExistQuerier missing godoc
-func NewExistQuerier(resourceType resource.Type, tableName string, tenantColumn string) ExistQuerier {
+func NewExistQuerier(resourceType resource.Type, tableName string) ExistQuerier {
+	return &universalExistQuerier{resourceType: resourceType, tableName: tableName}
+}
+
+// NewExistQuerierWithEmbeddedTenant missing godoc
+func NewExistQuerierWithEmbeddedTenant(resourceType resource.Type, tableName string, tenantColumn string) ExistQuerier {
 	return &universalExistQuerier{resourceType: resourceType, tableName: tableName, tenantColumn: &tenantColumn}
 }
 
@@ -43,19 +48,31 @@ func NewExistQuerierGlobal(resourceType resource.Type, tableName string) ExistQu
 
 // Exists missing godoc
 func (g *universalExistQuerier) Exists(ctx context.Context, tenant string, conditions Conditions) (bool, error) {
-	/*if tenant == "" {
+	if tenant == "" {
 		return false, apperrors.NewTenantRequiredError()
-	}*/
-	//conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
-	return g.unsafeExists(ctx, conditions)
+	}
+
+	if g.tenantColumn != nil {
+		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
+		return g.unsafeExists(ctx, tenant, conditions)
+	}
+
+	tenantIsolation, err := NewTenantIsolationCondition(g.resourceType, tenant, false)
+	if err != nil {
+		return false, err
+	}
+
+	conditions = append(conditions, tenantIsolation)
+
+	return g.unsafeExists(ctx, tenant, conditions)
 }
 
 // ExistsGlobal missing godoc
 func (g *universalExistQuerier) ExistsGlobal(ctx context.Context, conditions Conditions) (bool, error) {
-	return g.unsafeExists(ctx, conditions)
+	return g.unsafeExists(ctx, "", conditions)
 }
 
-func (g *universalExistQuerier) unsafeExists(ctx context.Context, conditions Conditions) (bool, error) {
+func (g *universalExistQuerier) unsafeExists(ctx context.Context, tenant string, conditions Conditions) (bool, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, err
@@ -73,6 +90,11 @@ func (g *universalExistQuerier) unsafeExists(ctx context.Context, conditions Con
 		return false, errors.Wrap(err, "while writing enumerated conditions")
 	}
 	allArgs := getAllArgs(conditions)
+
+	if g.resourceType == resource.BundleInstanceAuth && len(tenant) > 0 {
+		stmtBuilder.WriteString(" OR owner_id = ?")
+		allArgs = append(allArgs, tenant)
+	}
 
 	query := getQueryFromBuilder(stmtBuilder)
 

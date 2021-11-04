@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -16,12 +17,14 @@ import (
 type Lister interface {
 	List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error
 	SetSelectedColumns(selectedColumns []string)
-	Clone() Lister
+	Clone() *universalLister
 }
 
 // ListerGlobal missing godoc
 type ListerGlobal interface {
 	ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error
+	SetSelectedColumns(selectedColumns []string)
+	Clone() *universalLister
 }
 
 type universalLister struct {
@@ -33,8 +36,8 @@ type universalLister struct {
 	orderByParams OrderByParams
 }
 
-// NewLister missing godoc
-func NewLister(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) Lister {
+// NewListerWithEmbeddedTenant missing godoc
+func NewListerWithEmbeddedTenant(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) Lister {
 	return &universalLister{
 		resourceType:    resourceType,
 		tableName:       tableName,
@@ -44,13 +47,22 @@ func NewLister(resourceType resource.Type, tableName string, tenantColumn string
 	}
 }
 
-// NewListerWithOrderBy missing godoc
-func NewListerWithOrderBy(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string, orderByParams OrderByParams) Lister {
+// NewLister missing godoc
+func NewLister(resourceType resource.Type, tableName string, selectedColumns []string) Lister {
 	return &universalLister{
 		resourceType:    resourceType,
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
-		tenantColumn:    &tenantColumn,
+		orderByParams:   NoOrderBy,
+	}
+}
+
+// NewListerWithOrderBy missing godoc
+func NewListerWithOrderBy(resourceType resource.Type, tableName string, selectedColumns []string, orderByParams OrderByParams) Lister {
+	return &universalLister{
+		resourceType:    resourceType,
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
 		orderByParams:   orderByParams,
 	}
 }
@@ -67,11 +79,23 @@ func NewListerGlobal(resourceType resource.Type, tableName string, selectedColum
 
 // List missing godoc
 func (l *universalLister) List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error {
-	/*if tenant == "" {
+	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
-	}*/
-	//additionalConditions = append(Conditions{NewTenantIsolationCondition(*l.tenantColumn, tenant)}, additionalConditions...)
-	return l.unsafeList(ctx, dest, additionalConditions...)
+	}
+
+	if l.tenantColumn != nil {
+		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
+		return l.unsafeList(ctx, tenant, dest, additionalConditions...)
+	}
+
+	tenantIsolation, err := NewTenantIsolationCondition(l.resourceType, tenant, false)
+	if err != nil {
+		return err
+	}
+
+	additionalConditions = append(additionalConditions, tenantIsolation)
+
+	return l.unsafeList(ctx, tenant, dest, additionalConditions...)
 }
 
 // SetSelectedColumns missing godoc
@@ -80,7 +104,7 @@ func (l *universalLister) SetSelectedColumns(selectedColumns []string) {
 }
 
 // Clone missing godoc
-func (l *universalLister) Clone() Lister {
+func (l *universalLister) Clone() *universalLister {
 	var clonedLister universalLister
 
 	clonedLister.resourceType = l.resourceType
@@ -94,16 +118,16 @@ func (l *universalLister) Clone() Lister {
 
 // ListGlobal missing godoc
 func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
-	return l.unsafeList(ctx, dest, additionalConditions...)
+	return l.unsafeList(ctx, "", dest, additionalConditions...)
 }
 
-func (l *universalLister) unsafeList(ctx context.Context, dest Collection, conditions ...Condition) error {
+func (l *universalLister) unsafeList(ctx context.Context, tenant string, dest Collection, conditions ...Condition) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
-	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, l.orderByParams, true)
+	query, args, err := buildSelectQuery(l.resourceType, l.tableName, l.selectedColumns, tenant, conditions, l.orderByParams, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}

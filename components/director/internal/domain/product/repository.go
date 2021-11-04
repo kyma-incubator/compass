@@ -14,7 +14,6 @@ import (
 const productTable string = `public.products`
 
 var (
-	tenantColumn     = "tenant_id" // TODO: <storage-redesign> delete this column
 	productColumns   = []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id"}
 	updatableColumns = []string{"title", "short_description", "vendor", "parent", "labels", "correlation_ids"}
 )
@@ -40,9 +39,9 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		conv:         conv,
-		existQuerier: repo.NewExistQuerier(resource.Product, productTable, tenantColumn),
-		singleGetter: repo.NewSingleGetter(resource.Product, productTable, tenantColumn, productColumns),
-		lister:       repo.NewLister(resource.Product, productTable, tenantColumn, productColumns),
+		existQuerier: repo.NewExistQuerier(resource.Product, productTable),
+		singleGetter: repo.NewSingleGetter(resource.Product, productTable, productColumns),
+		lister:       repo.NewLister(resource.Product, productTable, productColumns),
 		deleter:      repo.NewDeleter(resource.Product, productTable),
 		creator:      repo.NewCreator(resource.Product, productTable, productColumns),
 		updater:      repo.NewUpdater(resource.Product, productTable, updatableColumns, []string{"id"}),

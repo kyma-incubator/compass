@@ -20,7 +20,6 @@ const runtimeContextsTable string = `public.runtime_contexts`
 
 var (
 	runtimeContextColumns = []string{"id", "runtime_id", "key", "value"}
-	tenantColumn          = "tenant_id" // TODO: <storage-redesign> delete this column
 )
 
 type pgRepository struct {
@@ -36,11 +35,11 @@ type pgRepository struct {
 // NewRepository missing godoc
 func NewRepository() *pgRepository {
 	return &pgRepository{
-		existQuerier:       repo.NewExistQuerier(resource.RuntimeContext, runtimeContextsTable, tenantColumn),
-		singleGetter:       repo.NewSingleGetter(resource.RuntimeContext, runtimeContextsTable, tenantColumn, runtimeContextColumns),
+		existQuerier:       repo.NewExistQuerier(resource.RuntimeContext, runtimeContextsTable),
+		singleGetter:       repo.NewSingleGetter(resource.RuntimeContext, runtimeContextsTable, runtimeContextColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.RuntimeContext, runtimeContextsTable, runtimeContextColumns),
 		deleter:            repo.NewDeleter(resource.RuntimeContext, runtimeContextsTable),
-		pageableQuerier:    repo.NewPageableQuerier(resource.RuntimeContext, runtimeContextsTable, tenantColumn, runtimeContextColumns),
+		pageableQuerier:    repo.NewPageableQuerier(resource.RuntimeContext, runtimeContextsTable, runtimeContextColumns),
 		creator:            repo.NewCreator(resource.RuntimeContext, runtimeContextsTable, runtimeContextColumns),
 		updater:            repo.NewUpdater(resource.RuntimeContext, runtimeContextsTable, []string{"key", "value"}, []string{"id"}),
 	}

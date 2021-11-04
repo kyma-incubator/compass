@@ -2,6 +2,8 @@ package repo
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/pkg/errors"
 	"strings"
 )
 
@@ -231,4 +233,16 @@ func (c *jsonArrAnyMatchCondition) GetQueryPart() string {
 // GetQueryArgs missing godoc
 func (c *jsonArrAnyMatchCondition) GetQueryArgs() ([]interface{}, bool) {
 	return c.val, true
+}
+
+func NewTenantIsolationCondition(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return nil, errors.Errorf("entity %s does not have access table", resourceType)
+	}
+	tenantIsolationSubquery := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn)
+	if ownerCheck {
+		tenantIsolationSubquery += fmt.Sprintf(" AND %s = true", M2MOwnerColumn)
+	}
+	return NewInConditionForSubQuery("id", tenantIsolationSubquery, []interface{}{tenant}), nil
 }

@@ -19,7 +19,6 @@ const specIDColumn = "spec_id"
 
 var (
 	fetchRequestColumns = []string{"id", documentIDColumn, "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", specIDColumn}
-	tenantColumn        = "tenant_id" // TODO: <storage-redesign> delete
 )
 
 // Converter missing godoc
@@ -42,8 +41,8 @@ type repository struct {
 func NewRepository(conv Converter) *repository {
 	return &repository{
 		creator:      repo.NewCreator(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
-		singleGetter: repo.NewSingleGetter(resource.FetchRequest, fetchRequestTable, tenantColumn, fetchRequestColumns),
-		lister:       repo.NewLister(resource.FetchRequest, fetchRequestTable, tenantColumn, fetchRequestColumns),
+		singleGetter: repo.NewSingleGetter(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
+		lister:       repo.NewLister(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
 		deleter:      repo.NewDeleter(resource.FetchRequest, fetchRequestTable),
 		updater:      repo.NewUpdater(resource.FetchRequest, fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, []string{"id"}),
 		conv:         conv,

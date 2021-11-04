@@ -26,9 +26,9 @@ var (
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:         repo.NewGlobalCreator(resource.AutomaticScenarioAssigment, tableName, columns),
-		lister:          repo.NewLister(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
-		singleGetter:    repo.NewSingleGetter(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
-		pageableQuerier: repo.NewPageableQuerier(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
+		lister:          repo.NewListerWithEmbeddedTenant(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
+		singleGetter:    repo.NewSingleGetterWithEmbeddedTenant(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
+		pageableQuerier: repo.NewPageableQuerierWithEmbeddedTenant(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
 		deleter:         repo.NewDeleterWithEmbeddedTenant(resource.AutomaticScenarioAssigment, tableName, tenantColumn),
 		conv:            conv,
 	}

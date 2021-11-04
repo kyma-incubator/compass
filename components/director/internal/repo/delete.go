@@ -32,22 +32,21 @@ type universalDeleter struct {
 	tableName    string
 	resourceType resource.Type
 	tenantColumn *string
-	isGlobal     bool
 }
 
 // NewDeleter missing godoc
 func NewDeleter(resourceType resource.Type, tableName string) Deleter {
-	return &universalDeleter{resourceType: resourceType, tableName: tableName, isGlobal: false}
+	return &universalDeleter{resourceType: resourceType, tableName: tableName}
 }
 
 // NewDeleterWithEmbeddedTenant missing godoc
 func NewDeleterWithEmbeddedTenant(resourceType resource.Type, tableName string, tenantColumn string) Deleter {
-	return &universalDeleter{resourceType: resourceType, tableName: tableName, isGlobal: false, tenantColumn: &tenantColumn}
+	return &universalDeleter{resourceType: resourceType, tableName: tableName, tenantColumn: &tenantColumn}
 }
 
 // NewDeleterGlobal missing godoc
 func NewDeleterGlobal(resourceType resource.Type, tableName string) DeleterGlobal {
-	return &universalDeleter{tableName: tableName, resourceType: resourceType, isGlobal: true}
+	return &universalDeleter{tableName: tableName, resourceType: resourceType}
 }
 
 // DeleteOne missing godoc
@@ -151,8 +150,12 @@ func (g *universalDeleter) unsafeDeleteTenantAccess(ctx context.Context, tenant 
 
 	stmtBuilder.WriteString(fmt.Sprintf("SELECT id FROM %s WHERE", g.tableName))
 
-	tenantIsolationSubquery := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ? AND %s = true", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn, M2MOwnerColumn)
-	conditions = append(conditions, NewInConditionForSubQuery("id", tenantIsolationSubquery, []interface{}{tenant}))
+	tenantIsolation, err := NewTenantIsolationCondition(g.resourceType, tenant, true)
+	if err != nil {
+		return err
+	}
+
+	conditions = append(conditions, tenantIsolation)
 
 	err = writeEnumeratedConditions(&stmtBuilder, conditions)
 	if err != nil {
@@ -195,11 +198,6 @@ func (g *universalDeleter) unsafeDeleteTenantAccess(ctx context.Context, tenant 
 }
 
 func (g *universalDeleter) unsafeDeleteChildEntity(ctx context.Context, tenant string, conditions Conditions, requireSingleRemoval bool) error {
-	m2mTable, ok := g.resourceType.TenantAccessTable()
-	if !ok {
-		return errors.Errorf("entity %s does not have access table", g.resourceType)
-	}
-
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -208,8 +206,12 @@ func (g *universalDeleter) unsafeDeleteChildEntity(ctx context.Context, tenant s
 	var stmtBuilder strings.Builder
 	stmtBuilder.WriteString(fmt.Sprintf("DELETE FROM %s WHERE", g.tableName))
 
-	tenantIsolationSubquery := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ? AND %s = true", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn, M2MOwnerColumn)
-	conditions = append(conditions, NewInConditionForSubQuery("id", tenantIsolationSubquery, []interface{}{tenant}))
+	tenantIsolation, err := NewTenantIsolationCondition(g.resourceType, tenant, true)
+	if err != nil {
+		return err
+	}
+
+	conditions = append(conditions, tenantIsolation)
 
 	err = writeEnumeratedConditions(&stmtBuilder, conditions)
 	if err != nil {
@@ -217,7 +219,7 @@ func (g *universalDeleter) unsafeDeleteChildEntity(ctx context.Context, tenant s
 	}
 	allArgs := getAllArgs(conditions)
 
-	if g.resourceType == resource.BundleInstanceAuth {
+	if g.resourceType == resource.BundleInstanceAuth && len(tenant) > 0 {
 		stmtBuilder.WriteString(" OR owner_id = ?")
 		allArgs = append(allArgs, tenant)
 	}

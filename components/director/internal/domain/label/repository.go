@@ -38,6 +38,12 @@ type repository struct {
 	deleter                repo.Deleter
 	getter                 repo.SingleGetter
 	queryBuilder           repo.QueryBuilder
+
+	embeddedTenantLister                 repo.Lister
+	embeddedTenantDeleter                repo.Deleter
+	embeddedTenantGetter                 repo.SingleGetter
+	embeddedTenantQueryBuilder           repo.QueryBuilder
+
 	creator                repo.Creator
 	globalCreator          repo.GlobalCreator
 	updater                repo.Updater
@@ -50,11 +56,17 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		lister:                 repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
-		listerGlobal:           repo.NewListerGlobal(resource.Label, tableName, tableColumns),
-		deleter:                repo.NewDeleter(resource.Label, tableName),
-		getter:                 repo.NewSingleGetter(resource.Label, tableName, tenantColumn, tableColumns),
-		queryBuilder:           repo.NewQueryBuilder(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
+		lister:       repo.NewLister(resource.Label, tableName, tableColumns),
+		listerGlobal: repo.NewListerGlobal(resource.Label, tableName, tableColumns),
+		deleter:      repo.NewDeleter(resource.Label, tableName),
+		getter:       repo.NewSingleGetter(resource.Label, tableName, tableColumns),
+		queryBuilder: repo.NewQueryBuilder(resource.Label, tableName, []string{"runtime_id"}),
+
+		embeddedTenantLister:       repo.NewListerWithEmbeddedTenant(resource.Label, tableName, tenantColumn, tableColumns),
+		embeddedTenantDeleter:      repo.NewDeleterWithEmbeddedTenant(resource.Label, tenantColumn, tableName),
+		embeddedTenantGetter:       repo.NewSingleGetterWithEmbeddedTenant(resource.Label, tableName, tenantColumn, tableColumns),
+		embeddedTenantQueryBuilder: repo.NewQueryBuilderWithEmbeddedTenant(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
+
 		creator:                repo.NewCreator(resource.Label, tableName, tableColumns),
 		globalCreator:          repo.NewGlobalCreator(resource.Label, tableName, tableColumns),
 		updater:                repo.NewUpdater(resource.Label, tableName, updatableColumns, idColumns),
@@ -125,8 +137,13 @@ func (r *repository) Create(ctx context.Context, tenant string, label *model.Lab
 
 // GetByKey missing godoc
 func (r *repository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
+	getter := r.getter
+	if objectType == model.TenantLabelableObject {
+		getter = r.embeddedTenantGetter
+	}
+
 	var entity Entity
-	if err := r.getter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("key", key), repo.NewEqualCondition(labelableObjectField(objectType), objectID)}, repo.NoOrderBy, &entity); err != nil {
+	if err := getter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("key", key), repo.NewEqualCondition(labelableObjectField(objectType), objectID)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
@@ -141,15 +158,19 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 // ListForObject missing godoc
 func (r *repository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	var entities Collection
+
 	typeCondition := repo.NewEqualCondition(labelableObjectField(objectType), objectID)
 	conditions := []repo.Condition{typeCondition}
+
+	lister := r.lister
 	if objectType == model.TenantLabelableObject {
+		lister = r.embeddedTenantLister
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.ApplicationLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeContextLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeLabelableObject)))
 	}
 
-	if err := r.lister.List(ctx, tenant, &entities, conditions...); err != nil {
+	if err := lister.List(ctx, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
@@ -211,17 +232,30 @@ func (r *repository) ListGlobalByKeyAndObjects(ctx context.Context, objectType m
 
 // Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("key", key), repo.NewEqualCondition(labelableObjectField(objectType), objectID)})
+	deleter := r.deleter
+	if objectType == model.TenantLabelableObject {
+		deleter = r.embeddedTenantDeleter
+	}
+	return deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("key", key), repo.NewEqualCondition(labelableObjectField(objectType), objectID)})
 }
 
 // DeleteAll missing godoc
 func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error {
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(labelableObjectField(objectType), objectID)})
+	deleter := r.deleter
+	if objectType == model.TenantLabelableObject {
+		deleter = r.embeddedTenantDeleter
+	}
+	return deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(labelableObjectField(objectType), objectID)})
 }
 
 // DeleteByKeyNegationPattern missing godoc
 func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{
+	deleter := r.deleter
+	if objectType == model.TenantLabelableObject {
+		deleter = r.embeddedTenantDeleter
+	}
+
+	return deleter.DeleteMany(ctx, tenant, repo.Conditions{
 		repo.NewEqualCondition(labelableObjectField(objectType), objectID),
 		repo.NewEqualCondition(tenantColumn, tenant),
 		repo.NewNotRegexConditionString("key", labelKeyPattern),
