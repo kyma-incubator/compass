@@ -9,6 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/automock"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
@@ -49,7 +52,7 @@ const (
 func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, true, ClientIDHeaderKey, claims.NewValidator())
+		auth := authenticator.New(PublicJWKSURL, true, ClientIDHeaderKey, claimsValidatorMock())
 		//when
 		err := auth.SynchronizeJWKS(context.TODO())
 
@@ -85,7 +88,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - token with signing method", func(t *testing.T) {
 		//given
-		middleware := createMiddleware(t, false)
+		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
@@ -106,7 +109,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - token with no signing method when it's allowed", func(t *testing.T) {
 		//given
-		middleware := createMiddleware(t, true)
+		middleware := createMiddleware(t, true, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
@@ -126,7 +129,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Success - with client user provided", func(t *testing.T) {
 		clientUser := "foo"
 		//given
-		middleware := createMiddleware(t, false)
+		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandlerWithClientUser(t, defaultTenant, clientUser, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
@@ -149,7 +152,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Success - when tenant is empty", func(t *testing.T) {
 		//given
 		tnt := ""
-		middleware := createMiddleware(t, true)
+		middleware := createMiddleware(t, true, claimsValidatorMock())
 		handler := testHandler(t, tnt, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
@@ -168,7 +171,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claims.NewValidator())
+		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -197,7 +200,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the first key", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey, claims.NewValidator())
+		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -224,7 +227,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the second key", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey, claims.NewValidator())
+		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -251,7 +254,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Error - retry parsing token with failing synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claims.NewValidator())
+		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -285,7 +288,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Error - token with no signing method when it's not allowed", func(t *testing.T) {
 		//given
-		middleware := createMiddleware(t, false)
+		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 
 		rr := httptest.NewRecorder()
@@ -310,7 +313,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Error - can't parse token", func(t *testing.T) {
 		//given
-		middleware := createMiddleware(t, false)
+		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
@@ -333,7 +336,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Error - invalid header and bearer token", func(t *testing.T) {
 		//given
-		middleware := createMiddleware(t, false)
+		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
@@ -356,7 +359,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Error - token without signing key", func(t *testing.T) {
 		//given
-		middleware := createMiddleware(t, false)
+		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 
 		rr := httptest.NewRecorder()
@@ -382,9 +385,11 @@ func TestAuthenticator_Handler(t *testing.T) {
 		assertGraphqlResponse(t, expected, response)
 	})
 
-	t.Run("Error - after successful parsing claims there is no tenant", func(t *testing.T) {
+	t.Run("Error - after successful parsing claims are not valid", func(t *testing.T) {
 		//given
-		middleware := createMiddleware(t, false)
+		v := &automock.ClaimsValidator{}
+		v.On("Validate", mock.Anything, mock.Anything).Return(apperrors.NewTenantNotFoundError("externalTenantName"))
+		middleware := createMiddleware(t, false, v)
 		handler := testHandler(t, "", scopes)
 
 		rr := httptest.NewRecorder()
@@ -446,7 +451,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Error - Token signed with different key", func(t *testing.T) {
 		//given
-		middleware := createMiddleware(t, false)
+		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 
 		rr := httptest.NewRecorder()
@@ -536,8 +541,8 @@ func createTokenWithSigningMethod(t *testing.T, tenant string, scopes string, ke
 	return signedToken
 }
 
-func createMiddleware(t *testing.T, allowJWTSigningNone bool) func(next http.Handler) http.Handler {
-	auth := authenticator.New(PublicJWKSURL, allowJWTSigningNone, ClientIDHeaderKey, claims.NewValidator())
+func createMiddleware(t *testing.T, allowJWTSigningNone bool, claimsValidatorMock authenticator.ClaimsValidator) func(next http.Handler) http.Handler {
+	auth := authenticator.New(PublicJWKSURL, allowJWTSigningNone, ClientIDHeaderKey, claimsValidatorMock)
 	err := auth.SynchronizeJWKS(context.TODO())
 	require.NoError(t, err)
 	return auth.Handler()
@@ -599,4 +604,10 @@ func assertGraphqlResponse(t *testing.T, expected, actual graphql.Response) {
 	expectedErrCode := int(errCode)
 	assert.Equal(t, expectedErrCode, actualErrCode)
 	assert.Equal(t, expected.Errors[0].Message, actual.Errors[0].Message)
+}
+
+func claimsValidatorMock() authenticator.ClaimsValidator {
+	v := &automock.ClaimsValidator{}
+	v.On("Validate", mock.Anything, mock.Anything).Return(nil)
+	return v
 }

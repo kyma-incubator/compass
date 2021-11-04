@@ -28,6 +28,8 @@ type ObjectContext struct {
 	TenantContext
 	KeysExtra
 	Scopes          string
+	Region          string
+	OauthClientID   string
 	ConsumerID      string
 	AuthFlow        oathkeeper.AuthFlow
 	ConsumerType    consumer.ConsumerType
@@ -41,11 +43,13 @@ type KeysExtra struct {
 }
 
 // NewObjectContext missing godoc
-func NewObjectContext(tenantCtx TenantContext, keysExtra KeysExtra, scopes string, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.ConsumerType, contextProvider string) ObjectContext {
+func NewObjectContext(tenantCtx TenantContext, keysExtra KeysExtra, scopes string, region string, clientID string, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.ConsumerType, contextProvider string) ObjectContext {
 	return ObjectContext{
 		TenantContext:   tenantCtx,
 		KeysExtra:       keysExtra,
 		Scopes:          scopes,
+		Region:          region,
+		OauthClientID:   clientID,
 		ConsumerID:      consumerID,
 		AuthFlow:        authFlow,
 		ConsumerType:    consumerType,

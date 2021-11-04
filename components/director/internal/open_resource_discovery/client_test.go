@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy/automock"
 	"github.com/stretchr/testify/mock"
@@ -34,7 +36,7 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 	}
 }
 
-var successfulRoundTripFunc = func(t *testing.T) func(req *http.Request) *http.Response {
+var successfulRoundTripFunc = func(t *testing.T, bothBaseURLsProvided, noBaseURLsButDocWithAbsURL bool) func(req *http.Request) *http.Response {
 	return func(req *http.Request) *http.Response {
 		var data []byte
 		var err error
@@ -44,8 +46,25 @@ var successfulRoundTripFunc = func(t *testing.T) func(req *http.Request) *http.R
 			require.NoError(t, err)
 		}
 		statusCode := http.StatusOK
-		if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
+		if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) && bothBaseURLsProvided {
+			config := fixWellKnownConfig()
+			config.BaseURL = baseURL2
+			data, err = json.Marshal(config)
+			require.NoError(t, err)
+		} else if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
 			data, err = json.Marshal(fixWellKnownConfig())
+			require.NoError(t, err)
+		} else if strings.Contains(req.URL.String(), customWebhookConfigURL) && noBaseURLsButDocWithAbsURL {
+			config := fixWellKnownConfig()
+			config.BaseURL = ""
+			config.OpenResourceDiscoveryV1.Documents[0].URL = absoluteDocURL
+			data, err = json.Marshal(config)
+			require.NoError(t, err)
+		} else if strings.Contains(req.URL.String(), customWebhookConfigURL) {
+			config := fixWellKnownConfig()
+			// when webhookURL is not /well-known, a valid baseURL in the config must be provided
+			config.BaseURL = baseURL2
+			data, err = json.Marshal(config)
 			require.NoError(t, err)
 		} else if strings.Contains(req.URL.String(), ordDocURI) {
 			data, err = json.Marshal(fixORDDocument())
@@ -80,14 +99,43 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		RoundTripFunc        func(req *http.Request) *http.Response
 		ExecutorProviderFunc func() accessstrategy.ExecutorProvider
 		ExpectedResult       ord.Documents
+		ExpectedBaseURL      string
 		ExpectedErr          error
+		WebhookURL           string
 	}{
 		{
-			Name:          "Success",
-			RoundTripFunc: successfulRoundTripFunc(t),
+			Name:          "Success when webhookURL contains /well-known suffix",
+			RoundTripFunc: successfulRoundTripFunc(t, false, false),
 			ExpectedResult: ord.Documents{
 				fixORDDocument(),
 			},
+			ExpectedBaseURL: baseURL,
+		},
+		{
+			Name:          "Success when webhookURL is custom and does not contain /well-known suffix but config baseURL is provided",
+			RoundTripFunc: successfulRoundTripFunc(t, false, false),
+			ExpectedResult: ord.Documents{
+				fixORDDocument(),
+			},
+			ExpectedBaseURL: baseURL2,
+			WebhookURL:      customWebhookConfigURL,
+		},
+		{
+			Name:          "Success when webhookURL is /well-known and config baseURL is set - config baseURL is chosen",
+			RoundTripFunc: successfulRoundTripFunc(t, true, false),
+			ExpectedResult: ord.Documents{
+				fixORDDocument(),
+			},
+			ExpectedBaseURL: baseURL2,
+		},
+		{
+			Name:          "Success when webhookURL isn't /well-known, no config baseURL is set but all documents in the config are with absolute url",
+			RoundTripFunc: successfulRoundTripFunc(t, false, true),
+			ExpectedResult: ord.Documents{
+				fixORDDocument(),
+			},
+			ExpectedBaseURL: "",
+			WebhookURL:      customWebhookConfigURL,
 		},
 		{
 			Name: "Success with secured system type configured and basic credentials",
@@ -99,10 +147,11 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 					},
 				},
 			},
-			RoundTripFunc: successfulRoundTripFunc(t),
+			RoundTripFunc: successfulRoundTripFunc(t, false, false),
 			ExpectedResult: ord.Documents{
 				fixORDDocument(),
 			},
+			ExpectedBaseURL: baseURL,
 		},
 		{
 			Name: "Success with secured system type configured and oauth credentials",
@@ -115,10 +164,11 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 					},
 				},
 			},
-			RoundTripFunc: successfulRoundTripFunc(t),
+			RoundTripFunc: successfulRoundTripFunc(t, false, false),
 			ExpectedResult: ord.Documents{
 				fixORDDocument(),
 			},
+			ExpectedBaseURL: baseURL,
 		},
 		{
 			Name: "Well-known config success fetch with access strategy",
@@ -138,10 +188,11 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				return executorProvider
 			},
 			AccessStrategy: testAccessStrategy,
-			RoundTripFunc:  successfulRoundTripFunc(t),
+			RoundTripFunc:  successfulRoundTripFunc(t, false, false),
 			ExpectedResult: ord.Documents{
 				fixORDDocument(),
 			},
+			ExpectedBaseURL: baseURL,
 		},
 		{
 			Name: "Well-known config fetch with access strategy fails when access strategy provider returns error",
@@ -151,7 +202,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				return executorProvider
 			},
 			AccessStrategy: testAccessStrategy,
-			RoundTripFunc:  successfulRoundTripFunc(t),
+			RoundTripFunc:  successfulRoundTripFunc(t, false, false),
 			ExpectedErr:    errors.Errorf("cannot find executor for access strategy %q as part of webhook processing: test", testAccessStrategy),
 		},
 		{
@@ -165,7 +216,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				return executorProvider
 			},
 			AccessStrategy: testAccessStrategy,
-			RoundTripFunc:  successfulRoundTripFunc(t),
+			RoundTripFunc:  successfulRoundTripFunc(t, false, false),
 			ExpectedErr:    errors.Errorf("error while fetching open resource discovery well-known configuration with access strategy %q: test", testAccessStrategy),
 		},
 		{
@@ -243,8 +294,8 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				statusCode := http.StatusOK
 				if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
 					config := fixWellKnownConfig()
-					config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = "custom"
-					config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomType = "test"
+					config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = accessstrategy.CustomAccessStrategy
+					config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomType = "foo.bar:test:v1"
 					data, err = json.Marshal(config)
 					require.NoError(t, err)
 				} else if strings.Contains(req.URL.String(), ordDocURI) {
@@ -257,7 +308,8 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
-			ExpectedResult: ord.Documents{},
+			ExpectedResult:  ord.Documents{},
+			ExpectedBaseURL: baseURL,
 		},
 		{
 			Name: "Error fetching document",
@@ -321,6 +373,12 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 
 			testWebhook.Auth = test.Credentials
 
+			if test.WebhookURL != "" {
+				testWebhook.URL = str.Ptr(test.WebhookURL)
+			} else {
+				testWebhook.URL = str.Ptr(baseURL + ord.WellKnownEndpoint)
+			}
+
 			if len(test.AccessStrategy) > 0 {
 				if testWebhook.Auth == nil {
 					testWebhook.Auth = &model.Auth{}
@@ -336,7 +394,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.Len(t, docs, len(test.ExpectedResult))
-				require.Equal(t, baseURL, actualBaseURL)
+				require.Equal(t, test.ExpectedBaseURL, actualBaseURL)
 				require.Equal(t, test.ExpectedResult, docs)
 			}
 

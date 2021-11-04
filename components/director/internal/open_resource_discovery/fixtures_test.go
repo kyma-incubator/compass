@@ -15,20 +15,22 @@ import (
 )
 
 const (
-	ordDocURI         = "/open-resource-discovery/v1/documents/example1"
-	baseURL           = "http://test.com:8080"
-	baseURL2          = "http://second.com"
-	packageORDID      = "ns:package:PACKAGE_ID:v1"
-	productORDID      = "sap:product:id:"
-	product2ORDID     = "ns:product:id2:"
-	bundleORDID       = "ns:consumptionBundle:BUNDLE_ID:v1"
-	secondBundleORDID = "ns:consumptionBundle:BUNDLE_ID:v2"
-	vendorORDID       = "sap:vendor:SAP:"
-	vendor2ORDID      = "partner:vendor:SAP:"
-	api1ORDID         = "ns:apiResource:API_ID:v2"
-	api2ORDID         = "ns:apiResource:API_ID2:v1"
-	event1ORDID       = "ns:eventResource:EVENT_ID:v1"
-	event2ORDID       = "ns2:eventResource:EVENT_ID:v1"
+	absoluteDocURL         = "http://config.com/open-resource-discovery/v1/documents/example1"
+	ordDocURI              = "/open-resource-discovery/v1/documents/example1"
+	baseURL                = "http://test.com:8080"
+	baseURL2               = "http://second.com"
+	customWebhookConfigURL = "http://custom.com/config/endpoint"
+	packageORDID           = "ns:package:PACKAGE_ID:v1"
+	productORDID           = "sap:product:id:"
+	product2ORDID          = "ns:product:id2:"
+	bundleORDID            = "ns:consumptionBundle:BUNDLE_ID:v1"
+	secondBundleORDID      = "ns:consumptionBundle:BUNDLE_ID:v2"
+	vendorORDID            = "sap:vendor:SAP:"
+	vendor2ORDID           = "partner:vendor:SAP:"
+	api1ORDID              = "ns:apiResource:API_ID:v2"
+	api2ORDID              = "ns:apiResource:API_ID2:v1"
+	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
+	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
 
 	appID       = "testApp"
 	whID        = "testWh"
@@ -182,7 +184,8 @@ func fixResourceHashes() map[string]uint64 {
 
 func fixWellKnownConfig() *ord.WellKnownConfig {
 	return &ord.WellKnownConfig{
-		Schema: "../spec/v1/generated/Configuration.schema.json",
+		Schema:  "../spec/v1/generated/Configuration.schema.json",
+		BaseURL: baseURL,
 		OpenResourceDiscoveryV1: ord.OpenResourceDiscoveryV1{
 			Documents: []ord.DocumentDetails{
 				{

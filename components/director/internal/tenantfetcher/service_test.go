@@ -1602,7 +1602,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
-				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 				return client
 			},
 		},

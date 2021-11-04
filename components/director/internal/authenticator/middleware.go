@@ -29,7 +29,7 @@ const (
 // ClaimsValidator missing godoc
 //go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore
 type ClaimsValidator interface {
-	Validate(claims.Claims) error
+	Validate(context.Context, claims.Claims) error
 }
 
 // Authenticator missing godoc
@@ -93,7 +93,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			if err := a.claimsValidator.Validate(*tokenClaims); err != nil {
+			if err := a.claimsValidator.Validate(ctx, *tokenClaims); err != nil {
 				log.C(ctx).WithError(err).Errorf("An error has occurred while validating claims: %v", err)
 				switch apperrors.ErrorCode(err) {
 				case apperrors.TenantNotFound:
