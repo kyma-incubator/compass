@@ -265,7 +265,7 @@ func (s SubaccountService) SyncTenants() error {
 		totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete) + len(runtimesToMove)
 		log.C(ctx).Printf("Amount of new events: %d", totalNewEvents)
 		if totalNewEvents == 0 {
-			return nil
+			continue
 		}
 
 		tx, err := s.transact.Begin()
