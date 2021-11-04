@@ -12,7 +12,7 @@ type Condition interface {
 	// GetQueryPart returns formatted string that will be included in the SQL query for a given condition
 	GetQueryPart() string
 
-	// GetQueryArg returns a boolean flag if the condition contains argument and the argument value
+	// GetQueryArgs returns a boolean flag if the condition contains argument and the argument value
 	//
 	// For conditions like IN and IS NOT NULL there are no arguments to be included in the query.
 	// For conditions like = there is a placeholder which value will be returned calling this func.

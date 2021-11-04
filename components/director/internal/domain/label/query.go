@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
@@ -22,7 +24,7 @@ const (
 	// UnionSet missing godoc
 	UnionSet               SetCombination = "UNION"
 	scenariosLabelKey      string         = "SCENARIOS"
-	stmtPrefixFormat       string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL`
+	stmtPrefixFormat       string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND`
 	stmtPrefixGlobalFormat string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL`
 )
 
@@ -65,11 +67,23 @@ func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 
 	objectField := labelableObjectField(queryFor)
 
-	// TODO: <storage-redesign> NQMAM IDEQ
+	var cond repo.Condition
+	if queryFor == model.TenantLabelableObject {
+		cond = repo.NewEqualCondition("tenant_id", tenant)
+	} else {
+		var err error
+		cond, err = repo.NewTenantIsolationCondition(queryFor.GetResourceType(), tenant.String(), false)
+		if err != nil {
+			return "", nil, err
+		}
+	}
 
-	stmtPrefix := fmt.Sprintf(stmtPrefixFormat, objectField, tableName, objectField)
+	stmtPrefixFormatWithTenantIsolation := stmtPrefixFormat + " " + cond.GetQueryPart()
+	stmtPrefix := fmt.Sprintf(stmtPrefixFormatWithTenantIsolation, objectField, tableName, objectField)
+	var stmtPrefixArgs []interface{}
+	stmtPrefixArgs = append(stmtPrefixArgs, tenant)
 
-	return buildFilterQuery(stmtPrefix, nil, setCombination, filter, isSubQuery)
+	return buildFilterQuery(stmtPrefix, stmtPrefixArgs, setCombination, filter, isSubQuery)
 }
 
 func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombination SetCombination, filters []*labelfilter.LabelFilter, isSubQuery bool) (string, []interface{}, error) {

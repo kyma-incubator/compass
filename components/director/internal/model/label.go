@@ -1,6 +1,9 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+)
 
 // Label missing godoc
 type Label struct {
@@ -53,6 +56,20 @@ const (
 	// TenantLabelableObject missing godoc
 	TenantLabelableObject LabelableObject = "Tenant"
 )
+
+func (obj LabelableObject) GetResourceType() resource.Type {
+	switch obj {
+	case RuntimeLabelableObject:
+		return resource.RuntimeLabel
+	case RuntimeContextLabelableObject:
+		return resource.RuntimeContextLabel
+	case ApplicationLabelableObject:
+		return resource.ApplicationLabel
+	case TenantLabelableObject:
+		return resource.TenantLabel
+	}
+	return ""
+}
 
 // NewLabelForRuntimeContext missing godoc
 func NewLabelForRuntimeContext(runtimeCtxID, tenant, key string, value interface{}) *Label {
