@@ -91,7 +91,7 @@ type BundleInstanceAuthService interface {
 // SelfRegisterManager missing godoc
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore
 type SelfRegisterManager interface {
-	PrepareRuntimeForSelfRegistration(ctx context.Context, in *graphql.RuntimeInput) error
+	PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput) (model.RuntimeInput, error)
 	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string) error
 	GetSelfRegDistinguishingLabelKey() string
 }
@@ -198,9 +198,10 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 
 // RegisterRuntime missing godoc
 func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
+	var err error
 	convertedIn := r.converter.InputFromGraphQL(in)
 
-	if err := r.selfRegManager.PrepareRuntimeForSelfRegistration(ctx, &in); err != nil {
+	if convertedIn, err = r.selfRegManager.PrepareRuntimeForSelfRegistration(ctx, convertedIn); err != nil {
 		return nil, err
 	}
 
@@ -212,7 +213,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 	defer func() {
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
 		if didRollback {
-			labelVal := str.CastOrEmpty(in.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
+			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			r.cleanupAndLogOnError(ctx, labelVal)
 		}
 	}()

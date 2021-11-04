@@ -3,6 +3,8 @@ package rtmtest
 import (
 	"errors"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/stretchr/testify/mock"
 )
@@ -20,16 +22,18 @@ func NoopSelfRegManager() *automock.SelfRegisterManager {
 }
 
 // SelfRegManagerThatDoesPrepWithNoErrors missing godoc
-func SelfRegManagerThatDoesPrepWithNoErrors() *automock.SelfRegisterManager {
-	srm := &automock.SelfRegisterManager{}
-	srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything).Return(nil).Once()
-	return srm
+func SelfRegManagerThatDoesPrepWithNoErrors(res model.RuntimeInput) func() *automock.SelfRegisterManager {
+	return func() *automock.SelfRegisterManager {
+		srm := &automock.SelfRegisterManager{}
+		srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything).Return(res, nil).Once()
+		return srm
+	}
 }
 
 // SelfRegManagerThatReturnsErrorOnPrep missing godoc
 func SelfRegManagerThatReturnsErrorOnPrep() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
-	srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything).Return(errors.New(SelfRegErrorMsg)).Once()
+	srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything).Return(model.RuntimeInput{}, errors.New(SelfRegErrorMsg)).Once()
 	return srm
 }
 
@@ -57,9 +61,11 @@ func SelfRegManagerReturnsDistinguishingLabel() *automock.SelfRegisterManager {
 }
 
 // SelfRegManagerThatReturnsNoErrors missing godoc
-func SelfRegManagerThatReturnsNoErrors() *automock.SelfRegisterManager {
-	srm := SelfRegManagerThatDoesPrepWithNoErrors()
-	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
-	srm.On("CleanupSelfRegisteredRuntime", mock.Anything, mock.AnythingOfType("string")).Return(nil).Once()
-	return srm
+func SelfRegManagerThatReturnsNoErrors(res model.RuntimeInput) func() *automock.SelfRegisterManager {
+	return func() *automock.SelfRegisterManager {
+		srm := SelfRegManagerThatDoesPrepWithNoErrors(res)()
+		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
+		srm.On("CleanupSelfRegisteredRuntime", mock.Anything, mock.AnythingOfType("string")).Return(nil).Once()
+		return srm
+	}
 }

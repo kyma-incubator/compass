@@ -14,7 +14,7 @@ import (
 
 const (
 	// ResponseLabelKey is a testing label key
-	ResponseLabelKey = "test-label-key"
+	ResponseLabelKey = "test-response-label-key"
 	// ResponseLabelValue is a testing label value
 	ResponseLabelValue = "test-label-val"
 )

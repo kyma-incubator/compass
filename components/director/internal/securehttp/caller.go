@@ -33,7 +33,7 @@ func NewCaller(credentials graphql.CredentialData, clientTimeout time.Duration) 
 	case *graphql.OAuthCredentialData:
 		c.provider = auth.NewTokenAuthorizationProvider(http.DefaultClient)
 	}
-	c.client.Transport = director_http.NewSecuredTransport(http.DefaultTransport, c.provider)
+	c.client.Transport = director_http.NewCorrelationIDTransport(director_http.NewSecuredTransport(http.DefaultTransport, c.provider))
 	return c
 }
 

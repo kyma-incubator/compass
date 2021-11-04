@@ -10,9 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -58,32 +59,32 @@ func NewSelfRegisterManager(cfg SelfRegConfig, caller ExternalSvcCaller) *selfRe
 
 // PrepareRuntimeForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
 // is being self-registered
-func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in *graphql.RuntimeInput) error {
+func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput) (model.RuntimeInput, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
-		return errors.Wrapf(err, "while loading consumer")
+		return model.RuntimeInput{}, errors.Wrapf(err, "while loading consumer")
 	}
 	if distinguishLabel, exists := in.Labels[s.cfg.SelfRegisterDistinguishLabelKey]; exists && consumerInfo.Flow.IsCertFlow() { // this means that the runtime is being self-registered
 		distinguishLabelVal := str.CastOrEmpty(distinguishLabel)
 
 		request, err := s.createSelfRegPrepRequest(distinguishLabelVal, consumerInfo.ConsumerID)
 		if err != nil {
-			return err
+			return model.RuntimeInput{}, err
 		}
 
 		response, err := s.caller.Call(request)
 		if err != nil {
-			return errors.Wrapf(err, "while executing preparation of self registered runtime")
+			return model.RuntimeInput{}, errors.Wrapf(err, "while executing preparation of self registered runtime")
 		}
 		defer httputils.Close(ctx, response.Body)
 
 		respBytes, err := io.ReadAll(response.Body)
 		if err != nil {
-			return errors.Wrapf(err, "while reading response body")
+			return model.RuntimeInput{}, errors.Wrapf(err, "while reading response body")
 		}
 
 		if response.StatusCode != http.StatusCreated {
-			return errors.New(fmt.Sprintf("received unexpected status %d while preparing self-registered runtime: %s", response.StatusCode, string(respBytes)))
+			return model.RuntimeInput{}, errors.New(fmt.Sprintf("received unexpected status %d while preparing self-registered runtime: %s", response.StatusCode, string(respBytes)))
 		}
 
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
@@ -91,7 +92,7 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 
 		log.C(ctx).Infof("Successfully executed prep for self-registered runtime with distinguishing label value %s", distinguishLabelVal)
 	}
-	return nil
+	return in, nil
 }
 
 // CleanupSelfRegisteredRuntime executes cleanup calls for self-registered runtimes

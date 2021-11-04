@@ -5,7 +5,7 @@ package automock
 import (
 	context "context"
 
-	graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -43,15 +43,22 @@ func (_m *SelfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 }
 
 // PrepareRuntimeForSelfRegistration provides a mock function with given fields: ctx, in
-func (_m *SelfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in *graphql.RuntimeInput) error {
+func (_m *SelfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput) (model.RuntimeInput, error) {
 	ret := _m.Called(ctx, in)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *graphql.RuntimeInput) error); ok {
+	var r0 model.RuntimeInput
+	if rf, ok := ret.Get(0).(func(context.Context, model.RuntimeInput) model.RuntimeInput); ok {
 		r0 = rf(ctx, in)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(model.RuntimeInput)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.RuntimeInput) error); ok {
+		r1 = rf(ctx, in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

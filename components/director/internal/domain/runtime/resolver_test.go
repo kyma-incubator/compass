@@ -86,7 +86,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(modelInput),
 			Input:            gqlInput,
 			ExpectedRuntime:  gqlRuntime,
 			ExpectedErr:      nil,
@@ -108,7 +108,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -131,7 +131,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -232,7 +232,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
 			RuntimeID:        runtimeID,
 			Input:            gqlInput,
 			ExpectedRuntime:  gqlRuntime,
@@ -255,7 +255,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
 			RuntimeID:        runtimeID,
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
@@ -279,7 +279,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
 			RuntimeID:        runtimeID,
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,

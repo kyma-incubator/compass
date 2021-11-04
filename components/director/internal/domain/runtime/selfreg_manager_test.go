@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
@@ -24,9 +26,9 @@ const (
 
 var testConfig = runtime.SelfRegConfig{
 	SelfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
-	SelfRegisterLabelKey:            rtmtest.ResponseLabelKey,
+	SelfRegisterLabelKey:            "test-label-key",
 	SelfRegisterLabelValuePrefix:    "test-prefix",
-	SelfRegisterResponseKey:         "test-response-key",
+	SelfRegisterResponseKey:         rtmtest.ResponseLabelKey,
 	SelfRegisterPath:                "test-path",
 	SelfRegisterNameQueryParam:      "testNameQuery",
 	SelfRegisterTenantQueryParam:    "testTenantQuery",
@@ -46,9 +48,14 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		ConsumerID: "test-consumer-id",
 		Flow:       oathkeeper.CertificateFlow,
 	}
-	lblInput := &graphql.RuntimeInput{
+	lblInput := model.RuntimeInput{
 		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal},
 	}
+	lblInputAfterPrep := model.RuntimeInput{
+		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal,
+			testConfig.SelfRegisterLabelKey: rtmtest.ResponseLabelValue},
+	}
+	lblInvalidInput := model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value"}}
 
 	fakeConfig := testConfig
 	fakeConfig.URL = "https://test-url    .com"
@@ -57,69 +64,76 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
 
 	testCases := []struct {
-		Name        string
-		Config      runtime.SelfRegConfig
-		Caller      func(*testing.T) *automock.ExternalSvcCaller
-		Input       *graphql.RuntimeInput
-		InputAssert func(*testing.T, *graphql.RuntimeInput)
-		Context     context.Context
-		ExpectedErr error
+		Name           string
+		Config         runtime.SelfRegConfig
+		Caller         func(*testing.T) *automock.ExternalSvcCaller
+		Input          model.RuntimeInput
+		InputAssert    func(*testing.T, model.RuntimeInput)
+		Context        context.Context
+		ExpectedErr    error
+		ExpectedOutput model.RuntimeInput
 	}{
 		{
 			Name:   "Success",
 			Config: testConfig,
 			Input:  lblInput,
 			Caller: rtmtest.CallerThatGetsCalledOnce(http.StatusCreated),
-			InputAssert: func(t *testing.T, in *graphql.RuntimeInput) {
+			InputAssert: func(t *testing.T, in model.RuntimeInput) {
 				assert.Equal(t, distinguishLblVal, in.Labels[selfRegisterDistinguishLabelKey])
 			},
-			Context:     ctxWithCertConsumer,
-			ExpectedErr: nil,
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    nil,
+			ExpectedOutput: lblInputAfterPrep,
 		},
 		{
-			Name:        "Success for non-matching consumer",
-			Config:      testConfig,
-			Caller:      rtmtest.CallerThatDoesNotGetCalled,
-			InputAssert: noopAssert,
-			Input:       &graphql.RuntimeInput{},
-			Context:     ctxWithTokenConsumer,
-			ExpectedErr: nil,
+			Name:           "Success for non-matching consumer",
+			Config:         testConfig,
+			Caller:         rtmtest.CallerThatDoesNotGetCalled,
+			InputAssert:    noopAssert,
+			Input:          model.RuntimeInput{},
+			Context:        ctxWithTokenConsumer,
+			ExpectedErr:    nil,
+			ExpectedOutput: model.RuntimeInput{},
 		},
 		{
-			Name:        "Error when context does not contain consumer",
-			Config:      testConfig,
-			Caller:      rtmtest.CallerThatDoesNotGetCalled,
-			InputAssert: noopAssert,
-			Input:       &graphql.RuntimeInput{},
-			Context:     context.TODO(),
-			ExpectedErr: consumer.NoConsumerError,
+			Name:           "Error when context does not contain consumer",
+			Config:         testConfig,
+			Caller:         rtmtest.CallerThatDoesNotGetCalled,
+			InputAssert:    noopAssert,
+			Input:          model.RuntimeInput{},
+			Context:        context.TODO(),
+			ExpectedErr:    consumer.NoConsumerError,
+			ExpectedOutput: model.RuntimeInput{},
 		},
 		{
-			Name:        "Error when can't create URL for preparation of self-registered runtime",
-			Config:      fakeConfig,
-			Caller:      rtmtest.CallerThatDoesNotGetCalled,
-			InputAssert: noopAssert,
-			Input:       &graphql.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value"}},
-			Context:     ctxWithCertConsumer,
-			ExpectedErr: errors.New("while creating url for preparation of self-registered runtime"),
+			Name:           "Error when can't create URL for preparation of self-registered runtime",
+			Config:         fakeConfig,
+			Caller:         rtmtest.CallerThatDoesNotGetCalled,
+			InputAssert:    noopAssert,
+			Input:          lblInvalidInput,
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    errors.New("while creating url for preparation of self-registered runtime"),
+			ExpectedOutput: model.RuntimeInput{},
 		},
 		{
-			Name:        "Error when Call doesn't succeed",
-			Config:      testConfig,
-			Caller:      rtmtest.CallerThatDoesNotSucceed,
-			InputAssert: noopAssert,
-			Input:       lblInput,
-			Context:     ctxWithCertConsumer,
-			ExpectedErr: rtmtest.TestError,
+			Name:           "Error when Call doesn't succeed",
+			Config:         testConfig,
+			Caller:         rtmtest.CallerThatDoesNotSucceed,
+			InputAssert:    noopAssert,
+			Input:          lblInput,
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    rtmtest.TestError,
+			ExpectedOutput: model.RuntimeInput{},
 		},
 		{
-			Name:        "Error when status code is unexpected",
-			Config:      testConfig,
-			Caller:      rtmtest.CallerThatReturnsBadStatus,
-			InputAssert: noopAssert,
-			Input:       lblInput,
-			Context:     ctxWithCertConsumer,
-			ExpectedErr: errors.New("received unexpected status"),
+			Name:           "Error when status code is unexpected",
+			Config:         testConfig,
+			Caller:         rtmtest.CallerThatReturnsBadStatus,
+			InputAssert:    noopAssert,
+			Input:          lblInput,
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    errors.New("received unexpected status"),
+			ExpectedOutput: model.RuntimeInput{},
 		},
 	}
 
@@ -128,13 +142,14 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			svcCaller := testCase.Caller(t)
 			manager := runtime.NewSelfRegisterManager(testCase.Config, svcCaller)
 
-			err := manager.PrepareRuntimeForSelfRegistration(testCase.Context, testCase.Input)
+			output, err := manager.PrepareRuntimeForSelfRegistration(testCase.Context, testCase.Input)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
+			require.Equal(t, testCase.ExpectedOutput, output)
 
 			testCase.InputAssert(t, testCase.Input)
 			svcCaller.AssertExpectations(t)
@@ -213,4 +228,4 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 	}
 }
 
-func noopAssert(*testing.T, *graphql.RuntimeInput) {}
+func noopAssert(*testing.T, model.RuntimeInput) {}
