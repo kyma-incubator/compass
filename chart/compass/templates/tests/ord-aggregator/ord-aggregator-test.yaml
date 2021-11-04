@@ -43,15 +43,15 @@ spec:
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080"
             - name: EXTERNAL_SERVICES_MOCK_UNSECURED_URL
-              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPort}}"
+              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPort}}/.well-known/open-resource-discovery"
             - name: EXTERNAL_SERVICES_MOCK_ABSOLUTE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPort}}/test/fullPath"
             - name: EXTERNAL_SERVICES_MOCK_CERT_SECURED_URL
-              value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+              value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}/.well-known/open-resource-discovery"
             - name: EXTERNAL_SERVICES_MOCK_BASIC_URL
-              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.basicSecuredPort }}"
+              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.basicSecuredPort }}/.well-known/open-resource-discovery"
             - name: EXTERNAL_SERVICES_MOCK_OAUTH_URL
-              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.oauthSecuredPort }}"
+              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.oauthSecuredPort }}/.well-known/open-resource-discovery"
             - name: BASIC_USERNAME
               valueFrom:
                 secretKeyRef:
