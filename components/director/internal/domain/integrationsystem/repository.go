@@ -38,7 +38,7 @@ func NewRepository(conv Converter) *pgRepository {
 		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.IntegrationSystem, tableName),
 		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.IntegrationSystem, tableName, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.IntegrationSystem, tableName, tableColumns),
-		updaterGlobal:         repo.NewGlobalUpdaterBuilderFor(resource.IntegrationSystem).WithTable(tableName).WithUpdatableColumns("name", "description").WithIDColumns("id").Build(),
+		updaterGlobal:         repo.NewUpdaterGlobal(resource.IntegrationSystem,tableName,[]string{"name", "description"},[]string{"id"}),
 		deleterGlobal:         repo.NewDeleterGlobal(resource.IntegrationSystem, tableName),
 		conv:                  conv,
 	}
@@ -86,7 +86,7 @@ func (r *pgRepository) List(ctx context.Context, pageSize int, cursor string) (m
 
 // Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, model model.IntegrationSystem) error {
-	return r.updaterGlobal.UpdateSingle(ctx, r.conv.ToEntity(&model))
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, r.conv.ToEntity(&model))
 }
 
 // Delete missing godoc

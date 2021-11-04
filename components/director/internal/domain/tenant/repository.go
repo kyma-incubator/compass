@@ -69,7 +69,7 @@ func NewRepository(conv Converter) *pgRepository {
 		existQuerierGlobal: repo.NewExistQuerierGlobal(resource.Tenant, tableName),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.Tenant, tableName, insertColumns),
-		updaterGlobal:      repo.NewGlobalUpdaterBuilderFor(resource.Tenant).WithTable(tableName).WithUpdatableColumns(externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn).WithIDColumns(idColumn).Build(),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tenant,tableName,[]string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn},[]string{idColumn}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Tenant, tableName),
 		conv:               conv,
 	}
@@ -158,7 +158,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 
 	entity := r.conv.ToEntity(model)
 
-	return r.updaterGlobal.UpdateSingle(ctx, entity)
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
 
 // DeleteByExternalTenant removes a tenant with matching external ID from the Compass storage.

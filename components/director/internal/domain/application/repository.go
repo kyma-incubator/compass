@@ -62,7 +62,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
 		creator:               repo.NewCreator(resource.Application, applicationTable, applicationColumns),
 		updater:               repo.NewUpdater(resource.Application, applicationTable, updatableColumns, []string{"id"}),
-		globalUpdater:         repo.NewGlobalUpdaterBuilderFor(resource.Application).WithTable(applicationTable).WithUpdatableColumns(updatableColumns...).WithIDColumns("id").Build(),
+		globalUpdater:         repo.NewUpdaterGlobal(resource.Application, applicationTable, updatableColumns, []string{"id"}),
 		conv:                  conv,
 	}
 }
@@ -108,7 +108,7 @@ func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 			app.SetDeletedAt(time.Now())
 		}
 
-		return r.globalUpdater.UpdateSingle(ctx, app)
+		return r.globalUpdater.UpdateSingleGlobal(ctx, app)
 	}
 
 	return r.globalDeleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})

@@ -33,24 +33,24 @@ type Converter interface {
 }
 
 type repository struct {
-	lister                 repo.Lister
-	listerGlobal           repo.ListerGlobal
-	deleter                repo.Deleter
-	getter                 repo.SingleGetter
-	queryBuilder           repo.QueryBuilder
+	lister       repo.Lister
+	listerGlobal repo.ListerGlobal
+	deleter      repo.Deleter
+	getter       repo.SingleGetter
+	queryBuilder repo.QueryBuilder
 
-	embeddedTenantLister                 repo.Lister
-	embeddedTenantDeleter                repo.Deleter
-	embeddedTenantGetter                 repo.SingleGetter
-	embeddedTenantQueryBuilder           repo.QueryBuilder
+	embeddedTenantLister       repo.Lister
+	embeddedTenantDeleter      repo.Deleter
+	embeddedTenantGetter       repo.SingleGetter
+	embeddedTenantQueryBuilder repo.QueryBuilder
 
-	creator                repo.Creator
-	globalCreator          repo.GlobalCreator
-	updater                repo.Updater
-	versionedUpdater       repo.Updater
-	globalUpdater          repo.UpdaterGlobal
-	versionedGlobalUpdater repo.UpdaterGlobal
-	conv                   Converter
+	creator                        repo.Creator
+	globalCreator                  repo.GlobalCreator
+	updater                        repo.Updater
+	versionedUpdater               repo.Updater
+	embeddedTenantUpdater          repo.UpdaterGlobal
+	versionedEmbeddedTenantUpdater repo.UpdaterGlobal
+	conv                           Converter
 }
 
 // NewRepository missing godoc
@@ -67,13 +67,13 @@ func NewRepository(conv Converter) *repository {
 		embeddedTenantGetter:       repo.NewSingleGetterWithEmbeddedTenant(resource.Label, tableName, tenantColumn, tableColumns),
 		embeddedTenantQueryBuilder: repo.NewQueryBuilderWithEmbeddedTenant(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
 
-		creator:                repo.NewCreator(resource.Label, tableName, tableColumns),
-		globalCreator:          repo.NewGlobalCreator(resource.Label, tableName, tableColumns),
-		updater:                repo.NewUpdater(resource.Label, tableName, updatableColumns, idColumns),
-		versionedUpdater:       repo.NewUpdater(resource.Label, tableName, updatableColumns, versionedIDColumns),
-		globalUpdater:          repo.NewGlobalUpdaterBuilderFor(resource.Label).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithIDColumns(idColumns...).WithTenantColumn(tenantColumn).Build(),
-		versionedGlobalUpdater: repo.NewGlobalUpdaterBuilderFor(resource.Label).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithIDColumns(versionedIDColumns...).WithTenantColumn(tenantColumn).Build(),
-		conv:                   conv,
+		creator:                        repo.NewCreator(resource.Label, tableName, tableColumns),
+		globalCreator:                  repo.NewGlobalCreator(resource.Label, tableName, tableColumns),
+		updater:                        repo.NewUpdater(resource.Label, tableName, updatableColumns, idColumns),
+		versionedUpdater:               repo.NewUpdater(resource.Label, tableName, updatableColumns, versionedIDColumns),
+		embeddedTenantUpdater:          repo.NewUpdaterWithEmbeddedTenant(resource.Label, tableName, updatableColumns, tenantColumn, idColumns),
+		versionedEmbeddedTenantUpdater: repo.NewUpdaterWithEmbeddedTenant(resource.Label, tableName, updatableColumns, tenantColumn, versionedIDColumns),
+		conv:                           conv,
 	}
 }
 
@@ -97,7 +97,7 @@ func (r *repository) Upsert(ctx context.Context, tenant string, label *model.Lab
 		return errors.Wrap(err, "while creating label entity from model")
 	}
 	if label.ObjectType == model.TenantLabelableObject {
-		return r.globalUpdater.UpdateSingleWithVersion(ctx, labelEntity)
+		return r.embeddedTenantUpdater.UpdateSingleWithVersionGlobal(ctx, labelEntity)
 	}
 	return r.updater.UpdateSingleWithVersion(ctx, tenant, labelEntity)
 }
@@ -112,7 +112,7 @@ func (r *repository) UpdateWithVersion(ctx context.Context, tenant string, label
 		return errors.Wrap(err, "while creating label entity from model")
 	}
 	if label.ObjectType == model.TenantLabelableObject {
-		return r.versionedGlobalUpdater.UpdateSingleWithVersion(ctx, labelEntity)
+		return r.embeddedTenantUpdater.UpdateSingleWithVersionGlobal(ctx, labelEntity)
 	}
 	return r.versionedUpdater.UpdateSingleWithVersion(ctx, tenant, labelEntity)
 }

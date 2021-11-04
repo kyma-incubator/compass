@@ -53,7 +53,7 @@ func NewRepository(conv BundleReferenceConverter) *repository {
 		lister:      repo.NewListerGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
 		getter:      repo.NewSingleGetterGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
 		deleter:     repo.NewDeleterGlobal(resource.BundleReference, BundleReferenceTable),
-		updater:     repo.NewGlobalUpdaterBuilderFor(resource.BundleReference).WithTable(BundleReferenceTable).WithUpdatableColumns(updatableColumns...).Build(),
+		updater:     repo.NewUpdaterGlobal(resource.BundleReference,BundleReferenceTable,updatableColumns,[]string{}),
 		conv:        conv,
 	}
 }
@@ -157,7 +157,7 @@ func (r *repository) Update(ctx context.Context, item *model.BundleReference) er
 
 	entity := r.conv.ToEntity(*item)
 
-	return updater.UpdateSingle(ctx, entity)
+	return updater.UpdateSingleGlobal(ctx, entity)
 }
 
 // DeleteByReferenceObjectID removes a BundleReference with matching objectID and bundleID from the Compass storage.

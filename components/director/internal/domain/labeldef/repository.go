@@ -52,8 +52,8 @@ func NewRepository(conv EntityConverter) *repository {
 		existQuerier:     repo.NewExistQuerierWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn),
 		lister:           repo.NewListerWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
 		deleter:          repo.NewDeleterWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn),
-		updater:          repo.NewGlobalUpdaterBuilderFor(resource.LabelDefinition).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithTenantColumn(tenantColumn).WithIDColumns(idColumns...).Build(),
-		versionedUpdater: repo.NewGlobalUpdaterBuilderFor(resource.LabelDefinition).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithTenantColumn(tenantColumn).WithIDColumns(versionedIDColumns...).Build(),
+		updater:          repo.NewUpdaterWithEmbeddedTenant(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
+		versionedUpdater: repo.NewUpdaterWithEmbeddedTenant(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, versionedIDColumns),
 		upserter:         repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}),
 	}
 }
@@ -130,7 +130,7 @@ func (r *repository) Update(ctx context.Context, def model.LabelDefinition) erro
 	if err != nil {
 		return errors.Wrap(err, "while creating Label Definition entity from model")
 	}
-	return r.updater.UpdateSingleWithVersion(ctx, entity)
+	return r.updater.UpdateSingleWithVersionGlobal(ctx, entity)
 }
 
 // UpdateWithVersion missing godoc
@@ -139,7 +139,7 @@ func (r *repository) UpdateWithVersion(ctx context.Context, def model.LabelDefin
 	if err != nil {
 		return errors.Wrap(err, "while creating Label Definition entity from model")
 	}
-	return r.versionedUpdater.UpdateSingleWithVersion(ctx, entity)
+	return r.versionedUpdater.UpdateSingleWithVersionGlobal(ctx, entity)
 }
 
 // DeleteByKey missing godoc

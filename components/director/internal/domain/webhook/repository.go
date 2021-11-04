@@ -55,7 +55,7 @@ func NewRepository(conv EntityConverter) *repository {
 		creator:            repo.NewCreator(resource.Webhook, tableName, webhookColumns),
 		globalCreator:      repo.NewGlobalCreator(resource.Webhook, tableName, webhookColumns),
 		updater:            repo.NewUpdater(resource.Webhook, tableName, updatableColumns, []string{"id", "app_id"}),
-		updaterGlobal:      repo.NewGlobalUpdaterBuilderFor(resource.Webhook).WithTable(tableName).WithUpdatableColumns(updatableColumns...).WithIDColumns("id").Build(),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook,tableName,updatableColumns, []string{"id"}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),
 		deleter:            repo.NewDeleter(resource.Webhook, tableName),
 		lister:             repo.NewLister(resource.Webhook, tableName, webhookColumns),
@@ -176,7 +176,7 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Webh
 		return errors.Wrap(err, "while converting model to entity")
 	}
 	if entity.GetRefSpecificResourceType() == resource.Webhook { // Global resource webhook
-		return r.updaterGlobal.UpdateSingle(ctx, entity)
+		return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 	}
 	return r.updater.UpdateSingle(ctx, tenant, entity)
 }
