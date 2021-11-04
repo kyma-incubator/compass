@@ -663,11 +663,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(stdT *testing.T) {
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, getRuntimeReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		if conf.DefaultScenarioEnabled {
-			assert.Len(t, actualRuntime.Labels, 4)
-		} else {
-			assert.Len(t, actualRuntime.Labels, 3)
-		}
+		assert.Len(t, actualRuntime.Labels, 4)
 
 		t.Log("Successfully update runtime and validate the protected labels are excluded")
 		//GIVEN
