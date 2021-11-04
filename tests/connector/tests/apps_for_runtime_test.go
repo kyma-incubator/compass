@@ -18,9 +18,6 @@ const (
 
 func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	scenarios := []string{DefaultScenario, TestScenario}
-	// Listing scenarios for LabelDefinition creates a default record if there are no scenarios. This invocation is needed so that we can later update the scenarios instead of creating a new LabelDefinition
-	_, err := fixtures.ListLabelDefinitionByKeyWithinTenant(ctx, directorAppsForRuntimeClient.DexGraphqlClient, ScenariosLabel, appsForRuntimeTenantID)
-	require.NoError(t, err)
 	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, scenarios)
 
 	appIdToCommonName := make(map[string]string)
