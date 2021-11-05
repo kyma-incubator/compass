@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/selfreg"
+
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/health"
 
@@ -42,6 +44,7 @@ type config struct {
 	JWKSPath   string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
+	SelfRegConfig selfreg.Config
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
 
 	CACert string `envconfig:"APP_CA_CERT"`
@@ -152,6 +155,12 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	// non-isolated and unsecured ORD handlers. NOTE: Do not host document endpoints on this default server in order to ensure tests separation.
 	// Unsecured config pointing to cert secured document
 	router.HandleFunc("/cert", ord_aggregator.HandleFuncOrdConfig(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
+
+	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.SelfRegConfig)
+	selfRegRouter := router.PathPrefix(cfg.SelfRegConfig.Path).Subrouter()
+	selfRegRouter.Use(oauthMiddleware(&key.PublicKey))
+	selfRegRouter.HandleFunc("", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
+	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", cfg.Port),

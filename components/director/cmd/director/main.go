@@ -130,6 +130,8 @@ type config struct {
 
 	Features features.Config
 
+	SelfRegConfig runtime.SelfRegConfig
+
 	OperationsNamespace string `envconfig:"default=compass-system"`
 
 	DisableAsyncMode bool `envconfig:"default=false"`
@@ -185,6 +187,7 @@ func main() {
 		Timeout:   cfg.ClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
+	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
 
 	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
@@ -207,6 +210,7 @@ func main() {
 		metricsCollector,
 		httpClient,
 		internalHTTPClient,
+		cfg.SelfRegConfig,
 		cfg.OneTimeToken.Length,
 		adminURL,
 	)

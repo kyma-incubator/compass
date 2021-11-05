@@ -94,3 +94,11 @@ func NewNullString(s string) sql.NullString {
 		Valid:  len(s) != 0,
 	}
 }
+
+// CastOrEmpty casts the given value to string and returns the empty string otherwise
+func CastOrEmpty(i interface{}) string {
+	if s, ok := i.(string); ok {
+		return s
+	}
+	return ""
+}

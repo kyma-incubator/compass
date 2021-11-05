@@ -64,7 +64,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	if len(body) > 0 {
 		err = json.Unmarshal(body, &claims)
 		if err != nil {
-			log.C(r.Context()).WithError(err).Infof("Cannot json unmarshalling the request body. Error: %s. Proceeding with empty claims", err)
+			log.C(r.Context()).WithError(err).Infof("Cannot json unmarshal the request body. Error: %s. Proceeding with empty claims", err)
 		}
 	}
 
