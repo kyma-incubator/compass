@@ -1,20 +1,6 @@
 package repo_test
 
-import (
-	"context"
-	"fmt"
-	"regexp"
-	"testing"
-	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/stretchr/testify/require"
-)
-
+/*
 func TestExist(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
@@ -203,3 +189,4 @@ func defaultExpectedExistQuery() string {
 	givenQuery := fmt.Sprintf("SELECT 1 FROM users WHERE %s AND id_col = $2", fixTenantIsolationSubquery())
 	return regexp.QuoteMeta(givenQuery)
 }
+*/

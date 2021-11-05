@@ -1,25 +1,6 @@
 package repo_test
 
-import (
-	"context"
-	"database/sql/driver"
-	"fmt"
-	"regexp"
-	"testing"
-	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/jmoiron/sqlx"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
+/*
 func TestListPageable(t *testing.T) {
 	givenTenant := uuidB()
 	peterID := uuidA()
@@ -425,7 +406,4 @@ func TestListPageableGlobal(t *testing.T) {
 		require.EqualError(t, err, "while counting objects: some error")
 	})
 }
-
-func someError() error {
-	return errors.New("some error")
-}
+*/

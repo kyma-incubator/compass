@@ -2,25 +2,13 @@ package repo_test
 
 import (
 	"context"
-	"fmt"
-	"regexp"
-	"testing"
-	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/stretchr/testify/require"
 )
 
 type methodToTest = func(ctx context.Context, tenant string, conditions repo.Conditions) error
 type methodToTestWithoutTenant = func(ctx context.Context, conditions repo.Conditions) error
 
-var tableName = "users"
-
+/*
 func TestDelete(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
@@ -299,3 +287,5 @@ func uuidB() string {
 func uuidC() string {
 	return "cccccccc-cccc-cccc-cccc-cccccccccccc"
 }
+
+*/

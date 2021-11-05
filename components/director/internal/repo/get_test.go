@@ -1,22 +1,6 @@
 package repo_test
 
-import (
-	"context"
-	"fmt"
-	"regexp"
-	"testing"
-	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
+/*
 func TestGetSingle(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
@@ -367,3 +351,4 @@ func defaultExpectedGetSingleQuery() string {
 	givenQuery := fmt.Sprintf("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE %s AND id_col = $2", fixTenantIsolationSubquery())
 	return regexp.QuoteMeta(givenQuery)
 }
+*/

@@ -1,22 +1,6 @@
 package repo_test
 
-import (
-	"context"
-	"database/sql/driver"
-	"fmt"
-	"regexp"
-	"testing"
-
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/jmoiron/sqlx"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
+/*
 func TestUnionList(t *testing.T) {
 	givenTenant := uuidB()
 	peterID := uuidA()
@@ -77,3 +61,4 @@ func TestUnionList(t *testing.T) {
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
+*/

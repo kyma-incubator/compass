@@ -1,16 +1,6 @@
 package repo_test
 
-import (
-	"fmt"
-	"strings"
-	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
+/*
 func TestQueryBuilder(t *testing.T) {
 	givenTenant := uuidA()
 	sut := repo.NewQueryBuilder(UserType, "users", "tenant_id", []string{"id_col", "tenant_id", "first_name", "last_name", "age"})
@@ -135,3 +125,4 @@ func getExpectedQueryWithINSubquery() (string, int) {
 func removeWhitespace(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
+*/

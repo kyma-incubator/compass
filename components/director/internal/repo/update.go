@@ -156,7 +156,7 @@ func (u *universalUpdater) unsafeUpdateSingleWithFields(ctx context.Context, dbE
 	if err != nil {
 		return errors.Wrap(err, "while checking affected rows")
 	}
-	if affected == 0 {
+	if affected == 0 && len(tenant) > 0 {
 		return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
 	}
 	if affected != 1 {
@@ -178,30 +178,30 @@ func (u *universalUpdater) buildQuery(fieldsToSet []string, tenant string, resou
 			preparedIDColumns = append(preparedIDColumns, fmt.Sprintf("%s = :%s", idCol, idCol))
 		}
 		stmtBuilder.WriteString(fmt.Sprintf(" %s", strings.Join(preparedIDColumns, " AND ")))
+		if u.tenantColumn != nil || len(tenant) > 0 {
+			stmtBuilder.WriteString(" AND")
+		}
 	}
 
-	if len(tenant) > 0 { // if not global
-		stmtBuilder.WriteString(" AND")
-		if u.tenantColumn != nil { // if embedded tenant
-			stmtBuilder.WriteString(fmt.Sprintf(" %s = :%s", *u.tenantColumn, *u.tenantColumn))
-		} else { // tenant in m2m table
-			accessTable, ok := resourceType.TenantAccessTable()
-			if !ok {
-				return "", errors.Errorf("entity %s does not have access table", resourceType)
-			}
-
-			if _, err := uuid.Parse(tenant); err != nil { // SQL Injection protection
-				return "", errors.Wrapf(err, "tenant_id %s should be UUID", tenant)
-			}
-
-			stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true)", M2MResourceIDColumn, accessTable, M2MTenantIDColumn, tenant, M2MOwnerColumn))
-
-			if resourceType == resource.BundleInstanceAuth {
-				stmtBuilder.WriteString(" OR owner_id = :owner_id") // TODO: <storage-redesign> externalize
-			}
-
-			stmtBuilder.WriteString(")")
+	if u.tenantColumn != nil { // if embedded tenant
+		stmtBuilder.WriteString(fmt.Sprintf(" %s = :%s", *u.tenantColumn, *u.tenantColumn))
+	} else if len(tenant) > 0 { // if not global
+		accessTable, ok := resourceType.TenantAccessTable()
+		if !ok {
+			return "", errors.Errorf("entity %s does not have access table", resourceType)
 		}
+
+		if _, err := uuid.Parse(tenant); err != nil { // SQL Injection protection
+			return "", errors.Wrapf(err, "tenant_id %s should be UUID", tenant)
+		}
+
+		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true)", M2MResourceIDColumn, accessTable, M2MTenantIDColumn, tenant, M2MOwnerColumn))
+
+		if resourceType == resource.BundleInstanceAuth {
+			stmtBuilder.WriteString(" OR owner_id = :owner_id") // TODO: <storage-redesign> externalize
+		}
+
+		stmtBuilder.WriteString(")")
 	}
 
 	return stmtBuilder.String(), nil

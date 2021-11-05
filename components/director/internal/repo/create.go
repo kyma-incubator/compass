@@ -42,6 +42,15 @@ func NewCreator(tableName string, columns []string) Creator {
 	}
 }
 
+func NewCreatorWithMatchingColumns(tableName string, columns []string, matcherColumns []string) Creator {
+	return &universalCreator{
+		tableName:          tableName,
+		columns:            columns,
+		matcherColumns:     matcherColumns,
+		ownerCheckRequired: true,
+	}
+}
+
 // NewCreatorGlobal missing godoc
 func NewCreatorGlobal(resourceType resource.Type, tableName string, columns []string) CreatorGlobal {
 	return &globalCreator{
@@ -181,7 +190,7 @@ func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string,
 	}
 
 	if len(parentID) == 0 {
-		return errors.Errorf("Unkonw parentID for entity type %s and parentType %s", resourceType, parentResourceType)
+		return errors.Errorf("unknown parentID for entity type %s and parentType %s", resourceType, parentResourceType)
 	}
 
 	conditions := Conditions{NewEqualCondition(M2MResourceIDColumn, parentID)}
@@ -196,7 +205,7 @@ func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string,
 	}
 
 	if !exists {
-		return errors.Errorf("Tenant %s does not have access to the parent resource %s with ID %s.", tenant, parentResourceType, parentID)
+		return errors.Errorf("tenant %s does not have access to the parent resource %s with ID %s", tenant, parentResourceType, parentID)
 	}
 
 	return nil
