@@ -96,4 +96,5 @@ const (
 	ShouldUpdateSingleRowButUpdatedMsg = "should update single row, but updated"
 	// ShouldUpdateSingleRowButUpdatedMsgF  is the format of the message for ShouldUpdateSingleRowButUpdatedMsg
 	ShouldUpdateSingleRowButUpdatedMsgF = "should update single row, but updated %d rows"
+	ShouldBeOwnerMsg = "Owner access is needed for resource modification"
 )

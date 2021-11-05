@@ -156,6 +156,9 @@ func (u *universalUpdater) unsafeUpdateSingleWithFields(ctx context.Context, dbE
 	if err != nil {
 		return errors.Wrap(err, "while checking affected rows")
 	}
+	if affected == 0 {
+		return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+	}
 	if affected != 1 {
 		if u.resourceType == resource.BundleReference {
 			return apperrors.NewCannotUpdateObjectInManyBundles()

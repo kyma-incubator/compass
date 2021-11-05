@@ -175,7 +175,9 @@ func (g *universalDeleter) unsafeDeleteTenantAccess(ctx context.Context, resourc
 		err = persist.SelectContext(ctx, &ids, query, allArgs...)
 	}
 	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Delete, "while selecting objects from '%s' table by conditions", g.tableName); err != nil {
-		return err
+		if apperrors.IsNotFoundError(err) {
+			return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+		}
 	}
 
 	stmtBuilder.Reset()
@@ -232,14 +234,17 @@ func (g *universalDeleter) unsafeDeleteChildEntity(ctx context.Context, resource
 		return err
 	}
 
-	if requireSingleRemoval {
-		affected, err := res.RowsAffected()
-		if err != nil {
-			return errors.Wrap(err, "while checking affected rows")
-		}
-		if affected != 1 {
-			return apperrors.NewInternalError("delete should remove single row, but removed %d rows", affected)
-		}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "while checking affected rows")
+	}
+
+	if affected == 0 {
+		return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+	}
+
+	if requireSingleRemoval && affected != 1 {
+		return apperrors.NewInternalError("delete should remove single row, but removed %d rows", affected)
 	}
 
 	return nil
