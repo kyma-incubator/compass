@@ -2,8 +2,6 @@ package webhook
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -50,24 +48,24 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		singleGetter:       repo.NewSingleGetter(resource.Webhook, tableName, webhookColumns),
+		singleGetter:       repo.NewSingleGetter(tableName, webhookColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
-		creator:            repo.NewCreator(resource.Webhook, tableName, webhookColumns),
+		creator:            repo.NewCreator(tableName, webhookColumns),
 		globalCreator:      repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
-		updater:            repo.NewUpdater(resource.Webhook, tableName, updatableColumns, []string{"id", "app_id"}),
+		updater:            repo.NewUpdater(tableName, updatableColumns, []string{"id", "app_id"}),
 		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook,tableName,updatableColumns, []string{"id"}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),
-		deleter:            repo.NewDeleter(resource.Webhook, tableName),
-		lister:             repo.NewLister(resource.Webhook, tableName, webhookColumns),
+		deleter:            repo.NewDeleter(tableName),
+		lister:             repo.NewLister(tableName, webhookColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.Webhook, tableName, webhookColumns),
 		conv:               conv,
 	}
 }
 
 // GetByID missing godoc
-func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error) {
+func (r *repository) GetByID(ctx context.Context, tenant, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error) {
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, objectType.GetResourceType(), tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 	m, err := r.conv.FromEntity(entity)
@@ -98,7 +96,7 @@ func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicatio
 		repo.NewEqualCondition("app_id", applicationID),
 	}
 
-	if err := r.lister.List(ctx, tenant, &entities, conditions...); err != nil {
+	if err := r.lister.List(ctx, resource.AppWebhook, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
@@ -148,20 +146,20 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Webh
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
-	log.C(ctx).Debugf("Persisting Webhook entity with type %s and id %s for %s to db", item.Type, item.ID, PrintOwnerInfo(item))
+	log.C(ctx).Debugf("Persisting Webhook entity with type %s and id %s for %s to db", item.Type, item.ID, item.ObjectType)
 	if len(tenant) == 0 {
 		return r.globalCreator.Create(ctx, entity)
 	}
-	return r.creator.Create(ctx, tenant, entity)
+	return r.creator.Create(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
 
 // CreateMany missing godoc
 func (r *repository) CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error {
 	for _, item := range items {
 		if err := r.Create(ctx, tenant, item); err != nil {
-			return errors.Wrapf(err, "while creating Webhook with type %s and id %s for %s", item.Type, item.ID, PrintOwnerInfo(item))
+			return errors.Wrapf(err, "while creating Webhook with type %s and id %s for %s", item.Type, item.ID, item.ObjectType)
 		}
-		log.C(ctx).Infof("Successfully created Webhook with type %s and id %s for %s", item.Type, item.ID, PrintOwnerInfo(item))
+		log.C(ctx).Infof("Successfully created Webhook with type %s and id %s for %s", item.Type, item.ID, item.ObjectType)
 	}
 	return nil
 }
@@ -175,10 +173,10 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Webh
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
 	}
-	if entity.GetRefSpecificResourceType() == resource.Webhook { // Global resource webhook
+	if item.ObjectType.GetResourceType() == resource.Webhook { // Global resource webhook
 		return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 	}
-	return r.updater.UpdateSingle(ctx, tenant, entity)
+	return r.updater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
 
 // Delete missing godoc
@@ -188,38 +186,5 @@ func (r *repository) Delete(ctx context.Context, id string) error {
 
 // DeleteAllByApplicationID missing godoc
 func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, applicationID string) error {
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
-}
-
-// PrintOwnerInfo missing godoc
-func PrintOwnerInfo(item *model.Webhook) string {
-	var (
-		owningResource      resource.Type
-		appID               string
-		appTemplateID       string
-		runtimeID           string
-		integrationSystemID string
-	)
-
-	if item.ApplicationID != nil {
-		appID = *item.ApplicationID
-		owningResource = resource.Application
-	}
-
-	if item.ApplicationTemplateID != nil {
-		appTemplateID = *item.ApplicationTemplateID
-		owningResource = resource.ApplicationTemplate
-	}
-
-	if item.RuntimeID != nil {
-		runtimeID = *item.RuntimeID
-		owningResource = resource.Runtime
-	}
-
-	if item.IntegrationSystemID != nil {
-		integrationSystemID = *item.IntegrationSystemID
-		owningResource = resource.IntegrationSystem
-	}
-
-	return fmt.Sprintf("Owning Resource: %s, Application ID: %q, Application Template ID: %q, Runtime ID: %q, Integration System ID: %q", owningResource, appID, appTemplateID, runtimeID, integrationSystemID)
+	return r.deleter.DeleteMany(ctx, resource.AppWebhook, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
 }

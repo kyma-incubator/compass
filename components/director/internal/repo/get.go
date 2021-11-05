@@ -16,7 +16,7 @@ import (
 
 // SingleGetter missing godoc
 type SingleGetter interface {
-	Get(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
+	Get(ctx context.Context,  resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
 
 // SingleGetterGlobal missing godoc
@@ -32,18 +32,16 @@ type universalSingleGetter struct {
 }
 
 // NewSingleGetterWithEmbeddedTenant missing godoc
-func NewSingleGetterWithEmbeddedTenant(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) SingleGetter {
+func NewSingleGetterWithEmbeddedTenant(tableName string, tenantColumn string, selectedColumns []string) SingleGetter {
 	return &universalSingleGetter{
-		resourceType:    resourceType,
 		tableName:       tableName,
 		tenantColumn:    &tenantColumn,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 	}
 }
 
-func NewSingleGetter(resourceType resource.Type, tableName string, selectedColumns []string) SingleGetter {
+func NewSingleGetter(tableName string, selectedColumns []string) SingleGetter {
 	return &universalSingleGetter{
-		resourceType:    resourceType,
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 	}
@@ -59,32 +57,32 @@ func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selecte
 }
 
 // Get missing godoc
-func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+func (g *universalSingleGetter) Get(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
 	}
 
 	if g.tenantColumn != nil {
 		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
-		return g.unsafeGet(ctx, tenant, conditions, orderByParams, dest)
+		return g.unsafeGet(ctx, tenant, resourceType, conditions, orderByParams, dest)
 	}
 
-	tenantIsolation, err := NewTenantIsolationCondition(g.resourceType, tenant, false)
+	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
 	if err != nil {
 		return err
 	}
 
 	conditions = append(conditions, tenantIsolation)
 
-	return g.unsafeGet(ctx, tenant, conditions, orderByParams, dest)
+	return g.unsafeGet(ctx, tenant, resourceType, conditions, orderByParams, dest)
 }
 
 // GetGlobal missing godoc
 func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	return g.unsafeGet(ctx, "", conditions, orderByParams, dest)
+	return g.unsafeGet(ctx, "", g.resourceType, conditions, orderByParams, dest)
 }
 
-func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant string, resourceType resource.Type, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if dest == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -93,7 +91,7 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant string, co
 		return err
 	}
 
-	query, args, err := buildSelectQuery(g.resourceType, g.tableName, g.selectedColumns, tenant, conditions, orderByParams, true)
+	query, args, err := buildSelectQuery(resourceType, g.tableName, g.selectedColumns, tenant, conditions, orderByParams, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}
@@ -101,5 +99,5 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant string, co
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 	err = persist.GetContext(ctx, dest, query, args...)
 
-	return persistence.MapSQLError(ctx, err, g.resourceType, resource.Get, "while getting object from '%s' table", g.tableName)
+	return persistence.MapSQLError(ctx, err, resourceType, resource.Get, "while getting object from '%s' table", g.tableName)
 }

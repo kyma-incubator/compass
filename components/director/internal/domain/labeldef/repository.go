@@ -48,10 +48,10 @@ type repository struct {
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{conv: conv,
 		creator:          repo.NewCreatorGlobal(resource.LabelDefinition, tableName, labeldefColumns),
-		getter:           repo.NewSingleGetterWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
-		existQuerier:     repo.NewExistQuerierWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn),
-		lister:           repo.NewListerWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
-		deleter:          repo.NewDeleterWithEmbeddedTenant(resource.LabelDefinition, tableName, tenantColumn),
+		getter:           repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, labeldefColumns),
+		existQuerier:     repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
+		lister:           repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, labeldefColumns),
+		deleter:          repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		updater:          repo.NewUpdaterWithEmbeddedTenant(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
 		versionedUpdater: repo.NewUpdaterWithEmbeddedTenant(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, versionedIDColumns),
 		upserter:         repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}),
@@ -87,7 +87,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, key string) (*
 	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
 	dest := Entity{}
 
-	err := r.getter.Get(ctx, tenant, conds, repo.NoOrderBy, &dest)
+	err := r.getter.Get(ctx, resource.LabelDefinition, tenant, conds, repo.NoOrderBy, &dest)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Label Definition by key=%s", key)
 	}
@@ -102,14 +102,14 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, key string) (*
 // Exists missing godoc
 func (r *repository) Exists(ctx context.Context, tenant string, key string) (bool, error) {
 	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
-	return r.existQuerier.Exists(ctx, tenant, conds)
+	return r.existQuerier.Exists(ctx, resource.LabelDefinition, tenant, conds)
 }
 
 // List missing godoc
 func (r *repository) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
 	var dest EntityCollection
 
-	err := r.lister.List(ctx, tenant, &dest)
+	err := r.lister.List(ctx, resource.LabelDefinition, tenant, &dest)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing Label Definitions")
 	}
@@ -145,5 +145,5 @@ func (r *repository) UpdateWithVersion(ctx context.Context, def model.LabelDefin
 // DeleteByKey missing godoc
 func (r *repository) DeleteByKey(ctx context.Context, tenant, key string) error {
 	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
-	return r.deleter.DeleteOne(ctx, tenant, conds)
+	return r.deleter.DeleteOne(ctx, resource.LabelDefinition, tenant, conds)
 }

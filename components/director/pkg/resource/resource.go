@@ -44,8 +44,10 @@ const (
 	FetchRequest Type = "fetchRequest"
 	// DocFetchRequest missing godoc
 	DocFetchRequest Type = "docFetchRequest"
-	// SpecFetchRequest missing godoc
-	SpecFetchRequest Type = "specFetchRequest"
+	// APISpecFetchRequest missing godoc
+	APISpecFetchRequest Type = "apiSpecFetchRequest"
+	// EventSpecFetchRequest missing godoc
+	EventSpecFetchRequest Type = "eventSpecFetchRequest"
 	// Specification missing godoc
 	Specification Type = "specification"
 	// APISpecification missing godoc
@@ -84,51 +86,51 @@ var tenantAccessTable = map[Type]string{
 
 	// Views
 
-	RuntimeContext:      "runtime_contexts_tenants",
-	Label:               "labels_tenants",
-	ApplicationLabel:    "labels_tenants",
-	RuntimeLabel:        "labels_tenants",
-	RuntimeContextLabel: "labels_tenants",
-	Bundle:              "bundles_tenants",
-	Package:             "packages_tenants",
-	Product:             "products_tenants",
-	Vendor:              "vendors_tenants",
-	Tombstone:           "tombstones_tenants",
-	FetchRequest:        "fetch_requests_tenants",
-	DocFetchRequest:     "fetch_requests_tenants",
-	SpecFetchRequest:    "fetch_requests_tenants",
-	Specification:       "specifications_tenants",
-	APISpecification:    "specifications_tenants",
-	EventSpecification:  "specifications_tenants",
-	Document:            "documents_tenants",
-	BundleInstanceAuth:  "bundle_instance_auths_tenants",
-	API:                 "api_definitions_tenants",
-	EventDefinition:     "event_api_definitions_tenants",
-	Webhook:             "webhooks_tenants",
-	AppWebhook:          "webhooks_tenants",
-	RuntimeWebhook:      "webhooks_tenants",
+	RuntimeContext:        "runtime_contexts_tenants",
+	Label:                 "labels_tenants",
+	ApplicationLabel:      "application_labels_tenants",
+	RuntimeLabel:          "runtime_labels_tenants",
+	RuntimeContextLabel:   "runtime_contexts_tenants",
+	Bundle:                "bundles_tenants",
+	Package:               "packages_tenants",
+	Product:               "products_tenants",
+	Vendor:                "vendors_tenants",
+	Tombstone:             "tombstones_tenants",
+	DocFetchRequest:       "document_fetch_requests_tenants",
+	APISpecFetchRequest:   "api_specifications_fetch_requests_tenants",
+	EventSpecFetchRequest: "event_specifications_fetch_requests_tenants",
+	APISpecification:      "api_specifications_tenants",
+	EventSpecification:    "event_specifications_tenants",
+	Document:              "documents_tenants",
+	BundleInstanceAuth:    "bundle_instance_auths_tenants",
+	API:                   "api_definitions_tenants",
+	EventDefinition:       "event_api_definitions_tenants",
+	Webhook:               "webhooks_tenants",
+	AppWebhook:            "application_webhooks_tenants",
+	RuntimeWebhook:        "runtime_webhooks_tenants",
 }
 
 var parentRelation = map[Type]Type{
-	RuntimeContext:      Runtime,
-	RuntimeLabel:        Runtime,
-	RuntimeContextLabel: RuntimeContext,
-	ApplicationLabel:    Application,
-	Bundle:              Application,
-	Package:             Application,
-	Product:             Application,
-	Vendor:              Application,
-	Tombstone:           Application,
-	DocFetchRequest:     Document,
-	SpecFetchRequest:    Specification,
-	APISpecification:    API,
-	EventSpecification:  EventDefinition,
-	Document:            Bundle,
-	BundleInstanceAuth:  Bundle,
-	API:                 Application,
-	EventDefinition:     Application,
-	AppWebhook:          Application,
-	RuntimeWebhook:      Runtime,
+	RuntimeContext:        Runtime,
+	RuntimeLabel:          Runtime,
+	RuntimeContextLabel:   RuntimeContext,
+	ApplicationLabel:      Application,
+	Bundle:                Application,
+	Package:               Application,
+	Product:               Application,
+	Vendor:                Application,
+	Tombstone:             Application,
+	DocFetchRequest:       Document,
+	APISpecFetchRequest:   APISpecification,
+	EventSpecFetchRequest: EventSpecification,
+	APISpecification:      API,
+	EventSpecification:    EventDefinition,
+	Document:              Bundle,
+	BundleInstanceAuth:    Bundle,
+	API:                   Application,
+	EventDefinition:       Application,
+	AppWebhook:            Application,
+	RuntimeWebhook:        Runtime,
 }
 
 func (t Type) TenantAccessTable() (string, bool) {

@@ -15,7 +15,7 @@ import (
 
 // Lister missing godoc
 type Lister interface {
-	List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error
+	List(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error
 	SetSelectedColumns(selectedColumns []string)
 	Clone() *universalLister
 }
@@ -37,9 +37,8 @@ type universalLister struct {
 }
 
 // NewListerWithEmbeddedTenant missing godoc
-func NewListerWithEmbeddedTenant(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) Lister {
+func NewListerWithEmbeddedTenant(tableName string, tenantColumn string, selectedColumns []string) Lister {
 	return &universalLister{
-		resourceType:    resourceType,
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    &tenantColumn,
@@ -48,9 +47,8 @@ func NewListerWithEmbeddedTenant(resourceType resource.Type, tableName string, t
 }
 
 // NewLister missing godoc
-func NewLister(resourceType resource.Type, tableName string, selectedColumns []string) Lister {
+func NewLister(tableName string, selectedColumns []string) Lister {
 	return &universalLister{
-		resourceType:    resourceType,
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		orderByParams:   NoOrderBy,
@@ -58,9 +56,8 @@ func NewLister(resourceType resource.Type, tableName string, selectedColumns []s
 }
 
 // NewListerWithOrderBy missing godoc
-func NewListerWithOrderBy(resourceType resource.Type, tableName string, selectedColumns []string, orderByParams OrderByParams) Lister {
+func NewListerWithOrderBy(tableName string, selectedColumns []string, orderByParams OrderByParams) Lister {
 	return &universalLister{
-		resourceType:    resourceType,
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		orderByParams:   orderByParams,
@@ -78,24 +75,24 @@ func NewListerGlobal(resourceType resource.Type, tableName string, selectedColum
 }
 
 // List missing godoc
-func (l *universalLister) List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error {
+func (l *universalLister) List(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
 	}
 
 	if l.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
-		return l.unsafeList(ctx, tenant, dest, additionalConditions...)
+		return l.unsafeList(ctx, tenant, resourceType, dest, additionalConditions...)
 	}
 
-	tenantIsolation, err := NewTenantIsolationCondition(l.resourceType, tenant, false)
+	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
 	if err != nil {
 		return err
 	}
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return l.unsafeList(ctx, tenant, dest, additionalConditions...)
+	return l.unsafeList(ctx, tenant, resourceType, dest, additionalConditions...)
 }
 
 // SetSelectedColumns missing godoc
@@ -118,16 +115,16 @@ func (l *universalLister) Clone() *universalLister {
 
 // ListGlobal missing godoc
 func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
-	return l.unsafeList(ctx, "", dest, additionalConditions...)
+	return l.unsafeList(ctx, "", l.resourceType, dest, additionalConditions...)
 }
 
-func (l *universalLister) unsafeList(ctx context.Context, tenant string, dest Collection, conditions ...Condition) error {
+func (l *universalLister) unsafeList(ctx context.Context, tenant string, resourceType resource.Type, dest Collection, conditions ...Condition) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
-	query, args, err := buildSelectQuery(l.resourceType, l.tableName, l.selectedColumns, tenant, conditions, l.orderByParams, true)
+	query, args, err := buildSelectQuery(resourceType, l.tableName, l.selectedColumns, tenant, conditions, l.orderByParams, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}
@@ -135,5 +132,5 @@ func (l *universalLister) unsafeList(ctx context.Context, tenant string, dest Co
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 	err = persist.SelectContext(ctx, dest, query, args...)
 
-	return persistence.MapSQLError(ctx, err, l.resourceType, resource.List, "while fetching list of objects from '%s' table", l.tableName)
+	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table", l.tableName)
 }

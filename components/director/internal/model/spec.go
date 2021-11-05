@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 )
 
@@ -26,6 +27,16 @@ const (
 	// EventSpecReference missing godoc
 	EventSpecReference SpecReferenceObjectType = "Event"
 )
+
+func (obj SpecReferenceObjectType) GetResourceType() resource.Type {
+	switch obj {
+	case APISpecReference:
+		return resource.APISpecification
+	case EventSpecReference:
+		return resource.EventSpecification
+	}
+	return ""
+}
 
 // SpecFormat missing godoc
 type SpecFormat string

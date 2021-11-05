@@ -43,7 +43,7 @@ type EventAPIDefinitionConverter interface {
 
 type pgRepository struct {
 	singleGetter repo.SingleGetter
-	queryBuilder repo.QueryBuilder
+	bundleRefQueryBuilder repo.QueryBuilderGlobal
 	lister       repo.Lister
 	creator      repo.Creator
 	updater      repo.Updater
@@ -55,13 +55,13 @@ type pgRepository struct {
 // NewRepository missing godoc
 func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
-		singleGetter: repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
-		queryBuilder: repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, []string{bundlereferences.EventDefIDColumn}),
-		lister:       repo.NewLister(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
-		creator:      repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
-		updater:      repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, idColumns),
-		deleter:      repo.NewDeleter(resource.EventDefinition, eventAPIDefTable),
-		existQuerier: repo.NewExistQuerier(resource.EventDefinition, eventAPIDefTable),
+		singleGetter: repo.NewSingleGetter(eventAPIDefTable, eventDefColumns),
+		bundleRefQueryBuilder: repo.NewQueryBuilderGlobal(resource.BundleReference, bundlereferences.BundleReferenceTable, []string{bundlereferences.EventDefIDColumn}),
+		lister:       repo.NewLister(eventAPIDefTable, eventDefColumns),
+		creator:      repo.NewCreator(eventAPIDefTable, eventDefColumns),
+		updater:      repo.NewUpdater(eventAPIDefTable, updatableColumns, idColumns),
+		deleter:      repo.NewDeleter(eventAPIDefTable),
+		existQuerier: repo.NewExistQuerier(eventAPIDefTable),
 		conv:         conv,
 	}
 }
@@ -77,7 +77,7 @@ func (r EventAPIDefCollection) Len() int {
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
 	var eventAPIDefEntity Entity
-	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
+	err := r.singleGetter.Get(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting EventDefinition with id %s", id)
 	}
@@ -107,7 +107,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	}
 
 	var eventCollection EventAPIDefCollection
-	err := r.lister.List(ctx, tenantID, &eventCollection, conditions...)
+	err := r.lister.List(ctx, resource.EventDefinition,tenantID, &eventCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 // ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error) {
 	eventCollection := EventAPIDefCollection{}
-	if err := r.lister.List(ctx, tenantID, &eventCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.List(ctx, resource.EventDefinition,tenantID, &eventCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	events := make([]*model.EventDefinition, 0, eventCollection.Len())
@@ -165,7 +165,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ev
 	entity := r.conv.ToEntity(*item)
 
 	log.C(ctx).Debugf("Persisting Event-Definition entity with id %s to db", item.ID)
-	err := r.creator.Create(ctx, tenant, entity)
+	err := r.creator.Create(ctx, resource.EventDefinition,tenant, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
 	}
@@ -177,7 +177,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ev
 func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*model.EventDefinition) error {
 	for index, item := range items {
 		entity := r.conv.ToEntity(*item)
-		err := r.creator.Create(ctx, tenant, entity)
+		err := r.creator.Create(ctx, resource.EventDefinition,tenant, entity)
 		if err != nil {
 			return errors.Wrapf(err, "while persisting %d item", index)
 		}
@@ -194,17 +194,17 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Ev
 
 	entity := r.conv.ToEntity(*item)
 
-	return r.updater.UpdateSingle(ctx, tenant, entity)
+	return r.updater.UpdateSingle(ctx,resource.EventDefinition, tenant, entity)
 }
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
+	return r.existQuerier.Exists(ctx, resource.EventDefinition,tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
-	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
+	return r.deleter.DeleteOne(ctx, resource.EventDefinition,tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 // DeleteAllByBundleID missing godoc
@@ -213,7 +213,7 @@ func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundle
 		repo.NewEqualCondition(bundleColumn, bundleID),
 		repo.NewNotNullCondition(bundlereferences.EventDefIDColumn),
 	}
-	subquery, args, err := r.queryBuilder.BuildQuery(tenantID, false, subqueryConditions...)
+	subquery, args, err := r.bundleRefQueryBuilder.BuildQueryGlobal(false, subqueryConditions...)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundle
 		repo.NewInConditionForSubQuery(idColumn, subquery, args),
 	}
 
-	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
+	return r.deleter.DeleteMany(ctx, resource.EventDefinition,tenantID, inOperatorConditions)
 }
 
 func getEventDefsForBundle(ids []string, defs map[string]*model.EventDefinition) []*model.EventDefinition {

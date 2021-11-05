@@ -1,24 +1,24 @@
 package model
 
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 // Webhook missing godoc
 type Webhook struct {
-	ID                    string
-	ApplicationID         *string
-	ApplicationTemplateID *string
-	RuntimeID             *string
-	IntegrationSystemID   *string
-	CorrelationIDKey      *string
-	Type                  WebhookType
-	URL                   *string
-	Auth                  *Auth
-	Mode                  *WebhookMode
-	RetryInterval         *int
-	Timeout               *int
-	URLTemplate           *string
-	InputTemplate         *string
-	HeaderTemplate        *string
-	OutputTemplate        *string
-	StatusTemplate        *string
+	ID               string
+	ObjectID         string
+	ObjectType       WebhookReferenceObjectType
+	CorrelationIDKey *string
+	Type             WebhookType
+	URL              *string
+	Auth             *Auth
+	Mode             *WebhookMode
+	RetryInterval    *int
+	Timeout          *int
+	URLTemplate      *string
+	InputTemplate    *string
+	HeaderTemplate   *string
+	OutputTemplate   *string
+	StatusTemplate   *string
 }
 
 // WebhookInput missing godoc
@@ -63,34 +63,43 @@ const (
 	WebhookModeAsync WebhookMode = "ASYNC"
 )
 
-// WebhookConverterFunc missing godoc
-type WebhookConverterFunc func(i *WebhookInput, id string, resourceID string) *Webhook
+// WebhookReferenceObjectType missing godoc
+type WebhookReferenceObjectType string
 
-// ToApplicationWebhook missing godoc
-func (i *WebhookInput) ToApplicationWebhook(id string, applicationID string) *Webhook {
-	if i == nil {
-		return nil
+const (
+	// UnknownWebhookReference missing godoc
+	UnknownWebhookReference WebhookReferenceObjectType = "Unknown"
+	// ApplicationWebhookReference missing godoc
+	ApplicationWebhookReference WebhookReferenceObjectType = "ApplicationWebhook"
+	// RuntimeWebhookReference missing godoc
+	RuntimeWebhookReference WebhookReferenceObjectType = "RuntimeWebhook"
+	// ApplicationTemplateWebhookReference missing godoc
+	ApplicationTemplateWebhookReference WebhookReferenceObjectType = "ApplicationTemplateWebhook"
+	// IntegrationSystemWebhookReference missing godoc
+	IntegrationSystemWebhookReference WebhookReferenceObjectType = "IntegrationSystemWebhook"
+)
+
+func (obj WebhookReferenceObjectType) GetResourceType() resource.Type {
+	switch obj {
+	case UnknownWebhookReference:
+		return resource.Webhook
+	case ApplicationWebhookReference:
+		return resource.AppWebhook
+	case RuntimeWebhookReference:
+		return resource.RuntimeWebhook
+	case ApplicationTemplateWebhookReference:
+		return resource.Webhook
+	case IntegrationSystemWebhookReference:
+		return resource.Webhook
 	}
-
-	webhook := i.toGenericWebhook(id)
-	webhook.ApplicationID = &applicationID
-	return webhook
+	return ""
 }
 
-// ToApplicationTemplateWebhook missing godoc
-func (i *WebhookInput) ToApplicationTemplateWebhook(id string, appTemplateID string) *Webhook {
-	if i == nil {
-		return nil
-	}
-
-	webhook := i.toGenericWebhook(id)
-	webhook.ApplicationTemplateID = &appTemplateID
-	return webhook
-}
-
-func (i *WebhookInput) toGenericWebhook(id string) *Webhook {
+func (i *WebhookInput) ToWebhook(id, objID string, objectType WebhookReferenceObjectType) *Webhook {
 	return &Webhook{
 		ID:               id,
+		ObjectID:         objID,
+		ObjectType:       objectType,
 		CorrelationIDKey: i.CorrelationIDKey,
 		Type:             i.Type,
 		URL:              i.URL,

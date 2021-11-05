@@ -42,12 +42,12 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		conv:         conv,
-		existQuerier: repo.NewExistQuerier(resource.Package, packageTable),
-		lister:       repo.NewLister(resource.Package, packageTable, packageColumns),
-		singleGetter: repo.NewSingleGetter(resource.Package, packageTable, packageColumns),
-		deleter:      repo.NewDeleter(resource.Package, packageTable),
-		creator:      repo.NewCreator(resource.Package, packageTable, packageColumns),
-		updater:      repo.NewUpdater(resource.Package, packageTable, updatableColumns, []string{"id"}),
+		existQuerier: repo.NewExistQuerier(packageTable),
+		lister:       repo.NewLister(packageTable, packageColumns),
+		singleGetter: repo.NewSingleGetter(packageTable, packageColumns),
+		deleter:      repo.NewDeleter(packageTable),
+		creator:      repo.NewCreator(packageTable, packageColumns),
+		updater:      repo.NewUpdater(packageTable, updatableColumns, []string{"id"}),
 	}
 }
 
@@ -58,7 +58,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.P
 	}
 
 	log.C(ctx).Debugf("Persisting Package entity with id %q", model.ID)
-	return r.creator.Create(ctx, tenant, r.conv.ToEntity(model))
+	return r.creator.Create(ctx, resource.Package, tenant, r.conv.ToEntity(model))
 }
 
 // Update missing godoc
@@ -67,25 +67,25 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.P
 		return apperrors.NewInternalError("model can not be nil")
 	}
 	log.C(ctx).Debugf("Updating Package entity with id %q", model.ID)
-	return r.updater.UpdateSingle(ctx, tenant, r.conv.ToEntity(model))
+	return r.updater.UpdateSingle(ctx, resource.Package, tenant, r.conv.ToEntity(model))
 }
 
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting Package entity with id %q", id)
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.Package, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.Package, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Package, error) {
 	log.C(ctx).Debugf("Getting Package entity with id %q", id)
 	var pkgEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &pkgEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Package, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &pkgEnt); err != nil {
 		return nil, err
 	}
 
@@ -100,7 +100,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.P
 // ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Package, error) {
 	pkgCollection := pkgCollection{}
-	if err := r.lister.List(ctx, tenantID, &pkgCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.List(ctx, resource.Package, tenantID, &pkgCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	pkgs := make([]*model.Package, 0, pkgCollection.Len())

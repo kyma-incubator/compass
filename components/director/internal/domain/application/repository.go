@@ -52,16 +52,16 @@ type pgRepository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:          repo.NewExistQuerier(resource.Application, applicationTable),
-		singleGetter:          repo.NewSingleGetter(resource.Application, applicationTable, applicationColumns),
+		existQuerier:          repo.NewExistQuerier(applicationTable),
+		singleGetter:          repo.NewSingleGetter(applicationTable, applicationColumns),
 		globalGetter:          repo.NewSingleGetterGlobal(resource.Application, applicationTable, applicationColumns),
 		globalDeleter:         repo.NewDeleterGlobal(resource.Application, applicationTable),
-		deleter:               repo.NewDeleter(resource.Application, applicationTable),
-		lister:                repo.NewLister(resource.Application, applicationTable, applicationColumns),
-		pageableQuerier:       repo.NewPageableQuerier(resource.Application, applicationTable, applicationColumns),
+		deleter:               repo.NewDeleter(applicationTable),
+		lister:                repo.NewLister(applicationTable, applicationColumns),
+		pageableQuerier:       repo.NewPageableQuerier(applicationTable, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
-		creator:               repo.NewCreator(resource.Application, applicationTable, applicationColumns),
-		updater:               repo.NewUpdater(resource.Application, applicationTable, updatableColumns, []string{"id"}),
+		creator:               repo.NewCreator(applicationTable, applicationColumns),
+		updater:               repo.NewUpdater(applicationTable, updatableColumns, []string{"id"}),
 		globalUpdater:         repo.NewUpdaterGlobal(resource.Application, applicationTable, updatableColumns, []string{"id"}),
 		conv:                  conv,
 	}
@@ -69,7 +69,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Delete missing godoc
@@ -90,7 +90,7 @@ func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 		return r.Update(ctx, tenant, app)
 	}
 
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // DeleteGlobal missing godoc
@@ -117,7 +117,7 @@ func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Application, error) {
 	var appEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
 		return nil, err
 	}
 
@@ -129,7 +129,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.A
 // GetByNameAndSystemNumber missing godoc
 func (r *pgRepository) GetByNameAndSystemNumber(ctx context.Context, tenant, name, systemNumber string) (*model.Application, error) {
 	var appEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("name", name), repo.NewEqualCondition("system_number", systemNumber)}, repo.NoOrderBy, &appEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("name", name), repo.NewEqualCondition("system_number", systemNumber)}, repo.NoOrderBy, &appEnt); err != nil {
 		return nil, err
 	}
 
@@ -154,7 +154,7 @@ func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.App
 func (r *pgRepository) ListAll(ctx context.Context, tenantID string) ([]*model.Application, error) {
 	var entities EntityCollection
 
-	err := r.lister.List(ctx, tenantID, &entities)
+	err := r.lister.List(ctx, resource.Application, tenantID, &entities)
 
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
 	}
 
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -258,7 +258,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 		conditions = append(conditions, repo.NewInConditionForSubQuery("id", combinedQuery, combinedArgs))
 	}
 
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, conditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant.String(), pageSize, cursor, "id", &appsCollection, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -289,7 +289,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.A
 	}
 
 	log.C(ctx).Debugf("Persisting Application entity with id %s to db", model.ID)
-	return r.creator.Create(ctx, tenant, appEnt)
+	return r.creator.Create(ctx, resource.Application, tenant, appEnt)
 }
 
 // Update missing godoc
@@ -317,7 +317,7 @@ func (r *pgRepository) updateSingle(ctx context.Context, tenant string, model *m
 	if isTechnical {
 		return r.globalUpdater.TechnicalUpdate(ctx, appEnt)
 	}
-	return r.updater.UpdateSingle(ctx, tenant, appEnt)
+	return r.updater.UpdateSingle(ctx, resource.Application, tenant, appEnt)
 }
 
 func (r *pgRepository) multipleFromEntities(entities EntityCollection) ([]*model.Application, error) {

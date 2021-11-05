@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"time"
 )
 
@@ -20,11 +21,25 @@ type FetchRequest struct {
 type FetchRequestReferenceObjectType string
 
 const (
-	// SpecFetchRequestReference missing godoc
-	SpecFetchRequestReference FetchRequestReferenceObjectType = "Spec"
+	// APISpecFetchRequestReference missing godoc
+	APISpecFetchRequestReference FetchRequestReferenceObjectType = "APISpec"
+	// EventSpecFetchRequestReference missing godoc
+	EventSpecFetchRequestReference FetchRequestReferenceObjectType = "EventSpec"
 	// DocumentFetchRequestReference missing godoc
 	DocumentFetchRequestReference FetchRequestReferenceObjectType = "Document"
 )
+
+func (obj FetchRequestReferenceObjectType) GetResourceType() resource.Type {
+	switch obj {
+	case APISpecFetchRequestReference:
+		return resource.APISpecFetchRequest
+	case EventSpecFetchRequestReference:
+		return resource.EventSpecFetchRequest
+	case DocumentFetchRequestReference:
+		return resource.DocFetchRequest
+	}
+	return ""
+}
 
 // FetchRequestStatus missing godoc
 type FetchRequestStatus struct {

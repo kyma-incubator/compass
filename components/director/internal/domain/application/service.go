@@ -541,7 +541,7 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 	var err error
 	webhooks := make([]*model.Webhook, 0, len(in.Webhooks))
 	for _, item := range in.Webhooks {
-		webhooks = append(webhooks, item.ToApplicationWebhook(s.uidService.Generate(), applicationID))
+		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), applicationID, model.ApplicationWebhookReference))
 	}
 	err = s.webhookRepo.CreateMany(ctx, tenant, webhooks)
 	if err != nil {

@@ -47,13 +47,11 @@ func NewRepository(conv EntityConverter) *repository {
 		//  the caller has to the parent and allow it.
 		//  However, this cannot be done before formations redesign and due to this the formation check will still take place
 		//  in the pkg/scenario/directive.go. Once formation redesign in in place we can remove this directive and here we can use:
-		//
-		// creator: repo.NewCreatorBuilderFor(resource.BundleInstanceAuth).WithTable(tableName).WithColumns(tableColumns...).WithoutOwnerCheck().Build(),
 		creator:      repo.NewCreatorGlobal(resource.BundleInstanceAuth, tableName, tableColumns),
-		singleGetter: repo.NewSingleGetter(resource.BundleInstanceAuth, tableName, tableColumns),
-		lister:       repo.NewLister(resource.BundleInstanceAuth, tableName, tableColumns),
-		deleter:      repo.NewDeleter(resource.BundleInstanceAuth, tableName),
-		updater:      repo.NewUpdater(resource.BundleInstanceAuth, tableName, updatableColumns, idColumns),
+		singleGetter: repo.NewSingleGetter(tableName, tableColumns),
+		lister:       repo.NewLister(tableName, tableColumns),
+		deleter:      repo.NewDeleter(tableName),
+		updater:      repo.NewUpdater(tableName, updatableColumns, idColumns),
 		conv:         conv,
 	}
 }
@@ -81,7 +79,7 @@ func (r *repository) Create(ctx context.Context, item *model.BundleInstanceAuth)
 // GetByID missing godoc
 func (r *repository) GetByID(ctx context.Context, tenantID string, id string) (*model.BundleInstanceAuth, error) {
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.BundleInstanceAuth, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
@@ -101,7 +99,7 @@ func (r *repository) GetForBundle(ctx context.Context, tenant string, id string,
 		repo.NewEqualCondition("id", id),
 		repo.NewEqualCondition("bundle_id", bundleID),
 	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
+	if err := r.singleGetter.Get(ctx,resource.BundleInstanceAuth, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
 	}
 
@@ -121,7 +119,7 @@ func (r *repository) ListByBundleID(ctx context.Context, tenantID string, bundle
 		repo.NewEqualCondition("bundle_id", bundleID),
 	}
 
-	err := r.lister.List(ctx, tenantID, &entities, conditions...)
+	err := r.lister.List(ctx,resource.BundleInstanceAuth, tenantID, &entities, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -138,7 +136,7 @@ func (r *repository) ListByRuntimeID(ctx context.Context, tenantID string, runti
 		repo.NewEqualCondition("runtime_id", runtimeID),
 	}
 
-	err := r.lister.List(ctx, tenantID, &entities, conditions...)
+	err := r.lister.List(ctx,resource.BundleInstanceAuth, tenantID, &entities, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -159,12 +157,12 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Bund
 	}
 
 	log.C(ctx).Debugf("Updating BundleInstanceAuth entity with id %s in db", item.ID)
-	return r.updater.UpdateSingle(ctx, tenant, entity)
+	return r.updater.UpdateSingle(ctx,resource.BundleInstanceAuth, tenant, entity)
 }
 
 // Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenantID string, id string) error {
-	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx,resource.BundleInstanceAuth, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *repository) multipleFromEntities(entities Collection) ([]*model.BundleInstanceAuth, error) {

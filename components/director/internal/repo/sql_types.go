@@ -3,15 +3,8 @@ package repo
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"time"
 )
-
-// MultiRefEntity is an interface for multi reference entities which can be used to obtain the reference specific entity
-// Example: We have a resource.Label type. Labels can be for apps and runtimes. This will return the concrete resource.Type - resource.RuntimeLabel or resource.ApplicationLabel
-type MultiRefEntity interface {
-	GetRefSpecificResourceType() resource.Type
-}
 
 type ChildEntity interface {
 	GetParentID() string

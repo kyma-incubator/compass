@@ -2,7 +2,6 @@ package label
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity missing godoc
@@ -30,17 +29,6 @@ func (e *Entity) GetParentID() string {
 		return e.RuntimeContextID.String
 	}
 	return e.TenantID.String
-}
-
-func (e *Entity) GetRefSpecificResourceType() resource.Type {
-	if e.AppID.Valid {
-		return resource.ApplicationLabel
-	} else if e.RuntimeID.Valid {
-		return resource.RuntimeLabel
-	} else if e.RuntimeContextID.Valid {
-		return resource.RuntimeContextLabel
-	}
-	return resource.TenantLabel
 }
 
 // Collection missing godoc

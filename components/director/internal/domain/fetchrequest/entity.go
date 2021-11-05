@@ -2,7 +2,6 @@ package fetchrequest
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"time"
 )
 
@@ -29,11 +28,4 @@ func (e *Entity) GetParentID() string {
         return e.SpecID.String
     }
 	return e.DocumentID.String
-}
-
-func (e *Entity) GetRefSpecificResourceType() resource.Type {
-	if e.SpecID.Valid {
-		return resource.SpecFetchRequest
-	}
-	return resource.DocFetchRequest
 }

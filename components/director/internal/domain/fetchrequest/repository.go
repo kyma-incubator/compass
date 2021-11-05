@@ -5,8 +5,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
@@ -25,7 +23,7 @@ var (
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in model.FetchRequest) (*Entity, error)
-	FromEntity(in Entity) (model.FetchRequest, error)
+	FromEntity(in Entity, objectType model.FetchRequestReferenceObjectType) (model.FetchRequest, error)
 }
 
 type repository struct {
@@ -40,11 +38,11 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		creator:      repo.NewCreator(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
-		singleGetter: repo.NewSingleGetter(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
-		lister:       repo.NewLister(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
-		deleter:      repo.NewDeleter(resource.FetchRequest, fetchRequestTable),
-		updater:      repo.NewUpdater(resource.FetchRequest, fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, []string{"id"}),
+		creator:      repo.NewCreator(fetchRequestTable, fetchRequestColumns),
+		singleGetter: repo.NewSingleGetter(fetchRequestTable, fetchRequestColumns),
+		lister:       repo.NewLister(fetchRequestTable, fetchRequestColumns),
+		deleter:      repo.NewDeleter(fetchRequestTable),
+		updater:      repo.NewUpdater(fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, []string{"id"}),
 		conv:         conv,
 	}
 }
@@ -60,7 +58,7 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Fetc
 		return errors.Wrap(err, "while creating FetchRequest entity from model")
 	}
 
-	return r.creator.Create(ctx, tenant, entity)
+	return r.creator.Create(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
 
 // GetByReferenceObjectID missing godoc
@@ -71,11 +69,11 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 	}
 
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)}, repo.NoOrderBy, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, objectType.GetResourceType(), tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
-	frModel, err := r.conv.FromEntity(entity)
+	frModel, err := r.conv.FromEntity(entity, objectType)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting FetchRequest model from entity")
 	}
@@ -84,8 +82,8 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 }
 
 // Delete missing godoc
-func (r *repository) Delete(ctx context.Context, tenant, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+func (r *repository) Delete(ctx context.Context, tenant, id string, objectType model.FetchRequestReferenceObjectType) error {
+	return r.deleter.DeleteOne(ctx, objectType.GetResourceType(), tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // DeleteByReferenceObjectID missing godoc
@@ -95,7 +93,7 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 		return err
 	}
 
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)})
+	return r.deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, repo.Conditions{repo.NewEqualCondition(fieldName, objectID)})
 }
 
 // Update missing godoc
@@ -104,7 +102,7 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Fetc
 	if err != nil {
 		return err
 	}
-	return r.updater.UpdateSingle(ctx, tenant, entity)
+	return r.updater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
 
 // ListByReferenceObjectIDs missing godoc
@@ -122,13 +120,13 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 			repo.NewInConditionForStringValues(fieldName, objectIDs),
 		}
 	}
-	if err := r.lister.List(ctx, tenant, &fetchRequestCollection, conditions...); err != nil {
+	if err := r.lister.List(ctx, objectType.GetResourceType(), tenant, &fetchRequestCollection, conditions...); err != nil {
 		return nil, err
 	}
 
 	fetchRequestsByID := map[string]*model.FetchRequest{}
 	for _, fetchRequestEnt := range fetchRequestCollection {
-		m, err := r.conv.FromEntity(fetchRequestEnt)
+		m, err := r.conv.FromEntity(fetchRequestEnt, objectType)
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating FetchRequest model from entity")
 		}
@@ -152,7 +150,8 @@ func (r *repository) referenceObjectFieldName(objectType model.FetchRequestRefer
 	switch objectType {
 	case model.DocumentFetchRequestReference:
 		return documentIDColumn, nil
-	case model.SpecFetchRequestReference:
+	case model.EventSpecFetchRequestReference: fallthrough
+	case model.APISpecFetchRequestReference:
 		return specIDColumn, nil
 	}
 

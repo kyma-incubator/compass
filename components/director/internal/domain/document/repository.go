@@ -46,12 +46,12 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		existQuerier:    repo.NewExistQuerier(resource.Document, documentTable),
-		singleGetter:    repo.NewSingleGetter(resource.Document, documentTable, documentColumns),
-		unionLister:     repo.NewUnionLister(resource.Document, documentTable, documentColumns),
-		deleter:         repo.NewDeleter(resource.Document, documentTable),
-		pageableQuerier: repo.NewPageableQuerier(resource.Document, documentTable, documentColumns),
-		creator:         repo.NewCreator(resource.Document, documentTable, documentColumns),
+		existQuerier:    repo.NewExistQuerier(documentTable),
+		singleGetter:    repo.NewSingleGetter(documentTable, documentColumns),
+		unionLister:     repo.NewUnionLister(documentTable, documentColumns),
+		deleter:         repo.NewDeleter(documentTable),
+		pageableQuerier: repo.NewPageableQuerier(documentTable, documentColumns),
+		creator:         repo.NewCreator(documentTable, documentColumns),
 		conv:            conv,
 	}
 }
@@ -66,13 +66,13 @@ func (d DocumentCollection) Len() int {
 
 // Exists missing godoc
 func (r *repository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.Document, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // GetByID missing godoc
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Document, error) {
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Document, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
@@ -92,7 +92,7 @@ func (r *repository) GetForBundle(ctx context.Context, tenant string, id string,
 		repo.NewEqualCondition("id", id),
 		repo.NewEqualCondition("bundle_id", bundleID),
 	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Document, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
 	}
 
@@ -116,7 +116,7 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Docu
 	}
 
 	log.C(ctx).Debugf("Persisting Document entity with id %s to db", item.ID)
-	return r.creator.Create(ctx, tenant, entity)
+	return r.creator.Create(ctx, resource.Document, tenant, entity)
 }
 
 // CreateMany missing godoc
@@ -136,13 +136,13 @@ func (r *repository) CreateMany(ctx context.Context, tenant string, items []*mod
 
 // Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.Document, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // ListByBundleIDs missing godoc
 func (r *repository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	var documentCollection DocumentCollection
-	counts, err := r.unionLister.List(ctx, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &documentCollection)
+	counts, err := r.unionLister.List(ctx, resource.Document, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &documentCollection)
 	if err != nil {
 		return nil, err
 	}

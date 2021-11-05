@@ -39,12 +39,12 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		conv:         conv,
-		existQuerier: repo.NewExistQuerier(resource.Tombstone, tombstoneTable),
-		singleGetter: repo.NewSingleGetter(resource.Tombstone, tombstoneTable, tombstoneColumns),
-		lister:       repo.NewLister(resource.Tombstone, tombstoneTable, tombstoneColumns),
-		deleter:      repo.NewDeleter(resource.Tombstone, tombstoneTable),
-		creator:      repo.NewCreator(resource.Tombstone, tombstoneTable, tombstoneColumns),
-		updater:      repo.NewUpdater(resource.Tombstone, tombstoneTable, updatableColumns, []string{"id"}),
+		existQuerier: repo.NewExistQuerier(tombstoneTable),
+		singleGetter: repo.NewSingleGetter(tombstoneTable, tombstoneColumns),
+		lister:       repo.NewLister(tombstoneTable, tombstoneColumns),
+		deleter:      repo.NewDeleter(tombstoneTable),
+		creator:      repo.NewCreator(tombstoneTable, tombstoneColumns),
+		updater:      repo.NewUpdater(tombstoneTable, updatableColumns, []string{"id"}),
 	}
 }
 
@@ -55,7 +55,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.T
 	}
 
 	log.C(ctx).Debugf("Persisting Tombstone entity with id %q", model.ID)
-	return r.creator.Create(ctx, tenant, r.conv.ToEntity(model))
+	return r.creator.Create(ctx, resource.Tombstone, tenant, r.conv.ToEntity(model))
 }
 
 // Update missing godoc
@@ -64,25 +64,25 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.T
 		return apperrors.NewInternalError("model can not be nil")
 	}
 	log.C(ctx).Debugf("Updating Tombstone entity with id %q", model.ID)
-	return r.updater.UpdateSingle(ctx, tenant, r.conv.ToEntity(model))
+	return r.updater.UpdateSingle(ctx, resource.Tombstone, tenant, r.conv.ToEntity(model))
 }
 
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting Tombstone entity with id %q", id)
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.Tombstone, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.Tombstone, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Tombstone, error) {
 	log.C(ctx).Debugf("Getting Tombstone entity with id %q", id)
 	var tombstoneEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &tombstoneEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Tombstone, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &tombstoneEnt); err != nil {
 		return nil, err
 	}
 
@@ -97,7 +97,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.T
 // ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Tombstone, error) {
 	tombstoneCollection := tombstoneCollection{}
-	if err := r.lister.List(ctx, tenantID, &tombstoneCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.List(ctx, resource.Tombstone, tenantID, &tombstoneCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	tombstones := make([]*model.Tombstone, 0, tombstoneCollection.Len())

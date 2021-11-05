@@ -39,12 +39,12 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		conv:         conv,
-		existQuerier: repo.NewExistQuerier(resource.Vendor, vendorTable),
-		singleGetter: repo.NewSingleGetter(resource.Vendor, vendorTable, vendorColumns),
-		lister:       repo.NewLister(resource.Vendor, vendorTable, vendorColumns),
-		deleter:      repo.NewDeleter(resource.Vendor, vendorTable),
-		creator:      repo.NewCreator(resource.Vendor, vendorTable, vendorColumns),
-		updater:      repo.NewUpdater(resource.Vendor, vendorTable, updatableColumns, []string{"id"}),
+		existQuerier: repo.NewExistQuerier(vendorTable),
+		singleGetter: repo.NewSingleGetter(vendorTable, vendorColumns),
+		lister:       repo.NewLister(vendorTable, vendorColumns),
+		deleter:      repo.NewDeleter(vendorTable),
+		creator:      repo.NewCreator(vendorTable, vendorColumns),
+		updater:      repo.NewUpdater(vendorTable, updatableColumns, []string{"id"}),
 	}
 }
 
@@ -55,7 +55,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.V
 	}
 
 	log.C(ctx).Debugf("Persisting Vendor entity with id %q", model.ID)
-	return r.creator.Create(ctx, tenant, r.conv.ToEntity(model))
+	return r.creator.Create(ctx, resource.Vendor, tenant, r.conv.ToEntity(model))
 }
 
 // Update missing godoc
@@ -64,25 +64,25 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.V
 		return apperrors.NewInternalError("model can not be nil")
 	}
 	log.C(ctx).Debugf("Updating Vendor entity with id %q", model.ID)
-	return r.updater.UpdateSingle(ctx, tenant, r.conv.ToEntity(model))
+	return r.updater.UpdateSingle(ctx, resource.Vendor, tenant, r.conv.ToEntity(model))
 }
 
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting Vendor entity with id %q", id)
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.Vendor, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.Vendor, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Vendor, error) {
 	log.C(ctx).Debugf("Getting Vendor entity with id %q", id)
 	var productEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &productEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Vendor, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &productEnt); err != nil {
 		return nil, err
 	}
 
@@ -97,7 +97,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.V
 // ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Vendor, error) {
 	vendorCollection := vendorCollection{}
-	if err := r.lister.List(ctx, tenantID, &vendorCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.List(ctx, resource.Vendor, tenantID, &vendorCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	vendors := make([]*model.Vendor, 0, vendorCollection.Len())

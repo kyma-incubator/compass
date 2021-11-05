@@ -18,7 +18,7 @@ import (
 
 // Creator missing godoc
 type Creator interface {
-	Create(ctx context.Context, tenant string, dbEntity interface{}) error
+	Create(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error
 }
 
 // CreatorGlobal missing godoc
@@ -28,16 +28,14 @@ type CreatorGlobal interface {
 
 type universalCreator struct {
 	tableName          string
-	resourceType       resource.Type
 	columns            []string
 	matcherColumns     []string
 	ownerCheckRequired bool
 }
 
 // NewCreator is a simplified constructor for child entities
-func NewCreator(resourceType resource.Type, tableName string, columns []string) Creator {
+func NewCreator(tableName string, columns []string) Creator {
 	return &universalCreator{
-		resourceType:       resourceType,
 		tableName:          tableName,
 		columns:            columns,
 		ownerCheckRequired: true,
@@ -54,7 +52,7 @@ func NewCreatorGlobal(resourceType resource.Type, tableName string, columns []st
 }
 
 // Create missing godoc
-func (c *universalCreator) Create(ctx context.Context, tenant string, dbEntity interface{}) error {
+func (c *universalCreator) Create(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -80,11 +78,6 @@ func (c *universalCreator) Create(ctx context.Context, tenant string, dbEntity i
 		}
 
 		dbEntity = entity
-	}
-
-	resourceType := c.resourceType
-	if multiRefEntity, ok := dbEntity.(MultiRefEntity); ok {
-		resourceType = multiRefEntity.GetRefSpecificResourceType()
 	}
 
 	if resourceType.IsTopLevel() {
@@ -122,7 +115,7 @@ func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id st
 	}
 
 	if affected == 0 {
-		log.C(ctx).Warnf("%s top level entity already exists based on matcher columns [%s]. Returning error for calling tenant %s...", resourceType, strings.Join(c.matcherColumns, ", "), tenant)
+		log.C(ctx).Warnf("%s top level entity already exists based on matcher columns [%s]. Returning not-unique error for calling tenant %s...", resourceType, strings.Join(c.matcherColumns, ", "), tenant)
 		return apperrors.NewNotUniqueError(resourceType)
 	}
 
@@ -196,8 +189,8 @@ func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string,
 		conditions = append(conditions, NewEqualCondition(M2MOwnerColumn, true))
 	}
 
-	exister := NewExistQuerierWithEmbeddedTenant(parentResourceType, parentAccessTable, M2MTenantIDColumn)
-	exists, err := exister.Exists(ctx, tenant, conditions)
+	exister := NewExistQuerierWithEmbeddedTenant(parentAccessTable, M2MTenantIDColumn)
+	exists, err := exister.Exists(ctx, resource.TenantAccess, tenant, conditions)
 	if err != nil {
 		return errors.Wrap(err, "while checking for tenant access")
 	}

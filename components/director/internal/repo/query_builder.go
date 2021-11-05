@@ -15,7 +15,12 @@ import (
 
 // QueryBuilder missing godoc
 type QueryBuilder interface {
-	BuildQuery(tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
+	BuildQuery(resourceType resource.Type, tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
+}
+
+// QueryBuilder missing godoc
+type QueryBuilderGlobal interface {
+	BuildQueryGlobal(isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
 }
 
 type universalQueryBuilder struct {
@@ -26,42 +31,52 @@ type universalQueryBuilder struct {
 }
 
 // NewQueryBuilderWithEmbeddedTenant missing godoc
-func NewQueryBuilderWithEmbeddedTenant(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) QueryBuilder {
+func NewQueryBuilderWithEmbeddedTenant(tableName string, tenantColumn string, selectedColumns []string) QueryBuilder {
 	return &universalQueryBuilder{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    &tenantColumn,
-		resourceType:    resourceType,
 	}
 }
 
-func NewQueryBuilder(resourceType resource.Type, tableName string, selectedColumns []string) QueryBuilder {
+func NewQueryBuilder(tableName string, selectedColumns []string) QueryBuilder {
 	return &universalQueryBuilder{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
-		resourceType:    resourceType,
 	}
 }
 
+func NewQueryBuilderGlobal(resourceType resource.Type, tableName string, selectedColumns []string) QueryBuilderGlobal {
+	return &universalQueryBuilder{
+		resourceType:    resourceType,
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
+	}
+}
+
+func (b *universalQueryBuilder) BuildQueryGlobal(isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error) {
+	return buildSelectQuery(b.resourceType, b.tableName, b.selectedColumns, "", conditions, OrderByParams{}, isRebindingNeeded)
+}
+
 // BuildQuery missing godoc
-func (b *universalQueryBuilder) BuildQuery(tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error) {
+func (b *universalQueryBuilder) BuildQuery(resourceType resource.Type, tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error) {
 	if tenantID == "" {
 		return "", nil, apperrors.NewTenantRequiredError()
 	}
 
 	if b.tenantColumn != nil {
 		conditions = append(Conditions{NewEqualCondition(*b.tenantColumn, tenantID)}, conditions...)
-		return buildSelectQuery(b.resourceType, b.tableName, b.selectedColumns, tenantID, conditions, OrderByParams{}, isRebindingNeeded)
+		return buildSelectQuery(resourceType, b.tableName, b.selectedColumns, tenantID, conditions, OrderByParams{}, isRebindingNeeded)
 	}
 
-	tenantIsolation, err := NewTenantIsolationCondition(b.resourceType, tenantID, false)
+	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenantID, false)
 	if err != nil {
 		return "", nil, err
 	}
 
 	conditions = append(conditions, tenantIsolation)
 
-	return buildSelectQuery(b.resourceType, b.tableName, b.selectedColumns, tenantID, conditions, OrderByParams{}, isRebindingNeeded)
+	return buildSelectQuery(resourceType, b.tableName, b.selectedColumns, tenantID, conditions, OrderByParams{}, isRebindingNeeded)
 }
 
 // TODO: Refactor builder

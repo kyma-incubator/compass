@@ -16,7 +16,7 @@ import (
 // WebhookRepository missing godoc
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
 type WebhookRepository interface {
-	GetByID(ctx context.Context, tenant, id string) (*model.Webhook, error)
+	GetByID(ctx context.Context, tenant, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
 	ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
 	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
@@ -56,13 +56,13 @@ func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UI
 }
 
 // Get missing godoc
-func (s *service) Get(ctx context.Context, id string) (webhook *model.Webhook, err error) {
+func (s *service) Get(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) (webhook *model.Webhook, err error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil || tnt == "" {
 		log.C(ctx).Infof("tenant was not loaded while getting Webhook id %s", id)
 		webhook, err = s.webhookRepo.GetByIDGlobal(ctx, id)
 	} else {
-		webhook, err = s.webhookRepo.GetByID(ctx, tnt, id)
+		webhook, err = s.webhookRepo.GetByID(ctx, tnt, id, objectType)
 	}
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Webhook with ID %s", id)
@@ -95,7 +95,7 @@ func (s *service) ListAllApplicationWebhooks(ctx context.Context, applicationID 
 }
 
 // Create missing godoc
-func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error) {
+func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if apperrors.IsTenantRequired(err) {
 		log.C(ctx).Debugf("Creating Webhook with type %s without tenant", in.Type)
@@ -103,7 +103,7 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 		return "", err
 	}
 	id := s.uidSvc.Generate()
-	webhook := converterFunc(&in, id, owningResourceID)
+	webhook := in.ToWebhook(id, owningResourceID, objectType)
 
 	if err = s.webhookRepo.Create(ctx, tnt, webhook); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", id, webhook.Type, owningResourceID)
@@ -114,25 +114,19 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 }
 
 // Update missing godoc
-func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) error {
+func (s *service) Update(ctx context.Context, id string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if apperrors.IsTenantRequired(err) {
 		log.C(ctx).Debugf("Creating Webhook with type %s without tenant", in.Type)
 	} else if err != nil {
 		return err
 	}
-	webhook, err := s.Get(ctx, id)
+	webhook, err := s.Get(ctx, id, objectType)
 	if err != nil {
 		return errors.Wrap(err, "while getting Webhook")
 	}
 
-	if webhook.ApplicationID != nil {
-		webhook = in.ToApplicationWebhook(id, *webhook.ApplicationID)
-	} else if webhook.ApplicationTemplateID != nil {
-		webhook = in.ToApplicationTemplateWebhook(id, *webhook.ApplicationTemplateID)
-	} else {
-		return errors.New("while updating Webhook: webhook doesn't have neither of application_id and application_template_id")
-	}
+	webhook = in.ToWebhook(id, webhook.ObjectID, webhook.ObjectType)
 
 	err = s.webhookRepo.Update(ctx, tnt, webhook)
 	if err != nil {
@@ -143,8 +137,8 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) 
 }
 
 // Delete missing godoc
-func (s *service) Delete(ctx context.Context, id string) error {
-	webhook, err := s.Get(ctx, id)
+func (s *service) Delete(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) error {
+	webhook, err := s.Get(ctx, id, objectType)
 	if err != nil {
 		return errors.Wrap(err, "while getting Webhook")
 	}

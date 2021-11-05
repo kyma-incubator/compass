@@ -39,9 +39,9 @@ type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
 	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
-	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
-	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
-	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error)
+	RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
+	GetFetchRequest(ctx context.Context, specID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error)
+	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error)
 }
 
 // BundleReferenceService missing godoc
@@ -271,7 +271,7 @@ func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*m
 		return nil, err
 	}
 
-	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDs)
+	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDs, model.EventSpecReference)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil

@@ -88,11 +88,12 @@ func (c *converter) ToEntity(in model.FetchRequest) (*Entity, error) {
 	filter := repo.NewNullableString(in.Filter)
 	message := repo.NewNullableString(in.Status.Message)
 	refID := repo.NewValidNullableString(in.ObjectID)
-	var specID sql.NullString
 
+	var specID sql.NullString
 	var documentID sql.NullString
 	switch in.ObjectType {
-	case model.SpecFetchRequestReference:
+	case model.APISpecFetchRequestReference: fallthrough
+	case model.EventSpecFetchRequestReference:
 		specID = refID
 	case model.DocumentFetchRequestReference:
 		documentID = refID
@@ -113,8 +114,8 @@ func (c *converter) ToEntity(in model.FetchRequest) (*Entity, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (model.FetchRequest, error) {
-	objectID, objectType, err := c.objectReferenceFromEntity(in)
+func (c *converter) FromEntity(in Entity, objectType model.FetchRequestReferenceObjectType) (model.FetchRequest, error) {
+	objectID, err := c.objectIDFromEntity(in)
 	if err != nil {
 		return model.FetchRequest{}, errors.Wrap(err, "while determining object reference")
 	}
@@ -195,14 +196,14 @@ func (c *converter) authToModel(in sql.NullString) (*model.Auth, error) {
 	return &auth, nil
 }
 
-func (c *converter) objectReferenceFromEntity(in Entity) (string, model.FetchRequestReferenceObjectType, error) {
+func (c *converter) objectIDFromEntity(in Entity) (string, error) {
 	if in.SpecID.Valid {
-		return in.SpecID.String, model.SpecFetchRequestReference, nil
+		return in.SpecID.String, nil
 	}
 
 	if in.DocumentID.Valid {
-		return in.DocumentID.String, model.DocumentFetchRequestReference, nil
+		return in.DocumentID.String, nil
 	}
 
-	return "", "", fmt.Errorf("incorrect Object Reference ID and its type for Entity with ID %q", in.ID)
+	return "", fmt.Errorf("incorrect Object Reference ID and its type for Entity with ID %q", in.ID)
 }

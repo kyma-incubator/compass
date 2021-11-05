@@ -26,11 +26,11 @@ type UpdaterGlobal interface {
 }
 
 type Updater interface {
-	UpdateSingle(ctx context.Context, tenant string, dbEntity interface{}) error
-	UpdateSingleWithVersion(ctx context.Context, tenant string, dbEntity interface{}) error
+	UpdateSingle(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error
+	UpdateSingleWithVersion(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error
 }
 
-type updater struct {
+type universalUpdater struct {
 	tableName        string
 	resourceType     resource.Type
 	updatableColumns []string
@@ -39,9 +39,8 @@ type updater struct {
 }
 
 // NewUpdater missing godoc
-func NewUpdater(resourceType resource.Type, tableName string, updatableColumns []string, idColumns []string) Updater {
-	return &updater{
-		resourceType:     resourceType,
+func NewUpdater(tableName string, updatableColumns []string, idColumns []string) Updater {
+	return &universalUpdater{
 		tableName:        tableName,
 		updatableColumns: updatableColumns,
 		idColumns:        idColumns,
@@ -50,7 +49,7 @@ func NewUpdater(resourceType resource.Type, tableName string, updatableColumns [
 
 // NewUpdaterGlobal missing godoc
 func NewUpdaterGlobal(resourceType resource.Type, tableName string, updatableColumns []string, idColumns []string) UpdaterGlobal {
-	return &updater{
+	return &universalUpdater{
 		resourceType:     resourceType,
 		tableName:        tableName,
 		updatableColumns: updatableColumns,
@@ -60,7 +59,7 @@ func NewUpdaterGlobal(resourceType resource.Type, tableName string, updatableCol
 
 // NewUpdaterWithEmbeddedTenant missing godoc
 func NewUpdaterWithEmbeddedTenant(resourceType resource.Type, tableName string, updatableColumns []string, tenantColumn string, idColumns []string) UpdaterGlobal {
-	return &updater{
+	return &universalUpdater{
 		resourceType:     resourceType,
 		tableName:        tableName,
 		updatableColumns: updatableColumns,
@@ -70,45 +69,45 @@ func NewUpdaterWithEmbeddedTenant(resourceType resource.Type, tableName string, 
 }
 
 // UpdateSingleWithVersion missing godoc
-func (u *updater) UpdateSingleWithVersion(ctx context.Context, tenant string, dbEntity interface{}) error {
-	return u.updateSingleWithVersion(ctx, tenant, dbEntity)
+func (u *universalUpdater) UpdateSingleWithVersion(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error {
+	return u.updateSingleWithVersion(ctx, tenant, dbEntity, resourceType)
 }
 
-func (u *updater) UpdateSingle(ctx context.Context, tenant string, dbEntity interface{}) error {
-	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, tenant, u.buildFieldsToSet())
+func (u *universalUpdater) UpdateSingle(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error {
+	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, tenant, u.buildFieldsToSet(), resourceType)
 }
 
-func (u *updater) UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error {
-	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, "", u.buildFieldsToSet())
+func (u *universalUpdater) UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error {
+	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, "", u.buildFieldsToSet(), u.resourceType)
 }
 
-func (u *updater) UpdateSingleWithVersionGlobal(ctx context.Context, dbEntity interface{}) error {
-	return u.updateSingleWithVersion(ctx, "", dbEntity)
+func (u *universalUpdater) UpdateSingleWithVersionGlobal(ctx context.Context, dbEntity interface{}) error {
+	return u.updateSingleWithVersion(ctx, "", dbEntity, u.resourceType)
 }
 
 // SetIDColumns missing godoc
-func (u *updater) SetIDColumns(idColumns []string) {
+func (u *universalUpdater) SetIDColumns(idColumns []string) {
 	u.idColumns = idColumns
 }
 
 // SetUpdatableColumns missing godoc
-func (u *updater) SetUpdatableColumns(updatableColumns []string) {
+func (u *universalUpdater) SetUpdatableColumns(updatableColumns []string) {
 	u.updatableColumns = updatableColumns
 }
 
 // TechnicalUpdate missing godoc
-func (u *updater) TechnicalUpdate(ctx context.Context, dbEntity interface{}) error {
+func (u *universalUpdater) TechnicalUpdate(ctx context.Context, dbEntity interface{}) error {
 	entity, ok := dbEntity.(Entity)
 	if ok && entity.GetDeletedAt().IsZero() {
 		entity.SetUpdatedAt(time.Now())
 		dbEntity = entity
 	}
-	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, "", u.buildFieldsToSet())
+	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, "", u.buildFieldsToSet(), u.resourceType)
 }
 
 // Clone missing godoc
-func (u *updater) Clone() UpdaterGlobal {
-	var clonedUpdater updater
+func (u *universalUpdater) Clone() UpdaterGlobal {
+	var clonedUpdater universalUpdater
 
 	clonedUpdater.tableName = u.tableName
 	clonedUpdater.resourceType = u.resourceType
@@ -119,11 +118,11 @@ func (u *updater) Clone() UpdaterGlobal {
 	return &clonedUpdater
 }
 
-func (u *updater) updateSingleWithVersion(ctx context.Context, tenant string, dbEntity interface{}) error {
+func (u *universalUpdater) updateSingleWithVersion(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
 	fieldsToSet := u.buildFieldsToSet()
 	fieldsToSet = append(fieldsToSet, "version = version+1")
 
-	if err := u.unsafeUpdateSingleWithFields(ctx, dbEntity, tenant, fieldsToSet); err != nil {
+	if err := u.unsafeUpdateSingleWithFields(ctx, dbEntity, tenant, fieldsToSet, resourceType); err != nil {
 		if apperrors.IsConcurrentUpdate(err) {
 			return apperrors.NewConcurrentUpdate()
 		}
@@ -132,7 +131,7 @@ func (u *updater) updateSingleWithVersion(ctx context.Context, tenant string, db
 	return nil
 }
 
-func (u *updater) unsafeUpdateSingleWithFields(ctx context.Context, dbEntity interface{}, tenant string, fieldsToSet []string) error {
+func (u *universalUpdater) unsafeUpdateSingleWithFields(ctx context.Context, dbEntity interface{}, tenant string, fieldsToSet []string, resourceType resource.Type) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -140,11 +139,6 @@ func (u *updater) unsafeUpdateSingleWithFields(ctx context.Context, dbEntity int
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
-	}
-
-	resourceType := u.resourceType
-	if multiRefEntity, ok := dbEntity.(MultiRefEntity); ok {
-		resourceType = multiRefEntity.GetRefSpecificResourceType()
 	}
 
 	query, err := u.buildQuery(fieldsToSet, tenant, resourceType)
@@ -172,7 +166,7 @@ func (u *updater) unsafeUpdateSingleWithFields(ctx context.Context, dbEntity int
 	return nil
 }
 
-func (u *updater) buildQuery(fieldsToSet []string, tenant string, resourceType resource.Type) (string, error) {
+func (u *universalUpdater) buildQuery(fieldsToSet []string, tenant string, resourceType resource.Type) (string, error) {
 	var stmtBuilder strings.Builder
 	stmtBuilder.WriteString(fmt.Sprintf("UPDATE %s SET %s WHERE", u.tableName, strings.Join(fieldsToSet, ", ")))
 	if len(u.idColumns) > 0 {
@@ -210,7 +204,7 @@ func (u *updater) buildQuery(fieldsToSet []string, tenant string, resourceType r
 	return stmtBuilder.String(), nil
 }
 
-func (u *updater) buildFieldsToSet() []string {
+func (u *universalUpdater) buildFieldsToSet() []string {
 	fieldsToSet := make([]string, 0, len(u.updatableColumns)+1)
 	for _, c := range u.updatableColumns {
 		fieldsToSet = append(fieldsToSet, fmt.Sprintf("%s = :%s", c, c))

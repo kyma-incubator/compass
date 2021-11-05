@@ -19,15 +19,23 @@ SET selector_key = 'global_subaccount_id',
 
 ALTER TABLE automatic_scenario_assignments DROP COLUMN target_tenant_id;
 
+DROP VIEW IF EXISTS runtime_webhooks_tenants;
+DROP VIEW IF EXISTS application_webhooks_tenants;
 DROP VIEW IF EXISTS webhooks_tenants;
 DROP VIEW IF EXISTS vendors_tenants;
 DROP VIEW IF EXISTS tombstones_tenants;
 DROP VIEW IF EXISTS products_tenants;
 DROP VIEW IF EXISTS packages_tenants;
 DROP VIEW IF EXISTS runtime_contexts_tenants;
+DROP VIEW IF EXISTS runtime_labels_tenants;
+DROP VIEW IF EXISTS application_labels_tenants;
 DROP VIEW IF EXISTS labels_tenants;
-DROP VIEW IF EXISTS fetch_requests_tenants;
-DROP VIEW IF EXISTS specifications_tenants;
+DROP VIEW IF EXISTS runtime_contexts_labels_tenants;
+DROP VIEW IF EXISTS event_specifications_fetch_requests_tenants;
+DROP VIEW IF EXISTS api_specifications_fetch_requests_tenants;
+DROP VIEW IF EXISTS document_fetch_requests_tenants;
+DROP VIEW IF EXISTS event_specifications_tenants;
+DROP VIEW IF EXISTS api_specifications_tenants;
 DROP VIEW IF EXISTS event_api_definitions_tenants;
 DROP VIEW IF EXISTS documents_tenants;
 DROP VIEW IF EXISTS bundles_tenants;

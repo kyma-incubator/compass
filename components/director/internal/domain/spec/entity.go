@@ -2,7 +2,6 @@ package spec
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity missing godoc
@@ -30,11 +29,4 @@ func (e *Entity) GetParentID() string {
 		return e.APIDefID.String
 	}
 	return e.EventAPIDefID.String
-}
-
-func (e *Entity) GetRefSpecificResourceType() resource.Type {
-	if e.APIDefID.Valid {
-		return resource.APISpecification
-	}
-	return resource.EventSpecification
 }

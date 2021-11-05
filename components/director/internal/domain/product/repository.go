@@ -39,12 +39,12 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		conv:         conv,
-		existQuerier: repo.NewExistQuerier(resource.Product, productTable),
-		singleGetter: repo.NewSingleGetter(resource.Product, productTable, productColumns),
-		lister:       repo.NewLister(resource.Product, productTable, productColumns),
-		deleter:      repo.NewDeleter(resource.Product, productTable),
-		creator:      repo.NewCreator(resource.Product, productTable, productColumns),
-		updater:      repo.NewUpdater(resource.Product, productTable, updatableColumns, []string{"id"}),
+		existQuerier: repo.NewExistQuerier(productTable),
+		singleGetter: repo.NewSingleGetter(productTable, productColumns),
+		lister:       repo.NewLister(productTable, productColumns),
+		deleter:      repo.NewDeleter(productTable),
+		creator:      repo.NewCreator(productTable, productColumns),
+		updater:      repo.NewUpdater(productTable, updatableColumns, []string{"id"}),
 	}
 }
 
@@ -55,7 +55,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.P
 	}
 
 	log.C(ctx).Debugf("Persisting Product entity with id %q", model.ID)
-	return r.creator.Create(ctx, tenant, r.conv.ToEntity(model))
+	return r.creator.Create(ctx, resource.Product, tenant, r.conv.ToEntity(model))
 }
 
 // Update missing godoc
@@ -64,25 +64,25 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.P
 		return apperrors.NewInternalError("model can not be nil")
 	}
 	log.C(ctx).Debugf("Updating Product entity with id %q", model.ID)
-	return r.updater.UpdateSingle(ctx, tenant, r.conv.ToEntity(model))
+	return r.updater.UpdateSingle(ctx, resource.Product, tenant, r.conv.ToEntity(model))
 }
 
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	log.C(ctx).Debugf("Deleting Product entity with id %q", id)
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.Product, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.Product, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Product, error) {
 	log.C(ctx).Debugf("Getting Product entity with id %q", id)
 	var productEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &productEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Product, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &productEnt); err != nil {
 		return nil, err
 	}
 
@@ -97,7 +97,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.P
 // ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Product, error) {
 	productCollection := productCollection{}
-	if err := r.lister.List(ctx, tenantID, &productCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.List(ctx, resource.Product, tenantID, &productCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	products := make([]*model.Product, 0, productCollection.Len())

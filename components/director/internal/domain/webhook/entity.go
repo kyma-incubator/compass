@@ -2,7 +2,6 @@ package webhook
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity missing godoc
@@ -37,15 +36,6 @@ func (e *Entity) GetParentID() string {
 		return e.ApplicationID.String
 	}
 	return ""
-}
-
-func (e *Entity) GetRefSpecificResourceType() resource.Type {
-	if e.RuntimeID.Valid {
-		return resource.RuntimeWebhook
-	} else if e.ApplicationID.Valid {
-		return resource.AppWebhook
-	}
-	return resource.Webhook
 }
 
 // Collection missing godoc

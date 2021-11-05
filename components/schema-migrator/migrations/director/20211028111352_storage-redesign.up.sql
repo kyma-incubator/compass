@@ -262,33 +262,53 @@ SELECT e.*, ta.tenant_id, ta.owner FROM event_api_definitions AS e
                                             INNER JOIN tenant_applications ta ON ta.id = e.app_id;
 
 -- Specs
-CREATE VIEW specifications_tenants AS
+CREATE VIEW api_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                             INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
-                                            INNER JOIN tenant_applications ta on ta.id = ad.app_id)
-UNION ALL
-(SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
+                                            INNER JOIN tenant_applications ta on ta.id = ad.app_id);
+
+CREATE VIEW event_specifications_tenants AS
+SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
                                             INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
-                                            INNER JOIN tenant_applications ta on ta.id = ead.app_id);
+                                            INNER JOIN tenant_applications ta on ta.id = ead.app_id;
 
 -- Fetch Requests
-CREATE OR REPLACE VIEW fetch_requests_tenants AS
-(SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
+CREATE OR REPLACE VIEW document_fetch_requests_tenants AS
+SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                              INNER JOIN documents d ON fr.document_id = d.id
-                                             INNER JOIN tenant_applications ta ON ta.id = d.app_id)
-UNION ALL
-(SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
+                                             INNER JOIN tenant_applications ta ON ta.id = d.app_id;
+
+CREATE OR REPLACE VIEW api_specifications_fetch_requests_tenants AS
+SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                              INNER JOIN specifications s ON fr.spec_id = s.id
                                              INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
-                                             INNER JOIN tenant_applications ta on ta.id = ad.app_id)
-UNION ALL
-(SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
+                                             INNER JOIN tenant_applications ta on ta.id = ad.app_id;
+
+CREATE OR REPLACE VIEW event_specifications_fetch_requests_tenants AS
+SELECT fr.*, ta.tenant_id, ta.owner FROM fetch_requests AS fr
                                              INNER JOIN specifications s ON fr.spec_id = s.id
                                              INNER JOIN event_api_definitions AS ead ON ead.id = s.event_def_id
-                                             INNER JOIN tenant_applications ta on ta.id = ead.app_id);
+                                             INNER JOIN tenant_applications ta on ta.id = ead.app_id;
 
 -- Labels - since labels can be put on tenants we cannot get l.*, however this is
 -- not a problem because labels are not necessary for the ORD service which is the only component reading from the view
+CREATE OR REPLACE VIEW application_labels_tenants AS
+SELECT l.id, ta.tenant_id, ta.owner FROM labels AS l
+                                             INNER JOIN tenant_applications ta
+                                                        ON l.app_id = ta.id AND (l.tenant_id IS NULL OR l.tenant_id = ta.tenant_id);
+
+CREATE OR REPLACE VIEW runtime_labels_tenants AS
+SELECT l.id, tr.tenant_id, tr.owner FROM labels AS l
+                                             INNER JOIN tenant_runtimes tr
+                                                        ON l.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id);
+
+CREATE OR REPLACE VIEW runtime_contexts_labels_tenants AS
+SELECT l.id, tr.tenant_id, tr.owner FROM labels AS l
+                                             INNER JOIN runtime_contexts rc ON l.runtime_context_id = rc.id
+                                             INNER JOIN tenant_runtimes tr ON rc.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id);
+
+
+-- Aggregated labels view
 CREATE OR REPLACE VIEW labels_tenants AS
 (SELECT l.id, ta.tenant_id, ta.owner FROM labels AS l
                                              INNER JOIN tenant_applications ta
@@ -328,6 +348,16 @@ SELECT v.*, ta.tenant_id, ta.owner FROM vendors AS v
                                             INNER JOIN tenant_applications AS ta ON ta.id = v.app_id;
 
 -- Webhooks
+CREATE OR REPLACE VIEW application_webhooks_tenants AS
+SELECT w.*, ta.tenant_id, ta.owner FROM webhooks AS w
+                                            INNER JOIN tenant_applications ta ON w.app_id = ta.id;
+
+CREATE OR REPLACE VIEW runtime_webhooks_tenants AS
+SELECT w.*, tr.tenant_id, tr.owner FROM webhooks AS w
+                                            INNER JOIN tenant_runtimes tr ON w.runtime_id = tr.id;
+
+
+-- Aggregated Webhooks
 CREATE OR REPLACE VIEW webhooks_tenants AS
 (SELECT w.*, ta.tenant_id, ta.owner FROM webhooks AS w
                                             INNER JOIN tenant_applications ta ON w.app_id = ta.id)

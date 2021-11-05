@@ -26,10 +26,10 @@ var (
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:         repo.NewCreatorGlobal(resource.AutomaticScenarioAssigment, tableName, columns),
-		lister:          repo.NewListerWithEmbeddedTenant(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
-		singleGetter:    repo.NewSingleGetterWithEmbeddedTenant(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
-		pageableQuerier: repo.NewPageableQuerierWithEmbeddedTenant(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
-		deleter:         repo.NewDeleterWithEmbeddedTenant(resource.AutomaticScenarioAssigment, tableName, tenantColumn),
+		lister:          repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, columns),
+		singleGetter:    repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, columns),
+		pageableQuerier: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, columns),
+		deleter:         repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		conv:            conv,
 	}
 }
@@ -65,7 +65,7 @@ func (r *repository) ListForSelector(ctx context.Context, in model.LabelSelector
 		repo.NewEqualCondition(selectorValueColumn, in.Value),
 	}
 
-	if err := r.lister.List(ctx, tenantID, &out, conditions...); err != nil {
+	if err := r.lister.List(ctx, resource.AutomaticScenarioAssigment, tenantID, &out, conditions...); err != nil {
 		return nil, errors.Wrap(err, "while getting automatic scenario assignments from db")
 	}
 
@@ -87,7 +87,7 @@ func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioN
 		repo.NewEqualCondition(scenarioColumn, scenarioName),
 	}
 
-	if err := r.singleGetter.Get(ctx, tenantID, conditions, repo.NoOrderBy, &ent); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.AutomaticScenarioAssigment, tenantID, conditions, repo.NoOrderBy, &ent); err != nil {
 		return model.AutomaticScenarioAssignment{}, err
 	}
 
@@ -99,7 +99,7 @@ func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioN
 // List missing godoc
 func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error) {
 	var collection EntityCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, scenarioColumn, &collection)
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.AutomaticScenarioAssigment, tenantID, pageSize, cursor, scenarioColumn, &collection)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (r *repository) DeleteForSelector(ctx context.Context, tenantID string, sel
 		repo.NewEqualCondition(selectorValueColumn, selector.Value),
 	}
 
-	return r.deleter.DeleteMany(ctx, tenantID, conditions)
+	return r.deleter.DeleteMany(ctx, resource.AutomaticScenarioAssigment, tenantID, conditions)
 }
 
 // DeleteForScenarioName missing godoc
@@ -134,5 +134,5 @@ func (r *repository) DeleteForScenarioName(ctx context.Context, tenantID string,
 		repo.NewEqualCondition(scenarioColumn, scenarioName),
 	}
 
-	return r.deleter.DeleteOne(ctx, tenantID, conditions)
+	return r.deleter.DeleteOne(ctx, resource.AutomaticScenarioAssigment, tenantID, conditions)
 }

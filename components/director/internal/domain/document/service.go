@@ -27,7 +27,7 @@ type DocumentRepository interface {
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
 	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
-	Delete(ctx context.Context, tenant, id string) error
+	Delete(ctx context.Context, tenant, id string, objectType model.FetchRequestReferenceObjectType) error
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
