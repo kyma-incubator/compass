@@ -182,7 +182,7 @@ func (g *universalDeleter) unsafeDeleteTenantAccess(ctx context.Context, tenant 
 
 	stmtBuilder.WriteString(fmt.Sprintf("DELETE FROM %s WHERE", m2mTable))
 
-	deleteConditions := Conditions{NewEqualCondition(M2MTenantIDColumn, tenant), NewInConditionForStringValues(M2MResourceIDColumn, ids), NewEqualCondition(M2MOwnerColumn, true)}
+	deleteConditions := Conditions{NewInConditionForStringValues(M2MResourceIDColumn, ids)}
 	err = writeEnumeratedConditions(&stmtBuilder, deleteConditions)
 	if err != nil {
 		return errors.Wrap(err, "while writing enumerated conditions")

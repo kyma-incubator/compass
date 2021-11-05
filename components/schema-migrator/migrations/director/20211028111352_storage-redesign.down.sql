@@ -566,11 +566,6 @@ DROP TRIGGER add_app_to_parent_tenants ON tenant_applications;
 
 DROP FUNCTION IF EXISTS insert_parent_chain();
 
-DROP TRIGGER delete_runtime_from_child_tenants ON tenant_runtimes;
-DROP TRIGGER delete_app_from_child_tenants ON tenant_applications;
-
-DROP FUNCTION IF EXISTS delete_child_chain();
-
 DROP TRIGGER delete_runtime_resource ON tenant_runtimes;
 DROP TRIGGER delete_application_resource ON tenant_applications;
 

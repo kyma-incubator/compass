@@ -75,22 +75,6 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER add_app_to_parent_tenants AFTER INSERT ON tenant_applications FOR EACH ROW EXECUTE PROCEDURE insert_parent_chain();
 CREATE TRIGGER add_runtime_to_parent_tenants AFTER INSERT ON tenant_runtimes FOR EACH ROW EXECUTE PROCEDURE insert_parent_chain();
 
-CREATE OR REPLACE FUNCTION delete_child_chain() RETURNS TRIGGER AS
-$$
-DECLARE
-    child_id UUID;
-BEGIN
-    FOR child_id IN SELECT id FROM business_tenant_mappings WHERE parent = OLD.tenant_id
-    LOOP
-        EXECUTE format('DELETE FROM %I WHERE id = %L AND tenant_id = %L', TG_TABLE_NAME, OLD.id, child_id);
-    END LOOP;
-    RETURN NULL;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER delete_app_from_child_tenants AFTER DELETE ON tenant_applications FOR EACH ROW EXECUTE PROCEDURE delete_child_chain();
-CREATE TRIGGER delete_runtime_from_child_tenants AFTER DELETE ON tenant_runtimes FOR EACH ROW EXECUTE PROCEDURE delete_child_chain();
-
 UPDATE runtimes
 SET tenant_id =
         (SELECT id

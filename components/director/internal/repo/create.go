@@ -122,7 +122,8 @@ func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id st
 	}
 
 	if affected == 0 {
-		log.C(ctx).Infof("%s top level entity already exists based on matcher columns [%s]. Will proceed with only creating access record for tenant %s...", resourceType, strings.Join(c.matcherColumns, ", "), tenant)
+		log.C(ctx).Warnf("%s top level entity already exists based on matcher columns [%s]. Returning error for calling tenant %s...", resourceType, strings.Join(c.matcherColumns, ", "), tenant)
+		return apperrors.NewNotUniqueError(resourceType)
 	}
 
 	vals := make([]string, 0, len(m2mColumns))
