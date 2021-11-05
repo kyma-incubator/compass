@@ -25,8 +25,21 @@ func PersistenceContextThatDoesntExpectCommit() *automock.PersistenceTx {
 func TransactionerThatSucceeds(persistTx *automock.PersistenceTx) *automock.Transactioner {
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
 	return transact
+}
+
+// TransactionerThatDoesARollback missing godoc
+func TransactionerThatDoesARollback(persistTx *automock.PersistenceTx) *automock.Transactioner {
+	transact := &automock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Once()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+	return transact
+}
+
+// NoopTransactioner missing godoc
+func NoopTransactioner(_ *automock.PersistenceTx) *automock.Transactioner {
+	return &automock.Transactioner{}
 }
 
 // CtxWithDBMatcher missing godoc
@@ -58,7 +71,7 @@ func (g txCtxGenerator) ThatSucceedsMultipleTimes(times int) (*automock.Persiste
 
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Times(times)
-	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Times(times)
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(times)
 
 	return persistTx, transact
 }
@@ -69,7 +82,7 @@ func (g txCtxGenerator) ThatDoesntExpectCommit() (*automock.PersistenceTx, *auto
 
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 
 	return persistTx, transact
 }
@@ -81,7 +94,7 @@ func (g txCtxGenerator) ThatFailsOnCommit() (*automock.PersistenceTx, *automock.
 
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 
 	return persistTx, transact
 }
