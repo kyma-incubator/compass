@@ -143,6 +143,10 @@ spec:
               value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.ordService.skipPattern }}
+            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.distinguishLabel }}
+            - name: APP_SELF_REGISTER_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.label }}
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine

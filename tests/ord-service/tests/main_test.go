@@ -79,6 +79,8 @@ type config struct {
 	ClientSecret                     string
 	SubscriptionProviderLabelKey     string
 	ConsumerSubaccountIdsLabelKey    string
+	SelfRegisterDistinguishLabelKey  string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
+	SelfRegisterLabelKey             string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
 }
 
 var testConfig config
