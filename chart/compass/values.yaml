@@ -60,6 +60,14 @@ global:
     - name: TestDeleteApplicationIfInScenario
       id: 0d597250-6b2d-4d89-9c54-e23cb497cd01
       type: account
+    - name: TestProviderSubaccount
+      id: f8075207-1478-4a80-bd26-24a4785a2bfd
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestSelfRegisterSubaccount
+      id: 08b6da37-e911-48fb-a0cb-fa635a6c665a
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
 
   images:
     containerRegistry:
@@ -75,7 +83,7 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2085"
+      version: "PR-2096"
     gateway:
       dir:
       version: "PR-2077"
@@ -84,7 +92,7 @@ global:
       version: "PR-2063"
     ord_service:
       dir:
-      version: "PR-45"
+      version: "PR-46"
     schema_migrator:
       dir:
       version: "PR-2085"
@@ -104,7 +112,7 @@ global:
       version: "PR-46"
     e2e_tests:
       dir:
-      version: "PR-2085"
+      version: "PR-2096"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -137,6 +145,21 @@ global:
       lastOperationPath: "/last_operation"
     info:
       path: "/v1/info"
+    selfRegister:
+      secret:
+        name: "compass-external-services-mock-oauth-credentials"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        urlKey: url
+      oauthTokenPath: "/secured/oauth/token"
+      distinguishLabel: "distinguishingLabel"
+      label: "selfRegLabel"
+      labelValuePrefix: "self-reg-prefix-"
+      responseKey: "self-reg-key"
+      path: "/external-api/self-reg"
+      nameQueryParam: "name"
+      tenantQueryParam: "tenant"
+      requestBodyPattern: '{"key": "%s"}'
 
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
@@ -306,7 +329,7 @@ global:
     port: 4455
     timeout_ms: 120000
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}"}'
+      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
       internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read","tenant":"{\"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\",\"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
@@ -559,6 +582,8 @@ global:
 
   tests:
     ordService:
+      skipPattern: ""
+    director:
       skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local

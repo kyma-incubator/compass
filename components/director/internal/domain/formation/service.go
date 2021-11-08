@@ -22,6 +22,12 @@ type LabelDefRepository interface {
 	UpdateWithVersion(ctx context.Context, def model.LabelDefinition) error
 }
 
+// LabelRepository missing godoc
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+type LabelRepository interface {
+	Delete(context.Context, string, model.LabelableObject, string, string) error
+}
+
 // LabelDefService missing godoc
 //go:generate mockery --name=LabelDefService --output=automock --outpkg=automock --case=underscore
 type LabelDefService interface {
@@ -54,6 +60,7 @@ type AutomaticFormationAssignmentService interface {
 
 type service struct {
 	labelDefRepository LabelDefRepository
+	labelRepository    LabelRepository
 	labelService       LabelService
 	labelDefService    LabelDefService
 	asaService         AutomaticFormationAssignmentService
@@ -61,9 +68,10 @@ type service struct {
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository LabelDefRepository, labelService LabelService, uuidService UIDService, labelDefService LabelDefService, asaService AutomaticFormationAssignmentService) *service {
+func NewService(labelDefRepository LabelDefRepository, labelRepository LabelRepository, labelService LabelService, uuidService UIDService, labelDefService LabelDefService, asaService AutomaticFormationAssignmentService) *service {
 	return &service{
 		labelDefRepository: labelDefRepository,
+		labelRepository:    labelRepository,
 		labelService:       labelService,
 		labelDefService:    labelDefService,
 		asaService:         asaService,
@@ -197,7 +205,16 @@ func (s *service) modifyAssignedFormationsForApplication(ctx context.Context, tn
 		return nil, err
 	}
 
-	labelInput.Value = modificationFunc(existingFormations, formation.Name)
+	formations := modificationFunc(existingFormations, formation.Name)
+	// can not set scenario label to empty value, violates the scenario label definition
+	if len(formations) == 0 {
+		if err := s.labelRepository.Delete(ctx, tnt, model.ApplicationLabelableObject, objectID, model.ScenariosKey); err != nil {
+			return nil, err
+		}
+		return &formation, nil
+	}
+
+	labelInput.Value = formations
 	labelInput.Version = existingLabel.Version
 	if err := s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput); err != nil {
 		return nil, err

@@ -65,6 +65,10 @@ func UpdateLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, 
 }
 
 func UpdateScenariosLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, scenarios []string) *graphql.LabelDefinition {
+	// Listing scenarios for LabelDefinition creates a default record if there are no scenarios. This invocation is needed so that we can later update the scenarios instead of creating a new LabelDefinition
+	_, err := ListLabelDefinitionByKeyWithinTenant(ctx, gqlClient, "scenarios", tenantID)
+	require.NoError(t, err)
+
 	jsonSchema := map[string]interface{}{
 		"items": map[string]interface{}{
 			"enum": scenarios,

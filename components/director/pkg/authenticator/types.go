@@ -26,6 +26,9 @@ const CoordinatesKey = "authenticator_coordinates"
 // HeaderName missing godoc
 const HeaderName = "X-Authenticator-Name"
 
+// ComponentName is used to differentiate the ord from director flow using external certificate authentication
+const ComponentName = "X-Component-Name"
+
 // Config holds all configuration related to an additional authenticator provided to the Director
 type Config struct {
 	Name           string          `json:"name"`
@@ -38,6 +41,7 @@ type TrustedIssuer struct {
 	Protocol    string `json:"protocol"`
 	DomainURL   string `json:"domain_url"`
 	ScopePrefix string `json:"scope_prefix"`
+	Region      string `json:"region"`
 }
 
 // Coordinates missing godoc
@@ -51,6 +55,7 @@ type Attributes struct {
 	UniqueAttribute   Attribute `json:"uniqueAttribute"`
 	IdentityAttribute Attribute `json:"identity"`
 	TenantAttribute   Attribute `json:"tenant"`
+	ClientID          Attribute `json:"clientid"`
 }
 
 // Validate validates all attributes

@@ -23,8 +23,9 @@ const (
 	Active   TenantStatus = "Active"
 	Inactive TenantStatus = "Inactive"
 
-	Account  TenantType = "account"
-	Customer TenantType = "customer"
+	Account    TenantType = "account"
+	Customer   TenantType = "customer"
+	Subaccount TenantType = "subaccount"
 
 	TestDefaultCustomerTenant                                  = "Test_DefaultCustomer"
 	TenantSeparationTenantName                                 = "TestTenantSeparation"
@@ -41,6 +42,8 @@ const (
 	AutomaticScenarioAssignmentsWholeScenarioTenantName        = "TestAutomaticScenarioAssignmentsWholeScenario"
 	ApplicationsForRuntimeWithHiddenAppsTenantName             = "TestApplicationsForRuntimeWithHiddenApps"
 	TestDeleteApplicationIfInScenario                          = "TestDeleteApplicationIfInScenario"
+	TestProviderSubaccount                                     = "TestProviderSubaccount"
+	TestSelfRegisterSubaccount                                 = "TestSelfRegisterSubaccount"
 )
 
 type Tenant struct {
@@ -173,6 +176,22 @@ func (mgr *TestTenantsManager) Init() {
 			ProviderName:   testProvider,
 			Type:           Account,
 			Status:         Active,
+		},
+		TestProviderSubaccount: {
+			Name:           TestProviderSubaccount,
+			ExternalTenant: "f8075207-1478-4a80-bd26-24a4785a2bfd",
+			ProviderName:   testProvider,
+			Type:           Subaccount,
+			Status:         Active,
+			Parent:         testDefaultTenant,
+		},
+		TestSelfRegisterSubaccount: {
+			Name:           TestSelfRegisterSubaccount,
+			ExternalTenant: "08b6da37-e911-48fb-a0cb-fa635a6c665a",
+			ProviderName:   testProvider,
+			Type:           Subaccount,
+			Status:         Active,
+			Parent:         testDefaultTenant,
 		},
 	}
 	mgr.Cleanup()

@@ -212,7 +212,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: should update single row, but updated 0 rows")
+		require.EqualError(t, err, "Could not update object due to concurrent update")
 	})
 }
 
@@ -296,27 +296,6 @@ func TestRepositoryUpdateLabelDefinitionWithVersion(t *testing.T) {
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
-	t.Run("returns error if update fails", func(t *testing.T) {
-		mockConverter := &automock.EntityConverter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
-
-		sut := labeldef.NewRepository(mockConverter)
-		db, dbMock := testdb.MockDatabase(t)
-
-		ctx := context.TODO()
-		ctx = persistence.SaveToContext(ctx, db)
-
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ? AND version = ?`, fixUpdateTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
-		defer dbMock.AssertExpectations(t)
-
-		// WHEN
-		err := sut.UpdateWithVersion(ctx, in)
-		// THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-
 	t.Run("returns error if no row was affected by query", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
@@ -336,7 +315,7 @@ func TestRepositoryUpdateLabelDefinitionWithVersion(t *testing.T) {
 		// WHEN
 		err := sut.UpdateWithVersion(ctx, in)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: should update single row, but updated 0 rows")
+		require.EqualError(t, err, "Could not update object due to concurrent update")
 	})
 }
 

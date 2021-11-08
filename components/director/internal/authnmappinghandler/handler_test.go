@@ -148,9 +148,6 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Twice()
 
-		//"{\"subject\":\"\",\"extra\":{\"authenticator_coordinates\":{\"name\":\"authenticatorName\",\"index\":0},\"error\":{\"message\":\"Missing authenticator\"},\"tenant\":\"test-tenant\"},\"header\":null}"
-		//"{\"subject\":\"\",\"extra\":{\"authenticator_coordinates\":{\"name\":\"authenticatorName\",\"index\":0},\"tenant\":\"test-tenant\"},\"header\":null}"
-
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		reqWithVars := mux.SetURLVars(req, map[string]string{
 			"authenticator": authenticatorName,
