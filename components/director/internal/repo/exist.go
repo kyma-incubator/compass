@@ -29,11 +29,17 @@ type universalExistQuerier struct {
 	tableName    string
 	tenantColumn *string
 	resourceType resource.Type
+	ownerCheck   bool
 }
 
 // NewExistQuerier missing godoc
 func NewExistQuerier(tableName string) ExistQuerier {
 	return &universalExistQuerier{tableName: tableName}
+}
+
+// NewExistQuerierWithOwnerCheck missing godoc
+func NewExistQuerierWithOwnerCheck(tableName string) ExistQuerier {
+	return &universalExistQuerier{tableName: tableName, ownerCheck: true}
 }
 
 // NewExistQuerierWithEmbeddedTenant missing godoc
@@ -57,7 +63,7 @@ func (g *universalExistQuerier) Exists(ctx context.Context, resourceType resourc
 		return g.unsafeExists(ctx, tenant, resourceType, conditions)
 	}
 
-	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
+	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, g.ownerCheck)
 	if err != nil {
 		return false, err
 	}

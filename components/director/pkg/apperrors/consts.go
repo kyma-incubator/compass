@@ -91,7 +91,7 @@ const (
 	// CannotUpdateObjectInManyBundlesMsg missing godoc
 	CannotUpdateObjectInManyBundlesMsg = "Can not update object that is part of more than one bundle"
 	// ConcurrentUpdateMsg is the error message for NewConcurrentUpdate
-	ConcurrentUpdateMsg = "Could not update object due to concurrent update or missing owner access" // TODO: <storage-redesign> discuss on daily
+	ConcurrentUpdateMsg = "Could not update object due to concurrent update"
 	// ShouldUpdateSingleRowButUpdatedMsgF  is the format of the message for ShouldUpdateSingleRowButUpdatedMsg
 	ShouldUpdateSingleRowButUpdatedMsgF = "should update single row, but updated %d rows"
 	ShouldBeOwnerMsg = "Owner access is needed for resource modification"

@@ -68,8 +68,32 @@ func NewUpdaterWithEmbeddedTenant(resourceType resource.Type, tableName string, 
 	}
 }
 
-// UpdateSingleWithVersion missing godoc
+// UpdateSingleWithVersion performs get of the resource with owner check before updating the entity with version.
+// This is needed in order to distinguish the generic Unauthorized error due to the tenant has no owner access to the entity
+// and the case of concurrent modification where the version differs. In both cases the affected rows would be 0.
 func (u *universalUpdater) UpdateSingleWithVersion(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error {
+	if dbEntity == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+
+	var id string
+	if identifiable, ok := dbEntity.(Identifiable); ok {
+		id = identifiable.GetID()
+	}
+
+	if len(id) == 0 {
+		return apperrors.NewInternalError("id cannot be empty, check if the entity implements Identifiable")
+	}
+
+	exister := NewExistQuerierWithOwnerCheck(u.tableName)
+	found, err := exister.Exists(ctx, resourceType, tenant, Conditions{NewEqualCondition("id", id)})
+	if err != nil {
+		return err
+	}
+	if !found {
+		return apperrors.NewInvalidOperationError("entity does not exist or caller tenant does not have owner access")
+	}
+
 	return u.updateSingleWithVersion(ctx, tenant, dbEntity, resourceType)
 }
 
