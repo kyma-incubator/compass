@@ -777,6 +777,11 @@ func (r *mutationResolver) CreateAutomaticScenarioAssignment(ctx context.Context
 	return r.scenarioAssignment.CreateAutomaticScenarioAssignment(ctx, in)
 }
 
+// WriteTenants missing godoc
+func (r *mutationResolver) WriteTenants(ctx context.Context, in []*graphql.BusinessTenantMappingInput) (int, error) {
+	return r.tenant.Write(ctx, in)
+}
+
 type applicationResolver struct {
 	*RootResolver
 }

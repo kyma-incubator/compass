@@ -2,9 +2,12 @@ package tenantfetcher
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
+
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -109,6 +112,12 @@ type TenantSyncService interface {
 	SyncTenants() error
 }
 
+// GraphQLClient expects graphql implementation
+//go:generate mockery --name=GraphQLClient --output=automock --outpkg=automock --case=underscore
+type GraphQLClient interface {
+	Run(context.Context, *gcli.Request, interface{}) error
+}
+
 const (
 	retryAttempts          = 7
 	retryDelayMilliseconds = 100
@@ -127,6 +136,7 @@ type GlobalAccountService struct {
 	retryAttempts        uint
 	fullResyncInterval   time.Duration
 	toEventsPage         func([]byte) *eventsPage
+	gqlClient            GraphQLClient
 }
 
 // SubaccountService missing godoc
@@ -147,6 +157,7 @@ type SubaccountService struct {
 	movedRuntimeLabelKey            string
 	fullResyncInterval              time.Duration
 	toEventsPage                    func([]byte) *eventsPage
+	gqlClient                       GraphQLClient
 }
 
 // NewGlobalAccountService missing godoc
@@ -156,7 +167,8 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 	fieldMapping TenantFieldMapping,
 	providerName string, regionName string, client EventAPIClient,
 	tenantStorageService TenantStorageService,
-	fullResyncInterval time.Duration) *GlobalAccountService {
+	fullResyncInterval time.Duration,
+	gqlClient GraphQLClient) *GlobalAccountService {
 	return &GlobalAccountService{
 		transact:             transact,
 		kubeClient:           kubeClient,
@@ -175,6 +187,7 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 				providerName: providerName,
 			}
 		},
+		gqlClient: gqlClient,
 	}
 }
 
@@ -190,7 +203,8 @@ func NewSubaccountService(queryConfig QueryConfig,
 	labelDefService LabelDefinitionService,
 	labelService LabelService,
 	movedRuntimeLabelKey string,
-	fullResyncInterval time.Duration) *SubaccountService {
+	fullResyncInterval time.Duration,
+	gqlClient GraphQLClient) *SubaccountService {
 	return &SubaccountService{
 		transact:                        transact,
 		kubeClient:                      kubeClient,
@@ -215,6 +229,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 				providerName:                    providerName,
 			}
 		},
+		gqlClient: gqlClient,
 	}
 }
 
@@ -285,7 +300,7 @@ func (s SubaccountService) SyncTenants() error {
 
 		// Order of event processing matters
 		if len(tenantsToCreate) > 0 {
-			if err := createTenants(ctx, s.tenantStorageService, currentTenants, tenantsToCreate, region, s.providerName); err != nil {
+			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName); err != nil {
 				return errors.Wrap(err, "while storing subaccounts")
 			}
 		}
@@ -373,7 +388,7 @@ func (s GlobalAccountService) SyncTenants() error {
 
 	// Order of event processing matters
 	if len(tenantsToCreate) > 0 {
-		if err := createTenants(ctx, s.tenantStorageService, currentTenants, tenantsToCreate, s.tenantsRegion, s.providerName); err != nil {
+		if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, s.tenantsRegion, s.providerName); err != nil {
 			return errors.Wrap(err, "while storing accounts")
 		}
 	}
@@ -393,7 +408,7 @@ func (s GlobalAccountService) SyncTenants() error {
 	return nil
 }
 
-func createTenants(ctx context.Context, tenantStorageService TenantStorageService, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, region string, provider string) error {
+func createTenants(ctx context.Context, gqlClient GraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, region string, provider string) error {
 	tenantsToCreate := parents(currTenants, eventsTenants, provider)
 	for _, eventTenant := range eventsTenants {
 		if parentGUID, ok := currTenants[eventTenant.Parent]; ok {
@@ -403,8 +418,17 @@ func createTenants(ctx context.Context, tenantStorageService TenantStorageServic
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
 	if len(tenantsToCreate) > 0 {
-		if err := tenantStorageService.UpsertMany(ctx, tenantsToCreate...); err != nil {
-			return errors.Wrap(err, "while storing new tenants")
+		bytes, err := json.Marshal(tenantsToCreate)
+		if err != nil {
+			return errors.Wrap(err, "while marshalling tenants")
+		}
+		var res int
+		fmt.Println("------------")
+		tenantsQuery := fmt.Sprintf("mutation { in: %s }", bytes)
+		fmt.Println(tenantsQuery)
+		fmt.Println("------------")
+		if err = gqlClient.Run(ctx, gcli.NewRequest(tenantsQuery), &res); err != nil {
+			return errors.Wrap(err, "while executing gql query")
 		}
 	}
 	return nil

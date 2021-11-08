@@ -402,7 +402,7 @@ input BundleInstanceAuthStatusInput {
 	- CredentialsNotProvided
 	- PendingDeletion
 	
-	   **Validation**: required, if condition is FAILED
+	**Validation**: required, if condition is FAILED
 	"""
 	reason: String!
 }
@@ -421,6 +421,16 @@ input BundleUpdateInput {
 	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
 	"""
 	defaultInstanceAuth: AuthInput
+}
+
+input BusinessTenantMappingInput {
+	name: String!
+	externalTenant: String!
+	parent: String
+	subdomain: String
+	region: String
+	type: String!
+	provider: String!
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -1455,5 +1465,6 @@ type Mutation {
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
 	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
+	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 }
 

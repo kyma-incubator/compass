@@ -2,7 +2,12 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"net/http"
 	"time"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 
@@ -34,13 +39,15 @@ type config struct {
 	Log      log.Config
 	Features features.Config
 
-	TenantProvider       string        `envconfig:"APP_TENANT_PROVIDER"`
-	AccountsRegion       string        `envconfig:"default=central,APP_ACCOUNT_REGION"`
-	SubaccountRegions    []string      `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
-	MetricsPushEndpoint  string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
-	MovedRuntimeLabelKey string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
-	ClientTimeout        time.Duration `envconfig:"default=60s"`
-	FullResyncInterval   time.Duration `envconfig:"default=12h"`
+	TenantProvider              string        `envconfig:"APP_TENANT_PROVIDER"`
+	AccountsRegion              string        `envconfig:"default=central,APP_ACCOUNT_REGION"`
+	SubaccountRegions           []string      `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
+	MetricsPushEndpoint         string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+	MovedRuntimeLabelKey        string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
+	ClientTimeout               time.Duration `envconfig:"default=60s"`
+	FullResyncInterval          time.Duration `envconfig:"default=12h"`
+	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
+	HttpClientSkipSslValidation bool          `envconfig:"default=false"`
 
 	ShouldSyncSubaccounts bool `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
 }
@@ -118,8 +125,25 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
+	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HttpClientSkipSslValidation)
+
 	if cfg.ShouldSyncSubaccounts {
-		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval, gqlClient)
 	}
-	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval)
+	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, gqlClient)
+}
+
+func newInternalGraphQLClient(URL string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: skipSSLValidation,
+		},
+	}
+
+	client := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")),
+		Timeout:   timeout,
+	}
+
+	return gcli.NewClient(URL, gcli.WithHTTPClient(client))
 }

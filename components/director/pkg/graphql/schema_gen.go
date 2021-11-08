@@ -401,6 +401,7 @@ type ComplexityRoot struct {
 		UpdateRuntime                                 func(childComplexity int, id string, in RuntimeInput) int
 		UpdateRuntimeContext                          func(childComplexity int, id string, in RuntimeContextInput) int
 		UpdateWebhook                                 func(childComplexity int, webhookID string, in WebhookInput) int
+		WriteTenants                                  func(childComplexity int, in []*BusinessTenantMappingInput) int
 	}
 
 	OAuthCredentialData struct {
@@ -653,6 +654,7 @@ type MutationResolver interface {
 	CreateAutomaticScenarioAssignment(ctx context.Context, in AutomaticScenarioAssignmentSetInput) (*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
+	WriteTenants(ctx context.Context, in []*BusinessTenantMappingInput) (int, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -2714,6 +2716,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateWebhook(childComplexity, args["webhookID"].(string), args["in"].(WebhookInput)), true
 
+	case "Mutation.writeTenants":
+		if e.complexity.Mutation.WriteTenants == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_writeTenants_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.WriteTenants(childComplexity, args["in"].([]*BusinessTenantMappingInput)), true
+
 	case "OAuthCredentialData.clientId":
 		if e.complexity.OAuthCredentialData.ClientID == nil {
 			break
@@ -3971,7 +3985,7 @@ input BundleInstanceAuthStatusInput {
 	- CredentialsNotProvided
 	- PendingDeletion
 	
-	   **Validation**: required, if condition is FAILED
+	**Validation**: required, if condition is FAILED
 	"""
 	reason: String!
 }
@@ -3990,6 +4004,16 @@ input BundleUpdateInput {
 	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
 	"""
 	defaultInstanceAuth: AuthInput
+}
+
+input BusinessTenantMappingInput {
+	name: String!
+	externalTenant: String!
+	parent: String
+	subdomain: String
+	region: String
+	type: String!
+	provider: String!
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -5024,6 +5048,7 @@ type Mutation {
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
 	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
+	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 }
 
 `, BuiltIn: false},
@@ -6785,6 +6810,20 @@ func (ec *executionContext) field_Mutation_updateWebhook_args(ctx context.Contex
 		}
 	}
 	args["in"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_writeTenants_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*BusinessTenantMappingInput
+	if tmp, ok := rawArgs["in"]; ok {
+		arg0, err = ec.unmarshalOBusinessTenantMappingInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenantMappingInputᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["in"] = arg0
 	return args, nil
 }
 
@@ -17286,6 +17325,71 @@ func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentsForSelec
 	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_writeTenants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_writeTenants_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().WriteTenants(rctx, args["in"].([]*BusinessTenantMappingInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.writeTenants")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(int); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be int`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *OAuthCredentialData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -22909,6 +23013,60 @@ func (ec *executionContext) unmarshalInputBundleUpdateInput(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputBusinessTenantMappingInput(ctx context.Context, obj interface{}) (BusinessTenantMappingInput, error) {
+	var it BusinessTenantMappingInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "externalTenant":
+			var err error
+			it.ExternalTenant, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "parent":
+			var err error
+			it.Parent, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "subdomain":
+			var err error
+			it.Subdomain, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "region":
+			var err error
+			it.Region, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "type":
+			var err error
+			it.Type, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "provider":
+			var err error
+			it.Provider, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCSRFTokenCredentialRequestAuthInput(ctx context.Context, obj interface{}) (CSRFTokenCredentialRequestAuthInput, error) {
 	var it CSRFTokenCredentialRequestAuthInput
 	var asMap = obj.(map[string]interface{})
@@ -25591,6 +25749,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "writeTenants":
+			out.Values[i] = ec._Mutation_writeTenants(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -27397,6 +27560,18 @@ func (ec *executionContext) unmarshalNBundleUpdateInput2githubᚗcomᚋkymaᚑin
 	return ec.unmarshalInputBundleUpdateInput(ctx, v)
 }
 
+func (ec *executionContext) unmarshalNBusinessTenantMappingInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenantMappingInput(ctx context.Context, v interface{}) (BusinessTenantMappingInput, error) {
+	return ec.unmarshalInputBusinessTenantMappingInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNBusinessTenantMappingInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenantMappingInput(ctx context.Context, v interface{}) (*BusinessTenantMappingInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNBusinessTenantMappingInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenantMappingInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalNDocument2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v Document) graphql.Marshaler {
 	return ec._Document(ctx, sel, &v)
 }
@@ -28965,6 +29140,26 @@ func (ec *executionContext) marshalOBundlePage2ᚖgithubᚗcomᚋkymaᚑincubato
 		return graphql.Null
 	}
 	return ec._BundlePage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOBusinessTenantMappingInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenantMappingInputᚄ(ctx context.Context, v interface{}) ([]*BusinessTenantMappingInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*BusinessTenantMappingInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNBusinessTenantMappingInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenantMappingInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOCLOB2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx context.Context, v interface{}) (CLOB, error) {
