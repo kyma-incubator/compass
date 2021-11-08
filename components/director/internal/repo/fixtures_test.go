@@ -9,8 +9,10 @@ const (
 	userTableName    = "users"
 	appTableName     = "apps"
 	bundlesTableName = "bundles"
+	biaTableName     = "bia"
 
 	appID          = "appID"
+	appID2          = "appID2"
 	appName        = "appName"
 	appDescription = "appDesc"
 
@@ -18,11 +20,19 @@ const (
 	bundleName        = "bundleName"
 	bundleDescription = "bundleDesc"
 
+	biaID          = "biaID"
+	biaName        = "biaName"
+	biaDescription = "biaDesc"
+
 	userID    = "given_id"
-	tenantID  = "given_tenant"
+	tenantID  = "75093633-1578-497f-890a-d438a74a4127"
 	firstName = "given_first_name"
 	lastName  = "given_last_name"
 	age       = 55
+
+	tenantIsolationConditionWithoutOwnerCheckFmt = "(id IN (SELECT id FROM %s WHERE tenant_id = %s))"
+	tenantIsolationConditionWithOwnerCheckFmt    = "(id IN (SELECT id FROM %s WHERE tenant_id = %s AND owner = true))"
+	tenantIsolationConditionForBIA    = "(id IN (SELECT id FROM %s WHERE tenant_id = %s AND owner = true) OR owner_id = %s)"
 )
 
 var fixUser = User{
@@ -46,9 +56,17 @@ var fixBundle = &Bundle{
 	AppID:       appID,
 }
 
+var fixBIA = &BundleInstanceAuth{
+	ID:          biaID,
+	Name:        biaName,
+	Description: biaDescription,
+	OwnerID:     tenantID,
+	BundleID:    bundleID,
+}
+
 // User is a exemplary type to test generic Repositories
 type User struct {
-	ID        string `db:"id_col"`
+	ID        string `db:"id"`
 	Tenant    string `db:"tenant_id"`
 	FirstName string `db:"first_name"`
 	LastName  string `db:"last_name"`
@@ -59,7 +77,7 @@ func (a User) GetID() string {
 	return a.ID
 }
 
-var userColumns = []string{"id_col", "tenant_id", "first_name", "last_name", "age"}
+var userColumns = []string{"id", "tenant_id", "first_name", "last_name", "age"}
 
 const UserType = resource.Type("UserType")
 
@@ -70,7 +88,7 @@ func (u UserCollection) Len() int {
 }
 
 type App struct {
-	ID          string `db:"id_col"`
+	ID          string `db:"id"`
 	Name        string `db:"name"`
 	Description string `db:"description"`
 }
@@ -79,7 +97,7 @@ func (a *App) GetID() string {
 	return a.ID
 }
 
-var appColumns = []string{"id_col", "name", "description"}
+var appColumns = []string{"id", "name", "description"}
 
 type AppCollection []App
 
@@ -88,7 +106,7 @@ func (a AppCollection) Len() int {
 }
 
 type Bundle struct {
-	ID          string `db:"id_col"`
+	ID          string `db:"id"`
 	Name        string `db:"name"`
 	Description string `db:"description"`
 	AppID       string `db:"app_id"`
@@ -102,11 +120,35 @@ func (a *Bundle) GetParentID() string {
 	return a.AppID
 }
 
-var bundleColumns = []string{"id_col", "name", "description", "app_id"}
+var bundleColumns = []string{"id", "name", "description", "app_id"}
 
 type BundleCollection []Bundle
 
 func (a BundleCollection) Len() int {
+	return len(a)
+}
+
+type BundleInstanceAuth struct {
+	ID          string `db:"id"`
+	Name        string `db:"name"`
+	Description string `db:"description"`
+	OwnerID     string `db:"owner_id"`
+	BundleID    string `db:"bundle_id"`
+}
+
+func (a *BundleInstanceAuth) GetID() string {
+	return a.ID
+}
+
+func (a *BundleInstanceAuth) GetParentID() string {
+	return a.BundleID
+}
+
+var biaColumns = []string{"id", "name", "description", "owner_id"}
+
+type BundleInstanceAuthCollection []BundleInstanceAuth
+
+func (a BundleInstanceAuthCollection) Len() int {
 	return len(a)
 }
 

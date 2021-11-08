@@ -167,17 +167,17 @@ func (g *universalDeleter) unsafeDeleteTenantAccess(ctx context.Context, resourc
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 
 	var ids IDs
-	if requireSingleRemoval {
-		var id string
-		err = persist.GetContext(ctx, &id, query, allArgs...)
-		ids = append(ids, id)
-	} else {
-		err = persist.SelectContext(ctx, &ids, query, allArgs...)
-	}
+	err = persist.SelectContext(ctx, &ids, query, allArgs...)
 	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Delete, "while selecting objects from '%s' table by conditions", g.tableName); err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
-		}
+		return err
+	}
+
+	if len(ids) == 0 {
+		return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+	}
+
+	if requireSingleRemoval && len(ids) != 1 {
+		return apperrors.NewInternalError("delete should remove single row, but removed %d rows", len(ids))
 	}
 
 	stmtBuilder.Reset()
@@ -220,11 +220,6 @@ func (g *universalDeleter) unsafeDeleteChildEntity(ctx context.Context, resource
 		return errors.Wrap(err, "while writing enumerated conditions")
 	}
 	allArgs := getAllArgs(conditions)
-
-	if resourceType == resource.BundleInstanceAuth && len(tenant) > 0 {
-		stmtBuilder.WriteString(" OR owner_id = ?")
-		allArgs = append(allArgs, tenant)
-	}
 
 	query := getQueryFromBuilder(stmtBuilder)
 	log.C(ctx).Debugf("Executing DB query: %s", query)

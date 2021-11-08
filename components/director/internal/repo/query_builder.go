@@ -95,11 +95,6 @@ func buildSelectQuery(resourceType resource.Type, tableName string, selectedColu
 
 	allArgs := getAllArgs(conditions)
 
-	if resourceType == resource.BundleInstanceAuth && len(tenantID) > 0 {
-		stmtBuilder.WriteString(" OR owner_id = ?")
-		allArgs = append(allArgs, tenantID)
-	}
-
 	err = writeOrderByPart(&stmtBuilder, orderByParams)
 	if err != nil {
 		return "", nil, errors.Wrap(err, "while writing order by part")

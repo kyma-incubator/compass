@@ -156,7 +156,7 @@ func (u *universalUpdater) unsafeUpdateSingleWithFields(ctx context.Context, dbE
 	if err != nil {
 		return errors.Wrap(err, "while checking affected rows")
 	}
-	if affected == 0 && len(tenant) > 0 {
+	if affected == 0 && (len(tenant) > 0 || u.tenantColumn != nil) {
 		return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
 	}
 	if affected != 1 {
@@ -195,7 +195,7 @@ func (u *universalUpdater) buildQuery(fieldsToSet []string, tenant string, resou
 			return "", errors.Wrapf(err, "tenant_id %s should be UUID", tenant)
 		}
 
-		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true)", M2MResourceIDColumn, accessTable, M2MTenantIDColumn, tenant, M2MOwnerColumn))
+		stmtBuilder.WriteString(fmt.Sprintf(" (id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true)", M2MResourceIDColumn, accessTable, M2MTenantIDColumn, tenant, M2MOwnerColumn))
 
 		if resourceType == resource.BundleInstanceAuth {
 			stmtBuilder.WriteString(" OR owner_id = :owner_id") // TODO: <storage-redesign> externalize

@@ -29,7 +29,7 @@ func TestCreate(t *testing.T) {
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
 
-			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id_col, name, description ) VALUES ( ?, ?, ? )", appTableName))).
+			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, name, description ) VALUES ( ?, ?, ? )", appTableName))).
 				WithArgs(appID, appName, appDescription).WillReturnResult(sqlmock.NewResult(1, 1))
 			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( %s, %s, %s ) VALUES ( ?, ?, ? )", m2mTable, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
 				WithArgs(tenantID, appID, true).WillReturnResult(sqlmock.NewResult(1,1))
@@ -44,7 +44,7 @@ func TestCreate(t *testing.T) {
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
 
-			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id_col, name, description ) VALUES ( ?, ?, ? )", appTableName))).
+			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, name, description ) VALUES ( ?, ?, ? )", appTableName))).
 				WillReturnError(someError())
 			// WHEN
 			err := creator.Create(ctx,resourceType, tenantID, fixApp)
@@ -70,7 +70,7 @@ func TestCreate(t *testing.T) {
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
 
-			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id_col, name, description ) VALUES ( ?, ?, ? )", appTableName))).
+			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, name, description ) VALUES ( ?, ?, ? )", appTableName))).
 				WillReturnError(&pq.Error{Code: persistence.UniqueViolation})
 			// WHEN
 			err := creator.Create(ctx, resourceType, tenantID, fixApp)
@@ -79,13 +79,13 @@ func TestCreate(t *testing.T) {
 		})
 
 		t.Run("returns non unique error if there are matcher columns and the entity already exists", func(t *testing.T) {
-			creator := repo.NewCreatorWithMatchingColumns(appTableName, appColumns, []string{"id_col"})
+			creator := repo.NewCreatorWithMatchingColumns(appTableName, appColumns, []string{"id"})
 			// GIVEN
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
 
-			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id_col, name, description ) VALUES ( ?, ?, ? )", appTableName))).
+			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, name, description ) VALUES ( ?, ?, ? )", appTableName))).
 				WithArgs(appID, appName, appDescription).WillReturnResult(sqlmock.NewResult(1, 0))
 			// WHEN
 			err := creator.Create(ctx, resourceType, tenantID, fixApp)
@@ -130,7 +130,7 @@ func TestCreate(t *testing.T) {
 
 			mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT 1 FROM %s WHERE %s = $1 AND %s = $2 AND %s = $3", m2mTable, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
 				WithArgs(tenantID, appID, true).WillReturnRows(testdb.RowWhenObjectExist())
-			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id_col, name, description, app_id ) VALUES ( ?, ?, ?, ? )", bundlesTableName))).
+			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, name, description, app_id ) VALUES ( ?, ?, ?, ? )", bundlesTableName))).
 				WithArgs(bundleID, bundleName, bundleDescription, appID).WillReturnResult(sqlmock.NewResult(1, 1))
 
 			err := creator.Create(ctx, resourceType, tenantID, fixBundle)
@@ -218,7 +218,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestCreateGlobal(t *testing.T) {
-	sut := repo.NewCreatorGlobal(UserType, userTableName, []string{"id_col", "tenant_id", "first_name", "last_name", "age"})
+	sut := repo.NewCreatorGlobal(UserType, userTableName, []string{"id", "tenant_id", "first_name", "last_name", "age"})
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
@@ -232,7 +232,7 @@ func TestCreateGlobal(t *testing.T) {
 			Age:       55,
 		}
 
-		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )", userTableName))).
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )", userTableName))).
 			WithArgs("given_id", "given_tenant", "given_first_name", "given_last_name", 55).WillReturnResult(sqlmock.NewResult(1, 1))
 		// WHEN
 		err := sut.Create(ctx, givenUser)
@@ -247,7 +247,7 @@ func TestCreateGlobal(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		givenUser := User{}
 
-		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )", userTableName))).
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )", userTableName))).
 			WillReturnError(someError())
 		// WHEN
 		err := sut.Create(ctx, givenUser)
@@ -275,7 +275,7 @@ func TestCreateGlobal(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		givenUser := User{}
 
-		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )", userTableName))).
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )", userTableName))).
 			WillReturnError(&pq.Error{Code: persistence.UniqueViolation})
 		// WHEN
 		err := sut.Create(ctx, givenUser)
@@ -299,7 +299,7 @@ func TestCreateGlobal(t *testing.T) {
 }
 
 func TestCreateWhenWrongConfiguration(t *testing.T) {
-	sut := repo.NewCreatorGlobal(UserType, userTableName, []string{"id_col", "column_does_not_exist"})
+	sut := repo.NewCreatorGlobal(UserType, userTableName, []string{"id", "column_does_not_exist"})
 	// GIVEN
 	db, mock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), db)

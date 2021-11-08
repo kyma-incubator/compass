@@ -91,11 +91,6 @@ func (g *universalExistQuerier) unsafeExists(ctx context.Context, tenant string,
 	}
 	allArgs := getAllArgs(conditions)
 
-	if resourceType == resource.BundleInstanceAuth && len(tenant) > 0 {
-		stmtBuilder.WriteString(" OR owner_id = ?")
-		allArgs = append(allArgs, tenant)
-	}
-
 	query := getQueryFromBuilder(stmtBuilder)
 
 	log.C(ctx).Debugf("Executing DB query: %s", query)

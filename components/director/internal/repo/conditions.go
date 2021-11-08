@@ -235,14 +235,36 @@ func (c *jsonArrAnyMatchCondition) GetQueryArgs() ([]interface{}, bool) {
 	return c.val, true
 }
 
+type tenantIsolationCondition struct {
+	sql  string
+	args []interface{}
+}
+
+// GetQueryPart missing godoc
+func (c *tenantIsolationCondition) GetQueryPart() string {
+	return c.sql
+}
+
+// GetQueryArgs missing godoc
+func (c *tenantIsolationCondition) GetQueryArgs() ([]interface{}, bool) {
+	return c.args, true
+}
+
 func NewTenantIsolationCondition(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return nil, errors.Errorf("entity %s does not have access table", resourceType)
 	}
-	tenantIsolationSubquery := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn)
+	args := []interface{}{tenant}
+	tenantIsolationSubquery := fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = ?", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn)
 	if ownerCheck {
 		tenantIsolationSubquery += fmt.Sprintf(" AND %s = true", M2MOwnerColumn)
 	}
-	return NewInConditionForSubQuery("id", tenantIsolationSubquery, []interface{}{tenant}), nil
+	tenantIsolationSubquery += ")"
+	if resourceType == resource.BundleInstanceAuth {
+		tenantIsolationSubquery += " OR owner_id = ?"
+		args = append(args, tenant)
+	}
+	tenantIsolationSubquery += ")"
+	return &tenantIsolationCondition{sql: tenantIsolationSubquery, args: args}, nil
 }

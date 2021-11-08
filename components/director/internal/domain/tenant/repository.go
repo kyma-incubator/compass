@@ -176,7 +176,7 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
                 WHERE ta.%s = ? AND ta.%s = true AND
                       (NOT EXISTS(SELECT 1 FROM %s WHERE %s = ta.%[1]s) -- the tenant has no children
                           OR
-                      (NOT EXISTS (SELECT 1 FROM %[2]s ta2
+                      (NOT EXISTS(SELECT 1 FROM %[2]s ta2
                                             WHERE ta2.%[3]s = ? AND ta.%[4]s = true AND
                                                   %[1]s IN (SELECT %s FROM %[5]s WHERE %[6]s = ta.%[1]s))) -- there is no child that has owner access
                        ))`
