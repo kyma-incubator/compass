@@ -244,7 +244,6 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantService {
-
 				svc := &automock.TenantService{}
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 

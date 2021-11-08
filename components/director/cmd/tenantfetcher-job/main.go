@@ -47,7 +47,7 @@ type config struct {
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
 	FullResyncInterval          time.Duration `envconfig:"default=12h"`
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
-	HttpClientSkipSslValidation bool          `envconfig:"default=false"`
+	HTTPClientSkipSslValidation bool          `envconfig:"default=false"`
 
 	ShouldSyncSubaccounts bool `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
 }
@@ -125,7 +125,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HttpClientSkipSslValidation)
+	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
 
 	if cfg.ShouldSyncSubaccounts {
 		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval, gqlClient)
@@ -133,7 +133,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, gqlClient)
 }
 
-func newInternalGraphQLClient(URL string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
+func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: skipSSLValidation,
@@ -145,5 +145,5 @@ func newInternalGraphQLClient(URL string, timeout time.Duration, skipSSLValidati
 		Timeout:   timeout,
 	}
 
-	return gcli.NewClient(URL, gcli.WithHTTPClient(client))
+	return gcli.NewClient(url, gcli.WithHTTPClient(client))
 }

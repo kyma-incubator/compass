@@ -423,10 +423,10 @@ func createTenants(ctx context.Context, gqlClient GraphQLClient, currTenants map
 			return errors.Wrap(err, "while marshalling tenants")
 		}
 		var res int
-		fmt.Println("------------")
+		log.C(ctx).Info("-------------")
 		tenantsQuery := fmt.Sprintf("mutation { in: %s }", string(bytes))
-		fmt.Println(tenantsQuery)
-		fmt.Println("------------")
+		log.C(ctx).Info(tenantsQuery)
+		log.C(ctx).Info("-------------")
 		if err = gqlClient.Run(ctx, gcli.NewRequest(tenantsQuery), &res); err != nil {
 			return errors.Wrap(err, "while executing gql query")
 		}
