@@ -21,6 +21,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	tenantInsertChunkSize = 500
+)
+
 func TestService_SyncAccountTenants(t *testing.T) {
 	// GIVEN
 	provider := "default"
@@ -815,7 +819,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				TotalPagesField:    "pages",
 				TotalResultsField:  "total",
 				EntityTypeField:    "type",
-			}, provider, region, apiClient, tenantStorageSvc, time.Hour, gqlClient)
+			}, provider, region, apiClient, tenantStorageSvc, time.Hour, gqlClient, tenantInsertChunkSize)
 			svc.SetRetryAttempts(1)
 
 			// WHEN
@@ -870,7 +874,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			SubdomainField:     "subdomain",
 			TotalPagesField:    "pages",
 			TotalResultsField:  "total",
-		}, provider, region, apiClient, tenantStorageSvc, time.Hour, gqlClient)
+		}, provider, region, apiClient, tenantStorageSvc, time.Hour, gqlClient, tenantInsertChunkSize)
 
 		// WHEN
 		err := svc.SyncTenants()
@@ -1818,7 +1822,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				LabelValue:   "id",
 				SourceTenant: "source_tenant",
 				TargetTenant: "target_tenant",
-			}, provider, []string{testRegion}, apiClient, tenantStorageSvc, runtimeStorageSvc, labelDefSvc, labelSvc, movedRuntimeLabelKey, time.Hour, gqlClient)
+			}, provider, []string{testRegion}, apiClient, tenantStorageSvc, runtimeStorageSvc, labelDefSvc, labelSvc, movedRuntimeLabelKey, time.Hour, gqlClient, tenantInsertChunkSize)
 			svc.SetRetryAttempts(1)
 
 			// WHEN
@@ -1882,7 +1886,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			LabelValue:   "id",
 			SourceTenant: "source_tenant",
 			TargetTenant: "target_tenant",
-		}, provider, []string{testRegion}, apiClient, tenantStorageSvc, nil, nil, nil, movedRuntimeLabelKey, time.Hour, gqlClient)
+		}, provider, []string{testRegion}, apiClient, tenantStorageSvc, nil, nil, nil, movedRuntimeLabelKey, time.Hour, gqlClient, tenantInsertChunkSize)
 
 		// WHEN
 		err := svc.SyncTenants()
