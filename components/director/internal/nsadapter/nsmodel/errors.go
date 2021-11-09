@@ -1,4 +1,4 @@
-package model
+package nsmodel
 
 type NSError struct {
 	message string

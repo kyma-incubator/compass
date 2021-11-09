@@ -1,12 +1,16 @@
-package model
+package nsmodel
 
-import validation "github.com/go-ozzo/ozzo-validation/v4"
+import (
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+)
 
 type System struct {
-	Protocol   string `json:"protocol"`
-	Host       string `json:"host"`
-	SystemType string `json:"type"`
-	Status     string `json:"status"`
+	Protocol     string `json:"protocol"`
+	Host         string `json:"host"`
+	SystemType   string `json:"type"`
+	Status       string `json:"status"`
+	SystemNumber string `json:"systemNumber"`
 }
 
 func (s System) Validate() error {
@@ -66,4 +70,15 @@ func validateSCCs(value interface{}) error {
 		}
 	}
 	return nil
+}
+
+
+func ToAppInput(system System,tenant string, locationID string) model.ApplicationRegisterInput{
+	appInput := model.ApplicationRegisterInput{
+		Name:                "",
+		ProviderName:        "SAP",
+		Labels: map[string]interface{}{"SCC": },
+		SystemNumber:        system.SystemNumber,
+		Status: system.Status,
+	}
 }

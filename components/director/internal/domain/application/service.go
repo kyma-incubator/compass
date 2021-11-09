@@ -281,6 +281,38 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	return s.genericCreate(ctx, in, creator)
 }
 
+func (s *service) GetSystem(ctx context.Context, subaccount, locationID, virtualHost string) (*model.Application, error){
+	//appTenant, err := tenant.LoadFromContext(ctx)
+	//if err != nil {
+	//	return nil, errors.Wrapf(err, "while loading tenant from context")
+	//}
+	//
+	////TODO fix filter
+	//labelfilter.NewForKey("SCC")
+	//
+	//app, err := s.appRepo.GetByFilter(ctx, appTenant, id)
+	//if err != nil {
+	//	return nil, errors.Wrapf(err, "while getting Application with id %s", id)
+	//}
+	//
+	//return app, nil
+	return nil, nil
+}
+
+func (s *service) MarkAsUnreachable(ctx context.Context, id string) error{
+	//TODO
+	return nil
+}
+func (s *service) ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.Application, error){
+	//TODO 
+	return nil, nil
+}
+
+func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput) (string, error){
+	//TODO
+	return "", nil
+}
+
 // CreateFromTemplate missing godoc
 func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error) {
 	creator := func(ctx context.Context, application *model.Application) (err error) {

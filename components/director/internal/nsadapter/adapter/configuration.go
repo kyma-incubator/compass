@@ -6,7 +6,7 @@ import (
 )
 
 type Configuration struct {
-	ServerTimeout time.Duration `envconfig:"default=3s"`
+	ServerTimeout time.Duration `envconfig:"default=30s"` //TODO What is the proper timeout value?
 	Port          string        `envconfig:"default=8080"`
 	Address       string        `envconfig:"default=127.0.0.1:8080"`
 	Log           *log.Config
