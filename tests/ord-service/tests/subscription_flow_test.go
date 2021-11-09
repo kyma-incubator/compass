@@ -46,6 +46,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
 		ctx := context.Background()
+		distinguishLblValue := "test-distinguish-value"
 
 		// defaultTenantId is the parent of the subaccountID
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
@@ -75,11 +76,15 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 		runtimeInput := graphql.RuntimeInput{
 			Name:        "selfRegisterRuntime",
 			Description: ptr.String("selfRegisterRuntime-description"),
+			Labels:      graphql.Labels{testConfig.SelfRegisterDistinguishLabelKey: distinguishLblValue},
 		}
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, defaultTenantId, &runtimeInput)
 		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, defaultTenantId, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
+		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
+		require.True(t, ok)
+		require.Contains(t, strLbl, distinguishLblValue)
 
 		labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId)
 		require.NoError(t, err)
