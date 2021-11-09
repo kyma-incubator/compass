@@ -44,6 +44,7 @@ type config struct {
 	SubaccountRegions           []string      `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
 	MetricsPushEndpoint         string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 	MovedRuntimeLabelKey        string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
+	TenantInsertChunkSize       int           `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
 	FullResyncInterval          time.Duration `envconfig:"default=12h"`
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
@@ -131,9 +132,9 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	}
 
 	if cfg.ShouldSyncSubaccounts {
-		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval, gqlClient)
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval, gqlClient, cfg.TenantInsertChunkSize)
 	}
-	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, gqlClient)
+	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, gqlClient, cfg.TenantInsertChunkSize)
 }
 
 func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {

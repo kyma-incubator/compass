@@ -172,6 +172,8 @@ spec:
                 value: {{ default "targetGlobalAccountGUID" $config.fieldMapping.movedRuntimeByLabelTargetField }}
               - name: APP_MOVED_RUNTIME_LABEL_KEY
                 value: {{ default "movedRuntimeLabelKey" $config.fieldMapping.movedRuntimeLabelKey }}
+              - name: APP_TENANT_INSERT_CHUNK_SIZE
+                value: {{ default 500  }}
               - name: APP_DIRECTOR_GRAPHQL_ENDPOINT
                 value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
               - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION

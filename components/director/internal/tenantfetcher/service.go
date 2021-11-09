@@ -127,18 +127,19 @@ const (
 
 // GlobalAccountService missing godoc
 type GlobalAccountService struct {
-	queryConfig          QueryConfig
-	transact             persistence.Transactioner
-	kubeClient           KubeClient
-	eventAPIClient       EventAPIClient
-	tenantStorageService TenantStorageService
-	providerName         string
-	tenantsRegion        string
-	fieldMapping         TenantFieldMapping
-	retryAttempts        uint
-	fullResyncInterval   time.Duration
-	toEventsPage         func([]byte) *eventsPage
-	gqlClient            GraphQLClient
+	queryConfig           QueryConfig
+	transact              persistence.Transactioner
+	kubeClient            KubeClient
+	eventAPIClient        EventAPIClient
+	tenantStorageService  TenantStorageService
+	providerName          string
+	tenantsRegion         string
+	fieldMapping          TenantFieldMapping
+	retryAttempts         uint
+	fullResyncInterval    time.Duration
+	toEventsPage          func([]byte) *eventsPage
+	gqlClient             GraphQLClient
+	tenantInsertChunkSize int
 }
 
 // SubaccountService missing godoc
@@ -160,6 +161,7 @@ type SubaccountService struct {
 	fullResyncInterval              time.Duration
 	toEventsPage                    func([]byte) *eventsPage
 	gqlClient                       GraphQLClient
+	tenantInsertChunkSize           int
 }
 
 // NewGlobalAccountService missing godoc
@@ -170,7 +172,8 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 	providerName string, regionName string, client EventAPIClient,
 	tenantStorageService TenantStorageService,
 	fullResyncInterval time.Duration,
-	gqlClient GraphQLClient) *GlobalAccountService {
+	gqlClient GraphQLClient,
+	tenantInsertChunkSize int) *GlobalAccountService {
 	return &GlobalAccountService{
 		transact:             transact,
 		kubeClient:           kubeClient,
@@ -189,7 +192,8 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 				providerName: providerName,
 			}
 		},
-		gqlClient: gqlClient,
+		gqlClient:             gqlClient,
+		tenantInsertChunkSize: tenantInsertChunkSize,
 	}
 }
 
@@ -206,7 +210,8 @@ func NewSubaccountService(queryConfig QueryConfig,
 	labelService LabelService,
 	movedRuntimeLabelKey string,
 	fullResyncInterval time.Duration,
-	gqlClient GraphQLClient) *SubaccountService {
+	gqlClient GraphQLClient,
+	tenantInsertChunkSize int) *SubaccountService {
 	return &SubaccountService{
 		transact:                        transact,
 		kubeClient:                      kubeClient,
@@ -231,7 +236,8 @@ func NewSubaccountService(queryConfig QueryConfig,
 				providerName:                    providerName,
 			}
 		},
-		gqlClient: gqlClient,
+		gqlClient:             gqlClient,
+		tenantInsertChunkSize: tenantInsertChunkSize,
 	}
 }
 
@@ -302,7 +308,7 @@ func (s SubaccountService) SyncTenants() error {
 
 		// Order of event processing matters
 		if len(tenantsToCreate) > 0 {
-			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName); err != nil {
+			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize); err != nil {
 				return errors.Wrap(err, "while storing subaccounts")
 			}
 		}
@@ -390,7 +396,7 @@ func (s GlobalAccountService) SyncTenants() error {
 
 	// Order of event processing matters
 	if len(tenantsToCreate) > 0 {
-		if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, s.tenantsRegion, s.providerName); err != nil {
+		if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, s.tenantsRegion, s.providerName, s.tenantInsertChunkSize); err != nil {
 			return errors.Wrap(err, "while storing accounts")
 		}
 	}
@@ -410,7 +416,7 @@ func (s GlobalAccountService) SyncTenants() error {
 	return nil
 }
 
-func createTenants(ctx context.Context, gqlClient GraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, region string, provider string) error {
+func createTenants(ctx context.Context, gqlClient GraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, region string, provider string, maxChunkSize int) error {
 	tenantsToCreate := parents(currTenants, eventsTenants, provider)
 	for _, eventTenant := range eventsTenants {
 		if parentGUID, ok := currTenants[eventTenant.Parent]; ok {
@@ -424,7 +430,7 @@ func createTenants(ctx context.Context, gqlClient GraphQLClient, currTenants map
 			if len(tenantsToCreate) == 0 {
 				break
 			}
-			chunkSize := int(math.Min(float64(len(tenantsToCreate)), 100))
+			chunkSize := int(math.Min(float64(len(tenantsToCreate)), float64(maxChunkSize)))
 			tenantsChunk := tenantsToCreate[:chunkSize]
 			if err := insertTenantsChunk(ctx, tenantsChunk, gqlClient); err != nil {
 				return err
