@@ -2,9 +2,10 @@ package tenantfetcher
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	gcli "github.com/machinebox/graphql"
@@ -121,6 +122,7 @@ type GraphQLClient interface {
 const (
 	retryAttempts          = 7
 	retryDelayMilliseconds = 100
+	tenantQueryPattern     = `{name: "%s",externalTenant: "%s",parent: "%s",subdomain: "%s",region:"%s",type:"%s",provider: "%s"},`
 )
 
 // GlobalAccountService missing godoc
@@ -418,18 +420,33 @@ func createTenants(ctx context.Context, gqlClient GraphQLClient, currTenants map
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
 	if len(tenantsToCreate) > 0 {
-		bytes, err := json.Marshal(tenantsToCreate)
-		if err != nil {
-			return errors.Wrap(err, "while marshalling tenants")
+		for {
+			if len(tenantsToCreate) == 0 {
+				break
+			}
+			chunkSize := int(math.Min(float64(len(tenantsToCreate)), 100))
+			tenantsChunk := tenantsToCreate[:chunkSize]
+			if err := insertTenantsChunk(ctx, tenantsChunk, gqlClient); err != nil {
+				return err
+			}
+			tenantsToCreate = tenantsToCreate[chunkSize:]
 		}
-		var res int
-		log.C(ctx).Info("-------------")
-		tenantsQuery := fmt.Sprintf("mutation { writeTenants(in: %s )}", string(bytes))
-		log.C(ctx).Info(tenantsQuery)
-		log.C(ctx).Info("-------------")
-		if err = gqlClient.Run(ctx, gcli.NewRequest(tenantsQuery), &res); err != nil {
-			return errors.Wrap(err, "while executing gql query")
-		}
+	}
+	return nil
+}
+
+func insertTenantsChunk(ctx context.Context, tenantsChunk []model.BusinessTenantMappingInput, gqlClient GraphQLClient) error {
+	var res map[string]interface{}
+
+	mutationBuilder := strings.Builder{}
+	for _, tnt := range tenantsChunk {
+		mutationBuilder.WriteString(fmt.Sprintf(tenantQueryPattern, tnt.Name, tnt.ExternalTenant, tnt.Parent, tnt.Subdomain, tnt.Region, tnt.Type, tnt.Provider))
+	}
+	tenantsQuery := fmt.Sprintf("mutation { writeTenants(in:[%s])}", mutationBuilder.String()[:mutationBuilder.Len()-1])
+	gRequest := gcli.NewRequest(tenantsQuery)
+	gRequest.Header.Set("Tenant", "global")
+	if err := gqlClient.Run(ctx, gRequest, &res); err != nil {
+		return errors.Wrap(err, "while executing gql query")
 	}
 	return nil
 }

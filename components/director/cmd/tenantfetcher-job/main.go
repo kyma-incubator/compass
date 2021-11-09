@@ -126,6 +126,9 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	}
 
 	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
+	gqlClient.Log = func(s string) {
+		log.D().Debug(s)
+	}
 
 	if cfg.ShouldSyncSubaccounts {
 		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval, gqlClient)
