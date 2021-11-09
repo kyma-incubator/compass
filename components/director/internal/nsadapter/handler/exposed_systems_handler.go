@@ -3,12 +3,12 @@ package handler
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/nsmodel"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -79,44 +79,18 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, nsmodel.NewNSError("missing or invalid required report type query parameter"))
 		return
 	}
-	
+
 	if reportType == "delta" {
 		for _, scc := range reportData.Value {
-			for _, system := range scc.ExposedSystems {
-				if system.SystemNumber != "" {
-					a.appSvc.Upsert(ctx,)
-				} else {
-					system := GetSystem(subacc, locId, virtual_svc); //fetch all systems for the current scc from the db
-					if system exists {
-						UpdateApp()
-						GetLabel()
-						SetLabel()
-						if needed
-					} else {
-						CreateApplication()
-
-					}
-				}
-				//If there are missing systems in SCC report -> mark the respective systems in CMP as unreachable
-				allDBsystems = getAllForSCC(subacc, locationID)
-				unreachable
-				filterUnreachable(dbSystems, systems)
-				for _, system := range unreachable {
-					markAsUnreachable(system)
-				}
+			if err := a.handleSccSystems(ctx, scc); err != nil {
+				//TODO return proper response //system
 			}
 		}
-		//Check for each SCC, if there is a difference in its systems in CMP and the reported system
-		//If there are new systems added to the SCC report-> create applications in CMP for them
+		//TODO return proper response
+	}
 
-		//For all systems which are present in both places - compare data (type and protocol)
-	    //[\{"protocol":"HTTP","host":"127.0.0.1:8080","description":"","type":"otherSAPsys","status":"disabled"}]
-//label with protocol, virtual_host and location ID
-// join tenants_apps on app_id applications on app_id labels where correct protocol, virtual_host and location ID
-		//Systems should be labeled that the source is NS
-		//Identify which is the landscape
-	} else if reportType == "full" {
-
+	if reportType == "full" {
+		//TODO implement
 	}
 
 	if err := json.NewEncoder(rw).Encode(nsmodel.NewNSError("response test")); err != nil {
@@ -126,4 +100,50 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func (a *Handler) handleSccSystems(ctx context.Context, scc nsmodel.SCC) error {
+	if err := a.upsertSccSystems(ctx, scc); err != nil {
+		return err
+	}
 
+	if err := a.markAsUnreachable(ctx, scc); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) error {
+	for _, system := range scc.ExposedSystems {
+		if system.SystemNumber != "" {
+			if _, err := a.appSvc.Upsert(ctx, nsmodel.ToAppRegisterInput(system, scc.Subaccount, scc.LocationID)); err != nil {
+				return errors.Wrapf(err, "while upserting Application")
+			}
+			return nil
+		}
+
+		app, err := a.appSvc.GetSystem(ctx, scc.Subaccount, scc.LocationID, system.Host)
+		if err != nil {
+			//TODO check if the app exists? Check the error type?
+		}
+		if app exists {
+			if err := a.appSvc.Update(ctx, app.ID, nsmodel.ToAppUpdateInput(system, scc.Subaccount, scc.LocationID)); err != nil {
+				return errors.Wrapf(err, "while updating Application with id %s", app.ID)
+			}
+		} else {
+			if _, err := a.appSvc.Create(ctx, nsmodel.ToAppRegisterInput(system, scc.Subaccount, scc.LocationID)); err != nil {
+				return errors.Wrapf(err, "while creating Application")
+			}
+		}
+	}
+	return nil
+}
+
+func (a *Handler) markAsUnreachable(ctx context.Context, scc nsmodel.SCC) error {
+	//If there are missing systems in SCC report -> mark the respective systems in CMP as unreachable
+	allDBsystems = getAllForSCC(subacc, locationID)
+	unreachable
+	filterUnreachable(dbSystems, systems)
+	for _, system := range unreachable {
+		markAsUnreachable(system)
+	}
+	return nil
+}

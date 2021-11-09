@@ -3,12 +3,14 @@ package nsmodel
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 type System struct {
 	Protocol     string `json:"protocol"`
 	Host         string `json:"host"`
 	SystemType   string `json:"type"`
+	Description  string `json:"description"`
 	Status       string `json:"status"`
 	SystemNumber string `json:"systemNumber"`
 }
@@ -18,6 +20,7 @@ func (s System) Validate() error {
 		validation.Field(&s.Protocol, validation.Required),
 		validation.Field(&s.Host, validation.Required),
 		validation.Field(&s.SystemType, validation.Required),
+		validation.Field(&s.Description, validation.Required),
 		validation.Field(&s.Status, validation.Required),
 	)
 }
@@ -72,13 +75,25 @@ func validateSCCs(value interface{}) error {
 	return nil
 }
 
+func ToAppRegisterInput(system System, tenant string, locationID string) model.ApplicationRegisterInput {
+	return model.ApplicationRegisterInput{
+		Name:         "",
+		ProviderName: str.Ptr("SAP"),
+		Labels:       map[string]interface{}{"SCC": locationID + system.Host},
+		SystemNumber: str.Ptr(system.SystemNumber),
+		Status:       system.Status,
+	}
+}
 
-func ToAppInput(system System,tenant string, locationID string) model.ApplicationRegisterInput{
-	appInput := model.ApplicationRegisterInput{
-		Name:                "",
-		ProviderName:        "SAP",
-		Labels: map[string]interface{}{"SCC": },
-		SystemNumber:        system.SystemNumber,
-		Status: system.Status,
+func ToAppUpdateInput(system System, tenant string, locationID string) model.ApplicationUpdateInput {
+	// we should update the description, system type, protocol and system status
+	// Where we will store the system type and the protocol ???
+	return model.ApplicationUpdateInput{
+		Description:         str.Ptr(system.Description),
+		IntegrationSystemID: nil,
+		StatusCondition:     nil,
+		BaseURL:             nil,
+		Labels:              nil,
+		Status:              system.Status,
 	}
 }
