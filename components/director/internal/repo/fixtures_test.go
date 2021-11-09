@@ -12,9 +12,11 @@ const (
 	biaTableName     = "bia"
 
 	appID          = "appID"
-	appID2          = "appID2"
+	appID2         = "appID2"
 	appName        = "appName"
+	appName2        = "appName"
 	appDescription = "appDesc"
+	appDescription2 = "appDesc"
 
 	bundleID          = "bundleID"
 	bundleName        = "bundleName"
@@ -45,6 +47,12 @@ var fixUser = User{
 
 var fixApp = &App{
 	ID:          appID,
+	Name:        appName,
+	Description: appDescription,
+}
+
+var fixApp2 = &App{
+	ID:          appID2,
 	Name:        appName,
 	Description: appDescription,
 }
