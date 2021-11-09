@@ -16,12 +16,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
-// Creator missing godoc
+// Creator is an interface for creating entities with externally managed tenant accesses (m2m table or view)
 type Creator interface {
 	Create(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error
 }
 
-// CreatorGlobal missing godoc
+// CreatorGlobal is an interface for creating global entities without tenant or entities with tenant embedded in them.
 type CreatorGlobal interface {
 	Create(ctx context.Context, dbEntity interface{}) error
 }
@@ -33,7 +33,7 @@ type universalCreator struct {
 	ownerCheckRequired bool
 }
 
-// NewCreator is a simplified constructor for child entities
+// NewCreator is a constructor for Creator about entities with externally managed tenant accesses (m2m table or view)
 func NewCreator(tableName string, columns []string) Creator {
 	return &universalCreator{
 		tableName:          tableName,
@@ -42,6 +42,8 @@ func NewCreator(tableName string, columns []string) Creator {
 	}
 }
 
+// NewCreatorWithMatchingColumns is a constructor for Creator about entities with externally managed tenant accesses (m2m table or view).
+// In addition, matcherColumns can be added in order to identify already existing top-level entities and prevent their duplicate creation.
 func NewCreatorWithMatchingColumns(tableName string, columns []string, matcherColumns []string) Creator {
 	return &universalCreator{
 		tableName:          tableName,
@@ -51,7 +53,7 @@ func NewCreatorWithMatchingColumns(tableName string, columns []string, matcherCo
 	}
 }
 
-// NewCreatorGlobal missing godoc
+// NewCreatorGlobal is a constructor for GlobalCreator about entities without tenant or entities with tenant embedded in them.
 func NewCreatorGlobal(resourceType resource.Type, tableName string, columns []string) CreatorGlobal {
 	return &globalCreator{
 		resourceType: resourceType,
@@ -60,7 +62,9 @@ func NewCreatorGlobal(resourceType resource.Type, tableName string, columns []st
 	}
 }
 
-// Create missing godoc
+// Create is a method for creating entities with externally managed tenant accesses (m2m table or view)
+// In case of top level entity it creates tenant access record in the m2m table as well.
+// In case of child entity first it checks if the calling tenant has access to the parent entity and then creates the child entity.
 func (c *universalCreator) Create(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -217,6 +221,7 @@ type globalCreator struct {
 	columns      []string
 }
 
+// Create creates a new global entity or entity with embedded tenant in it.
 func (c *globalCreator) Create(ctx context.Context, dbEntity interface{}) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
