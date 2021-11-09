@@ -27,6 +27,10 @@ func WithTimeout(h http.Handler, timeout time.Duration) (http.Handler, error) {
 		return nil, err
 	}
 
+	return WithTimeoutWithErrorMessage(h,timeout,msg)
+}
+
+func WithTimeoutWithErrorMessage(h http.Handler, timeout time.Duration, msg []byte) (http.Handler, error) {
 	preTimoutLoggingHandler := newTimeoutLoggingHandler(h, timeout, msg)
 	timeoutHandler := http.TimeoutHandler(preTimoutLoggingHandler, timeout, string(msg))
 	postTimeoutLoggingHandler := newTimeoutLoggingHandler(timeoutHandler, timeout, msg)
