@@ -424,7 +424,7 @@ func createTenants(ctx context.Context, gqlClient GraphQLClient, currTenants map
 		}
 		var res int
 		log.C(ctx).Info("-------------")
-		tenantsQuery := fmt.Sprintf("mutation { in: %s }", string(bytes))
+		tenantsQuery := fmt.Sprintf("mutation { writeTenants(in: %s )}", string(bytes))
 		log.C(ctx).Info(tenantsQuery)
 		log.C(ctx).Info("-------------")
 		if err = gqlClient.Run(ctx, gcli.NewRequest(tenantsQuery), &res); err != nil {
