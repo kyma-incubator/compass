@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 
@@ -37,6 +41,46 @@ func (d *Director) WriteTenants(ctx context.Context, tenants []model.BusinessTen
 
 func (d *Director) DeleteTenants(ctx context.Context, tenants []model.BusinessTenantMappingInput) error {
 	return modifyTenants(ctx, tenants, "deleteTenants", d.client)
+}
+
+func (d *Director) CreateLabelDefinition(ctx context.Context, lblDef graphql.LabelDefinitionInput) error {
+	res := struct {
+		LabelDefinition graphql.LabelDefinition `json:"createLabelDefinition"`
+	}{}
+
+	gqlizer := graphqlizer.Graphqlizer{}
+	in, err := gqlizer.LabelDefinitionInputToGQL(lblDef)
+	gqlFieldProvider := graphqlizer.GqlFieldsProvider{}
+	if err != nil {
+		return errors.Wrap(err, "while creating label definition input")
+	}
+	lblDefQuery := fmt.Sprintf(`mutation { createLabelDefinition(in: %s ) {"%s"}}`, in, gqlFieldProvider.ForLabelDefinition())
+	gRequest := gcli.NewRequest(lblDefQuery)
+
+	if err = d.client.Run(ctx, gRequest, &res); err != nil {
+		return errors.Wrap(err, "while executing gql query")
+	}
+	return nil
+}
+
+func (d *Director) UpdateLabelDefinition(ctx context.Context, lblDef graphql.LabelDefinitionInput) error {
+	res := struct {
+		LabelDefinition graphql.LabelDefinition `json:"updateLabelDefinition"`
+	}{}
+
+	gqlizer := graphqlizer.Graphqlizer{}
+	in, err := gqlizer.LabelDefinitionInputToGQL(lblDef)
+	gqlFieldProvider := graphqlizer.GqlFieldsProvider{}
+	if err != nil {
+		return errors.Wrap(err, "while creating label definition input")
+	}
+	lblDefQuery := fmt.Sprintf(`mutation { updateLabelDefinition(in: %s ) {"%s"}}`, in, gqlFieldProvider.ForLabelDefinition())
+	gRequest := gcli.NewRequest(lblDefQuery)
+
+	if err = d.client.Run(ctx, gRequest, &res); err != nil {
+		return errors.Wrap(err, "while executing gql query")
+	}
+	return nil
 }
 
 func modifyTenants(ctx context.Context, tenants []model.BusinessTenantMappingInput, mutation string, client GraphQLClient) error {
