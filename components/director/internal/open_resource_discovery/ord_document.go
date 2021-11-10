@@ -147,6 +147,10 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				doc.ConsumptionBundles[i].ShortDescription = &emptyString
 			}
 
+			if doc.ConsumptionBundles[i].Description == nil || *doc.ConsumptionBundles[i].Description == "" {
+				doc.ConsumptionBundles[i].Description = &emptyString
+			}
+
 			if err := validateBundleInput(bndl); err != nil {
 				return errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID))
 			}
