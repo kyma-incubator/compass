@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	"strings"
 	"time"
-
-	gcli "github.com/machinebox/graphql"
 
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -113,16 +110,16 @@ type TenantSyncService interface {
 	SyncTenants() error
 }
 
-// GraphQLClient expects graphql implementation
-//go:generate mockery --name=GraphQLClient --output=automock --outpkg=automock --case=underscore
-type GraphQLClient interface {
-	Run(context.Context, *gcli.Request, interface{}) error
+// DirectorGraphQLClient expects graphql implementation
+//go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore
+type DirectorGraphQLClient interface {
+	WriteTenants(context.Context, []model.BusinessTenantMappingInput) error
+	DeleteTenants(context.Context, []model.BusinessTenantMappingInput) error
 }
 
 const (
 	retryAttempts          = 7
 	retryDelayMilliseconds = 100
-	tenantQueryPattern     = `{name: "%s",externalTenant: "%s",parent: "%s",subdomain: "%s",region:"%s",type:"%s",provider: "%s"},`
 )
 
 // GlobalAccountService missing godoc
@@ -138,7 +135,7 @@ type GlobalAccountService struct {
 	retryAttempts         uint
 	fullResyncInterval    time.Duration
 	toEventsPage          func([]byte) *eventsPage
-	gqlClient             GraphQLClient
+	gqlClient             DirectorGraphQLClient
 	tenantInsertChunkSize int
 }
 
@@ -160,7 +157,7 @@ type SubaccountService struct {
 	movedRuntimeLabelKey            string
 	fullResyncInterval              time.Duration
 	toEventsPage                    func([]byte) *eventsPage
-	gqlClient                       GraphQLClient
+	gqlClient                       DirectorGraphQLClient
 	tenantInsertChunkSize           int
 }
 
@@ -172,7 +169,7 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 	providerName string, regionName string, client EventAPIClient,
 	tenantStorageService TenantStorageService,
 	fullResyncInterval time.Duration,
-	gqlClient GraphQLClient,
+	gqlClient DirectorGraphQLClient,
 	tenantInsertChunkSize int) *GlobalAccountService {
 	return &GlobalAccountService{
 		transact:             transact,
@@ -210,7 +207,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 	labelService LabelService,
 	movedRuntimeLabelKey string,
 	fullResyncInterval time.Duration,
-	gqlClient GraphQLClient,
+	gqlClient DirectorGraphQLClient,
 	tenantInsertChunkSize int) *SubaccountService {
 	return &SubaccountService{
 		transact:                        transact,
@@ -306,6 +303,10 @@ func (s SubaccountService) SyncTenants() error {
 			}
 		}
 
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+
 		// Order of event processing matters
 		if len(tenantsToCreate) > 0 {
 			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize); err != nil {
@@ -318,14 +319,11 @@ func (s SubaccountService) SyncTenants() error {
 			}
 		}
 		if len(tenantsToDelete) > 0 {
-			if err := deleteTenants(ctx, s.tenantStorageService, currentTenants, tenantsToDelete); err != nil {
+			if err := deleteTenants(ctx, s.gqlClient, s.tenantStorageService, currentTenants, tenantsToDelete, s.tenantInsertChunkSize); err != nil {
 				return errors.Wrap(err, "while deleting subaccounts")
 			}
 		}
 
-		if err = tx.Commit(); err != nil {
-			return err
-		}
 		log.C(ctx).Printf("Processed new events for region: %s", region)
 	}
 
@@ -394,6 +392,10 @@ func (s GlobalAccountService) SyncTenants() error {
 		}
 	}
 
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
 	// Order of event processing matters
 	if len(tenantsToCreate) > 0 {
 		if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, s.tenantsRegion, s.providerName, s.tenantInsertChunkSize); err != nil {
@@ -401,14 +403,11 @@ func (s GlobalAccountService) SyncTenants() error {
 		}
 	}
 	if len(tenantsToDelete) > 0 {
-		if err := deleteTenants(ctx, s.tenantStorageService, currentTenants, tenantsToDelete); err != nil {
+		if err := deleteTenants(ctx, s.gqlClient, s.tenantStorageService, currentTenants, tenantsToDelete, s.tenantInsertChunkSize); err != nil {
 			return errors.Wrap(err, "moving deleting accounts")
 		}
 	}
 
-	if err = tx.Commit(); err != nil {
-		return err
-	}
 	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
 		return err
 	}
@@ -416,7 +415,7 @@ func (s GlobalAccountService) SyncTenants() error {
 	return nil
 }
 
-func createTenants(ctx context.Context, gqlClient GraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, region string, provider string, maxChunkSize int) error {
+func createTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, region string, provider string, maxChunkSize int) error {
 	tenantsToCreate := parents(currTenants, eventsTenants, provider)
 	for _, eventTenant := range eventsTenants {
 		if parentGUID, ok := currTenants[eventTenant.Parent]; ok {
@@ -426,35 +425,25 @@ func createTenants(ctx context.Context, gqlClient GraphQLClient, currTenants map
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
 	if len(tenantsToCreate) > 0 {
-		for {
-			if len(tenantsToCreate) == 0 {
-				break
-			}
-			chunkSize := int(math.Min(float64(len(tenantsToCreate)), float64(maxChunkSize)))
-			tenantsChunk := tenantsToCreate[:chunkSize]
-			if err := insertTenantsChunk(ctx, tenantsChunk, gqlClient); err != nil {
-				return err
-			}
-			tenantsToCreate = tenantsToCreate[chunkSize:]
-		}
+		return executeInChunks(ctx, tenantsToCreate, func(ctx context.Context, chunk []model.BusinessTenantMappingInput) error {
+			return gqlClient.WriteTenants(ctx, chunk)
+		}, maxChunkSize)
 	}
 	return nil
 }
 
-func insertTenantsChunk(ctx context.Context, tenantsChunk []model.BusinessTenantMappingInput, gqlClient GraphQLClient) error {
-	var res map[string]interface{}
-
-	mutationBuilder := strings.Builder{}
-	for _, tnt := range tenantsChunk {
-		mutationBuilder.WriteString(fmt.Sprintf(tenantQueryPattern, tnt.Name, tnt.ExternalTenant, tnt.Parent, tnt.Subdomain, tnt.Region, tnt.Type, tnt.Provider))
+func executeInChunks(ctx context.Context, tenants []model.BusinessTenantMappingInput, f func(ctx context.Context, chunk []model.BusinessTenantMappingInput) error, maxChunkSize int) error {
+	for {
+		if len(tenants) == 0 {
+			return nil
+		}
+		chunkSize := int(math.Min(float64(len(tenants)), float64(maxChunkSize)))
+		tenantsChunk := tenants[:chunkSize]
+		if err := f(ctx, tenantsChunk); err != nil {
+			return err
+		}
+		tenants = tenants[chunkSize:]
 	}
-	tenantsQuery := fmt.Sprintf("mutation { writeTenants(in:[%s])}", mutationBuilder.String()[:mutationBuilder.Len()-1])
-	gRequest := gcli.NewRequest(tenantsQuery)
-	gRequest.Header.Set("Tenant", "global")
-	if err := gqlClient.Run(ctx, gRequest, &res); err != nil {
-		return errors.Wrap(err, "while executing gql query")
-	}
-	return nil
 }
 
 func parents(currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, providerName string) []model.BusinessTenantMappingInput {
@@ -547,7 +536,7 @@ func checkForScenarios(ctx context.Context, labelService LabelService, runtime *
 	return nil
 }
 
-func deleteTenants(ctx context.Context, tenantStorageService TenantStorageService, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
+func deleteTenants(ctx context.Context, gqlClient DirectorGraphQLClient, tenantStorageService TenantStorageService, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, maxChunkSize int) error {
 	tenantsToDelete := make([]model.BusinessTenantMappingInput, 0)
 	for _, toDelete := range eventsTenants {
 		if _, ok := currTenants[toDelete.ExternalTenant]; ok {
@@ -555,11 +544,9 @@ func deleteTenants(ctx context.Context, tenantStorageService TenantStorageServic
 		}
 	}
 
-	if err := tenantStorageService.DeleteMany(ctx, tenantsToDelete); err != nil {
-		return errors.Wrap(err, "while removing tenants")
-	}
-
-	return nil
+	return executeInChunks(ctx, tenantsToDelete, func(ctx context.Context, chunk []model.BusinessTenantMappingInput) error {
+		return gqlClient.DeleteTenants(ctx, chunk)
+	}, maxChunkSize)
 }
 
 func (s GlobalAccountService) getAccountsToCreate(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {

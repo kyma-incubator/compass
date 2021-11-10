@@ -1466,5 +1466,6 @@ type Mutation {
 	"""
 	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
+	deleteTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 }
 

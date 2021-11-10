@@ -19,6 +19,7 @@ type BusinessTenantMappingService interface {
 	ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error)
 	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
 	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
+	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
@@ -132,6 +133,28 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 
 	if err := r.srv.UpsertMany(ctx, tenants...); err != nil {
 		return -1, errors.Wrap(err, "while writing new tenants")
+	}
+
+	if err = tx.Commit(); err != nil {
+		return -1, err
+	}
+
+	return len(tenants), nil
+}
+
+func (r *Resolver) Delete(ctx context.Context, inputTenants []*graphql.BusinessTenantMappingInput) (int, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return -1, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tenants := r.conv.MultipleInputFromGraphQL(inputTenants)
+
+	if err := r.srv.DeleteMany(ctx, tenants); err != nil {
+		return -1, errors.Wrap(err, "while deleting tenants")
 	}
 
 	if err = tx.Commit(); err != nil {
