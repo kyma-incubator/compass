@@ -117,7 +117,7 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 	var resp *http.Response
 	var err error
 
-	log.C(ctx).Infof("ORD Webhook URL: %s\n", webhook.URL)
+	log.C(ctx).Infof("ORD Webhook URL: %s\n", *webhook.URL)
 	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) ORD webhook is configured with %q access strategy.", app.Name, app.ID, app.Type, *webhook.Auth.AccessStrategy)
 		executor, err := c.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*webhook.Auth.AccessStrategy))
