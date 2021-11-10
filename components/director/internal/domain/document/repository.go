@@ -28,7 +28,7 @@ var (
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in model.Document) (*Entity, error)
+	ToEntity(in *model.Document) (*Entity, error)
 	FromEntity(in Entity) (model.Document, error)
 }
 
@@ -110,7 +110,7 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Docu
 		return apperrors.NewInternalError("Document cannot be empty")
 	}
 
-	entity, err := r.conv.ToEntity(*item)
+	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while creating Document entity from model")
 	}

@@ -3,6 +3,7 @@ package formation_test
 import (
 	"context"
 	"errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -366,7 +367,7 @@ func TestServiceAssignFormation(t *testing.T) {
 	objectID := "123"
 	lbl := &model.Label{
 		ID:         "123",
-		Tenant:     tnt,
+		Tenant:     str.Ptr(tnt),
 		Key:        model.ScenariosKey,
 		Value:      []interface{}{testFormation},
 		ObjectID:   objectID,
@@ -541,7 +542,7 @@ func TestServiceAssignFormation(t *testing.T) {
 					Version:    0,
 				}).Return(&model.Label{
 					ID:         "123",
-					Tenant:     tnt,
+					Tenant:     str.Ptr(tnt),
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormation},
 					ObjectID:   objectID,
@@ -566,7 +567,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(&model.Label{
 					ID:         "123",
-					Tenant:     tnt,
+					Tenant:     str.Ptr(tnt),
 					Key:        model.ScenariosKey,
 					Value:      []interface{}{5},
 					ObjectID:   objectID,
@@ -677,7 +678,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 	objectID := "123"
 	lblSingleFormation := &model.Label{
 		ID:         "123",
-		Tenant:     tnt,
+		Tenant:     str.Ptr(tnt),
 		Key:        model.ScenariosKey,
 		Value:      []interface{}{testFormation},
 		ObjectID:   objectID,
@@ -686,7 +687,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 	}
 	lbl := &model.Label{
 		ID:         "123",
-		Tenant:     tnt,
+		Tenant:     str.Ptr(tnt),
 		Key:        model.ScenariosKey,
 		Value:      []interface{}{testFormation, secondTestFormation},
 		ObjectID:   objectID,
@@ -857,7 +858,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 					Version:    0,
 				}).Return(&model.Label{
 					ID:         "123",
-					Tenant:     tnt,
+					Tenant:     str.Ptr(tnt),
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormation},
 					ObjectID:   objectID,
@@ -885,7 +886,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, tnt, lblInput).Return(&model.Label{
 					ID:         "123",
-					Tenant:     tnt,
+					Tenant:     str.Ptr(tnt),
 					Key:        model.ScenariosKey,
 					Value:      []interface{}{5},
 					ObjectID:   objectID,

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"regexp"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -179,7 +178,6 @@ const (
 
 func fixBundleModel(name, desc string) *model.Bundle {
 	return &model.Bundle{
-		TenantID:                       tenantID,
 		ApplicationID:                  appID,
 		Name:                           name,
 		Description:                    &desc,
@@ -386,7 +384,6 @@ func fixEntityBundle(id, name, desc string) *bundle.Entity {
 	}
 
 	return &bundle.Entity{
-		TenantID:                      tenantID,
 		ApplicationID:                 appID,
 		Name:                          name,
 		Description:                   descSQL,
@@ -409,19 +406,19 @@ func fixEntityBundle(id, name, desc string) *bundle.Entity {
 }
 
 func fixBundleColumns() []string {
-	return []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	return []string{"id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
 }
 
 func fixBundleRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
+	return []driver.Value{id, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
 func fixBundleRowWithAppID(id, applicationID string) []driver.Value {
-	return []driver.Value{id, tenantID, applicationID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
+	return []driver.Value{id, applicationID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
 func fixBundleCreateArgs(defAuth, schema string, bndl *model.Bundle) []driver.Value {
-	return []driver.Value{bundleID, tenantID, appID, bndl.Name, bndl.Description, schema, defAuth, ordID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies), bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error}
+	return []driver.Value{bundleID, appID, bndl.Name, bndl.Description, schema, defAuth, ordID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies), bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error}
 }
 
 func fixDefaultAuth() string {
@@ -460,7 +457,6 @@ func fixModelBundleInstanceAuth(id string) *model.BundleInstanceAuth {
 	return &model.BundleInstanceAuth{
 		ID:          id,
 		BundleID:    bundleID,
-		Tenant:      tenantID,
 		Context:     &context,
 		InputParams: &params,
 		Auth:        fixModelAuth(),
@@ -491,7 +487,6 @@ func fixGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 
 func fixModelAPIBundleReference(bundleID, apiID string) *model.BundleReference {
 	return &model.BundleReference{
-		Tenant:              tenantID,
 		BundleID:            str.Ptr(bundleID),
 		ObjectType:          model.BundleAPIReference,
 		ObjectID:            str.Ptr(apiID),
@@ -501,7 +496,6 @@ func fixModelAPIBundleReference(bundleID, apiID string) *model.BundleReference {
 
 func fixModelEventBundleReference(bundleID, eventID string) *model.BundleReference {
 	return &model.BundleReference{
-		Tenant:     tenantID,
 		BundleID:   str.Ptr(bundleID),
 		ObjectType: model.BundleEventReference,
 		ObjectID:   str.Ptr(eventID),
@@ -511,24 +505,4 @@ func fixModelEventBundleReference(bundleID, eventID string) *model.BundleReferen
 func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 	t := graphql.Timestamp(time)
 	return &t
-}
-
-func fixUnescapedUpdateTenantIsolationSubquery() string {
-	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
-}
-
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
-
-func fixUnescapedTenantIsolationSubquery() string {
-	return fixUnescapedTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
-}
-
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
 }

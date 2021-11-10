@@ -64,7 +64,6 @@ func TestService_Create(t *testing.T) {
 	}
 
 	modelBundle := &model.Bundle{
-		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
 		Name:                           name,
 		Description:                    &desc,
@@ -292,7 +291,6 @@ func TestService_Update(t *testing.T) {
 	})
 
 	bundleModel := &model.Bundle{
-		TenantID:                       tenantID,
 		ApplicationID:                  "id",
 		Name:                           name,
 		Description:                    &desc,

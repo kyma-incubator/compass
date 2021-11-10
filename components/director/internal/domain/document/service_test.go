@@ -24,11 +24,11 @@ func TestService_Get(t *testing.T) {
 	id := "foo"
 
 	documentModel := fixModelDocument("1", id)
-	tnt := documentModel.Tenant
+	tnt := givenTenant()
 	externalTnt := "external-tnt"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, documentModel.Tenant, externalTnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
 		Name               string
@@ -181,7 +181,7 @@ func TestService_CreateToBundle(t *testing.T) {
 	frID := "fr-id"
 	timestamp := time.Now()
 	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
-	modelDoc := modelInput.ToDocumentWithinBundle(id, tnt, bundleID, appID)
+	modelDoc := modelInput.ToDocumentWithinBundle(id, bundleID, appID)
 
 	testCases := []struct {
 		Name               string
@@ -292,14 +292,12 @@ func TestService_Delete(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	bundleID := "foobar"
-	documentModel := fixModelDocument(id, bundleID)
 
-	tnt := documentModel.Tenant
+	tnt := givenTenant()
 	externalTnt := "external-tnt"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, documentModel.Tenant, externalTnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
 		Name               string

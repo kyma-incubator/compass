@@ -31,7 +31,6 @@ func TestResolver_AddEventToBundle(t *testing.T) {
 
 	modelEvent, spec, bundleRef := fixFullEventDefinitionModel("test")
 	modelBndl := &model.Bundle{
-		TenantID:      tenantID,
 		ApplicationID: appID,
 		BaseEntity: &model.BaseEntity{
 			ID: bundleID,

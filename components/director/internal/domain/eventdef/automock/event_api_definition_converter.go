@@ -29,14 +29,16 @@ func (_m *EventAPIDefinitionConverter) FromEntity(entity eventdef.Entity) model.
 }
 
 // ToEntity provides a mock function with given fields: apiModel
-func (_m *EventAPIDefinitionConverter) ToEntity(apiModel model.EventDefinition) eventdef.Entity {
+func (_m *EventAPIDefinitionConverter) ToEntity(apiModel *model.EventDefinition) *eventdef.Entity {
 	ret := _m.Called(apiModel)
 
-	var r0 eventdef.Entity
-	if rf, ok := ret.Get(0).(func(model.EventDefinition) eventdef.Entity); ok {
+	var r0 *eventdef.Entity
+	if rf, ok := ret.Get(0).(func(*model.EventDefinition) *eventdef.Entity); ok {
 		r0 = rf(apiModel)
 	} else {
-		r0 = ret.Get(0).(eventdef.Entity)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*eventdef.Entity)
+		}
 	}
 
 	return r0

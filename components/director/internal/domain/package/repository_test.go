@@ -1,60 +1,52 @@
 package ordpackage_test
 
 import (
-	"context"
-	"fmt"
+	"database/sql/driver"
+	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	ordpackage "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestPgRepository_Create(t *testing.T) {
-	//GIVEN
-	pkgModel := fixPackageModel()
-	pkgEntity := fixEntityPackage()
-	insertQuery := `^INSERT INTO public.packages \(.+\) VALUES \(.+\)$`
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Create Package",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenantID, appID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       `^INSERT INTO public.packages \(.+\) VALUES \(.+\)$`,
+				Args:        fixPackageRow(),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       ordpackage.NewRepository,
+		ModelEntity:               fixPackageModel(),
+		DBEntity:                  fixEntityPackage(),
+		NilModelEntity:            fixNilModelPackage(),
+		TenantID:                  tenantID,
+		DisableConverterErrorTest: true,
+	}
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-
-		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixPackageRow()...).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := automock.EntityConverter{}
-		convMock.On("ToEntity", pkgModel).Return(pkgEntity, nil).Once()
-		pgRepository := ordpackage.NewRepository(&convMock)
-		//WHEN
-		err := pgRepository.Create(ctx, pkgModel)
-		//THEN
-		require.NoError(t, err)
-		sqlMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when item is nil", func(t *testing.T) {
-		ctx := context.TODO()
-		convMock := automock.EntityConverter{}
-		pgRepository := ordpackage.NewRepository(&convMock)
-		// WHEN
-		err := pgRepository.Create(ctx, nil)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "model can not be nil")
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.packages SET vendor = ?, title = ?, short_description = ?, description = ?, version = ?, package_links = ?, links = ?,
 		licence_type = ?, tags = ?, countries = ?, labels = ?, policy_level = ?, custom_policy_level = ?, part_of_products = ?, line_of_business = ?, industry = ?, resource_hash = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
@@ -235,4 +227,4 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
 	})
-}
+}*/

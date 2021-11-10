@@ -14,20 +14,20 @@ type WebhookService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, resourceID, in, converterFunc
-func (_m *WebhookService) Create(ctx context.Context, resourceID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error) {
-	ret := _m.Called(ctx, resourceID, in, converterFunc)
+// Create provides a mock function with given fields: ctx, resourceID, in, objectType
+func (_m *WebhookService) Create(ctx context.Context, resourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error) {
+	ret := _m.Called(ctx, resourceID, in, objectType)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookInput, model.WebhookConverterFunc) string); ok {
-		r0 = rf(ctx, resourceID, in, converterFunc)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookInput, model.WebhookReferenceObjectType) string); ok {
+		r0 = rf(ctx, resourceID, in, objectType)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookInput, model.WebhookConverterFunc) error); ok {
-		r1 = rf(ctx, resourceID, in, converterFunc)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookInput, model.WebhookReferenceObjectType) error); ok {
+		r1 = rf(ctx, resourceID, in, objectType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -35,13 +35,13 @@ func (_m *WebhookService) Create(ctx context.Context, resourceID string, in mode
 	return r0, r1
 }
 
-// Delete provides a mock function with given fields: ctx, id
-func (_m *WebhookService) Delete(ctx context.Context, id string) error {
-	ret := _m.Called(ctx, id)
+// Delete provides a mock function with given fields: ctx, id, objectType
+func (_m *WebhookService) Delete(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) error {
+	ret := _m.Called(ctx, id, objectType)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookReferenceObjectType) error); ok {
+		r0 = rf(ctx, id, objectType)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -49,13 +49,13 @@ func (_m *WebhookService) Delete(ctx context.Context, id string) error {
 	return r0
 }
 
-// Get provides a mock function with given fields: ctx, id
-func (_m *WebhookService) Get(ctx context.Context, id string) (*model.Webhook, error) {
-	ret := _m.Called(ctx, id)
+// Get provides a mock function with given fields: ctx, id, objectType
+func (_m *WebhookService) Get(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error) {
+	ret := _m.Called(ctx, id, objectType)
 
 	var r0 *model.Webhook
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Webhook); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookReferenceObjectType) *model.Webhook); ok {
+		r0 = rf(ctx, id, objectType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Webhook)
@@ -63,8 +63,8 @@ func (_m *WebhookService) Get(ctx context.Context, id string) (*model.Webhook, e
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookReferenceObjectType) error); ok {
+		r1 = rf(ctx, id, objectType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -95,13 +95,13 @@ func (_m *WebhookService) ListAllApplicationWebhooks(ctx context.Context, applic
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, id, in
-func (_m *WebhookService) Update(ctx context.Context, id string, in model.WebhookInput) error {
-	ret := _m.Called(ctx, id, in)
+// Update provides a mock function with given fields: ctx, id, in, objectType
+func (_m *WebhookService) Update(ctx context.Context, id string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) error {
+	ret := _m.Called(ctx, id, in, objectType)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookInput) error); ok {
-		r0 = rf(ctx, id, in)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookInput, model.WebhookReferenceObjectType) error); ok {
+		r0 = rf(ctx, id, in, objectType)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -1,10 +1,8 @@
 package bundle_test
 
 import (
-	"context"
+	"database/sql/driver"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -13,8 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,57 +19,46 @@ func TestPgRepository_Create(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
+	var nilBundleMode *model.Bundle
 	bndlModel := fixBundleModel(name, desc)
 	bndlEntity := fixEntityBundle(bundleID, name, desc)
-	insertQuery := `^INSERT INTO public.bundles \(.+\) VALUES \(.+\)$`
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		defAuth, err := json.Marshal(bndlModel.DefaultInstanceAuth)
-		require.NoError(t, err)
+	defAuth, err := json.Marshal(bndlModel.DefaultInstanceAuth)
+	require.NoError(t, err)
 
-		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixBundleCreateArgs(string(defAuth), *bndlModel.InstanceAuthRequestInputSchema, bndlModel)...).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Create Bundle",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenantID, appID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       `^INSERT INTO public.bundles \(.+\) VALUES \(.+\)$`,
+				Args:        fixBundleCreateArgs(string(defAuth), *bndlModel.InstanceAuthRequestInputSchema, bndlModel),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       bundle.NewRepository,
+		ModelEntity:               bndlModel,
+		DBEntity:                  bndlEntity,
+		NilModelEntity:            nilBundleMode,
+		TenantID:                  tenantID,
+	}
 
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := automock.EntityConverter{}
-		convMock.On("ToEntity", bndlModel).Return(bndlEntity, nil).Once()
-		pgRepository := bundle.NewRepository(&convMock)
-		//WHEN
-		err = pgRepository.Create(ctx, bndlModel)
-		//THEN
-		require.NoError(t, err)
-		sqlMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when conversion from model to entity failed", func(t *testing.T) {
-		ctx := context.TODO()
-		convMock := automock.EntityConverter{}
-		convMock.On("ToEntity", bndlModel).Return(&bundle.Entity{}, errors.New("test error"))
-		pgRepository := bundle.NewRepository(&convMock)
-		// WHEN
-		err := pgRepository.Create(ctx, bndlModel)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "test error")
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when item is nil", func(t *testing.T) {
-		ctx := context.TODO()
-		convMock := automock.EntityConverter{}
-		pgRepository := bundle.NewRepository(&convMock)
-		// WHEN
-		err := pgRepository.Create(ctx, nil)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "model can not be nil")
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
-
+/*
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ? WHERE %s AND id = ?`, fixUnescapedUpdateTenantIsolationSubquery()))
 
@@ -636,3 +621,4 @@ func TestPgRepository_ListByApplicationIDNoPaging(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 }
+*/

@@ -256,11 +256,12 @@ func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 func fixModelApplicationWebhooks(webhookID, applicationID string) []*model.Webhook {
 	return []*model.Webhook{
 		{
-			ApplicationID: str.Ptr(applicationID),
-			ID:            webhookID,
-			Type:          model.WebhookTypeConfigurationChanged,
-			URL:           str.Ptr("foourl"),
-			Auth:          &model.Auth{},
+			ObjectID:   applicationID,
+			ObjectType: model.ApplicationWebhookReference,
+			ID:         webhookID,
+			Type:       model.WebhookTypeConfigurationChanged,
+			URL:        str.Ptr("foourl"),
+			Auth:       &model.Auth{},
 		},
 	}
 }
@@ -268,11 +269,12 @@ func fixModelApplicationWebhooks(webhookID, applicationID string) []*model.Webho
 func fixModelApplicationTemplateWebhooks(webhookID, applicationTemplateID string) []*model.Webhook {
 	return []*model.Webhook{
 		{
-			ApplicationTemplateID: str.Ptr(applicationTemplateID),
-			ID:                    webhookID,
-			Type:                  model.WebhookTypeConfigurationChanged,
-			URL:                   str.Ptr("foourl"),
-			Auth:                  &model.Auth{},
+			ObjectID:   applicationTemplateID,
+			ObjectType: model.ApplicationTemplateWebhookReference,
+			ID:         webhookID,
+			Type:       model.WebhookTypeConfigurationChanged,
+			URL:        str.Ptr("foourl"),
+			Auth:       &model.Auth{},
 		},
 	}
 }
@@ -385,7 +387,6 @@ func fixGQLApplicationCreateInput(name string) graphql.ApplicationRegisterInput 
 
 func fixModelApplication(id, name string) model.Application {
 	return model.Application{
-		Tenant:         testTenant,
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,

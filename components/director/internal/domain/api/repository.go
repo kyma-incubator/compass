@@ -33,7 +33,7 @@ var (
 //go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type APIDefinitionConverter interface {
 	FromEntity(entity Entity) model.APIDefinition
-	ToEntity(apiModel model.APIDefinition) *Entity
+	ToEntity(apiModel *model.APIDefinition) *Entity
 }
 
 type pgRepository struct {
@@ -161,7 +161,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.AP
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
-	entity := r.conv.ToEntity(*item)
+	entity := r.conv.ToEntity(item)
 	err := r.creator.Create(ctx, resource.API, tenant, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
@@ -173,7 +173,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.AP
 // CreateMany missing godoc
 func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*model.APIDefinition) error {
 	for index, item := range items {
-		entity := r.conv.ToEntity(*item)
+		entity := r.conv.ToEntity(item)
 
 		err := r.creator.Create(ctx, resource.API, tenant, entity)
 		if err != nil {
@@ -190,7 +190,7 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.AP
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
-	entity := r.conv.ToEntity(*item)
+	entity := r.conv.ToEntity(item)
 
 	return r.updater.UpdateSingle(ctx, resource.API, tenant, entity)
 }

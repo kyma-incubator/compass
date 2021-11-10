@@ -169,7 +169,7 @@ func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(eventModel model.EventDefinition) *Entity {
+func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 	return &Entity{
 		ApplicationID:       eventModel.ApplicationID,
 		PackageID:           repo.NewNullableString(eventModel.PackageID),

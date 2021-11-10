@@ -459,7 +459,6 @@ func TestService_Create(t *testing.T) {
 	modelAPIDefinition := &model.APIDefinition{
 		PackageID:     &packageID,
 		ApplicationID: appID,
-		Tenant:        tenantID,
 		Name:          name,
 		TargetURLs:    api.ConvertTargetURLToJSONArray(targetURL),
 		Version:       &model.Version{},
@@ -713,7 +712,6 @@ func TestService_Update(t *testing.T) {
 
 	modelSpec := &model.Spec{
 		ID:         id,
-		Tenant:     tenantID,
 		ObjectType: model.APISpecReference,
 		ObjectID:   id,
 		Data:       &spec,
@@ -972,7 +970,6 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 
 	modelSpec := &model.Spec{
 		ID:         id,
-		Tenant:     tenantID,
 		ObjectType: model.APISpecReference,
 		ObjectID:   id,
 		Data:       &spec,

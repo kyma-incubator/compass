@@ -38,7 +38,7 @@ var (
 //go:generate mockery --name=EventAPIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type EventAPIDefinitionConverter interface {
 	FromEntity(entity Entity) model.EventDefinition
-	ToEntity(apiModel model.EventDefinition) *Entity
+	ToEntity(apiModel *model.EventDefinition) *Entity
 }
 
 type pgRepository struct {
@@ -162,7 +162,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ev
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
-	entity := r.conv.ToEntity(*item)
+	entity := r.conv.ToEntity(item)
 
 	log.C(ctx).Debugf("Persisting Event-Definition entity with id %s to db", item.ID)
 	err := r.creator.Create(ctx, resource.EventDefinition,tenant, entity)
@@ -176,7 +176,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ev
 // CreateMany missing godoc
 func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*model.EventDefinition) error {
 	for index, item := range items {
-		entity := r.conv.ToEntity(*item)
+		entity := r.conv.ToEntity(item)
 		err := r.creator.Create(ctx, resource.EventDefinition,tenant, entity)
 		if err != nil {
 			return errors.Wrapf(err, "while persisting %d item", index)
@@ -192,7 +192,7 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Ev
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
-	entity := r.conv.ToEntity(*item)
+	entity := r.conv.ToEntity(item)
 
 	return r.updater.UpdateSingle(ctx,resource.EventDefinition, tenant, entity)
 }

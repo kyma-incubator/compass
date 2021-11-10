@@ -452,7 +452,6 @@ func TestService_Create(t *testing.T) {
 	modelEventDefinition := &model.EventDefinition{
 		PackageID:     &packageID,
 		ApplicationID: appID,
-		Tenant:        tenantID,
 		Name:          name,
 		Version:       &model.Version{},
 		BaseEntity: &model.BaseEntity{
@@ -697,7 +696,6 @@ func TestService_Update(t *testing.T) {
 
 	modelSpec := &model.Spec{
 		ID:         id,
-		Tenant:     tenantID,
 		ObjectType: model.EventSpecReference,
 		ObjectID:   id,
 		Data:       &spec,
@@ -897,7 +895,6 @@ func TestService_UpdateManyBundles(t *testing.T) {
 
 	modelSpec := &model.Spec{
 		ID:         id,
-		Tenant:     tenantID,
 		ObjectType: model.EventSpecReference,
 		ObjectID:   id,
 		Data:       &spec,

@@ -46,7 +46,7 @@ func NewRepository(conv EntityConverter) *repository {
 		//  scenario will be to have a non-owner access to the bundle once a formation is created. Then we check for whatever access
 		//  the caller has to the parent and allow it.
 		//  However, this cannot be done before formations redesign and due to this the formation check will still take place
-		//  in the pkg/scenario/directive.go. Once formation redesign in in place we can remove this directive and here we can use:
+		//  in the pkg/scenario/directive.go. Once formation redesign in in place we can remove this directive and here we can use non-global creator.
 		creator:      repo.NewCreatorGlobal(resource.BundleInstanceAuth, tableName, tableColumns),
 		singleGetter: repo.NewSingleGetter(tableName, tableColumns),
 		lister:       repo.NewLister(tableName, tableColumns),

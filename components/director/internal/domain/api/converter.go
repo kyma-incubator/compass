@@ -182,7 +182,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
+func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 	return &Entity{
 		ApplicationID:                           apiModel.ApplicationID,
 		PackageID:                               repo.NewNullableString(apiModel.PackageID),

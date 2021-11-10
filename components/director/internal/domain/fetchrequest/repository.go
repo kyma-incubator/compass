@@ -22,7 +22,7 @@ var (
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in model.FetchRequest) (*Entity, error)
+	ToEntity(in *model.FetchRequest) (*Entity, error)
 	FromEntity(in Entity, objectType model.FetchRequestReferenceObjectType) (model.FetchRequest, error)
 }
 
@@ -53,7 +53,7 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Fetc
 		return apperrors.NewInternalError("item can not be empty")
 	}
 
-	entity, err := r.conv.ToEntity(*item)
+	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while creating FetchRequest entity from model")
 	}
@@ -98,7 +98,7 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 
 // Update missing godoc
 func (r *repository) Update(ctx context.Context, tenant string, item *model.FetchRequest) error {
-	entity, err := r.conv.ToEntity(*item)
+	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return err
 	}

@@ -1,91 +1,124 @@
 package fetchrequest_test
 
 import (
-	"context"
 	"database/sql"
-	"errors"
-	"fmt"
+	"database/sql/driver"
 	"regexp"
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/stretchr/testify/assert"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRepository_Create(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-		// GIVEN
-		timestamp := time.Now()
-		frModel := fixFullFetchRequestModel(givenID(), timestamp)
-		frEntity := fixFullFetchRequestEntity(t, givenID(), timestamp)
+	timestamp := time.Now()
+	var nilFrModel *model.FetchRequest
+	apiFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.APISpecFetchRequestReference)
+	apiFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.APISpecFetchRequestReference)
+	eventFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.EventSpecFetchRequestReference)
+	eventFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.EventSpecFetchRequestReference)
+	docFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.DocumentFetchRequestReference)
+	docFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.DocumentFetchRequestReference)
 
-		mockConverter := &automock.Converter{}
-		mockConverter.On("ToEntity", frModel).Return(frEntity, nil).Once()
-		defer mockConverter.AssertExpectations(t)
+	apiFRSuite := testdb.RepoCreateTestSuite{
+		Name: "Create API FR",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM api_specifications_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenantID, refID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       regexp.QuoteMeta("INSERT INTO public.fetch_requests ( id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
+				Args:        []driver.Value{givenID(), sql.NullString{}, "foo.bar", apiFREntity.Auth, apiFREntity.Mode, apiFREntity.Filter, apiFREntity.StatusCondition, apiFREntity.StatusMessage, apiFREntity.StatusTimestamp, refID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         &apiFRModel,
+		DBEntity:            &apiFREntity,
+		NilModelEntity:      nilFrModel,
+		TenantID:            tenantID,
+	}
 
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
+	eventFRSuite := testdb.RepoCreateTestSuite{
+		Name: "Create Event FR",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM event_specifications_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenantID, refID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       regexp.QuoteMeta("INSERT INTO public.fetch_requests ( id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
+				Args:        []driver.Value{givenID(), sql.NullString{}, "foo.bar", eventFREntity.Auth, eventFREntity.Mode, eventFREntity.Filter, eventFREntity.StatusCondition, eventFREntity.StatusMessage, eventFREntity.StatusTimestamp, refID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         &eventFRModel,
+		DBEntity:            &eventFREntity,
+		NilModelEntity:      nilFrModel,
+		TenantID:            tenantID,
+	}
 
-		dbMock.ExpectExec(regexp.QuoteMeta("INSERT INTO public.fetch_requests ( id, tenant_id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")).
-			WithArgs(givenID(), givenTenant(), "documentID", "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusMessage, frEntity.StatusTimestamp, sql.NullString{}).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
+	docFRSuite := testdb.RepoCreateTestSuite{
+		Name: "Create Doc FR",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM documents_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenantID, refID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       regexp.QuoteMeta("INSERT INTO public.fetch_requests ( id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
+				Args:        []driver.Value{givenID(), refID, "foo.bar", docFREntity.Auth, docFREntity.Mode, docFREntity.Filter, docFREntity.StatusCondition, docFREntity.StatusMessage, docFREntity.StatusTimestamp, sql.NullString{}},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         &docFRModel,
+		DBEntity:            &docFREntity,
+		NilModelEntity:      nilFrModel,
+		TenantID:            tenantID,
+	}
 
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := fetchrequest.NewRepository(mockConverter)
-		// WHEN
-		err := repo.Create(ctx, &frModel)
-		// THEN
-		require.NoError(t, err)
-	})
-
-	t.Run("Error - DB", func(t *testing.T) {
-		// GIVEN
-		timestamp := time.Now()
-		frModel := fixFullFetchRequestModel(givenID(), timestamp)
-		frEntity := fixFullFetchRequestEntity(t, givenID(), timestamp)
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", frModel).Return(frEntity, nil)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec("INSERT INTO .*").WillReturnError(givenError())
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := fetchrequest.NewRepository(mockConverter)
-		// WHEN
-		err := repo.Create(ctx, &frModel)
-		// THEN
-		require.EqualError(t, err, apperrors.NewInternalError("Unexpected error while executing SQL query").Error())
-	})
-
-	t.Run("Error - Converter", func(t *testing.T) {
-		// GIVEN
-		timestamp := time.Now()
-		frModel := fixFullFetchRequestModel(givenID(), timestamp)
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", frModel).Return(fetchrequest.Entity{}, givenError())
-
-		repo := fetchrequest.NewRepository(mockConverter)
-		// WHEN
-		err := repo.Create(context.TODO(), &frModel)
-		// THEN
-		require.EqualError(t, err, "while creating FetchRequest entity from model: some error")
-	})
+	apiFRSuite.Run(t)
+	eventFRSuite.Run(t)
+	docFRSuite.Run(t)
 }
-
+/*
 func TestRepository_GetByReferenceObjectID(t *testing.T) {
 	refID := "foo"
 	testCases := []struct {
@@ -430,15 +463,8 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
+*/
 
 func givenID() string {
 	return "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-}
-
-func givenTenant() string {
-	return "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
-}
-
-func givenError() error {
-	return errors.New("some error")
 }

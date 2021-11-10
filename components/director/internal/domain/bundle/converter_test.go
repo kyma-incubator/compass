@@ -49,7 +49,6 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		bndlModel := &model.Bundle{
-			TenantID:                       tenantID,
 			ApplicationID:                  appID,
 			Name:                           name,
 			Description:                    nil,
@@ -59,7 +58,6 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		}
 
 		expectedEntity := &bundle.Entity{
-			TenantID:                      tenantID,
 			ApplicationID:                 appID,
 			Name:                          name,
 			Description:                   sql.NullString{},
@@ -104,7 +102,6 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		entity := &bundle.Entity{
-			TenantID:                      tenantID,
 			ApplicationID:                 appID,
 			Name:                          name,
 			Description:                   sql.NullString{},
@@ -113,7 +110,6 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 			BaseEntity:                    &repo.BaseEntity{ID: bundleID},
 		}
 		expectedModel := &model.Bundle{
-			TenantID:                       tenantID,
 			ApplicationID:                  appID,
 			Name:                           name,
 			Description:                    nil,

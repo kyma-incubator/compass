@@ -356,7 +356,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(versionConv, nil)
 		//WHEN
-		entity := conv.ToEntity(apiModel)
+		entity := conv.ToEntity(&apiModel)
 		//THEN
 		assert.Equal(t, fixFullEntityAPIDefinition(apiDefID, "foo"), *entity)
 	})
@@ -367,7 +367,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(versionConv, nil)
 		//WHEN
-		entity := conv.ToEntity(*apiModel)
+		entity := conv.ToEntity(apiModel)
 		//THEN
 		assert.Equal(t, fixEntityAPIDefinition("id", "name", "target_url"), entity)
 	})

@@ -1,9 +1,7 @@
 package eventdef_test
 
 import (
-	"context"
-	"errors"
-	"fmt"
+	"database/sql/driver"
 	"regexp"
 	"testing"
 
@@ -12,11 +10,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
-
+/*
 func TestPgRepository_GetByID(t *testing.T) {
 	// given
 	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
@@ -302,45 +297,47 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
-
+*/
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
+	var nilEventDefModel *model.EventDefinition
 	eventDefModel, _, _ := fixFullEventDefinitionModel("placeholder")
 	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
-	insertQuery := `^INSERT INTO "public"."event_api_definitions" \(.+\) VALUES \(.+\)$`
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Create Event",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenantID, appID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       `^INSERT INTO "public"."event_api_definitions" \(.+\) VALUES \(.+\)$`,
+				Args:        fixEventCreateArgs(eventID, &eventDefModel),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		ModelEntity:               &eventDefModel,
+		DBEntity:                  &eventDefEntity,
+		NilModelEntity:            nilEventDefModel,
+		TenantID:                  tenantID,
+		DisableConverterErrorTest: true,
+	}
 
-		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixEventCreateArgs(eventID, &eventDefModel)...).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := automock.EventAPIDefinitionConverter{}
-		convMock.On("ToEntity", eventDefModel).Return(eventDefEntity, nil).Once()
-		pgRepository := event.NewRepository(&convMock)
-		//WHEN
-		err := pgRepository.Create(ctx, &eventDefModel)
-		//THEN
-		require.NoError(t, err)
-		sqlMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when item is nil", func(t *testing.T) {
-		ctx := context.TODO()
-		convMock := automock.EventAPIDefinitionConverter{}
-		pgRepository := event.NewRepository(&convMock)
-		// WHEN
-		err := pgRepository.Create(ctx, nil)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "item cannot be nil")
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
-
+/*
 func TestPgRepository_CreateMany(t *testing.T) {
 	insertQuery := `^INSERT INTO "public"."event_api_definitions" (.+) VALUES (.+)$`
 
@@ -464,3 +461,4 @@ func TestPgRepository_Exists(t *testing.T) {
 	sqlMock.AssertExpectations(t)
 	convMock.AssertExpectations(t)
 }
+*/

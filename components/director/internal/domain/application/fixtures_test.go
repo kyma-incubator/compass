@@ -3,9 +3,7 @@ package application_test
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/url"
-	"regexp"
 	"testing"
 	"time"
 
@@ -60,7 +58,6 @@ func fixGQLApplicationPage(applications []*graphql.Application) *graphql.Applica
 
 func fixModelApplication(id, tenant, name, description string) *model.Application {
 	return &model.Application{
-		Tenant: tenant,
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
 		},
@@ -72,7 +69,6 @@ func fixModelApplication(id, tenant, name, description string) *model.Applicatio
 
 func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, url string, conditionStatus model.ApplicationStatusCondition, conditionTimestamp time.Time) *model.Application {
 	return &model.Application{
-		Tenant: tenant,
 		Status: &model.ApplicationStatus{
 			Condition: conditionStatus,
 			Timestamp: conditionTimestamp,
@@ -105,7 +101,6 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 
 	return &model.Application{
 		ProviderName: &providerName,
-		Tenant:       tenant,
 		Name:         name,
 		Description:  &description,
 		Status: &model.ApplicationStatus{
@@ -159,7 +154,6 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 	require.NoError(t, err)
 
 	return &application.Entity{
-		TenantID:            tenant,
 		Name:                name,
 		ProviderName:        repo.NewNullableString(&providerName),
 		Description:         repo.NewValidNullableString(description),
@@ -336,11 +330,12 @@ func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
 
 func fixModelWebhook(appID, id string) *model.Webhook {
 	return &model.Webhook{
-		ApplicationID: &appID,
-		ID:            id,
-		Type:          model.WebhookTypeConfigurationChanged,
-		URL:           stringPtr("foourl"),
-		Auth:          &model.Auth{},
+		ObjectID:   appID,
+		ObjectType: model.ApplicationWebhookReference,
+		ID:         id,
+		Type:       model.WebhookTypeConfigurationChanged,
+		URL:        stringPtr("foourl"),
+		Auth:       &model.Auth{},
 	}
 }
 
@@ -386,8 +381,7 @@ func fixModelEventAPIDefinition(id string, appID, name, description string, grou
 	}
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	return &model.EventDefinition{Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
+	return &model.EventDefinition{Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
 }
 func fixGQLEventDefinition(id string, appID, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
@@ -404,7 +398,6 @@ func fixGQLEventDefinition(id string, appID, bundleID string, name, description 
 func fixFetchRequest(url string, objectType model.FetchRequestReferenceObjectType, timestamp time.Time) *model.FetchRequest {
 	return &model.FetchRequest{
 		ID:     "foo",
-		Tenant: "tenant",
 		URL:    url,
 		Auth:   nil,
 		Mode:   "SINGLE",
@@ -446,7 +439,6 @@ func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEven
 
 func fixModelBundle(id, tenantID, appID, name, description string) *model.Bundle {
 	return &model.Bundle{
-		TenantID:                       tenantID,
 		ApplicationID:                  appID,
 		Name:                           name,
 		Description:                    &description,
@@ -495,20 +487,4 @@ func fixBundlePage(bundles []*model.Bundle) *model.BundlePage {
 func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 	t := graphql.Timestamp(time)
 	return &t
-}
-
-func fixUpdateTenantIsolationSubquery() string {
-	return regexp.QuoteMeta(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`)
-}
-
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
-}
-
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
 }

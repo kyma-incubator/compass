@@ -156,7 +156,6 @@ func TestToEntity(t *testing.T) {
 	sut := document.NewConverter(nil)
 
 	modelWithRequiredFields := model.Document{
-		Tenant:      "givenTenant",
 		BundleID:    "givenBundleID",
 		AppID:       "givenAppID",
 		Title:       "givenTitle",
@@ -176,11 +175,10 @@ func TestToEntity(t *testing.T) {
 	t.Run("only required fields", func(t *testing.T) {
 		givenModel := modelWithRequiredFields
 		// WHEN
-		actual, err := sut.ToEntity(givenModel)
+		actual, err := sut.ToEntity(&givenModel)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, &document.Entity{
-			TenantID:    givenModel.Tenant,
 			BndlID:      givenModel.BundleID,
 			AppID:       givenModel.AppID,
 			Title:       givenModel.Title,
@@ -203,7 +201,7 @@ func TestToEntity(t *testing.T) {
 		givenModel.Data = str.Ptr("givenData")
 		givenModel.Kind = str.Ptr("givenKind")
 		// WHEN
-		actual, err := sut.ToEntity(givenModel)
+		actual, err := sut.ToEntity(&givenModel)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, sql.NullString{Valid: true, String: "givenData"}, actual.Data)
@@ -215,7 +213,6 @@ func TestFromEntity(t *testing.T) {
 	// GIVEN
 	sut := document.NewConverter(nil)
 	entityWithRequiredFields := document.Entity{
-		TenantID:    "givenTenant",
 		BndlID:      "givenBundleID",
 		AppID:       "givenAppID",
 		Title:       "givenTitle",
@@ -234,7 +231,6 @@ func TestFromEntity(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, model.Document{
-			Tenant:      "givenTenant",
 			BundleID:    "givenBundleID",
 			AppID:       "givenAppID",
 			Title:       "givenTitle",

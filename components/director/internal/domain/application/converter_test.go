@@ -434,7 +434,6 @@ func TestConverter_ConvertToModel(t *testing.T) {
 
 func assertApplicationDefinition(t *testing.T, appModel *model.Application, entity *application.Entity) {
 	assert.Equal(t, appModel.ID, entity.ID)
-	assert.Equal(t, appModel.Tenant, entity.TenantID)
 	assert.Equal(t, appModel.Name, entity.Name)
 
 	if appModel.Status != nil {

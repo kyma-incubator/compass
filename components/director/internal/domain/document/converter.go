@@ -112,7 +112,7 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*mo
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.Document) (*Entity, error) {
+func (c *converter) ToEntity(in *model.Document) (*Entity, error) {
 	kind := repo.NewNullableString(in.Kind)
 	data := repo.NewNullableString(in.Data)
 

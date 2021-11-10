@@ -358,7 +358,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
 		//WHEN
-		entity := conv.ToEntity(eventModel)
+		entity := conv.ToEntity(&eventModel)
 		//THEN
 		assert.Equal(t, fixFullEntityEventDefinition(eventID, "foo"), entity)
 	})
@@ -369,7 +369,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
 		//WHEN
-		entity := conv.ToEntity(*eventModel)
+		entity := conv.ToEntity(eventModel)
 		//THEN
 		assert.Equal(t, fixEntityEventDefinition("id", "name"), entity)
 	})

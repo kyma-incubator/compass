@@ -120,15 +120,14 @@ func TestConverter_FromEntity(t *testing.T) {
 	}{
 		{
 			Name:               "All properties given",
-			Input:              fixFullFetchRequestEntity(t, "1", timestamp),
-			Expected:           fixFullFetchRequestModel("1", timestamp),
+			Input:              fixFullFetchRequestEntity(t, "1", timestamp, model.APISpecFetchRequestReference),
+			Expected:           fixFullFetchRequestModel("1", timestamp, model.APISpecFetchRequestReference),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Empty value",
 			Input: fetchrequest.Entity{
 				ID:              "2",
-				TenantID:        "tenant",
 				Auth:            sql.NullString{},
 				StatusTimestamp: timestamp,
 				StatusCondition: string(model.FetchRequestStatusConditionFailed),
@@ -152,7 +151,7 @@ func TestConverter_FromEntity(t *testing.T) {
 			conv := fetchrequest.NewConverter(authConv)
 
 			// when
-			res, err := conv.FromEntity(testCase.Input)
+			res, err := conv.FromEntity(testCase.Input, model.APISpecFetchRequestReference)
 
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)
@@ -179,19 +178,18 @@ func TestConverter_ToEntity(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixFullFetchRequestModel("1", timestamp),
-			Expected: fixFullFetchRequestEntity(t, "1", timestamp),
+			Input:    fixFullFetchRequestModel("1", timestamp, model.APISpecFetchRequestReference),
+			Expected: fixFullFetchRequestEntity(t, "1", timestamp, model.APISpecFetchRequestReference),
 		},
 		{
 			Name:     "String value",
-			Input:    fixFullFetchRequestModel("1", timestamp),
-			Expected: fixFullFetchRequestEntity(t, "1", timestamp),
+			Input:    fixFullFetchRequestModel("1", timestamp, model.APISpecFetchRequestReference),
+			Expected: fixFullFetchRequestEntity(t, "1", timestamp, model.APISpecFetchRequestReference),
 		},
 		{
 			Name: "Empty Auth",
 			Input: model.FetchRequest{
 				ID:     "2",
-				Tenant: "tenant",
 				Status: &model.FetchRequestStatus{
 					Timestamp: timestamp,
 					Condition: model.FetchRequestStatusConditionFailed,
@@ -199,7 +197,6 @@ func TestConverter_ToEntity(t *testing.T) {
 			},
 			Expected: fetchrequest.Entity{
 				ID:              "2",
-				TenantID:        "tenant",
 				StatusTimestamp: timestamp,
 				StatusCondition: string(model.FetchRequestStatusConditionFailed),
 			},
@@ -208,11 +205,9 @@ func TestConverter_ToEntity(t *testing.T) {
 			Name: "Error",
 			Input: model.FetchRequest{
 				ID:     "2",
-				Tenant: "tenant",
 			},
 			Expected: fetchrequest.Entity{
 				ID:       "2",
-				TenantID: "tenant",
 			},
 			ExpectedErrMessage: apperrors.NewInvalidDataError("Invalid input model").Error(),
 		},
@@ -224,7 +219,7 @@ func TestConverter_ToEntity(t *testing.T) {
 			conv := fetchrequest.NewConverter(authConv)
 
 			// when
-			res, err := conv.ToEntity(testCase.Input)
+			res, err := conv.ToEntity(&testCase.Input)
 
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)

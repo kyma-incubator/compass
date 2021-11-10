@@ -8,7 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +22,6 @@ func TestService_GetForBundle(t *testing.T) {
 	targetURL := "http://test.com"
 
 	bundleReferenceModel := &model.BundleReference{
-		Tenant:              tenantID,
 		BundleID:            &bundleID,
 		ObjectType:          model.BundleAPIReference,
 		ObjectID:            &objectID,
@@ -31,7 +29,6 @@ func TestService_GetForBundle(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name         string
@@ -43,7 +40,7 @@ func TestService_GetForBundle(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("GetByID", ctx, model.BundleAPIReference, tenantID, &objectID, &bundleID).Return(bundleReferenceModel, nil).Once()
+				repo.On("GetByID", ctx, model.BundleAPIReference, &objectID, &bundleID).Return(bundleReferenceModel, nil).Once()
 				return repo
 			},
 			Expected: bundleReferenceModel,
@@ -52,7 +49,7 @@ func TestService_GetForBundle(t *testing.T) {
 			Name: "Error on getting by id",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("GetByID", ctx, model.BundleAPIReference, tenantID, &objectID, &bundleID).Return(nil, testErr).Once()
+				repo.On("GetByID", ctx, model.BundleAPIReference, &objectID, &bundleID).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedErr: testErr,
@@ -90,7 +87,6 @@ func TestService_GetBundleIDsForObject(t *testing.T) {
 	bundleIDs := []string{firstBundleID, secondBundleID}
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name         string
@@ -102,7 +98,7 @@ func TestService_GetBundleIDsForObject(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("GetBundleIDsForObject", ctx, tenantID, model.BundleAPIReference, &objectID).Return(bundleIDs, nil).Once()
+				repo.On("GetBundleIDsForObject", ctx, model.BundleAPIReference, &objectID).Return(bundleIDs, nil).Once()
 				return repo
 			},
 			Expected: bundleIDs,
@@ -111,7 +107,7 @@ func TestService_GetBundleIDsForObject(t *testing.T) {
 			Name: "Error on getting bundle ids",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("GetBundleIDsForObject", ctx, tenantID, model.BundleAPIReference, &objectID).Return(nil, testErr).Once()
+				repo.On("GetBundleIDsForObject", ctx, model.BundleAPIReference, &objectID).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedErr: testErr,
@@ -148,7 +144,6 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 	targetURL := "http://test.com"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	bundleReferenceInput := &model.BundleReferenceInput{
 		APIDefaultTargetURL: &targetURL,
@@ -156,7 +151,6 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 
 	bundleReferenceModel := &model.BundleReference{
 		ID:                  bundleRefID,
-		Tenant:              tenantID,
 		BundleID:            &bundleID,
 		ObjectType:          model.BundleAPIReference,
 		ObjectID:            &objectID,
@@ -231,14 +225,12 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 	updatedTargetURL := "http://test-updated.com"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	bundleReferenceInput := &model.BundleReferenceInput{
 		APIDefaultTargetURL: &updatedTargetURL,
 	}
 
 	bundleReferenceModelBefore := &model.BundleReference{
-		Tenant:              tenantID,
 		BundleID:            &bundleID,
 		ObjectType:          model.BundleAPIReference,
 		ObjectID:            &objectID,
@@ -246,7 +238,6 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 	}
 
 	bundleReferenceModelAfter := &model.BundleReference{
-		Tenant:              tenantID,
 		BundleID:            &bundleID,
 		ObjectType:          model.BundleAPIReference,
 		ObjectID:            &objectID,
@@ -263,7 +254,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("GetByID", ctx, model.BundleAPIReference, tenantID, &objectID, &bundleID).Return(bundleReferenceModelBefore, nil).Once()
+				repo.On("GetByID", ctx, model.BundleAPIReference, &objectID, &bundleID).Return(bundleReferenceModelBefore, nil).Once()
 				repo.On("Update", ctx, bundleReferenceModelAfter).Return(nil).Once()
 				return repo
 			},
@@ -273,7 +264,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 			Name: "Error on getting by id",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("GetByID", ctx, model.BundleAPIReference, tenantID, &objectID, &bundleID).Return(nil, testErr).Once()
+				repo.On("GetByID", ctx, model.BundleAPIReference, &objectID, &bundleID).Return(nil, testErr).Once()
 				return repo
 			},
 			Input:       *bundleReferenceInput,
@@ -283,7 +274,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 			Name: "Error on update",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("GetByID", ctx, model.BundleAPIReference, tenantID, &objectID, &bundleID).Return(bundleReferenceModelBefore, nil).Once()
+				repo.On("GetByID", ctx, model.BundleAPIReference, &objectID, &bundleID).Return(bundleReferenceModelBefore, nil).Once()
 				repo.On("Update", ctx, bundleReferenceModelAfter).Return(testErr).Once()
 				return repo
 			},
@@ -319,7 +310,6 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 	bundleID := "bundleID"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name         string
@@ -330,7 +320,7 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("DeleteByReferenceObjectID", ctx, tenantID, bundleID, model.BundleAPIReference, objectID).Return(nil).Once()
+				repo.On("DeleteByReferenceObjectID", ctx, bundleID, model.BundleAPIReference, objectID).Return(nil).Once()
 				return repo
 			},
 		},
@@ -338,7 +328,7 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 			Name: "Error on deletion",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("DeleteByReferenceObjectID", ctx, tenantID, bundleID, model.BundleAPIReference, objectID).Return(testErr).Once()
+				repo.On("DeleteByReferenceObjectID", ctx, bundleID, model.BundleAPIReference, objectID).Return(testErr).Once()
 				return repo
 			},
 			ExpectedErr: testErr,
@@ -390,7 +380,6 @@ func TestService_ListByBundleIDs(t *testing.T) {
 	after := "test"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name                string
@@ -404,7 +393,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("ListByBundleIDs", ctx, model.BundleAPIReference, tenantID, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
+				repo.On("ListByBundleIDs", ctx, model.BundleAPIReference, bundleIDs, 2, after).Return(bundleRefs, totalCounts, nil).Once()
 				return repo
 			},
 			PageSize:            2,
@@ -433,7 +422,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 			Name: "Error on listing bundle references",
 			RepositoryFn: func() *automock.BundleReferenceRepository {
 				repo := &automock.BundleReferenceRepository{}
-				repo.On("ListByBundleIDs", ctx, model.BundleAPIReference, tenantID, bundleIDs, 2, after).Return(nil, nil, testErr).Once()
+				repo.On("ListByBundleIDs", ctx, model.BundleAPIReference, bundleIDs, 2, after).Return(nil, nil, testErr).Once()
 				return repo
 			},
 			PageSize:            2,
@@ -466,12 +455,4 @@ func TestService_ListByBundleIDs(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
-	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := bundlereferences.NewService(nil, nil)
-		// WHEN
-		_, _, err := svc.ListByBundleIDs(context.TODO(), model.BundleAPIReference, nil, 2, "")
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot read tenant from context")
-	})
 }

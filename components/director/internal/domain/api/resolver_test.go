@@ -31,7 +31,6 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 
 	modelAPI, spec, bundleRef := fixFullAPIDefinitionModel("test")
 	modelBndl := &model.Bundle{
-		TenantID:      tenantID,
 		ApplicationID: appID,
 		BaseEntity: &model.BaseEntity{
 			ID: bundleID,

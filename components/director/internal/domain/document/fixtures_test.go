@@ -2,8 +2,6 @@ package document_test
 
 import (
 	"database/sql"
-	"fmt"
-	"regexp"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -28,7 +26,7 @@ var (
 func fixModelDocument(id, bundleID string) *model.Document {
 	return &model.Document{
 		BundleID:    bundleID,
-		Tenant:      docTenant,
+		AppID:       appID,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
 		Description: docDescription,
@@ -49,7 +47,7 @@ func fixModelDocument(id, bundleID string) *model.Document {
 func fixEntityDocument(id, bundleID string) *document.Entity {
 	return &document.Entity{
 		BndlID:      bundleID,
-		TenantID:    docTenant,
+		AppID:       appID,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
 		Description: docDescription,
@@ -115,7 +113,6 @@ func fixModelDocumentInputWithFetchRequest(fetchRequestURL string) *model.Docume
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
 	return &model.FetchRequest{
 		ID:     id,
-		Tenant: "tenant",
 		URL:    url,
 		Auth:   nil,
 		Mode:   model.FetchModeSingle,
@@ -155,7 +152,6 @@ func fixGQLDocumentInput(id string) *graphql.DocumentInput {
 
 func fixModelBundle(id string) *model.Bundle {
 	return &model.Bundle{
-		TenantID:      docTenant,
 		ApplicationID: appID,
 		Name:          "name",
 		BaseEntity: &model.BaseEntity{
@@ -172,24 +168,4 @@ func fixModelBundle(id string) *model.Bundle {
 func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 	t := graphql.Timestamp(time)
 	return &t
-}
-
-func fixUpdateTenantIsolationSubquery() string {
-	return regexp.QuoteMeta(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`)
-}
-
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
-
-func fixUnescapedTenantIsolationSubquery() string {
-	return fixUnescapedTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
-}
-
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
 }

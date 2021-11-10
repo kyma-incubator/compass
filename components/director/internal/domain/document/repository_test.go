@@ -1,89 +1,60 @@
 package document_test
 
 import (
-	"context"
+	"database/sql/driver"
 	"errors"
-	"fmt"
-	"regexp"
-	"testing"
-
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"regexp"
+	"testing"
 )
 
-const insertQuery = "INSERT INTO public.documents ( id, tenant_id, bundle_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"
 
-var columns = []string{"id", "tenant_id", "bundle_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
+var columns = []string{"id", "bundle_id", "app_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
 
 func TestRepository_Create(t *testing.T) {
 	refID := bndlID()
-	t.Run("Success", func(t *testing.T) {
-		// GIVEN
-		docModel := fixModelDocument(givenID(), refID)
-		docEntity := fixEntityDocument(givenID(), refID)
+	var nilDocModel *model.Document
+	docModel := fixModelDocument(givenID(), refID)
+	docEntity := fixEntityDocument(givenID(), refID)
 
-		mockConverter := &automock.Converter{}
-		mockConverter.On("ToEntity", *docModel).Return(docEntity, nil).Once()
-		defer mockConverter.AssertExpectations(t)
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Create Document",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM bundles_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{givenTenant(), refID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       regexp.QuoteMeta("INSERT INTO public.documents ( id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
+				Args:        []driver.Value{givenID(), refID, appID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data,
+					docEntity.Ready, docEntity.CreatedAt, docEntity.UpdatedAt, docEntity.DeletedAt, docEntity.Error},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       document.NewRepository,
+		ModelEntity:               docModel,
+		DBEntity:                  docEntity,
+		NilModelEntity:            nilDocModel,
+		TenantID:                  givenTenant(),
+	}
 
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).
-			WithArgs(givenID(), givenTenant(), refID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data,
-				docEntity.Ready, docEntity.CreatedAt, docEntity.UpdatedAt, docEntity.DeletedAt, docEntity.Error).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := document.NewRepository(mockConverter)
-		// WHEN
-		err := repo.Create(ctx, docModel)
-		// THEN
-		require.NoError(t, err)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// GIVEN
-		docModel := fixModelDocument(givenID(), refID)
-		docEntity := fixEntityDocument(givenID(), refID)
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", *docModel).Return(docEntity, nil)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec("INSERT INTO .*").WillReturnError(givenError())
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := document.NewRepository(mockConverter)
-		// WHEN
-		err := repo.Create(ctx, docModel)
-		// THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-
-	t.Run("Converter Error", func(t *testing.T) {
-		// GIVEN
-		docModel := fixModelDocument(givenID(), refID)
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", *docModel).Return(nil, givenError())
-
-		repo := document.NewRepository(mockConverter)
-		// WHEN
-		err := repo.Create(context.TODO(), docModel)
-		// THEN
-		require.EqualError(t, err, "while creating Document entity from model: some error")
-	})
+	suite.Run(t)
 }
-
+/*
 func TestRepository_CreateMany(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
@@ -693,6 +664,7 @@ func TestRepository_Delete(t *testing.T) {
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
+*/
 
 func givenID() string {
 	return "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"

@@ -75,7 +75,7 @@ func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) (*model.Fetc
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.FetchRequest) (*Entity, error) {
+func (c *converter) ToEntity(in *model.FetchRequest) (*Entity, error) {
 	if in.Status == nil {
 		return nil, apperrors.NewInvalidDataError("Invalid input model")
 	}

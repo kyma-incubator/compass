@@ -1160,7 +1160,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 
 	modelLabel := &model.Label{
 		ID:         "b39ba24d-87fe-43fe-ac55-7f2e5ee04bcb",
-		Tenant:     "tnt",
+		Tenant:     str.Ptr("tnt"),
 		Key:        labelKey,
 		Value:      []string{"foo", "bar"},
 		ObjectID:   applicationID,
@@ -1430,7 +1430,7 @@ func TestResolver_Labels(t *testing.T) {
 	modelLabels := map[string]*model.Label{
 		"abc": {
 			ID:         "abc",
-			Tenant:     tenant,
+			Tenant:     str.Ptr(tenant),
 			Key:        labelKey1,
 			Value:      labelValue1,
 			ObjectID:   id,
@@ -1438,7 +1438,7 @@ func TestResolver_Labels(t *testing.T) {
 		},
 		"def": {
 			ID:         "def",
-			Tenant:     tenant,
+			Tenant:     str.Ptr(tenant),
 			Key:        labelKey2,
 			Value:      labelValue2,
 			ObjectID:   id,

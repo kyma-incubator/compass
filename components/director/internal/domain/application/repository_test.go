@@ -3,31 +3,23 @@ package application_test
 import (
 	"context"
 	"database/sql/driver"
-	"fmt"
-	"regexp"
-	"strconv"
-	"testing"
-	"time"
-
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-
-	"github.com/pkg/errors"
+	"regexp"
+	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
+/*
 func TestRepository_Exists(t *testing.T) {
 	// given
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -287,57 +279,40 @@ func TestRepository_Delete(t *testing.T) {
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
-
+*/
 func TestRepository_Create(t *testing.T) {
-	var executeCreateFunc = func(ctx context.Context, appID string, mode graphql.OperationMode, operationError error) {
-		// given
-		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
-		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+	var nilAppModel *model.Application
+	appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+	appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 
-		if mode == graphql.OperationModeAsync {
-			appModel.Ready = false
-			appEntity.Ready = false
-		}
-
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("ToEntity", appModel).Return(appEntity, nil).Once()
-		defer mockConverter.AssertExpectations(t)
-
-		if operationError == nil {
-			db, dbMock := testdb.MockDatabase(t)
-			defer dbMock.AssertExpectations(t)
-
-			dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.applications ( id, app_template_id, tenant_id, system_number,  name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
-				WithArgs(givenID(), nil, givenTenant(), nil, appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error, repo.NewNullableStringFromJSONRawMessage(appModel.CorrelationIDs)).
-				WillReturnResult(sqlmock.NewResult(-1, 1))
-
-			ctx = persistence.SaveToContext(ctx, db)
-		}
-
-		repo := application.NewRepository(mockConverter)
-
-		// when
-		err := repo.Create(ctx, appModel)
-
-		// then
-		if operationError != nil {
-			assert.Error(t, err)
-			assert.Contains(t, err.Error(), operationError.Error())
-		} else {
-			assert.NoError(t, err)
-		}
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Generic Create Application",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       regexp.QuoteMeta(`INSERT INTO public.applications ( id, app_template_id, system_number,  name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`),
+				Args:        []driver.Value{givenID(), nil, nil, appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error, repo.NewNullableStringFromJSONRawMessage(appModel.CorrelationIDs)},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+			{
+				Query:       regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? )`),
+				Args:        []driver.Value{givenTenant(), givenID(), true},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: application.NewRepository,
+		ModelEntity:         appModel,
+		DBEntity:            appEntity,
+		NilModelEntity:      nilAppModel,
+		TenantID:            givenTenant(),
+		IsTopLevelEntity:    true,
 	}
 
-	t.Run("Success", func(t *testing.T) {
-		executeCreateFunc(context.Background(), givenID(), graphql.OperationModeSync, nil)
-	})
+	suite.Run(t)
 
-	t.Run("Success when operation mode is set to sync explicitly and no operation in the context", func(t *testing.T) {
-		ctx := context.Background()
-		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeSync)
-
-		executeCreateFunc(ctx, givenID(), graphql.OperationModeSync, nil)
-	})
+	// Additional tests
 
 	t.Run("Success when operation mode is set to async explicitly and operation is in the context", func(t *testing.T) {
 		ctx := context.Background()
@@ -349,14 +324,11 @@ func TestRepository_Create(t *testing.T) {
 		}
 		ctx = operation.SaveToContext(ctx, &[]*operation.Operation{op})
 
-		appID := givenID()
-		executeCreateFunc(ctx, appID, graphql.OperationModeAsync, nil)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// given
 		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+
+		appModel.Ready = false
+		appEntity.Ready = false
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", appModel).Return(appEntity, nil).Once()
@@ -365,35 +337,27 @@ func TestRepository_Create(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec("INSERT INTO .*").WillReturnError(givenError())
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.applications ( id, app_template_id, system_number,  name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
+			WithArgs(givenID(), nil, nil, appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error, repo.NewNullableStringFromJSONRawMessage(appModel.CorrelationIDs)).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repository := application.NewRepository(mockConverter)
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? )`)).
+			WithArgs(givenTenant(), givenID(), true).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		// when
-		err := repository.Create(ctx, appModel)
-
-		// then
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-
-	t.Run("Converter Error", func(t *testing.T) {
-		// given
-		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("ToEntity", appModel).Return(&application.Entity{}, givenError())
-		defer mockConverter.AssertExpectations(t)
+		ctx = persistence.SaveToContext(ctx, db)
 
 		repo := application.NewRepository(mockConverter)
 
 		// when
-		err := repo.Create(context.TODO(), appModel)
+		err := repo.Create(ctx, givenTenant(), appModel)
 
 		// then
-		require.EqualError(t, err, "while converting to Application entity: some error")
+		assert.NoError(t, err)
 	})
 }
 
+/*
 func TestRepository_Update(t *testing.T) {
 	updateStmt := fmt.Sprintf(`UPDATE public\.applications SET name = \?, description = \?, status_condition = \?, status_timestamp = \?, healthcheck_url = \?, integration_system_id = \?, provider_name = \?, base_url = \?, labels = \?, ready = \?, created_at = \?, updated_at = \?, deleted_at = \?, error = \?, correlation_ids = \? WHERE %s AND id = \?`, fixUpdateTenantIsolationSubquery())
 
@@ -756,7 +720,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 						WHERE "app_id" IS NOT NULL AND %s
 						AND "key" = $6 AND "value" ?| array[$7]
 					UNION SELECT "app_id" FROM public.labels
-						WHERE "app_id" IS NOT NULL AND %s 
+						WHERE "app_id" IS NOT NULL AND %s
 						AND "key" = $9 AND "value" ?| array[$10]`, fixUnescapedTenantIsolationSubqueryWithArg(2), fixUnescapedTenantIsolationSubqueryWithArg(5), fixUnescapedTenantIsolationSubqueryWithArg(8))
 	applicationScenarioQuery := regexp.QuoteMeta(scenariosQuery)
 
@@ -920,3 +884,4 @@ func TestPgRepository_GetByNameAndSystemNumber(t *testing.T) {
 func givenError() error {
 	return errors.New("some error")
 }
+*/

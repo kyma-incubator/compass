@@ -34,7 +34,6 @@ func TestResolver_API(t *testing.T) {
 			ObjectID:   id,
 		}
 		modelBundleRef := &model.BundleReference{
-			Tenant:              tenantID,
 			BundleID:            &bndlID,
 			ObjectType:          model.BundleAPIReference,
 			ObjectID:            &id,
@@ -628,7 +627,6 @@ func TestResolver_Event(t *testing.T) {
 			ObjectID:   id,
 		}
 		modelBundleRef := &model.BundleReference{
-			Tenant:     tenantID,
 			BundleID:   &bndlID,
 			ObjectType: model.BundleEventReference,
 			ObjectID:   &id,
