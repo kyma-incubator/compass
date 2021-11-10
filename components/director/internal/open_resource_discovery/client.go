@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -150,6 +151,8 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d Body: %s", resp.StatusCode, string(bodyBytes))
 	}
+
+	fmt.Println(string(bodyBytes))
 
 	config := WellKnownConfig{}
 	if err := json.Unmarshal(bodyBytes, &config); err != nil {
