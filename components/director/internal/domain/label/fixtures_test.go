@@ -1,30 +1,57 @@
 package label_test
 
 import (
-	"fmt"
-	"regexp"
+	"database/sql"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
-func fixNoRebindTenantIsolationSubquery() string {
-	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
+const (
+	labelId  = "lblId"
+	refID    = "refID"
+	key      = "test"
+	value    = "test"
+	tenantID = "tenant"
+)
+
+func fixModelLabel(objectType model.LabelableObject) *model.Label {
+	result := &model.Label{
+		ID:         labelId,
+		Key:        key,
+		Value:      value,
+		ObjectID:   refID,
+		ObjectType: objectType,
+	}
+	if objectType == model.TenantLabelableObject {
+		result.Tenant = str.Ptr(tenantID)
+	}
+	return result
 }
 
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
+func fixEntityLabel(objectType model.LabelableObject) *label.Entity {
+	var tenant sql.NullString
+	var appID sql.NullString
+	var runtimeCtxID sql.NullString
+	var runtimeID sql.NullString
+	switch objectType {
+	case model.RuntimeContextLabelableObject:
+		runtimeCtxID = sql.NullString{String: refID, Valid: true}
+	case model.RuntimeLabelableObject:
+		runtimeID = sql.NullString{String: refID, Valid: true}
+	case model.ApplicationLabelableObject:
+		appID = sql.NullString{String: refID, Valid: true}
+	case model.TenantLabelableObject:
+		tenant = sql.NullString{String: tenantID, Valid: true}
+	}
 
-func fixUnescapedTenantIsolationSubquery() string {
-	return fixUnescapedTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
-}
-
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
-}
-
-func fixUpdateTenantIsolationSubquery() string {
-	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
+	return &label.Entity{
+		Key:              key,
+		Value:            value,
+		ID:               labelId,
+		TenantID:         tenant,
+		AppID:            appID,
+		RuntimeContextID: runtimeCtxID,
+		RuntimeID:        runtimeID,
+	}
 }

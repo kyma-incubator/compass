@@ -46,13 +46,11 @@ func TestConverter_ToEntity(t *testing.T) {
 			Input: model.Label{
 				ID:      "2",
 				Key:     "foo",
-				Tenant:  "tenant",
 				Version: version,
 			},
 			Expected: label.Entity{
 				ID:       "2",
 				Key:      "foo",
-				TenantID: "tenant",
 				Version:  version,
 			},
 			ExpectedErrMessage: "",
@@ -72,7 +70,7 @@ func TestConverter_ToEntity(t *testing.T) {
 			conv := label.NewConverter()
 
 			// when
-			res, err := conv.ToEntity(testCase.Input)
+			res, err := conv.ToEntity(&testCase.Input)
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)
 				assert.Equal(t, testCase.ExpectedErrMessage, err.Error())
@@ -119,13 +117,11 @@ func TestConverter_FromEntity(t *testing.T) {
 			Input: label.Entity{
 				ID:       "2",
 				Key:      "foo",
-				TenantID: "tenant",
 				Version:  version,
 			},
 			Expected: model.Label{
 				ID:      "2",
 				Key:     "foo",
-				Tenant:  "tenant",
 				Version: version,
 			},
 			ExpectedErrMessage: "",
@@ -158,7 +154,6 @@ func TestConverter_FromEntity(t *testing.T) {
 func fixLabelEntity(id string, value []byte, version int) label.Entity {
 	return label.Entity{
 		ID:       id,
-		TenantID: "tenant",
 		AppID:    sql.NullString{},
 		RuntimeID: sql.NullString{
 			String: "321",
@@ -172,7 +167,6 @@ func fixLabelEntity(id string, value []byte, version int) label.Entity {
 func fixLabelModel(id string, value interface{}, version int) model.Label {
 	return model.Label{
 		ID:         id,
-		Tenant:     "tenant",
 		Key:        "test",
 		ObjectType: model.RuntimeLabelableObject,
 		ObjectID:   "321",

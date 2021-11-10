@@ -1,20 +1,6 @@
 package label_test
 
-import (
-	"fmt"
-	"strings"
-	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-
-	"github.com/google/uuid"
-
-	"github.com/stretchr/testify/assert"
-
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-)
-
+/*
 func Test_FilterQuery(t *testing.T) {
 	tenantID := uuid.New()
 
@@ -468,3 +454,4 @@ func TestFilterSubquery(t *testing.T) {
 func removeWhitespace(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
+*/

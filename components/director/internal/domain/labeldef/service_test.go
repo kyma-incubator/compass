@@ -343,7 +343,6 @@ func TestServiceUpdate(t *testing.T) {
 		existingLabels := []*model.Label{
 			{
 				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
-				Tenant: tenant,
 				Key:    key,
 				Value: map[string]interface{}{
 					"firstName": "val",
@@ -355,7 +354,6 @@ func TestServiceUpdate(t *testing.T) {
 			},
 			{
 				ID:     "2037fc3d-be6c-4489-94cf-05518bac709f",
-				Tenant: tenant,
 				Key:    key,
 				Value: map[string]interface{}{
 					"firstName": "val3",
@@ -410,7 +408,6 @@ func TestServiceUpdate(t *testing.T) {
 		existingLabels := []*model.Label{
 			{
 				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
-				Tenant: tenant,
 				Key:    oldProperty,
 				Value: map[string]interface{}{
 					"key": "val",
@@ -420,7 +417,6 @@ func TestServiceUpdate(t *testing.T) {
 			},
 			{
 				ID:     "2037fc3d-be6c-4489-94cf-05518bac709f",
-				Tenant: tenant,
 				Key:    oldProperty,
 				Value: map[string]interface{}{
 					"key": "val2",
@@ -490,7 +486,6 @@ func TestServiceUpdate(t *testing.T) {
 		existingLabels := []*model.Label{
 			{
 				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
-				Tenant: tenant,
 				Key:    key,
 				Value: map[string]interface{}{
 					"firstName": "val",
@@ -501,7 +496,6 @@ func TestServiceUpdate(t *testing.T) {
 			},
 			{
 				ID:     "2037fc3d-be6c-4489-94cf-05518bac709f",
-				Tenant: tenant,
 				Key:    key,
 				Value: map[string]interface{}{
 					"firstName": "val3",
@@ -743,9 +737,9 @@ func TestServiceDelete(t *testing.T) {
 			Tenant: "tenant",
 		}
 		existingLabels := []*model.Label{
-			fixLabel("test", tnt, given.Key, nil, "object1", model.ApplicationLabelableObject),
-			fixLabel("test2", tnt, given.Key, nil, "object2", model.RuntimeLabelableObject),
-			fixLabel("test3", tnt, given.Key, nil, "object3", model.ApplicationLabelableObject),
+			fixLabel("test", given.Key, nil, "object1", model.ApplicationLabelableObject),
+			fixLabel("test2", given.Key, nil, "object2", model.RuntimeLabelableObject),
+			fixLabel("test3", given.Key, nil, "object3", model.ApplicationLabelableObject),
 		}
 		deleteRelatedResources := false
 		mockRepository.On("GetByKey", ctx, tnt, given.Key).Return(&given, nil).Once()
@@ -1316,10 +1310,9 @@ func fixModifiedScenariosLabelDefinition(tenantID string) model.LabelDefinition 
 	return ld
 }
 
-func fixLabel(id, tenant, key string, value interface{}, objectID string, objectType model.LabelableObject) *model.Label {
+func fixLabel(id, key string, value interface{}, objectID string, objectType model.LabelableObject) *model.Label {
 	return &model.Label{
 		ID:         id,
-		Tenant:     tenant,
 		Key:        key,
 		Value:      value,
 		ObjectID:   objectID,

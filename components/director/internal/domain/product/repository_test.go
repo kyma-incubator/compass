@@ -1,60 +1,53 @@
 package product_test
 
 import (
-	"context"
-	"fmt"
+	"database/sql/driver"
 	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/product"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/product/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
-	productModel := fixProductModel()
-	productEntity := fixEntityProduct()
-	insertQuery := `^INSERT INTO public.products \(.+\) VALUES \(.+\)$`
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Create Product",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenantID, appID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       `^INSERT INTO public.products \(.+\) VALUES \(.+\)$`,
+				Args:        fixProductRow(),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       product.NewRepository,
+		ModelEntity:               fixProductModel(),
+		DBEntity:                  fixEntityProduct(),
+		NilModelEntity:            fixNilModelProduct(),
+		TenantID:                  tenantID,
+		DisableConverterErrorTest: true,
+	}
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-
-		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixProductRow()...).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := automock.EntityConverter{}
-		convMock.On("ToEntity", productModel).Return(productEntity, nil).Once()
-		pgRepository := product.NewRepository(&convMock)
-		//WHEN
-		err := pgRepository.Create(ctx, productModel)
-		//THEN
-		require.NoError(t, err)
-		sqlMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when item is nil", func(t *testing.T) {
-		ctx := context.TODO()
-		convMock := automock.EntityConverter{}
-		pgRepository := product.NewRepository(&convMock)
-		// WHEN
-		err := pgRepository.Create(ctx, nil)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "model can not be nil")
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.products SET title = ?, short_description = ?, vendor = ?, parent = ?, labels = ?, correlation_ids = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
 
@@ -235,3 +228,4 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 }
+*/

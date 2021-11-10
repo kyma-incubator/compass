@@ -28,7 +28,7 @@ var (
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in model.Label) (*Entity, error)
+	ToEntity(in *model.Label) (*Entity, error)
 	FromEntity(in Entity) (model.Label, error)
 }
 
@@ -92,7 +92,7 @@ func (r *repository) Upsert(ctx context.Context, tenant string, label *model.Lab
 	}
 
 	l.Value = label.Value
-	labelEntity, err := r.conv.ToEntity(*l)
+	labelEntity, err := r.conv.ToEntity(l)
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
@@ -107,7 +107,7 @@ func (r *repository) UpdateWithVersion(ctx context.Context, tenant string, label
 	if label == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
-	labelEntity, err := r.conv.ToEntity(*label)
+	labelEntity, err := r.conv.ToEntity(label)
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
@@ -123,7 +123,7 @@ func (r *repository) Create(ctx context.Context, tenant string, label *model.Lab
 		return apperrors.NewInternalError("item can not be empty")
 	}
 
-	labelEntity, err := r.conv.ToEntity(*label)
+	labelEntity, err := r.conv.ToEntity(label)
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}

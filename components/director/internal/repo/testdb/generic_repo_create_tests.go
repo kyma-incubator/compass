@@ -32,7 +32,8 @@ type SqlQueryDetails struct {
 	InvalidRowsProvider func() []*sqlmock.Rows
 }
 
-// RepoCreateTestSuite represents a generic test suite for all entity repo create methods.
+// RepoCreateTestSuite represents a generic test suite for repository Create method of any entity that has externally managed tenants in m2m table/view.
+// This test suite is not suitable for global entities or entities with embedded tenant.
 type RepoCreateTestSuite struct {
 	Name                      string
 	SqlQueryDetails           []SqlQueryDetails

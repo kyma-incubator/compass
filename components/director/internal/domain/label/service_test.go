@@ -62,13 +62,13 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("Upsert", ctx, &model.Label{
-					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "object", Value: objectValue,
+					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "object", Value: objectValue,
 				}).Return(nil).Once()
 				repo.On("Upsert", ctx, &model.Label{
-					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
+					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
 				}).Return(nil).Once()
 				repo.On("Upsert", ctx, &model.Label{
-					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "array", Value: arrayValue,
+					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "array", Value: arrayValue,
 				}).Return(nil).Once()
 				return repo
 			},
@@ -97,10 +97,10 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, runtimeType, runtimeID, "string").Return(nil, notFoundErr).Maybe()
 
 				repo.On("Upsert", ctx, &model.Label{
-					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "object", Value: objectValue,
+					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "object", Value: objectValue,
 				}).Return(testErr).Maybe()
 				repo.On("Upsert", ctx, &model.Label{
-					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
+					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
 				}).Return(nil).Maybe()
 				return repo
 			},
@@ -189,7 +189,6 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 					Value:      "string",
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -221,7 +220,6 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -263,7 +261,6 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -376,7 +373,6 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(testErr).Once()
@@ -475,7 +471,6 @@ func TestLabelService_CreateLabel(t *testing.T) {
 					Value:      "string",
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -505,7 +500,6 @@ func TestLabelService_CreateLabel(t *testing.T) {
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -547,7 +541,6 @@ func TestLabelService_CreateLabel(t *testing.T) {
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -636,7 +629,6 @@ func TestLabelService_CreateLabel(t *testing.T) {
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(testErr)
@@ -759,7 +751,6 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 					Value:      "string",
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -789,7 +780,6 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -831,7 +821,6 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -920,7 +909,6 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(testErr)
@@ -1032,7 +1020,6 @@ func TestLabelService_GetLabel(t *testing.T) {
 				repo := &automock.LabelRepository{}
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, "appID", "test").Return(&model.Label{
 					ID:         id,
-					Tenant:     tnt,
 					Key:        "test",
 					Value:      []interface{}{"test"},
 					ObjectID:   "appID",
@@ -1052,7 +1039,6 @@ func TestLabelService_GetLabel(t *testing.T) {
 
 			ExpectedLabel: &model.Label{
 				ID:         id,
-				Tenant:     tnt,
 				Key:        "test",
 				Value:      []interface{}{"test"},
 				ObjectID:   "appID",

@@ -17,7 +17,7 @@ func NewConverter() *converter {
 type converter struct{}
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.Label) (*Entity, error) {
+func (c *converter) ToEntity(in *model.Label) (*Entity, error) {
 	var valueMarshalled []byte
 	var err error
 
