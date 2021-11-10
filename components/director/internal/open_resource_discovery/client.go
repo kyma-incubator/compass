@@ -191,5 +191,12 @@ func calculateBaseURL(webhookURL string, config WellKnownConfig) (string, error)
 		parsedWebhookURL.Path = strippedPath
 		return parsedWebhookURL.String(), nil
 	}
+
+	if strings.HasSuffix(parsedWebhookURL.Path, "/sap/bc/http/sap/ord_configuration") {
+		strippedPath := strings.ReplaceAll(parsedWebhookURL.Path, "/sap/bc/http/sap/ord_configuration", "")
+		parsedWebhookURL.Path = strippedPath
+		return parsedWebhookURL.String(), nil
+	}
+
 	return "", nil
 }
