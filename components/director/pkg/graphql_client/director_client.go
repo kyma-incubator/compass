@@ -32,30 +32,23 @@ func NewDirector(client GraphQLClient) *Director {
 }
 
 func (d *Director) WriteTenants(ctx context.Context, tenants []model.BusinessTenantMappingInput) error {
-	var res map[string]interface{}
-
-	mutationBuilder := strings.Builder{}
-	for _, tnt := range tenants {
-		mutationBuilder.WriteString(fmt.Sprintf(tenantQueryPattern, tnt.Name, tnt.ExternalTenant, tnt.Parent, tnt.Subdomain, tnt.Region, tnt.Type, tnt.Provider))
-	}
-	tenantsQuery := fmt.Sprintf("mutation { writeTenants(in:[%s])}", mutationBuilder.String()[:mutationBuilder.Len()-1])
-	gRequest := gcli.NewRequest(tenantsQuery)
-	if err := d.client.Run(ctx, gRequest, &res); err != nil {
-		return errors.Wrap(err, "while executing gql query")
-	}
-	return nil
+	return modifyTenants(ctx, tenants, "writeTenants", d.client)
 }
 
 func (d *Director) DeleteTenants(ctx context.Context, tenants []model.BusinessTenantMappingInput) error {
+	return modifyTenants(ctx, tenants, "deleteTenants", d.client)
+}
+
+func modifyTenants(ctx context.Context, tenants []model.BusinessTenantMappingInput, mutation string, client GraphQLClient) error {
 	var res map[string]interface{}
 
 	mutationBuilder := strings.Builder{}
 	for _, tnt := range tenants {
 		mutationBuilder.WriteString(fmt.Sprintf(tenantQueryPattern, tnt.Name, tnt.ExternalTenant, tnt.Parent, tnt.Subdomain, tnt.Region, tnt.Type, tnt.Provider))
 	}
-	tenantsQuery := fmt.Sprintf("mutation { deleteTenants(in:[%s])}", mutationBuilder.String()[:mutationBuilder.Len()-1])
+	tenantsQuery := fmt.Sprintf("mutation { %s(in:[%s])}", mutation, mutationBuilder.String()[:mutationBuilder.Len()-1])
 	gRequest := gcli.NewRequest(tenantsQuery)
-	if err := d.client.Run(ctx, gRequest, &res); err != nil {
+	if err := client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql query")
 	}
 	return nil
