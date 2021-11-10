@@ -152,7 +152,7 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d Body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
-	fmt.Println(string(bodyBytes))
+	log.C(ctx).Infof("\n\nORD Config body: %s\n\n", string(bodyBytes))
 
 	config := WellKnownConfig{}
 	if err := json.Unmarshal(bodyBytes, &config); err != nil {
