@@ -131,6 +131,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		}
 	}
 
+	emptyString := ""
 	for _, doc := range docs {
 		if err := validateDocumentInput(doc); err != nil {
 			return errors.Wrap(err, "error validating document")
@@ -141,7 +142,11 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				return errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID)
 			}
 		}
-		for _, bndl := range doc.ConsumptionBundles {
+		for i, bndl := range doc.ConsumptionBundles {
+			if doc.ConsumptionBundles[i].ShortDescription == nil || *doc.ConsumptionBundles[i].ShortDescription == "" {
+				doc.ConsumptionBundles[i].ShortDescription = &emptyString
+			}
+
 			if err := validateBundleInput(bndl); err != nil {
 				return errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID))
 			}

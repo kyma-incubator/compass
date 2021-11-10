@@ -117,7 +117,6 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 	var resp *http.Response
 	var err error
 
-	log.C(ctx).Infof("ORD Webhook URL: %s\n", *webhook.URL)
 	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) ORD webhook is configured with %q access strategy.", app.Name, app.ID, app.Type, *webhook.Auth.AccessStrategy)
 		executor, err := c.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*webhook.Auth.AccessStrategy))
@@ -152,8 +151,6 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d Body: %s", resp.StatusCode, string(bodyBytes))
 	}
-
-	log.C(ctx).Infof("\n\nORD Config body: %s\n\n", string(bodyBytes))
 
 	config := WellKnownConfig{}
 	if err := json.Unmarshal(bodyBytes, &config); err != nil {
