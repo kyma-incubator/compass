@@ -131,7 +131,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		}
 	}
 
-	emptyString := ""
+	emptyString := "-empty-"
 	for _, doc := range docs {
 		if err := validateDocumentInput(doc); err != nil {
 			return errors.Wrap(err, "error validating document")
