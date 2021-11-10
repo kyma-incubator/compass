@@ -145,10 +145,12 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		for i, bndl := range doc.ConsumptionBundles {
 			if doc.ConsumptionBundles[i].ShortDescription == nil || *doc.ConsumptionBundles[i].ShortDescription == "" {
 				doc.ConsumptionBundles[i].ShortDescription = &emptyString
+				bndl.ShortDescription = &emptyString
 			}
 
 			if doc.ConsumptionBundles[i].Description == nil || *doc.ConsumptionBundles[i].Description == "" {
 				doc.ConsumptionBundles[i].Description = &emptyString
+				bndl.Description = &emptyString
 			}
 
 			if err := validateBundleInput(bndl); err != nil {
