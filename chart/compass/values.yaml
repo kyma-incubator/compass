@@ -513,7 +513,7 @@ global:
       manageSecrets: true
       providerName: "compass"
       schedule: "*/5 * * * *"
-      tenantInsertChunkSize: 500
+      tenantInsertChunkSize: "500"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: 2s

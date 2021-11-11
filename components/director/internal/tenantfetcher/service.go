@@ -496,13 +496,13 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 		runtime, err := s.runtimeStorageService.GetByFiltersGlobal(ctx, filters)
 		if err != nil {
 			if apperrors.IsNotFoundError(err) {
-				log.D().Debugf("No runtime found for label key %s with value %s", s.movedRuntimeLabelKey, mapping.LabelValue)
+				log.C(ctx).Debugf("No runtime found for label key %s with value %s", s.movedRuntimeLabelKey, mapping.LabelValue)
 				continue
 			}
 			return errors.Wrapf(err, "while listing runtimes for label key %s", s.movedRuntimeLabelKey)
 		}
 
-		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, mapping.TargetTenant) // should move runtime here
+		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, mapping.TargetTenant)
 		if err != nil {
 			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
 		}

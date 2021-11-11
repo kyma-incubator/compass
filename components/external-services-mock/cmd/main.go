@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/selfreg"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/tenantfetcher"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/health"
@@ -135,6 +136,21 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
 	router.HandleFunc("/systemfetcher/systems", systemFetcherHandler.HandleFunc)
+
+	// Tenant fetcher handlers
+	tenantFetcherHandler := tenantfetcher.NewTenantFetcherHandler(cfg.DefaultTenant)
+
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("create"))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset("create"))
+	router.HandleFunc("/tenant-fetcher/global-account-create", tenantFetcherHandler.HandleFunc("create"))
+
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-delete/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("delete"))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-delete/reset").HandlerFunc(tenantFetcherHandler.HandleReset("delete"))
+	router.HandleFunc("/tenant-fetcher/global-account-delete", tenantFetcherHandler.HandleFunc("delete"))
+
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-update/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("update"))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-update/reset").HandlerFunc(tenantFetcherHandler.HandleReset("update"))
+	router.HandleFunc("/tenant-fetcher/global-account-update", tenantFetcherHandler.HandleFunc("update"))
 
 	// Fetch request handlers
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
