@@ -29,13 +29,13 @@ spec:
           labels:
             cronjob: tenant-fetcher
         spec:
-          {{ if .Values.global.isLocalEnv }}
+          {{ if $.Values.global.isLocalEnv }}
           # HostAliases are used by Pod to resolve kyma.local domain
           hostAliases:
-            - ip: {{ .Values.global.minikubeIP }}
+            - ip: {{ $.Values.global.minikubeIP }}
               hostnames:
                 # Used for calls to Director
-                - "{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
+                - "{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}"
           {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
           containers:
