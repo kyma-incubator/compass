@@ -36,6 +36,7 @@ graphql:
     registerRuntimeContext: [ "runtime:write" ]
     updateRuntimeContext: [ "runtime:write" ]
     unregisterRuntimeContext: [ "runtime:write" ]
+    setRuntimeTenant: [ "runtime:tenant_write" ]
     registerIntegrationSystem: ["integration_system:write"]
     updateIntegrationSystem: ["integration_system:write"]
     unregisterIntegrationSystem: ["integration_system:write"]

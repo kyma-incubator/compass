@@ -386,6 +386,7 @@ type ComplexityRoot struct {
 		SetBundleInstanceAuth                         func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
+		SetRuntimeTenant                              func(childComplexity int, runtimeID string, tenantID string) int
 		UnassignFormation                             func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		UnpairApplication                             func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterApplication                         func(childComplexity int, id string, mode *OperationMode) int
@@ -604,6 +605,7 @@ type MutationResolver interface {
 	DeleteApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
 	RegisterRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error)
 	UpdateRuntime(ctx context.Context, id string, in RuntimeInput) (*Runtime, error)
+	SetRuntimeTenant(ctx context.Context, runtimeID string, tenantID string) (*Runtime, error)
 	UnregisterRuntime(ctx context.Context, id string) (*Runtime, error)
 	RegisterRuntimeContext(ctx context.Context, in RuntimeContextInput) (*RuntimeContext, error)
 	UpdateRuntimeContext(ctx context.Context, id string, in RuntimeContextInput) (*RuntimeContext, error)
@@ -2537,6 +2539,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SetRuntimeLabel(childComplexity, args["runtimeID"].(string), args["key"].(string), args["value"].(interface{})), true
+
+	case "Mutation.setRuntimeTenant":
+		if e.complexity.Mutation.SetRuntimeTenant == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setRuntimeTenant_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetRuntimeTenant(childComplexity, args["runtimeID"].(string), args["tenantID"].(string)), true
 
 	case "Mutation.unassignFormation":
 		if e.complexity.Mutation.UnassignFormation == nil {
@@ -4785,7 +4799,7 @@ type Query {
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 200, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-
+	
 	**Examples**
 	- [query integration systems](examples/query-integration-systems/query-integration-systems.graphql)
 	"""
@@ -4869,6 +4883,7 @@ type Mutation {
 	- [update runtime](examples/update-runtime/update-runtime.graphql)
 	"""
 	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
+	setRuntimeTenant(runtimeID: ID!, tenantID: ID!): Runtime! @hasScopes(path: "graphql.mutation.setRuntimeTenant")
 	"""
 	**Examples**
 	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
@@ -6361,6 +6376,28 @@ func (ec *executionContext) field_Mutation_setRuntimeLabel_args(ctx context.Cont
 		}
 	}
 	args["value"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_setRuntimeTenant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["runtimeID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["runtimeID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["tenantID"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tenantID"] = arg1
 	return args, nil
 }
 
@@ -13981,6 +14018,71 @@ func (ec *executionContext) _Mutation_updateRuntime(ctx context.Context, field g
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateRuntime")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Runtime); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Runtime`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Runtime)
+	fc.Result = res
+	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_setRuntimeTenant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_setRuntimeTenant_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().SetRuntimeTenant(rctx, args["runtimeID"].(string), args["tenantID"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setRuntimeTenant")
 			if err != nil {
 				return nil, err
 			}
@@ -25591,6 +25693,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "updateRuntime":
 			out.Values[i] = ec._Mutation_updateRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "setRuntimeTenant":
+			out.Values[i] = ec._Mutation_setRuntimeTenant(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

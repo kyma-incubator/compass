@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -74,8 +76,6 @@ type PageConfig struct {
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
-	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
 // LabelDefinitionService missing godoc
@@ -100,7 +100,6 @@ type EventAPIClient interface {
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
-	Update(ctx context.Context, id string, in model.RuntimeInput) error
 	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
 }
 
@@ -115,6 +114,15 @@ type TenantSyncService interface {
 type DirectorGraphQLClient interface {
 	WriteTenants(context.Context, []model.BusinessTenantMappingInput) error
 	DeleteTenants(context.Context, []model.BusinessTenantMappingInput) error
+	CreateLabelDefinition(context.Context, graphql.LabelDefinitionInput, string) error
+	UpdateLabelDefinition(context.Context, graphql.LabelDefinitionInput, string) error
+	SetRuntimeTenant(ctx context.Context, runtimeID, tenantID string) error
+}
+
+// LabelDefConverter missing godoc
+//go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore
+type LabelDefConverter interface {
+	ToGraphQLInput(definition model.LabelDefinition) (graphql.LabelDefinitionInput, error)
 }
 
 const (
@@ -159,6 +167,7 @@ type SubaccountService struct {
 	toEventsPage                    func([]byte) *eventsPage
 	gqlClient                       DirectorGraphQLClient
 	tenantInsertChunkSize           int
+	labelDefConverter               LabelDefConverter
 }
 
 // NewGlobalAccountService missing godoc
@@ -208,7 +217,8 @@ func NewSubaccountService(queryConfig QueryConfig,
 	movedRuntimeLabelKey string,
 	fullResyncInterval time.Duration,
 	gqlClient DirectorGraphQLClient,
-	tenantInsertChunkSize int) *SubaccountService {
+	tenantInsertChunkSize int,
+	labelDefConverter LabelDefConverter) *SubaccountService {
 	return &SubaccountService{
 		transact:                        transact,
 		kubeClient:                      kubeClient,
@@ -235,6 +245,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 		},
 		gqlClient:             gqlClient,
 		tenantInsertChunkSize: tenantInsertChunkSize,
+		labelDefConverter:     labelDefConverter,
 	}
 }
 
@@ -303,10 +314,6 @@ func (s SubaccountService) SyncTenants() error {
 			}
 		}
 
-		if err = tx.Commit(); err != nil {
-			return err
-		}
-
 		// Order of event processing matters
 		if len(tenantsToCreate) > 0 {
 			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize); err != nil {
@@ -319,12 +326,16 @@ func (s SubaccountService) SyncTenants() error {
 			}
 		}
 		if len(tenantsToDelete) > 0 {
-			if err := deleteTenants(ctx, s.gqlClient, s.tenantStorageService, currentTenants, tenantsToDelete, s.tenantInsertChunkSize); err != nil {
+			if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize); err != nil {
 				return errors.Wrap(err, "while deleting subaccounts")
 			}
 		}
 
 		log.C(ctx).Printf("Processed new events for region: %s", region)
+
+		if err = tx.Commit(); err != nil {
+			return err
+		}
 	}
 
 	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
@@ -403,7 +414,7 @@ func (s GlobalAccountService) SyncTenants() error {
 		}
 	}
 	if len(tenantsToDelete) > 0 {
-		if err := deleteTenants(ctx, s.gqlClient, s.tenantStorageService, currentTenants, tenantsToDelete, s.tenantInsertChunkSize); err != nil {
+		if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize); err != nil {
 			return errors.Wrap(err, "moving deleting accounts")
 		}
 	}
@@ -505,11 +516,20 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 			Key:    s.movedRuntimeLabelKey,
 		}
 
-		if err := s.labelDefService.Upsert(ctx, labelDef); err != nil {
-			return errors.Wrapf(err, "while upserting label definition to internal tenant with ID %s", targetInternalTenant)
+		labelDefGQL, err := s.labelDefConverter.ToGraphQLInput(labelDef)
+		if err != nil {
+			return err
+		}
+		if err := s.gqlClient.CreateLabelDefinition(ctx, labelDefGQL, targetInternalTenant); err != nil {
+			if apperrors.IsNotUniqueError(errors.Unwrap(err)) {
+				if err = s.gqlClient.UpdateLabelDefinition(ctx, labelDefGQL, targetInternalTenant); err != nil {
+					return errors.Wrap(err, "while updating label definition")
+				}
+			}
+			return errors.Wrap(err, "while creating label definition")
 		}
 
-		err = s.runtimeStorageService.UpdateTenantID(ctx, runtime.ID, targetInternalTenant)
+		err = s.gqlClient.SetRuntimeTenant(ctx, runtime.ID, targetInternalTenant)
 		if err != nil {
 			return errors.Wrapf(err, "while updating tenant ID of runtime with label key-value match %s-%s",
 				s.movedRuntimeLabelKey, mapping.LabelValue)
@@ -536,7 +556,7 @@ func checkForScenarios(ctx context.Context, labelService LabelService, runtime *
 	return nil
 }
 
-func deleteTenants(ctx context.Context, gqlClient DirectorGraphQLClient, tenantStorageService TenantStorageService, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, maxChunkSize int) error {
+func deleteTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, maxChunkSize int) error {
 	tenantsToDelete := make([]model.BusinessTenantMappingInput, 0)
 	for _, toDelete := range eventsTenants {
 		if _, ok := currTenants[toDelete.ExternalTenant]; ok {

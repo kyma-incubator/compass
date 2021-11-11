@@ -584,6 +584,10 @@ func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in grap
 	return r.runtime.UpdateRuntime(ctx, id, in)
 }
 
+func (r *mutationResolver) SetRuntimeTenant(ctx context.Context, runtimeID string, tenantID string) (*graphql.Runtime, error) {
+	return r.runtime.SetRuntimeTenant(ctx, runtimeID, tenantID)
+}
+
 // UnregisterRuntime missing godoc
 func (r *mutationResolver) UnregisterRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.DeleteRuntime(ctx, id)

@@ -43,29 +43,32 @@ func (d *Director) DeleteTenants(ctx context.Context, tenants []model.BusinessTe
 	return modifyTenants(ctx, tenants, "deleteTenants", d.client)
 }
 
-func (d *Director) CreateLabelDefinition(ctx context.Context, lblDef graphql.LabelDefinitionInput) error {
+func (d *Director) CreateLabelDefinition(ctx context.Context, lblDef graphql.LabelDefinitionInput, tenant string) error {
+	return modifyLabelDefs(ctx, lblDef, tenant, "createLabelDefinition", d.client)
+}
+
+func (d *Director) UpdateLabelDefinition(ctx context.Context, lblDef graphql.LabelDefinitionInput, tenant string) error {
+	return modifyLabelDefs(ctx, lblDef, tenant, "updateLabelDefinition", d.client)
+}
+
+func (d *Director) SetRuntimeTenant(ctx context.Context, runtimeID, tenantID string) error {
 	res := struct {
-		LabelDefinition graphql.LabelDefinition `json:"createLabelDefinition"`
+		Runtime graphql.Runtime `json:"result"`
 	}{}
 
-	gqlizer := graphqlizer.Graphqlizer{}
-	in, err := gqlizer.LabelDefinitionInputToGQL(lblDef)
 	gqlFieldProvider := graphqlizer.GqlFieldsProvider{}
-	if err != nil {
-		return errors.Wrap(err, "while creating label definition input")
-	}
-	lblDefQuery := fmt.Sprintf(`mutation { createLabelDefinition(in: %s ) {"%s"}}`, in, gqlFieldProvider.ForLabelDefinition())
+	lblDefQuery := fmt.Sprintf(`mutation { result: setRuntimeTenant(runtimeID:"%s", tenantID:"%s") {%s}}`, runtimeID, tenantID, gqlFieldProvider.ForRuntime())
 	gRequest := gcli.NewRequest(lblDefQuery)
 
-	if err = d.client.Run(ctx, gRequest, &res); err != nil {
+	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql query")
 	}
 	return nil
 }
 
-func (d *Director) UpdateLabelDefinition(ctx context.Context, lblDef graphql.LabelDefinitionInput) error {
+func modifyLabelDefs(ctx context.Context, lblDef graphql.LabelDefinitionInput, tenant string, mutation string, client GraphQLClient) error {
 	res := struct {
-		LabelDefinition graphql.LabelDefinition `json:"updateLabelDefinition"`
+		LabelDefinition graphql.LabelDefinition `json:"result"`
 	}{}
 
 	gqlizer := graphqlizer.Graphqlizer{}
@@ -74,10 +77,10 @@ func (d *Director) UpdateLabelDefinition(ctx context.Context, lblDef graphql.Lab
 	if err != nil {
 		return errors.Wrap(err, "while creating label definition input")
 	}
-	lblDefQuery := fmt.Sprintf(`mutation { updateLabelDefinition(in: %s ) {"%s"}}`, in, gqlFieldProvider.ForLabelDefinition())
+	lblDefQuery := fmt.Sprintf(`mutation { result: %s(in: %s ) {%s}}`, mutation, in, gqlFieldProvider.ForLabelDefinition())
 	gRequest := gcli.NewRequest(lblDefQuery)
-
-	if err = d.client.Run(ctx, gRequest, &res); err != nil {
+	gRequest.Header.Set("Tenant", tenant)
+	if err = client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql query")
 	}
 	return nil
