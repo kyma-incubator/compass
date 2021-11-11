@@ -75,25 +75,27 @@ func validateSCCs(value interface{}) error {
 	return nil
 }
 
-func ToAppRegisterInput(system System, tenant string, locationID string) model.ApplicationRegisterInput {
+func ToAppRegisterInput(system System, locationID string) model.ApplicationRegisterInput {
+	sccLabel := struct {
+		Host       string
+		LocationId string
+	}{
+		system.Host,
+		locationID,
+	}
 	return model.ApplicationRegisterInput{
-		Name:         "",
+		Name:         "on-premise-system", //TODO doublecheck the name
 		ProviderName: str.Ptr("SAP"),
-		Labels:       map[string]interface{}{"SCC": locationID + system.Host},
+		Labels:       map[string]interface{}{"scc": sccLabel, "applicationType": system.SystemType, "systemProtocol": system.Protocol},
 		SystemNumber: str.Ptr(system.SystemNumber),
-		Status:       system.Status,
+		Status:       str.Ptr(system.Status),
 	}
 }
 
-func ToAppUpdateInput(system System, tenant string, locationID string) model.ApplicationUpdateInput {
+func ToAppUpdateInput(system System) model.ApplicationUpdateInput {
 	// we should update the description, system type, protocol and system status
-	// Where we will store the system type and the protocol ???
 	return model.ApplicationUpdateInput{
 		Description:         str.Ptr(system.Description),
-		IntegrationSystemID: nil,
-		StatusCondition:     nil,
-		BaseURL:             nil,
-		Labels:              nil,
-		Status:              system.Status,
+		Status:              str.Ptr(system.Status),
 	}
 }

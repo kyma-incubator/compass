@@ -296,6 +296,7 @@ func (s *service) GetSystem(ctx context.Context, subaccount, locationID, virtual
 	//}
 	//
 	//return app, nil
+
 	return nil, nil
 }
 

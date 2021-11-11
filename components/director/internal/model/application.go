@@ -125,6 +125,7 @@ type ApplicationRegisterInput struct {
 	SystemNumber        *string
 	OrdLabels           json.RawMessage
 	CorrelationIDs      json.RawMessage
+	Status              *string
 }
 
 // ApplicationRegisterInputWithTemplate missing godoc
@@ -180,4 +181,5 @@ type ApplicationUpdateInput struct {
 	BaseURL             *string
 	Labels              json.RawMessage
 	CorrelationIDs      json.RawMessage
+	Status              *string
 }

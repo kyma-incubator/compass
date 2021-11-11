@@ -7,10 +7,10 @@ import (
 
 // ErrorResponse missing godoc
 type ErrorResponse struct {
-	Error Error `json:"error"`
+	Error error `json:"error"`
 }
 
-func GetTimeoutMessage() []byte{
+func GetTimeoutMessage() []byte {
 	marshal, err := json.Marshal(ErrorResponse{Error: Error{
 		Code:    http.StatusRequestTimeout,
 		Message: "timeout",
@@ -26,4 +26,26 @@ func GetTimeoutMessage() []byte{
 type Error struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
+}
+
+func (e Error) Error() string {
+	return e.Message
+}
+
+// Error missing godoc
+type DetailedError struct {
+	Code    int       `json:"code"`
+	Message string    `json:"message"`
+	Details []Details `json:"details"`
+}
+
+func (d DetailedError) Error() string {
+	return d.Message
+}
+
+type Detail struct {
+	Code       string `json:"code"`
+	Message    string `json:"message"`
+	Subaccount string `json:"subaccount"`
+	LocationId string `json:"locationId"`
 }

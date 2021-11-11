@@ -7,8 +7,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/nsmodel"
+	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 	"net/http"
 )
 
@@ -18,7 +20,7 @@ type ApplicationService interface {
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 	GetSystem(ctx context.Context, subaccount, locationID, virtualHost string) (*model.Application, error)
 	MarkAsUnreachable(ctx context.Context, id string) error
-	ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
+	ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*ApplicationWithLabel, error) //TODO specify location ID in  label filter query
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
 }
@@ -63,13 +65,19 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&reportData)
 	if err != nil {
 		logger.Warnf("Got error on decoding Request Body: %v\n", err)
-		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, nsmodel.NewNSError("failed to parse request body"))
+		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
+			Code:    http.StatusBadRequest,
+			Message: "failed to parse request body",
+		})
 		return
 	}
 
 	if err := reportData.Validate(); err != nil {
 		logger.Warnf("Got error while validating Request Body: %v\n", err)
-		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, nsmodel.NewNSError(err.Error()))
+		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		})
 		return
 	}
 
@@ -80,15 +88,30 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	details := make([]httputil.Detail, 0, 0)
 	if reportType == "delta" {
 		for _, scc := range reportData.Value {
-			if err := a.handleSccSystems(ctx, scc); err != nil {
-				//TODO return proper response //system
+			if ok := a.handleSccSystems(ctx, scc); !ok {
+				addErrorDetails(&details, &scc)
 			}
 		}
-		//TODO return proper response
+		if len(details) == 0 {
+			httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
+			return
+		}
+		httputil.RespondWithError(ctx, rw, http.StatusOK, httputil.DetailedError{
+			Code:    0, //TODO change me
+			Message: "Update/create failed for some on-premise systems",
+			Details: details,
+		})
+		return
 	}
 
+	//Full report
+	//The same as above
+	//Check all SCCs in CMP with all SCCs in full report
+	//If in CMP there are SCCs missing from the full report - mark all systems in these SCCs as unreachable
+	//At this step not possible to have something in full report which is not available in SCC as in the previous step we will have created applications for all new systems in full report
 	if reportType == "full" {
 		//TODO implement
 	}
@@ -100,50 +123,134 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (a *Handler) handleSccSystems(ctx context.Context, scc nsmodel.SCC) error {
-	if err := a.upsertSccSystems(ctx, scc); err != nil {
-		return err
-	}
-
-	if err := a.markAsUnreachable(ctx, scc); err != nil {
-		return err
-	}
-	return nil
+func (a *Handler) handleSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
+	successfulUpsert := a.upsertSccSystems(ctx, scc)
+	successfulMark := a.markAsUnreachable(ctx, scc)
+	return successfulUpsert && successfulMark
 }
 
-func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) error {
+//TODO Fix all errors
+func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
+	success := true
 	for _, system := range scc.ExposedSystems {
+		//TODO open transaction
 		if system.SystemNumber != "" {
-			if _, err := a.appSvc.Upsert(ctx, nsmodel.ToAppRegisterInput(system, scc.Subaccount, scc.LocationID)); err != nil {
-				return errors.Wrapf(err, "while upserting Application")
+			if _, err := a.appSvc.Upsert(ctx, nsmodel.ToAppRegisterInput(system, scc.LocationID)); err != nil {
+				success = false
+				log.C(ctx).Warn(errors.Wrapf(err, "while upserting Application"))
 			}
-			return nil
+			continue
 		}
 
-		app, err := a.appSvc.GetSystem(ctx, scc.Subaccount, scc.LocationID, system.Host)
-		if err != nil {
-			//TODO check if the app exists? Check the error type?
+		if ok := a.upsert(ctx, scc, system); !ok {
+			success = false
 		}
-		if app exists {
-			if err := a.appSvc.Update(ctx, app.ID, nsmodel.ToAppUpdateInput(system, scc.Subaccount, scc.LocationID)); err != nil {
-				return errors.Wrapf(err, "while updating Application with id %s", app.ID)
-			}
-		} else {
-			if _, err := a.appSvc.Create(ctx, nsmodel.ToAppRegisterInput(system, scc.Subaccount, scc.LocationID)); err != nil {
-				return errors.Wrapf(err, "while creating Application")
-			}
-		}
+
 	}
-	return nil
+	return success
 }
 
-func (a *Handler) markAsUnreachable(ctx context.Context, scc nsmodel.SCC) error {
-	//If there are missing systems in SCC report -> mark the respective systems in CMP as unreachable
-	allDBsystems = getAllForSCC(subacc, locationID)
-	unreachable
-	filterUnreachable(dbSystems, systems)
-	for _, system := range unreachable {
-		markAsUnreachable(system)
+func IsNotFoundError(err error) bool {
+	_, ok := err.(*nsmodel.SystemNotFoundError)
+	return ok
+}
+
+func (a *Handler) upsert(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
+	app, err := a.appSvc.GetSystem(ctx, scc.Subaccount, scc.LocationID, system.Host)
+
+	if err != nil && IsNotFoundError(err) {
+		if _, err := a.appSvc.Create(ctx, nsmodel.ToAppRegisterInput(system, scc.LocationID)); err != nil {
+			log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
+			return false
+		}
+		return true
 	}
-	return nil
+
+	if err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while getting Application"))
+		return false
+	}
+
+	return a.updateSystem(ctx, system, app)
+}
+
+func (a *Handler) updateSystem(ctx context.Context, system nsmodel.System, app *model.Application) bool {
+	if err := a.appSvc.Update(ctx, app.ID, nsmodel.ToAppUpdateInput(system)); err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while updating Application with id %s", app.ID))
+		return false
+	}
+
+	//TODO check if something additional is needed
+	if err := a.appSvc.SetLabel(ctx, &model.LabelInput{
+		Key:        "applicationType",
+		Value:      system.SystemType,
+		ObjectID:   app.ID,
+		ObjectType: model.ApplicationLabelableObject,
+	}); err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while setting 'applicationType' label for Application with id %s", app.ID))
+		return false
+	}
+
+	if err := a.appSvc.SetLabel(ctx, &model.LabelInput{
+		Key:        "systemProtocol",
+		Value:      system.Protocol,
+		ObjectID:   app.ID,
+		ObjectType: model.ApplicationLabelableObject,
+	}); err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while setting 'systemProtocol' label for Application with id %s", app.ID))
+		return false
+	}
+
+	return true
+}
+
+func addErrorDetails(details *[]httputil.Detail, scc *nsmodel.SCC) {
+	*details = append(*details, httputil.Detail{
+		Code:       "0000", //TODO change me
+		Message:    "Creation failed",
+		Subaccount: scc.Subaccount,
+		LocationId: scc.LocationID,
+	})
+}
+
+func (a *Handler) markAsUnreachable(ctx context.Context, scc nsmodel.SCC) bool {
+	success := true
+	apps, err := a.appSvc.ListBySCC(ctx, nil) //TODO change nil to proper labelfilter
+	if err != nil {
+		success = false
+		log.C(ctx).Warn(errors.Wrapf(err, "while listing all applications for scc with subaccount %s and location id %s", scc.Subaccount, scc.LocationID))
+	}
+
+	unreachable := filterUnreachable(apps, scc.ExposedSystems)
+	for _, system := range unreachable {
+		if err := a.appSvc.MarkAsUnreachable(ctx, system.ID); err != nil {
+			success = false
+			log.C(ctx).Warn(errors.Wrapf(err, "while marking application with id %s as unreachable", system.ID))
+		}
+	}
+	return success
+}
+
+func filterUnreachable(apps []*ApplicationWithLabel, systems []nsmodel.System) []*model.Application {
+	hostToSystem := make(map[string]interface{}, len(systems))
+
+	for _, s := range systems {
+		hostToSystem[s.Host] = struct{}{}
+	}
+
+	unreachable := make([]*model.Application, 0, 0)
+
+	for _, a := range apps {
+		result := gjson.Get(a.sccLabel.Value.(string), "Host")
+		_, ok := hostToSystem[result.Value().(string)]
+		if !ok {
+			unreachable = append(unreachable, a.app)
+		}
+	}
+	return unreachable
+}
+
+type ApplicationWithLabel struct {
+	app      *model.Application
+	sccLabel *model.Label
 }
