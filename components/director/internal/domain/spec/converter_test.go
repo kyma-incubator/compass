@@ -248,13 +248,13 @@ func TestConverter_FromEntity(t *testing.T) {
 	}{
 		{
 			Name:               "All properties given for API",
-			Input:              fixAPISpecEntity(),
+			Input:              *fixAPISpecEntity(),
 			Expected:           *fixModelAPISpec(),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name:               "All properties given for Event",
-			Input:              fixEventSpecEntity(),
+			Input:              *fixEventSpecEntity(),
 			Expected:           *fixModelEventSpec(),
 			ExpectedErrMessage: "",
 		},
@@ -262,7 +262,6 @@ func TestConverter_FromEntity(t *testing.T) {
 			Name: "Error when no reference entity",
 			Input: spec.Entity{
 				ID:       "2",
-				TenantID: "tenant",
 			},
 			ExpectedErrMessage: "while determining object reference: incorrect Object Reference ID and its type for Entity with ID '2'",
 		},
@@ -292,17 +291,17 @@ func TestConverter_ToEntity(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name     string
-		Input    model.Spec
-		Expected spec.Entity
+		Input    *model.Spec
+		Expected *spec.Entity
 	}{
 		{
 			Name:     "All properties given for API",
-			Input:    *fixModelAPISpec(),
+			Input:    fixModelAPISpec(),
 			Expected: fixAPISpecEntity(),
 		},
 		{
 			Name:     "All properties given for Event",
-			Input:    *fixModelEventSpec(),
+			Input:    fixModelEventSpec(),
 			Expected: fixEventSpecEntity(),
 		},
 	}

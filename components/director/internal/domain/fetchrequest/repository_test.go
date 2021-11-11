@@ -48,8 +48,8 @@ func TestRepository_Create(t *testing.T) {
 			return &automock.Converter{}
 		},
 		RepoConstructorFunc: fetchrequest.NewRepository,
-		ModelEntity:         &apiFRModel,
-		DBEntity:            &apiFREntity,
+		ModelEntity:         apiFRModel,
+		DBEntity:            apiFREntity,
 		NilModelEntity:      nilFrModel,
 		TenantID:            tenantID,
 	}
@@ -78,8 +78,8 @@ func TestRepository_Create(t *testing.T) {
 			return &automock.Converter{}
 		},
 		RepoConstructorFunc: fetchrequest.NewRepository,
-		ModelEntity:         &eventFRModel,
-		DBEntity:            &eventFREntity,
+		ModelEntity:         eventFRModel,
+		DBEntity:            eventFREntity,
 		NilModelEntity:      nilFrModel,
 		TenantID:            tenantID,
 	}
@@ -108,8 +108,8 @@ func TestRepository_Create(t *testing.T) {
 			return &automock.Converter{}
 		},
 		RepoConstructorFunc: fetchrequest.NewRepository,
-		ModelEntity:         &docFRModel,
-		DBEntity:            &docFREntity,
+		ModelEntity:         docFRModel,
+		DBEntity:            docFREntity,
 		NilModelEntity:      nilFrModel,
 		TenantID:            tenantID,
 	}

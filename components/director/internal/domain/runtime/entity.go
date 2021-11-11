@@ -3,8 +3,6 @@ package runtime
 import (
 	"database/sql"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
 // Runtime struct represents database entity for Runtime
@@ -19,44 +17,4 @@ type Runtime struct {
 
 func (e *Runtime) GetID() string {
 	return e.ID
-}
-
-// EntityFromRuntimeModel converts Runtime model to Runtime entity
-func EntityFromRuntimeModel(model *model.Runtime) (*Runtime, error) {
-	var nullDescription sql.NullString
-	if model.Description != nil && len(*model.Description) > 0 {
-		nullDescription = sql.NullString{
-			String: *model.Description,
-			Valid:  true,
-		}
-	}
-
-	return &Runtime{
-		ID:                model.ID,
-		Name:              model.Name,
-		Description:       nullDescription,
-		StatusCondition:   string(model.Status.Condition),
-		StatusTimestamp:   model.Status.Timestamp,
-		CreationTimestamp: model.CreationTimestamp,
-	}, nil
-}
-
-// ToModel converts Runtime entity to Runtime model
-func (e Runtime) ToModel() *model.Runtime {
-	var description *string
-	if e.Description.Valid {
-		description = new(string)
-		*description = e.Description.String
-	}
-
-	return &model.Runtime{
-		ID:          e.ID,
-		Name:        e.Name,
-		Description: description,
-		Status: &model.RuntimeStatus{
-			Condition: model.RuntimeStatusCondition(e.StatusCondition),
-			Timestamp: e.StatusTimestamp,
-		},
-		CreationTimestamp: e.CreationTimestamp,
-	}
 }

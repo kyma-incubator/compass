@@ -30,10 +30,17 @@ type pgRepository struct {
 	pageableQuerier    repo.PageableQuerier
 	creator            repo.Creator
 	updater            repo.Updater
+	conv               EntityConverter
+}
+
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
+type EntityConverter interface {
+	ToEntity(in *model.RuntimeContext) *RuntimeContext
+	FromEntity(entity *RuntimeContext) *model.RuntimeContext
 }
 
 // NewRepository missing godoc
-func NewRepository() *pgRepository {
+func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier:       repo.NewExistQuerier(runtimeContextsTable),
 		singleGetter:       repo.NewSingleGetter(runtimeContextsTable, runtimeContextColumns),
@@ -42,6 +49,7 @@ func NewRepository() *pgRepository {
 		pageableQuerier:    repo.NewPageableQuerier(runtimeContextsTable, runtimeContextColumns),
 		creator:            repo.NewCreator(runtimeContextsTable, runtimeContextColumns),
 		updater:            repo.NewUpdater(runtimeContextsTable, []string{"key", "value"}, []string{"id"}),
+		conv:               conv,
 	}
 }
 
@@ -62,7 +70,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.R
 		return nil, err
 	}
 
-	return runtimeCtxEnt.ToModel(), nil
+	return r.conv.FromEntity(&runtimeCtxEnt), nil
 }
 
 // GetByFiltersAndID missing godoc
@@ -87,7 +95,7 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 		return nil, err
 	}
 
-	return runtimeCtxEnt.ToModel(), nil
+	return r.conv.FromEntity(&runtimeCtxEnt), nil
 }
 
 // GetByFiltersGlobal missing godoc
@@ -107,7 +115,7 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 		return nil, err
 	}
 
-	return runtimeCtxEnt.ToModel(), nil
+	return r.conv.FromEntity(&runtimeCtxEnt), nil
 }
 
 // RuntimeContextCollection missing godoc
@@ -146,7 +154,7 @@ func (r *pgRepository) List(ctx context.Context, runtimeID string, tenant string
 	items := make([]*model.RuntimeContext, 0, len(runtimeCtxsCollection))
 
 	for _, runtimeCtxEnt := range runtimeCtxsCollection {
-		items = append(items, runtimeCtxEnt.ToModel())
+		items = append(items, r.conv.FromEntity(&runtimeCtxEnt))
 	}
 	return &model.RuntimeContextPage{
 		Data:       items,
@@ -160,7 +168,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ru
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
-	return r.creator.Create(ctx, resource.RuntimeContext, tenant, EntityFromRuntimeContextModel(item))
+	return r.creator.Create(ctx, resource.RuntimeContext, tenant, r.conv.ToEntity(item))
 }
 
 // Update missing godoc
@@ -168,5 +176,5 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Ru
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
-	return r.updater.UpdateSingle(ctx, resource.RuntimeContext, tenant, EntityFromRuntimeContextModel(item))
+	return r.updater.UpdateSingle(ctx, resource.RuntimeContext, tenant, r.conv.ToEntity(item))
 }

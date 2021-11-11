@@ -1,9 +1,7 @@
 package spec_test
 
 import (
-	"context"
-	"errors"
-	"fmt"
+	"database/sql/driver"
 	"regexp"
 	"testing"
 
@@ -12,11 +10,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
+/*
 func TestRepository_GetByID(t *testing.T) {
 	// given
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
@@ -69,66 +65,80 @@ func TestRepository_GetByID(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 }
-
+*/
 func TestRepository_Create(t *testing.T) {
-	//GIVEN
-	insertQuery := `^INSERT INTO public.specifications \(.+\) VALUES \(.+\)$`
+	var nilSpecModel *model.Spec
+	apiSpecModel := fixModelAPISpec()
+	apiSpecEntity := fixAPISpecEntity()
+	eventSpecModel := fixModelEventSpec()
+	eventSpecEntity := fixEventSpecEntity()
 
-	t.Run("Success for API", func(t *testing.T) {
-		specModel := fixModelAPISpec()
-		specEntity := fixAPISpecEntity()
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
+	apiSpecSuite := testdb.RepoCreateTestSuite{
+		Name: "Create API Specification",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM api_definitions_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenant, apiID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       `^INSERT INTO public.specifications \(.+\) VALUES \(.+\)$`,
+				Args:        fixAPISpecCreateArgs(apiSpecModel),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       spec.NewRepository,
+		ModelEntity:               apiSpecModel,
+		DBEntity:                  apiSpecEntity,
+		NilModelEntity:            nilSpecModel,
+		TenantID:                  tenant,
+		DisableConverterErrorTest: true,
+	}
 
-		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixAPISpecCreateArgs(specModel)...).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
+	eventSpecSuite := testdb.RepoCreateTestSuite{
+		Name: "Create Event Specification",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM event_api_definitions_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenant, eventID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       `^INSERT INTO public.specifications \(.+\) VALUES \(.+\)$`,
+				Args:        fixEventSpecCreateArgs(eventSpecModel),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       spec.NewRepository,
+		ModelEntity:               eventSpecModel,
+		DBEntity:                  eventSpecEntity,
+		NilModelEntity:            nilSpecModel,
+		TenantID:                  tenant,
+		DisableConverterErrorTest: true,
+	}
 
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := automock.Converter{}
-		convMock.On("ToEntity", *specModel).Return(specEntity, nil).Once()
-		pgRepository := spec.NewRepository(&convMock)
-		//WHEN
-		err := pgRepository.Create(ctx, specModel)
-		//THEN
-		require.NoError(t, err)
-		sqlMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("Success for Event", func(t *testing.T) {
-		specModel := fixModelEventSpec()
-		specEntity := fixEventSpecEntity()
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-
-		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixEventSpecCreateArgs(specModel)...).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := automock.Converter{}
-		convMock.On("ToEntity", *specModel).Return(specEntity, nil).Once()
-		pgRepository := spec.NewRepository(&convMock)
-		//WHEN
-		err := pgRepository.Create(ctx, specModel)
-		//THEN
-		require.NoError(t, err)
-		sqlMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when item is nil", func(t *testing.T) {
-		ctx := context.TODO()
-		convMock := automock.Converter{}
-		pgRepository := spec.NewRepository(&convMock)
-		// WHEN
-		err := pgRepository.Create(ctx, nil)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "item can not be empty")
-		convMock.AssertExpectations(t)
-	})
+	apiSpecSuite.Run(t)
+	eventSpecSuite.Run(t)
 }
-
+/*
 func TestRepository_ListByReferenceObjectID(t *testing.T) {
 	// GIVEN
 
@@ -457,3 +467,4 @@ func TestRepository_Exists(t *testing.T) {
 	sqlMock.AssertExpectations(t)
 	convMock.AssertExpectations(t)
 }
+*/

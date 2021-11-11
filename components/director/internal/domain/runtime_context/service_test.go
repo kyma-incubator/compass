@@ -65,7 +65,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("Create", ctx, runtimeCtxModel).Return(nil).Once()
+				repo.On("Create", ctx, tnt, runtimeCtxModel).Return(nil).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -85,7 +85,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success when labels are empty",
 			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("Create", ctx, runtimeCtxModel).Return(nil).Once()
+				repo.On("Create", ctx, tnt, runtimeCtxModel).Return(nil).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -105,7 +105,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Returns error when runtime context creation failed",
 			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("Create", ctx, runtimeCtxModel).Return(testErr).Once()
+				repo.On("Create", ctx, tnt, runtimeCtxModel).Return(testErr).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -124,7 +124,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Returns error when label upserting failed",
 			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("Create", ctx, runtimeCtxModel).Return(nil).Once()
+				repo.On("Create", ctx, tnt, runtimeCtxModel).Return(nil).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -227,7 +227,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeCtxModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeContextModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeContextModel).Return(nil).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -249,7 +249,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeCtxModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeContextModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeContextModel).Return(nil).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -274,7 +274,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeCtxModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeContextModel).Return(testErr).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeContextModel).Return(testErr).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -313,7 +313,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeCtxModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeContextModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeContextModel).Return(nil).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -334,7 +334,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeCtxModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeContextModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeContextModel).Return(nil).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -798,7 +798,6 @@ func TestService_ListLabel(t *testing.T) {
 
 	modelLabel := &model.Label{
 		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
-		Tenant:     tnt,
 		Key:        labelKey,
 		Value:      labelValue,
 		ObjectID:   runtimeCtxID,

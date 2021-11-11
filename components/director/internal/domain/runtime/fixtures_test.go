@@ -1,9 +1,9 @@
 package runtime_test
 
 import (
-	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"net/url"
-	"regexp"
 	"testing"
 	"time"
 
@@ -12,6 +12,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/stretchr/testify/require"
 )
+
+const tenantID = "tenantID"
 
 func fixRuntimePage(runtimes []*model.Runtime) *model.RuntimePage {
 	return &model.RuntimePage{
@@ -43,7 +45,6 @@ func fixModelRuntime(t *testing.T, id, tenant, name, description string) *model.
 
 	return &model.Runtime{
 		ID:     id,
-		Tenant: tenant,
 		Status: &model.RuntimeStatus{
 			Condition: model.RuntimeStatusConditionInitial,
 		},
@@ -82,7 +83,20 @@ func fixDetailedModelRuntime(t *testing.T, id, name, description string) *model.
 		},
 		Name:              name,
 		Description:       &description,
-		Tenant:            "tenant",
+		CreationTimestamp: time,
+	}
+}
+
+func fixDetailedEntityRuntime(t *testing.T, id, name, description string) *runtime.Runtime {
+	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	require.NoError(t, err)
+
+	return &runtime.Runtime{
+		ID:                id,
+		StatusCondition:   string(model.RuntimeStatusConditionInitial),
+		StatusTimestamp:   time,
+		Name:              name,
+		Description:       repo.NewValidNullableString(description),
 		CreationTimestamp: time,
 	}
 }
@@ -259,24 +273,4 @@ func fixValidURL(t *testing.T, rawURL string) url.URL {
 	require.NoError(t, err)
 	require.NotNil(t, eventingURL)
 	return *eventingURL
-}
-
-func fixUpdateTenantIsolationSubquery() string {
-	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
-}
-
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
-
-func fixUnescapedTenantIsolationSubquery() string {
-	return fixUnescapedTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
-}
-
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
 }

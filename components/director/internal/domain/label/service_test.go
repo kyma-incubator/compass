@@ -2,6 +2,7 @@ package label_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -61,13 +62,13 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 			InputObjectType: runtimeType,
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "object", Value: objectValue,
 				}).Return(nil).Once()
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
 				}).Return(nil).Once()
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "array", Value: arrayValue,
 				}).Return(nil).Once()
 				return repo
@@ -96,10 +97,10 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, runtimeType, runtimeID, "object").Return(nil, notFoundErr).Maybe()
 				repo.On("GetByKey", ctx, tnt, runtimeType, runtimeID, "string").Return(nil, notFoundErr).Maybe()
 
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "object", Value: objectValue,
 				}).Return(testErr).Maybe()
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
 				}).Return(nil).Maybe()
 				return repo
@@ -184,7 +185,7 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					Key:        "test",
 					Value:      "string",
 					ObjectType: model.ApplicationLabelableObject,
@@ -215,8 +216,9 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
@@ -256,8 +258,9 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
@@ -368,8 +371,9 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
@@ -466,7 +470,7 @@ func TestLabelService_CreateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Create", ctx, &model.Label{
+				repo.On("Create", ctx, tenantID, &model.Label{
 					Key:        "test",
 					Value:      "string",
 					ObjectType: model.ApplicationLabelableObject,
@@ -495,8 +499,9 @@ func TestLabelService_CreateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Create", ctx, &model.Label{
+				repo.On("Create", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
@@ -536,8 +541,9 @@ func TestLabelService_CreateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Create", ctx, &model.Label{
+				repo.On("Create", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
@@ -624,8 +630,9 @@ func TestLabelService_CreateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Create", ctx, &model.Label{
+				repo.On("Create", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
@@ -746,7 +753,7 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("UpdateWithVersion", ctx, &model.Label{
+				repo.On("UpdateWithVersion", ctx, tenantID, &model.Label{
 					Key:        "test",
 					Value:      "string",
 					ObjectType: model.ApplicationLabelableObject,
@@ -775,8 +782,9 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("UpdateWithVersion", ctx, &model.Label{
+				repo.On("UpdateWithVersion", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
@@ -816,8 +824,9 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("UpdateWithVersion", ctx, &model.Label{
+				repo.On("UpdateWithVersion", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
@@ -904,8 +913,9 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("UpdateWithVersion", ctx, &model.Label{
+				repo.On("UpdateWithVersion", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",

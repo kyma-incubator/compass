@@ -72,9 +72,9 @@ func fixGQLFetchRequestInput(url, filter string) *graphql.FetchRequestInput {
 	}
 }
 
-func fixFullFetchRequestModel(id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType) model.FetchRequest {
+func fixFullFetchRequestModel(id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType) *model.FetchRequest {
 	filter := "filter"
-	return model.FetchRequest{
+	return &model.FetchRequest{
 		ID:     id,
 		URL:    "foo.bar",
 		Mode:   model.FetchModeIndex,
@@ -96,7 +96,7 @@ func fixFullFetchRequestModel(id string, timestamp time.Time, objectType model.F
 	}
 }
 
-func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType) fetchrequest.Entity {
+func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType) *fetchrequest.Entity {
 	auth := &model.Auth{
 		Credential: model.CredentialData{
 			Basic: &model.BasicCredentialData{
@@ -121,7 +121,7 @@ func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time, obj
 	}
 
 	filter := "filter"
-	return fetchrequest.Entity{
+	return &fetchrequest.Entity{
 		ID:       id,
 		URL:      "foo.bar",
 		Mode:     string(model.FetchModeIndex),

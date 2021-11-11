@@ -1,33 +1,19 @@
 package runtime_test
 
 import (
-	"context"
+	"database/sql/driver"
 	"encoding/base64"
-	"fmt"
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"regexp"
 	"strconv"
 	"testing"
-	"time"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
-	"github.com/stretchr/testify/mock"
-
-	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
+/*
 func TestPgRepository_GetByID_ShouldReturnRuntimeModelForRuntimeEntity(t *testing.T) {
 	// given
 	tenantID := uuid.New().String()
@@ -474,12 +460,12 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 		AddRow(runtime1ID, tenantID, runtimes[0].Name, runtimes[0].Description, runtimes[0].Status.Condition, runtimes[0].CreationTimestamp, runtimes[0].CreationTimestamp).
 		AddRow(runtime2ID, tenantID, runtimes[1].Name, runtimes[1].Description, runtimes[1].Status.Condition, runtimes[1].CreationTimestamp, runtimes[1].CreationTimestamp)
 
-	filterQuery := fmt.Sprintf(`  AND id IN 
-						\(SELECT "runtime_id" FROM public.labels 
-							WHERE "runtime_id" IS NOT NULL 
-							AND %s 
+	filterQuery := fmt.Sprintf(`  AND id IN
+						\(SELECT "runtime_id" FROM public.labels
+							WHERE "runtime_id" IS NOT NULL
+							AND %s
 							AND "key" = \$3\)`, fixTenantIsolationSubqueryWithArg(2))
-	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM public.runtimes 
+	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM public.runtimes
 								WHERE %s %s ORDER BY name LIMIT %d OFFSET 0`, fixTenantIsolationSubqueryWithArg(1), filterQuery, rowSize)
 
 	sqlMock.ExpectQuery(sqlQuery).
@@ -517,47 +503,41 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 	assert.Equal(t, runtime2ID, modelRuntimePage.Data[1].ID)
 	assert.Equal(t, tenantID, modelRuntimePage.Data[1].Tenant)
 }
+*/
+func TestPgRepository_Create(t *testing.T) {
+	var nilRtModel *model.Runtime
+	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
+	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
 
-func TestPgRepository_Create_ShouldCreateRuntimeEntityFromValidModel(t *testing.T) {
-	// given
-	runtimeID := uuid.New().String()
-	tenantID := uuid.New().String()
-	timestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
-	assert.NoError(t, err)
-
-	description := "Description for runtime BCD"
-	modelRuntime := &model.Runtime{
-		ID:          runtimeID,
-		Tenant:      tenantID,
-		Name:        "Runtime XYZ",
-		Description: &description,
-		Status: &model.RuntimeStatus{
-			Condition: model.RuntimeStatusConditionInitial,
-			Timestamp: timestamp,
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Generic Create Runtime",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       regexp.QuoteMeta(`INSERT INTO public.runtimes ( id, name, description, status_condition, status_timestamp, creation_timestamp ) VALUES ( ?, ?, ?, ?, ?, ? )`),
+				Args:        []driver.Value{rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+			{
+				Query:       regexp.QuoteMeta(`INSERT INTO tenant_runtimes ( tenant_id, id, owner ) VALUES ( ?, ?, ? )`),
+				Args:        []driver.Value{tenantID, rtModel.ID, true},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
 		},
-		CreationTimestamp: timestamp,
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: runtime.NewRepository,
+		ModelEntity:         rtModel,
+		DBEntity:            rtEntity,
+		NilModelEntity:      nilRtModel,
+		TenantID:            tenantID,
+		IsTopLevelEntity:    true,
 	}
 
-	mockConverter := &automock.EntityConverter{}
-
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	defer sqlMock.AssertExpectations(t)
-
-	sqlMock.ExpectExec(`^INSERT INTO public.runtimes \(.+\) VALUES \(.+\)$`).
-		WithArgs(modelRuntime.ID, modelRuntime.Tenant, modelRuntime.Name, modelRuntime.Description, modelRuntime.Status.Condition, modelRuntime.Status.Timestamp, modelRuntime.CreationTimestamp).
-		WillReturnResult(sqlmock.NewResult(-1, 1))
-
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-	pgRepository := runtime.NewRepository(mockConverter)
-
-	// when
-	err = pgRepository.Create(ctx, modelRuntime)
-
-	// then
-	assert.NoError(t, err)
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_Update_ShouldUpdateRuntimeEntityFromValidModel(t *testing.T) {
 	// given
 	runtimeID := uuid.New().String()
@@ -649,30 +629,7 @@ func TestPgRepository_Exist(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, ex)
 }
-
-//func TestPgRepository_UpdateTenantID_ShouldUpdateTenant(t *testing.T) {
-//	// given
-//	runtimeID := uuid.New().String()
-//	newTenantID := uuid.New().String()
-//	mockConverter := &automock.EntityConverter{}
-//
-//	sqlxDB, sqlMock := testdb.MockDatabase(t)
-//	defer sqlMock.AssertExpectations(t)
-//
-//	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.runtimes SET tenant_id = ? WHERE id = ?`)).
-//		WithArgs(newTenantID, runtimeID).
-//		WillReturnResult(sqlmock.NewResult(-1, 1))
-//
-//	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-//
-//	pgRepository := runtime.NewRepository(mockConverter)
-//
-//	// when
-//	err := pgRepository.UpdateTenantID(ctx, runtimeID, newTenantID)
-//
-//	// then
-//	assert.NoError(t, err)
-//}
+*/
 
 func convertIntToBase64String(number int) string {
 	return base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number)))

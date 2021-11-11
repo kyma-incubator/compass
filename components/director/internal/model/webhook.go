@@ -67,7 +67,9 @@ const (
 type WebhookReferenceObjectType string
 
 const (
-	// UnknownWebhookReference missing godoc
+	// UnknownWebhookReference is used when the webhook's reference entity cannot be determined.
+	// For example in case of update we have only the target's webhook ID and the input, we cannot determine the reference entity.
+	// In those cases an aggregated view with all the webhook ref entity tenant access views unioned together is used for tenant isolation.
 	UnknownWebhookReference WebhookReferenceObjectType = "Unknown"
 	// ApplicationWebhookReference missing godoc
 	ApplicationWebhookReference WebhookReferenceObjectType = "ApplicationWebhook"

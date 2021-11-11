@@ -36,12 +36,10 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 	key := "key"
 	val := "value"
 	runtimeID := "runtime_id"
-	tenant := "tenant"
 
 	modelRuntimeContext := &model.RuntimeContext{
 		ID:        id,
 		RuntimeID: runtimeID,
-		Tenant:    tenant,
 		Key:       key,
 		Value:     val,
 	}
@@ -241,12 +239,10 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 	key := "key"
 	val := "value"
 	runtimeID := "runtime_id"
-	tenant := "tenant"
 
 	modelRuntimeContext := &model.RuntimeContext{
 		ID:        id,
 		RuntimeID: runtimeID,
-		Tenant:    tenant,
 		Key:       key,
 		Value:     val,
 	}
@@ -482,12 +478,10 @@ func TestResolver_DeleteRuntimeContext(t *testing.T) {
 	key := "key"
 	val := "value"
 	runtimeID := "runtime_id"
-	tenant := "tenant"
 
 	modelRuntimeContext := &model.RuntimeContext{
 		ID:        id,
 		RuntimeID: runtimeID,
-		Tenant:    tenant,
 		Key:       key,
 		Value:     val,
 	}
@@ -699,12 +693,10 @@ func TestResolver_RuntimeContext(t *testing.T) {
 	key := "key"
 	val := "value"
 	runtimeID := "runtime_id"
-	tenant := "tenant"
 
 	modelRuntimeContext := &model.RuntimeContext{
 		ID:        id,
 		RuntimeID: runtimeID,
-		Tenant:    tenant,
 		Key:       key,
 		Value:     val,
 	}
@@ -920,7 +912,6 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 	key := "key"
 	val := "value"
 	runtimeID := "runtime_id"
-	tenant := "tenant"
 
 	testErr := errors.New("Test error")
 
@@ -929,14 +920,12 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 		{
 			ID:        id,
 			RuntimeID: runtimeID,
-			Tenant:    tenant,
 			Key:       key,
 			Value:     val,
 		},
 		{
 			ID:        id + "2",
 			RuntimeID: runtimeID + "2",
-			Tenant:    tenant + "2",
 			Key:       key + "2",
 			Value:     val + "2",
 		},
@@ -1131,7 +1120,6 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 func TestResolver_Labels(t *testing.T) {
 	// given
 	id := "foo"
-	tenant := "tenant"
 	labelKey1 := "key1"
 	labelValue1 := "val1"
 	labelKey2 := "key2"
@@ -1150,7 +1138,6 @@ func TestResolver_Labels(t *testing.T) {
 	modelLabels := map[string]*model.Label{
 		"abc": {
 			ID:         "abc",
-			Tenant:     tenant,
 			Key:        labelKey1,
 			Value:      labelValue1,
 			ObjectID:   id,
@@ -1158,7 +1145,6 @@ func TestResolver_Labels(t *testing.T) {
 		},
 		"def": {
 			ID:         "def",
-			Tenant:     tenant,
 			Key:        labelKey2,
 			Value:      labelValue2,
 			ObjectID:   id,

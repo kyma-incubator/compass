@@ -121,7 +121,7 @@ func (c *converter) InputFromGraphQLEventSpec(in *graphql.EventSpecInput) (*mode
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.Spec) *Entity {
+func (c *converter) ToEntity(in *model.Spec) *Entity {
 	refID := repo.NewValidNullableString(in.ObjectID)
 
 	var apiDefID sql.NullString

@@ -13,7 +13,6 @@ import (
 func TestConverter_ToGraphQL(t *testing.T) {
 	id := "test_id"
 	runtimeID := "test_runtime_id"
-	tenant := "test_tenant"
 	key := "key"
 	val := "val"
 	// given
@@ -27,7 +26,6 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Input: &model.RuntimeContext{
 				ID:        id,
 				RuntimeID: runtimeID,
-				Tenant:    tenant,
 				Key:       key,
 				Value:     val,
 			},
@@ -64,7 +62,6 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	id := "test_id"
 	runtimeID := "test_runtime_id"
-	tenant := "test_tenant"
 	key := "key"
 	val := "val"
 
@@ -73,14 +70,12 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		{
 			ID:        id,
 			RuntimeID: runtimeID,
-			Tenant:    tenant,
 			Key:       key,
 			Value:     val,
 		},
 		{
 			ID:        id + "2",
 			RuntimeID: runtimeID + "2",
-			Tenant:    tenant + "2",
 			Key:       key + "2",
 			Value:     val + "2",
 		},
@@ -154,4 +149,44 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			assert.Equal(t, testCase.Expected, res)
 		})
 	}
+}
+
+func TestConverter_EntityFromRuntimeModel(t *testing.T) {
+	// given
+	modelRuntimeCtx := model.RuntimeContext{
+		ID:        "id",
+		RuntimeID: "runtime_id",
+		Key:       "key",
+		Value:     "value",
+	}
+
+	conv := runtimectx.NewConverter()
+	// when
+	entityRuntimeCtx := conv.ToEntity(&modelRuntimeCtx)
+
+	// then
+	assert.Equal(t, modelRuntimeCtx.ID, entityRuntimeCtx.ID)
+	assert.Equal(t, modelRuntimeCtx.RuntimeID, entityRuntimeCtx.RuntimeID)
+	assert.Equal(t, modelRuntimeCtx.Key, entityRuntimeCtx.Key)
+	assert.Equal(t, modelRuntimeCtx.Value, entityRuntimeCtx.Value)
+}
+
+func TestConverter_RuntimeContextToModel(t *testing.T) {
+	// given
+	entityRuntimeCtx := &runtimectx.RuntimeContext{
+		ID:        "id",
+		RuntimeID: "runtime_id",
+		Key:       "key",
+		Value:     "value",
+	}
+
+	conv := runtimectx.NewConverter()
+	// when
+	modelRuntimeCtx := conv.FromEntity(entityRuntimeCtx)
+
+	// then
+	assert.Equal(t, entityRuntimeCtx.ID, modelRuntimeCtx.ID)
+	assert.Equal(t, entityRuntimeCtx.RuntimeID, modelRuntimeCtx.RuntimeID)
+	assert.Equal(t, entityRuntimeCtx.Key, modelRuntimeCtx.Key)
+	assert.Equal(t, entityRuntimeCtx.Value, modelRuntimeCtx.Value)
 }

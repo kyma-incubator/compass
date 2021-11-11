@@ -329,7 +329,7 @@ func TestPgRepository_Create(t *testing.T) {
 		},
 		RepoConstructorFunc:       event.NewRepository,
 		ModelEntity:               &eventDefModel,
-		DBEntity:                  &eventDefEntity,
+		DBEntity:                  eventDefEntity,
 		NilModelEntity:            nilEventDefModel,
 		TenantID:                  tenantID,
 		DisableConverterErrorTest: true,

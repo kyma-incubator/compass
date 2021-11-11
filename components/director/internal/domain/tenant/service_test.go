@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -627,7 +628,7 @@ func Test_ListLabels(t *testing.T) {
 		labels := map[string]*model.Label{
 			"label-key": {
 				ID:         "5ef5ebd0-987d-4cb6-a3c1-7d710de259a2",
-				Tenant:     tenantID,
+				Tenant:     str.Ptr(tenantID),
 				Key:        "label-key",
 				Value:      "value",
 				ObjectID:   tenantID,

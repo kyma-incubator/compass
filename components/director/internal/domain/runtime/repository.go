@@ -25,6 +25,8 @@ var (
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	MultipleFromEntities(entities RuntimeCollection) []*model.Runtime
+	ToEntity(in *model.Runtime) (*Runtime, error)
+	FromEntity(entity *Runtime) *model.Runtime
 }
 
 type pgRepository struct {
@@ -73,7 +75,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.R
 		return nil, err
 	}
 
-	runtimeModel := runtimeEnt.ToModel()
+	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
 }
@@ -100,7 +102,7 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 		return nil, err
 	}
 
-	runtimeModel := runtimeEnt.ToModel()
+	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
 }
@@ -122,7 +124,7 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 		return nil, err
 	}
 
-	runtimeModel := runtimeEnt.ToModel()
+	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
 }
@@ -219,7 +221,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ru
 		return apperrors.NewInternalError("item can not be empty")
 	}
 
-	runtimeEnt, err := EntityFromRuntimeModel(item)
+	runtimeEnt, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
@@ -229,7 +231,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ru
 
 // Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Runtime) error {
-	runtimeEnt, err := EntityFromRuntimeModel(item)
+	runtimeEnt, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
@@ -259,7 +261,7 @@ func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, f
 		return nil, err
 	}
 
-	runtimeModel := runtimeEnt.ToModel()
+	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
 }

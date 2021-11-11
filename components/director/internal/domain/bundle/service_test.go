@@ -91,7 +91,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -124,7 +124,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Bundle creation",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(testErr).Once()
+				repo.On("Create", ctx, tenantID, modelBundle).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -148,7 +148,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - API creation",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -176,7 +176,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Event creation",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -206,7 +206,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Document creation",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -314,7 +314,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(bundleModel, nil).Once()
-				repo.On("Update", ctx, inputBundleModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputBundleModel).Return(nil).Once()
 				return repo
 			},
 			InputID:     "foo",
@@ -326,7 +326,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(bundleModel, nil).Once()
-				repo.On("Update", ctx, inputBundleModel).Return(testErr).Once()
+				repo.On("Update", ctx, tenantID, inputBundleModel).Return(testErr).Once()
 				return repo
 			},
 			InputID:     "foo",

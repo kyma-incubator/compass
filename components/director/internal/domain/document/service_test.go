@@ -195,12 +195,12 @@ func TestService_CreateToBundle(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, modelDoc).Return(nil).Once()
+				repo.On("Create", ctx, tnt, modelDoc).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -216,7 +216,7 @@ func TestService_CreateToBundle(t *testing.T) {
 			Name: "Returns error when document creation failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, modelDoc).Return(testErr).Once()
+				repo.On("Create", ctx, tnt, modelDoc).Return(testErr).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -235,12 +235,12 @@ func TestService_CreateToBundle(t *testing.T) {
 			Name: "Error - Fetch Request Creation",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, modelDoc).Return(nil).Once()
+				repo.On("Create", ctx, tnt, modelDoc).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
+				repo.On("Create", ctx, tnt, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {

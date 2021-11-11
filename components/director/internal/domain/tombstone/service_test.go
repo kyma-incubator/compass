@@ -35,7 +35,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.TombstoneRepository {
 				repo := &automock.TombstoneRepository{}
-				repo.On("Create", ctx, modelTombstone).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelTombstone).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -50,7 +50,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Tombstone creation",
 			RepositoryFn: func() *automock.TombstoneRepository {
 				repo := &automock.TombstoneRepository{}
-				repo.On("Create", ctx, modelTombstone).Return(testErr).Once()
+				repo.On("Create", ctx, tenantID, modelTombstone).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -121,7 +121,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.TombstoneRepository {
 				repo := &automock.TombstoneRepository{}
 				repo.On("GetByID", ctx, tenantID, tombstoneID).Return(modelTombstone, nil).Once()
-				repo.On("Update", ctx, inputTombstoneModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputTombstoneModel).Return(nil).Once()
 				return repo
 			},
 			InputID:     tombstoneID,
@@ -133,7 +133,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.TombstoneRepository {
 				repo := &automock.TombstoneRepository{}
 				repo.On("GetByID", ctx, tenantID, tombstoneID).Return(modelTombstone, nil).Once()
-				repo.On("Update", ctx, inputTombstoneModel).Return(testErr).Once()
+				repo.On("Update", ctx, tenantID, inputTombstoneModel).Return(testErr).Once()
 				return repo
 			},
 			InputID:     tombstoneID,

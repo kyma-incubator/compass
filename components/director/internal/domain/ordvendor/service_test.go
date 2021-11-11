@@ -35,7 +35,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("Create", ctx, modelVendor).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelVendor).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -50,7 +50,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Vendor creation",
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
-				repo.On("Create", ctx, modelVendor).Return(testErr).Once()
+				repo.On("Create", ctx, tenantID, modelVendor).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -121,7 +121,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
 				repo.On("GetByID", ctx, tenantID, vendorID).Return(modelVendor, nil).Once()
-				repo.On("Update", ctx, inputVendorModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputVendorModel).Return(nil).Once()
 				return repo
 			},
 			InputID:     vendorID,
@@ -133,7 +133,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.VendorRepository {
 				repo := &automock.VendorRepository{}
 				repo.On("GetByID", ctx, tenantID, vendorID).Return(modelVendor, nil).Once()
-				repo.On("Update", ctx, inputVendorModel).Return(testErr).Once()
+				repo.On("Update", ctx, tenantID, inputVendorModel).Return(testErr).Once()
 				return repo
 			},
 			InputID:     vendorID,

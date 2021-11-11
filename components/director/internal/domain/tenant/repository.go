@@ -170,7 +170,7 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 	return r.deleterGlobal.DeleteManyGlobal(ctx, conditions)
 }
 
-// GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
+// GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource. TODO: <storage-redesign> refactor / validate
 func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
 	rawStmt := `(SELECT %s FROM %s ta
                 WHERE ta.%s = ? AND ta.%s = true AND

@@ -957,7 +957,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(modelSpec, nil).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1014,7 +1014,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(nil, testErr).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(nil, testErr).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1029,7 +1029,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(modelSpec, nil).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1046,7 +1046,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(modelSpec, nil).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {

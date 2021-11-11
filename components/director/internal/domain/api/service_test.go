@@ -496,7 +496,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelAPIDefinition).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -522,7 +522,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success in ORD scenario where defaultTargetURLPerBundle map is passed",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelAPIDefinition).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -550,7 +550,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - API Creation",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, modelAPIDefinition).Return(testErr).Once()
+				repo.On("Create", ctx, tenantID, modelAPIDefinition).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -572,7 +572,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Spec Creation",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelAPIDefinition).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -596,7 +596,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - BundleReference API Creation",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelAPIDefinition).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -623,7 +623,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error in ORD scenario - BundleReference API Creation",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelAPIDefinition).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -749,7 +749,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -773,7 +773,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -797,7 +797,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(testErr).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(testErr).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -816,7 +816,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -839,7 +839,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -863,7 +863,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -887,7 +887,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -1017,7 +1017,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -1046,7 +1046,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -1070,7 +1070,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -1095,7 +1095,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(apiDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputAPIDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputAPIDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -1318,7 +1318,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 			Name: "Success",
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(fetchRequests, nil).Once()
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs, model.APISpecReference).Return(fetchRequests, nil).Once()
 				return svc
 			},
 			ExpectedFetchRequests: fetchRequests,
@@ -1327,7 +1327,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 			Name: "Success - Fetch Request Not Found",
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(nil, apperrors.NewNotFoundError(resource.FetchRequest, "")).Once()
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs, model.APISpecReference).Return(nil, apperrors.NewNotFoundError(resource.FetchRequest, "")).Once()
 				return svc
 			},
 			ExpectedFetchRequests: nil,
@@ -1336,7 +1336,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 			Name: "Error while listing Fetch Requests",
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(nil, testErr).Once()
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs, model.APISpecReference).Return(nil, testErr).Once()
 				return svc
 			},
 			ExpectedFetchRequests: nil,

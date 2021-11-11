@@ -76,7 +76,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
+				repo.On("Create", ctx, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
@@ -104,7 +104,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success when labels are empty",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
+				repo.On("Create", ctx, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
@@ -134,7 +134,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Returns error when runtime creation failed",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("Create", ctx, runtimeModel).Return(testErr).Once()
+				repo.On("Create", ctx, tnt, runtimeModel).Return(testErr).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -161,7 +161,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Return error when merge of scenarios and assignments failed",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
+				repo.On("Create", ctx, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
@@ -188,7 +188,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Returns error when label upserting failed",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("Create", ctx, runtimeModel).Return(nil).Once()
+				repo.On("Create", ctx, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
@@ -317,7 +317,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeModel).Return(nil).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -344,7 +344,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
-				repo.On("Update", ctx, inputProtectedRuntimeModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, inputProtectedRuntimeModel).Return(nil).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -371,7 +371,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeModel).Return(nil).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -398,7 +398,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeModel).Return(nil).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -427,7 +427,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeModel).Return(testErr).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeModel).Return(testErr).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -474,7 +474,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeModel).Return(nil).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -499,7 +499,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeModel).Return(nil).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -525,7 +525,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeModel, nil).Once()
-				repo.On("Update", ctx, inputRuntimeModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, inputRuntimeModel).Return(nil).Once()
 				return repo
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
@@ -1043,7 +1043,6 @@ func TestService_GetLabel(t *testing.T) {
 
 	modelLabel := &model.Label{
 		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
-		Tenant:     tnt,
 		Key:        labelKey,
 		Value:      labelValue,
 		ObjectID:   runtimeID,
@@ -1184,7 +1183,6 @@ func TestService_ListLabels(t *testing.T) {
 
 	modelLabel := &model.Label{
 		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
-		Tenant:     tnt,
 		Key:        labelKey,
 		Value:      labelValue,
 		ObjectID:   runtimeID,
@@ -1193,7 +1191,6 @@ func TestService_ListLabels(t *testing.T) {
 
 	protectedModelLabel := &model.Label{
 		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c12",
-		Tenant:     tnt,
 		Key:        "protected_defaultEventing",
 		Value:      labelValue,
 		ObjectID:   runtimeID,
@@ -1202,7 +1199,6 @@ func TestService_ListLabels(t *testing.T) {
 
 	secondProtectedModelLabel := &model.Label{
 		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c13",
-		Tenant:     tnt,
 		Key:        "consumer_subaccount_ids",
 		Value:      labelValue,
 		ObjectID:   runtimeID,
@@ -1370,7 +1366,7 @@ func TestService_SetLabel(t *testing.T) {
 	labelMapWithScenariosLabel := map[string]*model.Label{
 		model.ScenariosKey: {
 			ID:         "id",
-			Tenant:     "tenant",
+			Tenant:     str.Ptr("tenant"),
 			Key:        model.ScenariosKey,
 			Value:      scenariosLabelValue,
 			ObjectID:   "obj-id",
@@ -1381,7 +1377,7 @@ func TestService_SetLabel(t *testing.T) {
 	labelMapWithInvalidScenariosLabel := map[string]*model.Label{
 		model.ScenariosKey: {
 			ID:         "id",
-			Tenant:     "tenant",
+			Tenant:     str.Ptr("tenant"),
 			Key:        model.ScenariosKey,
 			Value:      []int{},
 			ObjectID:   "obj-id",
@@ -1392,7 +1388,6 @@ func TestService_SetLabel(t *testing.T) {
 	labelMap := map[string]*model.Label{
 		labelKey: {
 			ID:         "id",
-			Tenant:     "tenant",
 			Key:        labelKey,
 			Value:      []string{"val"},
 			ObjectID:   "obj-id",
@@ -1852,7 +1847,6 @@ func TestService_DeleteLabel(t *testing.T) {
 	labelMap := map[string]*model.Label{
 		labelKey: {
 			ID:         "id",
-			Tenant:     "tenant",
 			Key:        labelKey,
 			Value:      []string{"val"},
 			ObjectID:   "obj-id",
@@ -1863,7 +1857,7 @@ func TestService_DeleteLabel(t *testing.T) {
 	labelMapWithScenariosLabel := map[string]*model.Label{
 		model.ScenariosKey: {
 			ID:         "id",
-			Tenant:     "tenant",
+			Tenant:     str.Ptr("tenant"),
 			Key:        model.ScenariosKey,
 			Value:      scenariosLabelValue,
 			ObjectID:   "obj-id",
@@ -1874,7 +1868,7 @@ func TestService_DeleteLabel(t *testing.T) {
 	labelMapWithScenariosLabelWithMultipleValues := map[string]*model.Label{
 		model.ScenariosKey: {
 			ID:         "id",
-			Tenant:     "tenant",
+			Tenant:     str.Ptr("tenant"),
 			Key:        model.ScenariosKey,
 			Value:      scenariosLabelValueWithMultipleValues,
 			ObjectID:   "obj-id",
@@ -1882,7 +1876,6 @@ func TestService_DeleteLabel(t *testing.T) {
 		},
 		labelKey: {
 			ID:         "id",
-			Tenant:     "tenant",
 			Key:        labelKey,
 			Value:      labelValue,
 			ObjectID:   "obj-id",
@@ -1895,7 +1888,6 @@ func TestService_DeleteLabel(t *testing.T) {
 	labelMapWithTwoSelectors := map[string]*model.Label{
 		labelKey: {
 			ID:         "id",
-			Tenant:     "tenant",
 			Key:        labelKey,
 			Value:      labelSelectorValue,
 			ObjectID:   "obj-id",
@@ -1903,7 +1895,6 @@ func TestService_DeleteLabel(t *testing.T) {
 		},
 		labelKey2: {
 			ID:         "id",
-			Tenant:     "tenant",
 			Key:        labelKey2,
 			Value:      labelSelectorValue,
 			ObjectID:   "obj-id",
@@ -2390,70 +2381,6 @@ func TestService_DeleteLabel(t *testing.T) {
 	})
 }
 
-func TestService_UpdateTenantID(t *testing.T) {
-	// given
-	testErr := errors.New("Test error")
-	runtimeID := "sample-runtime-id"
-	tntID := "tenantID"
-	ctx := context.TODO()
-
-	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.RuntimeRepository
-		ExpectedErrMessage string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("UpdateTenantID", ctx, runtimeID, tntID).Return(nil).Once()
-				return repo
-			},
-
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "Fails on repository error",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("UpdateTenantID", ctx, runtimeID, tntID).Return(testErr).Once()
-				return repo
-			},
-
-			ExpectedErrMessage: testErr.Error(),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-			labelRepository := &automock.LabelRepository{}
-			labelUpsertService := &automock.LabelUpsertService{}
-			scenariosService := &automock.ScenariosService{}
-			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
-			uidSvc := &automock.UIDService{}
-			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
-
-			// when
-			err := svc.UpdateTenantID(ctx, runtimeID, tntID)
-
-			// then
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-			} else {
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			repo.AssertExpectations(t)
-			labelRepository.AssertExpectations(t)
-			labelUpsertService.AssertExpectations(t)
-			scenariosService.AssertExpectations(t)
-			scenarioAssignmentEngine.AssertExpectations(t)
-			uidSvc.AssertExpectations(t)
-		})
-	}
-}
-
 func TestService_GetByFiltersGlobal(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
@@ -2463,7 +2390,6 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 	testRuntime := &model.Runtime{
 		ID:     "test-id",
 		Name:   "test-runtime",
-		Tenant: "test-tenant-id",
 	}
 	ctx := context.TODO()
 

@@ -203,7 +203,7 @@ func (r *Resolver) genericCheckExistence(ctx context.Context, resourceID string,
 	}
 
 	if !found {
-		return apperrors.NewInvalidDataError(fmt.Sprintf("cannot add Webhook to not existing %s", objectType.GetResourceType()))
+		return apperrors.NewInvalidDataError(fmt.Sprintf("cannot add %s due to not existing reference entity", objectType))
 	}
 	return nil
 }

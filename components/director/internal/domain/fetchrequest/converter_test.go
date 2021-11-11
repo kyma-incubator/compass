@@ -120,8 +120,8 @@ func TestConverter_FromEntity(t *testing.T) {
 	}{
 		{
 			Name:               "All properties given",
-			Input:              fixFullFetchRequestEntity(t, "1", timestamp, model.APISpecFetchRequestReference),
-			Expected:           fixFullFetchRequestModel("1", timestamp, model.APISpecFetchRequestReference),
+			Input:              *fixFullFetchRequestEntity(t, "1", timestamp, model.APISpecFetchRequestReference),
+			Expected:           *fixFullFetchRequestModel("1", timestamp, model.APISpecFetchRequestReference),
 			ExpectedErrMessage: "",
 		},
 		{
@@ -172,8 +172,8 @@ func TestConverter_ToEntity(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name               string
-		Input              model.FetchRequest
-		Expected           fetchrequest.Entity
+		Input              *model.FetchRequest
+		Expected           *fetchrequest.Entity
 		ExpectedErrMessage string
 	}{
 		{
@@ -188,14 +188,14 @@ func TestConverter_ToEntity(t *testing.T) {
 		},
 		{
 			Name: "Empty Auth",
-			Input: model.FetchRequest{
+			Input: &model.FetchRequest{
 				ID:     "2",
 				Status: &model.FetchRequestStatus{
 					Timestamp: timestamp,
 					Condition: model.FetchRequestStatusConditionFailed,
 				},
 			},
-			Expected: fetchrequest.Entity{
+			Expected: &fetchrequest.Entity{
 				ID:              "2",
 				StatusTimestamp: timestamp,
 				StatusCondition: string(model.FetchRequestStatusConditionFailed),
@@ -203,10 +203,10 @@ func TestConverter_ToEntity(t *testing.T) {
 		},
 		{
 			Name: "Error",
-			Input: model.FetchRequest{
+			Input: &model.FetchRequest{
 				ID:     "2",
 			},
-			Expected: fetchrequest.Entity{
+			Expected: &fetchrequest.Entity{
 				ID:       "2",
 			},
 			ExpectedErrMessage: apperrors.NewInvalidDataError("Invalid input model").Error(),
@@ -219,7 +219,7 @@ func TestConverter_ToEntity(t *testing.T) {
 			conv := fetchrequest.NewConverter(authConv)
 
 			// when
-			res, err := conv.ToEntity(&testCase.Input)
+			res, err := conv.ToEntity(testCase.Input)
 
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)

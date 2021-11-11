@@ -160,12 +160,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -209,12 +209,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -258,12 +258,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -342,12 +342,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -426,12 +426,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -467,12 +467,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -514,12 +514,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -558,7 +558,7 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(testErr).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(testErr).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -704,12 +704,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -922,12 +922,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -971,12 +971,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1020,12 +1020,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1104,12 +1104,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1188,12 +1188,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1229,12 +1229,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1276,12 +1276,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1320,7 +1320,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(testErr).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(testErr).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -1466,12 +1466,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1612,7 +1612,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				appRepoMock := &automock.ApplicationRepository{}
 				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
 
-				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+				appRepoMock.On("Create", ctx, tnt, mock.MatchedBy(func(obj interface{}) bool {
 					app, ok := obj.(*model.Application)
 					if !ok {
 						return false
@@ -1623,7 +1623,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil)
 				return webhookRepo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1668,7 +1668,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				appRepoMock := &automock.ApplicationRepository{}
 				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
 
-				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+				appRepoMock.On("Create", ctx, tnt, mock.MatchedBy(func(obj interface{}) bool {
 					app, ok := obj.(*model.Application)
 					if !ok {
 						return false
@@ -1679,7 +1679,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil)
 				return webhookRepo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1729,7 +1729,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				}, nil).Once()
 				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
 
-				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+				appRepoMock.On("Create", ctx, tnt, mock.MatchedBy(func(obj interface{}) bool {
 					app, ok := obj.(*model.Application)
 					if !ok {
 						return false
@@ -1740,7 +1740,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil)
 				return webhookRepo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1812,7 +1812,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
 				expectedTemplates := []string{"t1", "t3", "t5"}
 				callTimes := 0
-				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+				appRepoMock.On("Create", ctx, tnt, mock.MatchedBy(func(obj interface{}) bool {
 					if callTimes > 2 {
 						return false
 					}
@@ -1828,7 +1828,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil)
 				return webhookRepo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1894,7 +1894,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				appRepoMock := &automock.ApplicationRepository{}
 				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
 
-				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+				appRepoMock.On("Create", ctx, tnt, mock.MatchedBy(func(obj interface{}) bool {
 					app, ok := obj.(*model.Application)
 					if !ok {
 						return false
@@ -2031,7 +2031,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, id).Return(true, nil).Twice()
 				return repo
 			},
@@ -2056,7 +2056,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfterStatusUpdate).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfterStatusUpdate).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, id).Return(true, nil).Once()
 				return repo
 			},
@@ -2079,7 +2079,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfter).Return(testErr).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(testErr).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2162,7 +2162,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, id).Return(true, nil).Once()
 				return repo
 			},
@@ -2186,7 +2186,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, id).Return(false, nil).Once()
 				return repo
 			},
@@ -2209,7 +2209,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, id).Return(false, testErr).Once()
 				return repo
 			},
@@ -2476,7 +2476,7 @@ func TestService_Unpair(t *testing.T) {
 			Name: "Success",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Update", ctx, applicationModelWithInitialStatus).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelWithInitialStatus).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, applicationModelWithInitialStatus.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, tnt, applicationModelWithInitialStatus.ID).Return(applicationModelWithInitialStatus, nil).Once()
 				return repo
@@ -2502,7 +2502,7 @@ func TestService_Unpair(t *testing.T) {
 			Name: "Success when application is part of a scenario but not with runtime",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Update", ctx, applicationModel).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModel).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
@@ -2528,7 +2528,7 @@ func TestService_Unpair(t *testing.T) {
 			Name: "Success when operation type is SYNC and sets the application status to INITIAL",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Update", mock.Anything, applicationModelWithInitialStatus).Return(nil).Once()
+				repo.On("Update", mock.Anything, tnt, applicationModelWithInitialStatus).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
@@ -2553,7 +2553,7 @@ func TestService_Unpair(t *testing.T) {
 			Name: "Success when operation type is ASYNC and does not change the application status",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Update", mock.Anything, applicationModel).Return(nil).Once()
+				repo.On("Update", mock.Anything, tnt, applicationModel).Return(nil).Once()
 				repo.On("Exists", mock.Anything, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", mock.Anything, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
@@ -2635,7 +2635,7 @@ func TestService_Unpair(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
-				repo.On("Update", ctx, applicationModel).Return(testErr).Once()
+				repo.On("Update", ctx, tnt, applicationModel).Return(testErr).Once()
 				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo

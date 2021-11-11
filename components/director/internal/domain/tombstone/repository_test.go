@@ -1,60 +1,57 @@
 package tombstone_test
 
 import (
-	"context"
-	"fmt"
+	"database/sql/driver"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone"
 	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
+	var nilTsModel *model.Tombstone
 	tombstoneModel := fixTombstoneModel()
 	tombstoneEntity := fixEntityTombstone()
-	insertQuery := `^INSERT INTO public.tombstones \(.+\) VALUES \(.+\)$`
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Create Tombstone",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenantID, appID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       `^INSERT INTO public.tombstones \(.+\) VALUES \(.+\)$`,
+				Args:        fixTombstoneRow(),
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       tombstone.NewRepository,
+		ModelEntity:               tombstoneModel,
+		DBEntity:                  tombstoneEntity,
+		NilModelEntity:            nilTsModel,
+		TenantID:                  tenantID,
+		DisableConverterErrorTest: true,
+	}
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-
-		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixTombstoneRow()...).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := automock.EntityConverter{}
-		convMock.On("ToEntity", tombstoneModel).Return(tombstoneEntity, nil).Once()
-		pgRepository := tombstone.NewRepository(&convMock)
-		//WHEN
-		err := pgRepository.Create(ctx, tombstoneModel)
-		//THEN
-		require.NoError(t, err)
-		sqlMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when item is nil", func(t *testing.T) {
-		ctx := context.TODO()
-		convMock := automock.EntityConverter{}
-		pgRepository := tombstone.NewRepository(&convMock)
-		// WHEN
-		err := pgRepository.Create(ctx, nil)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "model can not be nil")
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.tombstones SET removal_date = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
 
@@ -235,3 +232,4 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 }
+*/

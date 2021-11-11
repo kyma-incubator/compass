@@ -26,7 +26,7 @@ var (
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in model.Spec) *Entity
+	ToEntity(in *model.Spec) *Entity
 	FromEntity(in Entity) (model.Spec, error)
 }
 
@@ -82,7 +82,7 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Spec
 		return apperrors.NewInternalError("item can not be empty")
 	}
 
-	entity := r.conv.ToEntity(*item)
+	entity := r.conv.ToEntity(item)
 
 	return r.creator.Create(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
@@ -167,7 +167,7 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Spec
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
-	entity := r.conv.ToEntity(*item)
+	entity := r.conv.ToEntity(item)
 
 	return r.updater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }

@@ -28,7 +28,7 @@ var (
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	FromEntity(in Entity) (model.Webhook, error)
-	ToEntity(in model.Webhook) (*Entity, error)
+	ToEntity(in *model.Webhook) (*Entity, error)
 }
 
 type repository struct {
@@ -141,7 +141,7 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Webh
 	if item == nil {
 		return missingInputModelError
 	}
-	entity, err := r.conv.ToEntity(*item)
+	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
 	}
@@ -169,7 +169,7 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Webh
 	if item == nil {
 		return missingInputModelError
 	}
-	entity, err := r.conv.ToEntity(*item)
+	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
 	}

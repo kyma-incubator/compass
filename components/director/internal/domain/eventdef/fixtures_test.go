@@ -201,15 +201,15 @@ func fixGQLEventDefinitionInput(name, description string, group string) *graphql
 	}
 }
 
-func fixEntityEventDefinition(id string, name string) event.Entity {
-	return event.Entity{
+func fixEntityEventDefinition(id string, name string) *event.Entity {
+	return &event.Entity{
 		Name:       name,
 		BaseEntity: &repo.BaseEntity{ID: id},
 	}
 }
 
-func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
-	return event.Entity{
+func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
+	return &event.Entity{
 		ApplicationID:       appID,
 		PackageID:           repo.NewValidNullableString(packageID),
 		Name:                placeholder,

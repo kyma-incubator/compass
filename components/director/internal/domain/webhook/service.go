@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -116,14 +117,16 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) error {
 	tnt, err := tenant.LoadFromContext(ctx)
-	if apperrors.IsTenantRequired(err) {
-		log.C(ctx).Debugf("Creating Webhook with type %s without tenant", in.Type)
-	} else if err != nil {
+	if err != nil  && objectType.GetResourceType() != resource.Webhook { // If the webhook is not global
 		return err
 	}
 	webhook, err := s.Get(ctx, id, objectType)
 	if err != nil {
 		return errors.Wrap(err, "while getting Webhook")
+	}
+
+	if len(webhook.ObjectID) == 0 || (webhook.ObjectType != model.ApplicationWebhookReference && webhook.ObjectType != model.ApplicationTemplateWebhookReference) {
+		return errors.New("while updating Webhook: webhook doesn't have neither of application_id and application_template_id")
 	}
 
 	webhook = in.ToWebhook(id, webhook.ObjectID, webhook.ObjectType)

@@ -1,31 +1,18 @@
 package runtimectx_test
 
 import (
-	"context"
+	"database/sql/driver"
 	"encoding/base64"
-	"fmt"
+	"github.com/DATA-DOG/go-sqlmock"
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"regexp"
 	"strconv"
 	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
-	"github.com/stretchr/testify/mock"
-
-	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
-	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
-
+/*
 func TestPgRepository_GetByID_ShouldReturnRuntimeContextModelForRuntimeContextEntity(t *testing.T) {
 	// given
 	tenantID := uuid.New().String()
@@ -309,39 +296,46 @@ func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntitie
 	assert.Equal(t, runtimeID, modelRuntimePage.Data[1].RuntimeID)
 	assert.Equal(t, tenantID, modelRuntimePage.Data[1].Tenant)
 }
+*/
+func TestPgRepository_Create(t *testing.T) {
+	var nilRuntimeCtxModel *model.RuntimeContext
+	runtimeCtxModel := fixModelRuntimeCtx()
+	runtimeCtxEntity := fixEntityRuntimeCtx()
 
-func TestPgRepository_Create_ShouldCreateRuntimeEntityFromValidModel(t *testing.T) {
-	// given
-	runtimeID := uuid.New().String()
-	runtimeCtxID := uuid.New().String()
-	tenantID := uuid.New().String()
-
-	modelRuntimeCtx := &model.RuntimeContext{
-		ID:        runtimeCtxID,
-		RuntimeID: runtimeID,
-		Tenant:    tenantID,
-		Key:       "key",
-		Value:     "value",
+	suite := testdb.RepoCreateTestSuite{
+		Name: "Create Runtime Context",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_runtimes WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Args:     []driver.Value{tenantID, runtimeID, true},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+			{
+				Query:       `^INSERT INTO public.runtime_contexts \(.+\) VALUES \(.+\)$`,
+				Args:        []driver.Value{runtimeCtxModel.ID, runtimeCtxModel.RuntimeID, runtimeCtxModel.Key, runtimeCtxModel.Value},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       runtimectx.NewRepository,
+		ModelEntity:               runtimeCtxModel,
+		DBEntity:                  runtimeCtxEntity,
+		NilModelEntity:            nilRuntimeCtxModel,
+		TenantID:                  tenantID,
+		DisableConverterErrorTest: true,
 	}
 
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	defer sqlMock.AssertExpectations(t)
-
-	sqlMock.ExpectExec(`^INSERT INTO public.runtime_contexts \(.+\) VALUES \(.+\)$`).
-		WithArgs(modelRuntimeCtx.ID, modelRuntimeCtx.RuntimeID, modelRuntimeCtx.Tenant, modelRuntimeCtx.Key, modelRuntimeCtx.Value).
-		WillReturnResult(sqlmock.NewResult(-1, 1))
-
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-	pgRepository := runtimectx.NewRepository()
-
-	// when
-	err := pgRepository.Create(ctx, modelRuntimeCtx)
-
-	// then
-	assert.NoError(t, err)
+	suite.Run(t)
 }
-
+/*
 func TestPgRepository_Update_ShouldUpdateRuntimeEntityFromValidModel(t *testing.T) {
 	// given
 	runtimeID := uuid.New().String()
@@ -420,7 +414,7 @@ func TestPgRepository_Exist(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, ex)
 }
-
+*/
 func convertIntToBase64String(number int) string {
 	return base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number)))
 }

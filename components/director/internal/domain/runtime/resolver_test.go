@@ -1353,7 +1353,6 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 
 	modelLabel := &model.Label{
 		ID:         "baz",
-		Tenant:     "quaz",
 		Key:        labelKey,
 		Value:      labelValue,
 		ObjectID:   runtimeID,
@@ -1602,7 +1601,6 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 func TestResolver_Labels(t *testing.T) {
 	// given
 	id := "foo"
-	tenant := "tenant"
 	labelKey1 := "key1"
 	labelValue1 := "val1"
 	labelKey2 := "key2"
@@ -1613,7 +1611,6 @@ func TestResolver_Labels(t *testing.T) {
 	modelLabels := map[string]*model.Label{
 		"abc": {
 			ID:         "abc",
-			Tenant:     tenant,
 			Key:        labelKey1,
 			Value:      labelValue1,
 			ObjectID:   id,
@@ -1621,7 +1618,6 @@ func TestResolver_Labels(t *testing.T) {
 		},
 		"def": {
 			ID:         "def",
-			Tenant:     tenant,
 			Key:        labelKey2,
 			Value:      labelValue2,
 			ObjectID:   id,
@@ -1762,13 +1758,11 @@ func TestResolver_Labels(t *testing.T) {
 func TestResolver_GetLabel(t *testing.T) {
 	// given
 	runtimeID := "37e89317-9ace-441d-9dc0-badf09b035b4"
-	tenant := "tenant"
 	labelKey := runtime.IsNormalizedLabel
 	labelValue := "true"
 
 	modelLabel := &model.Label{
 		ID:         "abc",
-		Tenant:     tenant,
 		Key:        labelKey,
 		Value:      labelValue,
 		ObjectID:   runtimeID,

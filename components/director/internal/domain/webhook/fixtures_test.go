@@ -1,8 +1,13 @@
 package webhook_test
 
 import (
-	"fmt"
-	"regexp"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/stretchr/testify/require"
+	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -17,11 +22,11 @@ func stringPtr(s string) *string {
 func fixApplicationModelWebhook(id, appID, tenant, url string) *model.Webhook {
 	return &model.Webhook{
 		ID:             id,
-		ApplicationID:  &appID,
-		TenantID:       &tenant,
+		ObjectID:       appID,
+		ObjectType:     model.ApplicationWebhookReference,
 		Type:           model.WebhookTypeConfigurationChanged,
 		URL:            &url,
-		Auth:           &model.Auth{},
+		Auth:           fixBasicAuth(),
 		Mode:           &modelWebhookMode,
 		URLTemplate:    &emptyTemplate,
 		InputTemplate:  &emptyTemplate,
@@ -32,16 +37,17 @@ func fixApplicationModelWebhook(id, appID, tenant, url string) *model.Webhook {
 
 func fixApplicationTemplateModelWebhook(id, appTemplateID, url string) *model.Webhook {
 	return &model.Webhook{
-		ID:                    id,
-		ApplicationTemplateID: &appTemplateID,
-		Type:                  model.WebhookTypeConfigurationChanged,
-		URL:                   &url,
-		Auth:                  &model.Auth{},
-		Mode:                  &modelWebhookMode,
-		URLTemplate:           &emptyTemplate,
-		InputTemplate:         &emptyTemplate,
-		HeaderTemplate:        &emptyTemplate,
-		OutputTemplate:        &emptyTemplate,
+		ID:             id,
+		ObjectID:       appTemplateID,
+		ObjectType:     model.ApplicationTemplateWebhookReference,
+		Type:           model.WebhookTypeConfigurationChanged,
+		URL:            &url,
+		Auth:           fixBasicAuth(),
+		Mode:           &modelWebhookMode,
+		URLTemplate:    &emptyTemplate,
+		InputTemplate:  &emptyTemplate,
+		HeaderTemplate: &emptyTemplate,
+		OutputTemplate: &emptyTemplate,
 	}
 }
 
@@ -98,22 +104,77 @@ func fixApplicationTemplateModelWebhookWithType(id, appTemplateID, url string, w
 	return
 }
 
-func fixUpdateTenantIsolationSubquery() string {
-	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
+func fixBasicAuth() *model.Auth {
+	return &model.Auth{
+		Credential: model.CredentialData{
+			Basic: &model.BasicCredentialData{
+				Username: "aaa",
+				Password: "bbb",
+			},
+		},
+	}
 }
 
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
+func fixAuthAsAString(t *testing.T) string {
+	b, err := json.Marshal(fixBasicAuth())
+	require.NoError(t, err)
+	return string(b)
 }
 
-func fixUnescapedTenantIsolationSubquery() string {
-	return fixUnescapedTenantIsolationSubqueryWithArg(1)
+func fixApplicationWebhookEntity(t *testing.T) *webhook.Entity {
+	return &webhook.Entity{
+		ID:             givenID(),
+		ApplicationID:  repo.NewValidNullableString(givenApplicationID()),
+		Type:           string(model.WebhookTypeConfigurationChanged),
+		URL:            repo.NewValidNullableString("http://kyma.io"),
+		Mode:           repo.NewValidNullableString(string(model.WebhookModeSync)),
+		Auth:           sql.NullString{Valid: true, String: fixAuthAsAString(t)},
+		URLTemplate:    repo.NewValidNullableString(emptyTemplate),
+		InputTemplate:  repo.NewValidNullableString(emptyTemplate),
+		HeaderTemplate: repo.NewValidNullableString(emptyTemplate),
+		OutputTemplate: repo.NewValidNullableString(emptyTemplate),
+	}
 }
 
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
+func fixApplicationTemplateWebhookEntity(t *testing.T) *webhook.Entity {
+	return &webhook.Entity{
+		ID:                    givenID(),
+		ApplicationTemplateID: repo.NewValidNullableString(givenApplicationTemplateID()),
+		Type:                  string(model.WebhookTypeConfigurationChanged),
+		URL:                   repo.NewValidNullableString("http://kyma.io"),
+		Mode:                  repo.NewValidNullableString(string(model.WebhookModeSync)),
+		Auth:                  sql.NullString{Valid: true, String: fixAuthAsAString(t)},
+		URLTemplate:           repo.NewValidNullableString(emptyTemplate),
+		InputTemplate:         repo.NewValidNullableString(emptyTemplate),
+		HeaderTemplate:        repo.NewValidNullableString(emptyTemplate),
+		OutputTemplate:        repo.NewValidNullableString(emptyTemplate),
+	}
 }
 
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
+func givenID() string {
+	return "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+}
+
+func anotherID() string {
+	return "dddddddd-dddd-dddd-dddd-dddddddddddd"
+}
+
+func givenTenant() string {
+	return "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+}
+
+func givenExternalTenant() string {
+	return "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+}
+
+func givenApplicationID() string {
+	return "cccccccc-cccc-cccc-cccc-cccccccccccc"
+}
+
+func givenApplicationTemplateID() string {
+	return "ffffffff-ffff-ffff-ffff-ffffffffffff"
+}
+
+func givenError() error {
+	return errors.New("some error")
 }

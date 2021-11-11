@@ -35,7 +35,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.PackageRepository {
 				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelPackage).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -50,7 +50,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Package creation",
 			RepositoryFn: func() *automock.PackageRepository {
 				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(testErr).Once()
+				repo.On("Create", ctx, tenantID, modelPackage).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -121,7 +121,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.PackageRepository {
 				repo := &automock.PackageRepository{}
 				repo.On("GetByID", ctx, tenantID, packageID).Return(modelPackage, nil).Once()
-				repo.On("Update", ctx, inputPackageModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputPackageModel).Return(nil).Once()
 				return repo
 			},
 			InputID:     packageID,
@@ -133,7 +133,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.PackageRepository {
 				repo := &automock.PackageRepository{}
 				repo.On("GetByID", ctx, tenantID, packageID).Return(modelPackage, nil).Once()
-				repo.On("Update", ctx, inputPackageModel).Return(testErr).Once()
+				repo.On("Update", ctx, tenantID, inputPackageModel).Return(testErr).Once()
 				return repo
 			},
 			InputID:     packageID,

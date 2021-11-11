@@ -154,8 +154,8 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*mod
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.Webhook) (*Entity, error) {
-	optionalAuth, err := c.toAuthEntity(in)
+func (c *converter) ToEntity(in *model.Webhook) (*Entity, error) {
+	optionalAuth, err := c.toAuthEntity(*in)
 	if err != nil {
 		return nil, err
 	}
