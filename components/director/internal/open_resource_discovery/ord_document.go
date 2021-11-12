@@ -121,6 +121,10 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 	eventIDs := make(map[string]bool)
 	vendorIDs := make(map[string]bool)
 
+	productIDs["sap:product:SAPS4HANA:"] = true
+	productIDs["sap:product:SAPS4HANACloud:"] = true
+	productIDs["sap:product:SAPCloudPlatform:"] = true
+
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
 			if _, ok := packageIDs[pkg.OrdID]; ok {
