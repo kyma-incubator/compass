@@ -12,37 +12,45 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 )
-/*
+
 func TestPgRepository_GetByID(t *testing.T) {
-	// given
+	eventDefModel := fixEventDefinitionModel(eventID, "placeholder")
 	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."event_api_definitions" WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Document",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{eventID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixEventDefinitionColumns()).
+							AddRow(fixEventDefinitionRow(eventID, "placeholder")...),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixEventDefinitionColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		ExpectedModelEntity:       eventDefModel,
+		ExpectedDBEntity:          eventDefEntity,
+		MethodArgs:                []interface{}{tenantID, eventID},
+		DisableConverterErrorTest: true,
+	}
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixEventDefinitionColumns()).
-			AddRow(fixEventDefinitionRow(eventID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, eventID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("FromEntity", eventDefEntity).Return(model.EventDefinition{Tenant: tenantID, BaseEntity: &model.BaseEntity{ID: eventID}}, nil).Once()
-		pgRepository := event.NewRepository(convMock)
-		// WHEN
-		modelAPIDef, err := pgRepository.GetByID(ctx, tenantID, eventID)
-		//THEN
-		require.NoError(t, err)
-		assert.Equal(t, eventID, modelAPIDef.ID)
-		assert.Equal(t, tenantID, modelAPIDef.Tenant)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_ListByApplicationID(t *testing.T) {
 	// GIVEN
 	totalCount := 2
@@ -51,7 +59,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	secondEventDefID := "222222222-2222-2222-2222-222222222222"
 	secondEventDefEntity := fixFullEntityEventDefinition(secondEventDefID, "placeholder")
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."event_api_definitions" 
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."event_api_definitions"
 		WHERE %s AND app_id = \$2`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {
@@ -101,8 +109,8 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 
 	totalCounts := map[string]int{firstBndlID: 1, secondBndlID: 1}
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) 
-		FROM "public"."event_api_definitions" 
+	selectQuery := fmt.Sprintf(`^SELECT (.+)
+		FROM "public"."event_api_definitions"
 		WHERE %s AND id IN \(\$2, \$3\)`, fixTenantIsolationSubquery())
 
 	t.Run("success when there are no more pages", func(t *testing.T) {
@@ -338,6 +346,7 @@ func TestPgRepository_Create(t *testing.T) {
 
 	suite.Run(t)
 }
+
 /*
 func TestPgRepository_CreateMany(t *testing.T) {
 	insertQuery := `^INSERT INTO "public"."event_api_definitions" (.+) VALUES (.+)$`
@@ -368,7 +377,6 @@ func TestPgRepository_CreateMany(t *testing.T) {
 }
 */
 
-
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE "public"."event_api_definitions" SET package_id = ?, name = ?, description = ?, group_name = ?, ord_id = ?,
 		short_description = ?, system_instance_aware = ?, changelog_entries = ?, links = ?, tags = ?, countries = ?, release_status = ?,
@@ -389,7 +397,7 @@ func TestPgRepository_Update(t *testing.T) {
 				Args: []driver.Value{entity.PackageID, entity.Name, entity.Description, entity.GroupName, entity.OrdID, entity.ShortDescription, entity.SystemInstanceAware, entity.ChangeLogEntries, entity.Links,
 					entity.Tags, entity.Countries, entity.ReleaseStatus, entity.SunsetDate, entity.Labels, entity.Visibility,
 					entity.Disabled, entity.PartOfProducts, entity.LineOfBusiness, entity.Industry, entity.Version.Value, entity.Version.Deprecated, entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.Extensible, entity.Successors, entity.ResourceHash, entity.ID},
-				ValidResult: sqlmock.NewResult(-1, 1),
+				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
 		},
@@ -444,7 +452,7 @@ func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 
 func TestPgRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
-		Name:                "Event Exists",
+		Name: "Event Exists",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2))`),

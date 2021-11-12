@@ -3,6 +3,10 @@ package repo_test
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -12,9 +16,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
-	"time"
 )
 
 func TestCreate(t *testing.T) {
@@ -32,7 +33,7 @@ func TestCreate(t *testing.T) {
 			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, name, description ) VALUES ( ?, ?, ? )", appTableName))).
 				WithArgs(appID, appName, appDescription).WillReturnResult(sqlmock.NewResult(1, 1))
 			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( %s, %s, %s ) VALUES ( ?, ?, ? )", m2mTable, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
-				WithArgs(tenantID, appID, true).WillReturnResult(sqlmock.NewResult(1,1))
+				WithArgs(tenantID, appID, true).WillReturnResult(sqlmock.NewResult(1, 1))
 
 			err := creator.Create(ctx, resourceType, tenantID, fixApp)
 			require.NoError(t, err)
@@ -47,7 +48,7 @@ func TestCreate(t *testing.T) {
 			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, name, description ) VALUES ( ?, ?, ? )", appTableName))).
 				WillReturnError(someError())
 			// WHEN
-			err := creator.Create(ctx,resourceType, tenantID, fixApp)
+			err := creator.Create(ctx, resourceType, tenantID, fixApp)
 			// THEN
 			require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		})

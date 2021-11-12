@@ -26,6 +26,8 @@ var (
 	providerName       = "provider name"
 	fixedTimestamp     = time.Now()
 	legacyConnectorURL = "url.com"
+	systemNumber       = "123"
+	appName            = "appName"
 )
 
 func stringPtr(s string) *string {
@@ -108,6 +110,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 			Timestamp: appStatusTimestamp,
 		},
 		HealthCheckURL:      &testURL,
+		SystemNumber:        &systemNumber,
 		IntegrationSystemID: &intSysID,
 		BaseURL:             str.Ptr("base_url"),
 		Labels:              json.RawMessage("[]"),
@@ -133,6 +136,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 			Timestamp: graphql.Timestamp(appStatusTimestamp),
 		},
 		Name:                name,
+		SystemNumber:        &systemNumber,
 		Description:         &description,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
@@ -159,6 +163,7 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		Description:         repo.NewValidNullableString(description),
 		StatusCondition:     string(model.ApplicationStatusConditionInitial),
 		StatusTimestamp:     ts,
+		SystemNumber:        repo.NewValidNullableString(systemNumber),
 		HealthCheckURL:      repo.NewValidNullableString(testURL),
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
 		BaseURL:             repo.NewValidNullableString("base_url"),
@@ -487,4 +492,8 @@ func fixBundlePage(bundles []*model.Bundle) *model.BundlePage {
 func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 	t := graphql.Timestamp(time)
 	return &t
+}
+
+func fixAppColumns() []string {
+	return []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
 }

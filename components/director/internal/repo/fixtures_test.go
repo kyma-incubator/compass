@@ -11,11 +11,11 @@ const (
 	bundlesTableName = "bundles"
 	biaTableName     = "bia"
 
-	appID          = "appID"
-	appID2         = "appID2"
-	appName        = "appName"
+	appID           = "appID"
+	appID2          = "appID2"
+	appName         = "appName"
 	appName2        = "appName"
-	appDescription = "appDesc"
+	appDescription  = "appDesc"
 	appDescription2 = "appDesc"
 
 	bundleID          = "bundleID"
@@ -34,7 +34,7 @@ const (
 
 	tenantIsolationConditionWithoutOwnerCheckFmt = "(id IN (SELECT id FROM %s WHERE tenant_id = %s))"
 	tenantIsolationConditionWithOwnerCheckFmt    = "(id IN (SELECT id FROM %s WHERE tenant_id = %s AND owner = true))"
-	tenantIsolationConditionForBIA    = "(id IN (SELECT id FROM %s WHERE tenant_id = %s AND owner = true) OR owner_id = %s)"
+	tenantIsolationConditionForBIA               = "(id IN (SELECT id FROM %s WHERE tenant_id = %s AND owner = true) OR owner_id = %s)"
 )
 
 var fixUser = User{

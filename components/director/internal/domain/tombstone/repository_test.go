@@ -3,9 +3,10 @@ package tombstone_test
 import (
 	"database/sql/driver"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone/automock"
@@ -101,7 +102,7 @@ func TestPgRepository_Delete(t *testing.T) {
 
 func TestPgRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
-		Name:                "Tombstone Exists",
+		Name: "Tombstone Exists",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.tombstones WHERE id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2))`),
@@ -126,81 +127,35 @@ func TestPgRepository_Exists(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestPgRepository_GetByID(t *testing.T) {
-	// given
-	tombstoneEntity := fixEntityTombstone()
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Tombstone",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, removal_date, id FROM public.tombstones WHERE id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{tombstoneID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixTombstoneColumns()).AddRow(fixTombstoneRow()...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixTombstoneColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: tombstone.NewRepository,
+		ExpectedModelEntity: fixTombstoneModel(),
+		ExpectedDBEntity:    fixEntityTombstone(),
+		MethodArgs:          []interface{}{tenantID, tombstoneID},
+	}
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.tombstones WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
-
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixTombstoneColumns()).
-			AddRow(fixTombstoneRow()...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, tombstoneID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", tombstoneEntity).Return(&model.Tombstone{ID: tombstoneID, TenantID: tenantID}, nil).Once()
-		pgRepository := tombstone.NewRepository(convMock)
-		// WHEN
-		modelTombstone, err := pgRepository.GetByID(ctx, tenantID, tombstoneID)
-		//THEN
-		require.NoError(t, err)
-		assert.Equal(t, tombstoneID, modelTombstone.ID)
-		assert.Equal(t, tenantID, modelTombstone.TenantID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// given
-		repo := tombstone.NewRepository(nil)
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		testError := errors.New("test error")
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, tombstoneID).
-			WillReturnError(testError)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-		// when
-		modelTombstone, err := repo.GetByID(ctx, tenantID, tombstoneID)
-		// then
-
-		sqlMock.AssertExpectations(t)
-		assert.Nil(t, modelTombstone)
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-
-	t.Run("returns error when conversion failed", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		testError := errors.New("test error")
-		rows := sqlmock.NewRows(fixTombstoneColumns()).
-			AddRow(fixTombstoneRow()...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, tombstoneID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", tombstoneEntity).Return(&model.Tombstone{}, testError).Once()
-		pgRepository := tombstone.NewRepository(convMock)
-		// WHEN
-		_, err := pgRepository.GetByID(ctx, tenantID, tombstoneID)
-		//THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
-		sqlMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_ListByApplicationID(t *testing.T) {
 	// GIVEN
 	totalCount := 2

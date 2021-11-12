@@ -131,8 +131,8 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(entity Entity) model.EventDefinition {
-	return model.EventDefinition{
+func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
+	return &model.EventDefinition{
 		ApplicationID:       entity.ApplicationID,
 		PackageID:           repo.StringPtrFromNullableString(entity.PackageID),
 		Name:                entity.Name,

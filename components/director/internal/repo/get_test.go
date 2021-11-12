@@ -3,6 +3,10 @@ package repo_test
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -11,9 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
-	"time"
 )
 
 func TestGetSingle(t *testing.T) {
@@ -85,7 +86,7 @@ func TestGetSingle(t *testing.T) {
 
 		expectedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE name IN (SELECT name from names WHERE description = $1 AND id = $2) AND %s", appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$3")))
 		rows := sqlmock.NewRows([]string{"id", "name", "description"}).AddRow(appID, appName, appDescription)
-		mock.ExpectQuery(expectedQuery).WithArgs("foo",3, tenantID).WillReturnRows(rows)
+		mock.ExpectQuery(expectedQuery).WithArgs("foo", 3, tenantID).WillReturnRows(rows)
 		dest := App{}
 		// WHEN
 		err := sut.Get(ctx, resourceType, tenantID, repo.Conditions{repo.NewInConditionForSubQuery("name", "SELECT name from names WHERE description = ? AND id = ?", []interface{}{"foo", 3})}, repo.NoOrderBy, &dest)
@@ -103,7 +104,7 @@ func TestGetSingle(t *testing.T) {
 
 		expectedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE name IN ($1, $2) AND %s", appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$3")))
 		rows := sqlmock.NewRows([]string{"id", "name", "description"}).AddRow(appID, appName, appDescription)
-		mock.ExpectQuery(expectedQuery).WithArgs("foo","bar", tenantID).WillReturnRows(rows)
+		mock.ExpectQuery(expectedQuery).WithArgs("foo", "bar", tenantID).WillReturnRows(rows)
 		dest := App{}
 		// WHEN
 		err := sut.Get(ctx, resourceType, tenantID, repo.Conditions{repo.NewInConditionForStringValues("name", []string{"foo", "bar"})}, repo.NoOrderBy, &dest)
@@ -125,7 +126,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WithArgs(tenantID).WillReturnRows(rows)
 		dest := App{}
 		// WHEN
-		err := sut.Get(ctx, resourceType, tenantID, nil,repo.OrderByParams{repo.NewAscOrderBy("name")}, &dest)
+		err := sut.Get(ctx, resourceType, tenantID, nil, repo.OrderByParams{repo.NewAscOrderBy("name")}, &dest)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, appID, dest.ID)
@@ -144,7 +145,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WithArgs(tenantID).WillReturnRows(rows)
 		dest := App{}
 		// WHEN
-		err := sut.Get(ctx, resourceType, tenantID, nil,repo.OrderByParams{repo.NewAscOrderBy("name"), repo.NewDescOrderBy("description")}, &dest)
+		err := sut.Get(ctx, resourceType, tenantID, nil, repo.OrderByParams{repo.NewAscOrderBy("name"), repo.NewDescOrderBy("description")}, &dest)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, appID, dest.ID)
@@ -163,7 +164,7 @@ func TestGetSingle(t *testing.T) {
 		mock.ExpectQuery(expectedQuery).WithArgs(appName, appDescription, tenantID).WillReturnRows(rows)
 		dest := App{}
 		// WHEN
-		err := sut.Get(ctx, resourceType, tenantID, repo.Conditions{repo.NewEqualCondition("name", appName), repo.NewEqualCondition("description", appDescription)} ,repo.OrderByParams{repo.NewAscOrderBy("name"), repo.NewDescOrderBy("description")}, &dest)
+		err := sut.Get(ctx, resourceType, tenantID, repo.Conditions{repo.NewEqualCondition("name", appName), repo.NewEqualCondition("description", appDescription)}, repo.OrderByParams{repo.NewAscOrderBy("name"), repo.NewDescOrderBy("description")}, &dest)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, appID, dest.ID)

@@ -11,7 +11,7 @@ type ChildEntity interface {
 }
 
 type Identifiable interface {
-    GetID() string
+	GetID() string
 }
 
 // Entity denotes an DB-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values
@@ -45,7 +45,7 @@ type BaseEntity struct {
 }
 
 func (e *BaseEntity) GetID() string {
-    return e.ID
+	return e.ID
 }
 
 // GetReady missing godoc

@@ -16,13 +16,13 @@ import (
 //go:generate mockery --name=SpecRepository --output=automock --outpkg=automock --case=underscore
 type SpecRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Spec) error
-	GetByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType,) (*model.Spec, error)
+	GetByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
-	Delete(ctx context.Context, tenant, id string, objectType model.SpecReferenceObjectType,) error
+	Delete(ctx context.Context, tenant, id string, objectType model.SpecReferenceObjectType) error
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) error
 	Update(ctx context.Context, tenant string, item *model.Spec) error
-	Exists(ctx context.Context, tenantID, id string, objectType model.SpecReferenceObjectType,) (bool, error)
+	Exists(ctx context.Context, tenantID, id string, objectType model.SpecReferenceObjectType) (bool, error)
 }
 
 // FetchRequestRepository missing godoc
@@ -276,8 +276,10 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in mode
 
 func getFetchRequestObjectTypeBySpecObjectType(specObjectType model.SpecReferenceObjectType) model.FetchRequestReferenceObjectType {
 	switch specObjectType {
-	case model.APISpecReference: return model.APISpecFetchRequestReference
-	case model.EventSpecReference: return model.EventSpecFetchRequestReference
+	case model.APISpecReference:
+		return model.APISpecFetchRequestReference
+	case model.EventSpecReference:
+		return model.EventSpecFetchRequestReference
 	}
 	return ""
 }

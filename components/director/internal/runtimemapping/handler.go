@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"

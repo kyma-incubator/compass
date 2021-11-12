@@ -15,18 +15,20 @@ type Converter struct {
 }
 
 // FromEntity provides a mock function with given fields: in
-func (_m *Converter) FromEntity(in document.Entity) (model.Document, error) {
+func (_m *Converter) FromEntity(in *document.Entity) (*model.Document, error) {
 	ret := _m.Called(in)
 
-	var r0 model.Document
-	if rf, ok := ret.Get(0).(func(document.Entity) model.Document); ok {
+	var r0 *model.Document
+	if rf, ok := ret.Get(0).(func(*document.Entity) *model.Document); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.Document)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Document)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(document.Entity) error); ok {
+	if rf, ok := ret.Get(1).(func(*document.Entity) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

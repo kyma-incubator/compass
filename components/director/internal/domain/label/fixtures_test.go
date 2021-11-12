@@ -2,6 +2,7 @@ package label_test
 
 import (
 	"database/sql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -14,6 +15,8 @@ const (
 	value    = "test"
 	tenantID = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 )
+
+var fixColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "runtime_context_id", "key", "value", "version"}
 
 func fixModelLabel(objectType model.LabelableObject) *model.Label {
 	result := &model.Label{

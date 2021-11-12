@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -27,7 +28,7 @@ var (
 // EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
-	FromEntity(in Entity) (model.Webhook, error)
+	FromEntity(in *Entity) (*model.Webhook, error)
 	ToEntity(in *model.Webhook) (*Entity, error)
 }
 
@@ -53,7 +54,7 @@ func NewRepository(conv EntityConverter) *repository {
 		creator:            repo.NewCreator(tableName, webhookColumns),
 		globalCreator:      repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
 		updater:            repo.NewUpdater(tableName, updatableColumns, []string{"id", "app_id"}),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook,tableName,updatableColumns, []string{"id", "app_template_id"}),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id", "app_template_id"}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),
 		deleter:            repo.NewDeleter(tableName),
 		lister:             repo.NewLister(tableName, webhookColumns),
@@ -68,11 +69,11 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string, objectType 
 	if err := r.singleGetter.Get(ctx, objectType.GetResourceType(), tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
-	m, err := r.conv.FromEntity(entity)
+	m, err := r.conv.FromEntity(&entity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting from entity to model")
 	}
-	return &m, nil
+	return m, nil
 }
 
 // GetByIDGlobal missing godoc
@@ -81,11 +82,11 @@ func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.Webho
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
-	m, err := r.conv.FromEntity(entity)
+	m, err := r.conv.FromEntity(&entity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting from entity to model")
 	}
-	return &m, nil
+	return m, nil
 }
 
 // ListByApplicationID missing godoc
@@ -102,11 +103,11 @@ func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicatio
 
 	out := make([]*model.Webhook, 0, len(entities))
 	for _, ent := range entities {
-		w, err := r.conv.FromEntity(ent)
+		w, err := r.conv.FromEntity(&ent)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting Webhook to model")
 		}
-		out = append(out, &w)
+		out = append(out, w)
 	}
 
 	return out, nil
@@ -126,11 +127,11 @@ func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicatio
 
 	out := make([]*model.Webhook, 0, len(entities))
 	for _, ent := range entities {
-		w, err := r.conv.FromEntity(ent)
+		w, err := r.conv.FromEntity(&ent)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting Webhook to model")
 		}
-		out = append(out, &w)
+		out = append(out, w)
 	}
 
 	return out, nil

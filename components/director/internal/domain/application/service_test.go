@@ -3,9 +3,10 @@ package application_test
 import (
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
@@ -2285,7 +2286,7 @@ func TestService_Delete(t *testing.T) {
 	}
 
 	runtimeModel := &model.Runtime{
-		Name:   "test-runtime",
+		Name: "test-runtime",
 	}
 
 	ctx := context.TODO()
@@ -2456,7 +2457,7 @@ func TestService_Unpair(t *testing.T) {
 	}
 
 	runtimeModel := &model.Runtime{
-		Name:   "test-runtime",
+		Name: "test-runtime",
 	}
 
 	ctx := context.Background()

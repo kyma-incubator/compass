@@ -13,37 +13,39 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 )
 
-/*
 func TestPgRepository_GetByID(t *testing.T) {
-	// given
-	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
+	entity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
+	apiDefModel, _, _ := fixFullAPIDefinitionModel("placeholder")
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."api_definitions" WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get API",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash FROM "public"."api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{apiDefID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAPIDefinitionColumns()).AddRow(fixAPIDefinitionRow(apiDefID, "placeholder")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAPIDefinitionColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.APIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       api.NewRepository,
+		ExpectedModelEntity:       &apiDefModel,
+		ExpectedDBEntity:          &entity,
+		MethodArgs:                []interface{}{tenantID, apiDefID},
+		DisableConverterErrorTest: true,
+	}
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
-			AddRow(fixAPIDefinitionRow(apiDefID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, apiDefID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{Tenant: tenantID, BaseEntity: &model.BaseEntity{ID: apiDefID}}, nil).Once()
-		pgRepository := api.NewRepository(convMock)
-		// WHEN
-		modelAPIDef, err := pgRepository.GetByID(ctx, tenantID, apiDefID)
-		//THEN
-		require.NoError(t, err)
-		assert.Equal(t, apiDefID, modelAPIDef.ID)
-		assert.Equal(t, tenantID, modelAPIDef.Tenant)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_ListByApplicationID(t *testing.T) {
 	// GIVEN
 	totalCount := 2

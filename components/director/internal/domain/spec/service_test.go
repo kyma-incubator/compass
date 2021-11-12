@@ -331,9 +331,9 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 	timestamp := time.Now()
 
 	fr := &model.FetchRequest{
-		ID:     specID,
-		URL:    "foo.bar",
-		Mode:   model.FetchModeSingle,
+		ID:   specID,
+		URL:  "foo.bar",
+		Mode: model.FetchModeSingle,
 		Status: &model.FetchRequestStatus{
 			Condition: model.FetchRequestStatusConditionInitial,
 			Timestamp: timestamp,
@@ -536,9 +536,9 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 	timestamp := time.Now()
 
 	fr := &model.FetchRequest{
-		ID:     specID,
-		URL:    "foo.bar",
-		Mode:   model.FetchModeSingle,
+		ID:   specID,
+		URL:  "foo.bar",
+		Mode: model.FetchModeSingle,
 		Status: &model.FetchRequestStatus{
 			Condition: model.FetchRequestStatusConditionInitial,
 			Timestamp: timestamp,

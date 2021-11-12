@@ -49,7 +49,7 @@ func NewRepository(conv Converter) *repository {
 		listerGlobal:       repo.NewListerGlobal(resource.SystemAuth, tableName, tableColumns),
 		deleter:            repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.SystemAuth, tableName),
-		updater:            repo.NewUpdaterWithEmbeddedTenant(resource.SystemAuth,tableName,[]string{"value"},tenantColumn,[]string{"id"}),
+		updater:            repo.NewUpdaterWithEmbeddedTenant(resource.SystemAuth, tableName, []string{"value"}, tenantColumn, []string{"id"}),
 		conv:               conv,
 	}
 }

@@ -16,7 +16,7 @@ import (
 
 // SingleGetter missing godoc
 type SingleGetter interface {
-	Get(ctx context.Context,  resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
+	Get(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
 
 // SingleGetterGlobal missing godoc

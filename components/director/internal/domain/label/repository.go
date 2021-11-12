@@ -29,7 +29,7 @@ var (
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in *model.Label) (*Entity, error)
-	FromEntity(in Entity) (model.Label, error)
+	FromEntity(in *Entity) (*model.Label, error)
 }
 
 type repository struct {
@@ -142,17 +142,22 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 		getter = r.embeddedTenantGetter
 	}
 
+	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
+	if objectType != model.TenantLabelableObject {
+		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
+	}
+
 	var entity Entity
-	if err := getter.Get(ctx, objectType.GetResourceType(), tenant, repo.Conditions{repo.NewEqualCondition("key", key), repo.NewEqualCondition(labelableObjectField(objectType), objectID)}, repo.NoOrderBy, &entity); err != nil {
+	if err := getter.Get(ctx, objectType.GetResourceType(), tenant, conds, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
-	labelModel, err := r.conv.FromEntity(entity)
+	labelModel, err := r.conv.FromEntity(&entity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Label entity to model")
 	}
 
-	return &labelModel, nil
+	return labelModel, nil
 }
 
 // ListForObject missing godoc
@@ -177,12 +182,12 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 	labelsMap := make(map[string]*model.Label)
 
 	for _, entity := range entities {
-		m, err := r.conv.FromEntity(entity)
+		m, err := r.conv.FromEntity(&entity)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting Label entity to model")
 		}
 
-		labelsMap[m.Key] = &m
+		labelsMap[m.Key] = m
 	}
 
 	return labelsMap, nil
@@ -198,12 +203,12 @@ func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*mode
 	labels := make([]*model.Label, 0, len(entities))
 
 	for _, entity := range entities {
-		m, err := r.conv.FromEntity(entity)
+		m, err := r.conv.FromEntity(&entity)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting Label entity to model")
 		}
 
-		labels = append(labels, &m)
+		labels = append(labels, m)
 	}
 
 	return labels, nil
@@ -219,12 +224,12 @@ func (r *repository) ListGlobalByKeyAndObjects(ctx context.Context, objectType m
 	labels := make([]*model.Label, 0, len(entities))
 
 	for _, entity := range entities {
-		m, err := r.conv.FromEntity(entity)
+		m, err := r.conv.FromEntity(&entity)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting Label entity to model")
 		}
 
-		labels = append(labels, &m)
+		labels = append(labels, m)
 	}
 
 	return labels, nil
@@ -303,11 +308,11 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 
 	labelModels := make([]model.Label, 0, len(labels))
 	for _, label := range labels {
-		labelModel, err := r.conv.FromEntity(label)
+		labelModel, err := r.conv.FromEntity(&label)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting label entity to model")
 		}
-		labelModels = append(labelModels, labelModel)
+		labelModels = append(labelModels, *labelModel)
 	}
 	return labelModels, nil
 }
@@ -330,11 +335,11 @@ func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Con
 
 	labelModels := make([]model.Label, 0, len(labels))
 	for _, label := range labels {
-		labelModel, err := r.conv.FromEntity(label)
+		labelModel, err := r.conv.FromEntity(&label)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting label entity to model")
 		}
-		labelModels = append(labelModels, labelModel)
+		labelModels = append(labelModels, *labelModel)
 	}
 	return labelModels, nil
 }

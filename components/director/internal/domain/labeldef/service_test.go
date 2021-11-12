@@ -342,8 +342,8 @@ func TestServiceUpdate(t *testing.T) {
 
 		existingLabels := []*model.Label{
 			{
-				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
-				Key:    key,
+				ID:  "b9566e9d-83a2-4091-8c65-7a512b88f89e",
+				Key: key,
 				Value: map[string]interface{}{
 					"firstName": "val",
 					"lastName":  "val2",
@@ -353,8 +353,8 @@ func TestServiceUpdate(t *testing.T) {
 				ObjectType: model.RuntimeLabelableObject,
 			},
 			{
-				ID:     "2037fc3d-be6c-4489-94cf-05518bac709f",
-				Key:    key,
+				ID:  "2037fc3d-be6c-4489-94cf-05518bac709f",
+				Key: key,
 				Value: map[string]interface{}{
 					"firstName": "val3",
 					"lastName":  "val4",
@@ -407,8 +407,8 @@ func TestServiceUpdate(t *testing.T) {
 
 		existingLabels := []*model.Label{
 			{
-				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
-				Key:    oldProperty,
+				ID:  "b9566e9d-83a2-4091-8c65-7a512b88f89e",
+				Key: oldProperty,
 				Value: map[string]interface{}{
 					"key": "val",
 				},
@@ -416,8 +416,8 @@ func TestServiceUpdate(t *testing.T) {
 				ObjectType: model.RuntimeLabelableObject,
 			},
 			{
-				ID:     "2037fc3d-be6c-4489-94cf-05518bac709f",
-				Key:    oldProperty,
+				ID:  "2037fc3d-be6c-4489-94cf-05518bac709f",
+				Key: oldProperty,
 				Value: map[string]interface{}{
 					"key": "val2",
 				},
@@ -485,8 +485,8 @@ func TestServiceUpdate(t *testing.T) {
 
 		existingLabels := []*model.Label{
 			{
-				ID:     "b9566e9d-83a2-4091-8c65-7a512b88f89e",
-				Key:    key,
+				ID:  "b9566e9d-83a2-4091-8c65-7a512b88f89e",
+				Key: key,
 				Value: map[string]interface{}{
 					"firstName": "val",
 					"lastName":  "val2",
@@ -495,8 +495,8 @@ func TestServiceUpdate(t *testing.T) {
 				ObjectType: model.RuntimeLabelableObject,
 			},
 			{
-				ID:     "2037fc3d-be6c-4489-94cf-05518bac709f",
-				Key:    key,
+				ID:  "2037fc3d-be6c-4489-94cf-05518bac709f",
+				Key: key,
 				Value: map[string]interface{}{
 					"firstName": "val3",
 					"lastName":  "val4",

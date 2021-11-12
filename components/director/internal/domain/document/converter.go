@@ -139,11 +139,11 @@ func (c *converter) ToEntity(in *model.Document) (*Entity, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (model.Document, error) {
+func (c *converter) FromEntity(in *Entity) (*model.Document, error) {
 	kind := repo.StringPtrFromNullableString(in.Kind)
 	data := repo.StringPtrFromNullableString(in.Data)
 
-	out := model.Document{
+	out := &model.Document{
 		BundleID:    in.BndlID,
 		AppID:       in.AppID,
 		Title:       in.Title,

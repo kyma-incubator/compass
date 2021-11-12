@@ -14,18 +14,20 @@ type Converter struct {
 }
 
 // FromEntity provides a mock function with given fields: in
-func (_m *Converter) FromEntity(in spec.Entity) (model.Spec, error) {
+func (_m *Converter) FromEntity(in *spec.Entity) (*model.Spec, error) {
 	ret := _m.Called(in)
 
-	var r0 model.Spec
-	if rf, ok := ret.Get(0).(func(spec.Entity) model.Spec); ok {
+	var r0 *model.Spec
+	if rf, ok := ret.Get(0).(func(*spec.Entity) *model.Spec); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.Spec)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Spec)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(spec.Entity) error); ok {
+	if rf, ok := ret.Get(1).(func(*spec.Entity) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

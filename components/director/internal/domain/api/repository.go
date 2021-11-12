@@ -32,7 +32,7 @@ var (
 // APIDefinitionConverter missing godoc
 //go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type APIDefinitionConverter interface {
-	FromEntity(entity Entity) model.APIDefinition
+	FromEntity(entity *Entity) *model.APIDefinition
 	ToEntity(apiModel *model.APIDefinition) *Entity
 }
 
@@ -130,8 +130,8 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 	}
 	apis := make([]*model.APIDefinition, 0, apiCollection.Len())
 	for _, api := range apiCollection {
-		apiModel := r.conv.FromEntity(api)
-		apis = append(apis, &apiModel)
+		apiModel := r.conv.FromEntity(&api)
+		apis = append(apis, apiModel)
 	}
 	return apis, nil
 }
@@ -144,9 +144,9 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 		return nil, errors.Wrap(err, "while getting APIDefinition")
 	}
 
-	apiDefModel := r.conv.FromEntity(apiDefEntity)
+	apiDefModel := r.conv.FromEntity(&apiDefEntity)
 
-	return &apiDefModel, nil
+	return apiDefModel, nil
 }
 
 // GetForBundle missing godoc
@@ -249,8 +249,8 @@ func (r *pgRepository) groupEntitiesByID(bundleRefs []*model.BundleReference, ap
 
 	apiDefsByAPIDefID := map[string]*model.APIDefinition{}
 	for _, apiDefEnt := range apiDefCollection {
-		m := r.conv.FromEntity(apiDefEnt)
-		apiDefsByAPIDefID[apiDefEnt.ID] = &m
+		m := r.conv.FromEntity(&apiDefEnt)
+		apiDefsByAPIDefID[apiDefEnt.ID] = m
 	}
 
 	return refsByBundleID, apiDefsByAPIDefID

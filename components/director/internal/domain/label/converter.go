@@ -3,6 +3,7 @@ package label
 import (
 	"database/sql"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -62,12 +63,12 @@ func (c *converter) ToEntity(in *model.Label) (*Entity, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (model.Label, error) {
+func (c *converter) FromEntity(in *Entity) (*model.Label, error) {
 	var valueUnmarshalled interface{}
 	if in.Value != "" {
 		err := json.Unmarshal([]byte(in.Value), &valueUnmarshalled)
 		if err != nil {
-			return model.Label{}, errors.Wrap(err, "while unmarshalling Value")
+			return nil, errors.Wrap(err, "while unmarshalling Value")
 		}
 	}
 
@@ -85,7 +86,7 @@ func (c *converter) FromEntity(in Entity) (model.Label, error) {
 		objectType = model.RuntimeContextLabelableObject
 	}
 
-	return model.Label{
+	return &model.Label{
 		ID:         in.ID,
 		Tenant:     repo.StringPtrFromNullableString(in.TenantID),
 		ObjectID:   objectID,

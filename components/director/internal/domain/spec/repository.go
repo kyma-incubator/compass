@@ -27,7 +27,7 @@ var (
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in *model.Spec) *Entity
-	FromEntity(in Entity) (model.Spec, error)
+	FromEntity(in *Entity) (*model.Spec, error)
 }
 
 type repository struct {
@@ -68,12 +68,12 @@ func (r *repository) GetByID(ctx context.Context, tenantID string, id string, ob
 		return nil, errors.Wrapf(err, "while getting Specification with id %q", id)
 	}
 
-	specModel, err := r.conv.FromEntity(specEntity)
+	specModel, err := r.conv.FromEntity(&specEntity)
 	if err != nil {
 		return nil, err
 	}
 
-	return &specModel, nil
+	return specModel, nil
 }
 
 // Create missing godoc
@@ -106,12 +106,12 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string,
 	items := make([]*model.Spec, 0, len(specCollection))
 
 	for _, specEnt := range specCollection {
-		m, err := r.conv.FromEntity(specEnt)
+		m, err := r.conv.FromEntity(&specEnt)
 		if err != nil {
 			return nil, err
 		}
 
-		items = append(items, &m)
+		items = append(items, m)
 	}
 
 	return items, nil
@@ -136,11 +136,11 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 
 	specifications := make([]*model.Spec, 0, len(specs))
 	for _, s := range specs {
-		entity, err := r.conv.FromEntity(s)
+		entity, err := r.conv.FromEntity(&s)
 		if err != nil {
 			return nil, err
 		}
-		specifications = append(specifications, &entity)
+		specifications = append(specifications, entity)
 	}
 
 	return specifications, nil
@@ -173,7 +173,7 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Spec
 }
 
 // Exists missing godoc
-func (r *repository) Exists(ctx context.Context, tenantID, id string, objectType model.SpecReferenceObjectType,) (bool, error) {
+func (r *repository) Exists(ctx context.Context, tenantID, id string, objectType model.SpecReferenceObjectType) (bool, error) {
 	return r.existQuerier.Exists(ctx, objectType.GetResourceType(), tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 

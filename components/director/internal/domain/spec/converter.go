@@ -157,10 +157,10 @@ func (c *converter) ToEntity(in *model.Spec) *Entity {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (model.Spec, error) {
-	objectID, objectType, err := c.objectReferenceFromEntity(in)
+func (c *converter) FromEntity(in *Entity) (*model.Spec, error) {
+	objectID, objectType, err := c.objectReferenceFromEntity(*in)
 	if err != nil {
-		return model.Spec{}, errors.Wrap(err, "while determining object reference")
+		return nil, errors.Wrap(err, "while determining object reference")
 	}
 
 	var apiSpecFormat model.SpecFormat
@@ -196,7 +196,7 @@ func (c *converter) FromEntity(in Entity) (model.Spec, error) {
 		specFormat = eventSpecFormat
 	}
 
-	return model.Spec{
+	return &model.Spec{
 		ID:         in.ID,
 		ObjectType: objectType,
 		ObjectID:   objectID,

@@ -2,13 +2,14 @@ package repo_test
 
 import (
 	"fmt"
+	"strings"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
 )
 
 func TestQueryBuilder(t *testing.T) {
@@ -194,7 +195,7 @@ func TestQueryBuilderWithEmbeddedTenant(t *testing.T) {
 
 	t.Run("returns error when tenantID is empty", func(t *testing.T) {
 		// WHEN
-		query, args, err := sut.BuildQuery(UserType,"", true, repo.Conditions{}...)
+		query, args, err := sut.BuildQuery(UserType, "", true, repo.Conditions{}...)
 
 		// THEN
 		require.NotNil(t, err)

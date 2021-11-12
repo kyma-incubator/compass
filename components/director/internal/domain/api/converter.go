@@ -138,8 +138,8 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(entity Entity) model.APIDefinition {
-	return model.APIDefinition{
+func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
+	return &model.APIDefinition{
 		ApplicationID:                           entity.ApplicationID,
 		PackageID:                               repo.StringPtrFromNullableString(entity.PackageID),
 		Name:                                    entity.Name,

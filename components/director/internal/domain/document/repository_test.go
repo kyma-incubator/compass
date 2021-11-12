@@ -3,15 +3,15 @@ package document_test
 import (
 	"database/sql/driver"
 	"errors"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"regexp"
-	"testing"
 )
-
 
 var columns = []string{"id", "bundle_id", "app_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
 
@@ -36,8 +36,8 @@ func TestRepository_Create(t *testing.T) {
 				},
 			},
 			{
-				Query:       regexp.QuoteMeta("INSERT INTO public.documents ( id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
-				Args:        []driver.Value{givenID(), refID, appID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data,
+				Query: regexp.QuoteMeta("INSERT INTO public.documents ( id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"),
+				Args: []driver.Value{givenID(), refID, appID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data,
 					docEntity.Ready, docEntity.CreatedAt, docEntity.UpdatedAt, docEntity.DeletedAt, docEntity.Error},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
@@ -45,15 +45,16 @@ func TestRepository_Create(t *testing.T) {
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.Converter{}
 		},
-		RepoConstructorFunc:       document.NewRepository,
-		ModelEntity:               docModel,
-		DBEntity:                  docEntity,
-		NilModelEntity:            nilDocModel,
-		TenantID:                  givenTenant(),
+		RepoConstructorFunc: document.NewRepository,
+		ModelEntity:         docModel,
+		DBEntity:            docEntity,
+		NilModelEntity:      nilDocModel,
+		TenantID:            givenTenant(),
 	}
 
 	suite.Run(t)
 }
+
 /*
 func TestRepository_CreateMany(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
@@ -458,7 +459,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 */
 func TestRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
-		Name:                "Document Exists",
+		Name: "Document Exists",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.documents WHERE id = $1 AND (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $2))`),
@@ -473,7 +474,7 @@ func TestRepository_Exists(t *testing.T) {
 			},
 		},
 		ConverterMockProvider: func() testdb.Mock {
-			return &automock.DocumentConverter{}
+			return &automock.Converter{}
 		},
 		RepoConstructorFunc: document.NewRepository,
 		TargetID:            givenID(),
@@ -483,161 +484,80 @@ func TestRepository_Exists(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestRepository_GetByID(t *testing.T) {
-	refID := bndlID()
+	docModel := fixModelDocument(givenID(), bndlID())
+	docEntity := fixEntityDocument(givenID(), bndlID())
 
-	t.Run("Success", func(t *testing.T) {
-		// GIVEN
-		docModel := fixModelDocument(givenID(), refID)
-		docEntity := fixEntityDocument(givenID(), refID)
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Document",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE id = $1 AND (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{givenID(), givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(columns).
+							AddRow(givenID(), docEntity.BndlID, docEntity.AppID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data, docEntity.Ready, docEntity.CreatedAt, docEntity.UpdatedAt, docEntity.DeletedAt, docEntity.Error),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(columns),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: document.NewRepository,
+		ExpectedModelEntity: docModel,
+		ExpectedDBEntity:    docEntity,
+		MethodArgs:          []interface{}{givenTenant(), givenID()},
+	}
 
-		mockConverter := &automock.Converter{}
-		mockConverter.On("FromEntity", *docEntity).Return(*docModel, nil).Once()
-
-		repo := document.NewRepository(mockConverter)
-		db, dbMock := testdb.MockDatabase(t)
-
-		rows := sqlmock.NewRows(columns).
-			AddRow(givenID(), givenTenant(), refID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data,
-				docEntity.Ready, docEntity.CreatedAt, docEntity.UpdatedAt, docEntity.DeletedAt, docEntity.Error)
-
-		query := fmt.Sprintf("SELECT id, tenant_id, bundle_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE %s AND id = $2", fixUnescapedTenantIsolationSubquery())
-		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		actual, err := repo.GetByID(ctx, givenTenant(), givenID())
-		// THEN
-		require.NoError(t, err)
-		require.NotNil(t, actual)
-		assert.Equal(t, docModel, actual)
-
-		mockConverter.AssertExpectations(t)
-		dbMock.AssertExpectations(t)
-	})
-
-	t.Run("Converter Error", func(t *testing.T) {
-		// GIVEN
-		docEntity := fixEntityDocument(givenID(), refID)
-
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromEntity", *docEntity).Return(model.Document{}, givenError())
-
-		repo := document.NewRepository(mockConverter)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		rows := sqlmock.NewRows(columns).
-			AddRow(givenID(), givenTenant(), refID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data,
-				docEntity.Ready, docEntity.CreatedAt, docEntity.UpdatedAt, docEntity.DeletedAt, docEntity.Error)
-
-		dbMock.ExpectQuery("SELECT .*").
-			WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		_, err := repo.GetByID(ctx, givenTenant(), givenID())
-		// THEN
-		require.EqualError(t, err, "while converting Document entity to model: some error")
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// GIVEN
-		repo := document.NewRepository(nil)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectQuery("SELECT .*").
-			WithArgs(givenTenant(), givenID()).WillReturnError(givenError())
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		_, err := repo.GetByID(ctx, givenTenant(), givenID())
-		// THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
+	suite.Run(t)
 }
 
 func TestRepository_GetForBundle(t *testing.T) {
-	refID := bndlID()
+	docModel := fixModelDocument(givenID(), bndlID())
+	docEntity := fixEntityDocument(givenID(), bndlID())
 
-	t.Run("Success", func(t *testing.T) {
-		// GIVEN
-		docModel := fixModelDocument(givenID(), refID)
-		docEntity := fixEntityDocument(givenID(), refID)
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Document For Bundle",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE id = $1 AND bundle_id = $2 AND (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $3))`),
+				Args:     []driver.Value{givenID(), bndlID(), givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(columns).
+							AddRow(givenID(), docEntity.BndlID, docEntity.AppID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data, docEntity.Ready, docEntity.CreatedAt, docEntity.UpdatedAt, docEntity.DeletedAt, docEntity.Error),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(columns),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: document.NewRepository,
+		ExpectedModelEntity: docModel,
+		ExpectedDBEntity:    docEntity,
+		MethodArgs:          []interface{}{givenTenant(), givenID(), bndlID()},
+		MethodName:          "GetForBundle",
+	}
 
-		mockConverter := &automock.Converter{}
-		mockConverter.On("FromEntity", *docEntity).Return(*docModel, nil).Once()
-
-		repo := document.NewRepository(mockConverter)
-		db, dbMock := testdb.MockDatabase(t)
-
-		rows := sqlmock.NewRows(columns).
-			AddRow(givenID(), givenTenant(), refID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data,
-				docEntity.Ready, docEntity.CreatedAt, docEntity.UpdatedAt, docEntity.DeletedAt, docEntity.Error)
-
-		query := fmt.Sprintf("SELECT id, tenant_id, bundle_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE %s AND id = $2 AND bundle_id = $3", fixUnescapedTenantIsolationSubquery())
-		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(givenTenant(), givenID(), bndlID()).WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		actual, err := repo.GetForBundle(ctx, givenTenant(), givenID(), bndlID())
-		// THEN
-		require.NoError(t, err)
-		require.NotNil(t, actual)
-		assert.Equal(t, docModel, actual)
-
-		mockConverter.AssertExpectations(t)
-		dbMock.AssertExpectations(t)
-	})
-
-	t.Run("Converter Error", func(t *testing.T) {
-		// GIVEN
-		docEntity := fixEntityDocument(givenID(), refID)
-
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromEntity", *docEntity).Return(model.Document{}, givenError())
-
-		repo := document.NewRepository(mockConverter)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		rows := sqlmock.NewRows(columns).
-			AddRow(givenID(), givenTenant(), refID, docEntity.Title, docEntity.DisplayName, docEntity.Description, docEntity.Format, docEntity.Kind, docEntity.Data,
-				docEntity.Ready, docEntity.CreatedAt, docEntity.UpdatedAt, docEntity.DeletedAt, docEntity.Error)
-
-		dbMock.ExpectQuery("SELECT .*").
-			WithArgs(givenTenant(), givenID(), bndlID()).WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		_, err := repo.GetForBundle(ctx, givenTenant(), givenID(), bndlID())
-		// THEN
-		require.EqualError(t, err, "while converting Document entity to model: some error")
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// GIVEN
-		repo := document.NewRepository(nil)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectQuery("SELECT .*").
-			WithArgs(givenTenant(), givenID(), bndlID()).WillReturnError(givenError())
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		_, err := repo.GetForBundle(ctx, givenTenant(), givenID(), bndlID())
-		// THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
+	suite.Run(t)
 }
 
+/*
 func TestRepository_Delete(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN

@@ -24,8 +24,8 @@ func (e *Entity) GetID() string {
 }
 
 func (e *Entity) GetParentID() string {
-    if e.SpecID.Valid {
-        return e.SpecID.String
-    }
+	if e.SpecID.Valid {
+		return e.SpecID.String
+	}
 	return e.DocumentID.String
 }

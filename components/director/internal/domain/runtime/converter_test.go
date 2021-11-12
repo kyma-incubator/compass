@@ -1,8 +1,9 @@
 package runtime_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/model"

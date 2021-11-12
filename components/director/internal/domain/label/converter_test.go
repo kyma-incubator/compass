@@ -49,9 +49,9 @@ func TestConverter_ToEntity(t *testing.T) {
 				Version: version,
 			},
 			Expected: &label.Entity{
-				ID:       "2",
-				Key:      "foo",
-				Version:  version,
+				ID:      "2",
+				Key:     "foo",
+				Version: version,
 			},
 			ExpectedErrMessage: "",
 		},
@@ -96,30 +96,30 @@ func TestConverter_FromEntity(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name               string
-		Input              label.Entity
-		Expected           model.Label
+		Input              *label.Entity
+		Expected           *model.Label
 		ExpectedErrMessage string
 	}{
 		{
 			Name:               "All properties given",
-			Input:              *fixLabelEntity("1", marshalledArrayValue, version),
-			Expected:           *fixLabelModel("1", arrayValue, version),
+			Input:              fixLabelEntity("1", marshalledArrayValue, version),
+			Expected:           fixLabelModel("1", arrayValue, version),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name:               "String value",
-			Input:              *fixLabelEntity("1", marshalledStringValue, version),
-			Expected:           *fixLabelModel("1", stringValue, version),
+			Input:              fixLabelEntity("1", marshalledStringValue, version),
+			Expected:           fixLabelModel("1", stringValue, version),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Empty value",
-			Input: label.Entity{
-				ID:       "2",
-				Key:      "foo",
-				Version:  version,
+			Input: &label.Entity{
+				ID:      "2",
+				Key:     "foo",
+				Version: version,
 			},
-			Expected: model.Label{
+			Expected: &model.Label{
 				ID:      "2",
 				Key:     "foo",
 				Version: version,
@@ -128,8 +128,8 @@ func TestConverter_FromEntity(t *testing.T) {
 		},
 		{
 			Name:               "Error",
-			Input:              *fixLabelEntity("1", []byte("{json"), version),
-			Expected:           model.Label{},
+			Input:              fixLabelEntity("1", []byte("{json"), version),
+			Expected:           nil,
 			ExpectedErrMessage: "while unmarshalling Value: invalid character 'j' looking for beginning of object key string",
 		},
 	}
@@ -153,8 +153,8 @@ func TestConverter_FromEntity(t *testing.T) {
 
 func fixLabelEntity(id string, value []byte, version int) *label.Entity {
 	return &label.Entity{
-		ID:       id,
-		AppID:    sql.NullString{},
+		ID:    id,
+		AppID: sql.NullString{},
 		RuntimeID: sql.NullString{
 			String: "321",
 			Valid:  true,

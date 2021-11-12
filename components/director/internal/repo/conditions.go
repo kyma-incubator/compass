@@ -2,9 +2,10 @@ package repo
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 // Condition represents an SQL condition

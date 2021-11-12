@@ -3,8 +3,9 @@ package formation_test
 import (
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"

@@ -3,9 +3,10 @@ package eventing
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"net/url"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/require"
 
@@ -63,12 +64,12 @@ func fixRuntimeEventngCfgWithEmptyURL(t *testing.T) *model.RuntimeEventingConfig
 func fixRuntimes() []*model.Runtime {
 	return []*model.Runtime{
 		&model.Runtime{
-			ID:     runtimeID.String(),
-			Name:   "runtime-1",
+			ID:   runtimeID.String(),
+			Name: "runtime-1",
 		},
 		&model.Runtime{
-			ID:     uuid.New().String(),
-			Name:   "runtime-2",
+			ID:   uuid.New().String(),
+			Name: "runtime-2",
 		},
 	}
 }

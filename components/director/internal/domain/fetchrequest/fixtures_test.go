@@ -15,7 +15,7 @@ import (
 
 const (
 	tenantID = "b91b59f7-2563-40b2-aba9-fef726037aa3"
-	refID = "refID"
+	refID    = "refID"
 )
 
 func fixModelFetchRequest(t *testing.T, url, filter string) *model.FetchRequest {
@@ -122,9 +122,9 @@ func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time, obj
 
 	filter := "filter"
 	return &fetchrequest.Entity{
-		ID:       id,
-		URL:      "foo.bar",
-		Mode:     string(model.FetchModeIndex),
+		ID:   id,
+		URL:  "foo.bar",
+		Mode: string(model.FetchModeIndex),
 		Filter: sql.NullString{
 			String: filter,
 			Valid:  true,
@@ -135,7 +135,7 @@ func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time, obj
 			Valid:  true,
 			String: string(bytes),
 		},
-		SpecID: specID,
+		SpecID:     specID,
 		DocumentID: documentID,
 	}
 }
@@ -159,9 +159,9 @@ func fixFetchRequestModelWithReference(id string, timestamp time.Time, objectTyp
 
 func fixFetchRequestEntityWithReferences(id string, timestamp time.Time, specID, documentID sql.NullString) fetchrequest.Entity {
 	return fetchrequest.Entity{
-		ID:       id,
-		URL:      "foo.bar",
-		Mode:     string(model.FetchModeIndex),
+		ID:   id,
+		URL:  "foo.bar",
+		Mode: string(model.FetchModeIndex),
 		Filter: sql.NullString{
 			String: "filter",
 			Valid:  true,
@@ -172,4 +172,8 @@ func fixFetchRequestEntityWithReferences(id string, timestamp time.Time, specID,
 		SpecID:          specID,
 		DocumentID:      documentID,
 	}
+}
+
+func fixColumns() []string {
+	return []string{"id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", "spec_id"}
 }

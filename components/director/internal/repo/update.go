@@ -3,10 +3,11 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"

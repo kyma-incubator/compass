@@ -220,10 +220,10 @@ func (c *converter) toAuthEntity(in model.Webhook) (sql.NullString, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
-	auth, err := c.fromEntityAuth(in)
+func (c *converter) FromEntity(in *Entity) (*model.Webhook, error) {
+	auth, err := c.fromEntityAuth(*in)
 	if err != nil {
-		return model.Webhook{}, err
+		return nil, err
 	}
 
 	var webhookMode *model.WebhookMode
@@ -232,12 +232,12 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 		webhookMode = &webhookModeStr
 	}
 
-	objID, objType, err := c.objectReferenceFromEntity(in)
+	objID, objType, err := c.objectReferenceFromEntity(*in)
 	if err != nil {
-		return model.Webhook{}, err
+		return nil, err
 	}
 
-	return model.Webhook{
+	return &model.Webhook{
 		ID:               in.ID,
 		ObjectID:         objID,
 		ObjectType:       objType,

@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
+	"regexp"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -12,9 +16,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
-	"time"
 )
 
 func TestList(t *testing.T) {

@@ -3,12 +3,13 @@ package testdb
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"reflect"
-	"testing"
 )
 
 type RepoExistTestSuite struct {
@@ -24,7 +25,7 @@ type RepoExistTestSuite struct {
 func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 	for _, queryDetails := range suite.SqlQueryDetails {
 		if !queryDetails.IsSelect {
-			panic("get suite should expect only select SQL statements")
+			panic("exist suite should expect only select SQL statements")
 		}
 	}
 

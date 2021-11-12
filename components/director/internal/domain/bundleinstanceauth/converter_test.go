@@ -309,11 +309,11 @@ func TestConverter_FromEntity(t *testing.T) {
 		conv := bundleinstanceauth.NewConverter(nil)
 
 		//WHEN
-		result, err := conv.FromEntity(*piaEntity)
+		result, err := conv.FromEntity(piaEntity)
 
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, piaModel, &result)
+		assert.Equal(t, piaModel, result)
 	})
 
 	t.Run("Success all nullable properties empty", func(t *testing.T) {
@@ -324,10 +324,10 @@ func TestConverter_FromEntity(t *testing.T) {
 		conv := bundleinstanceauth.NewConverter(nil)
 
 		//WHEN
-		result, err := conv.FromEntity(*piaEntity)
+		result, err := conv.FromEntity(piaEntity)
 
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, piaModel, &result)
+		assert.Equal(t, piaModel, result)
 	})
 }

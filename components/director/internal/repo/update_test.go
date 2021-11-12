@@ -3,6 +3,11 @@ package repo_test
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -12,10 +17,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestUpdaterGlobal(t *testing.T) {
@@ -130,18 +131,18 @@ func TestUpdaterGlobal(t *testing.T) {
 
 	t.Run("Update with embedded tenant", func(t *testing.T) {
 		tests := []struct {
-			Name string
+			Name                string
 			AdditionalCondition string
-			Method func (updater repo.UpdaterGlobal) func (ctx context.Context, dbEntity interface{}) error
+			Method              func(updater repo.UpdaterGlobal) func(ctx context.Context, dbEntity interface{}) error
 		}{
 			{
-				Name:"UpdateSingleGlobal",
+				Name: "UpdateSingleGlobal",
 				Method: func(updater repo.UpdaterGlobal) func(ctx context.Context, dbEntity interface{}) error {
 					return updater.UpdateSingleGlobal
 				},
 			},
 			{
-				Name:"UpdateSingleWithVersionGlobal",
+				Name:                "UpdateSingleWithVersionGlobal",
 				AdditionalCondition: ", version = version+1",
 				Method: func(updater repo.UpdaterGlobal) func(ctx context.Context, dbEntity interface{}) error {
 					return updater.UpdateSingleWithVersionGlobal
@@ -166,7 +167,7 @@ func TestUpdaterGlobal(t *testing.T) {
 					ctx := persistence.SaveToContext(context.TODO(), db)
 					defer mock.AssertExpectations(t)
 
-					mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ?" + test.AdditionalCondition + " WHERE id = ? AND tenant_id = ?")).
+					mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ?"+test.AdditionalCondition+" WHERE id = ? AND tenant_id = ?")).
 						WithArgs("given_first_name", "given_last_name", 55, "given_id", "given_tenant").WillReturnResult(sqlmock.NewResult(0, 1))
 					// WHEN
 					err := test.Method(sut)(ctx, givenUser)
@@ -181,7 +182,7 @@ func TestUpdaterGlobal(t *testing.T) {
 					ctx := persistence.SaveToContext(context.TODO(), db)
 					defer mock.AssertExpectations(t)
 
-					mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ?" + test.AdditionalCondition + " WHERE tenant_id = ?")).
+					mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ?"+test.AdditionalCondition+" WHERE tenant_id = ?")).
 						WithArgs("given_first_name", "given_last_name", 55, "given_tenant").WillReturnResult(sqlmock.NewResult(0, 1))
 					// WHEN
 					err := test.Method(sut)(ctx, givenUser)
@@ -235,7 +236,7 @@ func TestUpdaterGlobal(t *testing.T) {
 					ctx := persistence.SaveToContext(context.TODO(), db)
 					defer mock.AssertExpectations(t)
 
-					mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ?" + test.AdditionalCondition + " WHERE id = ? AND tenant_id = ?")).
+					mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ?"+test.AdditionalCondition+" WHERE id = ? AND tenant_id = ?")).
 						WithArgs("given_first_name", "given_last_name", 55, "given_id", "given_tenant").WillReturnResult(sqlmock.NewResult(0, 157))
 					// WHEN
 					err := test.Method(sut)(ctx, givenUser)
@@ -250,7 +251,7 @@ func TestUpdaterGlobal(t *testing.T) {
 					ctx := persistence.SaveToContext(context.TODO(), db)
 					defer mock.AssertExpectations(t)
 
-					mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ?" + test.AdditionalCondition + " WHERE id = ? AND tenant_id = ?")).
+					mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET first_name = ?, last_name = ?, age = ?"+test.AdditionalCondition+" WHERE id = ? AND tenant_id = ?")).
 						WithArgs("given_first_name", "given_last_name", 55, "given_id", "given_tenant").WillReturnResult(sqlmock.NewResult(0, 0))
 					// WHEN
 					err := test.Method(sut)(ctx, givenUser)
@@ -281,20 +282,20 @@ func TestUpdaterGlobal(t *testing.T) {
 
 func TestUpdater(t *testing.T) {
 	tests := []struct {
-		Name string
-		AdditionalCondition string
-		AttachAdditionalQueries func (mock testdb.DBMock, m2mTable, tenant string)
-		Method func (updater repo.Updater) func (ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error
+		Name                    string
+		AdditionalCondition     string
+		AttachAdditionalQueries func(mock testdb.DBMock, m2mTable, tenant string)
+		Method                  func(updater repo.Updater) func(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error
 	}{
 		{
-			Name:"UpdateSingle",
+			Name:                    "UpdateSingle",
 			AttachAdditionalQueries: func(mock testdb.DBMock, m2mTable, tenant string) {},
 			Method: func(updater repo.Updater) func(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error {
 				return updater.UpdateSingle
 			},
 		},
 		{
-			Name:"UpdateSingleWithVersion",
+			Name: "UpdateSingleWithVersion",
 			AttachAdditionalQueries: func(mock testdb.DBMock, m2mTable, tenant string) {
 				mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT 1 FROM %s WHERE id = $1 AND %s", appTableName, fmt.Sprintf(tenantIsolationConditionWithOwnerCheckFmt, m2mTable, "$2")))).
 					WithArgs(appID, tenant).WillReturnRows(testdb.RowWhenObjectExist())
@@ -466,7 +467,6 @@ func TestUpdater(t *testing.T) {
 			})
 		})
 	}
-
 
 	t.Run("success for BundleInstanceAuth", func(t *testing.T) {
 		updater := repo.NewUpdater(biaTableName, []string{"name", "description"}, []string{"id"})

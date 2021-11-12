@@ -179,7 +179,7 @@ func (r *Resolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphq
 
 func (r *Resolver) checkForExistenceAndCreate(ctx context.Context, input model.WebhookInput, objectID string, objectType model.WebhookReferenceObjectType) (string, error) {
 	var (
-		existsFunc    existsFunc
+		existsFunc existsFunc
 	)
 
 	switch objectType {

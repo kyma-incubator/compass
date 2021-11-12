@@ -127,13 +127,13 @@ func (c *converter) ToEntity(in *model.BundleInstanceAuth) (*Entity, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (model.BundleInstanceAuth, error) {
+func (c *converter) FromEntity(in *Entity) (*model.BundleInstanceAuth, error) {
 	auth, err := c.authPtrFromNullString(in.AuthValue)
 	if err != nil {
-		return model.BundleInstanceAuth{}, err
+		return nil, err
 	}
 
-	return model.BundleInstanceAuth{
+	return &model.BundleInstanceAuth{
 		ID:               in.ID,
 		BundleID:         in.BundleID,
 		Owner:            in.OwnerID,

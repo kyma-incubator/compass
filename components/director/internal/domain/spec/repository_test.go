@@ -13,60 +13,64 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 )
 
-/*
 func TestRepository_GetByID(t *testing.T) {
-	// given
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
+	apiSpecModel := fixModelAPISpec()
+	apiSpecEntity := fixAPISpecEntity()
+	eventSpecModel := fixModelEventSpec()
+	eventSpecEntity := fixEventSpecEntity()
 
-	t.Run("Success For API", func(t *testing.T) {
-		specEntity := fixAPISpecEntity()
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixSpecColumns()).
-			AddRow(fixAPISpecRow()...)
+	apiSpecSuite := testdb.RepoGetTestSuite{
+		Name: "Get API Spec By ID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{specID, tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixAPISpecRow()...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		ExpectedModelEntity: apiSpecModel,
+		ExpectedDBEntity:    apiSpecEntity,
+		MethodArgs:          []interface{}{tenant, specID, model.APISpecReference},
+	}
 
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenant, specID).
-			WillReturnRows(rows)
+	eventSpecSuite := testdb.RepoGetTestSuite{
+		Name: "Get Event Spec By ID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{specID, tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixEventSpecRow()...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		ExpectedModelEntity: eventSpecModel,
+		ExpectedDBEntity:    eventSpecEntity,
+		MethodArgs:          []interface{}{tenant, specID, model.EventSpecReference},
+	}
 
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.Converter{}
-		convMock.On("FromEntity", specEntity).Return(*fixModelAPISpec(), nil).Once()
-		pgRepository := spec.NewRepository(convMock)
-		// WHEN
-		modelSpec, err := pgRepository.GetByID(ctx, tenant, specID)
-		//THEN
-		require.NoError(t, err)
-		assert.Equal(t, specID, modelSpec.ID)
-		assert.Equal(t, tenant, modelSpec.Tenant)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("Success For Event", func(t *testing.T) {
-		specEntity := fixEventSpecEntity()
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixSpecColumns()).
-			AddRow(fixEventSpecRow()...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenant, specID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.Converter{}
-		convMock.On("FromEntity", specEntity).Return(*fixModelEventSpec(), nil).Once()
-		pgRepository := spec.NewRepository(convMock)
-		// WHEN
-		modelSpec, err := pgRepository.GetByID(ctx, tenant, specID)
-		//THEN
-		require.NoError(t, err)
-		assert.Equal(t, specID, modelSpec.ID)
-		assert.Equal(t, tenant, modelSpec.Tenant)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
+	apiSpecSuite.Run(t)
+	eventSpecSuite.Run(t)
 }
-*/
+
 func TestRepository_Create(t *testing.T) {
 	var nilSpecModel *model.Spec
 	apiSpecModel := fixModelAPISpec()

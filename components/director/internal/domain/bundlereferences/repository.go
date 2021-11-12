@@ -53,7 +53,7 @@ func NewRepository(conv BundleReferenceConverter) *repository {
 		lister:      repo.NewListerGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
 		getter:      repo.NewSingleGetterGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
 		deleter:     repo.NewDeleterGlobal(resource.BundleReference, BundleReferenceTable),
-		updater:     repo.NewUpdaterGlobal(resource.BundleReference,BundleReferenceTable,updatableColumns,[]string{}),
+		updater:     repo.NewUpdaterGlobal(resource.BundleReference, BundleReferenceTable, updatableColumns, []string{}),
 		conv:        conv,
 	}
 }

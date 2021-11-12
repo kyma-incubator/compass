@@ -24,4 +24,3 @@ func (e *Entity) GetID() string {
 func (e *Entity) GetParentID() string {
 	return e.ApplicationID
 }
-

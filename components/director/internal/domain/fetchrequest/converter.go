@@ -92,7 +92,8 @@ func (c *converter) ToEntity(in *model.FetchRequest) (*Entity, error) {
 	var specID sql.NullString
 	var documentID sql.NullString
 	switch in.ObjectType {
-	case model.APISpecFetchRequestReference: fallthrough
+	case model.APISpecFetchRequestReference:
+		fallthrough
 	case model.EventSpecFetchRequestReference:
 		specID = refID
 	case model.DocumentFetchRequestReference:
@@ -114,18 +115,18 @@ func (c *converter) ToEntity(in *model.FetchRequest) (*Entity, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity, objectType model.FetchRequestReferenceObjectType) (model.FetchRequest, error) {
-	objectID, err := c.objectIDFromEntity(in)
+func (c *converter) FromEntity(in *Entity, objectType model.FetchRequestReferenceObjectType) (*model.FetchRequest, error) {
+	objectID, err := c.objectIDFromEntity(*in)
 	if err != nil {
-		return model.FetchRequest{}, errors.Wrap(err, "while determining object reference")
+		return nil, errors.Wrap(err, "while determining object reference")
 	}
 
 	auth, err := c.authToModel(in.Auth)
 	if err != nil {
-		return model.FetchRequest{}, errors.Wrap(err, "while converting Auth")
+		return nil, errors.Wrap(err, "while converting Auth")
 	}
 
-	return model.FetchRequest{
+	return &model.FetchRequest{
 		ID:         in.ID,
 		ObjectID:   objectID,
 		ObjectType: objectType,

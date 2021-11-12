@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -13,8 +16,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
 )
 
 func TestUnionList(t *testing.T) {
@@ -35,7 +36,7 @@ func TestUnionList(t *testing.T) {
 			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1"), appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$5")))).
 			WithArgs(tenantID, appID, 10, 0, tenantID, appID2, 10, 0).WillReturnRows(rows)
 		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id AS id, COUNT(*) AS total_count FROM %s WHERE %s GROUP BY id ORDER BY id ASC",
-			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1") ))).
+			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1")))).
 			WithArgs(tenantID).WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).AddRow(appID, 1).AddRow(appID2, 1))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		var dest AppCollection
@@ -86,7 +87,7 @@ func TestUnionList(t *testing.T) {
 
 		counts, err := sut.List(ctx, resourceType, tenantID, []string{appID, appID2}, "id", 10, "", repo.OrderByParams{repo.NewAscOrderBy("id")}, &dest)
 		require.Error(t, err)
-		require.EqualError(t, err,"Internal Server Error: Unexpected error while executing SQL query")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		require.Nil(t, counts)
 	})
 
@@ -103,13 +104,13 @@ func TestUnionList(t *testing.T) {
 			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1"), appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$5")))).
 			WithArgs(tenantID, appID, 10, 0, tenantID, appID2, 10, 0).WillReturnRows(rows)
 		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id AS id, COUNT(*) AS total_count FROM %s WHERE %s GROUP BY id ORDER BY id ASC",
-			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1") ))).
+			appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1")))).
 			WithArgs(tenantID).WillReturnError(someError())
 		var dest AppCollection
 
 		counts, err := sut.List(ctx, resourceType, tenantID, []string{appID, appID2}, "id", 10, "", repo.OrderByParams{repo.NewAscOrderBy("id")}, &dest)
 		require.Error(t, err)
-		require.EqualError(t, err,"Internal Server Error: Unexpected error while executing SQL query")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		require.Nil(t, counts)
 	})
 
@@ -213,7 +214,7 @@ func TestUnionListWithEmbeddedTenant(t *testing.T) {
 
 		counts, err := sut.List(ctx, UserType, tenantID, []string{peterID, homerID}, "id", 10, "", repo.OrderByParams{repo.NewAscOrderBy("id")}, &dest)
 		require.Error(t, err)
-		require.EqualError(t, err,"Internal Server Error: Unexpected error while executing SQL query")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		require.Nil(t, counts)
 	})
 
@@ -234,7 +235,7 @@ func TestUnionListWithEmbeddedTenant(t *testing.T) {
 
 		counts, err := sut.List(ctx, UserType, tenantID, []string{peterID, homerID}, "id", 10, "", repo.OrderByParams{repo.NewAscOrderBy("id")}, &dest)
 		require.Error(t, err)
-		require.EqualError(t, err,"Internal Server Error: Unexpected error while executing SQL query")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		require.Nil(t, counts)
 	})
 
@@ -332,10 +333,9 @@ func TestUnionListGlobal(t *testing.T) {
 
 		counts, err := sut.ListGlobal(ctx, []string{peterID, homerID}, "id", 10, "", repo.OrderByParams{repo.NewAscOrderBy("id")}, &dest)
 		require.Error(t, err)
-		require.EqualError(t, err,"Internal Server Error: Unexpected error while executing SQL query")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		require.Nil(t, counts)
 	})
-
 
 	t.Run("error when count fails", func(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
@@ -353,7 +353,7 @@ func TestUnionListGlobal(t *testing.T) {
 
 		counts, err := sut.ListGlobal(ctx, []string{peterID, homerID}, "id", 10, "", repo.OrderByParams{repo.NewAscOrderBy("id")}, &dest)
 		require.Error(t, err)
-		require.EqualError(t, err,"Internal Server Error: Unexpected error while executing SQL query")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		require.Nil(t, counts)
 	})
 

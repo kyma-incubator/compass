@@ -3,8 +3,9 @@ package tenant
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -69,7 +70,7 @@ func NewRepository(conv Converter) *pgRepository {
 		existQuerierGlobal: repo.NewExistQuerierGlobal(resource.Tenant, tableName),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.Tenant, tableName, insertColumns),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tenant,tableName,[]string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn},[]string{idColumn}),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Tenant, tableName),
 		conv:               conv,
 	}
@@ -205,36 +206,3 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 
 	return dest.TenantID, nil
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

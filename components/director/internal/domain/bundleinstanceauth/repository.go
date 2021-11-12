@@ -26,7 +26,7 @@ var (
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
 	ToEntity(in *model.BundleInstanceAuth) (*Entity, error)
-	FromEntity(entity Entity) (model.BundleInstanceAuth, error)
+	FromEntity(entity *Entity) (*model.BundleInstanceAuth, error)
 }
 
 type repository struct {
@@ -83,12 +83,12 @@ func (r *repository) GetByID(ctx context.Context, tenantID string, id string) (*
 		return nil, err
 	}
 
-	itemModel, err := r.conv.FromEntity(entity)
+	itemModel, err := r.conv.FromEntity(&entity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting BundleInstanceAuth entity to model")
 	}
 
-	return &itemModel, nil
+	return itemModel, nil
 }
 
 // GetForBundle missing godoc
@@ -99,16 +99,16 @@ func (r *repository) GetForBundle(ctx context.Context, tenant string, id string,
 		repo.NewEqualCondition("id", id),
 		repo.NewEqualCondition("bundle_id", bundleID),
 	}
-	if err := r.singleGetter.Get(ctx,resource.BundleInstanceAuth, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.BundleInstanceAuth, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
 	}
 
-	bndlModel, err := r.conv.FromEntity(ent)
+	bndlModel, err := r.conv.FromEntity(&ent)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating Bundle model from entity")
 	}
 
-	return &bndlModel, nil
+	return bndlModel, nil
 }
 
 // ListByBundleID missing godoc
@@ -119,7 +119,7 @@ func (r *repository) ListByBundleID(ctx context.Context, tenantID string, bundle
 		repo.NewEqualCondition("bundle_id", bundleID),
 	}
 
-	err := r.lister.List(ctx,resource.BundleInstanceAuth, tenantID, &entities, conditions...)
+	err := r.lister.List(ctx, resource.BundleInstanceAuth, tenantID, &entities, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (r *repository) ListByRuntimeID(ctx context.Context, tenantID string, runti
 		repo.NewEqualCondition("runtime_id", runtimeID),
 	}
 
-	err := r.lister.List(ctx,resource.BundleInstanceAuth, tenantID, &entities, conditions...)
+	err := r.lister.List(ctx, resource.BundleInstanceAuth, tenantID, &entities, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -157,22 +157,22 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Bund
 	}
 
 	log.C(ctx).Debugf("Updating BundleInstanceAuth entity with id %s in db", item.ID)
-	return r.updater.UpdateSingle(ctx,resource.BundleInstanceAuth, tenant, entity)
+	return r.updater.UpdateSingle(ctx, resource.BundleInstanceAuth, tenant, entity)
 }
 
 // Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenantID string, id string) error {
-	return r.deleter.DeleteOne(ctx,resource.BundleInstanceAuth, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.BundleInstanceAuth, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *repository) multipleFromEntities(entities Collection) ([]*model.BundleInstanceAuth, error) {
 	items := make([]*model.BundleInstanceAuth, 0, len(entities))
 	for _, ent := range entities {
-		m, err := r.conv.FromEntity(ent)
+		m, err := r.conv.FromEntity(&ent)
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating BundleInstanceAuth model from entity")
 		}
-		items = append(items, &m)
+		items = append(items, m)
 	}
 	return items, nil
 }

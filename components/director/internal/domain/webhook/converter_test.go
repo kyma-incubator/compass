@@ -233,12 +233,12 @@ func TestConverter_FromEntity(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := map[string]struct {
-		inEntity      webhook.Entity
-		expectedModel model.Webhook
+		inEntity      *webhook.Entity
+		expectedModel *model.Webhook
 		expectedErr   error
 	}{
 		"success when Auth not provided": {
-			inEntity: webhook.Entity{
+			inEntity: &webhook.Entity{
 				ID:             "givenID",
 				Type:           "CONFIGURATION_CHANGED",
 				URL:            repo.NewValidNullableString("https://test-domain.com"),
@@ -249,7 +249,7 @@ func TestConverter_FromEntity(t *testing.T) {
 				HeaderTemplate: repo.NewValidNullableString(emptyTemplate),
 				OutputTemplate: repo.NewValidNullableString(emptyTemplate),
 			},
-			expectedModel: model.Webhook{
+			expectedModel: &model.Webhook{
 				ID:             "givenID",
 				Type:           "CONFIGURATION_CHANGED",
 				URL:            stringPtr("https://test-domain.com"),
@@ -264,23 +264,23 @@ func TestConverter_FromEntity(t *testing.T) {
 			},
 		},
 		"success when Auth provided": {
-			inEntity: webhook.Entity{
-				ID: "givenID",
+			inEntity: &webhook.Entity{
+				ID:            "givenID",
 				ApplicationID: repo.NewValidNullableString("appID"),
 				Auth: sql.NullString{
 					Valid:  true,
 					String: string(b),
 				},
 			},
-			expectedModel: model.Webhook{
-				ID:   "givenID",
-				ObjectID: "appID",
+			expectedModel: &model.Webhook{
+				ID:         "givenID",
+				ObjectID:   "appID",
 				ObjectType: model.ApplicationWebhookReference,
-				Auth: fixBasicAuth(),
+				Auth:       fixBasicAuth(),
 			},
 		},
 		"got error on unmarshaling JSON": {
-			inEntity: webhook.Entity{
+			inEntity: &webhook.Entity{
 				Auth: sql.NullString{
 					Valid:  true,
 					String: "it is not even a proper JSON!",

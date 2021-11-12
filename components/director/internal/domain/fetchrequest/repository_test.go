@@ -1,12 +1,17 @@
 package fetchrequest_test
 
 import (
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/stretchr/testify/require"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
@@ -134,20 +139,20 @@ func TestRepository_Update(t *testing.T) {
 		Name: "Update API Fetch Request",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM api_specifications_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
-				Args:        []driver.Value{apiFREntity.StatusCondition, apiFREntity.StatusMessage, apiFREntity.StatusTimestamp, givenID()},
-				ValidResult: sqlmock.NewResult(-1, 1),
+				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM api_specifications_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
+				Args:          []driver.Value{apiFREntity.StatusCondition, apiFREntity.StatusMessage, apiFREntity.StatusTimestamp, givenID()},
+				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
 		},
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.Converter{}
 		},
-		RepoConstructorFunc:       fetchrequest.NewRepository,
-		ModelEntity:               apiFRModel,
-		DBEntity:                  apiFREntity,
-		NilModelEntity:            nilFrModel,
-		TenantID:                  tenantID,
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         apiFRModel,
+		DBEntity:            apiFREntity,
+		NilModelEntity:      nilFrModel,
+		TenantID:            tenantID,
 	}
 
 	apiFRSuite.Run(t)
@@ -156,20 +161,20 @@ func TestRepository_Update(t *testing.T) {
 		Name: "Update Event Fetch Request",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM event_specifications_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
-				Args:        []driver.Value{eventFREntity.StatusCondition, eventFREntity.StatusMessage, eventFREntity.StatusTimestamp, givenID()},
-				ValidResult: sqlmock.NewResult(-1, 1),
+				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM event_specifications_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
+				Args:          []driver.Value{eventFREntity.StatusCondition, eventFREntity.StatusMessage, eventFREntity.StatusTimestamp, givenID()},
+				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
 		},
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.Converter{}
 		},
-		RepoConstructorFunc:       fetchrequest.NewRepository,
-		ModelEntity:               eventFRModel,
-		DBEntity:                  eventFREntity,
-		NilModelEntity:            nilFrModel,
-		TenantID:                  tenantID,
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         eventFRModel,
+		DBEntity:            eventFREntity,
+		NilModelEntity:      nilFrModel,
+		TenantID:            tenantID,
 	}
 
 	eventFRSuite.Run(t)
@@ -178,114 +183,132 @@ func TestRepository_Update(t *testing.T) {
 		Name: "Update Document Fetch Request",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM document_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
-				Args:        []driver.Value{docFREntity.StatusCondition, docFREntity.StatusMessage, docFREntity.StatusTimestamp, givenID()},
-				ValidResult: sqlmock.NewResult(-1, 1),
+				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM document_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
+				Args:          []driver.Value{docFREntity.StatusCondition, docFREntity.StatusMessage, docFREntity.StatusTimestamp, givenID()},
+				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
 		},
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.Converter{}
 		},
-		RepoConstructorFunc:       fetchrequest.NewRepository,
-		ModelEntity:               docFRModel,
-		DBEntity:                  docFREntity,
-		NilModelEntity:            nilFrModel,
-		TenantID:                  tenantID,
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		ModelEntity:         docFRModel,
+		DBEntity:            docFREntity,
+		NilModelEntity:      nilFrModel,
+		TenantID:            tenantID,
 	}
 
 	docFRSuite.Run(t)
 }
 
-/*
 func TestRepository_GetByReferenceObjectID(t *testing.T) {
-	refID := "foo"
-	testCases := []struct {
-		Name       string
-		FieldName  string
-		ObjectType model.FetchRequestReferenceObjectType
-		DocumentID sql.NullString
-		SpecID     sql.NullString
-	}{
-		{Name: "Document", FieldName: "document_id", ObjectType: model.DocumentFetchRequestReference, DocumentID: sql.NullString{String: refID, Valid: true}},
-		{Name: "Spec", FieldName: "spec_id", ObjectType: model.SpecFetchRequestReference, SpecID: sql.NullString{String: refID, Valid: true}},
+	timestamp := time.Now()
+	apiFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.APISpecFetchRequestReference)
+	apiFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.APISpecFetchRequestReference)
+	eventFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.EventSpecFetchRequestReference)
+	eventFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.EventSpecFetchRequestReference)
+	docFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.DocumentFetchRequestReference)
+	docFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.DocumentFetchRequestReference)
+
+	apiFRSuite := testdb.RepoGetTestSuite{
+		Name: "Get Fetch Request by API ReferenceObjectID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE spec_id = $1 AND (id IN (SELECT id FROM api_specifications_fetch_requests_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{refID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns()).
+							AddRow(givenID(), apiFREntity.DocumentID, "foo.bar", apiFREntity.Auth, apiFREntity.Mode, apiFREntity.Filter, apiFREntity.StatusCondition, apiFREntity.StatusMessage, apiFREntity.StatusTimestamp, apiFREntity.SpecID),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:     fetchrequest.NewRepository,
+		ExpectedModelEntity:     apiFRModel,
+		ExpectedDBEntity:        apiFREntity,
+		MethodArgs:              []interface{}{tenantID, model.APISpecFetchRequestReference, refID},
+		AdditionalConverterArgs: []interface{}{model.APISpecFetchRequestReference},
+		MethodName:              "GetByReferenceObjectID",
 	}
 
-	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("Success - %s", testCase.Name), func(t *testing.T) {
-			// GIVEN
-			timestamp := time.Now()
-			frModel := fixFetchRequestModelWithReference(givenID(), timestamp, testCase.ObjectType, refID)
-			frEntity := fixFetchRequestEntityWithReferences(givenID(), timestamp, testCase.SpecID, testCase.DocumentID)
-
-			mockConverter := &automock.Converter{}
-			mockConverter.On("FromEntity", frEntity).Return(frModel, nil).Once()
-
-			repo := fetchrequest.NewRepository(mockConverter)
-			db, dbMock := testdb.MockDatabase(t)
-
-			rows := sqlmock.NewRows([]string{"id", "tenant_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", "spec_id"}).
-				AddRow(givenID(), givenTenant(), testCase.DocumentID, "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusMessage, frEntity.StatusTimestamp, testCase.SpecID)
-
-			query := fmt.Sprintf("SELECT id, tenant_id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE %s AND %s = $2", fixUnescapedTenantIsolationSubquery(), testCase.FieldName)
-			dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-				WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
-
-			ctx := persistence.SaveToContext(context.TODO(), db)
-			// WHEN
-			actual, err := repo.GetByReferenceObjectID(ctx, givenTenant(), testCase.ObjectType, givenID())
-			// THEN
-			require.NoError(t, err)
-			require.NotNil(t, actual)
-			assert.Equal(t, frModel, *actual)
-
-			mockConverter.AssertExpectations(t)
-			dbMock.AssertExpectations(t)
-		})
+	eventFRSuite := testdb.RepoGetTestSuite{
+		Name: "Get Fetch Request by Event ReferenceObjectID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE spec_id = $1 AND (id IN (SELECT id FROM event_specifications_fetch_requests_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{refID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns()).
+							AddRow(givenID(), eventFREntity.DocumentID, "foo.bar", eventFREntity.Auth, eventFREntity.Mode, eventFREntity.Filter, eventFREntity.StatusCondition, eventFREntity.StatusMessage, eventFREntity.StatusTimestamp, eventFREntity.SpecID),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:     fetchrequest.NewRepository,
+		ExpectedModelEntity:     eventFRModel,
+		ExpectedDBEntity:        eventFREntity,
+		MethodArgs:              []interface{}{tenantID, model.EventSpecFetchRequestReference, refID},
+		AdditionalConverterArgs: []interface{}{model.EventSpecFetchRequestReference},
+		MethodName:              "GetByReferenceObjectID",
 	}
 
-	t.Run("Error - Converter", func(t *testing.T) {
-		// GIVEN
-		timestamp := time.Now()
-		frEntity := fixFullFetchRequestEntity(t, givenID(), timestamp)
+	docFRSuite := testdb.RepoGetTestSuite{
+		Name: "Get Fetch Request by Document ReferenceObjectID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE document_id = $1 AND (id IN (SELECT id FROM document_fetch_requests_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{refID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns()).
+							AddRow(givenID(), docFREntity.DocumentID, "foo.bar", docFREntity.Auth, docFREntity.Mode, docFREntity.Filter, docFREntity.StatusCondition, docFREntity.StatusMessage, docFREntity.StatusTimestamp, docFREntity.SpecID),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:     fetchrequest.NewRepository,
+		ExpectedModelEntity:     docFRModel,
+		ExpectedDBEntity:        docFREntity,
+		MethodArgs:              []interface{}{tenantID, model.DocumentFetchRequestReference, refID},
+		AdditionalConverterArgs: []interface{}{model.DocumentFetchRequestReference},
+		MethodName:              "GetByReferenceObjectID",
+	}
 
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromEntity", frEntity).Return(model.FetchRequest{}, givenError())
+	apiFRSuite.Run(t)
+	eventFRSuite.Run(t)
+	docFRSuite.Run(t)
 
-		repo := fetchrequest.NewRepository(mockConverter)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", "spec_id"}).
-			AddRow(givenID(), givenTenant(), "documentID", "foo.bar", frEntity.Auth, frEntity.Mode, frEntity.Filter, frEntity.StatusCondition, frEntity.StatusMessage, frEntity.StatusTimestamp, sql.NullString{})
-
-		dbMock.ExpectQuery("SELECT .*").
-			WithArgs(givenTenant(), givenID()).WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		_, err := repo.GetByReferenceObjectID(ctx, givenTenant(), model.SpecFetchRequestReference, givenID())
-		// THEN
-		require.EqualError(t, err, "while getting FetchRequest model from entity: some error")
-	})
-
-	t.Run("Error - DB", func(t *testing.T) {
-		// GIVEN
-		repo := fetchrequest.NewRepository(nil)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectQuery("SELECT .*").
-			WithArgs(givenTenant(), givenID()).WillReturnError(givenError())
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		_, err := repo.GetByReferenceObjectID(ctx, givenTenant(), model.DocumentFetchRequestReference, givenID())
-		// THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-
+	// Additional tests
 	t.Run("Error - Invalid Object Reference Type", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
@@ -294,12 +317,13 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := fetchrequest.NewRepository(nil)
 		// WHEN
-		_, err := repo.GetByReferenceObjectID(ctx, givenTenant(), "test", givenID())
+		_, err := repo.GetByReferenceObjectID(ctx, tenantID, "test", givenID())
 		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("Invalid type of the Fetch Request reference object").Error())
 	})
 }
 
+/*
 func TestRepository_Delete(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN

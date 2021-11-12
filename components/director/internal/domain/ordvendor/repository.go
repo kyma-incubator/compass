@@ -81,17 +81,17 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Vendor, error) {
 	log.C(ctx).Debugf("Getting Vendor entity with id %q", id)
-	var productEnt Entity
-	if err := r.singleGetter.Get(ctx, resource.Vendor, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &productEnt); err != nil {
+	var vendorEnt Entity
+	if err := r.singleGetter.Get(ctx, resource.Vendor, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &vendorEnt); err != nil {
 		return nil, err
 	}
 
-	productModel, err := r.conv.FromEntity(&productEnt)
+	vendorModel, err := r.conv.FromEntity(&vendorEnt)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Vendor from Entity")
 	}
 
-	return productModel, nil
+	return vendorModel, nil
 }
 
 // ListByApplicationID missing godoc

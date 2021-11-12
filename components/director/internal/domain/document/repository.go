@@ -29,7 +29,7 @@ var (
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in *model.Document) (*Entity, error)
-	FromEntity(in Entity) (model.Document, error)
+	FromEntity(in *Entity) (*model.Document, error)
 }
 
 type repository struct {
@@ -76,12 +76,12 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Doc
 		return nil, err
 	}
 
-	docModel, err := r.conv.FromEntity(entity)
+	docModel, err := r.conv.FromEntity(&entity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Document entity to model")
 	}
 
-	return &docModel, nil
+	return docModel, nil
 }
 
 // GetForBundle missing godoc
@@ -96,12 +96,12 @@ func (r *repository) GetForBundle(ctx context.Context, tenant string, id string,
 		return nil, err
 	}
 
-	documentModel, err := r.conv.FromEntity(ent)
+	documentModel, err := r.conv.FromEntity(&ent)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Document entity to model")
 	}
 
-	return &documentModel, nil
+	return documentModel, nil
 }
 
 // Create missing godoc
@@ -149,11 +149,11 @@ func (r *repository) ListByBundleIDs(ctx context.Context, tenantID string, bundl
 
 	documentByID := map[string][]*model.Document{}
 	for _, documentEnt := range documentCollection {
-		m, err := r.conv.FromEntity(documentEnt)
+		m, err := r.conv.FromEntity(&documentEnt)
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating Document model from entity")
 		}
-		documentByID[documentEnt.BndlID] = append(documentByID[documentEnt.BndlID], &m)
+		documentByID[documentEnt.BndlID] = append(documentByID[documentEnt.BndlID], m)
 	}
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)

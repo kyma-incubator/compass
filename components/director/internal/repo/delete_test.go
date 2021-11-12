@@ -3,6 +3,10 @@ package repo_test
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -11,9 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
-	"time"
 )
 
 type methodToTest = func(ctx context.Context, resourceType resource.Type, tenant string, conditions repo.Conditions) error
@@ -105,7 +106,6 @@ func TestDelete(t *testing.T) {
 				require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
 			})
 
-
 			t.Run(fmt.Sprintf("[%s] returns error when select operation returns error", tn), func(t *testing.T) {
 				// GIVEN
 				db, mock := testdb.MockDatabase(t)
@@ -171,7 +171,6 @@ func TestDelete(t *testing.T) {
 				require.EqualError(t, err, apperrors.NewTenantRequiredError().Error())
 			})
 		}
-
 
 		t.Run("[DeleteMany] success when more than one resource matches conditions", func(t *testing.T) {
 			// GIVEN
@@ -283,7 +282,6 @@ func TestDelete(t *testing.T) {
 				require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
 			})
 
-
 			t.Run(fmt.Sprintf("[%s] returns error when delete operation returns error", tn), func(t *testing.T) {
 				// GIVEN
 				db, mock := testdb.MockDatabase(t)
@@ -360,7 +358,6 @@ func TestDelete(t *testing.T) {
 				})
 			}
 		})
-
 
 		t.Run("[DeleteMany] success when more than one resource matches conditions", func(t *testing.T) {
 			// GIVEN

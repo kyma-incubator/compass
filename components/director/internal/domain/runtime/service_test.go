@@ -2388,8 +2388,8 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 		&labelfilter.LabelFilter{Key: "test-key", Query: str.Ptr("test-filter")},
 	}
 	testRuntime := &model.Runtime{
-		ID:     "test-id",
-		Name:   "test-runtime",
+		ID:   "test-id",
+		Name: "test-runtime",
 	}
 	ctx := context.TODO()
 

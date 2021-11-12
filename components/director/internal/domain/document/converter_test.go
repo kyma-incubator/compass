@@ -227,10 +227,10 @@ func TestFromEntity(t *testing.T) {
 	t.Run("only required fields", func(t *testing.T) {
 		givenEntity := entityWithRequiredFields
 		// WHEN
-		actualModel, err := sut.FromEntity(givenEntity)
+		actualModel, err := sut.FromEntity(&givenEntity)
 		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, model.Document{
+		assert.Equal(t, &model.Document{
 			BundleID:    "givenBundleID",
 			AppID:       "givenAppID",
 			Title:       "givenTitle",
@@ -255,7 +255,7 @@ func TestFromEntity(t *testing.T) {
 		}
 
 		// WHEN
-		actualModel, err := sut.FromEntity(givenEntity)
+		actualModel, err := sut.FromEntity(&givenEntity)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, str.Ptr("givenData"), actualModel.Data)

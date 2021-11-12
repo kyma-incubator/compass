@@ -6,14 +6,16 @@ import (
 )
 
 const (
-	id = "id"
+	id        = "id"
 	runtimeID = "runtimeID"
-	key = "key"
-	val = "val"
+	key       = "key"
+	val       = "val"
 
-	tenantID = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	tenantID     = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	runtimeCtxID = "runtimeCtxID"
 )
+
+var fixColumns = []string{"id", "runtime_id", "key", "value"}
 
 func fixModelRuntimeCtx() *model.RuntimeContext {
 	return &model.RuntimeContext{

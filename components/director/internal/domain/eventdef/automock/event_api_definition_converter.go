@@ -15,14 +15,16 @@ type EventAPIDefinitionConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: entity
-func (_m *EventAPIDefinitionConverter) FromEntity(entity eventdef.Entity) model.EventDefinition {
+func (_m *EventAPIDefinitionConverter) FromEntity(entity *eventdef.Entity) *model.EventDefinition {
 	ret := _m.Called(entity)
 
-	var r0 model.EventDefinition
-	if rf, ok := ret.Get(0).(func(eventdef.Entity) model.EventDefinition); ok {
+	var r0 *model.EventDefinition
+	if rf, ok := ret.Get(0).(func(*eventdef.Entity) *model.EventDefinition); ok {
 		r0 = rf(entity)
 	} else {
-		r0 = ret.Get(0).(model.EventDefinition)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.EventDefinition)
+		}
 	}
 
 	return r0

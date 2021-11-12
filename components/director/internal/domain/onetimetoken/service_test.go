@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken/automock"

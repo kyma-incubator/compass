@@ -15,4 +15,3 @@ func (e *RuntimeContext) GetID() string {
 func (e *RuntimeContext) GetParentID() string {
 	return e.RuntimeID
 }
-

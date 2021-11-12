@@ -114,19 +114,19 @@ func TestConverter_FromEntity(t *testing.T) {
 	// given
 	testCases := []struct {
 		Name               string
-		Input              fetchrequest.Entity
-		Expected           model.FetchRequest
+		Input              *fetchrequest.Entity
+		Expected           *model.FetchRequest
 		ExpectedErrMessage string
 	}{
 		{
 			Name:               "All properties given",
-			Input:              *fixFullFetchRequestEntity(t, "1", timestamp, model.APISpecFetchRequestReference),
-			Expected:           *fixFullFetchRequestModel("1", timestamp, model.APISpecFetchRequestReference),
+			Input:              fixFullFetchRequestEntity(t, "1", timestamp, model.APISpecFetchRequestReference),
+			Expected:           fixFullFetchRequestModel("1", timestamp, model.APISpecFetchRequestReference),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Empty value",
-			Input: fetchrequest.Entity{
+			Input: &fetchrequest.Entity{
 				ID:              "2",
 				Auth:            sql.NullString{},
 				StatusTimestamp: timestamp,
@@ -136,11 +136,11 @@ func TestConverter_FromEntity(t *testing.T) {
 		},
 		{
 			Name: "Error",
-			Input: fetchrequest.Entity{
+			Input: &fetchrequest.Entity{
 				Auth:   repo.NewValidNullableString(`{Dd`),
 				SpecID: repo.NewValidNullableString("dd"),
 			},
-			Expected:           model.FetchRequest{},
+			Expected:           &model.FetchRequest{},
 			ExpectedErrMessage: "while converting Auth: while unmarshalling Auth: invalid character 'D' looking for beginning of object key string",
 		},
 	}
@@ -189,7 +189,7 @@ func TestConverter_ToEntity(t *testing.T) {
 		{
 			Name: "Empty Auth",
 			Input: &model.FetchRequest{
-				ID:     "2",
+				ID: "2",
 				Status: &model.FetchRequestStatus{
 					Timestamp: timestamp,
 					Condition: model.FetchRequestStatusConditionFailed,
@@ -204,10 +204,10 @@ func TestConverter_ToEntity(t *testing.T) {
 		{
 			Name: "Error",
 			Input: &model.FetchRequest{
-				ID:     "2",
+				ID: "2",
 			},
 			Expected: &fetchrequest.Entity{
-				ID:       "2",
+				ID: "2",
 			},
 			ExpectedErrMessage: apperrors.NewInvalidDataError("Invalid input model").Error(),
 		},

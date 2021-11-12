@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -11,8 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"reflect"
-	"testing"
 )
 
 // Mock represents a mockery Mock.

@@ -3,6 +3,7 @@ package bundlereferences_test
 import (
 	"database/sql"
 	"database/sql/driver"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -10,11 +11,11 @@ import (
 )
 
 const (
-	bundleRefID      = "qqqqqqqqq-qqqq-qqqq-qqqq-qqqqqqqqqqqq"
-	apiDefID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
-	eventDefID       = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
-	secondBundleID   = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	bundleRefID    = "qqqqqqqqq-qqqq-qqqq-qqqq-qqqqqqqqqqqq"
+	apiDefID       = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	eventDefID     = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	bundleID       = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+	secondBundleID = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 
 	apiDefTargetURL = "http://test.com"
 )

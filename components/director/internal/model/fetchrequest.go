@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // FetchRequest compass performs fetch to validate if request is correct and stores a copy

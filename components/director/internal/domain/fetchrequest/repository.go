@@ -23,7 +23,7 @@ var (
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in *model.FetchRequest) (*Entity, error)
-	FromEntity(in Entity, objectType model.FetchRequestReferenceObjectType) (model.FetchRequest, error)
+	FromEntity(in *Entity, objectType model.FetchRequestReferenceObjectType) (*model.FetchRequest, error)
 }
 
 type repository struct {
@@ -73,12 +73,12 @@ func (r *repository) GetByReferenceObjectID(ctx context.Context, tenant string, 
 		return nil, err
 	}
 
-	frModel, err := r.conv.FromEntity(entity, objectType)
+	frModel, err := r.conv.FromEntity(&entity, objectType)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting FetchRequest model from entity")
 	}
 
-	return &frModel, nil
+	return frModel, nil
 }
 
 // Delete missing godoc
@@ -129,15 +129,15 @@ func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string
 
 	fetchRequestsByID := map[string]*model.FetchRequest{}
 	for _, fetchRequestEnt := range fetchRequestCollection {
-		m, err := r.conv.FromEntity(fetchRequestEnt, objectType)
+		m, err := r.conv.FromEntity(&fetchRequestEnt, objectType)
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating FetchRequest model from entity")
 		}
 
 		if fieldName == specIDColumn {
-			fetchRequestsByID[fetchRequestEnt.SpecID.String] = &m
+			fetchRequestsByID[fetchRequestEnt.SpecID.String] = m
 		} else if fieldName == documentIDColumn {
-			fetchRequestsByID[fetchRequestEnt.DocumentID.String] = &m
+			fetchRequestsByID[fetchRequestEnt.DocumentID.String] = m
 		}
 	}
 
@@ -153,7 +153,8 @@ func (r *repository) referenceObjectFieldName(objectType model.FetchRequestRefer
 	switch objectType {
 	case model.DocumentFetchRequestReference:
 		return documentIDColumn, nil
-	case model.EventSpecFetchRequestReference: fallthrough
+	case model.EventSpecFetchRequestReference:
+		fallthrough
 	case model.APISpecFetchRequestReference:
 		return specIDColumn, nil
 	}

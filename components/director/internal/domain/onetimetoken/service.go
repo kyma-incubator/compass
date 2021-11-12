@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"

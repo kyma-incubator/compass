@@ -3,13 +3,14 @@ package testdb
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"reflect"
-	"testing"
 )
 
 // RepoUpdateTestSuite represents a generic test suite for repository Update and UpdateWithVersion methods of any entity that has externally managed tenants in m2m table/view.

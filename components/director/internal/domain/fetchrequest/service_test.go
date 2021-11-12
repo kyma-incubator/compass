@@ -5,11 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 	accessstrategyautomock "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy/automock"

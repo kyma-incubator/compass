@@ -38,7 +38,7 @@ func NewRepository(conv Converter) *pgRepository {
 		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.IntegrationSystem, tableName),
 		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.IntegrationSystem, tableName, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.IntegrationSystem, tableName, tableColumns),
-		updaterGlobal:         repo.NewUpdaterGlobal(resource.IntegrationSystem,tableName,[]string{"name", "description"},[]string{"id"}),
+		updaterGlobal:         repo.NewUpdaterGlobal(resource.IntegrationSystem, tableName, []string{"name", "description"}, []string{"id"}),
 		deleterGlobal:         repo.NewDeleterGlobal(resource.IntegrationSystem, tableName),
 		conv:                  conv,
 	}

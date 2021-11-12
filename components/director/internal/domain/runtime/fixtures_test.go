@@ -1,11 +1,12 @@
 package runtime_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -14,9 +15,11 @@ import (
 )
 
 const (
-	tenantID = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	tenantID  = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	runtimeID = "runtimeID"
 )
+
+var fixColumns = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}
 
 func fixRuntimePage(runtimes []*model.Runtime) *model.RuntimePage {
 	return &model.RuntimePage{
@@ -47,7 +50,7 @@ func fixModelRuntime(t *testing.T, id, tenant, name, description string) *model.
 	require.NoError(t, err)
 
 	return &model.Runtime{
-		ID:     id,
+		ID: id,
 		Status: &model.RuntimeStatus{
 			Condition: model.RuntimeStatusConditionInitial,
 		},

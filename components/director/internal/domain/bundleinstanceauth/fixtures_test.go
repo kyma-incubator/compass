@@ -28,7 +28,7 @@ var (
 	testInputParams    = `{"bar": "baz"}`
 	testError          = errors.New("test")
 	testTime           = time.Now()
-	testTableColumns   = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
+	testTableColumns   = []string{"id", "owner_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
 )
 
 func fixModelBundleInstanceAuth(id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *model.BundleInstanceAuth {
@@ -44,7 +44,7 @@ func fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant
 		ID:        id,
 		BundleID:  bundleID,
 		RuntimeID: runtimeID,
-		Owner:    tenant,
+		Owner:     tenant,
 		Auth:      auth,
 		Status:    status,
 	}
@@ -171,7 +171,7 @@ func fixEntityBundleInstanceAuthWithoutContextAndInputParams(t *testing.T, id, b
 		ID:        id,
 		BundleID:  bundleID,
 		RuntimeID: sqlNullString,
-		OwnerID:  tenant,
+		OwnerID:   tenant,
 	}
 
 	if auth != nil {
@@ -237,7 +237,7 @@ func fixGQLAuthInput() *graphql.AuthInput {
 
 type sqlRow struct {
 	id               string
-	ownerID         string
+	ownerID          string
 	bundleID         string
 	runtimeID        sql.NullString
 	runtimeContextID sql.NullString
@@ -261,7 +261,7 @@ func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 func fixSQLRowFromEntity(entity bundleinstanceauth.Entity) sqlRow {
 	return sqlRow{
 		id:               entity.ID,
-		ownerID:         entity.OwnerID,
+		ownerID:          entity.OwnerID,
 		bundleID:         entity.BundleID,
 		runtimeID:        entity.RuntimeID,
 		runtimeContextID: entity.RuntimeContextID,

@@ -15,14 +15,16 @@ type APIDefinitionConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: entity
-func (_m *APIDefinitionConverter) FromEntity(entity api.Entity) model.APIDefinition {
+func (_m *APIDefinitionConverter) FromEntity(entity *api.Entity) *model.APIDefinition {
 	ret := _m.Called(entity)
 
-	var r0 model.APIDefinition
-	if rf, ok := ret.Get(0).(func(api.Entity) model.APIDefinition); ok {
+	var r0 *model.APIDefinition
+	if rf, ok := ret.Get(0).(func(*api.Entity) *model.APIDefinition); ok {
 		r0 = rf(entity)
 	} else {
-		r0 = ret.Get(0).(model.APIDefinition)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.APIDefinition)
+		}
 	}
 
 	return r0

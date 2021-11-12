@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -117,7 +118,7 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) error {
 	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil  && objectType.GetResourceType() != resource.Webhook { // If the webhook is not global
+	if err != nil && objectType.GetResourceType() != resource.Webhook { // If the webhook is not global
 		return err
 	}
 	webhook, err := s.Get(ctx, id, objectType)

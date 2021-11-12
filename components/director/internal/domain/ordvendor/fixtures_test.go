@@ -3,6 +3,7 @@ package ordvendor_test
 import (
 	"database/sql/driver"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/ordvendor"

@@ -4,14 +4,17 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/stretchr/testify/require"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
+
+var fixColumns = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 
 var emptyTemplate = `{}`
 

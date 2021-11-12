@@ -48,7 +48,6 @@ func TestPgRepository_Create(t *testing.T) {
 	suite.Run(t)
 }
 
-
 func TestPgRepository_Update(t *testing.T) {
 	entity := fixEntityProduct()
 
@@ -56,9 +55,9 @@ func TestPgRepository_Update(t *testing.T) {
 		Name: "Update Product",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.products SET title = ?, short_description = ?, vendor = ?, parent = ?, labels = ?, correlation_ids = ? WHERE id = ? AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
-				Args:        append(fixProductUpdateArgs(), entity.ID),
-				ValidResult: sqlmock.NewResult(-1, 1),
+				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.products SET title = ?, short_description = ?, vendor = ?, parent = ?, labels = ?, correlation_ids = ? WHERE id = ? AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
+				Args:          append(fixProductUpdateArgs(), entity.ID),
+				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
 		},
@@ -75,6 +74,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 	suite.Run(t)
 }
+
 /*
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -95,7 +95,7 @@ func TestPgRepository_Delete(t *testing.T) {
 */
 func TestPgRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
-		Name:                "Product Exists",
+		Name: "Product Exists",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.products WHERE id = $1 AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = $2))`),
@@ -120,81 +120,35 @@ func TestPgRepository_Exists(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestPgRepository_GetByID(t *testing.T) {
-	// given
-	productEntity := fixEntityProduct()
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Product",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, short_description, vendor, parent, labels, correlation_ids, id FROM public.products WHERE id = $1 AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{productID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns()).AddRow(fixProductRow()...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: product.NewRepository,
+		ExpectedModelEntity: fixProductModel(),
+		ExpectedDBEntity:    fixEntityProduct(),
+		MethodArgs:          []interface{}{tenantID, productID},
+	}
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.products WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
-
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixProductColumns()).
-			AddRow(fixProductRow()...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, productID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", productEntity).Return(&model.Product{ID: productID, TenantID: tenantID}, nil).Once()
-		pgRepository := product.NewRepository(convMock)
-		// WHEN
-		modelProduct, err := pgRepository.GetByID(ctx, tenantID, productID)
-		//THEN
-		require.NoError(t, err)
-		assert.Equal(t, productID, modelProduct.ID)
-		assert.Equal(t, tenantID, modelProduct.TenantID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// given
-		repo := product.NewRepository(nil)
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		testError := errors.New("test error")
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, productID).
-			WillReturnError(testError)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-		// when
-		modelProduct, err := repo.GetByID(ctx, tenantID, productID)
-		// then
-
-		sqlMock.AssertExpectations(t)
-		assert.Nil(t, modelProduct)
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-
-	t.Run("returns error when conversion failed", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		testError := errors.New("test error")
-		rows := sqlmock.NewRows(fixProductColumns()).
-			AddRow(fixProductRow()...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, productID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", productEntity).Return(&model.Product{}, testError).Once()
-		pgRepository := product.NewRepository(convMock)
-		// WHEN
-		_, err := pgRepository.GetByID(ctx, tenantID, productID)
-		//THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
-		sqlMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_ListByApplicationID(t *testing.T) {
 	// GIVEN
 	totalCount := 2
