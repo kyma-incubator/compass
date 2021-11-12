@@ -25,32 +25,39 @@ type GraphQLClient interface {
 	Run(context.Context, *gcli.Request, interface{}) error
 }
 
+// Director is an GraphQLClient implementation
 type Director struct {
 	client GraphQLClient
 }
 
+// NewDirector creates new director with given client
 func NewDirector(client GraphQLClient) *Director {
 	return &Director{
 		client: client,
 	}
 }
 
+// WriteTenants makes graphql query for tenant creation
 func (d *Director) WriteTenants(ctx context.Context, tenants []model.BusinessTenantMappingInput) error {
 	return modifyTenants(ctx, tenants, "writeTenants", d.client)
 }
 
+// DeleteTenants makes graphql query for tenant deletion
 func (d *Director) DeleteTenants(ctx context.Context, tenants []model.BusinessTenantMappingInput) error {
 	return modifyTenants(ctx, tenants, "deleteTenants", d.client)
 }
 
+// CreateLabelDefinition makes graphql query for labeldef creation
 func (d *Director) CreateLabelDefinition(ctx context.Context, lblDef graphql.LabelDefinitionInput, tenant string) error {
 	return modifyLabelDefs(ctx, lblDef, tenant, "createLabelDefinition", d.client)
 }
 
+// UpdateLabelDefinition makes graphql query for updating labeldef
 func (d *Director) UpdateLabelDefinition(ctx context.Context, lblDef graphql.LabelDefinitionInput, tenant string) error {
 	return modifyLabelDefs(ctx, lblDef, tenant, "updateLabelDefinition", d.client)
 }
 
+// SetRuntimeTenant makes graphql query for setting runtime's tenant
 func (d *Director) SetRuntimeTenant(ctx context.Context, runtimeID, tenantID string) error {
 	res := struct {
 		Runtime graphql.Runtime `json:"result"`

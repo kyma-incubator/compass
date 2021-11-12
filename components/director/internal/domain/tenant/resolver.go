@@ -120,6 +120,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Tenant, key *string)
 	return resultLabels, nil
 }
 
+// Write creates new tenants
 func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTenantMappingInput) (int, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -142,6 +143,7 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 	return len(tenants), nil
 }
 
+// Delete deletes tenants
 func (r *Resolver) Delete(ctx context.Context, inputTenants []*graphql.BusinessTenantMappingInput) (int, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
