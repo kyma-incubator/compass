@@ -205,7 +205,6 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 					*documents[i].EventResources[j].Description = (*documents[i].EventResources[j].Description)[:255]
 				}
 			}
-
 		}
 
 		log.C(ctx).Info("Processing ORD documents")
