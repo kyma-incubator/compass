@@ -78,12 +78,6 @@ type TenantStorageService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
-// LabelDefinitionService missing godoc
-//go:generate mockery --name=LabelDefinitionService --output=automock --outpkg=automock --case=underscore
-type LabelDefinitionService interface {
-	Upsert(ctx context.Context, def model.LabelDefinition) error
-}
-
 // LabelService missing godoc
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
 type LabelService interface {
@@ -100,7 +94,6 @@ type EventAPIClient interface {
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
-	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
 }
 
 // TenantSyncService missing godoc
@@ -159,7 +152,6 @@ type SubaccountService struct {
 	tenantsRegions                  []string
 	fieldMapping                    TenantFieldMapping
 	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
-	labelDefService                 LabelDefinitionService
 	labelService                    LabelService
 	retryAttempts                   uint
 	movedRuntimeLabelKey            string
@@ -209,10 +201,11 @@ func NewSubaccountService(queryConfig QueryConfig,
 	kubeClient KubeClient,
 	fieldMapping TenantFieldMapping,
 	movRuntime MovedRuntimeByLabelFieldMapping,
-	providerName string, regionNames []string, client EventAPIClient,
+	providerName string,
+	regionNames []string,
+	client EventAPIClient,
 	tenantStorageService TenantStorageService,
 	runtimeStorageService RuntimeService,
-	labelDefService LabelDefinitionService,
 	labelService LabelService,
 	movedRuntimeLabelKey string,
 	fullResyncInterval time.Duration,
@@ -231,7 +224,6 @@ func NewSubaccountService(queryConfig QueryConfig,
 		queryConfig:                     queryConfig,
 		movedRuntimeByLabelFieldMapping: movRuntime,
 		retryAttempts:                   retryAttempts,
-		labelDefService:                 labelDefService,
 		labelService:                    labelService,
 		movedRuntimeLabelKey:            movedRuntimeLabelKey,
 		fullResyncInterval:              fullResyncInterval,
@@ -435,12 +427,9 @@ func createTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTen
 		eventTenant.Region = region
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
-	if len(tenantsToCreate) > 0 {
-		return executeInChunks(ctx, tenantsToCreate, func(ctx context.Context, chunk []model.BusinessTenantMappingInput) error {
-			return gqlClient.WriteTenants(ctx, chunk)
-		}, maxChunkSize)
-	}
-	return nil
+	return executeInChunks(ctx, tenantsToCreate, func(ctx context.Context, chunk []model.BusinessTenantMappingInput) error {
+		return gqlClient.WriteTenants(ctx, chunk)
+	}, maxChunkSize)
 }
 
 func executeInChunks(ctx context.Context, tenants []model.BusinessTenantMappingInput, f func(ctx context.Context, chunk []model.BusinessTenantMappingInput) error, maxChunkSize int) error {
