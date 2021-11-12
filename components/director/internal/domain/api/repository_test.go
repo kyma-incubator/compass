@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"database/sql/driver"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -367,53 +368,49 @@ func TestPgRepository_CreateMany(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 }
+*/
 
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE "public"."api_definitions" SET package_id = ?, name = ?, description = ?, group_name = ?, ord_id = ?,
 		short_description = ?, system_instance_aware = ?, api_protocol = ?, tags = ?, countries = ?, links = ?, api_resource_links = ?, release_status = ?,
 		sunset_date = ?, changelog_entries = ?, labels = ?, visibility = ?, disabled = ?, part_of_products = ?, line_of_business = ?,
-		industry = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, implementation_standard = ?, custom_implementation_standard = ?, custom_implementation_standard_description = ?, target_urls = ?, extensible = ?, successors = ?, resource_hash = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+		industry = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, implementation_standard = ?, custom_implementation_standard = ?, custom_implementation_standard_description = ?, target_urls = ?, extensible = ?, successors = ?, resource_hash = ?
+		WHERE id = ? AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID))
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		apiModel, _, _ := fixFullAPIDefinitionModel("update")
-		entity := fixFullEntityAPIDefinition(apiDefID, "update")
-		entity.UpdatedAt = &fixedTimestamp
-		entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
+	var nilApiDefModel *model.APIDefinition
+	apiModel, _, _ := fixFullAPIDefinitionModel("update")
+	entity := fixFullEntityAPIDefinition(apiDefID, "update")
+	entity.UpdatedAt = &fixedTimestamp
+	entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
-		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("ToEntity", apiModel).Return(&entity, nil)
-		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.PackageID, entity.Name, entity.Description, entity.Group,
-				entity.OrdID, entity.ShortDescription, entity.SystemInstanceAware, entity.APIProtocol, entity.Tags, entity.Countries,
-				entity.Links, entity.APIResourceLinks, entity.ReleaseStatus, entity.SunsetDate, entity.ChangeLogEntries, entity.Labels, entity.Visibility,
-				entity.Disabled, entity.PartOfProducts, entity.LineOfBusiness, entity.Industry, entity.Version.Value, entity.Version.Deprecated, entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.ImplementationStandard, entity.CustomImplementationStandard, entity.CustomImplementationStandardDescription, entity.TargetURLs, entity.Extensible, entity.Successors, entity.ResourceHash, tenantID, entity.ID).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update API",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query: updateQuery,
+				Args: []driver.Value{entity.PackageID, entity.Name, entity.Description, entity.Group,
+					entity.OrdID, entity.ShortDescription, entity.SystemInstanceAware, entity.APIProtocol, entity.Tags, entity.Countries,
+					entity.Links, entity.APIResourceLinks, entity.ReleaseStatus, entity.SunsetDate, entity.ChangeLogEntries, entity.Labels, entity.Visibility,
+					entity.Disabled, entity.PartOfProducts, entity.LineOfBusiness, entity.Industry, entity.Version.Value, entity.Version.Deprecated, entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.ImplementationStandard, entity.CustomImplementationStandard, entity.CustomImplementationStandardDescription, entity.TargetURLs, entity.Extensible, entity.Successors, entity.ResourceHash, entity.ID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.APIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       api.NewRepository,
+		ModelEntity:               &apiModel,
+		DBEntity:                  &entity,
+		NilModelEntity:            nilApiDefModel,
+		TenantID:                  tenantID,
+		DisableConverterErrorTest: true,
+	}
 
-		pgRepository := api.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, &apiModel)
-		//THEN
-		require.NoError(t, err)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when item is nil", func(t *testing.T) {
-		sqlxDB, _ := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.APIDefinitionConverter{}
-		pgRepository := api.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, nil)
-		//THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "item cannot be nil")
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)

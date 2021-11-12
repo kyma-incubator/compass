@@ -2,6 +2,7 @@ package eventdef_test
 
 import (
 	"database/sql/driver"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -365,52 +366,48 @@ func TestPgRepository_CreateMany(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 }
+*/
+
 
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE "public"."event_api_definitions" SET package_id = ?, name = ?, description = ?, group_name = ?, ord_id = ?,
 		short_description = ?, system_instance_aware = ?, changelog_entries = ?, links = ?, tags = ?, countries = ?, release_status = ?,
 		sunset_date = ?, labels = ?, visibility = ?, disabled = ?, part_of_products = ?, line_of_business = ?, industry = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?,
-		version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, extensible = ?, successors = ?, resource_hash = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+		version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, extensible = ?, successors = ?, resource_hash = ? WHERE id = ? AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID))
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		eventModel, _, _ := fixFullEventDefinitionModel("update")
-		entity := fixFullEntityEventDefinition(eventID, "update")
-		entity.UpdatedAt = &fixedTimestamp
-		entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
+	var nilEventDefModel *model.EventDefinition
+	eventModel, _, _ := fixFullEventDefinitionModel("update")
+	entity := fixFullEntityEventDefinition(eventID, "update")
+	entity.UpdatedAt = &fixedTimestamp
+	entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
-		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("ToEntity", eventModel).Return(entity, nil)
-		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.PackageID, entity.Name, entity.Description, entity.GroupName, entity.OrdID, entity.ShortDescription, entity.SystemInstanceAware, entity.ChangeLogEntries, entity.Links,
-				entity.Tags, entity.Countries, entity.ReleaseStatus, entity.SunsetDate, entity.Labels, entity.Visibility,
-				entity.Disabled, entity.PartOfProducts, entity.LineOfBusiness, entity.Industry, entity.Version.Value, entity.Version.Deprecated, entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.Extensible, entity.Successors, entity.ResourceHash, tenantID, entity.ID).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update Event",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query: updateQuery,
+				Args: []driver.Value{entity.PackageID, entity.Name, entity.Description, entity.GroupName, entity.OrdID, entity.ShortDescription, entity.SystemInstanceAware, entity.ChangeLogEntries, entity.Links,
+					entity.Tags, entity.Countries, entity.ReleaseStatus, entity.SunsetDate, entity.Labels, entity.Visibility,
+					entity.Disabled, entity.PartOfProducts, entity.LineOfBusiness, entity.Industry, entity.Version.Value, entity.Version.Deprecated, entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.Extensible, entity.Successors, entity.ResourceHash, entity.ID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       event.NewRepository,
+		ModelEntity:               &eventModel,
+		DBEntity:                  entity,
+		NilModelEntity:            nilEventDefModel,
+		TenantID:                  tenantID,
+		DisableConverterErrorTest: true,
+	}
 
-		pgRepository := event.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, &eventModel)
-		//THEN
-		require.NoError(t, err)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when item is nil", func(t *testing.T) {
-		sqlxDB, _ := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EventAPIDefinitionConverter{}
-		pgRepository := event.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, nil)
-		//THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "item cannot be nil")
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)

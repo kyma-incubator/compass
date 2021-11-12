@@ -3,6 +3,7 @@ package bundle_test
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -49,71 +50,49 @@ func TestPgRepository_Create(t *testing.T) {
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
 		},
-		RepoConstructorFunc:       bundle.NewRepository,
-		ModelEntity:               bndlModel,
-		DBEntity:                  bndlEntity,
-		NilModelEntity:            nilBundleMode,
-		TenantID:                  tenantID,
+		RepoConstructorFunc: bundle.NewRepository,
+		ModelEntity:         bndlModel,
+		DBEntity:            bndlEntity,
+		NilModelEntity:      nilBundleMode,
+		TenantID:            tenantID,
 	}
 
 	suite.Run(t)
 }
-/*
+
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ? WHERE %s AND id = ?`, fixUnescapedUpdateTenantIsolationSubquery()))
+	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ? WHERE id = ? AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID))
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		bndl := fixBundleModel("foo", "update")
-		entity := fixEntityBundle(bundleID, "foo", "update")
-		entity.UpdatedAt = &fixedTimestamp
-		entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
+	var nilBundleMode *model.Bundle
+	bndl := fixBundleModel("foo", "update")
+	entity := fixEntityBundle(bundleID, "foo", "update")
+	entity.UpdatedAt = &fixedTimestamp
+	entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
-		convMock := &automock.EntityConverter{}
-		convMock.On("ToEntity", bndl).Return(entity, nil)
-		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, entity.OrdID, entity.ShortDescription, entity.Links, entity.Labels, entity.CredentialExchangeStrategies, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, tenantID, entity.ID).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update Bundle",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         updateQuery,
+				Args:          []driver.Value{entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, entity.OrdID, entity.ShortDescription, entity.Links, entity.Labels, entity.CredentialExchangeStrategies, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.ID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: bundle.NewRepository,
+		ModelEntity:         bndl,
+		DBEntity:            entity,
+		NilModelEntity:      nilBundleMode,
+		TenantID:            tenantID,
+	}
 
-		pgRepository := bundle.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, bndl)
-		//THEN
-		require.NoError(t, err)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when conversion from model to entity failed", func(t *testing.T) {
-		sqlxDB, _ := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		bndlModel := &model.Bundle{}
-		convMock := &automock.EntityConverter{}
-		convMock.On("ToEntity", bndlModel).Return(&bundle.Entity{}, errors.New("test error")).Once()
-		pgRepository := bundle.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, bndlModel)
-		//THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "test error")
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when model is nil", func(t *testing.T) {
-		sqlxDB, _ := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		pgRepository := bundle.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, nil)
-		//THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "model can not be nil")
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -592,7 +571,7 @@ func TestPgRepository_ListByApplicationIDNoPaging(t *testing.T) {
 	secondBundleID := "222222222-2222-2222-2222-222222222222"
 	secondBundleEntity := fixEntityBundle(secondBundleID, "foo", "bar")
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.bundles 
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.bundles
 		WHERE %s AND app_id = \$2`, fixTenantIsolationSubquery())
 
 	t.Run("success", func(t *testing.T) {

@@ -231,6 +231,9 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ru
 
 // Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Runtime) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
 	runtimeEnt, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime entity from model")

@@ -53,7 +53,7 @@ func NewRepository(conv EntityConverter) *repository {
 		creator:            repo.NewCreator(tableName, webhookColumns),
 		globalCreator:      repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
 		updater:            repo.NewUpdater(tableName, updatableColumns, []string{"id", "app_id"}),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook,tableName,updatableColumns, []string{"id"}),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook,tableName,updatableColumns, []string{"id", "app_template_id"}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),
 		deleter:            repo.NewDeleter(tableName),
 		lister:             repo.NewLister(tableName, webhookColumns),

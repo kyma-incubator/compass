@@ -98,6 +98,9 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 
 // Update missing godoc
 func (r *repository) Update(ctx context.Context, tenant string, item *model.FetchRequest) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
 	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return err

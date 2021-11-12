@@ -2,6 +2,7 @@ package ordvendor_test
 
 import (
 	"database/sql/driver"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -46,44 +47,34 @@ func TestPgRepository_Create(t *testing.T) {
 	suite.Run(t)
 }
 
-/*func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.vendors SET title = ?, labels = ?, partners = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+func TestPgRepository_Update(t *testing.T) {
+	entity := fixEntityVendor()
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		vendorModel := fixVendorModel()
-		entity := fixEntityVendor()
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update Vendor",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.vendors SET title = ?, labels = ?, partners = ? WHERE id = ? AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
+				Args:        append(fixVendorUpdateArgs(), entity.ID),
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       ordvendor.NewRepository,
+		ModelEntity:               fixVendorModel(),
+		DBEntity:                  entity,
+		NilModelEntity:            fixNilModelVendor(),
+		TenantID:                  tenantID,
+		DisableConverterErrorTest: true,
+	}
 
-		convMock := &automock.EntityConverter{}
-		convMock.On("ToEntity", vendorModel).Return(entity, nil)
-		sqlMock.ExpectExec(updateQuery).
-			WithArgs(append(fixVendorUpdateArgs(), tenantID, entity.ID)...).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		pgRepository := ordvendor.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, vendorModel)
-		//THEN
-		require.NoError(t, err)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when model is nil", func(t *testing.T) {
-		sqlxDB, _ := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		pgRepository := ordvendor.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, nil)
-		//THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "model can not be nil")
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)

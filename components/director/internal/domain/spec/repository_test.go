@@ -2,6 +2,7 @@ package spec_test
 
 import (
 	"database/sql/driver"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -411,45 +412,61 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 	})
 }
 
+*/
 func TestRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?,
-		event_spec_format = ?, event_spec_type = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+	var nilSpecModel *model.Spec
+	apiSpecModel := fixModelAPISpec()
+	apiSpecEntity := fixAPISpecEntity()
+	eventSpecModel := fixModelEventSpec()
+	eventSpecEntity := fixEventSpecEntity()
 
-	t.Run("Success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		specModel := fixModelAPISpec()
-		entity := fixAPISpecEntity()
+	apiSpecSuite := testdb.RepoUpdateTestSuite{
+		Name: "Update API Spec",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = '%s' AND owner = true))`, tenant)),
+				Args:        []driver.Value{apiSpecEntity.SpecData, apiSpecEntity.APISpecFormat, apiSpecEntity.APISpecType, apiSpecEntity.EventSpecFormat, apiSpecEntity.EventSpecType, apiSpecEntity.ID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       spec.NewRepository,
+		ModelEntity:               apiSpecModel,
+		DBEntity:                  apiSpecEntity,
+		NilModelEntity:            nilSpecModel,
+		TenantID:                  tenant,
+		DisableConverterErrorTest: true,
+	}
 
-		convMock := &automock.Converter{}
-		convMock.On("ToEntity", *specModel).Return(entity, nil)
-		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.SpecData, entity.APISpecFormat, entity.APISpecType, entity.EventSpecFormat, entity.EventSpecType, tenant, entity.ID).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
+	eventSpecSuite := testdb.RepoUpdateTestSuite{
+		Name: "Update Event Spec",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = '%s' AND owner = true))`, tenant)),
+				Args:        []driver.Value{eventSpecEntity.SpecData, eventSpecEntity.APISpecFormat, eventSpecEntity.APISpecType, eventSpecEntity.EventSpecFormat, eventSpecEntity.EventSpecType, eventSpecEntity.ID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       spec.NewRepository,
+		ModelEntity:               eventSpecModel,
+		DBEntity:                  eventSpecEntity,
+		NilModelEntity:            nilSpecModel,
+		TenantID:                  tenant,
+		DisableConverterErrorTest: true,
+	}
 
-		pgRepository := spec.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, specModel)
-		//THEN
-		require.NoError(t, err)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("Returns error when item is nil", func(t *testing.T) {
-		sqlxDB, _ := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.Converter{}
-		pgRepository := spec.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, nil)
-		//THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "item cannot be nil")
-		convMock.AssertExpectations(t)
-	})
+	apiSpecSuite.Run(t)
+	eventSpecSuite.Run(t)
 }
 
+/*
 func TestRepository_Exists(t *testing.T) {
 	//GIVEN
 	sqlxDB, sqlMock := testdb.MockDatabase(t)

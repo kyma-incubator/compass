@@ -2,6 +2,7 @@ package tombstone_test
 
 import (
 	"database/sql/driver"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone"
 	"regexp"
 	"testing"
@@ -51,45 +52,35 @@ func TestPgRepository_Create(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.tombstones SET removal_date = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+	var nilTsModel *model.Tombstone
+	entity := fixEntityTombstone()
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		tombstoneModel := fixTombstoneModel()
-		entity := fixEntityTombstone()
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update Tombstone",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.tombstones SET removal_date = ? WHERE id = ? AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
+				Args:          append(fixTombstoneUpdateArgs(), entity.ID),
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       tombstone.NewRepository,
+		ModelEntity:               fixTombstoneModel(),
+		DBEntity:                  entity,
+		NilModelEntity:            nilTsModel,
+		TenantID:                  tenantID,
+		DisableConverterErrorTest: true,
+	}
 
-		convMock := &automock.EntityConverter{}
-		convMock.On("ToEntity", tombstoneModel).Return(entity, nil)
-		sqlMock.ExpectExec(updateQuery).
-			WithArgs(append(fixTombstoneUpdateArgs(), tenantID, entity.ID)...).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		pgRepository := tombstone.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, tombstoneModel)
-		//THEN
-		require.NoError(t, err)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("returns error when model is nil", func(t *testing.T) {
-		sqlxDB, _ := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		pgRepository := tombstone.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.Update(ctx, nil)
-		//THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "model can not be nil")
-		convMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)

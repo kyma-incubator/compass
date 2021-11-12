@@ -12,7 +12,7 @@ const (
 	refID    = "refID"
 	key      = "test"
 	value    = "test"
-	tenantID = "tenant"
+	tenantID = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 )
 
 func fixModelLabel(objectType model.LabelableObject) *model.Label {
@@ -22,6 +22,7 @@ func fixModelLabel(objectType model.LabelableObject) *model.Label {
 		Value:      value,
 		ObjectID:   refID,
 		ObjectType: objectType,
+		Version:    42,
 	}
 	if objectType == model.TenantLabelableObject {
 		result.Tenant = str.Ptr(tenantID)
@@ -53,5 +54,6 @@ func fixEntityLabel(objectType model.LabelableObject) *label.Entity {
 		AppID:            appID,
 		RuntimeContextID: runtimeCtxID,
 		RuntimeID:        runtimeID,
+		Version:          42,
 	}
 }

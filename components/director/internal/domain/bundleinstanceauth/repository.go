@@ -25,7 +25,7 @@ var (
 // EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
-	ToEntity(in model.BundleInstanceAuth) (Entity, error)
+	ToEntity(in *model.BundleInstanceAuth) (*Entity, error)
 	FromEntity(entity Entity) (model.BundleInstanceAuth, error)
 }
 
@@ -62,7 +62,7 @@ func (r *repository) Create(ctx context.Context, item *model.BundleInstanceAuth)
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
-	entity, err := r.conv.ToEntity(*item)
+	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while converting BundleInstanceAuth model to entity")
 	}
@@ -151,7 +151,7 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Bund
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
-	entity, err := r.conv.ToEntity(*item)
+	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
 	}

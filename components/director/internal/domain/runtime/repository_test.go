@@ -3,6 +3,7 @@ package runtime_test
 import (
 	"database/sql/driver"
 	"encoding/base64"
+	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
@@ -537,47 +538,35 @@ func TestPgRepository_Create(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
-func TestPgRepository_Update_ShouldUpdateRuntimeEntityFromValidModel(t *testing.T) {
-	// given
-	runtimeID := uuid.New().String()
-	tenantID := uuid.New().String()
-	timestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
-	assert.NoError(t, err)
+func TestPgRepository_Update(t *testing.T) {
+	var nilRtModel *model.Runtime
+	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
+	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
 
-	description := "Description for runtime BCD"
-	modelRuntime := &model.Runtime{
-		ID:          runtimeID,
-		Tenant:      tenantID,
-		Name:        "Runtime XYZ",
-		Description: &description,
-		Status: &model.RuntimeStatus{
-			Condition: model.RuntimeStatusConditionInitial,
-			Timestamp: timestamp,
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update Runtime",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.runtimes SET name = ?, description = ?, status_condition = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
+				Args:        []driver.Value{rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.ID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
 		},
-		CreationTimestamp: timestamp,
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       runtime.NewRepository,
+		ModelEntity:         rtModel,
+		DBEntity:            rtEntity,
+		NilModelEntity:      nilRtModel,
+		TenantID:                  tenantID,
 	}
 
-	mockConverter := &automock.EntityConverter{}
-
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	defer sqlMock.AssertExpectations(t)
-
-	sqlMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.runtimes SET name = ?, description = ?, status_condition = ?, status_timestamp = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))).
-		WithArgs(modelRuntime.Name, modelRuntime.Description, modelRuntime.Status.Condition, modelRuntime.Status.Timestamp, modelRuntime.Tenant, modelRuntime.ID).
-		WillReturnResult(sqlmock.NewResult(-1, 1))
-
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-	pgRepository := runtime.NewRepository(mockConverter)
-
-	// when
-	err = pgRepository.Update(ctx, modelRuntime)
-
-	// then
-	assert.NoError(t, err)
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing.T) {
 	// given
 	runtimeID := uuid.New().String()

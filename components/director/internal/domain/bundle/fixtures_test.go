@@ -171,7 +171,7 @@ const (
 	bundleID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
 	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	appID2           = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
-	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	ordID            = "com.compass.v1"
 )

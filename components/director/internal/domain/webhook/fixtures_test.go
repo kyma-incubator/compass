@@ -160,7 +160,7 @@ func anotherID() string {
 }
 
 func givenTenant() string {
-	return "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+	return "b91b59f7-2563-40b2-aba9-fef726037aa3"
 }
 
 func givenExternalTenant() string {

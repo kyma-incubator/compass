@@ -11,7 +11,7 @@ import (
 
 const (
 	vendorID         = "vendorID"
-	tenantID         = "tenantID"
+	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	appID            = "appID"
 	ordID            = "com.compass.v1"
 	externalTenantID = "externalTenantID"

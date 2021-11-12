@@ -112,7 +112,7 @@ func (r *repository) UpdateWithVersion(ctx context.Context, tenant string, label
 		return errors.Wrap(err, "while creating label entity from model")
 	}
 	if label.ObjectType == model.TenantLabelableObject {
-		return r.embeddedTenantUpdater.UpdateSingleWithVersionGlobal(ctx, labelEntity)
+		return r.versionedEmbeddedTenantUpdater.UpdateSingleWithVersionGlobal(ctx, labelEntity)
 	}
 	return r.versionedUpdater.UpdateSingleWithVersion(ctx, label.ObjectType.GetResourceType(), tenant, labelEntity)
 }

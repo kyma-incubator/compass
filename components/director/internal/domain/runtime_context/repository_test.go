@@ -3,6 +3,7 @@ package runtimectx_test
 import (
 	"database/sql/driver"
 	"encoding/base64"
+	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context/automock"
@@ -335,39 +336,37 @@ func TestPgRepository_Create(t *testing.T) {
 
 	suite.Run(t)
 }
-/*
-func TestPgRepository_Update_ShouldUpdateRuntimeEntityFromValidModel(t *testing.T) {
-	// given
-	runtimeID := uuid.New().String()
-	runtimeCtxID := uuid.New().String()
-	tenantID := uuid.New().String()
 
-	modelRuntimeCtx := &model.RuntimeContext{
-		ID:        runtimeCtxID,
-		RuntimeID: runtimeID,
-		Tenant:    tenantID,
-		Key:       "key",
-		Value:     "value",
+func TestPgRepository_Update(t *testing.T) {
+	var nilRuntimeCtxModel *model.RuntimeContext
+	runtimeCtxModel := fixModelRuntimeCtx()
+	runtimeCtxEntity := fixEntityRuntimeCtx()
+
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update Runtime Context",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.runtime_contexts SET key = ?, value = ? WHERE id = ? AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
+				Args:        []driver.Value{runtimeCtxModel.Key, runtimeCtxModel.Value, runtimeCtxModel.ID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       runtimectx.NewRepository,
+		ModelEntity:               runtimeCtxModel,
+		DBEntity:                  runtimeCtxEntity,
+		NilModelEntity:            nilRuntimeCtxModel,
+		TenantID:                  tenantID,
+		DisableConverterErrorTest: true,
 	}
 
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	defer sqlMock.AssertExpectations(t)
-
-	sqlMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.runtime_contexts SET key = ?, value = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))).
-		WithArgs(modelRuntimeCtx.Key, modelRuntimeCtx.Value, modelRuntimeCtx.Tenant, modelRuntimeCtx.ID).
-		WillReturnResult(sqlmock.NewResult(-1, 1))
-
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-	pgRepository := runtimectx.NewRepository()
-
-	// when
-	err := pgRepository.Update(ctx, modelRuntimeCtx)
-
-	// then
-	assert.NoError(t, err)
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing.T) {
 	// given
 	runtimeCtxID := uuid.New().String()

@@ -3,16 +3,16 @@ package application_test
 import (
 	"context"
 	"database/sql/driver"
+	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"regexp"
 	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -357,80 +357,39 @@ func TestRepository_Create(t *testing.T) {
 	})
 }
 
-/*
 func TestRepository_Update(t *testing.T) {
-	updateStmt := fmt.Sprintf(`UPDATE public\.applications SET name = \?, description = \?, status_condition = \?, status_timestamp = \?, healthcheck_url = \?, integration_system_id = \?, provider_name = \?, base_url = \?, labels = \?, ready = \?, created_at = \?, updated_at = \?, deleted_at = \?, error = \?, correlation_ids = \? WHERE %s AND id = \?`, fixUpdateTenantIsolationSubquery())
+	updateStmt := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.applications SET name = ?, description = ?, status_condition = ?, status_timestamp = ?, healthcheck_url = ?, integration_system_id = ?, provider_name = ?, base_url = ?, labels = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, correlation_ids = ? WHERE id = ? AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = '%s' AND owner = true))`, givenTenant()))
 
-	t.Run("Success", func(t *testing.T) {
-		// given
-		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
-		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
-		appEntity.UpdatedAt = &fixedTimestamp
-		appEntity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
+	var nilAppModel *model.Application
+	appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+	appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+	appEntity.UpdatedAt = &fixedTimestamp
+	appEntity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("ToEntity", appModel).Return(appEntity, nil).Once()
-		defer mockConverter.AssertExpectations(t)
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update Application",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       updateStmt,
+				Args:        []driver.Value{appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error, appEntity.CorrelationIDs, givenID()},
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       application.NewRepository,
+		ModelEntity:               appModel,
+		DBEntity:                  appEntity,
+		NilModelEntity:            nilAppModel,
+		TenantID:                  givenTenant(),
+	}
 
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec(updateStmt).
-			WithArgs(appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error, appEntity.CorrelationIDs, givenTenant(), givenID()).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := application.NewRepository(mockConverter)
-
-		// when
-		err := repo.Update(ctx, appModel)
-
-		// then
-		assert.NoError(t, err)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// given
-		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
-		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
-
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("ToEntity", appModel).Return(appEntity, nil).Once()
-		defer mockConverter.AssertExpectations(t)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec(updateStmt).
-			WillReturnError(givenError())
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repository := application.NewRepository(mockConverter)
-
-		// when
-		err := repository.Update(ctx, appModel)
-
-		// then
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-
-	t.Run("Converter Error", func(t *testing.T) {
-		// given
-		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("ToEntity", appModel).Return(&application.Entity{}, givenError())
-		defer mockConverter.AssertExpectations(t)
-
-		repo := application.NewRepository(mockConverter)
-
-		// when
-		err := repo.Update(context.TODO(), appModel)
-
-		// then
-		require.EqualError(t, err, "while converting to Application entity: some error")
-	})
+	suite.Run(t)
 }
 
+/*
 func TestRepository_GetByID(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// given

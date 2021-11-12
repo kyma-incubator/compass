@@ -21,7 +21,7 @@ import (
 
 func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 	// given
-	tnt := "tenant"
+	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
@@ -146,7 +146,7 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 
 func TestLabelService_UpsertLabel(t *testing.T) {
 	// given
-	tnt := "tenant"
+	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
@@ -431,7 +431,7 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 
 func TestLabelService_CreateLabel(t *testing.T) {
 	// given
-	tnt := "tenant"
+	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
@@ -714,7 +714,7 @@ func TestLabelService_CreateLabel(t *testing.T) {
 
 func TestLabelService_UpdateLabel(t *testing.T) {
 	// given
-	tnt := "tenant"
+	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
@@ -997,7 +997,7 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 
 func TestLabelService_GetLabel(t *testing.T) {
 	// given
-	tnt := "tenant"
+	tnt := tenantID
 	externalTnt := "external-tenant"
 	id := "foo"
 	ctx := context.TODO()

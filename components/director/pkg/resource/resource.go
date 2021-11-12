@@ -90,7 +90,7 @@ var tenantAccessTable = map[Type]string{
 	Label:                 "labels_tenants",
 	ApplicationLabel:      "application_labels_tenants",
 	RuntimeLabel:          "runtime_labels_tenants",
-	RuntimeContextLabel:   "runtime_contexts_tenants",
+	RuntimeContextLabel:   "runtime_contexts_labels_tenants",
 	Bundle:                "bundles_tenants",
 	Package:               "packages_tenants",
 	Product:               "products_tenants",

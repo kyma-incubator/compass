@@ -3,6 +3,7 @@ package fetchrequest_test
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -118,6 +119,84 @@ func TestRepository_Create(t *testing.T) {
 	eventFRSuite.Run(t)
 	docFRSuite.Run(t)
 }
+
+func TestRepository_Update(t *testing.T) {
+	timestamp := time.Now()
+	var nilFrModel *model.FetchRequest
+	apiFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.APISpecFetchRequestReference)
+	apiFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.APISpecFetchRequestReference)
+	eventFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.EventSpecFetchRequestReference)
+	eventFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.EventSpecFetchRequestReference)
+	docFRModel := fixFullFetchRequestModel(givenID(), timestamp, model.DocumentFetchRequestReference)
+	docFREntity := fixFullFetchRequestEntity(t, givenID(), timestamp, model.DocumentFetchRequestReference)
+
+	apiFRSuite := testdb.RepoUpdateTestSuite{
+		Name: "Update API Fetch Request",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM api_specifications_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
+				Args:        []driver.Value{apiFREntity.StatusCondition, apiFREntity.StatusMessage, apiFREntity.StatusTimestamp, givenID()},
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       fetchrequest.NewRepository,
+		ModelEntity:               apiFRModel,
+		DBEntity:                  apiFREntity,
+		NilModelEntity:            nilFrModel,
+		TenantID:                  tenantID,
+	}
+
+	apiFRSuite.Run(t)
+
+	eventFRSuite := testdb.RepoUpdateTestSuite{
+		Name: "Update Event Fetch Request",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM event_specifications_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
+				Args:        []driver.Value{eventFREntity.StatusCondition, eventFREntity.StatusMessage, eventFREntity.StatusTimestamp, givenID()},
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       fetchrequest.NewRepository,
+		ModelEntity:               eventFRModel,
+		DBEntity:                  eventFREntity,
+		NilModelEntity:            nilFrModel,
+		TenantID:                  tenantID,
+	}
+
+	eventFRSuite.Run(t)
+
+	docFRSuite := testdb.RepoUpdateTestSuite{
+		Name: "Update Document Fetch Request",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM document_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
+				Args:        []driver.Value{docFREntity.StatusCondition, docFREntity.StatusMessage, docFREntity.StatusTimestamp, givenID()},
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:       fetchrequest.NewRepository,
+		ModelEntity:               docFRModel,
+		DBEntity:                  docFREntity,
+		NilModelEntity:            nilFrModel,
+		TenantID:                  tenantID,
+	}
+
+	docFRSuite.Run(t)
+}
+
 /*
 func TestRepository_GetByReferenceObjectID(t *testing.T) {
 	refID := "foo"

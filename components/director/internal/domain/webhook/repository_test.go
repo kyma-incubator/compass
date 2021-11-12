@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/require"
 	"regexp"
@@ -245,107 +246,56 @@ func TestRepositoryCreateMany(t *testing.T) {
 	})
 }
 
+*/
 func TestRepositoryUpdate(t *testing.T) {
-	applicaitonModel := givenModel()
-	applicaitonEntity := fixEntity()
-	applicaitonModel.ApplicationTemplateID = nil
-	applicaitonEntity.ApplicationTemplateID = repo.NewValidNullableString("")
+	var nilWebhookModel *model.Webhook
 
-	applicaitonTemplateModel := givenModel()
-	applicaitonTemplatEntity := fixEntity()
-	applicaitonTemplateModel.ApplicationID = nil
-	applicaitonTemplatEntity.ApplicationID = repo.NewValidNullableString("")
-	applicaitonTemplateModel.TenantID = nil
-	applicaitonTemplatEntity.TenantID = repo.NewValidNullableString("")
-
-	tests := []struct {
-		name                string
-		mockConverterSetter func(*automock.EntityConverter)
-		dbMockSetter        func() (*sqlx.DB, testdb.DBMock)
-		model               model.Webhook
-		expectedError       error
-	}{
-		{
-			name: "Success for application Webhook",
-			mockConverterSetter: func(converter *automock.EntityConverter) {
-				converter.On("ToEntity", applicaitonModel).Return(applicaitonEntity, nil)
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update Application webhook",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.webhooks SET type = ?, url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND app_id = ? AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = '%s' AND owner = true))`, givenTenant())),
+				Args:        []driver.Value{string(model.WebhookTypeConfigurationChanged), "http://kyma.io", fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenApplicationID()},
+				ValidResult: sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
-			dbMockSetter: func() (*sqlx.DB, testdb.DBMock) {
-				db, dbMock := testdb.MockDatabase(t)
-				dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE public.webhooks SET type = ?, url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE %s AND id = ? AND app_id = ?", fixUpdateTenantIsolationSubquery()))).WithArgs(
-					string(model.WebhookTypeConfigurationChanged), "http://kyma.io", nil, model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenTenant(), givenID(), givenApplicationID()).WillReturnResult(sqlmock.NewResult(-1, 1))
-				return db, dbMock
-			},
-			model:         applicaitonModel,
-			expectedError: nil,
 		},
-		{
-			name: "Success for applicationTemplate Webhook",
-			mockConverterSetter: func(converter *automock.EntityConverter) {
-				converter.On("ToEntity", applicaitonTemplateModel).Return(applicaitonTemplatEntity, nil)
-			},
-			dbMockSetter: func() (*sqlx.DB, testdb.DBMock) {
-				db, dbMock := testdb.MockDatabase(t)
-				dbMock.ExpectExec(regexp.QuoteMeta("UPDATE public.webhooks SET type = ?, url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ?")).WithArgs(
-					string(model.WebhookTypeConfigurationChanged), "http://kyma.io", nil, model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
-				return db, dbMock
-			},
-			model:         applicaitonTemplateModel,
-			expectedError: nil,
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
 		},
-		{
-			name: testCaseErrorOnConvertingObjects,
-			mockConverterSetter: func(converter *automock.EntityConverter) {
-				converter.On("ToEntity", applicaitonModel).Return(webhook.Entity{}, givenError())
-			},
-			dbMockSetter:  nil,
-			model:         applicaitonModel,
-			expectedError: errors.New("while converting model to entity: some error"),
-		},
-		{
-			name: testCaseErrorOnDBCommunication,
-			mockConverterSetter: func(converter *automock.EntityConverter) {
-				converter.On("ToEntity", applicaitonModel).Return(applicaitonEntity, nil)
-			},
-			dbMockSetter: func() (*sqlx.DB, testdb.DBMock) {
-				db, dbMock := testdb.MockDatabase(t)
-				dbMock.ExpectExec("UPDATE .*").WillReturnError(givenError())
-				return db, dbMock
-			},
-			model:         applicaitonModel,
-			expectedError: errors.New("Internal Server Error: Unexpected error while executing SQL query"),
-		},
+		RepoConstructorFunc:       webhook.NewRepository,
+		ModelEntity:               fixApplicationModelWebhook(givenID(), givenApplicationID(), givenTenant(), "http://kyma.io"),
+		DBEntity:                  fixApplicationWebhookEntity(t),
+		NilModelEntity:            nilWebhookModel,
+		TenantID:                  givenTenant(),
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mockConverter := &automock.EntityConverter{}
-			defer mockConverter.AssertExpectations(t)
 
-			var db *sqlx.DB
-			var dbmock testdb.DBMock
-			ctx := context.TODO()
+	suite.Run(t)
 
-			test.mockConverterSetter(mockConverter)
+	// Additional tests for application template webhook -> global create
+	t.Run("Update ApplicationTemplate webhook", func(t *testing.T) {
+		tmplWhModel := fixApplicationTemplateModelWebhook(givenID(), givenApplicationTemplateID(), "http://kyma.io")
+		// GIVEN
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", tmplWhModel).Return(fixApplicationTemplateWebhookEntity(t), nil)
 
-			if test.dbMockSetter != nil {
-				db, dbmock = test.dbMockSetter()
-				defer dbmock.AssertExpectations(t)
-				ctx = persistence.SaveToContext(context.TODO(), db)
-			}
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
 
-			sut := webhook.NewRepository(mockConverter)
-			// WHEN
-			err := sut.Update(ctx, ptr(test.model))
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.webhooks SET type = ?, url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND app_template_id = ?`)).
+			WithArgs(string(model.WebhookTypeConfigurationChanged), "http://kyma.io", fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenApplicationTemplateID()).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-			if test.expectedError != nil {
-				require.EqualError(t, err, test.expectedError.Error())
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		sut := webhook.NewRepository(mockConverter)
+		// WHEN
+		err := sut.Update(ctx, "", tmplWhModel)
+		// THEN
+		require.NoError(t, err)
+	})
 }
 
+/*
 func TestRepositoryDelete(t *testing.T) {
 	t.Run(testCaseSuccess, func(t *testing.T) {
 		// GIVEN

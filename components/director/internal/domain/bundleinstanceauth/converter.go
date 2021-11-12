@@ -100,8 +100,8 @@ func (c *converter) SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) (
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.BundleInstanceAuth) (Entity, error) {
-	out := Entity{
+func (c *converter) ToEntity(in *model.BundleInstanceAuth) (*Entity, error) {
+	out := &Entity{
 		ID:               in.ID,
 		BundleID:         in.BundleID,
 		OwnerID:          in.Owner,
@@ -112,7 +112,7 @@ func (c *converter) ToEntity(in model.BundleInstanceAuth) (Entity, error) {
 	}
 	authValue, err := c.nullStringFromAuthPtr(in.Auth)
 	if err != nil {
-		return Entity{}, err
+		return nil, err
 	}
 	out.AuthValue = authValue
 

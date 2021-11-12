@@ -19,7 +19,7 @@ import (
 const (
 	eventID          = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
 	specID           = "sssssssss-ssss-ssss-ssss-ssssssssssss"
-	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"

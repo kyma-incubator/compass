@@ -22,7 +22,7 @@ var (
 	testID             = "foo"
 	testBundleID       = "bar"
 	testRuntimeID      = "d05fb90c-3084-4349-9deb-af23a4ce76be"
-	testTenant         = "baz"
+	testTenant         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	testExternalTenant = "foobaz"
 	testContext        = `{"foo": "bar"}`
 	testInputParams    = `{"bar": "baz"}`

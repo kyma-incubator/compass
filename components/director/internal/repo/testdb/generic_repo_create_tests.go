@@ -66,7 +66,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 
 			convMock := suite.ConverterMockProvider()
 			convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
-			pgRepository := suite.createRepo(convMock)
+			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 			//WHEN
 			err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
 			//THEN
@@ -89,7 +89,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
-				pgRepository := suite.createRepo(convMock)
+				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 				//WHEN
 				err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
 				//THEN
@@ -127,7 +127,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
-				pgRepository := suite.createRepo(convMock)
+				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 				//WHEN
 				err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
 				//THEN
@@ -151,7 +151,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(nil, testErr).Once()
-				pgRepository := suite.createRepo(convMock)
+				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 				//WHEN
 				err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
 				//THEN
@@ -166,7 +166,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 		t.Run("returns error when item is nil", func(t *testing.T) {
 			ctx := context.TODO()
 			convMock := suite.ConverterMockProvider()
-			pgRepository := suite.createRepo(convMock)
+			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 			// WHEN
 			err := callCreate(pgRepository, ctx, suite.TenantID, suite.NilModelEntity)
 			// THEN
@@ -177,10 +177,28 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 	})
 }
 
+// callCreate calls the Create method of the given repository.
+// In order to do this for all the different repository implementations we need to do it via reflection.
+func callCreate(repo interface{}, ctx context.Context, tenant string, modelEntity interface{}) error {
+	results := reflect.ValueOf(repo).MethodByName("Create").Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(tenant), reflect.ValueOf(modelEntity)})
+	if len(results) != 1 {
+		panic("Create should return one argument")
+	}
+	result := results[0].Interface()
+	if result == nil {
+		return nil
+	}
+	err, ok := result.(error)
+	if !ok {
+		panic("Expected result to be an error")
+	}
+	return err
+}
+
 // createRepo creates a new repository by the provided constructor func.
 // In order to do this for all the different repository implementations we need to do it via reflection.
-func (suite *RepoCreateTestSuite) createRepo(convMock interface{}) interface{} {
-	v := reflect.ValueOf(suite.RepoConstructorFunc)
+func createRepo(repoConstructorFunc interface{}, convMock interface{}) interface{} {
+	v := reflect.ValueOf(repoConstructorFunc)
 	if v.Kind() != reflect.Func {
 		panic("Repo constructor should be a function")
 	}
@@ -200,22 +218,4 @@ func (suite *RepoCreateTestSuite) createRepo(convMock interface{}) interface{} {
 
 	mockVal := reflect.ValueOf(convMock)
 	return v.Call([]reflect.Value{mockVal})[0].Interface()
-}
-
-// callCreate calls the Create method of the given repository.
-// In order to do this for all the different repository implementations we need to do it via reflection.
-func callCreate(repo interface{}, ctx context.Context, tenant string, modelEntity interface{}) error {
-	results := reflect.ValueOf(repo).MethodByName("Create").Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(tenant), reflect.ValueOf(modelEntity)})
-	if len(results) != 1 {
-		panic("Create should return one argument")
-	}
-	result := results[0].Interface()
-	if result == nil {
-		return nil
-	}
-	err, ok := result.(error)
-	if !ok {
-		panic("Expected result to be an error")
-	}
-	return err
 }
