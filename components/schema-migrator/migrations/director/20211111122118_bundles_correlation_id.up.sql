@@ -3,6 +3,7 @@ BEGIN;
 ALTER TABLE bundles ADD COLUMN correlation_ids JSONB;
 
 DROP VIEW IF EXISTS tenants_bundles;
+DROP VIEW IF EXISTS correlation_ids;
 
 CREATE OR REPLACE VIEW tenants_bundles
             (tenant_id, provider_tenant_id, id, app_id, name, description, instance_auth_request_json_schema,
@@ -49,4 +50,32 @@ FROM bundles b
                FROM apps_subaccounts_func() a_s
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON b.app_id = t_apps.id;
+
+
+CREATE OR REPLACE VIEW correlation_ids(application_id, product_id, bundle_id, value) as
+SELECT app_correlation_ids.application_id,
+       app_correlation_ids.product_id,
+       app_correlation_ids.bundle_id,
+       app_correlation_ids.value
+FROM (SELECT applications.id AS application_id,
+             NULL::uuid      AS product_id,
+             NULL::uuid      AS bundle_id,
+             elements.value
+      FROM applications,
+           LATERAL jsonb_array_elements_text(applications.correlation_ids) elements(value)) app_correlation_ids
+UNION ALL
+SELECT NULL::uuid  AS application_id,
+       products.id AS product_id,
+       NULL::uuid  AS bundle_id,
+       elements.value
+FROM products,
+     LATERAL jsonb_array_elements_text(products.correlation_ids) elements(value)
+UNION ALL
+SELECT NULL::uuid  AS application_id,
+       NULL::uuid  AS product_id,
+       bundles.id  AS bundle_id,
+       elements.value
+FROM bundles,
+     LATERAL jsonb_array_elements_text(bundles.correlation_ids) elements(value);
+
 COMMIT;
