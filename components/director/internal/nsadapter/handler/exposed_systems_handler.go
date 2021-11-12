@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
@@ -20,9 +21,10 @@ type ApplicationService interface {
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 	GetSystem(ctx context.Context, subaccount, locationID, virtualHost string) (*model.Application, error)
 	MarkAsUnreachable(ctx context.Context, id string) error
-	ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*ApplicationWithLabel, error) //TODO specify location ID in  label filter query
+	ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error) //TODO specify location ID in  label filter query
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
+	ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error) //TODO check what tenant will be used to execute this query
 }
 
 func NewHandler(service ApplicationService) *Handler {
@@ -60,6 +62,9 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
+//TODO handle transfer-encoding chunked
+//TODO check if all subaccounts are really subaccounts
+
 	decoder := json.NewDecoder(req.Body)
 	var reportData nsmodel.Report
 	err := decoder.Decode(&reportData)
@@ -88,39 +93,70 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	details := make([]httputil.Detail, 0, 0)
 	if reportType == "delta" {
-		for _, scc := range reportData.Value {
-			if ok := a.handleSccSystems(ctx, scc); !ok {
-				addErrorDetails(&details, &scc)
-			}
-		}
+		details := a.processDelta(ctx, reportData)
 		if len(details) == 0 {
 			httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 			return
 		}
 		httputil.RespondWithError(ctx, rw, http.StatusOK, httputil.DetailedError{
-			Code:    0, //TODO change me
+			Code:    http.StatusOK,
 			Message: "Update/create failed for some on-premise systems",
 			Details: details,
 		})
 		return
 	}
 
-	//Full report
-	//The same as above
-	//Check all SCCs in CMP with all SCCs in full report
-	//If in CMP there are SCCs missing from the full report - mark all systems in these SCCs as unreachable
-	//At this step not possible to have something in full report which is not available in SCC as in the previous step we will have created applications for all new systems in full report
 	if reportType == "full" {
-		//TODO implement
-	}
-
-	if err := json.NewEncoder(rw).Encode(nsmodel.NewNSError("response test")); err != nil {
-		logger.Warnf("Got error on encoding response: %v\n", err)
-		rw.WriteHeader(http.StatusInternalServerError)
+		a.processDelta(ctx, reportData)
+		a.handleUnreachableScc(ctx, reportData)
+		httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 		return
 	}
+}
+
+func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.Report) {
+	sccFromDb, err := a.appSvc.ListSCCs(ctx, "scc")
+	if err != nil {
+		log.C(ctx).Warnf("Got error while listing SCCs: %v\n", err)
+	}
+
+	if len(sccFromDb) == len(reportData.Value) {
+		return
+	}
+
+	sccFromNs := make([]*model.SccMetadata, 0, len(reportData.Value))
+	for _, scc := range reportData.Value {
+		sccFromNs = append(sccFromNs, &model.SccMetadata{
+			Subaccount: scc.Subaccount,
+			LocationId: scc.LocationID,
+		})
+	}
+
+	sccsToMarkAsUnreachable := difference(sccFromDb, sccFromNs)
+	for _, scc := range sccsToMarkAsUnreachable {
+		//TODO add correct tenant in ctx
+		apps, err := a.appSvc.ListBySCC(ctx, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("scc",fmt.Sprintf("{\"locationId\":%s}", scc.LocationId))})
+		if err != nil {
+			log.C(ctx).Warn(errors.Wrapf(err, "while listing all applications for scc with subaccount %s and location id %s", scc.Subaccount, scc.LocationId))
+			continue
+		}
+		for _, system := range apps {
+			if err := a.appSvc.MarkAsUnreachable(ctx, system.App.ID); err != nil {
+				log.C(ctx).Warn(errors.Wrapf(err, "while marking application with id %s as unreachable", system.App.ID))
+			}
+		}
+	}
+}
+
+func (a *Handler) processDelta(ctx context.Context, reportData nsmodel.Report) []httputil.Detail {
+	details := make([]httputil.Detail, 0, 0)
+	for _, scc := range reportData.Value {
+		if ok := a.handleSccSystems(ctx, scc); !ok {
+			addErrorDetails(&details, &scc)
+		}
+	}
+	return details
 }
 
 func (a *Handler) handleSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
@@ -129,7 +165,6 @@ func (a *Handler) handleSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 	return successfulUpsert && successfulMark
 }
 
-//TODO Fix all errors
 func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 	success := true
 	for _, system := range scc.ExposedSystems {
@@ -150,15 +185,10 @@ func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 	return success
 }
 
-func IsNotFoundError(err error) bool {
-	_, ok := err.(*nsmodel.SystemNotFoundError)
-	return ok
-}
-
 func (a *Handler) upsert(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
 	app, err := a.appSvc.GetSystem(ctx, scc.Subaccount, scc.LocationID, system.Host)
 
-	if err != nil && IsNotFoundError(err) {
+	if err != nil && nsmodel.IsNotFoundError(err) {
 		if _, err := a.appSvc.Create(ctx, nsmodel.ToAppRegisterInput(system, scc.LocationID)); err != nil {
 			log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
 			return false
@@ -204,18 +234,9 @@ func (a *Handler) updateSystem(ctx context.Context, system nsmodel.System, app *
 	return true
 }
 
-func addErrorDetails(details *[]httputil.Detail, scc *nsmodel.SCC) {
-	*details = append(*details, httputil.Detail{
-		Code:       "0000", //TODO change me
-		Message:    "Creation failed",
-		Subaccount: scc.Subaccount,
-		LocationId: scc.LocationID,
-	})
-}
-
 func (a *Handler) markAsUnreachable(ctx context.Context, scc nsmodel.SCC) bool {
 	success := true
-	apps, err := a.appSvc.ListBySCC(ctx, nil) //TODO change nil to proper labelfilter
+	apps, err := a.appSvc.ListBySCC(ctx, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("scc",fmt.Sprintf("{\"locationId\":%s}", scc.LocationID))})
 	if err != nil {
 		success = false
 		log.C(ctx).Warn(errors.Wrapf(err, "while listing all applications for scc with subaccount %s and location id %s", scc.Subaccount, scc.LocationID))
@@ -231,7 +252,7 @@ func (a *Handler) markAsUnreachable(ctx context.Context, scc nsmodel.SCC) bool {
 	return success
 }
 
-func filterUnreachable(apps []*ApplicationWithLabel, systems []nsmodel.System) []*model.Application {
+func filterUnreachable(apps []*model.ApplicationWithLabel, systems []nsmodel.System) []*model.Application {
 	hostToSystem := make(map[string]interface{}, len(systems))
 
 	for _, s := range systems {
@@ -241,16 +262,34 @@ func filterUnreachable(apps []*ApplicationWithLabel, systems []nsmodel.System) [
 	unreachable := make([]*model.Application, 0, 0)
 
 	for _, a := range apps {
-		result := gjson.Get(a.sccLabel.Value.(string), "Host")
+		result := gjson.Get(a.SccLabel.Value.(string), "Host")
 		_, ok := hostToSystem[result.Value().(string)]
 		if !ok {
-			unreachable = append(unreachable, a.app)
+			unreachable = append(unreachable, a.App)
 		}
 	}
 	return unreachable
 }
 
-type ApplicationWithLabel struct {
-	app      *model.Application
-	sccLabel *model.Label
+func difference(a, b []*model.SccMetadata) (diff []*model.SccMetadata) {
+	m := make(map[model.SccMetadata]bool)
+
+	for _, item := range b {
+		m[*item] = true
+	}
+
+	for _, item := range a {
+		if _, ok := m[*item]; !ok {
+			diff = append(diff, item)
+		}
+	}
+	return
+}
+
+func addErrorDetails(details *[]httputil.Detail, scc *nsmodel.SCC) {
+	*details = append(*details, httputil.Detail{
+		Message:    "Creation failed",
+		Subaccount: scc.Subaccount,
+		LocationId: scc.LocationID,
+	})
 }

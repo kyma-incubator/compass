@@ -22,6 +22,11 @@ type SystemNotFoundError struct {
 	msg string
 }
 
+func IsNotFoundError(err error) bool {
+	_, ok := err.(*SystemNotFoundError)
+	return ok
+}
+
 func NewSystemNotFoundError(subaccount, locationId, host string) *SystemNotFoundError {
 	return &SystemNotFoundError{msg: fmt.Sprintf(systemNotFoundErrMsgFormat, subaccount, locationId, host)}
 }

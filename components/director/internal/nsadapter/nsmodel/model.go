@@ -77,8 +77,8 @@ func validateSCCs(value interface{}) error {
 
 func ToAppRegisterInput(system System, locationID string) model.ApplicationRegisterInput {
 	sccLabel := struct {
-		Host       string
-		LocationId string
+		Host       string `json:"host"`
+		LocationId string `json:"locationId"`
 	}{
 		system.Host,
 		locationID,

@@ -36,7 +36,7 @@ func (e Error) Error() string {
 type DetailedError struct {
 	Code    int       `json:"code"`
 	Message string    `json:"message"`
-	Details []Details `json:"details"`
+	Details []Detail `json:"details"`
 }
 
 func (d DetailedError) Error() string {
@@ -44,7 +44,6 @@ func (d DetailedError) Error() string {
 }
 
 type Detail struct {
-	Code       string `json:"code"`
 	Message    string `json:"message"`
 	Subaccount string `json:"subaccount"`
 	LocationId string `json:"locationId"`

@@ -183,3 +183,8 @@ type ApplicationUpdateInput struct {
 	CorrelationIDs      json.RawMessage
 	Status              *string
 }
+
+type ApplicationWithLabel struct {
+	App      *Application
+	SccLabel *Label
+}
