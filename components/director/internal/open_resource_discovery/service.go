@@ -169,6 +169,43 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 					*documents[i].ConsumptionBundles[j].Description = (*documents[i].ConsumptionBundles[j].Description)[:255]
 				}
 			}
+
+			for j := range documents[i].APIResources {
+				if documents[i].APIResources[j].ShortDescription == nil || *documents[i].APIResources[j].ShortDescription == "" {
+					documents[i].APIResources[j].ShortDescription = &emptyString
+				}
+
+				if documents[i].APIResources[j].Description == nil || *documents[i].APIResources[j].Description == "" {
+					documents[i].APIResources[j].Description = &emptyString
+				}
+
+				if documents[i].APIResources[j].ShortDescription == nil || len(*documents[i].APIResources[j].ShortDescription) >= 255 {
+					*documents[i].APIResources[j].ShortDescription = (*documents[i].APIResources[j].ShortDescription)[:255]
+				}
+
+				if documents[i].APIResources[j].Description == nil || len(*documents[i].APIResources[j].Description) >= 255 {
+					*documents[i].APIResources[j].Description = (*documents[i].APIResources[j].Description)[:255]
+				}
+			}
+
+			for j := range documents[i].EventResources {
+				if documents[i].EventResources[j].ShortDescription == nil || *documents[i].EventResources[j].ShortDescription == "" {
+					documents[i].EventResources[j].ShortDescription = &emptyString
+				}
+
+				if documents[i].EventResources[j].Description == nil || *documents[i].EventResources[j].Description == "" {
+					documents[i].EventResources[j].Description = &emptyString
+				}
+
+				if documents[i].EventResources[j].ShortDescription == nil || len(*documents[i].EventResources[j].ShortDescription) >= 255 {
+					*documents[i].EventResources[j].ShortDescription = (*documents[i].EventResources[j].ShortDescription)[:255]
+				}
+
+				if documents[i].EventResources[j].Description == nil || len(*documents[i].EventResources[j].Description) >= 255 {
+					*documents[i].EventResources[j].Description = (*documents[i].EventResources[j].Description)[:255]
+				}
+			}
+
 		}
 
 		log.C(ctx).Info("Processing ORD documents")
