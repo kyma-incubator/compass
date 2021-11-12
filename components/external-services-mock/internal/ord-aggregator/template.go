@@ -164,8 +164,8 @@ const ordDocument = `{
          ],
          "description":"foo bar",
 		 correlationIds": [
-			"sap.s4:communicationScenario2:SAP_COM_0003",
-			"sap.s4:communicationScenario2:SAP_COM_0004"
+			"sap.s4:communicationScenario:SAP_COM_0001",
+			"sap.s4:communicationScenario:SAP_COM_0002"
 		 ],
          "labels":{
             "label-key-1":[

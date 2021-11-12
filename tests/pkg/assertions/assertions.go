@@ -519,6 +519,40 @@ func AssertMultipleEntitiesFromORDService(t *testing.T, respBody string, entitie
 	}
 }
 
+func AssertBundleCorrelationIds(t *testing.T, respBody string, entitiesMap map[string][]string, expectedNumber int) {
+	numberOfEntities := len(gjson.Get(respBody, "value").Array())
+	require.Equal(t, expectedNumber, numberOfEntities)
+
+	for i := 0; i < numberOfEntities; i++ {
+		entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
+		require.NotEmpty(t, entityTitle)
+
+		correlationIds := gjson.Get(respBody, fmt.Sprintf("value.%d.correlationIds", i)).Array()
+		bundleCorrelationIdsAsString := make([]string, 0)
+		for _, id := range correlationIds {
+			bundleCorrelationIdsAsString = append(bundleCorrelationIdsAsString, id.String())
+		}
+		expectedCorrelationIds := entitiesMap[entityTitle]
+		assert.True(t, unorderedEqual(expectedCorrelationIds, bundleCorrelationIdsAsString))
+	}
+}
+
+func unorderedEqual(first, second []string) bool {
+	if len(first) != len(second) {
+		return false
+	}
+	exists := make(map[string]bool)
+	for _, value := range first {
+		exists[value] = true
+	}
+	for _, value := range second {
+		if !exists[value] {
+			return false
+		}
+	}
+	return true
+}
+
 func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody string, entityType string, numberOfEntitiesForBundle map[string]int, entitiesDataForBundle map[string][]string) {
 	numberOfBundles := len(gjson.Get(respBody, "value").Array())
 
