@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
@@ -49,7 +51,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 	parentTenant1 := fixBusinessTenantMappingInput(parent1, parent1, provider, "", "", "", tenant.Customer)
 	parentTenant2 := fixBusinessTenantMappingInput(parent2, parent2, provider, "", "", "", tenant.Customer)
 	parentTenant3 := fixBusinessTenantMappingInput(parent3, parent3, provider, "", "", "", tenant.Customer)
-	//parentTenants := []model.BusinessTenantMappingInput{parentTenant1, parentTenant2, parentTenant3}
+	parentTenants := []model.BusinessTenantMappingInput{parentTenant1, parentTenant2, parentTenant3}
 
 	parentTenant1BusinessMapping := parentTenant1.ToBusinessTenantMapping(parent1GUID)
 	parentTenant2BusinessMapping := parentTenant2.ToBusinessTenantMapping(parent2GUID)
@@ -63,21 +65,17 @@ func TestService_SyncAccountTenants(t *testing.T) {
 	busTenant1 := fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", region, parent1, tenant.Account)
 	busTenant2 := fixBusinessTenantMappingInput("bar", "2", provider, "subdomain-2", region, parent2, tenant.Account)
 	busTenant3 := fixBusinessTenantMappingInput("baz", "3", provider, "subdomain-3", region, parent3, tenant.Account)
+	busTenants := []model.BusinessTenantMappingInput{busTenant1, busTenant2, busTenant3}
 
 	busTenantForDeletion1 := fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", "", parent1, tenant.Account)
 	busTenantForDeletion2 := fixBusinessTenantMappingInput("bar", "2", provider, "subdomain-2", "", parent2, tenant.Account)
 	busTenantForDeletion3 := fixBusinessTenantMappingInput("baz", "3", provider, "subdomain-3", "", parent3, tenant.Account)
-	businessTenantsForDeletion := []model.BusinessTenantMappingInput{busTenantForDeletion1, busTenantForDeletion2, busTenantForDeletion3}
+	busTenantsForDeletion := []model.BusinessTenantMappingInput{busTenantForDeletion1, busTenantForDeletion2, busTenantForDeletion3}
 
-	// busTenant1WithParentGUID := fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", region, parent1GUID, tenant.Account)
+	busTenant1WithParentGUID := fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", region, parent1GUID, tenant.Account)
 	busTenant2WithParentGUID := fixBusinessTenantMappingInput("bar", "2", provider, "subdomain-2", region, parent2GUID, tenant.Account)
 	busTenant3WithParentGUID := fixBusinessTenantMappingInput("baz", "3", provider, "subdomain-3", region, parent3GUID, tenant.Account)
-	// existingParentsWithGUIDs := []model.BusinessTenantMappingInput{busTenant1WithParentGUID, busTenant2WithParentGUID, busTenant3WithParentGUID}
-
-	// busTenant1WithParentID := fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", region, parent1, tenant.Account)
-	// busTenant2WithParentID := fixBusinessTenantMappingInput("bar", "2", provider, "subdomain-2", region, parent2, tenant.Account)
-	// busTenant3WithParentID := fixBusinessTenantMappingInput("baz", "3", provider, "subdomain-3", region, parent3, tenant.Account)
-	// newParentsWithIDs := []model.BusinessTenantMappingInput{busTenant1WithParentID, busTenant2WithParentID, busTenant3WithParentID}
+	busTenantsWithParentGUID := []model.BusinessTenantMappingInput{busTenant1WithParentGUID, busTenant2WithParentGUID, busTenant3WithParentGUID}
 
 	businessTenant1BusinessMapping := busTenant1.ToBusinessTenantMapping(busTenant1GUID)
 	businessTenant2BusinessMapping := busTenant2.ToBusinessTenantMapping(busTenant2GUID)
@@ -168,8 +166,10 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				tenantsToCreate := append(parentTenants[:2], busTenants[:2]...)
+
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, mock.Anything).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantsToCreate)).Return(nil)
 				return gqlClient
 			},
 			ExpectedError: nil,
@@ -195,8 +195,10 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				tenantsToCreate := append(parentTenants, busTenants...)
+
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, mock.Anything).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantsToCreate)).Return(nil)
 				return gqlClient
 			},
 			ExpectedError: nil,
@@ -229,7 +231,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, mock.Anything).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(busTenantsWithParentGUID)).Return(nil)
 				return gqlClient
 			},
 			ExpectedError: nil,
@@ -256,8 +258,10 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				tenantsToCreate := append(parentTenants, busTenants...)
+
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, mock.Anything).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantsToCreate)).Return(nil)
 				return gqlClient
 			},
 			ExpectedError: nil,
@@ -285,7 +289,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("DeleteTenants", mock.Anything, mock.Anything).Return(nil)
+				gqlClient.On("DeleteTenants", mock.Anything, matchArrayWithoutOrderArgument(busTenantsForDeletion)).Return(nil)
 				return gqlClient
 			},
 			ExpectedError: nil,
@@ -324,7 +328,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, mock.Anything).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(busTenantsWithParentGUID[:1])).Return(nil)
 				return gqlClient
 			},
 			ExpectedError: nil,
@@ -351,10 +355,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
 			ExpectedError: nil,
 		},
 		{
@@ -391,8 +392,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, mock.Anything).Return(nil)
-				gqlClient.On("DeleteTenants", mock.Anything, matchArrayWithoutOrderArgument(businessTenantsForDeletion[0:1])).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(busTenantsWithParentGUID[1:])).Return(nil)
+				gqlClient.On("DeleteTenants", mock.Anything, matchArrayWithoutOrderArgument(busTenantsForDeletion[0:1])).Return(nil)
 				return gqlClient
 			},
 			ExpectedError: nil,
@@ -415,10 +416,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
 			ExpectedError: nil,
 		},
 		{
@@ -455,8 +453,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument([]model.BusinessTenantMappingInput{busTenant2WithParentGUID, busTenant3WithParentGUID})).Return(nil)
-				gqlClient.On("DeleteTenants", mock.Anything, businessTenantsForDeletion[0:1]).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(busTenantsWithParentGUID[1:])).Return(nil)
+				gqlClient.On("DeleteTenants", mock.Anything, matchArrayWithoutOrderArgument(busTenantsForDeletion[0:1])).Return(nil)
 				return gqlClient
 			},
 			ExpectedError: nil,
@@ -493,8 +491,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument([]model.BusinessTenantMappingInput{busTenant2WithParentGUID, busTenant3WithParentGUID})).Return(nil)
-				gqlClient.On("DeleteTenants", mock.Anything, businessTenantsForDeletion[0:1]).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(busTenantsWithParentGUID[1:])).Return(nil)
+				gqlClient.On("DeleteTenants", mock.Anything, matchArrayWithoutOrderArgument(busTenantsForDeletion[0:1])).Return(nil)
 				return gqlClient
 			},
 			ExpectedError: nil,
@@ -517,10 +515,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
 			ExpectedError: errors.New("next page was expected but response was empty"),
 		},
 		{
@@ -538,10 +533,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
 			ExpectedError: testErr,
 		},
 		{
@@ -561,10 +553,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
 			ExpectedError: testErr,
 		},
 		{
@@ -584,10 +573,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
 			ExpectedError: testErr,
 		},
 		{
@@ -607,10 +593,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
 			ExpectedError: testErr,
 		},
 		{
@@ -630,10 +613,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
 			ExpectedError: errors.New("total results number changed during fetching consecutive events pages"),
 		},
 		{
@@ -653,10 +633,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
 			ExpectedError: testErr,
 		},
 		{
@@ -680,10 +657,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
 			ExpectedError: testErr,
 		},
 		{
@@ -709,8 +683,10 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				tenantsToCreate := append(parentTenants[:1], busTenants[0])
+
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument([]model.BusinessTenantMappingInput{parentTenant1, busTenant1})).Return(testErr)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantsToCreate)).Return(testErr)
 				return gqlClient
 			},
 			ExpectedError: testErr,
@@ -738,7 +714,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("DeleteTenants", mock.Anything, matchArrayWithoutOrderArgument([]model.BusinessTenantMappingInput{busTenantForDeletion1, busTenantForDeletion2, busTenantForDeletion3})).Return(testErr)
+				gqlClient.On("DeleteTenants", mock.Anything, matchArrayWithoutOrderArgument(busTenantsForDeletion)).Return(testErr)
 				return gqlClient
 			},
 			ExpectedError: testErr,
@@ -769,10 +745,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn: UnusedGQLClient,
 		},
 	}
 
@@ -836,7 +809,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 		kubeClient.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 		gqlClient := &automock.DirectorGraphQLClient{}
-		gqlClient.On("WriteTenants", mock.Anything, mock.Anything).Return(nil)
+		tenantsToCreate := []model.BusinessTenantMappingInput{fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", region, "", tenant.Subaccount)}
+		gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantsToCreate)).Return(nil)
 		defer mock.AssertExpectationsForObjects(t, persist, transact, apiClient, tenantStorageSvc, kubeClient)
 
 		svc := tenantfetcher.NewGlobalAccountService(tenantfetcher.QueryConfig{
@@ -871,6 +845,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 	provider := "default"
 	testRegion := "test-region"
 	movedRuntimeLabelKey := "moved_runtime_key"
+	targetInternalTenant := "targetInternalTenant"
+	runtimeID := "runtime-id"
 
 	tenantFieldMapping := tenantfetcher.TenantFieldMapping{
 		NameField:       "name",
@@ -891,7 +867,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 	parentTenant2 := fixBusinessTenantMappingInput(busTenant2GUID, busTenant2GUID, provider, "", "", "", tenant.Account)
 	parentTenant3 := fixBusinessTenantMappingInput(busTenant3GUID, busTenant3GUID, provider, "", "", "", tenant.Account)
 	parentTenant4 := fixBusinessTenantMappingInput(busTenant4GUID, busTenant4GUID, provider, "", "", "", tenant.Account)
-	//parentTenants := []model.BusinessTenantMappingInput{parentTenant1, parentTenant2, parentTenant3, parentTenant4}
+	parentTenants := []model.BusinessTenantMappingInput{parentTenant1, parentTenant2, parentTenant3, parentTenant4}
 
 	parentTenant1BusinessMapping := parentTenant1.ToBusinessTenantMapping(busTenant1GUID)
 	parentTenant2BusinessMapping := parentTenant2.ToBusinessTenantMapping(busTenant2GUID)
@@ -902,7 +878,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 	busSubaccount2 := fixBusinessTenantMappingInput("bar", "S2", provider, "subdomain-2", "test-region", parentTenant2.ExternalTenant, tenant.Subaccount)
 	busSubaccount3 := fixBusinessTenantMappingInput("baz", "S3", provider, "subdomain-3", "test-region", parentTenant3.ExternalTenant, tenant.Subaccount)
 	busSubaccount4 := fixBusinessTenantMappingInput("bsk", "S4", provider, "subdomain-4", "test-region", parentTenant4.ExternalTenant, tenant.Subaccount)
-	// subaccountTenants := []model.BusinessTenantMappingInput{busSubaccount1, busSubaccount2, busSubaccount3, busSubaccount4}
+	busSubaccounts := []model.BusinessTenantMappingInput{busSubaccount1, busSubaccount2, busSubaccount3, busSubaccount4}
 
 	businessSubaccount1BusinessMapping := busSubaccount1.ToBusinessTenantMapping(busTenant1GUID)
 	businessSubaccount2BusinessMapping := busSubaccount2.ToBusinessTenantMapping(busTenant2GUID)
@@ -974,6 +950,14 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		"region":    "test-region",
 	}
 
+	lblDef := model.LabelDefinition{
+		Tenant: targetInternalTenant,
+		Key:    "moved_runtime_key",
+	}
+	lblDefGQL := graphql.LabelDefinitionInput{
+		Key: "moved_runtime_key",
+	}
+
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -985,10 +969,10 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		APIClientFn         func() *automock.EventAPIClient
 		TenantStorageSvcFn  func() *automock.TenantService
 		RuntimeStorageSvcFn func() *automock.RuntimeService
-		LabelDefSvcFn       func() *automock.LabelDefinitionService
 		LabelSvcFn          func() *automock.LabelService
 		KubeClientFn        func() *automock.KubeClient
 		GqlClientFn         func() *automock.DirectorGraphQLClient
+		ConverterFn         func() *automock.LabelDefConverter
 		ExpectedError       error
 	}{
 		{
@@ -1004,7 +988,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				// Created tenants
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 
 				// Moved tenants
@@ -1021,20 +1004,11 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 					},
 				}
 				runtime := &model.Runtime{
-					ID:     "runtime-id",
+					ID:     runtimeID,
 					Name:   "test-runtime",
 					Tenant: "runtime-tenant",
 				}
 				svc.On("GetByFiltersGlobal", mock.Anything, filters).Return(runtime, nil).Once()
-				svc.On("UpdateTenantID", mock.Anything, "runtime-id", "targetInternalTenant").Return(nil).Once()
-				return svc
-			},
-			LabelDefSvcFn: func() *automock.LabelDefinitionService {
-				svc := &automock.LabelDefinitionService{}
-				svc.On("Upsert", mock.Anything, model.LabelDefinition{
-					Tenant: "targetInternalTenant",
-					Key:    "moved_runtime_key",
-				}).Return(nil).Once()
 				return svc
 			},
 			LabelSvcFn: func() *automock.LabelService {
@@ -1049,9 +1023,18 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				tenantsToCreate := append(parentTenants[:2], busSubaccounts[:2]...)
+
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, mock.Anything).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantsToCreate)).Return(nil)
+				gqlClient.On("CreateLabelDefinition", mock.Anything, lblDefGQL, targetInternalTenant).Return(nil)
+				gqlClient.On("SetRuntimeTenant", mock.Anything, runtimeID, targetInternalTenant).Return(nil)
 				return gqlClient
+			},
+			ConverterFn: func() *automock.LabelDefConverter {
+				converter := &automock.LabelDefConverter{}
+				converter.On("ToGraphQLInput", lblDef).Return(lblDefGQL, nil)
+				return converter
 			},
 			ExpectedError: nil,
 		},
@@ -1066,12 +1049,10 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				// Created tenants
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1080,10 +1061,13 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				tenantsToCreate := append(parentTenants[:1], busSubaccounts[:1]...)
+
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, mock.Anything).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantsToCreate)).Return(nil)
 				return gqlClient
 			},
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: nil,
 		},
 		{
@@ -1097,12 +1081,10 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				// Created tenants
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1111,10 +1093,12 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				tenantsToCreate := []model.BusinessTenantMappingInput{parentTenant2, busSubaccount2}
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, mock.Anything).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantsToCreate)).Return(nil)
 				return gqlClient
 			},
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: nil,
 		},
 		{
@@ -1132,7 +1116,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1142,9 +1125,10 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("DeleteTenants", mock.Anything, matchArrayWithoutOrderArgument([]model.BusinessTenantMappingInput{busSubaccount3})).Return(nil)
+				gqlClient.On("DeleteTenants", mock.Anything, busSubaccounts[2:3]).Return(nil)
 				return gqlClient
 			},
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: nil,
 		},
 		{
@@ -1176,7 +1160,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1185,11 +1168,12 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				updatedTenantToCreate := []model.BusinessTenantMappingInput{fixBusinessTenantMappingInput("updated-name", "S1", "default", "subdomain-1", "test-region", busTenant1GUID, tenant.Subaccount)}
 				gqlClient := &automock.DirectorGraphQLClient{}
-				updatedTenant := fixBusinessTenantMappingInput("updated-name", "S1", provider, "subdomain-1", "test-region", parentTenant1.ExternalTenant, tenant.Subaccount)
-				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument([]model.BusinessTenantMappingInput{updatedTenant})).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, updatedTenantToCreate).Return(nil)
 				return gqlClient
 			},
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: nil,
 		},
 		{
@@ -1208,7 +1192,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1216,10 +1199,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: nil,
 		},
 		{
@@ -1266,15 +1247,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 					Tenant: "runtime-tenant",
 				}
 				svc.On("GetByFiltersGlobal", mock.Anything, filters).Return(runtime, nil).Once()
-				svc.On("UpdateTenantID", mock.Anything, "runtime-id", "targetInternalTenant").Return(nil).Once()
-				return svc
-			},
-			LabelDefSvcFn: func() *automock.LabelDefinitionService {
-				svc := &automock.LabelDefinitionService{}
-				svc.On("Upsert", mock.Anything, model.LabelDefinition{
-					Tenant: "targetInternalTenant",
-					Key:    "moved_runtime_key",
-				}).Return(nil).Once()
 				return svc
 			},
 			LabelSvcFn: func() *automock.LabelService {
@@ -1290,8 +1262,15 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument([]model.BusinessTenantMappingInput{busSubaccount2, busSubaccount3, busSubaccount4})).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(busSubaccounts[1:])).Return(nil)
+				gqlClient.On("CreateLabelDefinition", mock.Anything, lblDefGQL, targetInternalTenant).Return(nil)
+				gqlClient.On("SetRuntimeTenant", mock.Anything, runtimeID, targetInternalTenant).Return(nil)
 				return gqlClient
+			},
+			ConverterFn: func() *automock.LabelDefConverter {
+				converter := &automock.LabelDefConverter{}
+				converter.On("ToGraphQLInput", lblDef).Return(lblDefGQL, nil)
+				return converter
 			},
 			ExpectedError: nil,
 		},
@@ -1317,8 +1296,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 					parentTenant3BusinessMapping,
 					parentTenant4BusinessMapping,
 				}, nil).Once()
-
-				// Moved tenants
 				svc.On("GetInternalTenant", mock.Anything, "target").Return("targetInternalTenant", nil).Once()
 
 				return svc
@@ -1337,17 +1314,16 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 					Tenant: "runtime-tenant",
 				}
 				svc.On("GetByFiltersGlobal", mock.Anything, filters).Return(runtime, nil).Once()
-				svc.On("UpdateTenantID", mock.Anything, "runtime-id", "targetInternalTenant").Return(nil).Once()
 				return svc
 			},
-			LabelDefSvcFn: func() *automock.LabelDefinitionService {
-				svc := &automock.LabelDefinitionService{}
-				svc.On("Upsert", mock.Anything, model.LabelDefinition{
-					Tenant: "targetInternalTenant",
-					Key:    "moved_runtime_key",
-				}).Return(nil).Once()
-				return svc
-			},
+			//LabelDefSvcFn: func() *automock.LabelDefinitionService {
+			//	svc := &automock.LabelDefinitionService{}
+			//	svc.On("Upsert", mock.Anything, model.LabelDefinition{
+			//		Tenant: "targetInternalTenant",
+			//		Key:    "moved_runtime_key",
+			//	}).Return(nil).Once()
+			//	return svc
+			//},
 			LabelSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("GetByKey", mock.Anything, "runtime-tenant", model.RuntimeLabelableObject, "runtime-id", model.ScenariosKey).Return(&model.Label{Value: []interface{}{"DEFAULT"}}, nil).Once()
@@ -1361,8 +1337,15 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument([]model.BusinessTenantMappingInput{busSubaccount2, busSubaccount3, busSubaccount4})).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(busSubaccounts[1:])).Return(nil)
+				gqlClient.On("CreateLabelDefinition", mock.Anything, lblDefGQL, targetInternalTenant).Return(nil)
+				gqlClient.On("SetRuntimeTenant", mock.Anything, runtimeID, targetInternalTenant).Return(nil)
 				return gqlClient
+			},
+			ConverterFn: func() *automock.LabelDefConverter {
+				converter := &automock.LabelDefConverter{}
+				converter.On("ToGraphQLInput", lblDef).Return(lblDefGQL, nil)
+				return converter
 			},
 			ExpectedError: nil,
 		},
@@ -1411,15 +1394,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 					Tenant: "runtime-tenant",
 				}
 				svc.On("GetByFiltersGlobal", mock.Anything, filters).Return(runtime, nil).Once()
-				svc.On("UpdateTenantID", mock.Anything, "runtime-id", "targetInternalTenant").Return(nil).Once()
-				return svc
-			},
-			LabelDefSvcFn: func() *automock.LabelDefinitionService {
-				svc := &automock.LabelDefinitionService{}
-				svc.On("Upsert", mock.Anything, model.LabelDefinition{
-					Tenant: "targetInternalTenant",
-					Key:    "moved_runtime_key",
-				}).Return(nil).Once()
 				return svc
 			},
 			LabelSvcFn: func() *automock.LabelService {
@@ -1435,8 +1409,15 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument([]model.BusinessTenantMappingInput{busSubaccount2, busSubaccount3, busSubaccount4})).Return(nil)
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(busSubaccounts[1:])).Return(nil)
+				gqlClient.On("CreateLabelDefinition", mock.Anything, lblDefGQL, targetInternalTenant).Return(nil)
+				gqlClient.On("SetRuntimeTenant", mock.Anything, runtimeID, targetInternalTenant).Return(nil)
 				return gqlClient
+			},
+			ConverterFn: func() *automock.LabelDefConverter {
+				converter := &automock.LabelDefConverter{}
+				converter.On("ToGraphQLInput", lblDef).Return(lblDefGQL, nil)
+				return converter
 			},
 			ExpectedError: nil,
 		},
@@ -1453,7 +1434,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1461,10 +1441,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: errors.New("next page was expected but response was empty"),
 		},
 		{
@@ -1477,7 +1455,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1485,10 +1462,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: testErr,
 		},
 		{
@@ -1503,7 +1478,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1511,10 +1485,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: testErr,
 		},
 		{
@@ -1529,7 +1501,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1537,10 +1508,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: testErr,
 		},
 		{
@@ -1555,7 +1524,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1563,10 +1531,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: testErr,
 		},
 		{
@@ -1581,7 +1547,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1589,10 +1554,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: errors.New("total results number changed during fetching consecutive events pages"),
 		},
 		{
@@ -1607,7 +1570,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1615,10 +1577,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn:   UnusedGQLClient,
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: testErr,
 		},
 		{
@@ -1637,7 +1597,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1646,14 +1605,18 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				tenantsToCreate := append(parentTenants[:1], busSubaccount1)
+
 				gqlClient := &automock.DirectorGraphQLClient{}
+				gqlClient.On("WriteTenants", mock.Anything, tenantsToCreate).Return(nil)
 				return gqlClient
 			},
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: testErr,
 		},
 		{
 			Name:            "Error when tenant creation fails",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
@@ -1668,7 +1631,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1677,15 +1639,18 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				tenantsToCreate := append(parentTenants[:1], busSubaccount1)
+
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument([]model.BusinessTenantMappingInput{parentTenant1, busSubaccount1})).Return(testErr)
+				gqlClient.On("WriteTenants", mock.Anything, tenantsToCreate).Return(testErr)
 				return gqlClient
 			},
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: testErr,
 		},
 		{
 			Name:            "Error when couldn't delete",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
 				client.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
@@ -1699,7 +1664,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1709,9 +1673,10 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("DeleteTenants", mock.Anything, matchArrayWithoutOrderArgument([]model.BusinessTenantMappingInput{busSubaccount1, busSubaccount2, busSubaccount3})).Return(testErr)
+				gqlClient.On("DeleteTenants", mock.Anything, matchArrayWithoutOrderArgument(busSubaccounts[:3])).Return(testErr)
 				return gqlClient
 			},
+			ConverterFn:   UnusedLabelDefConverter,
 			ExpectedError: testErr,
 		},
 		{
@@ -1735,7 +1700,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelDefSvcFn:       UnusedLabelDefSvc,
 			LabelSvcFn:          UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
@@ -1743,10 +1707,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 				return client
 			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				gqlClient := &automock.DirectorGraphQLClient{}
-				return gqlClient
-			},
+			GqlClientFn: UnusedGQLClient,
+			ConverterFn: UnusedLabelDefConverter,
 		},
 	}
 
@@ -1756,10 +1718,10 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			apiClient := testCase.APIClientFn()
 			tenantStorageSvc := testCase.TenantStorageSvcFn()
 			runtimeStorageSvc := testCase.RuntimeStorageSvcFn()
-			labelDefSvc := testCase.LabelDefSvcFn()
 			labelSvc := testCase.LabelSvcFn()
 			kubeClient := testCase.KubeClientFn()
 			gqlClient := testCase.GqlClientFn()
+			converter := testCase.ConverterFn()
 			svc := tenantfetcher.NewSubaccountService(tenantfetcher.QueryConfig{
 				PageNumField:   "pageNum",
 				PageSizeField:  "pageSize",
@@ -1785,7 +1747,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				LabelValue:   "id",
 				SourceTenant: "source_tenant",
 				TargetTenant: "target_tenant",
-			}, provider, []string{testRegion}, apiClient, tenantStorageSvc, runtimeStorageSvc, labelDefSvc, labelSvc, movedRuntimeLabelKey, time.Hour, gqlClient, tenantInsertChunkSize)
+			}, provider, []string{testRegion}, apiClient, tenantStorageSvc, runtimeStorageSvc, labelSvc, movedRuntimeLabelKey, time.Hour, gqlClient, tenantInsertChunkSize, converter)
 			svc.SetRetryAttempts(1)
 
 			// WHEN
@@ -1799,7 +1761,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, persist, transact, apiClient, tenantStorageSvc, runtimeStorageSvc, labelDefSvc, labelSvc, kubeClient, gqlClient)
+			mock.AssertExpectationsForObjects(t, persist, transact, apiClient, tenantStorageSvc, runtimeStorageSvc, labelSvc, kubeClient, gqlClient, converter)
 		})
 	}
 
@@ -1814,16 +1776,18 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
 
+		conv := &automock.LabelDefConverter{}
+
 		tenantStorageSvc := &automock.TenantService{}
 		tenantStorageSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 		kubeClient := &automock.KubeClient{}
 		kubeClient.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
 		kubeClient.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 		gqlClient := &automock.DirectorGraphQLClient{}
-		gqlClient.On("WriteTenants", mock.Anything, mock.Anything).Return(nil)
+		tenantsToCreate := append(parentTenants[:1], busSubaccounts[:1]...)
+		gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantsToCreate)).Return(nil)
 
 		defer mock.AssertExpectationsForObjects(t, persist, transact, apiClient, tenantStorageSvc, kubeClient)
-
 		svc := tenantfetcher.NewSubaccountService(tenantfetcher.QueryConfig{
 			PageNumField:   "pageNum",
 			PageSizeField:  "pageSize",
@@ -1849,7 +1813,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			LabelValue:   "id",
 			SourceTenant: "source_tenant",
 			TargetTenant: "target_tenant",
-		}, provider, []string{testRegion}, apiClient, tenantStorageSvc, nil, nil, nil, movedRuntimeLabelKey, time.Hour, gqlClient, tenantInsertChunkSize)
+		}, provider, []string{testRegion}, apiClient, tenantStorageSvc, nil, nil, movedRuntimeLabelKey, time.Hour, gqlClient, tenantInsertChunkSize, conv)
 
 		// WHEN
 		err := svc.SyncTenants()
@@ -1899,10 +1863,14 @@ func UnusedRuntimeStorageSvc() *automock.RuntimeService {
 	return &automock.RuntimeService{}
 }
 
-func UnusedLabelDefSvc() *automock.LabelDefinitionService {
-	return &automock.LabelDefinitionService{}
-}
-
 func UnusedLabelSvc() *automock.LabelService {
 	return &automock.LabelService{}
+}
+
+func UnusedLabelDefConverter() *automock.LabelDefConverter {
+	return &automock.LabelDefConverter{}
+}
+
+func UnusedGQLClient() *automock.DirectorGraphQLClient {
+	return &automock.DirectorGraphQLClient{}
 }
