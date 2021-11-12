@@ -171,11 +171,6 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 			}
 
 			for j := range documents[i].APIResources {
-				if documents[i].APIResources[j].SunsetDate == nil || *documents[i].APIResources[j].SunsetDate == "" {
-					date := "2006-01-02T15:04:05Z0700"
-					documents[i].APIResources[j].SunsetDate = &date
-				}
-
 				if documents[i].APIResources[j].ShortDescription == nil || *documents[i].APIResources[j].ShortDescription == "" {
 					documents[i].APIResources[j].ShortDescription = &emptyString
 				}
@@ -194,11 +189,6 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 			}
 
 			for j := range documents[i].EventResources {
-				if documents[i].EventResources[j].SunsetDate == nil || *documents[i].EventResources[j].SunsetDate == "" {
-					date := "2006-01-02T15:04:05Z0700"
-					documents[i].EventResources[j].SunsetDate = &date
-				}
-
 				if documents[i].EventResources[j].ShortDescription == nil || *documents[i].EventResources[j].ShortDescription == "" {
 					documents[i].EventResources[j].ShortDescription = &emptyString
 				}
