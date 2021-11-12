@@ -178,7 +178,6 @@ type ComplexityRoot struct {
 	Bundle struct {
 		APIDefinition                  func(childComplexity int, id string) int
 		APIDefinitions                 func(childComplexity int, group *string, first *int, after *PageCursor) int
-		CorrelationIds                 func(childComplexity int) int
 		CreatedAt                      func(childComplexity int) int
 		DefaultInstanceAuth            func(childComplexity int) int
 		DeletedAt                      func(childComplexity int) int
@@ -582,8 +581,6 @@ type BundleResolver interface {
 	APIDefinition(ctx context.Context, obj *Bundle, id string) (*APIDefinition, error)
 	EventDefinition(ctx context.Context, obj *Bundle, id string) (*EventDefinition, error)
 	Document(ctx context.Context, obj *Bundle, id string) (*Document, error)
-
-	CorrelationIds(ctx context.Context, obj *Bundle) (*JSON, error)
 }
 type DocumentResolver interface {
 	FetchRequest(ctx context.Context, obj *Document) (*FetchRequest, error)
@@ -1266,13 +1263,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Bundle.APIDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
-
-	case "Bundle.correlationIds":
-		if e.complexity.Bundle.CorrelationIds == nil {
-			break
-		}
-
-		return e.complexity.Bundle.CorrelationIds(childComplexity), true
 
 	case "Bundle.createdAt":
 		if e.complexity.Bundle.CreatedAt == nil {
@@ -3941,7 +3931,6 @@ input BundleCreateInput {
 	apiDefinitions: [APIDefinitionInput!]
 	eventDefinitions: [EventDefinitionInput!]
 	documents: [DocumentInput!]
-	correlationIds: JSON
 }
 
 input BundleInstanceAuthRequestInput {
@@ -4001,7 +3990,6 @@ input BundleUpdateInput {
 	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
 	"""
 	defaultInstanceAuth: AuthInput
-	correlationIds: JSON
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -4385,7 +4373,6 @@ type Bundle {
 	updatedAt: Timestamp
 	deletedAt: Timestamp
 	error: String
-	correlationIds: JSON
 }
 
 type BundleInstanceAuth {
@@ -10405,37 +10392,6 @@ func (ec *executionContext) _Bundle_error(ctx context.Context, field graphql.Col
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_correlationIds(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().CorrelationIds(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*JSON)
-	fc.Result = res
-	return ec.marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BundleInstanceAuth_id(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
@@ -22823,12 +22779,6 @@ func (ec *executionContext) unmarshalInputBundleCreateInput(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
-		case "correlationIds":
-			var err error
-			it.CorrelationIds, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -22950,12 +22900,6 @@ func (ec *executionContext) unmarshalInputBundleUpdateInput(ctx context.Context,
 		case "defaultInstanceAuth":
 			var err error
 			it.DefaultInstanceAuth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "correlationIds":
-			var err error
-			it.CorrelationIds, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -24546,17 +24490,6 @@ func (ec *executionContext) _Bundle(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Bundle_deletedAt(ctx, field, obj)
 		case "error":
 			out.Values[i] = ec._Bundle_error(ctx, field, obj)
-		case "correlationIds":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Bundle_correlationIds(ctx, field, obj)
-				return res
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

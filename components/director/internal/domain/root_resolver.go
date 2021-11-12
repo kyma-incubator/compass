@@ -943,11 +943,6 @@ func (r *BundleResolver) Document(ctx context.Context, obj *graphql.Bundle, id s
 	return r.mpBundle.Document(ctx, obj, id)
 }
 
-// CorrelationIds missing godoc
-func (r *BundleResolver) CorrelationIds(ctx context.Context, obj *graphql.Bundle) (*graphql.JSON, error) {
-	return r.mpBundle.CorrelationIds(ctx, obj)
-}
-
 type tenantResolver struct {
 	*RootResolver
 }

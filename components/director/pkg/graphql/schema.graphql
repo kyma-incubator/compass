@@ -362,7 +362,6 @@ input BundleCreateInput {
 	apiDefinitions: [APIDefinitionInput!]
 	eventDefinitions: [EventDefinitionInput!]
 	documents: [DocumentInput!]
-	correlationIds: JSON
 }
 
 input BundleInstanceAuthRequestInput {
@@ -422,7 +421,6 @@ input BundleUpdateInput {
 	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
 	"""
 	defaultInstanceAuth: AuthInput
-	correlationIds: JSON
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -806,7 +804,6 @@ type Bundle {
 	updatedAt: Timestamp
 	deletedAt: Timestamp
 	error: String
-	correlationIds: JSON
 }
 
 type BundleInstanceAuth {
