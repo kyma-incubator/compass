@@ -389,31 +389,35 @@ func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing
 	// then
 	assert.NoError(t, err)
 }
+*/
 
 func TestPgRepository_Exist(t *testing.T) {
-	// given
-	runtimeCtxID := uuid.New().String()
-	tenantID := uuid.New().String()
+	suite := testdb.RepoExistTestSuite{
+		Name:                "Runtime Context Exists",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.runtime_contexts WHERE id = $1 AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{runtimeCtxID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: runtimectx.NewRepository,
+		TargetID:            runtimeCtxID,
+		TenantID:            tenantID,
+	}
 
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	defer sqlMock.AssertExpectations(t)
-
-	sqlMock.ExpectQuery(fmt.Sprintf(`^SELECT 1 FROM public.runtime_contexts WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())).
-		WithArgs(tenantID, runtimeCtxID).
-		WillReturnRows(testdb.RowWhenObjectExist())
-
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-	pgRepository := runtimectx.NewRepository()
-
-	// when
-	ex, err := pgRepository.Exists(ctx, tenantID, runtimeCtxID)
-
-	// then
-	require.NoError(t, err)
-	assert.True(t, ex)
+	suite.Run(t)
 }
-*/
+
 func convertIntToBase64String(number int) string {
 	return base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number)))
 }

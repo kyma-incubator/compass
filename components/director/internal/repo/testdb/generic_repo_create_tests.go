@@ -33,7 +33,7 @@ type SqlQueryDetails struct {
 }
 
 // RepoCreateTestSuite represents a generic test suite for repository Create method of any entity that has externally managed tenants in m2m table/view.
-// This test suite is not suitable for global entities or entities with embedded tenant.
+// This test suite is not suitable for global entities or entities with embedded tenant in them.
 type RepoCreateTestSuite struct {
 	Name                      string
 	SqlQueryDetails           []SqlQueryDetails

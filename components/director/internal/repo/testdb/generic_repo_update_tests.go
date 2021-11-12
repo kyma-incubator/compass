@@ -12,6 +12,8 @@ import (
 	"testing"
 )
 
+// RepoUpdateTestSuite represents a generic test suite for repository Update and UpdateWithVersion methods of any entity that has externally managed tenants in m2m table/view.
+// This test suite is not suitable for global entities or entities with embedded tenant in them.
 type RepoUpdateTestSuite struct {
 	Name                      string
 	SqlQueryDetails           []SqlQueryDetails
@@ -25,6 +27,7 @@ type RepoUpdateTestSuite struct {
 	UpdateMethodName          string
 }
 
+// Run runs the generic repo update test suite
 func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 	if len(suite.UpdateMethodName) == 0 {
 		suite.UpdateMethodName = "Update"

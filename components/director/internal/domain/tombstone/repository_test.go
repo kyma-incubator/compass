@@ -97,24 +97,36 @@ func TestPgRepository_Delete(t *testing.T) {
 	convMock.AssertExpectations(t)
 }
 
-func TestPgRepository_Exists(t *testing.T) {
-	//GIVEN
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT 1 FROM public.tombstones WHERE %s AND id = $2`, fixUnescapedTenantIsolationSubquery()))
+*/
 
-	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, tombstoneID).WillReturnRows(testdb.RowWhenObjectExist())
-	convMock := &automock.EntityConverter{}
-	pgRepository := tombstone.NewRepository(convMock)
-	//WHEN
-	found, err := pgRepository.Exists(ctx, tenantID, tombstoneID)
-	//THEN
-	require.NoError(t, err)
-	assert.True(t, found)
-	sqlMock.AssertExpectations(t)
-	convMock.AssertExpectations(t)
+func TestPgRepository_Exists(t *testing.T) {
+	suite := testdb.RepoExistTestSuite{
+		Name:                "Tombstone Exists",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.tombstones WHERE id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{tombstoneID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: tombstone.NewRepository,
+		TargetID:            tombstoneID,
+		TenantID:            tenantID,
+	}
+
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_GetByID(t *testing.T) {
 	// given
 	tombstoneEntity := fixEntityTombstone()

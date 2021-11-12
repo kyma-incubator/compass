@@ -109,24 +109,36 @@ func TestPgRepository_Delete(t *testing.T) {
 	convMock.AssertExpectations(t)
 }
 
-func TestPgRepository_Exists(t *testing.T) {
-	//GIVEN
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT 1 FROM public.bundles WHERE %s AND id = $2`, fixUnescapedTenantIsolationSubquery()))
+*/
 
-	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, bundleID).WillReturnRows(testdb.RowWhenObjectExist())
-	convMock := &automock.EntityConverter{}
-	pgRepository := bundle.NewRepository(convMock)
-	//WHEN
-	found, err := pgRepository.Exists(ctx, tenantID, bundleID)
-	//THEN
-	require.NoError(t, err)
-	assert.True(t, found)
-	sqlMock.AssertExpectations(t)
-	convMock.AssertExpectations(t)
+func TestPgRepository_Exists(t *testing.T) {
+	suite := testdb.RepoExistTestSuite{
+		Name:                "Bundle Exists",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{bundleID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: bundle.NewRepository,
+		TargetID:            bundleID,
+		TenantID:            tenantID,
+	}
+
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_GetByID(t *testing.T) {
 	// given
 	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")

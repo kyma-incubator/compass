@@ -139,6 +139,7 @@ func TestRepository_Create(t *testing.T) {
 	apiSpecSuite.Run(t)
 	eventSpecSuite.Run(t)
 }
+
 /*
 func TestRepository_ListByReferenceObjectID(t *testing.T) {
 	// GIVEN
@@ -149,7 +150,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		secondSpecID := "222222222-2222-2222-2222-222222222222"
 		secondAPIDefEntity := fixAPISpecEntityWithID(secondSpecID)
 
-		selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications 
+		selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications
 		WHERE %s AND api_def_id = \$2
 		ORDER BY created_at`, fixTenantIsolationSubquery())
 
@@ -184,7 +185,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		secondSpecID := "222222222-2222-2222-2222-222222222222"
 		secondAPIDefEntity := fixEventSpecEntityWithID(secondSpecID)
 
-		selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications 
+		selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications
 		WHERE %s AND event_def_id = \$2
 		ORDER BY created_at`, fixTenantIsolationSubquery())
 
@@ -238,13 +239,13 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 	firstEventSpecEntity := fixEventSpecEntityWithIDs(firstSpecID, firstEventID)
 	secondEventSpecEntity := fixEventSpecEntityWithIDs(secondSpecID, secondEventID)
 
-	selectQueryAPIs := fmt.Sprintf(`^\(SELECT (.+) FROM public\.specifications 
+	selectQueryAPIs := fmt.Sprintf(`^\(SELECT (.+) FROM public\.specifications
 		WHERE %s AND api_def_id IS NOT NULL AND api_def_id = \$2 ORDER BY created_at ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
 		\(SELECT (.+) FROM public\.specifications WHERE %s AND api_def_id IS NOT NULL AND api_def_id = \$6 ORDER BY created_at ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
 	countQueryAPIs := fmt.Sprintf(`SELECT api_def_id AS id, COUNT\(\*\) AS total_count FROM public.specifications WHERE %s AND api_def_id IS NOT NULL GROUP BY api_def_id ORDER BY api_def_id ASC`, fixTenantIsolationSubquery())
 
-	selectQueryEvents := fmt.Sprintf(`^\(SELECT (.+) FROM public\.specifications 
+	selectQueryEvents := fmt.Sprintf(`^\(SELECT (.+) FROM public\.specifications
 		WHERE %s AND event_def_id IS NOT NULL AND event_def_id = \$2 ORDER BY created_at ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
 		\(SELECT (.+) FROM public\.specifications WHERE %s AND event_def_id IS NOT NULL AND event_def_id = \$6 ORDER BY created_at ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
 
@@ -424,9 +425,9 @@ func TestRepository_Update(t *testing.T) {
 		Name: "Update API Spec",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = '%s' AND owner = true))`, tenant)),
-				Args:        []driver.Value{apiSpecEntity.SpecData, apiSpecEntity.APISpecFormat, apiSpecEntity.APISpecType, apiSpecEntity.EventSpecFormat, apiSpecEntity.EventSpecType, apiSpecEntity.ID},
-				ValidResult: sqlmock.NewResult(-1, 1),
+				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = '%s' AND owner = true))`, tenant)),
+				Args:          []driver.Value{apiSpecEntity.SpecData, apiSpecEntity.APISpecFormat, apiSpecEntity.APISpecType, apiSpecEntity.EventSpecFormat, apiSpecEntity.EventSpecType, apiSpecEntity.ID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
 		},
@@ -445,9 +446,9 @@ func TestRepository_Update(t *testing.T) {
 		Name: "Update Event Spec",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query:       regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = '%s' AND owner = true))`, tenant)),
-				Args:        []driver.Value{eventSpecEntity.SpecData, eventSpecEntity.APISpecFormat, eventSpecEntity.APISpecType, eventSpecEntity.EventSpecFormat, eventSpecEntity.EventSpecType, eventSpecEntity.ID},
-				ValidResult: sqlmock.NewResult(-1, 1),
+				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = '%s' AND owner = true))`, tenant)),
+				Args:          []driver.Value{eventSpecEntity.SpecData, eventSpecEntity.APISpecFormat, eventSpecEntity.APISpecType, eventSpecEntity.EventSpecFormat, eventSpecEntity.EventSpecType, eventSpecEntity.ID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
 		},
@@ -466,22 +467,55 @@ func TestRepository_Update(t *testing.T) {
 	eventSpecSuite.Run(t)
 }
 
-/*
 func TestRepository_Exists(t *testing.T) {
-	//GIVEN
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT 1 FROM public.specifications WHERE %s AND id = $2`, fixUnescapedTenantIsolationSubquery()))
+	apiSpecSuite := testdb.RepoExistTestSuite{
+		Name: "API Specification Exists",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{specID, tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		TargetID:            specID,
+		TenantID:            tenant,
+		RefEntity:           model.APISpecReference,
+	}
 
-	sqlMock.ExpectQuery(existQuery).WithArgs(tenant, specID).WillReturnRows(testdb.RowWhenObjectExist())
-	convMock := &automock.Converter{}
-	pgRepository := spec.NewRepository(convMock)
-	//WHEN
-	found, err := pgRepository.Exists(ctx, tenant, specID)
-	//THEN
-	require.NoError(t, err)
-	assert.True(t, found)
-	sqlMock.AssertExpectations(t)
-	convMock.AssertExpectations(t)
+	eventSpecSuite := testdb.RepoExistTestSuite{
+		Name: "Event Specification Exists",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{specID, tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		TargetID:            specID,
+		TenantID:            tenant,
+		RefEntity:           model.EventSpecReference,
+	}
+
+	apiSpecSuite.Run(t)
+	eventSpecSuite.Run(t)
 }
-*/

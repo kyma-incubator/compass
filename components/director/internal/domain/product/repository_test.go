@@ -92,24 +92,35 @@ func TestPgRepository_Delete(t *testing.T) {
 	convMock.AssertExpectations(t)
 }
 
+*/
 func TestPgRepository_Exists(t *testing.T) {
-	//GIVEN
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT 1 FROM public.products WHERE %s AND id = $2`, fixUnescapedTenantIsolationSubquery()))
+	suite := testdb.RepoExistTestSuite{
+		Name:                "Product Exists",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.products WHERE id = $1 AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{productID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: product.NewRepository,
+		TargetID:            productID,
+		TenantID:            tenantID,
+	}
 
-	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, productID).WillReturnRows(testdb.RowWhenObjectExist())
-	convMock := &automock.EntityConverter{}
-	pgRepository := product.NewRepository(convMock)
-	//WHEN
-	found, err := pgRepository.Exists(ctx, tenantID, productID)
-	//THEN
-	require.NoError(t, err)
-	assert.True(t, found)
-	sqlMock.AssertExpectations(t)
-	convMock.AssertExpectations(t)
+	suite.Run(t)
 }
 
+/*
 func TestPgRepository_GetByID(t *testing.T) {
 	// given
 	productEntity := fixEntityProduct()

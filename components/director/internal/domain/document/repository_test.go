@@ -455,28 +455,35 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
-
+*/
 func TestRepository_Exists(t *testing.T) {
-	// given
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	defer sqlMock.AssertExpectations(t)
+	suite := testdb.RepoExistTestSuite{
+		Name:                "Document Exists",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.documents WHERE id = $1 AND (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{givenID(), givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.DocumentConverter{}
+		},
+		RepoConstructorFunc: document.NewRepository,
+		TargetID:            givenID(),
+		TenantID:            givenTenant(),
+	}
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT 1 FROM public.documents WHERE %s AND id = $2", fixUnescapedTenantIsolationSubquery()))).WithArgs(
-		givenTenant(), givenID()).
-		WillReturnRows(testdb.RowWhenObjectExist())
-
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-	repo := document.NewRepository(nil)
-
-	// when
-	ex, err := repo.Exists(ctx, givenTenant(), givenID())
-
-	// then
-	require.NoError(t, err)
-	assert.True(t, ex)
+	suite.Run(t)
 }
 
+/*
 func TestRepository_GetByID(t *testing.T) {
 	refID := bndlID()
 

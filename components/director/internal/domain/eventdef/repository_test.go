@@ -440,22 +440,31 @@ func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 	sqlMock.AssertExpectations(t)
 	convMock.AssertExpectations(t)
 }
+*/
 
 func TestPgRepository_Exists(t *testing.T) {
-	//GIVEN
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT 1 FROM "public"."event_api_definitions" WHERE %s AND id = $2`, fixUnescapedTenantIsolationSubquery()))
+	suite := testdb.RepoExistTestSuite{
+		Name:                "Event Exists",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{eventID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc: event.NewRepository,
+		TargetID:            eventID,
+		TenantID:            tenantID,
+	}
 
-	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, eventID).WillReturnRows(testdb.RowWhenObjectExist())
-	convMock := &automock.EventAPIDefinitionConverter{}
-	pgRepository := event.NewRepository(convMock)
-	//WHEN
-	found, err := pgRepository.Exists(ctx, tenantID, eventID)
-	//THEN
-	require.NoError(t, err)
-	assert.True(t, found)
-	sqlMock.AssertExpectations(t)
-	convMock.AssertExpectations(t)
+	suite.Run(t)
 }
-*/

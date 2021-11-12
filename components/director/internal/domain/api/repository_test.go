@@ -392,7 +392,7 @@ func TestPgRepository_Update(t *testing.T) {
 					entity.OrdID, entity.ShortDescription, entity.SystemInstanceAware, entity.APIProtocol, entity.Tags, entity.Countries,
 					entity.Links, entity.APIResourceLinks, entity.ReleaseStatus, entity.SunsetDate, entity.ChangeLogEntries, entity.Labels, entity.Visibility,
 					entity.Disabled, entity.PartOfProducts, entity.LineOfBusiness, entity.Industry, entity.Version.Value, entity.Version.Deprecated, entity.Version.DeprecatedSince, entity.Version.ForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.ImplementationStandard, entity.CustomImplementationStandard, entity.CustomImplementationStandardDescription, entity.TargetURLs, entity.Extensible, entity.Successors, entity.ResourceHash, entity.ID},
-				ValidResult: sqlmock.NewResult(-1, 1),
+				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
 		},
@@ -444,21 +444,30 @@ func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 	convMock.AssertExpectations(t)
 }
 
-func TestPgRepository_Exists(t *testing.T) {
-	//GIVEN
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := fmt.Sprintf(`SELECT 1 FROM "public"."api_definitions" WHERE %s AND id = \$2`, fixTenantIsolationSubquery())
-
-	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, apiDefID).WillReturnRows(testdb.RowWhenObjectExist())
-	convMock := &automock.APIDefinitionConverter{}
-	pgRepository := api.NewRepository(convMock)
-	//WHEN
-	found, err := pgRepository.Exists(ctx, tenantID, apiDefID)
-	//THEN
-	require.NoError(t, err)
-	assert.True(t, found)
-	sqlMock.AssertExpectations(t)
-	convMock.AssertExpectations(t)
-}
 */
+func TestPgRepository_Exists(t *testing.T) {
+	suite := testdb.RepoExistTestSuite{
+		Name: "API Exists",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM "public"."api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{apiDefID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.APIDefinitionConverter{}
+		},
+		RepoConstructorFunc: api.NewRepository,
+		TargetID:            apiDefID,
+		TenantID:            tenantID,
+	}
+
+	suite.Run(t)
+}

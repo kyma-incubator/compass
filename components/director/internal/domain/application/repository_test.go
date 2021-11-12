@@ -19,28 +19,35 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-/*
+
 func TestRepository_Exists(t *testing.T) {
-	// given
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	defer sqlMock.AssertExpectations(t)
+	suite := testdb.RepoExistTestSuite{
+		Name:                "Application Exists",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2))`),
+				Args:     []driver.Value{givenID(), givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: application.NewRepository,
+		TargetID:            givenID(),
+		TenantID:            givenTenant(),
+	}
 
-	sqlMock.ExpectQuery(fmt.Sprintf(`SELECT 1 FROM public\.applications WHERE %s AND id = \$2`, fixTenantIsolationSubquery())).WithArgs(
-		givenTenant(), givenID()).
-		WillReturnRows(testdb.RowWhenObjectExist())
-
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-	repo := application.NewRepository(nil)
-
-	// when
-	ex, err := repo.Exists(ctx, givenTenant(), givenID())
-
-	// then
-	require.NoError(t, err)
-	assert.True(t, ex)
+	suite.Run(t)
 }
 
+/*
 func TestRepository_Delete(t *testing.T) {
 	var executeDeleteFunc = func(ctx context.Context) {
 		// given
