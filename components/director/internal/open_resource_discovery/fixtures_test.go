@@ -274,6 +274,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Links:                        json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				Labels:                       json.RawMessage(labels),
 				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, providedBaseURL)),
+				CorrelationIDs:               json.RawMessage(correlationIDs),
 			},
 		},
 		Products: []*model.ProductInput{
