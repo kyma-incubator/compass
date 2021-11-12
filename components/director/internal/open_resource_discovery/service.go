@@ -160,6 +160,11 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 				if documents[i].ConsumptionBundles[j].Description == nil || *documents[i].ConsumptionBundles[j].Description == "" {
 					documents[i].ConsumptionBundles[j].Description = &emptyString
 				}
+
+				if documents[i].ConsumptionBundles[j].Description == nil || len(*documents[i].ConsumptionBundles[j].Description) >= 255 {
+					*documents[i].ConsumptionBundles[j].Description = (*documents[i].ConsumptionBundles[j].Description)[:255]
+				}
+
 			}
 		}
 
