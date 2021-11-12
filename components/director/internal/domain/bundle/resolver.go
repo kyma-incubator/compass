@@ -736,6 +736,33 @@ func (r *Resolver) DocumentsDataLoader(keys []dataloader.ParamDocument) ([]*grap
 	return gqlDocumentPages, nil
 }
 
+func (r *Resolver) CorrelationIds(ctx context.Context, obj *graphql.Bundle) (*graphql.JSON, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	bndl, err := r.bundleSvc.Get(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlBundle, err := r.bundleConverter.ToGraphQL(bndl)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting Bundle with id %s to GraphQL", obj.ID)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return gqlBundle.CorrelationIDs, nil
+}
+
 func getBundleReferenceForAPI(apiID string, bundleReferences []*model.BundleReference) (*model.BundleReference, error) {
 	for _, br := range bundleReferences {
 		if str.PtrStrToStr(br.ObjectID) == apiID {

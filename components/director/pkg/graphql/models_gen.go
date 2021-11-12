@@ -215,6 +215,7 @@ type BundleCreateInput struct {
 	APIDefinitions                 []*APIDefinitionInput   `json:"apiDefinitions"`
 	EventDefinitions               []*EventDefinitionInput `json:"eventDefinitions"`
 	Documents                      []*DocumentInput        `json:"documents"`
+	CorrelationIds                 *JSON                   `json:"correlationIds"`
 }
 
 type BundleInstanceAuth struct {
@@ -291,6 +292,7 @@ type BundleUpdateInput struct {
 	InstanceAuthRequestInputSchema *JSONSchema `json:"instanceAuthRequestInputSchema"`
 	// While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
 	DefaultInstanceAuth *AuthInput `json:"defaultInstanceAuth"`
+	CorrelationIds      *JSON      `json:"correlationIds"`
 }
 
 type CSRFTokenCredentialRequestAuth struct {

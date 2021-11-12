@@ -9,6 +9,7 @@ type Bundle struct {
 	InstanceAuthRequestInputSchema *JSONSchema `json:"InstanceAuthRequestInputSchema"`
 	// When defined, all Auth requests fallback to defaultAuth.
 	DefaultInstanceAuth *Auth `json:"defaultInstanceAuth"`
+	CorrelationIDs      *JSON `json:"correlationIds"`
 	*BaseEntity
 }
 
