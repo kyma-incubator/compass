@@ -171,6 +171,10 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 			}
 
 			for j := range documents[i].APIResources {
+				if documents[i].APIResources[j].TargetURLs == nil || string(documents[i].APIResources[j].TargetURLs) == "[]" {
+					documents[i].APIResources[j].TargetURLs = []byte(`[http://localhost:8080/test]`)
+				}
+
 				if documents[i].APIResources[j].ShortDescription == nil || *documents[i].APIResources[j].ShortDescription == "" {
 					documents[i].APIResources[j].ShortDescription = &emptyString
 				}
