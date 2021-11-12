@@ -14,20 +14,6 @@ type TenantStorageService struct {
 	mock.Mock
 }
 
-// DeleteMany provides a mock function with given fields: ctx, tenantInputs
-func (_m *TenantStorageService) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
-	ret := _m.Called(ctx, tenantInputs)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []model.BusinessTenantMappingInput) error); ok {
-		r0 = rf(ctx, tenantInputs)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // GetInternalTenant provides a mock function with given fields: ctx, externalTenant
 func (_m *TenantStorageService) GetInternalTenant(ctx context.Context, externalTenant string) (string, error) {
 	ret := _m.Called(ctx, externalTenant)
@@ -70,18 +56,4 @@ func (_m *TenantStorageService) List(ctx context.Context) ([]*model.BusinessTena
 	}
 
 	return r0, r1
-}
-
-// UpsertMany provides a mock function with given fields: ctx, tenantInputs
-func (_m *TenantStorageService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
-	ret := _m.Called(ctx, tenantInputs)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) error); ok {
-		r0 = rf(ctx, tenantInputs...)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }
