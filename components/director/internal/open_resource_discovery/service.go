@@ -161,6 +161,10 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 					documents[i].ConsumptionBundles[j].Description = &emptyString
 				}
 
+				if documents[i].ConsumptionBundles[j].ShortDescription == nil || len(*documents[i].ConsumptionBundles[j].ShortDescription) >= 255 {
+					*documents[i].ConsumptionBundles[j].ShortDescription = (*documents[i].ConsumptionBundles[j].ShortDescription)[:255]
+				}
+
 				if documents[i].ConsumptionBundles[j].Description == nil || len(*documents[i].ConsumptionBundles[j].Description) >= 255 {
 					*documents[i].ConsumptionBundles[j].Description = (*documents[i].ConsumptionBundles[j].Description)[:255]
 				}
