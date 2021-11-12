@@ -2,6 +2,7 @@ package httputil
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 )
 
@@ -16,7 +17,7 @@ func GetTimeoutMessage() []byte {
 		Message: "timeout",
 	}})
 	if err != nil {
-		//TODO
+		log.D().Errorf("while marshaling error message  %s",  err.Error())
 	}
 
 	return marshal

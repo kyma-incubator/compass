@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,8 +11,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/nsmodel"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
+	"io"
 	"net/http"
 )
 
@@ -21,18 +25,24 @@ type ApplicationService interface {
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 	GetSystem(ctx context.Context, subaccount, locationID, virtualHost string) (*model.Application, error)
 	MarkAsUnreachable(ctx context.Context, id string) error
-	ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error) //TODO specify location ID in  label filter query
+	ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
 	ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error) //TODO check what tenant will be used to execute this query
 }
 
-func NewHandler(service ApplicationService) *Handler {
-	return &Handler{appSvc: service}
+type TenantService interface {
+	ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
+}
+
+func NewHandler(appSvc ApplicationService, tntSvc TenantService, transact persistence.Transactioner) *Handler {
+	return &Handler{appSvc: appSvc, tntSvc: tntSvc, transact: transact}
 }
 
 type Handler struct {
-	appSvc ApplicationService
+	appSvc   ApplicationService
+	tntSvc   TenantService
+	transact persistence.Transactioner
 }
 
 //Description	Upsert ExposedSystems is a bulk create-or-update operation on exposed on-premise systems. It takes a list of fully described exposed systems, creates the ones CMP isn't aware of and updates the metadata for the ones it is.
@@ -62,12 +72,19 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
-//TODO handle transfer-encoding chunked
-//TODO check if all subaccounts are really subaccounts
-
-	decoder := json.NewDecoder(req.Body)
+	buf := &bytes.Buffer{}
+	_, err := io.Copy(buf, req.Body)
+	if err != nil {
+		logger.Warnf("Failed to retrieve request body: %v\n", err)
+		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
+			Code:    http.StatusBadRequest,
+			Message: "failed to retrieve request body",
+		})
+		return
+	}
+	
 	var reportData nsmodel.Report
-	err := decoder.Decode(&reportData)
+	err = json.Unmarshal(buf.Bytes(), &reportData)
 	if err != nil {
 		logger.Warnf("Got error on decoding Request Body: %v\n", err)
 		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
@@ -86,10 +103,46 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	externalIDToTenant := make(map[string]*model.BusinessTenantMapping, len(reportData.Value))
+	externalIDs := make([]string, 0, len(reportData.Value))
+	for _, scc := range reportData.Value {
+		if _, ok := externalIDToTenant[scc.Subaccount]; !ok {
+			externalIDs = append(externalIDs, scc.Subaccount)
+			externalIDToTenant[scc.Subaccount] = nil
+		}
+	}
+
+	tenants, err := a.listTenantsByExternalIDs(ctx, externalIDs)
+	if err != nil {
+		logger.Warnf("Got error while listing subaccounts: %v\n", err)
+		httputil.RespondWithError(ctx, rw, http.StatusInternalServerError, httputil.Error{
+			Code:    http.StatusInternalServerError,
+			Message: "Update failed",
+		})
+		return
+	}
+
+	//TODO what if there are missing tenants? len(tenants) != len(externalIDs)
+
+	for _, t := range tenants {
+		if t.Type != tenant.Subaccount {
+			logger.Warnf("Got tenant which is not asubaccount")
+			httputil.RespondWithError(ctx, rw, http.StatusInternalServerError, httputil.Error{
+				Code:    http.StatusInternalServerError,
+				Message: "Update failed",
+			})
+			return
+		}
+		externalIDToTenant[t.ExternalTenant] = t
+	}
+
 	reportType := req.URL.Query().Get("reportType")
 
 	if reportType != "full" && reportType != "delta" {
-		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, nsmodel.NewNSError("missing or invalid required report type query parameter"))
+		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
+			Code:    http.StatusBadRequest,
+			Message: "missing or invalid required report type query parameter",
+		})
 		return
 	}
 
@@ -115,35 +168,76 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.Report) {
-	sccFromDb, err := a.appSvc.ListSCCs(ctx, "scc")
+func (a *Handler) listTenantsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
+	tx, err := a.transact.Begin()
 	if err != nil {
-		log.C(ctx).Warnf("Got error while listing SCCs: %v\n", err)
+		log.C(ctx).Warn(errors.Wrapf(err, "while openning transaction"))
+		return nil, err
+	}
+	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+
+	tenants, err := a.tntSvc.ListsByExternalIDs(ctxWithTransaction, ids)
+
+	if err := tx.Commit(); err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
+		return nil, err
 	}
 
-	if len(sccFromDb) == len(reportData.Value) {
+	return tenants, nil
+
+}
+
+func (a *Handler) listSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
+	tx, err := a.transact.Begin()
+	if err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while openning transaction"))
+		return nil, err
+	}
+	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+
+	sccs, err := a.appSvc.ListSCCs(ctxWithTransaction, "scc")
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			log.C(ctx).Warn(errors.Wrapf(err, "while rolling back transaction"))
+		}
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
+		return nil, err
+	}
+
+	return sccs, nil
+
+}
+
+func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.Report) {
+	sccs, err := a.listSCCs(ctx)
+	if err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while listing sccs"))
 		return
 	}
 
-	sccFromNs := make([]*model.SccMetadata, 0, len(reportData.Value))
+	if len(sccs) == len(reportData.Value) {
+		return
+	}
+
+	sccsFromNs := make([]*model.SccMetadata, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
-		sccFromNs = append(sccFromNs, &model.SccMetadata{
+		sccsFromNs = append(sccsFromNs, &model.SccMetadata{
 			Subaccount: scc.Subaccount,
 			LocationId: scc.LocationID,
 		})
 	}
 
-	sccsToMarkAsUnreachable := difference(sccFromDb, sccFromNs)
+	sccsToMarkAsUnreachable := difference(sccs, sccsFromNs)
 	for _, scc := range sccsToMarkAsUnreachable {
 		//TODO add correct tenant in ctx
-		apps, err := a.appSvc.ListBySCC(ctx, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("scc",fmt.Sprintf("{\"locationId\":%s}", scc.LocationId))})
-		if err != nil {
-			log.C(ctx).Warn(errors.Wrapf(err, "while listing all applications for scc with subaccount %s and location id %s", scc.Subaccount, scc.LocationId))
-			continue
-		}
-		for _, system := range apps {
-			if err := a.appSvc.MarkAsUnreachable(ctx, system.App.ID); err != nil {
-				log.C(ctx).Warn(errors.Wrapf(err, "while marking application with id %s as unreachable", system.App.ID))
+		appsWithLabels, ok := a.listAppsByScc(ctx, scc.Subaccount, scc.LocationId)
+		if ok {
+			for _, appWithLabels := range appsWithLabels {
+				a.markSystemAsUnreachable(ctx, appWithLabels.App)
 			}
 		}
 	}
@@ -168,21 +262,39 @@ func (a *Handler) handleSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 	success := true
 	for _, system := range scc.ExposedSystems {
-		//TODO open transaction
+		tx, err := a.transact.Begin()
+		if err != nil {
+			log.C(ctx).Warn(errors.Wrapf(err, "while openning transaction"))
+			return false
+		}
+		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+
+		var txSucceeded bool
 		if system.SystemNumber != "" {
-			if _, err := a.appSvc.Upsert(ctx, nsmodel.ToAppRegisterInput(system, scc.LocationID)); err != nil {
-				success = false
-				log.C(ctx).Warn(errors.Wrapf(err, "while upserting Application"))
+			txSucceeded = a.upsertWithSystemNumber(ctxWithTransaction, scc, system)
+		} else {
+			txSucceeded = a.upsert(ctxWithTransaction, scc, system)
+		}
+
+		if txSucceeded {
+			if err := tx.Commit(); err != nil {
+				log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
 			}
-			continue
 		}
 
-		if ok := a.upsert(ctx, scc, system); !ok {
-			success = false
-		}
-
+		a.transact.RollbackUnlessCommitted(ctx, tx)
+		success = success && txSucceeded
 	}
 	return success
+}
+
+func (a *Handler) upsertWithSystemNumber(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
+	if _, err := a.appSvc.Upsert(ctx, nsmodel.ToAppRegisterInput(system, scc.LocationID)); err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while upserting Application"))
+		return false
+	}
+
+	return true
 }
 
 func (a *Handler) upsert(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
@@ -235,21 +347,65 @@ func (a *Handler) updateSystem(ctx context.Context, system nsmodel.System, app *
 }
 
 func (a *Handler) markAsUnreachable(ctx context.Context, scc nsmodel.SCC) bool {
-	success := true
-	apps, err := a.appSvc.ListBySCC(ctx, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("scc",fmt.Sprintf("{\"locationId\":%s}", scc.LocationID))})
-	if err != nil {
-		success = false
-		log.C(ctx).Warn(errors.Wrapf(err, "while listing all applications for scc with subaccount %s and location id %s", scc.Subaccount, scc.LocationID))
+	apps, ok := a.listAppsByScc(ctx, scc.Subaccount, scc.LocationID)
+	if !ok {
+		return false
 	}
 
+	success := true
 	unreachable := filterUnreachable(apps, scc.ExposedSystems)
 	for _, system := range unreachable {
-		if err := a.appSvc.MarkAsUnreachable(ctx, system.ID); err != nil {
-			success = false
-			log.C(ctx).Warn(errors.Wrapf(err, "while marking application with id %s as unreachable", system.ID))
-		}
+		success = a.markSystemAsUnreachable(ctx, system) && success
 	}
 	return success
+}
+
+func (a *Handler) markSystemAsUnreachable(ctx context.Context, system *model.Application) bool {
+	tx, err := a.transact.Begin()
+	if err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while openning transaction"))
+		return false
+	}
+	defer a.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+
+	if err := a.appSvc.MarkAsUnreachable(ctxWithTransaction, system.ID); err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while marking application with id %s as unreachable", system.ID))
+		return false
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
+		return false
+	}
+
+	return true
+}
+
+func (a *Handler) listAppsByScc(ctx context.Context, subaccount, locationID string) ([]*model.ApplicationWithLabel, bool) {
+	tx, err := a.transact.Begin()
+	if err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while openning transaction"))
+		return nil, false
+	}
+	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+
+	apps, err := a.appSvc.ListBySCC(ctxWithTransaction, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", locationID))})
+	if err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while listing all applications for scc with subaccount %s and location id %s", subaccount, locationID))
+		if err := tx.Rollback(); err != nil {
+			log.C(ctx).Warn(errors.Wrapf(err, "while rolling back transaction"))
+		}
+		return nil, false
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
+		return nil, false
+	}
+
+	return apps, true
 }
 
 func filterUnreachable(apps []*model.ApplicationWithLabel, systems []nsmodel.System) []*model.Application {

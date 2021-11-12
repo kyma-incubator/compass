@@ -4,20 +4,6 @@ import "fmt"
 
 const systemNotFoundErrMsgFormat = "system with subaccount [%s], location id [%s] and host [%s] does not exist"
 
-type NSError struct {
-	message string
-}
-
-func NewNSError(msg string) *NSError {
-	return &NSError{
-		message: msg,
-	}
-}
-
-func (m *NSError) Error() string {
-	return m.message
-}
-
 type SystemNotFoundError struct {
 	msg string
 }
