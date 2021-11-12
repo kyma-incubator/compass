@@ -150,6 +150,19 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 		}
 	}
 	if len(documents) > 0 {
+		emptyString := "-empty-"
+		for i := range documents {
+			for j := range documents[i].ConsumptionBundles {
+				if documents[i].ConsumptionBundles[j].ShortDescription == nil || *documents[i].ConsumptionBundles[j].ShortDescription == "" {
+					documents[i].ConsumptionBundles[j].ShortDescription = &emptyString
+				}
+
+				if documents[i].ConsumptionBundles[j].Description == nil || *documents[i].ConsumptionBundles[j].Description == "" {
+					documents[i].ConsumptionBundles[j].Description = &emptyString
+				}
+			}
+		}
+
 		log.C(ctx).Info("Processing ORD documents")
 		if err := s.processDocuments(ctx, app.ID, baseURL, documents); err != nil {
 			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
