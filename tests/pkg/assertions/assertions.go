@@ -3,6 +3,7 @@ package assertions
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strconv"
 	"strings"
 	"testing"
@@ -527,12 +528,15 @@ func AssertBundleCorrelationIds(t *testing.T, respBody string, entitiesMap map[s
 		entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
 		require.NotEmpty(t, entityTitle)
 
+		log.D().Printf("ENTITY TITLE %s\n", entityTitle)
 		correlationIds := gjson.Get(respBody, fmt.Sprintf("value.%d.correlationIds", i)).Array()
 		bundleCorrelationIdsAsString := make([]string, 0)
 		for _, id := range correlationIds {
 			bundleCorrelationIdsAsString = append(bundleCorrelationIdsAsString, id.String())
 		}
 		expectedCorrelationIds := entitiesMap[entityTitle]
+		log.D().Printf("EXPECTED IDS %v\n", expectedCorrelationIds)
+		log.D().Printf("ACTUAL IDS %v\n", bundleCorrelationIdsAsString)
 		assert.True(t, unorderedEqual(expectedCorrelationIds, bundleCorrelationIdsAsString))
 	}
 }
