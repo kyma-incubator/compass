@@ -3,10 +3,11 @@ package assertions
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/tidwall/gjson"
 
