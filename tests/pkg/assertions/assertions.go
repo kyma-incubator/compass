@@ -3,6 +3,10 @@ package assertions
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
@@ -10,9 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func AssertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actualApp graphql.ApplicationExt) {
