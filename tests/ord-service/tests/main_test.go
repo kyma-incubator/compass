@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -67,6 +68,7 @@ type config struct {
 	CA ConnectorCAConfig
 
 	DirectorURL                      string
+	DirectorExternalCertSecuredURL   string
 	ORDServiceURL                    string
 	ORDExternalCertSecuredServiceURL string
 	ORDServiceStaticPrefix           string
@@ -77,6 +79,8 @@ type config struct {
 	ClientSecret                     string
 	SubscriptionProviderLabelKey     string
 	ConsumerSubaccountIdsLabelKey    string
+	SelfRegisterDistinguishLabelKey  string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
+	SelfRegisterLabelKey             string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
 }
 
 var testConfig config
@@ -90,12 +94,14 @@ func TestMain(m *testing.M) {
 	tenant.TestTenants.Init()
 	defer tenant.TestTenants.Cleanup()
 
-	k8sClientSet, err := clients.NewK8SClientSet(context.Background(), time.Second, time.Minute, time.Minute)
+	ctx := context.Background()
+
+	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
 	}
 
-	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CA.SecretNamespace).Get(context.Background(), testConfig.CA.SecretName, metav1.GetOptions{})
+	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CA.SecretNamespace).Get(ctx, testConfig.CA.SecretName, metav1.GetOptions{})
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
 	}

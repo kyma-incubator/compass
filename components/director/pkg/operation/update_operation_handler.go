@@ -40,10 +40,11 @@ import (
 
 // OperationRequest is the expected request body when updating certain operation status
 type OperationRequest struct {
-	OperationType OperationType `json:"operation_type,omitempty"`
-	ResourceType  resource.Type `json:"resource_type"`
-	ResourceID    string        `json:"resource_id"`
-	Error         string        `json:"error"`
+	OperationType     OperationType `json:"operation_type,omitempty"`
+	ResourceType      resource.Type `json:"resource_type"`
+	ResourceID        string        `json:"resource_id"`
+	Error             string        `json:"error"`
+	OperationCategory string        `json:"operation_category,omitempty"`
 }
 
 // ResourceUpdaterFunc defines a function which updates a particular resource ready and error status
@@ -66,6 +67,9 @@ type errResponse struct {
 type operationError struct {
 	Error string `json:"error"`
 }
+
+// OperationCategoryUnpairApplication Operation category for unpair application mutation. It's used determine the operation status
+const OperationCategoryUnpairApplication = "unpairApplication"
 
 // NewUpdateOperationHandler creates a new handler struct to update resource by operation
 func NewUpdateOperationHandler(transact persistence.Transactioner, resourceUpdaterFuncs map[resource.Type]ResourceUpdaterFunc, resourceDeleterFuncs map[resource.Type]ResourceDeleterFunc) *updateOperationHandler {
@@ -117,8 +121,7 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 		return
 	}
 
-	appConditionStatus := determineApplicationFinalStatus(operation.OperationType, opError)
-
+	appConditionStatus := determineApplicationFinalStatus(operation, opError)
 	switch operation.OperationType {
 	case OperationTypeCreate:
 		fallthrough
@@ -159,6 +162,7 @@ func operationRequestFromBody(ctx context.Context, request *http.Request) (*Oper
 	if err != nil {
 		return nil, &errResponse{apperrors.NewInternalError("Unable to read request body"), http.StatusInternalServerError}
 	}
+
 	defer func() {
 		err := request.Body.Close()
 		if err != nil {
@@ -189,18 +193,25 @@ func stringifiedJSONError(errorMsg string) (*string, error) {
 	return &stringifiedErr, nil
 }
 
-func determineApplicationFinalStatus(opType OperationType, opError *string) model.ApplicationStatusCondition {
+func determineApplicationFinalStatus(op *OperationRequest, opError *string) model.ApplicationStatusCondition {
 	appConditionStatus := model.ApplicationStatusConditionInitial
-	switch opType {
+	switch op.OperationType {
 	case OperationTypeCreate:
 		appConditionStatus = model.ApplicationStatusConditionCreateSucceeded
 		if opError != nil || str.PtrStrToStr(opError) != "" {
 			appConditionStatus = model.ApplicationStatusConditionCreateFailed
 		}
 	case OperationTypeUpdate:
-		appConditionStatus = model.ApplicationStatusConditionUpdateSucceeded
-		if opError != nil || str.PtrStrToStr(opError) != "" {
-			appConditionStatus = model.ApplicationStatusConditionUpdateFailed
+		if op.OperationCategory == OperationCategoryUnpairApplication {
+			appConditionStatus = model.ApplicationStatusConditionInitial
+			if opError != nil || str.PtrStrToStr(opError) != "" {
+				appConditionStatus = model.ApplicationStatusConditionUnpairFailed
+			}
+		} else {
+			appConditionStatus = model.ApplicationStatusConditionUpdateSucceeded
+			if opError != nil || str.PtrStrToStr(opError) != "" {
+				appConditionStatus = model.ApplicationStatusConditionUpdateFailed
+			}
 		}
 	case OperationTypeDelete:
 		appConditionStatus = model.ApplicationStatusConditionDeleteSucceeded

@@ -104,6 +104,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		applicationTemplateID
 		labels
 		deletedAt
+		updatedAt
 		error
 		status {condition timestamp}
 		webhooks {%s}

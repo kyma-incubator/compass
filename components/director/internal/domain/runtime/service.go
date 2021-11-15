@@ -28,6 +28,7 @@ type RuntimeRepository interface {
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	ListAll(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Create(ctx context.Context, item *model.Runtime) error
 	Update(ctx context.Context, item *model.Runtime) error
 	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
@@ -55,7 +56,7 @@ type LabelUpsertService interface {
 //go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
+	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
 }
 
 // ScenarioAssignmentEngine missing godoc
@@ -171,6 +172,20 @@ func (s *service) ListByFiltersGlobal(ctx context.Context, filters []*labelfilte
 	return runtimes, nil
 }
 
+// ListByFilters lists all runtimes in a given tenant that match given label filter.
+func (s *service) ListByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
+	rtmTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtimes, err := s.repo.ListAll(ctx, rtmTenant, filters)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo")
+	}
+	return runtimes, nil
+}
+
 // Exist missing godoc
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
@@ -200,11 +215,6 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return "", errors.Wrapf(err, "while creating Runtime")
 	}
 
-	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, rtmTenant)
-	if err != nil {
-		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
-	}
-
 	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, in.Labels)
 	if err != nil {
 		return "", errors.Wrap(err, "while merging scenarios from input and assignments")
@@ -213,7 +223,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	if len(scenarios) > 0 {
 		in.Labels[model.ScenariosKey] = scenarios
 	} else {
-		s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
+		s.scenariosService.AddDefaultScenarioIfEnabled(ctx, rtmTenant, &in.Labels)
 	}
 
 	if in.Labels == nil || in.Labels[IsNormalizedLabel] == nil {

@@ -346,7 +346,7 @@ func TestSyncSystems(t *testing.T) {
 				persistTx := &pAutomock.PersistenceTx{}
 
 				transactioner.On("Begin").Return(persistTx, nil).Once()
-				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
+				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 
 				return mockedTx, transactioner
 			},
@@ -388,7 +388,7 @@ func TestSyncSystems(t *testing.T) {
 				persistTx := &pAutomock.PersistenceTx{}
 
 				transactioner.On("Begin").Return(persistTx, nil).Once()
-				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
+				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 
 				return mockedTx, transactioner
 			},

@@ -18,11 +18,15 @@ import (
 
 // OAuth2Config missing godoc
 type OAuth2Config struct {
-	ClientID             string   `envconfig:"APP_OAUTH_CLIENT_ID"`
-	ClientSecret         string   `envconfig:"APP_OAUTH_CLIENT_SECRET"`
-	TokenEndpointPattern string   `envconfig:"APP_OAUTH_TOKEN_ENDPOINT_PATTERN"`
-	TenantHeaderName     string   `envconfig:"APP_OAUTH_TENANT_HEADER_NAME"`
-	ScopesClaim          []string `envconfig:"APP_OAUTH_SCOPES_CLAIM"`
+	ClientID              string   `envconfig:"APP_OAUTH_CLIENT_ID"`
+	TokenBaseURL          string   `envconfig:"APP_OAUTH_TOKEN_BASE_URL"`
+	TokenPath             string   `envconfig:"APP_OAUTH_TOKEN_PATH"`
+	TokenEndpointProtocol string   `envconfig:"APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL"`
+	ClientSecret          string   `envconfig:"APP_OAUTH_CLIENT_SECRET"`
+	TenantHeaderName      string   `envconfig:"APP_OAUTH_TENANT_HEADER_NAME"`
+	ScopesClaim           []string `envconfig:"APP_OAUTH_SCOPES_CLAIM"`
+
+	TokenEndpointPattern string `envconfig:"-"`
 }
 
 // APIConfig missing godoc
@@ -50,7 +54,7 @@ func DefaultClientCreator(ctx context.Context, oAuth2Config OAuth2Config) *http.
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
 		ClientSecret: oAuth2Config.ClientSecret,
-		TokenURL:     oAuth2Config.TokenEndpointPattern,
+		TokenURL:     oAuth2Config.TokenEndpointProtocol + "://" + oAuth2Config.TokenBaseURL + oAuth2Config.TokenPath,
 		Scopes:       oAuth2Config.ScopesClaim,
 	}
 

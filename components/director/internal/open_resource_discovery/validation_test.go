@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
@@ -327,10 +329,131 @@ var (
 	invalidSuccessorsDueToInvalidEventRegex = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1", "invalid-event-successor"]`
 )
 
+func TestConfig_ValidateConfig(t *testing.T) {
+	var tests = []struct {
+		Name              string
+		ConfigProvider    func() ord.WellKnownConfig
+		BaseURL           string
+		ExpectedToBeValid bool
+	}{
+		{
+			Name: "Invalid 'baseURL' field for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.BaseURL = baseURL + "/full/path"
+				return *config
+			},
+		},
+		{
+			Name: "Missing 'OpenResourceDiscoveryV1' field for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1 = ord.OpenResourceDiscoveryV1{}
+				return *config
+			},
+		},
+		{
+			Name: "Missing 'url' field for document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].URL = ""
+				return *config
+			},
+		},
+		{
+			Name: "Missing 'accessStrategies' field for document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies = nil
+				return *config
+			},
+		},
+		{
+			Name: "Missing 'type' field for 'accessStrategies' field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = ""
+				return *config
+			},
+		},
+		{
+			Name: "Invalid field `type` for `accessStrategies` field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = invalidType
+				return *config
+			},
+		},
+		{
+			Name: "Invalid field `customType` when field `type` is not `custom` for `accessStrategies` field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = accessstrategy.OpenAccessStrategy
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomType = "foo"
+
+				return *config
+			},
+		},
+		{
+			Name: "Invalid field `customType` when field `type` is `custom` for `accessStrategies` field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = accessstrategy.CustomAccessStrategy
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomType = invalidCustomType
+
+				return *config
+			},
+		},
+		{
+			Name: "Field `type` is not `custom` when `customType` is valid for `accessStrategies` field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = accessstrategy.OpenAccessStrategy
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomType = "sap:custom-definition-format:v1"
+
+				return *config
+			},
+		},
+		{
+			Name: "Invalid field `customDescription` when field `type` is not `custom` for `accessStrategies` field of document for config",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = accessstrategy.OpenAccessStrategy
+				config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomDescription = "foo"
+
+				return *config
+			},
+		},
+		{
+			Name: "Invalid when webhookURL is not /well-known, no config baseURL is set => empty baseURL and documents have relative URLs",
+			ConfigProvider: func() ord.WellKnownConfig {
+				config := fixWellKnownConfig()
+				config.BaseURL = ""
+
+				return *config
+			},
+			BaseURL: "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			cfg := test.ConfigProvider()
+			err := cfg.Validate(test.BaseURL)
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 func TestDocuments_ValidateSystemInstance(t *testing.T) {
 	var tests = []struct {
 		Name              string
 		DocumentProvider  func() []*ord.Document
+		CalculatedBaseURL *string
 		ExpectedToBeValid bool
 	}{
 		{
@@ -382,13 +505,32 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "`baseUrl` of `DescribedSystemInstance` does not match the webhook Url",
+			Name: "`baseUrl` of `DescribedSystemInstance` does not match the calculated baseURL",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.DescribedSystemInstance.BaseURL = str.Ptr(baseURL2)
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "No `baseUrl` of `DescribedSystemInstance` is provided when the calculated baseURL is empty",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance = nil
+
+				return []*ord.Document{doc}
+			},
+			CalculatedBaseURL: str.Ptr(""),
+		}, {
+			Name: "`baseUrl` of `DescribedSystemInstance` is different for each document when the calculated baseURL is empty",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc2 := fixORDDocument()
+				doc2.DescribedSystemInstance.BaseURL = str.Ptr(baseURL2)
+
+				return []*ord.Document{doc, doc2}
+			},
+			CalculatedBaseURL: str.Ptr(""),
 		}, {
 			Name: "Invalid JSON `Labels` field for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
@@ -434,8 +576,21 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
+			var docs ord.Documents
+			if len(test.DocumentProvider()) == 0 {
+				docs = ord.Documents{test.DocumentProvider()[0]}
+			} else {
+				docs = test.DocumentProvider()
+			}
+
+			var url string
+			if test.CalculatedBaseURL != nil {
+				url = *test.CalculatedBaseURL
+			} else {
+				url = baseURL
+			}
+
+			err := docs.Validate(url, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {

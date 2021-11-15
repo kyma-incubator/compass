@@ -56,6 +56,7 @@ func (c *converter) ToEntity(in model.Label) (Entity, error) {
 		RuntimeContextID: rtmCtxID,
 		Key:              in.Key,
 		Value:            string(valueMarshalled),
+		Version:          in.Version,
 	}, nil
 }
 
@@ -90,5 +91,6 @@ func (c *converter) FromEntity(in Entity) (model.Label, error) {
 		ObjectType: objectType,
 		Key:        in.Key,
 		Value:      valueUnmarshalled,
+		Version:    in.Version,
 	}, nil
 }

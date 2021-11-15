@@ -41,6 +41,8 @@ models:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.JSON"
   PageCursor:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.PageCursor"
+  Formation:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Formation"
   Application:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Application"
     fields:
@@ -155,14 +157,15 @@ models:
         resolver: true
       rawEncoded:
         resolver: true
+
   ApplicationTemplate:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationTemplate"
     fields:
       webhooks:
         resolver: true
+
   Tenant:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Tenant"
     fields:
       labels:
         resolver: true
-

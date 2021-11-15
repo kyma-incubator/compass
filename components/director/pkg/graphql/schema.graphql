@@ -64,6 +64,8 @@ enum ApplicationStatusCondition {
 	DELETING
 	DELETE_FAILED
 	DELETE_SUCCEEDED
+	UNPAIRING
+	UNPAIR_FAILED
 }
 
 enum ApplicationTemplateAccessLevel {
@@ -106,6 +108,11 @@ enum FetchRequestStatusCondition {
 	INITIAL
 	SUCCEEDED
 	FAILED
+}
+
+enum FormationObjectType {
+	APPLICATION
+	TENANT
 }
 
 enum HealthCheckStatusCondition {
@@ -158,6 +165,7 @@ enum WebhookType {
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
+	UNPAIR_APPLICATION
 }
 
 interface OneTimeToken {
@@ -517,6 +525,10 @@ input FetchRequestInput {
 	Currently unsupported, providing it will result in a failure
 	"""
 	filter: String
+}
+
+input FormationInput {
+	name: String!
 }
 
 input IntegrationSystemInput {
@@ -919,6 +931,10 @@ type FetchRequestStatus {
 	timestamp: Timestamp!
 }
 
+type Formation {
+	name: String!
+}
+
 type HealthCheck {
 	type: HealthCheckType!
 	condition: HealthCheckStatusCondition!
@@ -1215,6 +1231,7 @@ type Mutation {
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
 	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(operationType: DELETE, idField: "id", webhookType: UNREGISTER_APPLICATION)
+	unpairApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unpairApplication") @async(operationType: UPDATE, idField: "id", webhookType: UNPAIR_APPLICATION)
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
@@ -1337,6 +1354,10 @@ type Mutation {
 	- [delete document](examples/delete-document/delete-document.graphql)
 	"""
 	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
+	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	deleteFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.deleteFormation")
+	assignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.assignFormation")
+	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
 	"""
 	**Examples**
 	- [create label definition](examples/create-label-definition/create-label-definition.graphql)

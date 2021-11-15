@@ -1,4 +1,3 @@
-# Required scopes for specific GraphQL operations
 graphql:
   query:
     applications: ["application:read"]
@@ -53,6 +52,10 @@ graphql:
     refetchEventAPISpec: ["application:write"]
     addDocumentToBundle: ["application:write"]
     deleteDocument: ["application:write"]
+    createFormation: ["formation:write"]
+    deleteFormation: ["formation:write"]
+    assignFormation: ["formation:write"]
+    unassignFormation: ["formation:write"]
     createLabelDefinition: ["label_definition:write"]
     updateLabelDefinition: ["label_definition:write"]
     deleteLabelDefinition: ["label_definition:write"]
@@ -135,6 +138,7 @@ clientCredentialsRegistrationScopes:
     - "integration_system.auths:read"
     - "application.webhooks:read"
     - "application_template.webhooks:read"
+    - "formation:write"
 applicationHideSelectors:
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"

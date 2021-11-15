@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -171,9 +174,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -221,9 +223,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -271,9 +272,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -356,9 +356,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &normalizedModelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &normalizedModelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -440,8 +439,7 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -482,9 +480,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						model.ScenariosKey: model.ScenariosDefaultValue,
@@ -530,8 +527,7 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &defaultLabelsWithoutIntSys).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &defaultLabelsWithoutIntSys).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -554,46 +550,6 @@ func TestService_Create(t *testing.T) {
 				Labels: defaultLabelsWithoutIntSys,
 			},
 			ExpectedErr: nil,
-		},
-		{
-			Name:              "Returns errors when ensuring scenarios label definition failed",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				return repo
-			},
-			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-				repo := &automock.IntegrationSystemRepository{}
-				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
-				return repo
-			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(testErr).Once()
-				return repo
-			},
-			LabelServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
-				return svc
-			},
-			BundleServiceFn: func() *automock.BundleService {
-				svc := &automock.BundleService{}
-				return svc
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
 		},
 		{
 			Name:              "Returns error when application creation failed",
@@ -762,9 +718,8 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -981,9 +936,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -1031,9 +985,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -1081,9 +1034,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -1166,9 +1118,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &normalizedModelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &normalizedModelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -1250,8 +1201,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -1292,9 +1242,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						model.ScenariosKey: model.ScenariosDefaultValue,
@@ -1340,8 +1289,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &defaultLabelsWithoutIntSys).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &defaultLabelsWithoutIntSys).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -1364,46 +1312,6 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				Labels: defaultLabelsWithoutIntSys,
 			},
 			ExpectedErr: nil,
-		},
-		{
-			Name:              "Returns errors when ensuring scenarios label definition failed",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				return repo
-			},
-			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-				repo := &automock.IntegrationSystemRepository{}
-				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
-				return repo
-			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(testErr).Once()
-				return repo
-			},
-			LabelServiceFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
-				return svc
-			},
-			BundleServiceFn: func() *automock.BundleService {
-				svc := &automock.BundleService{}
-				return svc
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
 		},
 		{
 			Name:              "Returns error when application creation failed",
@@ -1572,9 +1480,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
-				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(1).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -1725,8 +1632,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, tnt, mock.Anything)
 				return scenarioSvc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -1782,8 +1688,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, tnt, mock.Anything)
 				return scenarioSvc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -1844,8 +1749,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, tnt, mock.Anything)
 				return scenarioSvc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -1933,8 +1837,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				scenarioSvc := &automock.ScenariosService{}
-				scenarioSvc.On("EnsureScenariosLabelDefinitionExists", ctx, mock.Anything).Return(nil)
-				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, mock.Anything)
+				scenarioSvc.On("AddDefaultScenarioIfEnabled", ctx, tnt, mock.Anything)
 				return scenarioSvc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -2420,7 +2323,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Success when application is part of a scenario but not in runtime",
+			Name: "Success when application is part of a scenario but not with runtime",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil).Once()
@@ -2463,7 +2366,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when application is part of a scenario and a runtime",
+			Name: "Returns error when application is part of a scenario with runtime",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
@@ -2505,6 +2408,285 @@ func TestService_Delete(t *testing.T) {
 			}
 
 			appRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_Unpair(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System foo is still used and cannot be deleted. Unassign the system from the following formations first: Easter. Then, unassign the system from the following runtimes, too: test-runtime]")
+	id := "foo"
+	desc := "Lorem ipsum"
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	scenarios := []interface{}{"Easter"}
+	scenarioLabel := &model.Label{
+		ID:    uuid.New().String(),
+		Key:   model.ScenariosKey,
+		Value: scenarios,
+	}
+
+	emptyScenarioLabel := &model.Label{
+		ID:    uuid.New().String(),
+		Key:   model.ScenariosKey,
+		Value: []interface{}{},
+	}
+
+	timestamp := time.Now()
+
+	applicationModel := &model.Application{
+		Name:        "foo",
+		Description: &desc,
+		Tenant:      tnt,
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionConnected,
+			Timestamp: timestamp,
+		},
+		BaseEntity: &model.BaseEntity{ID: id},
+	}
+
+	applicationModelWithInitialStatus := &model.Application{
+		Name:        "foo",
+		Description: &desc,
+		Tenant:      tnt,
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionInitial,
+			Timestamp: timestamp,
+		},
+		BaseEntity: &model.BaseEntity{ID: id},
+	}
+
+	runtimeModel := &model.Runtime{
+		Name:   "test-runtime",
+		Tenant: tnt,
+	}
+
+	ctx := context.Background()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		AppRepoFn          func() *automock.ApplicationRepository
+		LabelRepoFn        func() *automock.LabelRepository
+		RuntimeRepoFn      func() *automock.RuntimeRepository
+		Input              model.ApplicationRegisterInput
+		ContextFn          func() context.Context
+		InputID            string
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Update", ctx, applicationModelWithInitialStatus).Return(nil).Once()
+				repo.On("Exists", ctx, applicationModelWithInitialStatus.Tenant, applicationModelWithInitialStatus.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, applicationModelWithInitialStatus.Tenant, applicationModelWithInitialStatus.ID).Return(applicationModelWithInitialStatus, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			ContextFn: func() context.Context {
+				ctx := context.Background()
+
+				return ctx
+			},
+			InputID: id,
+		},
+		{
+			Name: "Success when application is part of a scenario but not with runtime",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Update", ctx, applicationModel).Return(nil).Once()
+				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			ContextFn: func() context.Context {
+				ctx := context.Background()
+
+				return ctx
+			},
+			InputID: id,
+		},
+		{
+			Name: "Success when operation type is SYNC and sets the application status to INITIAL",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Update", mock.Anything, applicationModelWithInitialStatus).Return(nil).Once()
+				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			InputID: id,
+			ContextFn: func() context.Context {
+				backgroundCtx := context.Background()
+				return backgroundCtx
+			},
+		},
+		{
+			Name: "Success when operation type is ASYNC and does not change the application status",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Update", mock.Anything, applicationModel).Return(nil).Once()
+				repo.On("Exists", mock.Anything, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", mock.Anything, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", mock.Anything, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", mock.Anything, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			InputID: id,
+			ContextFn: func() context.Context {
+				backgroundCtx := context.Background()
+				backgroundCtx = operation.SaveModeToContext(backgroundCtx, graphql.OperationModeAsync)
+				return backgroundCtx
+			},
+		},
+		{
+			Name: "Returns error when application fetch failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil, testErr).Once()
+				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.AssertNotCalled(t, "Update")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			ContextFn: func() context.Context {
+				ctx := context.Background()
+
+				return ctx
+			},
+			InputID:            id,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when application is part of a scenario with runtime",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "Delete")
+				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				repo.AssertNotCalled(t, "Update")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{runtimeModel}, nil)
+				return repo
+			},
+			ContextFn: func() context.Context {
+				ctx := context.Background()
+
+				return ctx
+			},
+			InputID:            id,
+			ExpectedErrMessage: formationAndRuntimeError.Error(),
+		},
+		{
+			Name: "Returns error when update fails",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "Delete")
+				repo.On("Update", ctx, applicationModel).Return(testErr).Once()
+				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			ContextFn: func() context.Context {
+				ctx := context.Background()
+
+				return ctx
+			},
+			InputID:            id,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			appRepo := testCase.AppRepoFn()
+			labelRepo := testCase.LabelRepoFn()
+			runtimeRepo := testCase.RuntimeRepoFn()
+			ctx := testCase.ContextFn()
+			ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
+			svc.SetTimestampGen(func() time.Time { return timestamp })
+			// when
+			err := svc.Unpair(ctx, testCase.InputID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			appRepo.AssertExpectations(t)
+			labelRepo.AssertExpectations(t)
+			runtimeRepo.AssertExpectations(t)
 		})
 	}
 }

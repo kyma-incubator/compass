@@ -48,6 +48,7 @@ func (c *converter) ToEntity(in model.LabelDefinition) (Entity, error) {
 		ID:       in.ID,
 		Key:      in.Key,
 		TenantID: in.Tenant,
+		Version:  in.Version,
 	}
 	if in.Schema != nil {
 		b, err := json.Marshal(in.Schema)
@@ -64,9 +65,10 @@ func (c *converter) ToEntity(in model.LabelDefinition) (Entity, error) {
 // FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) (model.LabelDefinition, error) {
 	out := model.LabelDefinition{
-		ID:     in.ID,
-		Key:    in.Key,
-		Tenant: in.TenantID,
+		ID:      in.ID,
+		Key:     in.Key,
+		Tenant:  in.TenantID,
+		Version: in.Version,
 	}
 	if in.SchemaJSON.Valid {
 		mapDest := map[string]interface{}{}

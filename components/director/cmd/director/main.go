@@ -130,6 +130,8 @@ type config struct {
 
 	Features features.Config
 
+	SelfRegConfig runtime.SelfRegConfig
+
 	OperationsNamespace string `envconfig:"default=compass-system"`
 
 	DisableAsyncMode bool `envconfig:"default=false"`
@@ -185,6 +187,7 @@ func main() {
 		Timeout:   cfg.ClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
+	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
 
 	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
@@ -207,6 +210,7 @@ func main() {
 		metricsCollector,
 		httpClient,
 		internalHTTPClient,
+		cfg.SelfRegConfig,
 		cfg.OneTimeToken.Length,
 		adminURL,
 	)
@@ -223,9 +227,10 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
+	claimsValidator := claims.NewValidator(runtimeSvc(cfg), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountIDsLabelKey)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claims.NewValidator())
+	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
 
 	if cfg.JWKSSyncPeriod != 0 {
 		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
@@ -437,23 +442,22 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) func(writer http.ResponseWriter, request *http.Request) {
 	uidSvc := uid.NewService()
 
+	assignmentConv := scenarioassignment.NewConverter()
 	labelConv := label.NewConverter()
 	labelRepo := label.NewRepository(labelConv)
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, defaultScenarioEnabled)
-	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, defaultScenarioEnabled)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	runtimeConv := runtime.NewConverter()
 	runtimeRepo := runtime.NewRepository(runtimeConv)
 
-	scenarioAssignmentConv := scenarioassignment.NewConverter()
-	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo)
 
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
 
-	tenantConv := tenant.NewConverter()
-	tenantRepo := tenant.NewRepository(tenantConv)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	reqDataParser := oathkeeper.NewReqDataParser()
@@ -550,6 +554,7 @@ func webhookService() webhook.WebhookService {
 
 func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHTTPClient *http.Client, pairingAdapters map[string]string) oathkeeper.OneTimeTokenService {
 	uidSvc := uid.NewService()
+	assignmentConv := scenarioassignment.NewConverter()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
@@ -578,8 +583,9 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
-	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	bundleRepo := bundle.NewRepository(packageConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	docRepo := document.NewRepository(docConverter)
@@ -673,4 +679,27 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 		app.Error = errorMsg
 		return appRepo.TechnicalUpdate(ctx, app)
 	}
+}
+
+func runtimeSvc(cfg config) claims.RuntimeService {
+	uidSvc := uid.NewService()
+
+	rtConverter := runtime.NewConverter()
+	rtRepo := runtime.NewRepository(rtConverter)
+
+	lblRepo := label.NewRepository(label.NewConverter())
+
+	assignmentConv := scenarioassignment.NewConverter()
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+
+	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+
+	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
+	labelDefSvc := labeldef.NewService(labelDefRepo, lblRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+
+	labelSvc := label.NewLabelService(lblRepo, labelDefRepo, uidSvc)
+
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, lblRepo, scenarioAssignmentRepo)
+
+	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, cfg.Features.ProtectedLabelPattern)
 }

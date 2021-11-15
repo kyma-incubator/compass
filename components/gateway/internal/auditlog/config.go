@@ -25,6 +25,7 @@ type OAuthConfig struct {
 	OAuthURL     string `envconfig:"APP_AUDITLOG_OAUTH_URL"`
 	User         string `envconfig:"APP_AUDITLOG_OAUTH_USER,default=$USER"`
 	Tenant       string `envconfig:"APP_AUDITLOG_OAUTH_TENANT,default=$PROVIDER"`
+	TokenPath    string `envconfig:"APP_AUDITLOG_TOKEN_PATH"`
 }
 
 type AuthMode string

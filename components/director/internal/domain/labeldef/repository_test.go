@@ -27,13 +27,15 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 	labelDefID := "d048f47b-b700-49ed-913d-180c3748164b"
 	tenantID := "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 	someString := "any"
+	version := 42
 	var someSchema interface{} = someString
 
 	in := model.LabelDefinition{
-		ID:     labelDefID,
-		Tenant: tenantID,
-		Key:    "some-key",
-		Schema: &someSchema,
+		ID:      labelDefID,
+		Tenant:  tenantID,
+		Key:     "some-key",
+		Schema:  &someSchema,
+		Version: version,
 	}
 
 	t.Run("successfully created definition with schema", func(t *testing.T) {
@@ -42,9 +44,9 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		ctx = persistence.SaveToContext(ctx, db)
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
-		escapedQuery := regexp.QuoteMeta("INSERT INTO public.label_definitions ( id, tenant_id, key, schema ) VALUES ( ?, ?, ?, ? )")
-		dbMock.ExpectExec(escapedQuery).WithArgs(labelDefID, tenantID, "some-key", "any").WillReturnResult(sqlmock.NewResult(1, 1))
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
+		escapedQuery := regexp.QuoteMeta("INSERT INTO public.label_definitions ( id, tenant_id, key, schema, version ) VALUES ( ?, ?, ?, ?, ? )")
+		dbMock.ExpectExec(escapedQuery).WithArgs(labelDefID, tenantID, "some-key", "any", version).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		defer dbMock.AssertExpectations(t)
 		sut := labeldef.NewRepository(mockConverter)
@@ -60,9 +62,9 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		ctx = persistence.SaveToContext(ctx, db)
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID}, nil)
-		escapedQuery := regexp.QuoteMeta("INSERT INTO public.label_definitions ( id, tenant_id, key, schema ) VALUES ( ?, ?, ?, ? )")
-		dbMock.ExpectExec(escapedQuery).WithArgs(labelDefID, tenantID, "some-key", nil).WillReturnResult(sqlmock.NewResult(1, 1))
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{}, Version: version}, nil)
+		escapedQuery := regexp.QuoteMeta("INSERT INTO public.label_definitions ( id, tenant_id, key, schema, version ) VALUES ( ?, ?, ?, ?, ? )")
+		dbMock.ExpectExec(escapedQuery).WithArgs(labelDefID, tenantID, "some-key", nil, version).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer dbMock.AssertExpectations(t)
 		sut := labeldef.NewRepository(mockConverter)
 		// WHEN
@@ -74,13 +76,13 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 	t.Run("returns error if insert fails", func(t *testing.T) {
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
 
 		sut := labeldef.NewRepository(mockConverter)
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
-		escapedQuery := regexp.QuoteMeta("INSERT INTO public.label_definitions ( id, tenant_id, key, schema ) VALUES ( ?, ?, ?, ? )")
+		escapedQuery := regexp.QuoteMeta("INSERT INTO public.label_definitions ( id, tenant_id, key, schema, version ) VALUES ( ?, ?, ?, ?, ? )")
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
 		defer dbMock.AssertExpectations(t)
 		// WHEN
@@ -95,6 +97,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 	labelDefID := "d048f47b-b700-49ed-913d-180c3748164b"
 	tenantID := "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
 	someString := "any"
+	version := 42
 	var someSchema interface{} = someString
 
 	in := model.LabelDefinition{
@@ -112,9 +115,9 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
 		dbMock.ExpectExec(escapedQuery).WithArgs("any", tenantID, labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer dbMock.AssertExpectations(t)
 
@@ -134,9 +137,9 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID}, nil)
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, Version: version}, nil)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
 		dbMock.ExpectExec(escapedQuery).WithArgs(nil, tenantID, labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer dbMock.AssertExpectations(t)
 
@@ -151,7 +154,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 	t.Run("returns error if update fails", func(t *testing.T) {
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
 
 		sut := labeldef.NewRepository(mockConverter)
 		db, dbMock := testdb.MockDatabase(t)
@@ -159,7 +162,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
 		defer dbMock.AssertExpectations(t)
 
@@ -172,7 +175,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 	t.Run("returns error if update fails", func(t *testing.T) {
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
 
 		sut := labeldef.NewRepository(mockConverter)
 		db, dbMock := testdb.MockDatabase(t)
@@ -180,7 +183,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
 		defer dbMock.AssertExpectations(t)
 
@@ -198,9 +201,9 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ? WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
 		dbMock.ExpectExec(escapedQuery).WithArgs("any", tenantID, labelDefID).WillReturnResult(sqlmock.NewResult(1, 0))
 		defer dbMock.AssertExpectations(t)
 
@@ -209,7 +212,110 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: should update single row, but updated 0 rows")
+		require.EqualError(t, err, "Could not update object due to concurrent update")
+	})
+}
+
+func TestRepositoryUpdateLabelDefinitionWithVersion(t *testing.T) {
+	// GIVEN
+	labelDefID := "d048f47b-b700-49ed-913d-180c3748164b"
+	tenantID := "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
+	someString := "any"
+	version := 42
+	var someSchema interface{} = someString
+
+	in := model.LabelDefinition{
+		ID:     labelDefID,
+		Tenant: tenantID,
+		Key:    "some-key",
+		Schema: &someSchema,
+	}
+
+	t.Run("successfully updated definition with schema", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
+
+		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ? AND version = ?`, fixUpdateTenantIsolationSubquery()))
+		dbMock.ExpectExec(escapedQuery).WithArgs("any", tenantID, labelDefID, version).WillReturnResult(sqlmock.NewResult(1, 1))
+		defer dbMock.AssertExpectations(t)
+
+		sut := labeldef.NewRepository(mockConverter)
+
+		// WHEN
+		err := sut.UpdateWithVersion(ctx, in)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("successfully updated definition without schema", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, Version: version}, nil)
+
+		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ? AND version = ?`, fixUpdateTenantIsolationSubquery()))
+		dbMock.ExpectExec(escapedQuery).WithArgs(nil, tenantID, labelDefID, version).WillReturnResult(sqlmock.NewResult(1, 1))
+		defer dbMock.AssertExpectations(t)
+
+		sut := labeldef.NewRepository(mockConverter)
+
+		// WHEN
+		err := sut.UpdateWithVersion(ctx, in)
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("returns error if update fails", func(t *testing.T) {
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
+
+		sut := labeldef.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+
+		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ? AND version = ?`, fixUpdateTenantIsolationSubquery()))
+		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
+		defer dbMock.AssertExpectations(t)
+
+		// WHEN
+		err := sut.UpdateWithVersion(ctx, in)
+		// THEN
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("returns error if no row was affected by query", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
+
+		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ? AND version = ?`, fixUpdateTenantIsolationSubquery()))
+		dbMock.ExpectExec(escapedQuery).WithArgs("any", tenantID, labelDefID, version).WillReturnResult(sqlmock.NewResult(1, 0))
+		defer dbMock.AssertExpectations(t)
+
+		sut := labeldef.NewRepository(mockConverter)
+
+		// WHEN
+		err := sut.UpdateWithVersion(ctx, in)
+		// THEN
+		require.EqualError(t, err, "Could not update object due to concurrent update")
 	})
 }
 
@@ -312,29 +418,31 @@ func TestRepositoryList(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 
 		mockConverter.On("FromEntity",
-			labeldef.Entity{ID: "id1", TenantID: "tenant", Key: "key1"}).
+			labeldef.Entity{ID: "id1", TenantID: "tenant", Key: "key1", Version: 0}).
 			Return(
 				model.LabelDefinition{
-					ID:     "id1",
-					Tenant: "tenant",
-					Key:    "key1",
+					ID:      "id1",
+					Tenant:  "tenant",
+					Key:     "key1",
+					Version: 0,
 				}, nil)
 		mockConverter.On("FromEntity",
-			labeldef.Entity{ID: "id2", TenantID: "tenant", Key: "key2", SchemaJSON: sql.NullString{Valid: true, String: `{"title":"title"}`}}).
+			labeldef.Entity{ID: "id2", TenantID: "tenant", Key: "key2", SchemaJSON: sql.NullString{Valid: true, String: `{"title":"title"}`}, Version: 0}).
 			Return(
 				model.LabelDefinition{
-					ID:     "id2",
-					Tenant: "tenant",
-					Key:    "key2",
+					ID:      "id2",
+					Tenant:  "tenant",
+					Key:     "key2",
+					Version: 0,
 				}, nil)
 		sut := labeldef.NewRepository(mockConverter)
 
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).
-			AddRow("id1", "tenant", "key1", nil).
-			AddRow("id2", "tenant", "key2", `{"title":"title"}`)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema", "version"}).
+			AddRow("id1", "tenant", "key1", nil, 0).
+			AddRow("id2", "tenant", "key2", `{"title":"title"}`, 0)
 
 		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.label_definitions WHERE %s$`, fixTenantIsolationSubquery())).WithArgs("tenant").WillReturnRows(mockedRows)
 
@@ -347,8 +455,10 @@ func TestRepositoryList(t *testing.T) {
 		require.Len(t, actual, 2)
 		assert.Equal(t, "id1", actual[0].ID)
 		assert.Equal(t, "key1", actual[0].Key)
+		assert.Equal(t, 0, actual[0].Version)
 		assert.Equal(t, "id2", actual[1].ID)
 		assert.Equal(t, "key2", actual[1].Key)
+		assert.Equal(t, 0, actual[1].Version)
 	})
 	t.Run("returns empty list of Label Definitions if given tenant has nothing defined", func(t *testing.T) {
 		// GIVEN
@@ -357,7 +467,7 @@ func TestRepositoryList(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"})
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema", "version"})
 
 		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.label_definitions WHERE %s$`, fixTenantIsolationSubquery())).WithArgs("tenant").WillReturnRows(mockedRows)
 
@@ -376,7 +486,7 @@ func TestRepositoryList(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 
 		mockConverter.On("FromEntity",
-			labeldef.Entity{ID: "id1", TenantID: "tenant", Key: "key1"}).
+			labeldef.Entity{ID: "id1", TenantID: "tenant", Key: "key1", Version: 0}).
 			Return(
 				model.LabelDefinition{}, errors.New("conversion error"))
 
@@ -385,9 +495,9 @@ func TestRepositoryList(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).
-			AddRow("id1", "tenant", "key1", nil).
-			AddRow("id2", "tenant", "key2", `{"title":"title"}`)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema", "version"}).
+			AddRow("id1", "tenant", "key1", nil, 0).
+			AddRow("id2", "tenant", "key2", `{"title":"title"}`, 0)
 
 		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.label_definitions WHERE %s$`, fixTenantIsolationSubquery())).WithArgs("tenant").WillReturnRows(mockedRows)
 
@@ -554,12 +664,14 @@ func TestRepository_Upsert(t *testing.T) {
 		tnt := "tenant"
 		schema := "{}"
 		schemaInterface := reflect.ValueOf(schema).Interface()
+		version := 42
 
 		labeldefModel := model.LabelDefinition{
-			ID:     "foo",
-			Tenant: tnt,
-			Key:    key,
-			Schema: &schemaInterface,
+			ID:      "foo",
+			Tenant:  tnt,
+			Key:     key,
+			Schema:  &schemaInterface,
+			Version: version,
 		}
 		labeldefEntity := labeldef.Entity{
 			ID:       "foo",
@@ -569,6 +681,7 @@ func TestRepository_Upsert(t *testing.T) {
 				String: schema,
 				Valid:  true,
 			},
+			Version: version,
 		}
 
 		mockConverter := &automock.EntityConverter{}
@@ -580,8 +693,8 @@ func TestRepository_Upsert(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.label_definitions ( id, tenant_id, key, schema ) VALUES ( ?, ?, ?, ? ) ON CONFLICT ( tenant_id, key ) DO UPDATE SET schema=EXCLUDED.schema`)
-		dbMock.ExpectExec(escapedQuery).WithArgs(labeldefEntity.ID, labeldefEntity.TenantID, labeldefEntity.Key, labeldefEntity.SchemaJSON).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.label_definitions ( id, tenant_id, key, schema, version ) VALUES ( ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_id, key ) DO UPDATE SET schema=EXCLUDED.schema`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(labeldefEntity.ID, labeldefEntity.TenantID, labeldefEntity.Key, labeldefEntity.SchemaJSON, labeldefEntity.Version).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)

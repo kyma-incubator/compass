@@ -24,10 +24,12 @@ spec:
           hostnames:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - "dex.{{ .Values.global.ingress.domainName }}"
             - "oauth2.{{ .Values.global.ingress.domainName }}"
             - "director.{{ .Values.global.ingress.domainName }}"
       {{ end }}
+      serviceAccountName: {{ .Chart.Name }}-e2e-director
       containers:
         - name: director-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
@@ -90,6 +92,8 @@ spec:
               value: "{{ .Values.global.gateway.mtls.host }}"
             - name: APP_GATEWAY_OAUTH
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_HEALTH_URL
               value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
             - name: APP_WEBHOOK_URL
@@ -110,6 +114,16 @@ spec:
               value: {{ quote (printf .Values.global.mtlsClient.subjectPattern .Values.global.mtlsClient.locality .Values.global.mtlsClient.commonName) }}
             - name: APP_INFO_CERT_ISSUER
               value: {{ .Values.global.mtlsClient.issuer }}
+            - name: APP_CA_SECRET_NAME
+              value: "{{ .Values.global.connector.secrets.ca.name }}"
+            - name: APP_CA_SECRET_NAMESPACE
+              value: "{{ .Values.global.connector.secrets.ca.namespace }}"
+            - name: APP_CA_SECRET_CERTIFICATE_KEY
+              value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
+            - name: APP_CA_SECRET_KEY_KEY
+              value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.director.skipPattern }}
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"

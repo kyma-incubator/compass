@@ -60,6 +60,14 @@ global:
     - name: TestDeleteApplicationIfInScenario
       id: 0d597250-6b2d-4d89-9c54-e23cb497cd01
       type: account
+    - name: TestProviderSubaccount
+      id: f8075207-1478-4a80-bd26-24a4785a2bfd
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestSelfRegisterSubaccount
+      id: 08b6da37-e911-48fb-a0cb-fa635a6c665a
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
 
   images:
     containerRegistry:
@@ -75,19 +83,19 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2080"
+      version: "PR-2096"
     gateway:
       dir:
-      version: "PR-2082"
+      version: "PR-2077"
     operations_controller:
       dir:
       version: "PR-2084"
     ord_service:
       dir:
-      version: "PR-45"
+      version: "PR-46"
     schema_migrator:
       dir:
-      version: "PR-2072"
+      version: "PR-2085"
     system_broker:
       dir:
       version: "PR-2084"
@@ -98,13 +106,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2080"
+      version: "PR-2096"
     console:
       dir:
-      version: "PR-45"
+      version: "PR-46"
     e2e_tests:
       dir:
-      version: "PR-2080"
+      version: "PR-2101"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -137,15 +145,33 @@ global:
       lastOperationPath: "/last_operation"
     info:
       path: "/v1/info"
+    selfRegister:
+      secret:
+        name: "compass-external-services-mock-oauth-credentials"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        urlKey: url
+      oauthTokenPath: "/secured/oauth/token"
+      distinguishLabel: "distinguishingLabel"
+      label: "selfRegLabel"
+      labelValuePrefix: "self-reg-prefix-"
+      responseKey: "self-reg-key"
+      path: "/external-api/self-reg"
+      nameQueryParam: "name"
+      tenantQueryParam: "tenant"
+      requestBodyPattern: '{"key": "%s"}'
 
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
 
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
-    secretName: "compass-gateway-auditlog-secret"
-    script:
-      configMapName: "auditlog-script"
+    tokenPath: "/oauth/token"
+    secret:
+      name: "compass-gateway-auditlog-secret"
+      urlKey: url
+      clientIdKey: client-id
+      clientSecretKey: client-secret
 
   log:
     format: "kibana"
@@ -303,7 +329,7 @@ global:
     port: 4455
     timeout_ms: 120000
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}"}'
+      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
       internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read","tenant":"{\"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\",\"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
@@ -381,7 +407,6 @@ global:
       subdomainProperty: "subdomain"
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderId"
-
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
@@ -417,16 +442,19 @@ global:
       maxIdleConnections: 2
     accessStrategies:
       cmpMtls:
-        policy: "compass-local-clients"
-        csrEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
         certSvcApiPath: "/cert"
         tokenPath: "/secured/oauth/token"
-        oauthSecret:
-          name: cert-svc-oauth-secret
-          managed: true
-          urlKey: url
+        issuerLocality: "local"
+        retryAttempts: "8"
+        retryDelay: "250ms"
+        secret:
+          name: cert-svc-secret
+          manage: true
+          oauthUrlKey: url
           clientIdKey: client-id
           clientSecretKey: client-secret
+          csrEndpointKey: csr-endpoint
+          policyKey: policy
 
   systemFetcher:
     enabled: false
@@ -463,9 +491,16 @@ global:
     oauth:
       client: ""
       secret: ""
-      tokenURLPattern: ""
+      tokenEndpointProtocol: ""
+      tokenBaseUrl: ""
+      tokenPath: ""
       scopesClaim: ""
       tenantHeaderName: ""
+    secret:
+      name: "compass-system-fetcher-secret"
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      oauthUrlKey: url
     paging:
       pageSize: 200
       sizeParam: "$top"
@@ -487,10 +522,20 @@ global:
         client: ""
         secret: ""
         tokenURL: ""
+        tokenPath: ""
+      secret:
+        name: "compass-tenant-fetcher-secret-job1"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
       endpoints:
-        tenantCreated: "127.0.0.1/events?type=created"
-        tenantDeleted: "127.0.0.1/events?type=deleted"
-        tenantUpdated: "127.0.0.1/events?type=updated"
+        accountCreated: "127.0.0.1/events?type=account-created"
+        accountDeleted: "127.0.0.1/events?type=account-deleted"
+        accountUpdated: "127.0.0.1/events?type=account-updated"
+        subaccountCreated: "127.0.0.1/events?type=subaccount-created"
+        subaccountDeleted: "127.0.0.1/events?type=subaccount-deleted"
+        subaccountUpdated: "127.0.0.1/events?type=subaccount-updated"
+        subaccountMoved: "127.0.0.1/events?type=subaccount-moved"
       fieldMapping:
         totalPagesField: "totalPages"
         totalResultsField: "totalResults"
@@ -502,6 +547,12 @@ global:
         discriminatorField: ""
         discriminatorValue: ""
         detailsField: "details"
+        entityTypeField: "entityType"
+        parentIDField: "parentGuid"
+        regionField: "region"
+        movedRuntimeLabelKey: "global_subaccount_id"
+        movedRuntimeByLabelTargetField: "targetGlobalAccountGUID"
+        movedRuntimeByLabelSourceField: "sourceGlobalAccountGUID"
       queryMapping:
         pageNumField: "pageNum"
         pageSizeField: "pageSize"
@@ -509,6 +560,7 @@ global:
       query:
         startPage: "0"
         pageSize: "100"
+      shouldSyncSubaccounts: "false"
       dbPool:
         maxOpenConnections: 1
         maxIdleConnections: 1
@@ -530,6 +582,8 @@ global:
 
   tests:
     ordService:
+      skipPattern: ""
+    director:
       skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local

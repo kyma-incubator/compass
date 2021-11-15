@@ -21,9 +21,21 @@ type TenantProvisioner interface {
 // RuntimeService is used to interact with runtimes
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
-	SetLabel(context.Context, *model.LabelInput) error
-	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+}
+
+// LabelService is responsible updating already existing labels, and their label definitions.
+//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
+type LabelService interface {
+	GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error)
+	CreateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
+	UpdateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
+}
+
+// UIDService generates a unique ID
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+type UIDService interface {
+	Generate() string
 }
 
 type subscriptionFunc func(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest, region string) error
@@ -31,17 +43,21 @@ type subscriptionFunc func(ctx context.Context, tenantSubscriptionRequest *Tenan
 type sliceMutationFunc func([]string, string) []string
 
 type subscriber struct {
-	provisioner TenantProvisioner
-	RuntimeService
+	provisioner                   TenantProvisioner
+	runtimeSvc                    RuntimeService
+	labelSvc                      LabelService
+	uidSvc                        UIDService
 	SubscriptionProviderLabelKey  string
 	ConsumerSubaccountIDsLabelKey string
 }
 
 // NewSubscriber creates new subscriber
-func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, subscriptionProviderLabelKey, consumerSubaccountIDsLabelKey string) *subscriber {
+func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, labelService LabelService, uuidSvc UIDService, subscriptionProviderLabelKey, consumerSubaccountIDsLabelKey string) *subscriber {
 	return &subscriber{
 		provisioner:                   provisioner,
-		RuntimeService:                service,
+		runtimeSvc:                    service,
+		labelSvc:                      labelService,
+		uidSvc:                        uuidSvc,
 		SubscriptionProviderLabelKey:  subscriptionProviderLabelKey,
 		ConsumerSubaccountIDsLabelKey: consumerSubaccountIDsLabelKey,
 	}
@@ -67,7 +83,7 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
-	runtimes, err := s.ListByFiltersGlobal(ctx, filters)
+	runtimes, err := s.runtimeSvc.ListByFiltersGlobal(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil
@@ -77,34 +93,53 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 	}
 
 	for _, runtime := range runtimes {
-		ctx = tenant.SaveToContext(ctx, runtime.Tenant, "")
+		label, err := s.labelSvc.GetLabel(ctx, runtime.Tenant, &model.LabelInput{
+			Key:        s.ConsumerSubaccountIDsLabelKey,
+			ObjectID:   runtime.ID,
+			ObjectType: model.RuntimeLabelableObject,
+		})
 
-		labelOldValue := make([]string, 0)
-		label, err := s.GetLabel(ctx, runtime.ID, s.ConsumerSubaccountIDsLabelKey)
 		if err != nil {
 			if !apperrors.IsNotFoundError(err) {
 				return errors.Wrap(err, fmt.Sprintf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, s.ConsumerSubaccountIDsLabelKey))
 			}
-			// if the error is not found, do nothing and continue
+			// if the error is not found, create a label
+			if err := s.createLabel(ctx, runtime, subaccountTenantID); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Failed to create label with key: %s", s.ConsumerSubaccountIDsLabelKey))
+			}
 		} else {
-			if labelOldValue, err = labelutils.ValueToStringsSlice(label.Value); err != nil {
+			labelOldValue, err := labelutils.ValueToStringsSlice(label.Value)
+			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Failed to parse label values for label with id: %s", label.ID))
 			}
-		}
+			labelNewValue := mutateLabelsFunc(labelOldValue, subaccountTenantID)
 
-		var labelNewValue = mutateLabelsFunc(labelOldValue, subaccountTenantID)
-
-		if err := s.SetLabel(ctx, &model.LabelInput{
-			Key:        s.ConsumerSubaccountIDsLabelKey,
-			Value:      labelNewValue,
-			ObjectType: model.RuntimeLabelableObject,
-			ObjectID:   runtime.ID,
-		}); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", runtime.ID))
+			if err := s.updateLabel(ctx, runtime, label, labelNewValue); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", runtime.ID))
+			}
 		}
 	}
 
 	return nil
+}
+
+func (s *subscriber) createLabel(ctx context.Context, runtime *model.Runtime, subaccountTenantID string) error {
+	return s.labelSvc.CreateLabel(ctx, runtime.Tenant, s.uidSvc.Generate(), &model.LabelInput{
+		Key:        s.ConsumerSubaccountIDsLabelKey,
+		Value:      []string{subaccountTenantID},
+		ObjectType: model.RuntimeLabelableObject,
+		ObjectID:   runtime.ID,
+	})
+}
+
+func (s *subscriber) updateLabel(ctx context.Context, runtime *model.Runtime, label *model.Label, labelNewValue []string) error {
+	return s.labelSvc.UpdateLabel(ctx, runtime.Tenant, label.ID, &model.LabelInput{
+		Key:        s.ConsumerSubaccountIDsLabelKey,
+		Value:      labelNewValue,
+		ObjectType: model.RuntimeLabelableObject,
+		ObjectID:   runtime.ID,
+		Version:    label.Version,
+	})
 }
 
 func addElement(slice []string, elem string) []string {

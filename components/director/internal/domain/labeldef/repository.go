@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	tableName    = "public.label_definitions"
-	tenantColumn = "tenant_id"
-	keyColumn    = "key"
-	schemaColumn = "schema"
+	tableName     = "public.label_definitions"
+	tenantColumn  = "tenant_id"
+	keyColumn     = "key"
+	schemaColumn  = "schema"
+	versionColumn = "version"
 )
 
 // EntityConverter missing godoc
@@ -25,32 +26,35 @@ type EntityConverter interface {
 }
 
 var (
-	idColumns        = []string{"id"}
-	labeldefColumns  = []string{"id", tenantColumn, keyColumn, schemaColumn}
-	updatableColumns = []string{"schema"}
+	idColumns          = []string{"id"}
+	versionedIDColumns = append(idColumns, versionColumn)
+	labeldefColumns    = []string{"id", tenantColumn, keyColumn, schemaColumn, versionColumn}
+	updatableColumns   = []string{"schema"}
 )
 
 type repository struct {
-	conv         EntityConverter
-	creator      repo.Creator
-	getter       repo.SingleGetter
-	lister       repo.Lister
-	existQuerier repo.ExistQuerier
-	deleter      repo.Deleter
-	updater      repo.Updater
-	upserter     repo.Upserter
+	conv             EntityConverter
+	creator          repo.Creator
+	getter           repo.SingleGetter
+	lister           repo.Lister
+	existQuerier     repo.ExistQuerier
+	deleter          repo.Deleter
+	updater          repo.Updater
+	versionedUpdater repo.Updater
+	upserter         repo.Upserter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{conv: conv,
-		creator:      repo.NewCreator(resource.LabelDefinition, tableName, labeldefColumns),
-		getter:       repo.NewSingleGetter(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
-		existQuerier: repo.NewExistQuerier(resource.LabelDefinition, tableName, tenantColumn),
-		lister:       repo.NewLister(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
-		deleter:      repo.NewDeleter(resource.LabelDefinition, tableName, tenantColumn),
-		updater:      repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
-		upserter:     repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}),
+		creator:          repo.NewCreator(resource.LabelDefinition, tableName, labeldefColumns),
+		getter:           repo.NewSingleGetter(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
+		existQuerier:     repo.NewExistQuerier(resource.LabelDefinition, tableName, tenantColumn),
+		lister:           repo.NewLister(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
+		deleter:          repo.NewDeleter(resource.LabelDefinition, tableName, tenantColumn),
+		updater:          repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
+		versionedUpdater: repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, versionedIDColumns),
+		upserter:         repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}),
 	}
 }
 
@@ -126,7 +130,16 @@ func (r *repository) Update(ctx context.Context, def model.LabelDefinition) erro
 	if err != nil {
 		return errors.Wrap(err, "while creating Label Definition entity from model")
 	}
-	return r.updater.UpdateSingle(ctx, entity)
+	return r.updater.UpdateSingleWithVersion(ctx, entity)
+}
+
+// UpdateWithVersion missing godoc
+func (r *repository) UpdateWithVersion(ctx context.Context, def model.LabelDefinition) error {
+	entity, err := r.conv.ToEntity(def)
+	if err != nil {
+		return errors.Wrap(err, "while creating Label Definition entity from model")
+	}
+	return r.versionedUpdater.UpdateSingleWithVersion(ctx, entity)
 }
 
 // DeleteByKey missing godoc

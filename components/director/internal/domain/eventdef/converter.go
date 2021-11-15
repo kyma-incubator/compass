@@ -72,8 +72,8 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundl
 
 // MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
-	if len(in) != len(specs) {
-		return nil, errors.New("different events and specs count provided")
+	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
+		return nil, errors.New("different events, specs and bundleRefs count provided")
 	}
 
 	events := make([]*graphql.EventDefinition, 0, len(in))

@@ -25,16 +25,17 @@ func _() {
 	_ = x[ConcurrentOperation-32]
 	_ = x[InvalidStatusCondition-33]
 	_ = x[CannotUpdateObjectInManyBundles-34]
+	_ = x[ConcurrentUpdate-35]
 }
 
 const (
 	_ErrorType_name_0 = "InternalErrorUnknownError"
-	_ErrorType_name_1 = "NotFoundNotUniqueInvalidDataInsufficientScopesTenantRequiredTenantNotFoundUnauthorizedInvalidOperationOperationTimeoutEmptyDataInconsistentDataNotUniqueNameConcurrentOperationInvalidStatusConditionCannotUpdateObjectInManyBundles"
+	_ErrorType_name_1 = "NotFoundNotUniqueInvalidDataInsufficientScopesTenantRequiredTenantNotFoundUnauthorizedInvalidOperationOperationTimeoutEmptyDataInconsistentDataNotUniqueNameConcurrentOperationInvalidStatusConditionCannotUpdateObjectInManyBundlesConcurrentUpdate"
 )
 
 var (
 	_ErrorType_index_0 = [...]uint8{0, 13, 25}
-	_ErrorType_index_1 = [...]uint8{0, 8, 17, 28, 46, 60, 74, 86, 102, 118, 127, 143, 156, 175, 197, 228}
+	_ErrorType_index_1 = [...]uint8{0, 8, 17, 28, 46, 60, 74, 86, 102, 118, 127, 143, 156, 175, 197, 228, 244}
 )
 
 func (i ErrorType) String() string {
@@ -42,7 +43,7 @@ func (i ErrorType) String() string {
 	case 10 <= i && i <= 11:
 		i -= 10
 		return _ErrorType_name_0[_ErrorType_index_0[i]:_ErrorType_index_0[i+1]]
-	case 20 <= i && i <= 34:
+	case 20 <= i && i <= 35:
 		i -= 20
 		return _ErrorType_name_1[_ErrorType_index_1[i]:_ErrorType_index_1[i+1]]
 	default:

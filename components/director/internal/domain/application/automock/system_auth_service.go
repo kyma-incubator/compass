@@ -14,15 +14,15 @@ type SystemAuthService struct {
 	mock.Mock
 }
 
-// IsSystemAuthOneTimeTokenType provides a mock function with given fields: systemAuth
-func (_m *SystemAuthService) IsSystemAuthOneTimeTokenType(systemAuth *model.SystemAuth) bool {
-	ret := _m.Called(systemAuth)
+// DeleteMultipleByIDForObject provides a mock function with given fields: ctx, systemAuths
+func (_m *SystemAuthService) DeleteMultipleByIDForObject(ctx context.Context, systemAuths []model.SystemAuth) error {
+	ret := _m.Called(ctx, systemAuths)
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(*model.SystemAuth) bool); ok {
-		r0 = rf(systemAuth)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []model.SystemAuth) error); ok {
+		r0 = rf(ctx, systemAuths)
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
 	}
 
 	return r0
