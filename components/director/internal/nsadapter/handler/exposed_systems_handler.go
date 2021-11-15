@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
@@ -21,7 +22,7 @@ import (
 
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
-	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
+	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
 	Upsert(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 	GetSystem(ctx context.Context, subaccount, locationID, virtualHost string) (*model.Application, error)
@@ -306,7 +307,7 @@ func (a *Handler) upsert(ctx context.Context, scc nsmodel.SCC, system nsmodel.Sy
 	app, err := a.appSvc.GetSystem(ctx, scc.Subaccount, scc.LocationID, system.Host)
 
 	if err != nil && nsmodel.IsNotFoundError(err) {
-		if _, err := a.appSvc.Create(ctx, nsmodel.ToAppRegisterInput(system, scc.LocationID)); err != nil {
+		if _, err := a.appSvc.CreateFromTemplate(ctx, nsmodel.ToAppRegisterInput(system, scc.LocationID), str.Ptr(system.TemplateID)); err != nil {
 			log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
 			return false
 		}

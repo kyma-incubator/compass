@@ -1,18 +1,28 @@
 package nsmodel
 
 import (
+	"encoding/json"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/tidwall/gjson"
 )
 
-type System struct {
+var Mappings []systemfetcher.TemplateMapping
+
+type SystemBase struct {
 	Protocol     string `json:"protocol"`
 	Host         string `json:"host"`
 	SystemType   string `json:"type"`
 	Description  string `json:"description"`
 	Status       string `json:"status"`
 	SystemNumber string `json:"systemNumber"`
+}
+
+type System struct {
+	SystemBase
+	TemplateID   string `json:"-"`
 }
 
 func (s System) Validate() error {
@@ -24,6 +34,32 @@ func (s System) Validate() error {
 		validation.Field(&s.Status, validation.Required),
 	)
 }
+
+func (s *System) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, &s.SystemBase); err != nil {
+		return err
+	}
+
+	for _, tm := range Mappings {
+		if matchProps(data, tm) {
+			s.TemplateID = tm.ID
+			return nil
+		}
+	}
+
+	return nil
+}
+
+func matchProps(data []byte, tm systemfetcher.TemplateMapping) bool {
+	for i, sk := range tm.SourceKey {
+		v := gjson.GetBytes(data, sk).String()
+		if v != tm.SourceValue[i] {
+			return false
+		}
+	}
+	return true
+}
+
 
 type SCC struct {
 	Subaccount     string   `json:"subaccount"`
@@ -95,7 +131,7 @@ func ToAppRegisterInput(system System, locationID string) model.ApplicationRegis
 func ToAppUpdateInput(system System) model.ApplicationUpdateInput {
 	// we should update the description, system type, protocol and system status
 	return model.ApplicationUpdateInput{
-		Description:         str.Ptr(system.Description),
-		Status:              str.Ptr(system.Status),
+		Description: str.Ptr(system.Description),
+		Status:      str.Ptr(system.Status),
 	}
 }
