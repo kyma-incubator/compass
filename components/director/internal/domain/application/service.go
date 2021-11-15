@@ -304,7 +304,7 @@ func (s *service) MarkAsUnreachable(ctx context.Context, id string) error{
 	//TODO
 	return nil
 }
-func (s *service) ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.Application, error){
+func (s *service) ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error){
 	//TODO 
 	return nil, nil
 }
@@ -312,6 +312,11 @@ func (s *service) ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilt
 func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput) (string, error){
 	//TODO
 	return "", nil
+}
+
+func (s *service) ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error){
+	//TODO
+	return nil, nil
 }
 
 // CreateFromTemplate missing godoc
