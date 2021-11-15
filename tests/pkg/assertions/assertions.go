@@ -3,22 +3,16 @@ package assertions
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/tidwall/gjson"
-
-	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func AssertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actualApp graphql.ApplicationExt) {
@@ -529,7 +523,6 @@ func AssertBundleCorrelationIds(t *testing.T, respBody string, entitiesMap map[s
 		entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
 		require.NotEmpty(t, entityTitle)
 
-		log.D().Printf("ENTITY TITLE %s\n", entityTitle)
 		correlationIds := gjson.Get(respBody, fmt.Sprintf("value.%d.correlationIds", i)).Array()
 		bundleCorrelationIdsAsString := make([]string, 0)
 		for _, id := range correlationIds {
@@ -537,26 +530,8 @@ func AssertBundleCorrelationIds(t *testing.T, respBody string, entitiesMap map[s
 			bundleCorrelationIdsAsString = append(bundleCorrelationIdsAsString, idAsString)
 		}
 		expectedCorrelationIds := entitiesMap[entityTitle]
-		log.D().Printf("EXPECTED IDS %v\n", expectedCorrelationIds)
-		log.D().Printf("ACTUAL IDS %v\n", bundleCorrelationIdsAsString)
-		assert.True(t, unorderedEqual(expectedCorrelationIds, bundleCorrelationIdsAsString))
+		assert.True(t, unorderedEqualStringArrays(expectedCorrelationIds, bundleCorrelationIdsAsString))
 	}
-}
-
-func unorderedEqual(first, second []string) bool {
-	if len(first) != len(second) {
-		return false
-	}
-	exists := make(map[string]bool)
-	for _, value := range first {
-		exists[value] = true
-	}
-	for _, value := range second {
-		if !exists[value] {
-			return false
-		}
-	}
-	return true
 }
 
 func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody string, entityType string, numberOfEntitiesForBundle map[string]int, entitiesDataForBundle map[string][]string) {
@@ -616,4 +591,20 @@ func urlsAreIdentical(url1, url2 *string) bool {
 		}
 	}
 	return identical
+}
+
+func unorderedEqualStringArrays(first, second []string) bool {
+	if len(first) != len(second) {
+		return false
+	}
+	exists := make(map[string]bool)
+	for _, value := range first {
+		exists[value] = true
+	}
+	for _, value := range second {
+		if !exists[value] {
+			return false
+		}
+	}
+	return true
 }
