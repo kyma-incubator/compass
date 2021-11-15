@@ -570,6 +570,29 @@ func (g *Graphqlizer) AutomaticScenarioAssignmentSetInputToGQL(in graphql.Automa
 	}`)
 }
 
+// TenantsInputToGQL creates tenant input from multiple tenants
+func (g *Graphqlizer) TenantsInputToGQL(in []graphql.BusinessTenantMappingInput) (string, error) {
+	return g.genericToGQL(in, `
+		{{ $n := (len .) }}
+		{{range $i, $tenant := .}}
+		{
+			name: "{{$tenant.Name}}",
+ 			externalTenant: "{{$tenant.ExternalTenant}}",
+			{{- if $tenant.Parent }}
+			parent: "{{$tenant.Parent}}",
+			{{- end }}
+			{{- if $tenant.Region }}
+			region: "{{$tenant.Region}}",
+			{{- end }}
+			{{- if $tenant.Subdomain }}
+			subdomain: "{{$tenant.Subdomain}}",
+			{{- end }}
+			type: "{{$tenant.Type}}",
+			provider: "{{$tenant.Provider}}"
+		}{{if ne (inc $i) $n }},{{end}}
+		{{end}}`)
+}
+
 func (g *Graphqlizer) marshal(obj interface{}) string {
 	var out string
 
@@ -623,6 +646,7 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["BundleInstanceAuthStatusInputToGQL"] = g.BundleInstanceAuthStatusInputToGQL
 	fm["BundleCreateInputToGQL"] = g.BundleCreateInputToGQL
 	fm["LabelSelectorInputToGQL"] = g.LabelSelectorInputToGQL
+	fm["inc"] = func(i int) int { return i + 1 }
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {
