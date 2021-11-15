@@ -22,7 +22,7 @@ const (
 	testCaseSuccess                  = "success"
 	testCaseSuccessWithAuth          = "success with auth"
 	testCaseErrorOnConvertingObjects = "got error on converting object"
-	testCaseErrorOnDBCommunication   = "got error on db communication"
+	testCaseErrorOnDBCommunication   = "goterror  on db communication"
 )
 
 func TestRepositoryGetByID(t *testing.T) {
@@ -262,9 +262,8 @@ func TestRepositoryUpdate(t *testing.T) {
 	})
 }
 
-/*
 func TestRepositoryDelete(t *testing.T) {
-	t.Run(testCaseSuccess, func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -280,7 +279,7 @@ func TestRepositoryDelete(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run(testCaseErrorOnDBCommunication, func(t *testing.T) {
+	t.Run("got error on db communication", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -298,38 +297,29 @@ func TestRepositoryDelete(t *testing.T) {
 }
 
 func TestRepositoryDeleteAllByApplicationID(t *testing.T) {
-	sut := webhook.NewRepository(nil)
-	t.Run(testCaseSuccess, func(t *testing.T) {
-		// GIVEN
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Webhook Delete by ApplicationID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.webhooks WHERE app_id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{givenApplicationID(), givenTenant()},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: webhook.NewRepository,
+		MethodArgs:          []interface{}{givenTenant(), givenApplicationID()},
+		MethodName:          "DeleteAllByApplicationID",
+		IsDeleteMany:        true,
+	}
 
-		dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.webhooks WHERE %s AND app_id = $2", fixUnescapedTenantIsolationSubquery()))).WithArgs(
-			givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 123))
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		err := sut.DeleteAllByApplicationID(ctx, givenTenant(), givenID())
-		// THEN
-		require.NoError(t, err)
-	})
-
-	t.Run(testCaseErrorOnDBCommunication, func(t *testing.T) {
-		// GIVEN
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec("DELETE FROM .*").WithArgs(
-			givenTenant(), givenID()).WillReturnError(givenError())
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		err := sut.DeleteAllByApplicationID(ctx, givenTenant(), givenID())
-		// THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
+	suite.Run(t)
 }
 
+/*
 func TestRepositoryListByApplicationID(t *testing.T) {
 	t.Run(testCaseSuccess, func(t *testing.T) {
 		// GIVEN

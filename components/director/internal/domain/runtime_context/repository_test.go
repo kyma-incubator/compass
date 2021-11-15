@@ -345,30 +345,26 @@ func TestPgRepository_Update(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
-func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing.T) {
-	// given
-	runtimeCtxID := uuid.New().String()
-	tenantID := uuid.New().String()
+func TestPgRepository_Delete(t *testing.T) {
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Runtime Context Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.runtime_contexts WHERE id = $1 AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{runtimeCtxID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: runtimectx.NewRepository,
+		MethodArgs:          []interface{}{tenantID, runtimeCtxID},
+	}
 
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	defer sqlMock.AssertExpectations(t)
-
-	sqlMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.runtime_contexts WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())).
-		WithArgs(tenantID, runtimeCtxID).
-		WillReturnResult(sqlmock.NewResult(-1, 1))
-
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-	pgRepository := runtimectx.NewRepository()
-
-	// when
-	err := pgRepository.Delete(ctx, tenantID, runtimeCtxID)
-
-	// then
-	assert.NoError(t, err)
+	suite.Run(t)
 }
-*/
 
 func TestPgRepository_Exist(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{

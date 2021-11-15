@@ -366,58 +366,90 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 }
+*/
 
 func TestRepository_Delete(t *testing.T) {
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := fmt.Sprintf(`^DELETE FROM public.specifications WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
+	apiSpecSuite := testdb.RepoDeleteTestSuite{
+		Name: "API Spec Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{specID, tenant},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		MethodArgs:          []interface{}{tenant, specID, model.APISpecReference},
+	}
 
-	sqlMock.ExpectExec(deleteQuery).WithArgs(tenant, specID).WillReturnResult(sqlmock.NewResult(-1, 1))
-	convMock := &automock.Converter{}
-	pgRepository := spec.NewRepository(convMock)
-	//WHEN
-	err := pgRepository.Delete(ctx, tenant, specID)
-	//THEN
-	require.NoError(t, err)
-	sqlMock.AssertExpectations(t)
-	convMock.AssertExpectations(t)
+	eventSpecSuite := testdb.RepoDeleteTestSuite{
+		Name: "Event Spec Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{specID, tenant},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		MethodArgs:          []interface{}{tenant, specID, model.EventSpecReference},
+	}
+
+	apiSpecSuite.Run(t)
+	eventSpecSuite.Run(t)
 }
 
 func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
-	t.Run("Success for API", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		deleteQuery := fmt.Sprintf(`^DELETE FROM public.specifications WHERE %s AND api_def_id = \$2$`, fixTenantIsolationSubquery())
+	apiSpecSuite := testdb.RepoDeleteTestSuite{
+		Name: "API Spec DeleteByReferenceObjectID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.specifications WHERE api_def_id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{apiID, tenant},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		MethodArgs:          []interface{}{tenant, model.APISpecReference, apiID},
+		MethodName:          "DeleteByReferenceObjectID",
+		IsDeleteMany:        true,
+	}
 
-		sqlMock.ExpectExec(deleteQuery).WithArgs(tenant, apiID).WillReturnResult(sqlmock.NewResult(-1, 1))
-		convMock := &automock.Converter{}
-		pgRepository := spec.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.DeleteByReferenceObjectID(ctx, tenant, model.APISpecReference, apiID)
-		//THEN
-		require.NoError(t, err)
-		sqlMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
+	eventSpecSuite := testdb.RepoDeleteTestSuite{
+		Name: "Event Spec DeleteByReferenceObjectID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.specifications WHERE event_def_id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{eventID, tenant},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: spec.NewRepository,
+		MethodArgs:          []interface{}{tenant, model.EventSpecReference, eventID},
+		MethodName:          "DeleteByReferenceObjectID",
+		IsDeleteMany:        true,
+	}
 
-	t.Run("Success for Event", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		deleteQuery := fmt.Sprintf(`^DELETE FROM public.specifications WHERE %s AND event_def_id = \$2$`, fixTenantIsolationSubquery())
-
-		sqlMock.ExpectExec(deleteQuery).WithArgs(tenant, eventID).WillReturnResult(sqlmock.NewResult(-1, 1))
-		convMock := &automock.Converter{}
-		pgRepository := spec.NewRepository(convMock)
-		//WHEN
-		err := pgRepository.DeleteByReferenceObjectID(ctx, tenant, model.EventSpecReference, eventID)
-		//THEN
-		require.NoError(t, err)
-		sqlMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
+	apiSpecSuite.Run(t)
+	eventSpecSuite.Run(t)
 }
 
-*/
 func TestRepository_Update(t *testing.T) {
 	var nilSpecModel *model.Spec
 	apiSpecModel := fixModelAPISpec()

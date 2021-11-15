@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -17,7 +18,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRepository_Exists(t *testing.T) {
@@ -47,37 +50,38 @@ func TestRepository_Exists(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestRepository_Delete(t *testing.T) {
-	var executeDeleteFunc = func(ctx context.Context) {
-		// given
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec(fmt.Sprintf(`DELETE FROM public\.applications WHERE %s AND id = \$2`, fixTenantIsolationSubquery())).WithArgs(
-			givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		ctx = persistence.SaveToContext(ctx, db)
-		repo := application.NewRepository(nil)
-
-		// when
-		err := repo.Delete(ctx, givenTenant(), givenID())
-
-		// then
-		require.NoError(t, err)
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Application Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2 AND owner = true))`),
+				Args:     []driver.Value{givenID(), givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id"}).AddRow(givenID())}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id"}).AddRow(givenID()).AddRow("secondID")}
+				},
+			},
+			{
+				Query:       regexp.QuoteMeta(`DELETE FROM tenant_applications WHERE id IN ($1)`),
+				Args:        []driver.Value{givenID()},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: application.NewRepository,
+		MethodArgs:          []interface{}{givenTenant(), givenID()},
+		IsTopLeveEntity:     true,
 	}
 
-	t.Run("Success", func(t *testing.T) {
-		executeDeleteFunc(context.Background())
-	})
+	suite.Run(t)
 
-	t.Run("Success when operation mode is set to sync explicitly and no operation in the context", func(t *testing.T) {
-		ctx := context.Background()
-		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeSync)
-
-		executeDeleteFunc(ctx)
-	})
-
+	// Additional tests - async deletion
 	t.Run("Success when operation mode is set to async explicitly and operation is in the context", func(t *testing.T) {
 		ctx := context.Background()
 		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
@@ -92,22 +96,20 @@ func TestRepository_Delete(t *testing.T) {
 
 		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appModel.DeletedAt = &deletedAt
-		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+		entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels",
-			"ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}).
-			AddRow(givenID(), givenTenant(), appEntity.Name, appEntity.Description, appEntity.StatusCondition, appEntity.StatusTimestamp, appEntity.HealthCheckURL, appEntity.IntegrationSystemID, appEntity.ProviderName,
-				appEntity.BaseURL, appEntity.Labels, appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error, appEntity.CorrelationIDs)
+		rows := sqlmock.NewRows(fixAppColumns()).
+			AddRow(entity.ID, entity.ApplicationTemplateID, entity.SystemNumber, entity.Name, entity.Description, entity.StatusCondition, entity.StatusTimestamp, entity.HealthCheckURL, entity.IntegrationSystemID, entity.ProviderName, entity.BaseURL, entity.Labels, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs)
 
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.applications WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())).
-			WithArgs(givenTenant(), givenID()).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2))`)).
+			WithArgs(givenID(), givenTenant()).
 			WillReturnRows(rows)
 
 		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("FromEntity", appEntity).Return(appModel).Once()
+		mockConverter.On("FromEntity", entity).Return(appModel).Once()
 
 		appEntityWithDeletedTimestamp := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appEntityWithDeletedTimestamp.Ready = false
@@ -115,10 +117,10 @@ func TestRepository_Delete(t *testing.T) {
 		mockConverter.On("ToEntity", appModel).Return(appEntityWithDeletedTimestamp, nil).Once()
 		defer mockConverter.AssertExpectations(t)
 
-		updateStmt := fmt.Sprintf(`UPDATE public\.applications SET name = \?, description = \?, status_condition = \?, status_timestamp = \?, healthcheck_url = \?, integration_system_id = \?, provider_name = \?,  base_url = \?, labels = \?, ready = \?, created_at = \?, updated_at = \?, deleted_at = \?, error = \?, correlation_ids = \? WHERE %s AND id = \?`, fixUpdateTenantIsolationSubquery())
+		updateStmt := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.applications SET name = ?, description = ?, status_condition = ?, status_timestamp = ?, healthcheck_url = ?, integration_system_id = ?, provider_name = ?, base_url = ?, labels = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, correlation_ids = ? WHERE id = ? AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = '%s' AND owner = true))`, givenTenant()))
 
 		dbMock.ExpectExec(updateStmt).
-			WithArgs(appEntityWithDeletedTimestamp.Name, appEntityWithDeletedTimestamp.Description, appEntityWithDeletedTimestamp.StatusCondition, appEntityWithDeletedTimestamp.StatusTimestamp, appEntityWithDeletedTimestamp.HealthCheckURL, appEntityWithDeletedTimestamp.IntegrationSystemID, appEntityWithDeletedTimestamp.ProviderName, appEntityWithDeletedTimestamp.BaseURL, appEntityWithDeletedTimestamp.Labels, appEntityWithDeletedTimestamp.Ready, appEntityWithDeletedTimestamp.CreatedAt, appEntityWithDeletedTimestamp.UpdatedAt, appEntityWithDeletedTimestamp.DeletedAt, appEntityWithDeletedTimestamp.Error, appEntityWithDeletedTimestamp.CorrelationIDs, givenTenant(), givenID()).
+			WithArgs(appEntityWithDeletedTimestamp.Name, appEntityWithDeletedTimestamp.Description, appEntityWithDeletedTimestamp.StatusCondition, appEntityWithDeletedTimestamp.StatusTimestamp, appEntityWithDeletedTimestamp.HealthCheckURL, appEntityWithDeletedTimestamp.IntegrationSystemID, appEntityWithDeletedTimestamp.ProviderName, appEntityWithDeletedTimestamp.BaseURL, appEntityWithDeletedTimestamp.Labels, appEntityWithDeletedTimestamp.Ready, appEntityWithDeletedTimestamp.CreatedAt, appEntityWithDeletedTimestamp.UpdatedAt, appEntityWithDeletedTimestamp.DeletedAt, appEntityWithDeletedTimestamp.Error, appEntityWithDeletedTimestamp.CorrelationIDs, givenID()).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx = persistence.SaveToContext(ctx, db)
@@ -149,22 +151,20 @@ func TestRepository_Delete(t *testing.T) {
 		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appModel.DeletedAt = &deletedAt
 		appModel.Error = str.Ptr("error")
-		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+		entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels",
-			"ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}).
-			AddRow(givenID(), givenTenant(), appEntity.Name, appEntity.Description, appEntity.StatusCondition, appEntity.StatusTimestamp, appEntity.HealthCheckURL, appEntity.IntegrationSystemID, appEntity.ProviderName,
-				appEntity.BaseURL, appEntity.Labels, appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error, appEntity.CorrelationIDs)
+		rows := sqlmock.NewRows(fixAppColumns()).
+			AddRow(entity.ID, entity.ApplicationTemplateID, entity.SystemNumber, entity.Name, entity.Description, entity.StatusCondition, entity.StatusTimestamp, entity.HealthCheckURL, entity.IntegrationSystemID, entity.ProviderName, entity.BaseURL, entity.Labels, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs)
 
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.applications WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())).
-			WithArgs(givenTenant(), givenID()).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2))`)).
+			WithArgs(givenID(), givenTenant()).
 			WillReturnRows(rows)
 
 		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("FromEntity", appEntity).Return(appModel).Once()
+		mockConverter.On("FromEntity", entity).Return(appModel).Once()
 
 		appEntityWithDeletedTimestamp := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appEntityWithDeletedTimestamp.Ready = false
@@ -172,10 +172,10 @@ func TestRepository_Delete(t *testing.T) {
 		mockConverter.On("ToEntity", appModel).Return(appEntityWithDeletedTimestamp, nil).Once()
 		defer mockConverter.AssertExpectations(t)
 
-		updateStmt := fmt.Sprintf(`UPDATE public\.applications SET name = \?, description = \?, status_condition = \?, status_timestamp = \?, healthcheck_url = \?, integration_system_id = \?, provider_name = \?,  base_url = \?, labels = \?, ready = \?, created_at = \?, updated_at = \?, deleted_at = \?, error = \?, correlation_ids = \? WHERE %s AND id = \?`, fixUpdateTenantIsolationSubquery())
+		updateStmt := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.applications SET name = ?, description = ?, status_condition = ?, status_timestamp = ?, healthcheck_url = ?, integration_system_id = ?, provider_name = ?, base_url = ?, labels = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, correlation_ids = ? WHERE id = ? AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = '%s' AND owner = true))`, givenTenant()))
 
 		dbMock.ExpectExec(updateStmt).
-			WithArgs(appEntityWithDeletedTimestamp.Name, appEntityWithDeletedTimestamp.Description, appEntityWithDeletedTimestamp.StatusCondition, appEntityWithDeletedTimestamp.StatusTimestamp, appEntityWithDeletedTimestamp.HealthCheckURL, appEntityWithDeletedTimestamp.IntegrationSystemID, appEntityWithDeletedTimestamp.ProviderName, appEntityWithDeletedTimestamp.BaseURL, appEntityWithDeletedTimestamp.Labels, appEntityWithDeletedTimestamp.Ready, appEntityWithDeletedTimestamp.CreatedAt, appEntityWithDeletedTimestamp.UpdatedAt, appEntityWithDeletedTimestamp.DeletedAt, appEntityWithDeletedTimestamp.Error, appEntityWithDeletedTimestamp.CorrelationIDs, givenTenant(), givenID()).
+			WithArgs(appEntityWithDeletedTimestamp.Name, appEntityWithDeletedTimestamp.Description, appEntityWithDeletedTimestamp.StatusCondition, appEntityWithDeletedTimestamp.StatusTimestamp, appEntityWithDeletedTimestamp.HealthCheckURL, appEntityWithDeletedTimestamp.IntegrationSystemID, appEntityWithDeletedTimestamp.ProviderName, appEntityWithDeletedTimestamp.BaseURL, appEntityWithDeletedTimestamp.Labels, appEntityWithDeletedTimestamp.Ready, appEntityWithDeletedTimestamp.CreatedAt, appEntityWithDeletedTimestamp.UpdatedAt, appEntityWithDeletedTimestamp.DeletedAt, appEntityWithDeletedTimestamp.Error, appEntityWithDeletedTimestamp.CorrelationIDs, givenID()).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx = persistence.SaveToContext(ctx, db)
@@ -204,7 +204,7 @@ func TestRepository_Delete(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectQuery("SELECT .*").
-			WithArgs(givenTenant(), givenID()).WillReturnError(givenError())
+			WithArgs(givenID(), givenTenant()).WillReturnError(givenError())
 
 		ctx = persistence.SaveToContext(ctx, db)
 
@@ -231,20 +231,20 @@ func TestRepository_Delete(t *testing.T) {
 		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appModel.Ready = false
 		appModel.DeletedAt = &deletedAt
-		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+		entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}).
-			AddRow(givenID(), givenTenant(), appEntity.Name, appEntity.Description, appEntity.StatusCondition, appEntity.StatusTimestamp, appEntity.HealthCheckURL, appEntity.IntegrationSystemID, appEntity.ProviderName, appEntity.BaseURL, appEntity.Labels, appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error, appEntity.CorrelationIDs)
+		rows := sqlmock.NewRows(fixAppColumns()).
+			AddRow(entity.ID, entity.ApplicationTemplateID, entity.SystemNumber, entity.Name, entity.Description, entity.StatusCondition, entity.StatusTimestamp, entity.HealthCheckURL, entity.IntegrationSystemID, entity.ProviderName, entity.BaseURL, entity.Labels, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs)
 
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.applications WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())).
-			WithArgs(givenTenant(), givenID()).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2))`)).
+			WithArgs(givenID(), givenTenant()).
 			WillReturnRows(rows)
 
 		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("FromEntity", appEntity).Return(appModel, nil).Once()
+		mockConverter.On("FromEntity", entity).Return(appModel, nil).Once()
 
 		appEntityWithDeletedTimestamp := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appEntityWithDeletedTimestamp.Ready = false
@@ -252,10 +252,10 @@ func TestRepository_Delete(t *testing.T) {
 		mockConverter.On("ToEntity", appModel).Return(appEntityWithDeletedTimestamp, nil).Once()
 		defer mockConverter.AssertExpectations(t)
 
-		updateStmt := fmt.Sprintf(`UPDATE public\.applications SET name = \?, description = \?, status_condition = \?, status_timestamp = \?, healthcheck_url = \?, integration_system_id = \?, provider_name = \?,  base_url = \?, labels = \?, ready = \?, created_at = \?, updated_at = \?, deleted_at = \?, error = \?, correlation_ids = \? WHERE %s AND id = \?`, fixUpdateTenantIsolationSubquery())
+		updateStmt := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.applications SET name = ?, description = ?, status_condition = ?, status_timestamp = ?, healthcheck_url = ?, integration_system_id = ?, provider_name = ?, base_url = ?, labels = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, correlation_ids = ? WHERE id = ? AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = '%s' AND owner = true))`, givenTenant()))
 
 		dbMock.ExpectExec(updateStmt).
-			WithArgs(appEntityWithDeletedTimestamp.Name, appEntityWithDeletedTimestamp.Description, appEntityWithDeletedTimestamp.StatusCondition, appEntityWithDeletedTimestamp.StatusTimestamp, appEntityWithDeletedTimestamp.HealthCheckURL, appEntityWithDeletedTimestamp.IntegrationSystemID, appEntityWithDeletedTimestamp.ProviderName, appEntityWithDeletedTimestamp.BaseURL, appEntityWithDeletedTimestamp.Labels, appEntityWithDeletedTimestamp.Ready, appEntityWithDeletedTimestamp.CreatedAt, appEntityWithDeletedTimestamp.UpdatedAt, appEntityWithDeletedTimestamp.DeletedAt, appEntityWithDeletedTimestamp.Error, appEntityWithDeletedTimestamp.CorrelationIDs, givenTenant(), givenID()).
+			WithArgs(appEntityWithDeletedTimestamp.Name, appEntityWithDeletedTimestamp.Description, appEntityWithDeletedTimestamp.StatusCondition, appEntityWithDeletedTimestamp.StatusTimestamp, appEntityWithDeletedTimestamp.HealthCheckURL, appEntityWithDeletedTimestamp.IntegrationSystemID, appEntityWithDeletedTimestamp.ProviderName, appEntityWithDeletedTimestamp.BaseURL, appEntityWithDeletedTimestamp.Labels, appEntityWithDeletedTimestamp.Ready, appEntityWithDeletedTimestamp.CreatedAt, appEntityWithDeletedTimestamp.UpdatedAt, appEntityWithDeletedTimestamp.DeletedAt, appEntityWithDeletedTimestamp.Error, appEntityWithDeletedTimestamp.CorrelationIDs, givenID()).
 			WillReturnError(givenError())
 
 		ctx = persistence.SaveToContext(ctx, db)
@@ -267,26 +267,8 @@ func TestRepository_Delete(t *testing.T) {
 
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
-
-	t.Run("Error", func(t *testing.T) {
-		// given
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec("DELETE FROM .*").WithArgs(
-			givenTenant(), givenID()).WillReturnError(givenError())
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repository := application.NewRepository(nil)
-
-		// when
-		err := repository.Delete(ctx, givenTenant(), givenID())
-
-		// then
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
 }
-*/
+
 func TestRepository_Create(t *testing.T) {
 	var nilAppModel *model.Application
 	appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")

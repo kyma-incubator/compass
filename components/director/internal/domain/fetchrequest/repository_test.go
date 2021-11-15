@@ -323,102 +323,127 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 	})
 }
 
-/*
 func TestRepository_Delete(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-		// GIVEN
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
+	apiFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "API Fetch Request Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE id = $1 AND (id IN (SELECT id FROM api_specifications_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{givenID(), tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{tenantID, givenID(), model.APISpecFetchRequestReference},
+	}
 
-		dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.fetch_requests WHERE %s AND id = $2", fixUnescapedTenantIsolationSubquery()))).WithArgs(
-			givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
+	eventFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "Event Fetch Request Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE id = $1 AND (id IN (SELECT id FROM event_specifications_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{givenID(), tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{tenantID, givenID(), model.EventSpecFetchRequestReference},
+	}
 
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := fetchrequest.NewRepository(nil)
-		// WHEN
-		err := repo.Delete(ctx, givenTenant(), givenID())
-		// THEN
-		require.NoError(t, err)
-	})
+	docFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "Documents Fetch Request Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE id = $1 AND (id IN (SELECT id FROM document_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{givenID(), tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{tenantID, givenID(), model.DocumentFetchRequestReference},
+	}
 
-	t.Run("Error - DB", func(t *testing.T) {
-		// GIVEN
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec("DELETE FROM .*").WithArgs(
-			givenTenant(), givenID()).WillReturnError(givenError())
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := fetchrequest.NewRepository(nil)
-		// WHEN
-		err := repo.Delete(ctx, givenTenant(), givenID())
-		// THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
+	apiFRSuite.Run(t)
+	eventFRSuite.Run(t)
+	docFRSuite.Run(t)
 }
 
 func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
-	refID := "foo"
-	testCases := []struct {
-		Name       string
-		FieldName  string
-		ObjectType model.FetchRequestReferenceObjectType
-		DocumentID sql.NullString
-		SpecID     sql.NullString
-	}{
-		{Name: "Document", FieldName: "document_id", ObjectType: model.DocumentFetchRequestReference, DocumentID: sql.NullString{String: refID, Valid: true}},
-		{Name: "Spec", FieldName: "spec_id", ObjectType: model.SpecFetchRequestReference, SpecID: sql.NullString{String: refID, Valid: true}},
+	apiFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "API Fetch Request Delete By ObjectID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE spec_id = $1 AND (id IN (SELECT id FROM api_specifications_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.APISpecFetchRequestReference, refID},
+		MethodName:          "DeleteByReferenceObjectID",
+		IsDeleteMany:        true,
 	}
 
-	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("Success - %s", testCase.Name), func(t *testing.T) {
-			// GIVEN
-			db, dbMock := testdb.MockDatabase(t)
-			defer dbMock.AssertExpectations(t)
-
-			dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.fetch_requests WHERE %s AND %s = $2", fixUnescapedTenantIsolationSubquery(), testCase.FieldName))).WithArgs(
-				givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
-
-			ctx := persistence.SaveToContext(context.TODO(), db)
-			repo := fetchrequest.NewRepository(nil)
-			// WHEN
-			err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), testCase.ObjectType, givenID())
-			// THEN
-			require.NoError(t, err)
-		})
+	eventFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "Event Fetch Request Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE spec_id = $1 AND (id IN (SELECT id FROM event_specifications_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.EventSpecFetchRequestReference, refID},
+		MethodName:          "DeleteByReferenceObjectID",
+		IsDeleteMany:        true,
 	}
 
-	t.Run("Error - Invalid Object Reference Type", func(t *testing.T) {
-		// GIVEN
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
+	docFRSuite := testdb.RepoDeleteTestSuite{
+		Name: "Documents Fetch Request Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE document_id = $1 AND (id IN (SELECT id FROM document_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: fetchrequest.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.DocumentFetchRequestReference, refID},
+		MethodName:          "DeleteByReferenceObjectID",
+		IsDeleteMany:        true,
+	}
 
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := fetchrequest.NewRepository(nil)
-		// WHEN
-		err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), "test", givenID())
-		// THEN
-		require.EqualError(t, err, apperrors.NewInternalError("Invalid type of the Fetch Request reference object").Error())
-	})
-
-	t.Run("Error - DB", func(t *testing.T) {
-		// GIVEN
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec("DELETE FROM .*").WithArgs(
-			givenTenant(), givenID()).WillReturnError(givenError())
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := fetchrequest.NewRepository(nil)
-		// WHEN
-		err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), model.SpecFetchRequestReference, givenID())
-		// THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
+	apiFRSuite.Run(t)
+	eventFRSuite.Run(t)
+	docFRSuite.Run(t)
 }
 
+/*
 func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 	timestamp := time.Now()
 	firstSpecID := "111111111-1111-1111-1111-111111111111"

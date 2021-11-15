@@ -415,40 +415,49 @@ func TestPgRepository_Update(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestPgRepository_Delete(t *testing.T) {
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := fmt.Sprintf(`^DELETE FROM "public"."event_api_definitions" WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Event Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{eventID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc: event.NewRepository,
+		MethodArgs:          []interface{}{tenantID, eventID},
+	}
 
-	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, eventID).WillReturnResult(sqlmock.NewResult(-1, 1))
-	convMock := &automock.EventAPIDefinitionConverter{}
-	pgRepository := event.NewRepository(convMock)
-	//WHEN
-	err := pgRepository.Delete(ctx, tenantID, eventID)
-	//THEN
-	require.NoError(t, err)
-	sqlMock.AssertExpectations(t)
-	convMock.AssertExpectations(t)
+	suite.Run(t)
 }
 
 func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := fmt.Sprintf(`DELETE FROM "public"."event_api_definitions"
-		WHERE %s AND id IN \(SELECT (.+) FROM public\.bundle_references WHERE %s AND bundle_id = \$3 AND event_def_id IS NOT NULL\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(2))
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Event Delete By BundleID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM "public"."event_api_definitions" WHERE id IN (SELECT event_def_id FROM public.bundle_references WHERE bundle_id = $1 AND event_def_id IS NOT NULL) AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{bundleID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EventAPIDefinitionConverter{}
+		},
+		RepoConstructorFunc: event.NewRepository,
+		MethodName:          "DeleteAllByBundleID",
+		MethodArgs:          []interface{}{tenantID, bundleID},
+		IsDeleteMany:        true,
+	}
 
-	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, tenantID, bundleID).WillReturnResult(sqlmock.NewResult(-1, 1))
-	convMock := &automock.EventAPIDefinitionConverter{}
-	pgRepository := event.NewRepository(convMock)
-	//WHEN
-	err := pgRepository.DeleteAllByBundleID(ctx, tenantID, bundleID)
-	//THEN
-	require.NoError(t, err)
-	sqlMock.AssertExpectations(t)
-	convMock.AssertExpectations(t)
+	suite.Run(t)
 }
-*/
 
 func TestPgRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{

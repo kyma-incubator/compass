@@ -496,33 +496,37 @@ func TestPgRepository_Update(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
-func TestPgRepository_Delete_ShouldDeleteRuntimeEntityUsingValidModel(t *testing.T) {
-	// given
-	runtimeID := uuid.New().String()
-	tenantID := uuid.New().String()
-	modelRuntime := fixModelRuntime(t, runtimeID, tenantID, "Runtime BCD", "Description for runtime BCD")
+func TestPgRepository_Delete(t *testing.T) {
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Runtime Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id FROM public.runtimes WHERE id = $1 AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2 AND owner = true))`),
+				Args:     []driver.Value{runtimeID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id"}).AddRow(runtimeID)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id"}).AddRow(runtimeID).AddRow("secondID")}
+				},
+			},
+			{
+				Query:       regexp.QuoteMeta(`DELETE FROM tenant_runtimes WHERE id IN ($1)`),
+				Args:        []driver.Value{runtimeID},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: runtime.NewRepository,
+		MethodArgs:          []interface{}{tenantID, runtimeID},
+		IsTopLeveEntity:     true,
+	}
 
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	defer sqlMock.AssertExpectations(t)
-
-	mockConverter := &automock.EntityConverter{}
-
-	sqlMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.runtimes WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())).
-		WithArgs(tenantID, runtimeID).
-		WillReturnResult(sqlmock.NewResult(-1, 1))
-
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-	pgRepository := runtime.NewRepository(mockConverter)
-
-	// when
-	err := pgRepository.Delete(ctx, tenantID, modelRuntime.ID)
-
-	// then
-	assert.NoError(t, err)
+	suite.Run(t)
 }
-*/
 
 func TestPgRepository_Exist(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{

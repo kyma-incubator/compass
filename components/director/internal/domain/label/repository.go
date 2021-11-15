@@ -63,7 +63,7 @@ func NewRepository(conv Converter) *repository {
 		queryBuilder: repo.NewQueryBuilder(tableName, []string{"runtime_id"}),
 
 		embeddedTenantLister:       repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		embeddedTenantDeleter:      repo.NewDeleterWithEmbeddedTenant(tenantColumn, tableName),
+		embeddedTenantDeleter:      repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		embeddedTenantGetter:       repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		embeddedTenantQueryBuilder: repo.NewQueryBuilderWithEmbeddedTenant(tableName, tenantColumn, []string{"runtime_id"}),
 
@@ -238,33 +238,38 @@ func (r *repository) ListGlobalByKeyAndObjects(ctx context.Context, objectType m
 // Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
 	deleter := r.deleter
+	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
 	if objectType == model.TenantLabelableObject {
 		deleter = r.embeddedTenantDeleter
+	} else {
+		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
-	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, repo.Conditions{repo.NewEqualCondition("key", key), repo.NewEqualCondition(labelableObjectField(objectType), objectID)})
+	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
 }
 
 // DeleteAll missing godoc
 func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error {
 	deleter := r.deleter
+	conds := repo.Conditions{}
 	if objectType == model.TenantLabelableObject {
 		deleter = r.embeddedTenantDeleter
+	} else {
+		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
-	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, repo.Conditions{repo.NewEqualCondition(labelableObjectField(objectType), objectID)})
+	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
 }
 
 // DeleteByKeyNegationPattern missing godoc
 func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
 	deleter := r.deleter
+	conds := repo.Conditions{repo.NewNotRegexConditionString("key", labelKeyPattern)}
 	if objectType == model.TenantLabelableObject {
 		deleter = r.embeddedTenantDeleter
+	} else {
+		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
 
-	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, repo.Conditions{
-		repo.NewEqualCondition(labelableObjectField(objectType), objectID),
-		repo.NewEqualCondition(tenantColumn, tenant),
-		repo.NewNotRegexConditionString("key", labelKeyPattern),
-	})
+	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
 }
 
 // DeleteByKey missing godoc

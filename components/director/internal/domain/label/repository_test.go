@@ -1297,14 +1297,67 @@ func TestRepository_ListGlobalByKeyAndObjects(t *testing.T) {
 	})
 }
 
+*/
 func TestRepository_Delete(t *testing.T) {
-	t.Run("Success - Label for Runtime", func(t *testing.T) {
-		// GIVEN
-		objType := model.RuntimeLabelableObject
-		objID := "foo"
-		key := "test"
-		tnt := "tenant"
+	appLabelSuite := testdb.RepoDeleteTestSuite{
+		Name: "App Label Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND app_id = $2 AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
+				Args:          []driver.Value{key, refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.ApplicationLabelableObject, refID, key},
+		IsDeleteMany:        true,
+	}
 
+	rtLabelSuite := testdb.RepoDeleteTestSuite{
+		Name: "Runtime Label Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND runtime_id = $2 AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
+				Args:          []driver.Value{key, refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.RuntimeLabelableObject, refID, key},
+		IsDeleteMany:        true,
+	}
+
+	rtCtxLabelSuite := testdb.RepoDeleteTestSuite{
+		Name: "Runtime Context Label Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND runtime_context_id = $2 AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
+				Args:          []driver.Value{key, refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.RuntimeContextLabelableObject, refID, key},
+		IsDeleteMany:        true,
+	}
+
+	appLabelSuite.Run(t)
+	rtLabelSuite.Run(t)
+	rtCtxLabelSuite.Run(t)
+
+	t.Run("Success - Label for Tenant", func(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 
@@ -1313,118 +1366,81 @@ func TestRepository_Delete(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.labels WHERE %s AND key = $2 AND runtime_id = $3`, fixUnescapedTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key, objID).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE tenant_id = $1 AND key = $2`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(tenantID, key).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		// WHEN
-		err := labelRepo.Delete(ctx, tnt, objType, objID, key)
+		err := labelRepo.Delete(ctx, tenantID, model.TenantLabelableObject, tenantID, key)
 		// THEN
 		require.NoError(t, err)
-	})
-
-	t.Run("Success - Label for Runtime Context", func(t *testing.T) {
-		// GIVEN
-		objType := model.RuntimeContextLabelableObject
-		objID := "foo"
-		key := "test"
-		tnt := "tenant"
-
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-
-		labelRepo := label.NewRepository(mockConverter)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.labels WHERE %s AND key = $2 AND runtime_context_id = $3`, fixUnescapedTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key, objID).WillReturnResult(sqlmock.NewResult(1, 1))
-
-		ctx := context.TODO()
-		ctx = persistence.SaveToContext(ctx, db)
-		// WHEN
-		err := labelRepo.Delete(ctx, tnt, objType, objID, key)
-		// THEN
-		require.NoError(t, err)
-	})
-
-	t.Run("Success - Label for Application", func(t *testing.T) {
-		// GIVEN
-		objType := model.ApplicationLabelableObject
-		objID := "foo"
-		key := "test"
-		tnt := "tenant"
-
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-
-		labelRepo := label.NewRepository(mockConverter)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.labels WHERE %s AND key = $2 AND app_id = $3`, fixUnescapedTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key, objID).WillReturnResult(sqlmock.NewResult(1, 1))
-
-		ctx := context.TODO()
-		ctx = persistence.SaveToContext(ctx, db)
-		// WHEN
-		err := labelRepo.Delete(ctx, tnt, objType, objID, key)
-		// THEN
-		require.NoError(t, err)
-	})
-
-	t.Run("Error - Operation", func(t *testing.T) {
-		// GIVEN
-		objType := model.ApplicationLabelableObject
-		objID := "foo"
-		key := "test"
-		tnt := "tenant"
-		testErr := errors.New("Test err")
-
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-
-		labelRepo := label.NewRepository(mockConverter)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.labels WHERE %s AND key = $2 AND app_id = $3`, fixUnescapedTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key, objID).WillReturnError(testErr)
-
-		ctx := context.TODO()
-		ctx = persistence.SaveToContext(ctx, db)
-		// WHEN
-		err := labelRepo.Delete(ctx, tnt, objType, objID, key)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Unexpected error while executing SQL query")
-	})
-
-	t.Run("Error - Missing persistence", func(t *testing.T) {
-		// GIVEN
-		labelRepo := label.NewRepository(nil)
-		objType := model.RuntimeLabelableObject
-		objID := "foo"
-
-		// WHEN
-		err := labelRepo.Delete(context.TODO(), "tenant", objType, objID, "key")
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "unable to fetch database from context")
 	})
 }
 
 func TestRepository_DeleteAll(t *testing.T) {
-	t.Run("Success - Label for Runtime", func(t *testing.T) {
-		// GIVEN
-		objType := model.RuntimeLabelableObject
-		objID := "foo"
-		tnt := "tenant"
+	appLabelSuite := testdb.RepoDeleteTestSuite{
+		Name: "App Label Delete All",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE app_id = $1 AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.ApplicationLabelableObject, refID},
+		MethodName:          "DeleteAll",
+		IsDeleteMany:        true,
+	}
 
+	rtLabelSuite := testdb.RepoDeleteTestSuite{
+		Name: "Runtime Label Delete All",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE runtime_id = $1 AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.RuntimeLabelableObject, refID},
+		MethodName:          "DeleteAll",
+		IsDeleteMany:        true,
+	}
+
+	rtCtxLabelSuite := testdb.RepoDeleteTestSuite{
+		Name: "Runtime Context Label Delete All",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE runtime_context_id = $1 AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.RuntimeContextLabelableObject, refID},
+		MethodName:          "DeleteAll",
+		IsDeleteMany:        true,
+	}
+
+	appLabelSuite.Run(t)
+	rtLabelSuite.Run(t)
+	rtCtxLabelSuite.Run(t)
+
+	t.Run("Success - Label for Tenant", func(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 
@@ -1433,114 +1449,106 @@ func TestRepository_DeleteAll(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.labels WHERE %s AND runtime_id = $2`, fixUnescapedTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, objID).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE tenant_id = $1`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(tenantID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		// WHEN
-		err := labelRepo.DeleteAll(ctx, tnt, objType, objID)
+		err := labelRepo.DeleteAll(ctx, tenantID, model.TenantLabelableObject, tenantID)
 		// THEN
 		require.NoError(t, err)
-	})
-
-	t.Run("Success - Label for Runtime Context", func(t *testing.T) {
-		// GIVEN
-		objType := model.RuntimeContextLabelableObject
-		objID := "foo"
-		tnt := "tenant"
-
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-
-		labelRepo := label.NewRepository(mockConverter)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.labels WHERE %s AND runtime_context_id = $2`, fixUnescapedTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, objID).WillReturnResult(sqlmock.NewResult(1, 1))
-
-		ctx := context.TODO()
-		ctx = persistence.SaveToContext(ctx, db)
-		// WHEN
-		err := labelRepo.DeleteAll(ctx, tnt, objType, objID)
-		// THEN
-		require.NoError(t, err)
-	})
-
-	t.Run("Success - Label for Application", func(t *testing.T) {
-		// GIVEN
-		objType := model.ApplicationLabelableObject
-		objID := "foo"
-		tnt := "tenant"
-
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-
-		labelRepo := label.NewRepository(mockConverter)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.labels WHERE %s AND app_id = $2`, fixUnescapedTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, objID).WillReturnResult(sqlmock.NewResult(1, 1))
-
-		ctx := context.TODO()
-		ctx = persistence.SaveToContext(ctx, db)
-		// WHEN
-		err := labelRepo.DeleteAll(ctx, tnt, objType, objID)
-		// THEN
-		require.NoError(t, err)
-	})
-
-	t.Run("Error - Operation", func(t *testing.T) {
-		// GIVEN
-		objType := model.ApplicationLabelableObject
-		objID := "foo"
-		tnt := "tenant"
-		testErr := errors.New("Test err")
-
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-
-		labelRepo := label.NewRepository(mockConverter)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.labels WHERE %s AND app_id = $2`, fixUnescapedTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, objID).WillReturnError(testErr)
-
-		ctx := context.TODO()
-		ctx = persistence.SaveToContext(ctx, db)
-		// WHEN
-		err := labelRepo.DeleteAll(ctx, tnt, objType, objID)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Unexpected error while executing SQL query")
-	})
-
-	t.Run("Error - Missing persistence", func(t *testing.T) {
-		// GIVEN
-		labelRepo := label.NewRepository(nil)
-		objType := model.RuntimeLabelableObject
-		objID := "foo"
-
-		// WHEN
-		err := labelRepo.DeleteAll(context.TODO(), "tenant", objType, objID)
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "unable to fetch database from context")
 	})
 }
 
 func TestRepository_DeleteByKey(t *testing.T) {
-	tenant := "tenant"
-	key := "key"
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Label Delete By Key",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND (id IN (SELECT id FROM labels_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{key, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		MethodArgs:          []interface{}{tenantID, key},
+		MethodName:          "DeleteByKey",
+		IsDeleteMany:        true,
+	}
 
-	t.Run("Success - Deleted labels", func(t *testing.T) {
-		// GIVEN
+	suite.Run(t)
+}
+
+func TestRepository_DeleteByKeyNegationPattern(t *testing.T) {
+	pattern := "pattern"
+
+	appLabelSuite := testdb.RepoDeleteTestSuite{
+		Name: "App Label DeleteByKeyNegationPattern",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE NOT key ~ $1 AND app_id = $2 AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
+				Args:          []driver.Value{pattern, refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.ApplicationLabelableObject, refID, pattern},
+		MethodName:          "DeleteByKeyNegationPattern",
+		IsDeleteMany:        true,
+	}
+
+	rtLabelSuite := testdb.RepoDeleteTestSuite{
+		Name: "Runtime Label DeleteByKeyNegationPattern",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE NOT key ~ $1 AND runtime_id = $2 AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
+				Args:          []driver.Value{pattern, refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.RuntimeLabelableObject, refID, pattern},
+		MethodName:          "DeleteByKeyNegationPattern",
+		IsDeleteMany:        true,
+	}
+
+	rtCtxLabelSuite := testdb.RepoDeleteTestSuite{
+		Name: "Runtime Context Label DeleteByKeyNegationPattern",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE NOT key ~ $1 AND runtime_context_id = $2 AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
+				Args:          []driver.Value{pattern, refID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: label.NewRepository,
+		MethodArgs:          []interface{}{tenantID, model.RuntimeContextLabelableObject, refID, pattern},
+		MethodName:          "DeleteByKeyNegationPattern",
+		IsDeleteMany:        true,
+	}
+
+	appLabelSuite.Run(t)
+	rtLabelSuite.Run(t)
+	rtCtxLabelSuite.Run(t)
+
+	t.Run("Success - Label for Tenant", func(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 
@@ -1549,85 +1557,17 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.labels WHERE %s AND key = $2`, fixUnescapedTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(tenant, key).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.labels WHERE tenant_id = $1 AND NOT key ~ $2 `)
+		dbMock.ExpectExec(escapedQuery).WithArgs(tenantID, pattern).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		// WHEN
-		err := labelRepo.DeleteByKey(ctx, tenant, key)
-		// THEN
-		require.NoError(t, err)
-	})
-
-	t.Run("Error - can't fetch persistence from context", func(t *testing.T) {
-		labelRepo := label.NewRepository(nil)
-		// WHEN
-		err := labelRepo.DeleteByKey(context.TODO(), tenant, key)
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "unable to fetch database from context")
-	})
-
-	t.Run("Error - Operation", func(t *testing.T) {
-		// GIVEN
-		testErr := errors.New("Test err")
-
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-
-		labelRepo := label.NewRepository(mockConverter)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.labels WHERE %s AND key = $2`, fixUnescapedTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(tenant, key).WillReturnError(testErr)
-
-		ctx := context.TODO()
-		ctx = persistence.SaveToContext(ctx, db)
-		// WHEN
-		err := labelRepo.DeleteByKey(ctx, tenant, key)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Unexpected error while executing SQL query")
-	})
-
-	t.Run("Error - Missing persistence", func(t *testing.T) {
-		// GIVEN
-		labelRepo := label.NewRepository(nil)
-		objType := model.RuntimeLabelableObject
-		objID := "foo"
-
-		// WHEN
-		err := labelRepo.DeleteAll(context.TODO(), "tenant", objType, objID)
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "unable to fetch database from context")
-	})
-
-	t.Run("No rows were affected - should succeed", func(t *testing.T) {
-		// GIVEN
-		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-
-		labelRepo := label.NewRepository(mockConverter)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.labels WHERE %s AND key = $2`, fixUnescapedTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(tenant, key).WillReturnResult(sqlmock.NewResult(1, 0))
-
-		ctx := context.TODO()
-		ctx = persistence.SaveToContext(ctx, db)
-		// WHEN
-		err := labelRepo.DeleteByKey(ctx, tenant, key)
+		err := labelRepo.DeleteByKeyNegationPattern(ctx, tenantID, model.TenantLabelableObject, tenantID, pattern)
 		// THEN
 		require.NoError(t, err)
 	})
 }
-*/
 
 /*
 func TestRepository_GetRuntimeScenariosWhereLabelsMatchSelector(t *testing.T) {

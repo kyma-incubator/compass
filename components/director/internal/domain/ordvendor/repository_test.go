@@ -74,24 +74,27 @@ func TestPgRepository_Update(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestPgRepository_Delete(t *testing.T) {
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := fmt.Sprintf(`^DELETE FROM public.vendors WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Vendor Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.vendors WHERE id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{vendorID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: ordvendor.NewRepository,
+		MethodArgs:          []interface{}{tenantID, vendorID},
+	}
 
-	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, vendorID).WillReturnResult(sqlmock.NewResult(-1, 1))
-	convMock := &automock.EntityConverter{}
-	pgRepository := ordvendor.NewRepository(convMock)
-	//WHEN
-	err := pgRepository.Delete(ctx, tenantID, vendorID)
-	//THEN
-	require.NoError(t, err)
-	sqlMock.AssertExpectations(t)
-	convMock.AssertExpectations(t)
+	suite.Run(t)
 }
 
-*/
 func TestPgRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Vendor Exists",

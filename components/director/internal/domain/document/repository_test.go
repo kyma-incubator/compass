@@ -557,41 +557,26 @@ func TestRepository_GetForBundle(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestRepository_Delete(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-		// GIVEN
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Document Delete",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.documents WHERE id = $1 AND (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{givenID(), givenTenant()},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc: document.NewRepository,
+		MethodArgs:          []interface{}{givenTenant(), givenID()},
+	}
 
-		dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.documents WHERE %s AND id = $2", fixUnescapedTenantIsolationSubquery()))).WithArgs(
-			givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := document.NewRepository(nil)
-		// WHEN
-		err := repo.Delete(ctx, givenTenant(), givenID())
-		// THEN
-		require.NoError(t, err)
-	})
-
-	t.Run("Error", func(t *testing.T) {
-		// GIVEN
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec("DELETE FROM .*").WithArgs(
-			givenTenant(), givenID()).WillReturnError(givenError())
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := document.NewRepository(nil)
-		// WHEN
-		err := repo.Delete(ctx, givenTenant(), givenID())
-		// THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
+	suite.Run(t)
 }
-*/
 
 func givenID() string {
 	return "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
