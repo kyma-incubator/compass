@@ -117,7 +117,7 @@ func (g *universalPageableQuerier) unsafeList(ctx context.Context, resourceType 
 		return nil, -1, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list page of objects from '%s' table", g.tableName)
 	}
 
-	totalCount, err := g.getTotalCount(ctx, persist, query, args)
+	totalCount, err := g.getTotalCount(ctx, resourceType, persist, query, args)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -135,12 +135,12 @@ func (g *universalPageableQuerier) unsafeList(ctx context.Context, resourceType 
 	}, totalCount, nil
 }
 
-func (g *universalPageableQuerier) getTotalCount(ctx context.Context, persist persistence.PersistenceOp, query string, args []interface{}) (int, error) {
+func (g *universalPageableQuerier) getTotalCount(ctx context.Context, resourceType resource.Type, persist persistence.PersistenceOp, query string, args []interface{}) (int, error) {
 	stmt := strings.Replace(query, g.selectedColumns, "COUNT(*)", 1)
 	var totalCount int
 	err := persist.GetContext(ctx, &totalCount, stmt, args...)
 	if err != nil {
-		return -1, errors.Wrap(err, "while counting objects")
+		return -1, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while counting objects from '%s' table", g.tableName)
 	}
 	return totalCount, nil
 }

@@ -177,6 +177,10 @@ const (
 )
 
 func fixBundleModel(name, desc string) *model.Bundle {
+	return fixBundleModelWithID(bundleID, name, desc)
+}
+
+func fixBundleModelWithID(id, name, desc string) *model.Bundle {
 	return &model.Bundle{
 		ApplicationID:                  appID,
 		Name:                           name,
@@ -189,7 +193,7 @@ func fixBundleModel(name, desc string) *model.Bundle {
 		Labels:                         json.RawMessage("[]"),
 		CredentialExchangeStrategies:   json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
-			ID:        bundleID,
+			ID:        id,
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: &fixedTimestamp,

@@ -3,6 +3,7 @@ package api_test
 import (
 	"database/sql/driver"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"regexp"
 	"testing"
 
@@ -45,263 +46,132 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestPgRepository_ListByApplicationID(t *testing.T) {
-	// GIVEN
-	totalCount := 2
-	firstAPIDefID := "111111111-1111-1111-1111-111111111111"
-	firstAPIDefEntity := fixFullEntityAPIDefinition(firstAPIDefID, "placeholder")
-	secondAPIDefID := "222222222-2222-2222-2222-222222222222"
-	secondAPIDefEntity := fixFullEntityAPIDefinition(secondAPIDefID, "placeholder")
+	entity1 := fixFullEntityAPIDefinition(apiDefID, "placeholder")
+	apiDefModel1, _, _ := fixFullAPIDefinitionModel("placeholder")
+	entity2 := fixFullEntityAPIDefinition(apiDefID, "placeholder2")
+	apiDefModel2, _, _ := fixFullAPIDefinitionModel("placeholder2")
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."api_definitions"
-		WHERE %s AND app_id = \$2`, fixTenantIsolationSubquery())
+	suite := testdb.RepoListTestSuite{
+		Name: "List APIs",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash FROM "public"."api_definitions" WHERE app_id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAPIDefinitionColumns()).AddRow(fixAPIDefinitionRow(apiDefID, "placeholder")...).AddRow(fixAPIDefinitionRow(apiDefID, "placeholder2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAPIDefinitionColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.APIDefinitionConverter{}
+		},
+		RepoConstructorFunc:       api.NewRepository,
+		ExpectedModelEntities:     []interface{}{&apiDefModel1, &apiDefModel2},
+		ExpectedDBEntities:        []interface{}{&entity1, &entity2},
+		MethodArgs:                []interface{}{tenantID, appID},
+		MethodName:                "ListByApplicationID",
+		DisableConverterErrorTest: true,
+	}
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
-			AddRow(fixAPIDefinitionRow(firstAPIDefID, "placeholder")...).
-			AddRow(fixAPIDefinitionRow(secondAPIDefID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, appID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", firstAPIDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: firstAPIDefID}}, nil)
-		convMock.On("FromEntity", secondAPIDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: secondAPIDefID}}, nil)
-		pgRepository := api.NewRepository(convMock)
-		// WHEN
-		modelAPIDef, err := pgRepository.ListByApplicationID(ctx, tenantID, appID)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelAPIDef, totalCount)
-		assert.Equal(t, firstAPIDefID, modelAPIDef[0].ID)
-		assert.Equal(t, secondAPIDefID, modelAPIDef[1].ID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
 func TestPgRepository_ListAllForBundle(t *testing.T) {
-	// GIVEN
-	inputPageSize := 3
-	inputCursor := ""
+	pageSize := 1
+	cursor := ""
 
-	firstBndlID := "111111111-1111-1111-1111-111111111111"
-	secondBndlID := "222222222-2222-2222-2222-222222222222"
-	bundleIDs := []string{firstBndlID, secondBndlID}
+	emptyPageBundleID := "emptyPageBundleID"
 
-	firstAPIDefID := "111111111-1111-1111-1111-111111111111"
-	firstAPIDefEntity := fixFullEntityAPIDefinition(firstAPIDefID, "placeholder")
-	secondAPIDefID := "222222222-2222-2222-2222-222222222222"
-	secondAPIDefEntity := fixFullEntityAPIDefinition(secondAPIDefID, "placeholder")
+	onePageBundleID := "onePageBundleID"
+	firstAPIDefID := "firstAPIDefID"
+	firstAPIDef, _, _ := fixFullAPIDefinitionModelWithID(firstAPIDefID, "placeholder")
+	firstEntity := fixFullEntityAPIDefinition(firstAPIDefID, "placeholder")
+	firstBundleRef := fixModelBundleReference(onePageBundleID, firstAPIDefID)
 
-	firstBundleRef := fixModelBundleReference(firstBndlID, firstAPIDefID)
-	secondBundleRef := fixModelBundleReference(secondBndlID, secondAPIDefID)
-	bundleRefs := []*model.BundleReference{firstBundleRef, secondBundleRef}
+	multiplePagesBundleID := "multiplePagesBundleID"
 
-	totalCounts := map[string]int{firstBndlID: 1, secondBndlID: 1}
+	secondAPIDefID := "secondAPIDefID"
+	secondAPIDef, _, _ := fixFullAPIDefinitionModelWithID(secondAPIDefID, "placeholder")
+	secondEntity := fixFullEntityAPIDefinition(secondAPIDefID, "placeholder")
+	secondBundleRef := fixModelBundleReference(multiplePagesBundleID, secondAPIDefID)
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+)
-		FROM "public"."api_definitions"
-		WHERE %s AND id IN \(\$2, \$3\)`, fixTenantIsolationSubquery())
+	totalCounts := map[string]int{
+		emptyPageBundleID:     0,
+		onePageBundleID:       1,
+		multiplePagesBundleID: 2,
+	}
 
-	t.Run("success when there are no more pages", func(t *testing.T) {
-		totalCountForFirstBundle := 1
-		totalCountForSecondBundle := 1
+	suite := testdb.RepoListPageableTestSuite{
+		Name: "List APIs for multiple bundles with paging",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash FROM "public"."api_definitions" WHERE id IN ($1, $2) AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $3))`),
+				Args:     []driver.Value{firstAPIDefID, secondAPIDefID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAPIDefinitionColumns()).AddRow(fixAPIDefinitionRow(firstAPIDefID, "placeholder")...).AddRow(fixAPIDefinitionRow(secondAPIDefID, "placeholder")...)}
+				},
+			},
+		},
+		Pages: []testdb.PageDetails{
+			{
+				ExpectedModelEntities: nil,
+				ExpectedDBEntities:    nil,
+				ExpectedPage: &model.APIDefinitionPage{
+					Data: []*model.APIDefinition{},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 0,
+				},
+			},
+			{
+				ExpectedModelEntities: []interface{}{&firstAPIDef},
+				ExpectedDBEntities:    []interface{}{&firstEntity},
+				ExpectedPage: &model.APIDefinitionPage{
+					Data: []*model.APIDefinition{&firstAPIDef},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 1,
+				},
+			},
+			{
+				ExpectedModelEntities: []interface{}{&secondAPIDef},
+				ExpectedDBEntities:    []interface{}{&secondEntity},
+				ExpectedPage: &model.APIDefinitionPage{
+					Data: []*model.APIDefinition{&secondAPIDef},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   pagination.EncodeNextOffsetCursor(0, pageSize),
+						HasNextPage: true,
+					},
+					TotalCount: 2,
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.APIDefinitionConverter{}
+		},
+		RepoConstructorFunc: api.NewRepository,
+		MethodName:          "ListByBundleIDs",
+		MethodArgs: []interface{}{tenantID, []string{emptyPageBundleID, onePageBundleID, multiplePagesBundleID},
+			[]*model.BundleReference{firstBundleRef, secondBundleRef}, totalCounts, pageSize, cursor},
+		DisableConverterErrorTest: true,
+	}
 
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
-			AddRow(fixAPIDefinitionRow(firstAPIDefID, "placeholder")...).
-			AddRow(fixAPIDefinitionRow(secondAPIDefID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, firstAPIDefID, secondAPIDefID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", firstAPIDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: firstAPIDefID}})
-		convMock.On("FromEntity", secondAPIDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: secondAPIDefID}})
-		pgRepository := api.NewRepository(convMock)
-		// WHEN
-		modelAPIDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelAPIDefs, 2)
-		assert.Equal(t, firstAPIDefID, modelAPIDefs[0].Data[0].ID)
-		assert.Equal(t, secondAPIDefID, modelAPIDefs[1].Data[0].ID)
-		assert.Equal(t, "", modelAPIDefs[0].PageInfo.StartCursor)
-		assert.Equal(t, totalCountForFirstBundle, modelAPIDefs[0].TotalCount)
-		assert.False(t, modelAPIDefs[0].PageInfo.HasNextPage)
-		assert.Equal(t, "", modelAPIDefs[1].PageInfo.StartCursor)
-		assert.Equal(t, totalCountForSecondBundle, modelAPIDefs[1].TotalCount)
-		assert.False(t, modelAPIDefs[1].PageInfo.HasNextPage)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("success when there is next page", func(t *testing.T) {
-		totalCountForFirstBundle := 10
-		totalCountForSecondBundle := 10
-		totalCounts[firstBndlID] = 10
-		totalCounts[secondBndlID] = 10
-
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
-			AddRow(fixAPIDefinitionRow(firstAPIDefID, "placeholder")...).
-			AddRow(fixAPIDefinitionRow(secondAPIDefID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, firstAPIDefID, secondAPIDefID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", firstAPIDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: firstAPIDefID}})
-		convMock.On("FromEntity", secondAPIDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: secondAPIDefID}})
-		pgRepository := api.NewRepository(convMock)
-		// WHEN
-		modelAPIDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelAPIDefs, 2)
-		assert.Equal(t, firstAPIDefID, modelAPIDefs[0].Data[0].ID)
-		assert.Equal(t, secondAPIDefID, modelAPIDefs[1].Data[0].ID)
-		assert.Equal(t, "", modelAPIDefs[0].PageInfo.StartCursor)
-		assert.Equal(t, totalCountForFirstBundle, modelAPIDefs[0].TotalCount)
-		assert.True(t, modelAPIDefs[0].PageInfo.HasNextPage)
-		assert.NotEmpty(t, modelAPIDefs[0].PageInfo.EndCursor)
-		assert.Equal(t, "", modelAPIDefs[1].PageInfo.StartCursor)
-		assert.Equal(t, totalCountForSecondBundle, modelAPIDefs[1].TotalCount)
-		assert.True(t, modelAPIDefs[1].PageInfo.HasNextPage)
-		assert.NotEmpty(t, modelAPIDefs[1].PageInfo.EndCursor)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("success when there is next page and it can be traversed", func(t *testing.T) {
-		totalCountForFirstBundle := 2
-		totalCountForSecondBundle := 2
-		totalCounts[firstBndlID] = 2
-		totalCounts[secondBndlID] = 2
-
-		thirdAPIDefID := "333333333-3333-3333-3333-333333333333"
-		thirdAPIDefEntity := fixFullEntityAPIDefinition(thirdAPIDefID, "placeholder")
-		fourthAPIDefID := "444444444-4444-4444-4444-444444444444"
-		fourthAPIDefEntity := fixFullEntityAPIDefinition(fourthAPIDefID, "placeholder")
-
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rowsFirstPage := sqlmock.NewRows(fixAPIDefinitionColumns()).
-			AddRow(fixAPIDefinitionRow(firstAPIDefID, "placeholder")...).
-			AddRow(fixAPIDefinitionRow(secondAPIDefID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, firstAPIDefID, secondAPIDefID).
-			WillReturnRows(rowsFirstPage)
-
-		rowsSecondPage := sqlmock.NewRows(fixAPIDefinitionColumns()).
-			AddRow(fixAPIDefinitionRow(thirdAPIDefID, "placeholder")...).
-			AddRow(fixAPIDefinitionRow(fourthAPIDefID, "placeholder")...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, thirdAPIDefID, fourthAPIDefID).
-			WillReturnRows(rowsSecondPage)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", firstAPIDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: firstAPIDefID}})
-		convMock.On("FromEntity", secondAPIDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: secondAPIDefID}})
-		convMock.On("FromEntity", thirdAPIDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: thirdAPIDefID}})
-		convMock.On("FromEntity", fourthAPIDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: fourthAPIDefID}})
-		pgRepository := api.NewRepository(convMock)
-		// WHEN
-		modelAPIDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelAPIDefs, 2)
-		assert.Equal(t, firstAPIDefID, modelAPIDefs[0].Data[0].ID)
-		assert.Equal(t, secondAPIDefID, modelAPIDefs[1].Data[0].ID)
-		assert.Equal(t, "", modelAPIDefs[0].PageInfo.StartCursor)
-		assert.Equal(t, totalCountForFirstBundle, modelAPIDefs[0].TotalCount)
-		assert.True(t, modelAPIDefs[0].PageInfo.HasNextPage)
-		assert.NotEmpty(t, modelAPIDefs[0].PageInfo.EndCursor)
-		assert.Equal(t, "", modelAPIDefs[1].PageInfo.StartCursor)
-		assert.Equal(t, totalCountForSecondBundle, modelAPIDefs[1].TotalCount)
-		assert.True(t, modelAPIDefs[1].PageInfo.HasNextPage)
-		assert.NotEmpty(t, modelAPIDefs[1].PageInfo.EndCursor)
-		endCursor := modelAPIDefs[0].PageInfo.EndCursor
-
-		thirdBundleRef := fixModelBundleReference(firstBndlID, thirdAPIDefID)
-		fourthBundleRef := fixModelBundleReference(secondBndlID, fourthAPIDefID)
-		bundleRefsSecondPage := []*model.BundleReference{thirdBundleRef, fourthBundleRef}
-
-		modelAPIDefsSecondPage, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefsSecondPage, totalCounts, inputPageSize, endCursor)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelAPIDefsSecondPage, 2)
-		assert.Equal(t, thirdAPIDefID, modelAPIDefsSecondPage[0].Data[0].ID)
-		assert.Equal(t, fourthAPIDefID, modelAPIDefsSecondPage[1].Data[0].ID)
-		assert.Equal(t, totalCountForFirstBundle, modelAPIDefsSecondPage[0].TotalCount)
-		assert.False(t, modelAPIDefsSecondPage[0].PageInfo.HasNextPage)
-		assert.Equal(t, totalCountForSecondBundle, modelAPIDefsSecondPage[1].TotalCount)
-		assert.False(t, modelAPIDefsSecondPage[1].PageInfo.HasNextPage)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("returns empty page", func(t *testing.T) {
-		totalCountForFirstBundle := 0
-		totalCountForSecondBundle := 0
-		totalCounts[firstBndlID] = 0
-		totalCounts[secondBndlID] = 0
-
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixAPIDefinitionColumns())
-
-		sqlMock.ExpectQuery(selectQuery).WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.APIDefinitionConverter{}
-		pgRepository := api.NewRepository(convMock)
-		// WHEN
-		modelAPIDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
-		//THEN
-
-		require.NoError(t, err)
-		require.Len(t, modelAPIDefs[0].Data, 0)
-		require.Len(t, modelAPIDefs[1].Data, 0)
-		assert.Equal(t, totalCountForFirstBundle, modelAPIDefs[0].TotalCount)
-		assert.False(t, modelAPIDefs[0].PageInfo.HasNextPage)
-		assert.Equal(t, totalCountForSecondBundle, modelAPIDefs[1].TotalCount)
-		assert.False(t, modelAPIDefs[1].PageInfo.HasNextPage)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// given
-		pgRepository := api.NewRepository(nil)
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		testError := errors.New("test error")
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, firstAPIDefID, secondAPIDefID).
-			WillReturnError(testError)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-		// when
-		modelAPIDefs, err := pgRepository.ListByBundleIDs(ctx, tenantID, bundleIDs, bundleRefs, totalCounts, inputPageSize, inputCursor)
-
-		// then
-		sqlMock.AssertExpectations(t)
-		assert.Nil(t, modelAPIDefs)
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
+	suite.Run(t)
 }
-*/
+
 func TestPgRepository_Create(t *testing.T) {
 	var nilApiDefModel *model.APIDefinition
 	apiDefModel, _, _ := fixFullAPIDefinitionModel("placeholder")

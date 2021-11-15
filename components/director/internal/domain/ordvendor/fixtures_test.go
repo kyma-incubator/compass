@@ -30,6 +30,28 @@ func fixEntityVendor() *ordvendor.Entity {
 	}
 }
 
+func fixEntityVendorWithTitle(title string) *ordvendor.Entity {
+	return &ordvendor.Entity{
+		ID:            vendorID,
+		OrdID:         ordID,
+		ApplicationID: appID,
+		Title:         title,
+		Partners:      repo.NewValidNullableString(partners),
+		Labels:        repo.NewValidNullableString("{}"),
+	}
+}
+
+func fixVendorModelWithTitle(title string) *model.Vendor {
+	return &model.Vendor{
+		ID:            vendorID,
+		OrdID:         ordID,
+		ApplicationID: appID,
+		Title:         title,
+		Partners:      json.RawMessage(partners),
+		Labels:        json.RawMessage("{}"),
+	}
+}
+
 func fixVendorModel() *model.Vendor {
 	return &model.Vendor{
 		ID:            vendorID,
@@ -60,6 +82,10 @@ func fixVendorColumns() []string {
 
 func fixVendorRow() []driver.Value {
 	return []driver.Value{ordID, appID, "title", repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners), vendorID}
+}
+
+func fixVendorRowWithTitle(title string) []driver.Value {
+	return []driver.Value{ordID, appID, title, repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners), vendorID}
 }
 
 func fixVendorUpdateArgs() []driver.Value {

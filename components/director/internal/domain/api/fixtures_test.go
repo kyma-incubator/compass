@@ -43,6 +43,10 @@ func fixAPIDefinitionModel(id string, name, targetURL string) *model.APIDefiniti
 }
 
 func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
+	return fixFullAPIDefinitionModelWithID(apiDefID, placeholder)
+}
+
+func fixFullAPIDefinitionModelWithID(id string, placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
 	apiType := model.APISpecTypeOpenAPI
 	spec := model.Spec{
 		ID:         specID,
@@ -103,7 +107,7 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 		Extensible:                              json.RawMessage(extensible),
 		ResourceHash:                            str.Ptr(resourceHash),
 		BaseEntity: &model.BaseEntity{
-			ID:        apiDefID,
+			ID:        id,
 			Ready:     true,
 			CreatedAt: &fixedTimestamp,
 			UpdatedAt: &time.Time{},

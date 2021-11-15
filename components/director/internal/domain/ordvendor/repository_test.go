@@ -150,39 +150,31 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestPgRepository_ListByApplicationID(t *testing.T) {
-	// GIVEN
-	totalCount := 2
-	firstVendorEntity := fixEntityVendor()
-	secondVendorEntity := fixEntityVendor()
+	suite := testdb.RepoListTestSuite{
+		Name: "List Vendors",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id FROM public.vendors WHERE app_id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixVendorColumns()).AddRow(fixVendorRowWithTitle("title1")...).AddRow(fixVendorRowWithTitle("title2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixVendorColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   ordvendor.NewRepository,
+		ExpectedModelEntities: []interface{}{fixVendorModelWithTitle("title1"), fixVendorModelWithTitle("title2")},
+		ExpectedDBEntities:    []interface{}{fixEntityVendorWithTitle("title1"), fixEntityVendorWithTitle("title2")},
+		MethodArgs:            []interface{}{tenantID, appID},
+		MethodName:            "ListByApplicationID",
+	}
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.vendors WHERE %s AND app_id = \$2`, fixTenantIsolationSubquery())
-
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixVendorColumns()).
-			AddRow(fixVendorRow()...).
-			AddRow(fixVendorRow()...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, appID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", firstVendorEntity).Return(&model.Vendor{ID: firstVendorEntity.ID}, nil)
-		convMock.On("FromEntity", secondVendorEntity).Return(&model.Vendor{ID: secondVendorEntity.ID}, nil)
-		pgRepository := ordvendor.NewRepository(convMock)
-		// WHEN
-		modelVendor, err := pgRepository.ListByApplicationID(ctx, tenantID, appID)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelVendor, totalCount)
-		assert.Equal(t, firstVendorEntity.ID, modelVendor[0].ID)
-		assert.Equal(t, secondVendorEntity.ID, modelVendor[1].ID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
-*/
