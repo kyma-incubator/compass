@@ -126,7 +126,7 @@ const ordDocument = `{
                "url":"/testing/relative"
             }
          ],
-		 correlationIds": [
+		 "correlationIds": [
 			"sap.s4:communicationScenario:SAP_COM_0001",
 			"sap.s4:communicationScenario:SAP_COM_0002"
 		 ],
@@ -163,7 +163,7 @@ const ordDocument = `{
             }
          ],
          "description":"foo bar",
-		 correlationIds": [
+		 "correlationIds": [
 			"sap.s4:communicationScenario:SAP_COM_0001",
 			"sap.s4:communicationScenario:SAP_COM_0002"
 		 ],
