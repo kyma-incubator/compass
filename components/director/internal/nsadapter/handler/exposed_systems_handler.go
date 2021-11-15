@@ -19,6 +19,7 @@ import (
 	"net/http"
 )
 
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	Upsert(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
@@ -31,6 +32,7 @@ type ApplicationService interface {
 	ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error) //TODO check what tenant will be used to execute this query
 }
 
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
 type TenantService interface {
 	ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
 }
@@ -82,7 +84,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-	
+
 	var reportData nsmodel.Report
 	err = json.Unmarshal(buf.Bytes(), &reportData)
 	if err != nil {
@@ -103,12 +105,12 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	externalIDToTenant := make(map[string]*model.BusinessTenantMapping, len(reportData.Value))
+	externalIDToTenant := make(map[string]string, len(reportData.Value))
 	externalIDs := make([]string, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
 		if _, ok := externalIDToTenant[scc.Subaccount]; !ok {
 			externalIDs = append(externalIDs, scc.Subaccount)
-			externalIDToTenant[scc.Subaccount] = nil
+			externalIDToTenant[scc.Subaccount] = ""
 		}
 	}
 
@@ -122,18 +124,16 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//TODO what if there are missing tenants? len(tenants) != len(externalIDs)
-
-	for _, t := range tenants {
-		if t.Type != tenant.Subaccount {
-			logger.Warnf("Got tenant which is not asubaccount")
-			httputil.RespondWithError(ctx, rw, http.StatusInternalServerError, httputil.Error{
-				Code:    http.StatusInternalServerError,
-				Message: "Update failed",
-			})
-			return
+	details := make([]httputil.Detail, 0, 0)
+	notSubaccountIDs := mapExternalToInternal(ctx, tenants, externalIDToTenant)
+	for _, scc := range reportData.Value {
+		if _, ok := notSubaccountIDs[scc.Subaccount]; ok {
+			addErrorDetailsMsg(&details, &scc, "Provided id is not subaccount.")
 		}
-		externalIDToTenant[t.ExternalTenant] = t
+	}
+
+	if len(tenants) != len(externalIDs) {
+		cleanNotFound(ctx, externalIDToTenant, reportData.Value, details)
 	}
 
 	reportType := req.URL.Query().Get("reportType")
@@ -147,7 +147,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if reportType == "delta" {
-		details := a.processDelta(ctx, reportData)
+		a.processDelta(ctx, reportData, externalIDToTenant, details)
 		if len(details) == 0 {
 			httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 			return
@@ -161,7 +161,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if reportType == "full" {
-		a.processDelta(ctx, reportData)
+		a.processDelta(ctx, reportData, externalIDToTenant, details)
 		a.handleUnreachableScc(ctx, reportData)
 		httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 		return
@@ -177,6 +177,10 @@ func (a *Handler) listTenantsByExternalIDs(ctx context.Context, ids []string) ([
 	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 
 	tenants, err := a.tntSvc.ListsByExternalIDs(ctxWithTransaction, ids)
+	if err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while listing tenants by external ids"))
+		return nil, err
+	}
 
 	if err := tx.Commit(); err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
@@ -233,24 +237,25 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 
 	sccsToMarkAsUnreachable := difference(sccs, sccsFromNs)
 	for _, scc := range sccsToMarkAsUnreachable {
-		//TODO add correct tenant in ctx
-		appsWithLabels, ok := a.listAppsByScc(ctx, scc.Subaccount, scc.LocationId)
+		ctxWithSubaccount := tenant.SaveToContext(ctx, scc.Subaccount)
+		appsWithLabels, ok := a.listAppsByScc(ctxWithSubaccount, scc.Subaccount, scc.LocationId)
 		if ok {
 			for _, appWithLabels := range appsWithLabels {
-				a.markSystemAsUnreachable(ctx, appWithLabels.App)
+				a.markSystemAsUnreachable(ctxWithSubaccount, appWithLabels.App)
 			}
 		}
 	}
 }
 
-func (a *Handler) processDelta(ctx context.Context, reportData nsmodel.Report) []httputil.Detail {
-	details := make([]httputil.Detail, 0, 0)
+func (a *Handler) processDelta(ctx context.Context, reportData nsmodel.Report, idToTenant map[string]string, details []httputil.Detail) {
 	for _, scc := range reportData.Value {
-		if ok := a.handleSccSystems(ctx, scc); !ok {
-			addErrorDetails(&details, &scc)
+		if _, ok := idToTenant[scc.Subaccount]; ok {
+			ctxWithTenant := tenant.SaveToContext(ctx, idToTenant[scc.Subaccount])
+			if ok := a.handleSccSystems(ctxWithTenant, scc); !ok {
+				addErrorDetails(&details, &scc)
+			}
 		}
 	}
-	return details
 }
 
 func (a *Handler) handleSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
@@ -443,9 +448,36 @@ func difference(a, b []*model.SccMetadata) (diff []*model.SccMetadata) {
 }
 
 func addErrorDetails(details *[]httputil.Detail, scc *nsmodel.SCC) {
+	addErrorDetailsMsg(details, scc, "Creation failed")
+}
+
+func addErrorDetailsMsg(details *[]httputil.Detail, scc *nsmodel.SCC, message string) {
 	*details = append(*details, httputil.Detail{
-		Message:    "Creation failed",
+		Message:    message,
 		Subaccount: scc.Subaccount,
 		LocationId: scc.LocationID,
 	})
+}
+
+func mapExternalToInternal(ctx context.Context, tenants []*model.BusinessTenantMapping, externalIDToTenant map[string]string) (notSubaccountIDs map[string]interface{}) {
+	for _, t := range tenants {
+		if t.Type == tenant.Subaccount {
+			externalIDToTenant[t.ExternalTenant] = t.ID
+		} else {
+			log.C(ctx).Warnf("Got tenant with id: %s which is not asubaccount", t.ID)
+			notSubaccountIDs[t.ExternalTenant] = struct{}{}
+		}
+	}
+	return
+}
+
+func cleanNotFound(ctx context.Context, externalIDToTenant map[string]string, sccs []nsmodel.SCC, details []httputil.Detail) {
+	for _, scc := range sccs {
+		internalID, ok := externalIDToTenant[scc.Subaccount]
+		if !ok || internalID == "" {
+			log.C(ctx).Warnf("Got SCC with subaccount id: %s which is not found", scc.Subaccount)
+			addErrorDetailsMsg(&details, &scc, "Subaccount not found.")
+			delete(externalIDToTenant, scc.Subaccount)
+		}
+	}
 }
