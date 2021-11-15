@@ -533,7 +533,8 @@ func AssertBundleCorrelationIds(t *testing.T, respBody string, entitiesMap map[s
 		correlationIds := gjson.Get(respBody, fmt.Sprintf("value.%d.correlationIds", i)).Array()
 		bundleCorrelationIdsAsString := make([]string, 0)
 		for _, id := range correlationIds {
-			bundleCorrelationIdsAsString = append(bundleCorrelationIdsAsString, id.String())
+			idAsString := gjson.Get(id.String(), "value").String()
+			bundleCorrelationIdsAsString = append(bundleCorrelationIdsAsString, idAsString)
 		}
 		expectedCorrelationIds := entitiesMap[entityTitle]
 		log.D().Printf("EXPECTED IDS %v\n", expectedCorrelationIds)
