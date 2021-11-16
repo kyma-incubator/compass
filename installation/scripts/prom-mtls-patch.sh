@@ -91,16 +91,14 @@ EOF
     kubectl get ${crd} -n ${namespace} ${sm} -o yaml > ${sm}.yaml
 
     if [[ "$OSTYPE" == "darwin"* ]]; then
-      sed -i '' -e '/endpoints:/r tmp_patch_content.yaml' ${sm}.yaml
+      sed -i '' -e '/ endpoints:/r tmp_patch_content.yaml' ${sm}.yaml
       sed -i '' -e 's/- port:/  port:/g' ${sm}.yaml
       sed -i '' -e 's/- metricRelabelings:/  metricRelabelings:/g' ${sm}.yaml
     else # assume Linux otherwise
-      sed -i '/endpoints:/r tmp_patch_content.yaml' ${sm}.yaml
+      sed -i '/ endpoints:/r tmp_patch_content.yaml' ${sm}.yaml
       sed -i 's/- port:/  port:/g' ${sm}.yaml
       sed -i 's/- metricRelabelings:/  metricRelabelings:/g' ${sm}.yaml
     fi
-
-    cat ${sm}.yaml
 
     kubectl apply -f ${sm}.yaml || true
 
