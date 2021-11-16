@@ -67,7 +67,7 @@ spec:
     - from: # or anything other only if the request is authenticated via RequestAuthentication
         - source:
             requestPrincipals: ["*"]
-    - from:
+    - from: # or anything that's using the Prometheus service account
         - source:
             principals: ["cluster.local/ns/kyma-system/sa/monitoring-prometheus"]
 ---
