@@ -1642,6 +1642,24 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
+			Name: "Invalid `correlationIds` field when it contains non string value for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid value for `correlationIds` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
 			Name: "Success when `correlationIds` are valid",
 			DocumentProvider: func() []*ord.Document {
 				return []*ord.Document{fixORDDocument()}
