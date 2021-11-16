@@ -86,6 +86,16 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	reportType := req.URL.Query().Get("reportType")
+
+	if reportType != "full" && reportType != "delta" {
+		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
+			Code:    http.StatusBadRequest,
+			Message: "missing or invalid required report type query parameter",
+		})
+		return
+	}
+
 	var reportData nsmodel.Report
 	err = json.Unmarshal(buf.Bytes(), &reportData)
 	if err != nil {
@@ -129,26 +139,17 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	notSubaccountIDs := mapExternalToInternal(ctx, tenants, externalIDToTenant)
 	for _, scc := range reportData.Value {
 		if _, ok := notSubaccountIDs[scc.Subaccount]; ok {
-			addErrorDetailsMsg(&details, &scc, "Provided id is not subaccount.")
+			addErrorDetailsMsg(&details, &scc, "Provided id is not subaccount")
 		}
 	}
+	removeMarkedForRemoval(externalIDToTenant)
 
 	if len(tenants) != len(externalIDs) {
-		cleanNotFound(ctx, externalIDToTenant, reportData.Value, details)
-	}
-
-	reportType := req.URL.Query().Get("reportType")
-
-	if reportType != "full" && reportType != "delta" {
-		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
-			Code:    http.StatusBadRequest,
-			Message: "missing or invalid required report type query parameter",
-		})
-		return
+		cleanNotFound(ctx, externalIDToTenant, reportData.Value, &details)
 	}
 
 	if reportType == "delta" {
-		a.processDelta(ctx, reportData, externalIDToTenant, details)
+		a.processDelta(ctx, reportData, externalIDToTenant, &details)
 		if len(details) == 0 {
 			httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 			return
@@ -162,7 +163,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if reportType == "full" {
-		a.processDelta(ctx, reportData, externalIDToTenant, details)
+		a.processDelta(ctx, reportData, externalIDToTenant, &details)
 		a.handleUnreachableScc(ctx, reportData)
 		httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 		return
@@ -248,12 +249,12 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 	}
 }
 
-func (a *Handler) processDelta(ctx context.Context, reportData nsmodel.Report, idToTenant map[string]string, details []httputil.Detail) {
+func (a *Handler) processDelta(ctx context.Context, reportData nsmodel.Report, idToTenant map[string]string, details *[]httputil.Detail) {
 	for _, scc := range reportData.Value {
 		if _, ok := idToTenant[scc.Subaccount]; ok {
 			ctxWithTenant := tenant.SaveToContext(ctx, idToTenant[scc.Subaccount])
 			if ok := a.handleSccSystems(ctxWithTenant, scc); !ok {
-				addErrorDetails(&details, &scc)
+				addErrorDetails(details, &scc)
 			}
 		}
 	}
@@ -460,24 +461,35 @@ func addErrorDetailsMsg(details *[]httputil.Detail, scc *nsmodel.SCC, message st
 	})
 }
 
-func mapExternalToInternal(ctx context.Context, tenants []*model.BusinessTenantMapping, externalIDToTenant map[string]string) (notSubaccountIDs map[string]interface{}) {
+func mapExternalToInternal(ctx context.Context, tenants []*model.BusinessTenantMapping, externalIDToTenant map[string]string) map[string]interface{} {
+	notSubaccountIDs := make(map[string]interface{}, 0)
+
 	for _, t := range tenants {
 		if t.Type == tenant.Subaccount {
 			externalIDToTenant[t.ExternalTenant] = t.ID
 		} else {
 			log.C(ctx).Warnf("Got tenant with id: %s which is not asubaccount", t.ID)
+			externalIDToTenant[t.ExternalTenant] = "for removal"
 			notSubaccountIDs[t.ExternalTenant] = struct{}{}
 		}
 	}
-	return
+	return notSubaccountIDs
 }
 
-func cleanNotFound(ctx context.Context, externalIDToTenant map[string]string, sccs []nsmodel.SCC, details []httputil.Detail) {
+func removeMarkedForRemoval( externalIDToTenant map[string]string){
+	for k, v := range externalIDToTenant {
+		if v == "for removal" {
+			delete(externalIDToTenant, k)
+		}
+	}
+}
+
+func cleanNotFound(ctx context.Context, externalIDToTenant map[string]string, sccs []nsmodel.SCC, details *[]httputil.Detail) {
 	for _, scc := range sccs {
 		internalID, ok := externalIDToTenant[scc.Subaccount]
 		if !ok || internalID == "" {
 			log.C(ctx).Warnf("Got SCC with subaccount id: %s which is not found", scc.Subaccount)
-			addErrorDetailsMsg(&details, &scc, "Subaccount not found.")
+			addErrorDetailsMsg(details, &scc, "Subaccount not found")
 			delete(externalIDToTenant, scc.Subaccount)
 		}
 	}
