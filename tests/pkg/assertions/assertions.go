@@ -531,7 +531,7 @@ func AssertBundleCorrelationIds(t *testing.T, respBody string, entitiesMap map[s
 			bundleCorrelationIdsAsString = append(bundleCorrelationIdsAsString, idAsString)
 		}
 		expectedCorrelationIds := entitiesMap[entityTitle]
-		assert.True(t, unorderedEqualStringArrays(expectedCorrelationIds, bundleCorrelationIdsAsString))
+		assert.ElementsMatch(t, expectedCorrelationIds, bundleCorrelationIdsAsString)
 	}
 }
 
@@ -592,20 +592,4 @@ func urlsAreIdentical(url1, url2 *string) bool {
 		}
 	}
 	return identical
-}
-
-func unorderedEqualStringArrays(first, second []string) bool {
-	if len(first) != len(second) {
-		return false
-	}
-	exists := make(map[string]bool)
-	for _, value := range first {
-		exists[value] = true
-	}
-	for _, value := range second {
-		if !exists[value] {
-			return false
-		}
-	}
-	return true
 }
