@@ -22,7 +22,7 @@ type SystemBase struct {
 
 type System struct {
 	SystemBase
-	TemplateID   string `json:"-"`
+	TemplateID string `json:"-"`
 }
 
 func (s System) Validate() error {
@@ -30,7 +30,7 @@ func (s System) Validate() error {
 		validation.Field(&s.Protocol, validation.Required),
 		validation.Field(&s.Host, validation.Required),
 		validation.Field(&s.SystemType, validation.Required),
-		validation.Field(&s.Description, validation.Required),
+		validation.Field(&s.Description, validation.NotNil),
 		validation.Field(&s.Status, validation.Required),
 	)
 }
@@ -60,7 +60,6 @@ func matchProps(data []byte, tm systemfetcher.TemplateMapping) bool {
 	return true
 }
 
-
 type SCC struct {
 	Subaccount     string   `json:"subaccount"`
 	LocationID     string   `json:"locationID"`
@@ -70,9 +69,8 @@ type SCC struct {
 func (s SCC) Validate() error {
 	return validation.ValidateStruct(&s,
 		validation.Field(&s.Subaccount, validation.Required),
-		validation.Field(&s.LocationID, validation.Required),
-		validation.Field(&s.ExposedSystems, validation.Required),
-		validation.Field(&s.ExposedSystems, validation.By(validateSystems)),
+		validation.Field(&s.LocationID, validation.NotNil),
+		validation.Field(&s.ExposedSystems, validation.NotNil, validation.By(validateSystems)), //TODO test if exposed systems field is nil, will validateSystems method be executed?
 	)
 }
 
@@ -95,8 +93,7 @@ type Report struct {
 func (r Report) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.ReportType, validation.Required),
-		validation.Field(&r.Value, validation.Required),
-		validation.Field(&r.Value, validation.By(validateSCCs)),
+		validation.Field(&r.Value, validation.NotNil, validation.By(validateSCCs)),
 	)
 }
 
@@ -129,7 +126,6 @@ func ToAppRegisterInput(system System, locationID string) model.ApplicationRegis
 }
 
 func ToAppUpdateInput(system System) model.ApplicationUpdateInput {
-	// we should update the description, system type, protocol and system status
 	return model.ApplicationUpdateInput{
 		Description: str.Ptr(system.Description),
 		Status:      str.Ptr(system.Status),
