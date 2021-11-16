@@ -144,229 +144,170 @@ func TestRepository_Create(t *testing.T) {
 	eventSpecSuite.Run(t)
 }
 
-/*
 func TestRepository_ListByReferenceObjectID(t *testing.T) {
-	// GIVEN
+	apiSpecModel1 := fixModelAPISpecWithID("1")
+	apiSpecModel2 := fixModelAPISpecWithID("2")
+	apiSpecEntity1 := fixAPISpecEntityWithID("1")
+	apiSpecEntity2 := fixAPISpecEntityWithID("2")
 
-	t.Run("Success for API", func(t *testing.T) {
-		firstSpecID := "111111111-1111-1111-1111-111111111111"
-		firstSpecEntity := fixAPISpecEntityWithID(firstSpecID)
-		secondSpecID := "222222222-2222-2222-2222-222222222222"
-		secondAPIDefEntity := fixAPISpecEntityWithID(secondSpecID)
+	apiSpecSuite := testdb.RepoListTestSuite{
+		Name: "List API Specs By Ref Object ID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE api_def_id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{apiID, tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixAPISpecRowWithID("1")...).AddRow(fixAPISpecRowWithID("2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:   spec.NewRepository,
+		ExpectedModelEntities: []interface{}{apiSpecModel1, apiSpecModel2},
+		ExpectedDBEntities:    []interface{}{&apiSpecEntity1, &apiSpecEntity2},
+		MethodArgs:            []interface{}{tenant, model.APISpecReference, apiID},
+		MethodName:            "ListByReferenceObjectID",
+	}
 
-		selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications
-		WHERE %s AND api_def_id = \$2
-		ORDER BY created_at`, fixTenantIsolationSubquery())
+	eventSpecModel1 := fixModelEventSpecWithID("1")
+	eventSpecModel2 := fixModelEventSpecWithID("2")
+	eventSpecEntity1 := fixEventSpecEntityWithID("1")
+	eventSpecEntity2 := fixEventSpecEntityWithID("2")
 
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixSpecColumns()).
-			AddRow(fixAPISpecRowWithID(firstSpecID)...).
-			AddRow(fixAPISpecRowWithID(secondSpecID)...)
+	eventSpecSuite := testdb.RepoListTestSuite{
+		Name: "List Event Specs By Ref Object ID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE event_def_id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{apiID, tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixEventSpecRowWithID("1")...).AddRow(fixEventSpecRowWithID("2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:   spec.NewRepository,
+		ExpectedModelEntities: []interface{}{eventSpecModel1, eventSpecModel2},
+		ExpectedDBEntities:    []interface{}{&eventSpecEntity1, &eventSpecEntity2},
+		MethodArgs:            []interface{}{tenant, model.EventSpecReference, apiID},
+		MethodName:            "ListByReferenceObjectID",
+	}
 
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenant, apiID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.Converter{}
-		convMock.On("FromEntity", firstSpecEntity).Return(*fixModelAPISpecWithID(firstSpecID), nil)
-		convMock.On("FromEntity", secondAPIDefEntity).Return(*fixModelAPISpecWithID(secondSpecID), nil)
-		pgRepository := spec.NewRepository(convMock)
-		// WHEN
-		modelSpec, err := pgRepository.ListByReferenceObjectID(ctx, tenant, model.APISpecReference, apiID)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelSpec, 2)
-		assert.Equal(t, firstSpecID, modelSpec[0].ID)
-		assert.Equal(t, secondSpecID, modelSpec[1].ID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("Success for Event", func(t *testing.T) {
-		firstSpecID := "111111111-1111-1111-1111-111111111111"
-		firstSpecEntity := fixEventSpecEntityWithID(firstSpecID)
-		secondSpecID := "222222222-2222-2222-2222-222222222222"
-		secondAPIDefEntity := fixEventSpecEntityWithID(secondSpecID)
-
-		selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.specifications
-		WHERE %s AND event_def_id = \$2
-		ORDER BY created_at`, fixTenantIsolationSubquery())
-
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixSpecColumns()).
-			AddRow(fixEventSpecRowWithID(firstSpecID)...).
-			AddRow(fixEventSpecRowWithID(secondSpecID)...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenant, eventID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.Converter{}
-		convMock.On("FromEntity", firstSpecEntity).Return(*fixModelEventSpecWithID(firstSpecID), nil)
-		convMock.On("FromEntity", secondAPIDefEntity).Return(*fixModelEventSpecWithID(secondSpecID), nil)
-		pgRepository := spec.NewRepository(convMock)
-		// WHEN
-		modelSpec, err := pgRepository.ListByReferenceObjectID(ctx, tenant, model.EventSpecReference, eventID)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelSpec, 2)
-		assert.Equal(t, firstSpecID, modelSpec[0].ID)
-		assert.Equal(t, secondSpecID, modelSpec[1].ID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
+	apiSpecSuite.Run(t)
+	eventSpecSuite.Run(t)
 }
 
 func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
-	ExpectedLimit := 1
-	ExpectedOffset := 0
+	firstFrID := "111111111-1111-1111-1111-111111111111"
+	firstRefID := "refID1"
+	secondFrID := "222222222-2222-2222-2222-222222222222"
+	secondRefID := "refID2"
 
-	totalCountForFirstAPI := 1
-	totalCountForSecondAPI := 1
-	totalCountForFirstEvent := 1
-	totalCountForSecondEvent := 1
-	testErr := errors.New("test err")
+	apiSpecModel1 := fixModelAPISpecWithIDs(firstFrID, firstRefID)
+	apiSpecModel2 := fixModelAPISpecWithIDs(secondFrID, secondRefID)
+	apiSpecEntity1 := fixAPISpecEntityWithIDs(firstFrID, firstRefID)
+	apiSpecEntity2 := fixAPISpecEntityWithIDs(secondFrID, secondRefID)
 
-	firstSpecID := "111111111-1111-1111-1111-111111111111"
-	secondSpecID := "222222222-2222-2222-2222-222222222222"
-	firstAPIID := "333333333-3333-3333-3333-333333333333"
-	secondAPIID := "444444444-4444-4444-4444-444444444444"
-	firstEventID := "333333333-3333-3333-3333-333333333333"
-	secondEventID := "444444444-4444-4444-4444-444444444444"
-	apiIDs := []string{firstAPIID, secondAPIID}
-	eventIDs := []string{firstEventID, secondEventID}
+	apiSpecSuite := testdb.RepoListTestSuite{
+		Name: "List API Specifications by Object IDs",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+												WHERE api_def_id IS NOT NULL AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $1)) AND api_def_id = $2 ORDER BY created_at ASC, id ASC LIMIT $3 OFFSET $4)
+ 											   UNION
+												(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+												WHERE api_def_id IS NOT NULL AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $5)) AND api_def_id = $6 ORDER BY created_at ASC, id ASC LIMIT $7 OFFSET $8)`),
+				Args:     []driver.Value{tenant, firstRefID, 1, 0, tenant, secondRefID, 1, 0},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixAPISpecRowWithIDs(firstFrID, firstRefID)...).AddRow(fixAPISpecRowWithIDs(secondFrID, secondRefID)...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT api_def_id AS id, COUNT(*) AS total_count FROM public.specifications WHERE api_def_id IS NOT NULL AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $1)) GROUP BY api_def_id ORDER BY api_def_id ASC`),
+				Args:     []driver.Value{tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(firstRefID, 1).AddRow(secondRefID, 1)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(firstRefID, 0).AddRow(secondRefID, 0)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:   spec.NewRepository,
+		ExpectedModelEntities: []interface{}{apiSpecModel1, apiSpecModel2},
+		ExpectedDBEntities:    []interface{}{&apiSpecEntity1, &apiSpecEntity2},
+		MethodArgs:            []interface{}{tenant, model.APISpecReference, []string{firstRefID, secondRefID}},
+		MethodName:            "ListByReferenceObjectIDs",
+	}
 
-	firstAPISpecEntity := fixAPISpecEntityWithIDs(firstSpecID, firstAPIID)
-	secondAPISpecEntity := fixAPISpecEntityWithIDs(secondSpecID, secondAPIID)
-	firstEventSpecEntity := fixEventSpecEntityWithIDs(firstSpecID, firstEventID)
-	secondEventSpecEntity := fixEventSpecEntityWithIDs(secondSpecID, secondEventID)
+	eventSpecModel1 := fixModelEventSpecWithIDs(firstFrID, firstRefID)
+	eventSpecModel2 := fixModelEventSpecWithIDs(secondFrID, secondRefID)
+	eventSpecEntity1 := fixEventSpecEntityWithIDs(firstFrID, firstRefID)
+	eventSpecEntity2 := fixEventSpecEntityWithIDs(secondFrID, secondRefID)
 
-	selectQueryAPIs := fmt.Sprintf(`^\(SELECT (.+) FROM public\.specifications
-		WHERE %s AND api_def_id IS NOT NULL AND api_def_id = \$2 ORDER BY created_at ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
-		\(SELECT (.+) FROM public\.specifications WHERE %s AND api_def_id IS NOT NULL AND api_def_id = \$6 ORDER BY created_at ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
+	eventSpecSuite := testdb.RepoListTestSuite{
+		Name: "List Event Specifications by Object IDs",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+												WHERE event_def_id IS NOT NULL AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $1)) AND event_def_id = $2 ORDER BY created_at ASC, id ASC LIMIT $3 OFFSET $4)
+ 											   UNION
+												(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+												WHERE event_def_id IS NOT NULL AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $5)) AND event_def_id = $6 ORDER BY created_at ASC, id ASC LIMIT $7 OFFSET $8)`),
+				Args:     []driver.Value{tenant, firstRefID, 1, 0, tenant, secondRefID, 1, 0},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns()).AddRow(fixEventSpecRowWithIDs(firstFrID, firstRefID)...).AddRow(fixEventSpecRowWithIDs(secondFrID, secondRefID)...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixSpecColumns())}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT event_def_id AS id, COUNT(*) AS total_count FROM public.specifications WHERE event_def_id IS NOT NULL AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $1)) GROUP BY event_def_id ORDER BY event_def_id ASC`),
+				Args:     []driver.Value{tenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(firstRefID, 1).AddRow(secondRefID, 1)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(firstRefID, 0).AddRow(secondRefID, 0)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.Converter{}
+		},
+		RepoConstructorFunc:   spec.NewRepository,
+		ExpectedModelEntities: []interface{}{eventSpecModel1, eventSpecModel2},
+		ExpectedDBEntities:    []interface{}{&eventSpecEntity1, &eventSpecEntity2},
+		MethodArgs:            []interface{}{tenant, model.EventSpecReference, []string{firstRefID, secondRefID}},
+		MethodName:            "ListByReferenceObjectIDs",
+	}
 
-	countQueryAPIs := fmt.Sprintf(`SELECT api_def_id AS id, COUNT\(\*\) AS total_count FROM public.specifications WHERE %s AND api_def_id IS NOT NULL GROUP BY api_def_id ORDER BY api_def_id ASC`, fixTenantIsolationSubquery())
-
-	selectQueryEvents := fmt.Sprintf(`^\(SELECT (.+) FROM public\.specifications
-		WHERE %s AND event_def_id IS NOT NULL AND event_def_id = \$2 ORDER BY created_at ASC, id ASC LIMIT \$3 OFFSET \$4\) UNION
-		\(SELECT (.+) FROM public\.specifications WHERE %s AND event_def_id IS NOT NULL AND event_def_id = \$6 ORDER BY created_at ASC, id ASC LIMIT \$7 OFFSET \$8\)`, fixTenantIsolationSubqueryWithArg(1), fixTenantIsolationSubqueryWithArg(5))
-
-	countQueryEvents := fmt.Sprintf(`SELECT event_def_id AS id, COUNT\(\*\) AS total_count FROM public.specifications WHERE %s AND event_def_id IS NOT NULL GROUP BY event_def_id ORDER BY event_def_id ASC`, fixTenantIsolationSubquery())
-
-	t.Run("Success for API", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixSpecColumns()).
-			AddRow(fixAPISpecRowWithIDs(firstSpecID, firstAPIID)...).
-			AddRow(fixAPISpecRowWithIDs(secondSpecID, secondAPIID)...)
-
-		sqlMock.ExpectQuery(selectQueryAPIs).
-			WithArgs(tenant, firstAPIID, ExpectedLimit, ExpectedOffset, tenant, secondAPIID, ExpectedLimit, ExpectedOffset).
-			WillReturnRows(rows)
-
-		sqlMock.ExpectQuery(countQueryAPIs).
-			WithArgs(tenant).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
-				AddRow(firstAPIID, totalCountForFirstAPI).
-				AddRow(secondAPIID, totalCountForSecondAPI))
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.Converter{}
-		convMock.On("FromEntity", firstAPISpecEntity).Return(*fixModelAPISpecWithIDs(firstSpecID, firstAPIID), nil)
-		convMock.On("FromEntity", secondAPISpecEntity).Return(*fixModelAPISpecWithIDs(secondSpecID, secondAPIID), nil)
-		pgRepository := spec.NewRepository(convMock)
-		// WHEN
-		modelSpec, err := pgRepository.ListByReferenceObjectIDs(ctx, tenant, model.APISpecReference, apiIDs)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelSpec, 2)
-		assert.Equal(t, firstSpecID, modelSpec[0].ID)
-		assert.Equal(t, secondSpecID, modelSpec[1].ID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("Success for Event", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixSpecColumns()).
-			AddRow(fixEventSpecRowWithIDs(firstSpecID, firstEventID)...).
-			AddRow(fixEventSpecRowWithIDs(secondSpecID, secondEventID)...)
-
-		sqlMock.ExpectQuery(selectQueryEvents).
-			WithArgs(tenant, firstEventID, ExpectedLimit, ExpectedOffset, tenant, secondEventID, ExpectedLimit, ExpectedOffset).
-			WillReturnRows(rows)
-
-		sqlMock.ExpectQuery(countQueryEvents).
-			WithArgs(tenant).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
-				AddRow(firstEventID, totalCountForFirstEvent).
-				AddRow(secondEventID, totalCountForSecondEvent))
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.Converter{}
-		convMock.On("FromEntity", firstEventSpecEntity).Return(*fixModelEventSpecWithIDs(firstSpecID, firstEventID), nil)
-		convMock.On("FromEntity", secondEventSpecEntity).Return(*fixModelEventSpecWithIDs(secondSpecID, secondEventID), nil)
-		pgRepository := spec.NewRepository(convMock)
-		// WHEN
-		modelSpec, err := pgRepository.ListByReferenceObjectIDs(ctx, tenant, model.EventSpecReference, eventIDs)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelSpec, 2)
-		assert.Equal(t, firstSpecID, modelSpec[0].ID)
-		assert.Equal(t, secondSpecID, modelSpec[1].ID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("Returns error when conversion from entity fails", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixSpecColumns()).
-			AddRow(fixEventSpecRowWithIDs(firstSpecID, firstEventID)...).
-			AddRow(fixEventSpecRowWithIDs(secondSpecID, secondEventID)...)
-
-		sqlMock.ExpectQuery(selectQueryEvents).
-			WithArgs(tenant, firstEventID, ExpectedLimit, ExpectedOffset, tenant, secondEventID, ExpectedLimit, ExpectedOffset).
-			WillReturnRows(rows)
-
-		sqlMock.ExpectQuery(countQueryEvents).
-			WithArgs(tenant).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
-				AddRow(firstEventID, totalCountForFirstEvent).
-				AddRow(secondEventID, totalCountForSecondEvent))
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.Converter{}
-		convMock.On("FromEntity", firstEventSpecEntity).Return(model.Spec{}, testErr)
-		pgRepository := spec.NewRepository(convMock)
-		// WHEN
-		_, err := pgRepository.ListByReferenceObjectIDs(ctx, tenant, model.EventSpecReference, eventIDs)
-		//THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), testErr.Error())
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		sqlMock.ExpectQuery(selectQueryEvents).
-			WithArgs(tenant, firstEventID, ExpectedLimit, ExpectedOffset, tenant, secondEventID, ExpectedLimit, ExpectedOffset).
-			WillReturnError(testErr)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.Converter{}
-		pgRepository := spec.NewRepository(convMock)
-		// WHEN
-		modelSpecs, err := pgRepository.ListByReferenceObjectIDs(ctx, tenant, model.EventSpecReference, eventIDs)
-		//THEN
-		assert.Nil(t, modelSpecs)
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
+	apiSpecSuite.Run(t)
+	eventSpecSuite.Run(t)
 }
-*/
 
 func TestRepository_Delete(t *testing.T) {
 	apiSpecSuite := testdb.RepoDeleteTestSuite{

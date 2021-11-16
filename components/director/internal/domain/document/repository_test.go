@@ -3,9 +3,10 @@ package document_test
 import (
 	"database/sql/driver"
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -175,7 +176,6 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 	firstDocEntity := fixEntityDocument(firstDocID, onePageBundleID)
 	firstDocModel := fixModelDocument(firstDocID, onePageBundleID)
 
-
 	multiplePagesBundleID := "multiplePagesBundleID"
 
 	secondDocID := "222222222-2222-2222-2222-222222222222"
@@ -186,7 +186,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 		Name: "List Documents for multiple bundles with paging",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query:     regexp.QuoteMeta(`(SELECT id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $1)) AND bundle_id = $2 ORDER BY bundle_id ASC, id ASC LIMIT $3 OFFSET $4)
+				Query: regexp.QuoteMeta(`(SELECT id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $1)) AND bundle_id = $2 ORDER BY bundle_id ASC, id ASC LIMIT $3 OFFSET $4)
 												UNION
 												(SELECT id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $5)) AND bundle_id = $6 ORDER BY bundle_id ASC, id ASC LIMIT $7 OFFSET $8)
 												UNION
@@ -202,7 +202,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 				},
 			},
 			{
-				Query:     regexp.QuoteMeta(`SELECT bundle_id AS id, COUNT(*) AS total_count FROM public.documents WHERE (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $1)) GROUP BY bundle_id ORDER BY bundle_id ASC`),
+				Query:    regexp.QuoteMeta(`SELECT bundle_id AS id, COUNT(*) AS total_count FROM public.documents WHERE (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $1)) GROUP BY bundle_id ORDER BY bundle_id ASC`),
 				Args:     []driver.Value{givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -256,7 +256,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 		},
 		RepoConstructorFunc: document.NewRepository,
 		MethodName:          "ListByBundleIDs",
-		MethodArgs: []interface{}{givenTenant(), []string{emptyPageBundleID, onePageBundleID, multiplePagesBundleID}, pageSize, cursor},
+		MethodArgs:          []interface{}{givenTenant(), []string{emptyPageBundleID, onePageBundleID, multiplePagesBundleID}, pageSize, cursor},
 	}
 
 	suite.Run(t)

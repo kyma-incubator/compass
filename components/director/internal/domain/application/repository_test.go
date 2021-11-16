@@ -5,13 +5,14 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"regexp"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -599,7 +600,7 @@ func TestPgRepository_ListAll(t *testing.T) {
 }
 
 func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
-	app1ID:= "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
+	app1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	app2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
 	appEntity1 := fixDetailedEntityApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
 	appEntity2 := fixDetailedEntityApplication(t, app2ID, givenTenant(), "App 2", "App desc 2")

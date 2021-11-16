@@ -25,11 +25,15 @@ func fixNilModelProduct() *model.Product {
 }
 
 func fixEntityProduct() *product.Entity {
+	return fixEntityProductWithTitle("title")
+}
+
+func fixEntityProductWithTitle(title string) *product.Entity {
 	return &product.Entity{
 		ID:               productID,
 		OrdID:            ordID,
 		ApplicationID:    appID,
-		Title:            "title",
+		Title:            title,
 		ShortDescription: "short desc",
 		Vendor:           "vendorID",
 		Parent: sql.NullString{
@@ -45,12 +49,16 @@ func fixEntityProduct() *product.Entity {
 }
 
 func fixProductModel() *model.Product {
+	return fixProductModelWithTitle("title")
+}
+
+func fixProductModelWithTitle(title string) *model.Product {
 	parent := "parent"
 	return &model.Product{
 		ID:               productID,
 		OrdID:            ordID,
 		ApplicationID:    appID,
-		Title:            "title",
+		Title:            title,
 		ShortDescription: "short desc",
 		Vendor:           "vendorID",
 		Parent:           &parent,
@@ -77,7 +85,11 @@ func fixProductColumns() []string {
 }
 
 func fixProductRow() []driver.Value {
-	return []driver.Value{ordID, appID, "title", "short desc", "vendorID", "parent",
+	return fixProductRowWithTitle("title")
+}
+
+func fixProductRowWithTitle(title string) []driver.Value {
+	return []driver.Value{ordID, appID, title, "short desc", "vendorID", "parent",
 		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), productID}
 }
 

@@ -24,7 +24,6 @@ var (
 // EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
-	MultipleFromEntities(entities RuntimeCollection) []*model.Runtime
 	ToEntity(in *model.Runtime) (*Runtime, error)
 	FromEntity(entity *Runtime) *model.Runtime
 }
@@ -146,7 +145,7 @@ func (r *pgRepository) ListByFiltersGlobal(ctx context.Context, filters []*label
 		return nil, err
 	}
 
-	return r.conv.MultipleFromEntities(entities), nil
+	return r.multipleFromEntities(entities), nil
 }
 
 // ListAll missing godoc
@@ -173,7 +172,7 @@ func (r *pgRepository) ListAll(ctx context.Context, tenant string, filter []*lab
 		return nil, err
 	}
 
-	return r.conv.MultipleFromEntities(entities), nil
+	return r.multipleFromEntities(entities), nil
 }
 
 // RuntimeCollection missing godoc
@@ -207,7 +206,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		return nil, err
 	}
 
-	items := r.conv.MultipleFromEntities(runtimesCollection)
+	items := r.multipleFromEntities(runtimesCollection)
 
 	return &model.RuntimePage{
 		Data:       items,
@@ -267,4 +266,14 @@ func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, f
 	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
+}
+
+func (r *pgRepository) multipleFromEntities(entities RuntimeCollection) []*model.Runtime {
+	items := make([]*model.Runtime, 0, len(entities))
+	for _, ent := range entities {
+		model := r.conv.FromEntity(&ent)
+
+		items = append(items, model)
+	}
+	return items
 }

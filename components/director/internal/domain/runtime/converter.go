@@ -164,14 +164,3 @@ func (*converter) FromEntity(e *Runtime) *model.Runtime {
 		CreationTimestamp: e.CreationTimestamp,
 	}
 }
-
-// MultipleFromEntities missing godoc
-func (c *converter) MultipleFromEntities(entities RuntimeCollection) []*model.Runtime {
-	items := make([]*model.Runtime, 0, len(entities))
-	for _, ent := range entities {
-		model := c.FromEntity(&ent)
-
-		items = append(items, model)
-	}
-	return items
-}

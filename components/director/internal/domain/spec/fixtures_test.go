@@ -18,16 +18,7 @@ const (
 )
 
 func fixModelAPISpec() *model.Spec {
-	var specData = "specData"
-	var apiType = model.APISpecTypeOdata
-	return &model.Spec{
-		ID:         specID,
-		ObjectType: model.APISpecReference,
-		ObjectID:   apiID,
-		APIType:    &apiType,
-		Format:     model.SpecFormatXML,
-		Data:       &specData,
-	}
+	return fixModelAPISpecWithID(specID)
 }
 
 func fixModelAPISpecWithID(id string) *model.Spec {

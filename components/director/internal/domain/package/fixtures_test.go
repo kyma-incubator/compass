@@ -23,12 +23,16 @@ const (
 )
 
 func fixEntityPackage() *ordpackage.Entity {
+	return fixEntityPackageWithTitle("title")
+}
+
+func fixEntityPackageWithTitle(title string) *ordpackage.Entity {
 	return &ordpackage.Entity{
 		ID:                packageID,
 		ApplicationID:     appID,
 		OrdID:             ordID,
 		Vendor:            sql.NullString{String: "vendorID", Valid: true},
-		Title:             "title",
+		Title:             title,
 		ShortDescription:  "short desc",
 		Description:       "desc",
 		Version:           "v1.0.5",
@@ -52,6 +56,10 @@ func fixNilModelPackage() *model.Package {
 }
 
 func fixPackageModel() *model.Package {
+	return fixPackageModelWithTitle("title")
+}
+
+func fixPackageModelWithTitle(title string) *model.Package {
 	vendorID := "vendorID"
 	licenceType := "test"
 	return &model.Package{
@@ -59,7 +67,7 @@ func fixPackageModel() *model.Package {
 		ApplicationID:     appID,
 		OrdID:             ordID,
 		Vendor:            &vendorID,
-		Title:             "title",
+		Title:             title,
 		ShortDescription:  "short desc",
 		Description:       "desc",
 		Version:           "v1.0.5",
@@ -109,7 +117,11 @@ func fixPackageColumns() []string {
 }
 
 func fixPackageRow() []driver.Value {
-	return []driver.Value{packageID, appID, ordID, "vendorID", "title", "short desc", "desc", "v1.0.5",
+	return fixPackageRowWithTitle("title")
+}
+
+func fixPackageRowWithTitle(title string) []driver.Value {
+	return []driver.Value{packageID, appID, ordID, "vendorID", title, "short desc", "desc", "v1.0.5",
 		repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"), "test", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"),
 		"test", nil, repo.NewValidNullableString("[\"test\"]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash)}
 }

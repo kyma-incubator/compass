@@ -23,13 +23,14 @@ type RepoListTestSuite struct {
 	AdditionalConverterArgs   []interface{}
 	DisableConverterErrorTest bool
 	MethodName                string
+	DisableEmptySliceTest     bool
 }
 
 func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 	if len(suite.MethodName) == 0 {
 		panic("missing method name")
 	}
-	
+
 	for _, queryDetails := range suite.SqlQueryDetails {
 		if !queryDetails.IsSelect {
 			panic("list suite should expect only select SQL statements")
@@ -60,29 +61,31 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 			res, err := callList(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
 			//THEN
 			require.NoError(t, err)
-			require.ElementsMatch(t, suite.ExpectedModelEntities, res)
+			assertEqualElements(t, suite.ExpectedModelEntities, res)
 			sqlMock.AssertExpectations(t)
 			convMock.AssertExpectations(t)
 		})
 
-		t.Run("returns empty slice when no rows", func(t *testing.T) {
-			sqlxDB, sqlMock := MockDatabase(t)
-			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		if !suite.DisableEmptySliceTest {
+			t.Run("returns empty slice when no rows", func(t *testing.T) {
+				sqlxDB, sqlMock := MockDatabase(t)
+				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SqlQueryDetails {
-				sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
-			}
+				for _, sqlDetails := range suite.SqlQueryDetails {
+					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
+				}
 
-			convMock := suite.ConverterMockProvider()
-			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-			//WHEN
-			res, err := callList(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-			//THEN
-			require.NoError(t, err)
-			require.Empty(t, res)
-			sqlMock.AssertExpectations(t)
-			convMock.AssertExpectations(t)
-		})
+				convMock := suite.ConverterMockProvider()
+				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
+				//WHEN
+				res, err := callList(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
+				//THEN
+				require.NoError(t, err)
+				require.Empty(t, res)
+				sqlMock.AssertExpectations(t)
+				convMock.AssertExpectations(t)
+			})
+		}
 
 		for i := range suite.SqlQueryDetails {
 			t.Run(fmt.Sprintf("error if SQL query %d fail", i), func(t *testing.T) {
@@ -163,4 +166,20 @@ func callList(repo interface{}, ctx context.Context, methodName string, args []i
 		panic("Expected result to be an error")
 	}
 	return results[0].Interface(), err
+}
+
+// assertEqualElements checks that elements of two slices are equal.
+// It expects the first slice to contain pointer elements and converts each element of the second slice to pointer if it is a struct value before comparison.
+func assertEqualElements(t *testing.T, arr1, arr2 interface{}) {
+	array1 := reflect.ValueOf(arr1)
+	array2 := reflect.ValueOf(arr2)
+
+	require.Len(t, arr2, array1.Len())
+	for i := 0; i < array1.Len(); i++ {
+		actual := array2.Index(i).Interface()
+		if array2.Index(i).Kind() != reflect.Ptr {
+			actual = array2.Index(i).Addr().Interface()
+		}
+		require.EqualValues(t, array1.Index(i).Interface(), actual)
+	}
 }

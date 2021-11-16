@@ -151,39 +151,31 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestPgRepository_ListByApplicationID(t *testing.T) {
-	// GIVEN
-	totalCount := 2
-	firstProductEntity := fixEntityProduct()
-	secondProductEntity := fixEntityProduct()
+	suite := testdb.RepoListTestSuite{
+		Name: "List Products",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, short_description, vendor, parent, labels, correlation_ids, id FROM public.products WHERE app_id = $1 AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns()).AddRow(fixProductRowWithTitle("title1")...).AddRow(fixProductRowWithTitle("title2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixProductColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   product.NewRepository,
+		ExpectedModelEntities: []interface{}{fixProductModelWithTitle("title1"), fixProductModelWithTitle("title2")},
+		ExpectedDBEntities:    []interface{}{fixEntityProductWithTitle("title1"), fixEntityProductWithTitle("title2")},
+		MethodArgs:            []interface{}{tenantID, appID},
+		MethodName:            "ListByApplicationID",
+	}
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.products WHERE %s AND app_id = \$2`, fixTenantIsolationSubquery())
-
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixProductColumns()).
-			AddRow(fixProductRow()...).
-			AddRow(fixProductRow()...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, appID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", firstProductEntity).Return(&model.Product{ID: firstProductEntity.ID}, nil)
-		convMock.On("FromEntity", secondProductEntity).Return(&model.Product{ID: secondProductEntity.ID}, nil)
-		pgRepository := product.NewRepository(convMock)
-		// WHEN
-		modelProduct, err := pgRepository.ListByApplicationID(ctx, tenantID, appID)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelProduct, totalCount)
-		assert.Equal(t, firstProductEntity.ID, modelProduct[0].ID)
-		assert.Equal(t, secondProductEntity.ID, modelProduct[1].ID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
-*/

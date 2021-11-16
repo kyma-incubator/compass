@@ -157,39 +157,31 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestPgRepository_ListByApplicationID(t *testing.T) {
-	// GIVEN
-	totalCount := 2
-	firstTombstoneEntity := fixEntityTombstone()
-	secondTombstoneEntity := fixEntityTombstone()
+	suite := testdb.RepoListTestSuite{
+		Name: "List Tombstones",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, removal_date, id FROM public.tombstones WHERE app_id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixTombstoneColumns()).AddRow(fixTombstoneRowWithID("id1")...).AddRow(fixTombstoneRowWithID("id2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixTombstoneColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   tombstone.NewRepository,
+		ExpectedModelEntities: []interface{}{fixTombstoneModelWithID("id1"), fixTombstoneModelWithID("id2")},
+		ExpectedDBEntities:    []interface{}{fixEntityTombstoneWithID("id1"), fixEntityTombstoneWithID("id2")},
+		MethodArgs:            []interface{}{tenantID, appID},
+		MethodName:            "ListByApplicationID",
+	}
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.tombstones WHERE %s AND app_id = \$2`, fixTenantIsolationSubquery())
-
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixTombstoneColumns()).
-			AddRow(fixTombstoneRow()...).
-			AddRow(fixTombstoneRow()...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, appID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", firstTombstoneEntity).Return(&model.Tombstone{ID: firstTombstoneEntity.ID}, nil)
-		convMock.On("FromEntity", secondTombstoneEntity).Return(&model.Tombstone{ID: secondTombstoneEntity.ID}, nil)
-		pgRepository := tombstone.NewRepository(convMock)
-		// WHEN
-		modelTombstone, err := pgRepository.ListByApplicationID(ctx, tenantID, appID)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelTombstone, totalCount)
-		assert.Equal(t, firstTombstoneEntity.ID, modelTombstone[0].ID)
-		assert.Equal(t, secondTombstoneEntity.ID, modelTombstone[1].ID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
-*/

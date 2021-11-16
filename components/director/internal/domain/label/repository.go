@@ -164,8 +164,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 func (r *repository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	var entities Collection
 
-	typeCondition := repo.NewEqualCondition(labelableObjectField(objectType), objectID)
-	conditions := []repo.Condition{typeCondition}
+	var conditions []repo.Condition
 
 	lister := r.lister
 	if objectType == model.TenantLabelableObject {
@@ -173,6 +172,8 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.ApplicationLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeContextLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeLabelableObject)))
+	} else {
+		conditions = append(conditions, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
 
 	if err := lister.List(ctx, objectType.GetResourceType(), tenant, &entities, conditions...); err != nil {

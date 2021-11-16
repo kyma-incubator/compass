@@ -8,6 +8,10 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/require"
 
@@ -16,13 +20,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-)
-
-const (
-	testCaseSuccess                  = "success"
-	testCaseSuccessWithAuth          = "success with auth"
-	testCaseErrorOnConvertingObjects = "got error on converting object"
-	testCaseErrorOnDBCommunication   = "goterror  on db communication"
 )
 
 func TestRepositoryGetByID(t *testing.T) {
@@ -145,7 +142,7 @@ func TestRepositoryCreate(t *testing.T) {
 /*
 func TestRepositoryCreateMany(t *testing.T) {
 	const expectedInsert = "INSERT INTO public.webhooks ( id, tenant_id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"
-	t.Run(testCaseSuccess, func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
@@ -173,7 +170,7 @@ func TestRepositoryCreateMany(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run(testCaseErrorOnConvertingObjects, func(t *testing.T) {
+	t.Run("got error on converting object", func(t *testing.T) {
 		// GIVEN
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
@@ -190,7 +187,7 @@ func TestRepositoryCreateMany(t *testing.T) {
 		require.EqualError(t, err, expectedErr)
 	})
 
-	t.Run(testCaseErrorOnDBCommunication, func(t *testing.T) {
+	t.Run("got error  on db communication", func(t *testing.T) {
 		// GIVEN
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
@@ -319,127 +316,66 @@ func TestRepositoryDeleteAllByApplicationID(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestRepositoryListByApplicationID(t *testing.T) {
-	t.Run(testCaseSuccess, func(t *testing.T) {
-		// GIVEN
-		mockConv := &automock.EntityConverter{}
-		defer mockConv.AssertExpectations(t)
-		mockConv.On("FromEntity",
-			webhook.Entity{ID: givenID(),
-				TenantID:      repo.NewValidNullableString(givenTenant()),
-				ApplicationID: repo.NewValidNullableString(givenApplicationID()),
-				Type:          string(model.WebhookTypeConfigurationChanged),
-				URL:           repo.NewValidNullableString("http://kyma.io")}).
-			Return(model.Webhook{
-				ID: givenID(),
-			}, nil)
+	whID1 := "whID1"
+	whID2 := "whID2"
+	whModel1 := fixApplicationModelWebhook(whID1, givenApplicationID(), givenTenant(), "http://kyma.io")
+	whEntity1 := fixApplicationWebhookEntityWithID(t, whID1)
 
-		mockConv.On("FromEntity",
-			webhook.Entity{ID: anotherID(),
-				TenantID:      repo.NewValidNullableString(givenTenant()),
-				ApplicationID: repo.NewValidNullableString(givenApplicationID()),
-				Type:          string(model.WebhookTypeConfigurationChanged),
-				URL:           repo.NewValidNullableString("http://kyma2.io")}).
-			Return(model.Webhook{ID: anotherID()}, nil)
+	whModel2 := fixApplicationModelWebhook(whID2, givenApplicationID(), givenTenant(), "http://kyma.io")
+	whEntity2 := fixApplicationWebhookEntityWithID(t, whID2)
 
-		sut := webhook.NewRepository(mockConv)
+	suite := testdb.RepoListTestSuite{
+		Name: "List Webhooks by Application ID",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE app_id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{givenApplicationID(), givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(whModel1.ID, givenApplicationID(), nil, whModel1.Type, whModel1.URL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate).
+						AddRow(whModel2.ID, givenApplicationID(), nil, whModel2.Type, whModel2.URL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   webhook.NewRepository,
+		ExpectedModelEntities: []interface{}{whModel1, whModel2},
+		ExpectedDBEntities:    []interface{}{whEntity1, whEntity2},
+		MethodArgs:            []interface{}{givenTenant(), givenApplicationID()},
+		MethodName:            "ListByApplicationID",
+	}
 
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth"}).
-			AddRow(givenID(), givenTenant(), givenApplicationID(), nil, model.WebhookTypeConfigurationChanged, "http://kyma.io", nil).
-			AddRow(anotherID(), givenTenant(), givenApplicationID(), nil, model.WebhookTypeConfigurationChanged, "http://kyma2.io", nil)
-
-		dbMock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, tenant_id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE %s AND app_id = $2", fixUnescapedTenantIsolationSubquery()))).
-			WithArgs(givenTenant(), givenApplicationID()).
-			WillReturnRows(rows)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		actual, err := sut.ListByApplicationID(ctx, givenTenant(), givenApplicationID())
-		// THEN
-		require.NoError(t, err)
-		require.Len(t, actual, 2)
-		assert.Equal(t, givenID(), actual[0].ID)
-		assert.Equal(t, anotherID(), actual[1].ID)
-	})
-
-	t.Run("success if no found", func(t *testing.T) {
-		// GIVE
-		sut := webhook.NewRepository(nil)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		noRows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth"})
-
-		dbMock.ExpectQuery("SELECT").WithArgs(givenTenant(), givenApplicationID()).WillReturnRows(noRows)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		actual, err := sut.ListByApplicationID(ctx, givenTenant(), givenApplicationID())
-		// THEN
-		require.NoError(t, err)
-		require.Empty(t, actual)
-	})
-
-	t.Run(testCaseErrorOnDBCommunication, func(t *testing.T) {
-		// GIVEN
-		sut := webhook.NewRepository(nil)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectQuery("SELECT").WillReturnError(givenError())
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		_, err := sut.ListByApplicationID(ctx, givenTenant(), givenApplicationID())
-		// THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-
-	t.Run(testCaseErrorOnConvertingObjects, func(t *testing.T) {
-		// GIVEN
-		mockConv := &automock.EntityConverter{}
-		defer mockConv.AssertExpectations(t)
-		mockConv.On("FromEntity", mock.Anything).Return(model.Webhook{}, givenError())
-
-		sut := webhook.NewRepository(mockConv)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth"}).
-			AddRow(givenID(), givenTenant(), givenApplicationID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil)
-
-		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT")).WithArgs(givenTenant(), givenApplicationID()).WillReturnRows(rows)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		// WHEN
-		_, err := sut.ListByApplicationID(ctx, givenTenant(), givenApplicationID())
-		// THEN
-		require.EqualError(t, err, "while converting Webhook to model: some error")
-	})
+	suite.Run(t)
 }
 
 func TestRepositoryListByApplicationTemplateID(t *testing.T) {
-	t.Run(testCaseSuccess, func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		mockConv := &automock.EntityConverter{}
 		defer mockConv.AssertExpectations(t)
 		mockConv.On("FromEntity",
-			webhook.Entity{ID: givenID(),
+			&webhook.Entity{ID: givenID(),
 				ApplicationTemplateID: repo.NewValidNullableString(givenApplicationTemplateID()),
 				Type:                  string(model.WebhookTypeConfigurationChanged),
 				URL:                   repo.NewValidNullableString("http://kyma.io")}).
-			Return(model.Webhook{
+			Return(&model.Webhook{
 				ID: givenID(),
 			}, nil)
 
 		mockConv.On("FromEntity",
-			webhook.Entity{ID: anotherID(),
+			&webhook.Entity{ID: anotherID(),
 				ApplicationTemplateID: repo.NewValidNullableString(givenApplicationTemplateID()),
 				Type:                  string(model.WebhookTypeConfigurationChanged),
 				URL:                   repo.NewValidNullableString("http://kyma2.io")}).
-			Return(model.Webhook{ID: anotherID()}, nil)
+			Return(&model.Webhook{ID: anotherID()}, nil)
 
 		sut := webhook.NewRepository(mockConv)
 
@@ -450,7 +386,7 @@ func TestRepositoryListByApplicationTemplateID(t *testing.T) {
 			AddRow(givenID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma.io", nil).
 			AddRow(anotherID(), givenApplicationTemplateID(), model.WebhookTypeConfigurationChanged, "http://kyma2.io", nil)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, tenant_id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE app_template_id = $1")).
+		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE app_template_id = $1")).
 			WithArgs(givenApplicationTemplateID()).
 			WillReturnRows(rows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -470,7 +406,7 @@ func TestRepositoryListByApplicationTemplateID(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		noRows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "app_template_id", "type", "url", "auth"})
+		noRows := sqlmock.NewRows([]string{"id", "app_id", "app_template_id", "type", "url", "auth"})
 
 		dbMock.ExpectQuery("SELECT").WithArgs(givenApplicationTemplateID()).WillReturnRows(noRows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -481,7 +417,7 @@ func TestRepositoryListByApplicationTemplateID(t *testing.T) {
 		require.Empty(t, actual)
 	})
 
-	t.Run(testCaseErrorOnDBCommunication, func(t *testing.T) {
+	t.Run("got error  on db communication", func(t *testing.T) {
 		// GIVEN
 		sut := webhook.NewRepository(nil)
 		db, dbMock := testdb.MockDatabase(t)
@@ -495,11 +431,11 @@ func TestRepositoryListByApplicationTemplateID(t *testing.T) {
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
-	t.Run(testCaseErrorOnConvertingObjects, func(t *testing.T) {
+	t.Run("got error on converting object", func(t *testing.T) {
 		// GIVEN
 		mockConv := &automock.EntityConverter{}
 		defer mockConv.AssertExpectations(t)
-		mockConv.On("FromEntity", mock.Anything).Return(model.Webhook{}, givenError())
+		mockConv.On("FromEntity", mock.Anything).Return(&model.Webhook{}, givenError())
 
 		sut := webhook.NewRepository(mockConv)
 
@@ -517,4 +453,3 @@ func TestRepositoryListByApplicationTemplateID(t *testing.T) {
 		require.EqualError(t, err, "while converting Webhook to model: some error")
 	})
 }
-*/

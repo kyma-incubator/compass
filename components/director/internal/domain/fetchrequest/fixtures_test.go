@@ -73,6 +73,10 @@ func fixGQLFetchRequestInput(url, filter string) *graphql.FetchRequestInput {
 }
 
 func fixFullFetchRequestModel(id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType) *model.FetchRequest {
+	return fixFullFetchRequestModelWithRefID(id, timestamp, objectType, refID)
+}
+
+func fixFullFetchRequestModelWithRefID(id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType, objectID string) *model.FetchRequest {
 	filter := "filter"
 	return &model.FetchRequest{
 		ID:     id,
@@ -92,11 +96,15 @@ func fixFullFetchRequestModel(id string, timestamp time.Time, objectType model.F
 			},
 		},
 		ObjectType: objectType,
-		ObjectID:   refID,
+		ObjectID:   objectID,
 	}
 }
 
 func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType) *fetchrequest.Entity {
+	return fixFullFetchRequestEntityWithRefID(t, id, timestamp, objectType, refID)
+}
+
+func fixFullFetchRequestEntityWithRefID(t *testing.T, id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType, objectID string) *fetchrequest.Entity {
 	auth := &model.Auth{
 		Credential: model.CredentialData{
 			Basic: &model.BasicCredentialData{
@@ -113,11 +121,11 @@ func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time, obj
 	var specID sql.NullString
 	switch objectType {
 	case model.DocumentFetchRequestReference:
-		documentID = sql.NullString{Valid: true, String: refID}
+		documentID = sql.NullString{Valid: true, String: objectID}
 	case model.APISpecFetchRequestReference:
-		specID = sql.NullString{Valid: true, String: refID}
+		specID = sql.NullString{Valid: true, String: objectID}
 	case model.EventSpecFetchRequestReference:
-		specID = sql.NullString{Valid: true, String: refID}
+		specID = sql.NullString{Valid: true, String: objectID}
 	}
 
 	filter := "filter"

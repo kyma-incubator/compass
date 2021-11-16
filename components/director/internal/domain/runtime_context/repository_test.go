@@ -3,11 +3,11 @@ package runtimectx_test
 import (
 	"context"
 	"database/sql/driver"
-	"encoding/base64"
 	"fmt"
 	"regexp"
-	"strconv"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
@@ -116,167 +116,69 @@ func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeContextModelForRunti
 	mockConverter.AssertExpectations(t)
 }
 
-/*
 func TestPgRepository_List(t *testing.T) {
-	//GIVEN
-	tenantID := uuid.New().String()
-	runtimeID := uuid.New().String()
-	runtimeCtx1ID := uuid.New().String()
-	runtimeCtx2ID := uuid.New().String()
+	runtimeCtx1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
+	runtimeCtx2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
+	runtimeCtxEntity1 := fixEntityRuntimeCtxWithID(runtimeCtx1ID)
+	runtimeCtxEntity2 := fixEntityRuntimeCtxWithID(runtimeCtx2ID)
 
-	limit := 2
-	offset := 3
+	runtimeCtxModel1 := fixModelRuntimeCtxWithID(runtimeCtx1ID)
+	runtimeCtxModel2 := fixModelRuntimeCtxWithID(runtimeCtx2ID)
 
-	pageableQuery := `^SELECT (.+) FROM public.runtime_contexts WHERE %s AND runtime_id = \$2 ORDER BY id LIMIT %d OFFSET %d$`
-	countQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT COUNT(*) FROM public.runtime_contexts WHERE %s AND runtime_id = $2`, fixUnescapedTenantIsolationSubquery()))
-
-	testCases := []struct {
-		Name           string
-		InputCursor    string
-		InputPageSize  int
-		ExpectedOffset int
-		ExpectedLimit  int
-		Rows           *sqlmock.Rows
-		TotalCount     int
-	}{
-		{
-			Name:           "Success getting first page",
-			InputPageSize:  2,
-			InputCursor:    "",
-			ExpectedOffset: 0,
-			ExpectedLimit:  limit,
-			Rows: sqlmock.NewRows([]string{"id", "runtime_id", "tenant_id", "key", "value"}).
-				AddRow(runtimeCtx1ID, runtimeID, tenantID, "key", "val").
-				AddRow(runtimeCtx2ID, runtimeID, tenantID, "key", "val"),
-			TotalCount: 2,
+	suite := testdb.RepoListPageableTestSuite{
+		Name: "List Runtime Contexts",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1
+												AND id IN (SELECT "runtime_context_id" FROM public.labels WHERE "runtime_context_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4])
+												AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = $5)) ORDER BY id LIMIT 2 OFFSET 0`),
+				Args:     []driver.Value{runtimeID, tenantID, model.ScenariosKey, "scenario", tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(runtimeCtxEntity1.ID, runtimeCtxEntity1.RuntimeID, runtimeCtxEntity1.Key, runtimeCtxEntity1.Value).
+						AddRow(runtimeCtxEntity2.ID, runtimeCtxEntity2.RuntimeID, runtimeCtxEntity2.Key, runtimeCtxEntity2.Value),
+					}
+				},
+			},
+			{
+				Query: regexp.QuoteMeta(`SELECT COUNT(*) FROM public.runtime_contexts WHERE runtime_id = $1
+												AND id IN (SELECT "runtime_context_id" FROM public.labels WHERE "runtime_context_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4])
+												AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = $5))`),
+				Args:     []driver.Value{runtimeID, tenantID, model.ScenariosKey, "scenario", tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(2)}
+				},
+			},
 		},
-		{
-			Name:           "Success getting next page",
-			InputPageSize:  2,
-			InputCursor:    convertIntToBase64String(offset),
-			ExpectedOffset: offset,
-			ExpectedLimit:  limit,
-			Rows: sqlmock.NewRows([]string{"id", "runtime_id", "tenant_id", "key", "value"}).
-				AddRow(runtimeCtx1ID, runtimeID, tenantID, "key", "val").
-				AddRow(runtimeCtx2ID, runtimeID, tenantID, "key", "val"),
-			TotalCount: 2,
-		}}
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			sqlxDB, sqlMock := testdb.MockDatabase(t)
-			defer sqlMock.AssertExpectations(t)
-			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-			pgRepository := runtimectx.NewRepository()
-			expectedQuery := fmt.Sprintf(pageableQuery, fixTenantIsolationSubquery(), testCase.ExpectedLimit, testCase.ExpectedOffset)
-
-			sqlMock.ExpectQuery(expectedQuery).
-				WithArgs(tenantID, runtimeID).
-				WillReturnRows(testCase.Rows)
-			countRow := sqlMock.NewRows([]string{"count"}).AddRow(testCase.TotalCount)
-
-			sqlMock.ExpectQuery(countQuery).
-				WithArgs(tenantID, runtimeID).
-				WillReturnRows(countRow)
-
-			//THEN
-			modelRuntimePage, err := pgRepository.List(ctx, runtimeID, tenantID, nil, testCase.InputPageSize, testCase.InputCursor)
-
-			//THEN
-			require.NoError(t, err)
-			assert.Equal(t, testCase.ExpectedLimit, modelRuntimePage.TotalCount)
-			require.NoError(t, sqlMock.ExpectationsWereMet())
-
-			assert.Equal(t, runtimeCtx1ID, modelRuntimePage.Data[0].ID)
-			assert.Equal(t, runtimeID, modelRuntimePage.Data[0].RuntimeID)
-			assert.Equal(t, tenantID, modelRuntimePage.Data[0].Tenant)
-
-			assert.Equal(t, runtimeCtx2ID, modelRuntimePage.Data[1].ID)
-			assert.Equal(t, runtimeID, modelRuntimePage.Data[1].RuntimeID)
-			assert.Equal(t, tenantID, modelRuntimePage.Data[1].Tenant)
-		})
+		Pages: []testdb.PageDetails{
+			{
+				ExpectedModelEntities: []interface{}{runtimeCtxModel1, runtimeCtxModel2},
+				ExpectedDBEntities:    []interface{}{runtimeCtxEntity1, runtimeCtxEntity2},
+				ExpectedPage: &model.RuntimeContextPage{
+					Data: []*model.RuntimeContext{runtimeCtxModel1, runtimeCtxModel2},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 2,
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       runtimectx.NewRepository,
+		MethodArgs:                []interface{}{runtimeID, tenantID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, `$[*] ? ( @ == "scenario" )`)}, 2, ""},
+		MethodName:                "List",
+		DisableConverterErrorTest: true,
 	}
 
-	t.Run("Returns error when decoded cursor is non-positive number", func(t *testing.T) {
-		//GIVEN
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		defer sqlMock.AssertExpectations(t)
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("MultipleFromEntities", mock.Anything)
-
-		pgRepository := runtime.NewRepository(mockConverter)
-		//THEN
-		_, err := pgRepository.List(ctx, tenantID, nil, 2, convertIntToBase64String(-3))
-
-		//THEN
-		require.EqualError(t, err, "while decoding page cursor: Invalid data [reason=cursor is not correct]")
-	})
+	suite.Run(t)
 }
 
-func TestPgRepository_List_WithFiltersShouldReturnRuntimeModelsForRuntimeEntities(t *testing.T) {
-	// given
-	tenantID := uuid.New().String()
-	runtimeID := uuid.New().String()
-	runtimeCtx1ID := uuid.New().String()
-	runtimeCtx2ID := uuid.New().String()
-
-	rowSize := 2
-
-	sqlxDB, sqlMock := testdb.MockDatabase(t)
-	defer sqlMock.AssertExpectations(t)
-
-	rows := sqlmock.NewRows([]string{"id", "runtime_id", "tenant_id", "key", "value"}).
-		AddRow(runtimeCtx1ID, runtimeID, tenantID, "key", "val").
-		AddRow(runtimeCtx2ID, runtimeID, tenantID, "key", "val")
-
-	filterQuery := fmt.Sprintf(`  AND id IN
-						\(SELECT "runtime_context_id" FROM public.labels
-							WHERE "runtime_context_id" IS NOT NULL
-							AND %s
-							AND "key" = \$4\)`, fixTenantIsolationSubqueryWithArg(3))
-	sqlQuery := fmt.Sprintf(`^SELECT (.+) FROM public.runtime_contexts
-								WHERE %s AND runtime_id = \$2 %s ORDER BY id LIMIT %d OFFSET 0`, fixTenantIsolationSubqueryWithArg(1), filterQuery, rowSize)
-
-	sqlMock.ExpectQuery(sqlQuery).
-		WithArgs(tenantID, runtimeID, tenantID, "foo").
-		WillReturnRows(rows)
-
-	countRows := sqlMock.NewRows([]string{"count"}).AddRow(rowSize)
-
-	countQuery := fmt.Sprintf(`^SELECT COUNT\(\*\) FROM public.runtime_contexts WHERE %s AND runtime_id = \$2 %s`, fixTenantIsolationSubquery(), filterQuery)
-	sqlMock.ExpectQuery(countQuery).
-		WithArgs(tenantID, runtimeID, tenantID, "foo").
-		WillReturnRows(countRows)
-
-	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-	labelFilterFoo := labelfilter.LabelFilter{
-		Key: "foo",
-	}
-	filter := []*labelfilter.LabelFilter{&labelFilterFoo}
-
-	pgRepository := runtimectx.NewRepository()
-
-	// when
-	modelRuntimePage, err := pgRepository.List(ctx, runtimeID, tenantID, filter, rowSize, "")
-
-	//then
-	assert.NoError(t, err)
-	require.NotNil(t, modelRuntimePage)
-	assert.Equal(t, rowSize, modelRuntimePage.TotalCount)
-	require.NoError(t, sqlMock.ExpectationsWereMet())
-
-	assert.Equal(t, runtimeCtx1ID, modelRuntimePage.Data[0].ID)
-	assert.Equal(t, runtimeID, modelRuntimePage.Data[0].RuntimeID)
-	assert.Equal(t, tenantID, modelRuntimePage.Data[0].Tenant)
-
-	assert.Equal(t, runtimeCtx2ID, modelRuntimePage.Data[1].ID)
-	assert.Equal(t, runtimeID, modelRuntimePage.Data[1].RuntimeID)
-	assert.Equal(t, tenantID, modelRuntimePage.Data[1].Tenant)
-}
-*/
 func TestPgRepository_Create(t *testing.T) {
 	var nilRuntimeCtxModel *model.RuntimeContext
 	runtimeCtxModel := fixModelRuntimeCtx()
@@ -391,8 +293,4 @@ func TestPgRepository_Exist(t *testing.T) {
 	}
 
 	suite.Run(t)
-}
-
-func convertIntToBase64String(number int) string {
-	return base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(number)))
 }

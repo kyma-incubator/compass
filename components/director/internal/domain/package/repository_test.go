@@ -152,38 +152,31 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestPgRepository_ListByApplicationID(t *testing.T) {
-	// GIVEN
-	totalCount := 2
-	firstPkgEntity := fixEntityPackage()
-	secondPkgEntity := fixEntityPackage()
+	suite := testdb.RepoListTestSuite{
+		Name: "List Packages",
+		SqlQueryDetails: []testdb.SqlQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, ord_id, vendor, title, short_description, description, version, package_links, links, licence_type, tags, countries, labels, policy_level, custom_policy_level, part_of_products, line_of_business, industry, resource_hash FROM public.packages WHERE app_id = $1 AND (id IN (SELECT id FROM packages_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{appID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixPackageColumns()).AddRow(fixPackageRowWithTitle("title1")...).AddRow(fixPackageRowWithTitle("title2")...)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixPackageColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   ordpackage.NewRepository,
+		ExpectedModelEntities: []interface{}{fixPackageModelWithTitle("title1"), fixPackageModelWithTitle("title2")},
+		ExpectedDBEntities:    []interface{}{fixEntityPackageWithTitle("title1"), fixEntityPackageWithTitle("title2")},
+		MethodArgs:            []interface{}{tenantID, appID},
+		MethodName:            "ListByApplicationID",
+	}
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.packages WHERE %s AND app_id = \$2`, fixTenantIsolationSubquery())
-
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow()...).
-			AddRow(fixPackageRow()...)
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, appID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", firstPkgEntity).Return(&model.Package{ID: firstPkgEntity.ID}, nil)
-		convMock.On("FromEntity", secondPkgEntity).Return(&model.Package{ID: secondPkgEntity.ID}, nil)
-		pgRepository := ordpackage.NewRepository(convMock)
-		// WHEN
-		modelPkg, err := pgRepository.ListByApplicationID(ctx, tenantID, appID)
-		//THEN
-		require.NoError(t, err)
-		require.Len(t, modelPkg, totalCount)
-		assert.Equal(t, firstPkgEntity.ID, modelPkg[0].ID)
-		assert.Equal(t, secondPkgEntity.ID, modelPkg[1].ID)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-}*/
+	suite.Run(t)
+}

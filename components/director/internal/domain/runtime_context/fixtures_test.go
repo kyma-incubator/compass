@@ -18,6 +18,10 @@ const (
 var fixColumns = []string{"id", "runtime_id", "key", "value"}
 
 func fixModelRuntimeCtx() *model.RuntimeContext {
+	return fixModelRuntimeCtxWithID(runtimeCtxID)
+}
+
+func fixModelRuntimeCtxWithID(id string) *model.RuntimeContext {
 	return &model.RuntimeContext{
 		ID:        id,
 		RuntimeID: runtimeID,
@@ -27,6 +31,10 @@ func fixModelRuntimeCtx() *model.RuntimeContext {
 }
 
 func fixEntityRuntimeCtx() *runtimectx.RuntimeContext {
+	return fixEntityRuntimeCtxWithID(runtimeCtxID)
+}
+
+func fixEntityRuntimeCtxWithID(id string) *runtimectx.RuntimeContext {
 	return &runtimectx.RuntimeContext{
 		ID:        id,
 		RuntimeID: runtimeID,

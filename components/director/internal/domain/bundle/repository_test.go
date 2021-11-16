@@ -4,9 +4,10 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
@@ -225,7 +226,6 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 	firstBndlModel := fixBundleModelWithID(firstBundleID, "foo", desc)
 	firstBndlModel.ApplicationID = onePageAppID
 
-
 	multiplePagesAppID := "multiplePagesAppID"
 
 	secondBundleID := "222222222-2222-2222-2222-222222222222"
@@ -238,7 +238,7 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 		Name: "List Bundles for multiple Applications with paging",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query:     regexp.QuoteMeta(`(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) AND app_id = $2 ORDER BY app_id ASC, id ASC LIMIT $3 OFFSET $4)
+				Query: regexp.QuoteMeta(`(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) AND app_id = $2 ORDER BY app_id ASC, id ASC LIMIT $3 OFFSET $4)
 												UNION
 												(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $5)) AND app_id = $6 ORDER BY app_id ASC, id ASC LIMIT $7 OFFSET $8)
 												UNION
@@ -251,7 +251,7 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 				},
 			},
 			{
-				Query:     regexp.QuoteMeta(`SELECT app_id AS id, COUNT(*) AS total_count FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) GROUP BY app_id ORDER BY app_id ASC`),
+				Query:    regexp.QuoteMeta(`SELECT app_id AS id, COUNT(*) AS total_count FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) GROUP BY app_id ORDER BY app_id ASC`),
 				Args:     []driver.Value{tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -305,7 +305,7 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 		},
 		RepoConstructorFunc: bundle.NewRepository,
 		MethodName:          "ListByApplicationIDs",
-		MethodArgs: []interface{}{tenantID, []string{emptyPageAppID, onePageAppID, multiplePagesAppID}, pageSize, cursor},
+		MethodArgs:          []interface{}{tenantID, []string{emptyPageAppID, onePageAppID, multiplePagesAppID}, pageSize, cursor},
 	}
 
 	suite.Run(t)

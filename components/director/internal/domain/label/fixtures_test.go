@@ -19,8 +19,16 @@ const (
 var fixColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "runtime_context_id", "key", "value", "version"}
 
 func fixModelLabel(objectType model.LabelableObject) *model.Label {
+	return fixModelLabelWithID(labelId, key, objectType)
+}
+
+func fixModelLabelWithID(id, key string, objectType model.LabelableObject) *model.Label {
+	return fixModelLabelWithRefID(id, key, objectType, refID)
+}
+
+func fixModelLabelWithRefID(id, key string, objectType model.LabelableObject, refID string) *model.Label {
 	result := &model.Label{
-		ID:         labelId,
+		ID:         id,
 		Key:        key,
 		Value:      value,
 		ObjectID:   refID,
@@ -34,6 +42,14 @@ func fixModelLabel(objectType model.LabelableObject) *model.Label {
 }
 
 func fixEntityLabel(objectType model.LabelableObject) *label.Entity {
+	return fixEntityLabelWithID(labelId, key, objectType)
+}
+
+func fixEntityLabelWithID(id, key string, objectType model.LabelableObject) *label.Entity {
+	return fixEntityLabelWithRefID(id, key, objectType, refID)
+}
+
+func fixEntityLabelWithRefID(id, key string, objectType model.LabelableObject, refID string) *label.Entity {
 	var tenant sql.NullString
 	var appID sql.NullString
 	var runtimeCtxID sql.NullString
@@ -52,7 +68,7 @@ func fixEntityLabel(objectType model.LabelableObject) *label.Entity {
 	return &label.Entity{
 		Key:              key,
 		Value:            value,
-		ID:               labelId,
+		ID:               id,
 		TenantID:         tenant,
 		AppID:            appID,
 		RuntimeContextID: runtimeCtxID,

@@ -108,7 +108,6 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Fetc
 	return r.updater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
 
-// ListByReferenceObjectIDs missing godoc
 func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {

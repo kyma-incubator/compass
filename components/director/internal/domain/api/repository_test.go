@@ -3,9 +3,10 @@ package api_test
 import (
 	"database/sql/driver"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"

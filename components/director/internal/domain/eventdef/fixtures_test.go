@@ -40,6 +40,10 @@ func fixEventDefinitionModel(id string, name string) *model.EventDefinition {
 }
 
 func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, model.Spec, model.BundleReference) {
+	return fixFullEventDefinitionModelWithID(eventID, placeholder)
+}
+
+func fixFullEventDefinitionModelWithID(id, placeholder string) (model.EventDefinition, model.Spec, model.BundleReference) {
 	eventType := model.EventSpecTypeAsyncAPI
 	spec := model.Spec{
 		ID:         specID,
@@ -92,7 +96,7 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 		Extensible:          json.RawMessage(extensible),
 		Version:             v,
 		BaseEntity: &model.BaseEntity{
-			ID:        eventID,
+			ID:        id,
 			Ready:     true,
 			CreatedAt: &fixedTimestamp,
 			UpdatedAt: &time.Time{},

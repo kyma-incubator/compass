@@ -16,8 +16,11 @@ const (
 )
 
 func fixEntityTombstone() *tombstone.Entity {
+	return fixEntityTombstoneWithID(tombstoneID)
+}
+func fixEntityTombstoneWithID(id string) *tombstone.Entity {
 	return &tombstone.Entity{
-		ID:            tombstoneID,
+		ID:            id,
 		OrdID:         ordID,
 		ApplicationID: appID,
 		RemovalDate:   "removalDate",
@@ -25,8 +28,12 @@ func fixEntityTombstone() *tombstone.Entity {
 }
 
 func fixTombstoneModel() *model.Tombstone {
+	return fixTombstoneModelWithID(tombstoneID)
+}
+
+func fixTombstoneModelWithID(id string) *model.Tombstone {
 	return &model.Tombstone{
-		ID:            tombstoneID,
+		ID:            id,
 		OrdID:         ordID,
 		ApplicationID: appID,
 		RemovalDate:   "removalDate",
@@ -45,7 +52,11 @@ func fixTombstoneColumns() []string {
 }
 
 func fixTombstoneRow() []driver.Value {
-	return []driver.Value{ordID, appID, "removalDate", tombstoneID}
+	return fixTombstoneRowWithID(tombstoneID)
+}
+
+func fixTombstoneRowWithID(id string) []driver.Value {
+	return []driver.Value{ordID, appID, "removalDate", id}
 }
 
 func fixTombstoneUpdateArgs() []driver.Value {

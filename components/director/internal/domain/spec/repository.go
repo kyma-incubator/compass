@@ -117,7 +117,6 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string,
 	return items, nil
 }
 
-// ListByReferenceObjectIDs missing godoc
 func (r *repository) ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error) {
 	objectFieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
