@@ -88,7 +88,7 @@ EOF
   echo "$patchContent" > tmp_patch_content.yaml
 
   for sm in ${kymaSvcMonitors[@]}; do
-    kubectl get --show-managed-fields=false ${crd} -n ${namespace} ${sm} -o yaml > ${sm}.yaml
+    kubectl get ${crd} -n ${namespace} ${sm} -o yaml > ${sm}.yaml
 
     if [[ "$OSTYPE" == "darwin"* ]]; then
       sed -i '' -e '/endpoints:/r tmp_patch_content.yaml' ${sm}.yaml
