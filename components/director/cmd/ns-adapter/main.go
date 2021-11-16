@@ -137,6 +137,7 @@ func main() {
 	})
 
 	validation.ErrRequired = validation.ErrRequired.SetMessage("the value is required")
+	validation.ErrNotNilRequired = validation.ErrNotNilRequired.SetMessage("the value can not be nil")
 
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%s", conf.Port),
