@@ -75,15 +75,17 @@ function patchKymaServiceMonitorsForMTLS() {
 
   crd="servicemonitors.monitoring.coreos.com"
   namespace="kyma-system"
-  patchContent='  - scheme: https
+  patchContent=`cat <<"EOF"
+  - scheme: https
     tlsConfig:
       caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
       certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
       keyFile: /etc/prometheus/secrets/istio.default/key.pem
       insecureSkipVerify: true
-'
+EOF
+  `
 
-  printf "$patchContent" > tmp_patch_content.yaml
+  echo "$patchContent" > tmp_patch_content.yaml
 
   for sm in ${kymaSvcMonitors[@]}; do
     kubectl get ${crd} -n ${namespace} ${sm} -o yaml > ${sm}.yaml
