@@ -88,6 +88,7 @@ graphql:
     deleteAutomaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:write"]
     writeTenants: ["tenant:write"]
     deleteTenants: ["tenant:write"]
+    updateTenant: ["tenant:write"]
 
   field:
     fetch_request:

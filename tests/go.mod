@@ -29,7 +29,7 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210922143733-cb93bcfd3cd6
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
-	github.com/kyma-incubator/compass/components/director v0.0.0-20211022125007-080192a5068e
+	github.com/kyma-incubator/compass/components/director v0.0.0-20211116100439-5f71f99aef04
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20211014123116-dd19192a2e8f
@@ -60,7 +60,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/net v0.0.0-20210510120150-4163338589ed
+	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
 	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1
 	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect

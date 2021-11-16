@@ -14,7 +14,7 @@ metadata:
 rules:
 - apiGroups: ["*"]
   resources: ["jobs"]
-  resourceNames: ["tenant-fetcher-test", "tenant-fetcher-test2"]
+  resourceNames: ["tenant-fetcher-test", "tenant-fetcher-subaccount-test"]
   verbs: ["get", "delete"]
 - apiGroups: ["*"]
   resources: ["jobs"]
@@ -22,7 +22,7 @@ rules:
   verbs: ["create"]
 - apiGroups: ["*"]
   resources: ["cronjobs"]
-  resourceNames: ["{{ .Chart.Name }}-tenant-fetcher-external-mock"]
+  resourceNames: ["{{ .Chart.Name }}-tenant-fetcher-external-mock", "{{ .Chart.Name }}-tenant-fetcher-subaccount-fetcher"]
   verbs: ["get"]
 - apiGroups: ["operations.compass"]
   resources: ["operations"]

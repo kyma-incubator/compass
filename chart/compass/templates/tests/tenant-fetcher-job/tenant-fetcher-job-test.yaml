@@ -24,6 +24,7 @@ spec:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}"
             - "dex.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-tenant-fetcher
@@ -48,8 +49,12 @@ spec:
               value: "{{ .Values.global.ingress.domainName }}"
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: INTERNAL_DIRECTOR_URL
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
+            - name: APP_MOVED_RUNTIME_LABEL_KEY
+              value: {{ default "movedRuntimeLabelKey" .Values.global.tenantFetchers.job1.fieldMapping.movedRuntimeLabelKey }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:

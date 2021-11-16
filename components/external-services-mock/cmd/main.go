@@ -152,6 +152,22 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-update/reset").HandlerFunc(tenantFetcherHandler.HandleReset("update"))
 	router.HandleFunc("/tenant-fetcher/global-account-update", tenantFetcherHandler.HandleFunc("update"))
 
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("create_subaccount"))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset("create_subaccount"))
+	router.HandleFunc("/tenant-fetcher/subaccount-create", tenantFetcherHandler.HandleFunc("create_subaccount"))
+
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-delete/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("delete_subaccount"))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-delete/reset").HandlerFunc(tenantFetcherHandler.HandleReset("delete_subaccount"))
+	router.HandleFunc("/tenant-fetcher/subaccount-delete", tenantFetcherHandler.HandleFunc("delete_subaccount"))
+
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-update/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("update_subaccount"))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-update/reset").HandlerFunc(tenantFetcherHandler.HandleReset("update_subaccount"))
+	router.HandleFunc("/tenant-fetcher/subaccount-update", tenantFetcherHandler.HandleFunc("update_subaccount"))
+
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-move/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("move_subaccount"))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-move/reset").HandlerFunc(tenantFetcherHandler.HandleReset("move_subaccount"))
+	router.HandleFunc("/tenant-fetcher/subaccount-move", tenantFetcherHandler.HandleFunc("move_subaccount"))
+
 	// Fetch request handlers
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 

@@ -73,7 +73,7 @@ func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.B
 	if err != nil {
 		return errors.Wrap(err, "while creating tenants input")
 	}
-	tenantsQuery := fmt.Sprintf("mutation { updateTenants(id: %s, in:%s)}", id, in)
+	tenantsQuery := fmt.Sprintf(`mutation { updateTenants(id: "%s", in:%s)}`, id, in)
 	gRequest := gcli.NewRequest(tenantsQuery)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql query")

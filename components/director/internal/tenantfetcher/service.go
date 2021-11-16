@@ -495,7 +495,7 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 	for _, mapping := range movedRuntimeMappings {
 		subaccountID := mapping.LabelValue
 		subaccountTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, subaccountID)
-
+		// TODO upsert global account if not exists
 		targetInternalTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, mapping.TargetTenant)
 		if err != nil {
 			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
