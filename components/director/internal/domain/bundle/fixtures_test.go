@@ -399,10 +399,7 @@ func fixEntityBundle(id, name, desc string) *bundle.Entity {
 		Links:                         repo.NewValidNullableString("[]"),
 		Labels:                        repo.NewValidNullableString("[]"),
 		CredentialExchangeStrategies:  repo.NewValidNullableString("[]"),
-		CorrelationIDs: sql.NullString{
-			String: correlationIDs,
-			Valid:  true,
-		},
+		CorrelationIDs:                repo.NewValidNullableString(correlationIDs),
 		BaseEntity: &repo.BaseEntity{
 			ID:        id,
 			Ready:     true,
