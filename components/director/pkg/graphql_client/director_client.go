@@ -68,12 +68,13 @@ func (d *Director) DeleteTenants(ctx context.Context, tenants []graphql.Business
 func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.BusinessTenantMappingInput) error {
 	var res map[string]interface{}
 
+	fieldProvider := graphqlizer.GqlFieldsProvider{}
 	gqlizer := graphqlizer.Graphqlizer{}
 	in, err := gqlizer.UpdateTenantsInputToGQL(tenant)
 	if err != nil {
 		return errors.Wrap(err, "while creating tenants input")
 	}
-	tenantsQuery := fmt.Sprintf(`mutation { updateTenants(id: "%s", in:%s)}`, id, in)
+	tenantsQuery := fmt.Sprintf(`mutation { updateTenant(id: "%s", in:%s) { %s }}`, id, in, fieldProvider.ForTenant())
 	gRequest := gcli.NewRequest(tenantsQuery)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql query")

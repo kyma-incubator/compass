@@ -606,19 +606,19 @@ func (g *Graphqlizer) DeleteTenantsInputToGQL(in []graphql.BusinessTenantMapping
 func (g *Graphqlizer) UpdateTenantsInputToGQL(in graphql.BusinessTenantMappingInput) (string, error) {
 	return g.genericToGQL(in, `
 		{
-			name: "{{$tenant.Name}}",
- 			externalTenant: "{{$tenant.ExternalTenant}}",
-			{{- if $tenant.Parent }}
-			parent: "{{$tenant.Parent}}",
+			name: "{{.Name}}",
+ 			externalTenant: "{{.ExternalTenant}}",
+			{{- if .Parent }}
+			parent: "{{.Parent}}",
 			{{- end }}
-			{{- if $tenant.Region }}
-			region: "{{$tenant.Region}}",
+			{{- if .Region }}
+			region: "{{.Region}}",
 			{{- end }}
-			{{- if $tenant.Subdomain }}
-			subdomain: "{{$tenant.Subdomain}}",
+			{{- if .Subdomain }}
+			subdomain: "{{.Subdomain}}",
 			{{- end }}
-			type: "{{$tenant.Type}}",
-			provider: "{{$tenant.Provider}}"
+			type: "{{.Type}}",
+			provider: "{{.Provider}}"
 		}`)
 }
 

@@ -221,7 +221,7 @@ func TestMoveSubaccounts(t *testing.T) {
 		Name:   "runtime",
 		Labels: map[string]interface{}{cfg.MovedRuntimeLabelKey: "sub1"},
 	}
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorInternalGQLClient, tenant1.ID, input)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant1.ID, input)
 	assert.NoError(t, err)
 
 	event1 := genMockSubaccountMoveEvent("sub1", "sub1", subaccountSubdomain, subaccountParent, cfg.MovedRuntimeLabelKey, tenant1.ID, tenant2.ID, subaccountRegion)
@@ -245,7 +245,7 @@ func TestMoveSubaccounts(t *testing.T) {
 	log.C(ctx).Infof("actual subaccount: %+v", subaccount)
 	assert.Equal(t, tenant2.InternalID, subaccount.ParentID)
 
-	rtm := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.ID, runtime.ID)
+	rtm := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenant2.ID, runtime.ID)
 	assert.Equal(t, runtime.Name, rtm.Name)
 }
 

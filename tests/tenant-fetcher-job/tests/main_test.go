@@ -41,6 +41,9 @@ func TestMain(m *testing.M) {
 	dexToken := server.Token()
 
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
+	dexGraphQLClient.Log = func(s string) {
+		log.D().Info(s)
+	}
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
