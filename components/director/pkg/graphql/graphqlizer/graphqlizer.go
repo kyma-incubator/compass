@@ -597,7 +597,7 @@ func (g *Graphqlizer) DeleteTenantsInputToGQL(in []graphql.BusinessTenantMapping
 	return g.genericToGQL(in, `
 		{{ $n := (len .) }}
 		{{range $i, $tenant := .}}
-		{"{{$tenant.ExternalTenant}}"}{{if ne (inc $i) $n }},{{end}}
+		"{{$tenant.ExternalTenant}}"{{if ne (inc $i) $n }},{{end}}
 		{{end}}`)
 }
 
