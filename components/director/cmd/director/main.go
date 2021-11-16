@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
+	"github.com/kyma-incubator/compass/components/director/pkg/namespacedname"
 	"net/http"
 	"net/url"
 	"os"
@@ -144,6 +147,8 @@ type config struct {
 
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
+
+	ExternalClientCertSecret string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET"`
 }
 
 func main() {
@@ -198,6 +203,14 @@ func main() {
 
 	adminURL, err := url.Parse(cfg.OAuth20.URL)
 	exitOnError(err, "Error while parsing Hydra URL")
+
+	externalClientCertSecret := namespacedname.Parse(cfg.ExternalClientCertSecret)
+	kubeConfig := kubernetes.Config{}
+	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
+	exitOnError(err, "Failed to initialize Kubernetes client.")
+	certsCache := certloader.NewCertificateCache()
+	certsLoader := certloader.NewCertificatesLoader(certsCache, k8sClientSet.CoreV1().Secrets(externalClientCertSecret.Namespace), externalClientCertSecret.Name, time.Second)
+	go certsLoader.Run(ctx)
 
 	rootResolver := domain.NewRootResolver(
 		&normalizer.DefaultNormalizator{},

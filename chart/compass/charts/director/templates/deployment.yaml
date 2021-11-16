@@ -208,6 +208,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.tenantQueryParam }}
             - name: APP_SELF_REGISTER_REQUEST_BODY_PATTERN
               value: {{ .Values.global.director.selfRegister.requestBodyPattern | quote }}
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.director.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.director.secrets.externalClientCertSecret.name }}"
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}
