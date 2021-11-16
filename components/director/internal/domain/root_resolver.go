@@ -786,8 +786,8 @@ func (r *mutationResolver) WriteTenants(ctx context.Context, in []*graphql.Busin
 	return r.tenant.Write(ctx, in)
 }
 
-// DeleteTenants missing godoc
-func (r *mutationResolver) DeleteTenants(ctx context.Context, in []*graphql.BusinessTenantMappingInput) (int, error) {
+// DeleteTenants deletes multiple tenants by external tenant id
+func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int, error) {
 	return r.tenant.Delete(ctx, in)
 }
 

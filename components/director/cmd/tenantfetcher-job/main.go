@@ -135,9 +135,9 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
 	if cfg.ShouldSyncSubaccounts {
-		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, labelDefConverter)
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, labelDefConverter, tenantStorageConv)
 	}
-	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize)
+	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv)
 }
 
 func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {

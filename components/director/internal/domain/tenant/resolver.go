@@ -19,7 +19,7 @@ type BusinessTenantMappingService interface {
 	ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error)
 	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
 	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
-	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
+	DeleteMany(ctx context.Context, tenantInputs []string) error
 }
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
@@ -144,7 +144,7 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 }
 
 // Delete deletes tenants
-func (r *Resolver) Delete(ctx context.Context, inputTenants []*graphql.BusinessTenantMappingInput) (int, error) {
+func (r *Resolver) Delete(ctx context.Context, externalTenantIDs []string) (int, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return -1, err
@@ -153,9 +153,7 @@ func (r *Resolver) Delete(ctx context.Context, inputTenants []*graphql.BusinessT
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tenants := r.conv.MultipleInputFromGraphQL(inputTenants)
-
-	if err := r.srv.DeleteMany(ctx, tenants); err != nil {
+	if err := r.srv.DeleteMany(ctx, externalTenantIDs); err != nil {
 		return -1, errors.Wrap(err, "while deleting tenants")
 	}
 
@@ -163,7 +161,7 @@ func (r *Resolver) Delete(ctx context.Context, inputTenants []*graphql.BusinessT
 		return -1, err
 	}
 
-	return len(tenants), nil
+	return len(externalTenantIDs), nil
 }
 
 // NewResolver returns the GraphQL resolver for tenants.

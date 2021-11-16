@@ -105,8 +105,8 @@ type TenantSyncService interface {
 // DirectorGraphQLClient expects graphql implementation
 //go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore
 type DirectorGraphQLClient interface {
-	WriteTenants(context.Context, []model.BusinessTenantMappingInput) error
-	DeleteTenants(context.Context, []model.BusinessTenantMappingInput) error
+	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
+	DeleteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
 	CreateLabelDefinition(context.Context, graphql.LabelDefinitionInput, string) error
 	UpdateLabelDefinition(context.Context, graphql.LabelDefinitionInput, string) error
 	SetRuntimeTenant(ctx context.Context, runtimeID, tenantID string) error
@@ -116,6 +116,12 @@ type DirectorGraphQLClient interface {
 //go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore
 type LabelDefConverter interface {
 	ToGraphQLInput(definition model.LabelDefinition) (graphql.LabelDefinitionInput, error)
+}
+
+// TenantConverter expects tenant converter implementation
+//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore
+type TenantConverter interface {
+	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
 }
 
 const (
@@ -138,6 +144,7 @@ type GlobalAccountService struct {
 	toEventsPage          func([]byte) *eventsPage
 	gqlClient             DirectorGraphQLClient
 	tenantInsertChunkSize int
+	tenantConverter       TenantConverter
 }
 
 // SubaccountService missing godoc
@@ -160,6 +167,7 @@ type SubaccountService struct {
 	gqlClient                       DirectorGraphQLClient
 	tenantInsertChunkSize           int
 	labelDefConverter               LabelDefConverter
+	tenantConverter                 TenantConverter
 }
 
 // NewGlobalAccountService missing godoc
@@ -171,7 +179,8 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 	tenantStorageService TenantStorageService,
 	fullResyncInterval time.Duration,
 	gqlClient DirectorGraphQLClient,
-	tenantInsertChunkSize int) *GlobalAccountService {
+	tenantInsertChunkSize int,
+	tenantConverter TenantConverter) *GlobalAccountService {
 	return &GlobalAccountService{
 		transact:             transact,
 		kubeClient:           kubeClient,
@@ -192,6 +201,7 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 		},
 		gqlClient:             gqlClient,
 		tenantInsertChunkSize: tenantInsertChunkSize,
+		tenantConverter:       tenantConverter,
 	}
 }
 
@@ -211,7 +221,8 @@ func NewSubaccountService(queryConfig QueryConfig,
 	fullResyncInterval time.Duration,
 	gqlClient DirectorGraphQLClient,
 	tenantInsertChunkSize int,
-	labelDefConverter LabelDefConverter) *SubaccountService {
+	labelDefConverter LabelDefConverter,
+	tenantConverter TenantConverter) *SubaccountService {
 	return &SubaccountService{
 		transact:                        transact,
 		kubeClient:                      kubeClient,
@@ -238,6 +249,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 		gqlClient:             gqlClient,
 		tenantInsertChunkSize: tenantInsertChunkSize,
 		labelDefConverter:     labelDefConverter,
+		tenantConverter:       tenantConverter,
 	}
 }
 
@@ -308,7 +320,7 @@ func (s SubaccountService) SyncTenants() error {
 
 		// Order of event processing matters
 		if len(tenantsToCreate) > 0 {
-			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize); err != nil {
+			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 				return errors.Wrap(err, "while storing subaccounts")
 			}
 		}
@@ -318,7 +330,7 @@ func (s SubaccountService) SyncTenants() error {
 			}
 		}
 		if len(tenantsToDelete) > 0 {
-			if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize); err != nil {
+			if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 				return errors.Wrap(err, "while deleting subaccounts")
 			}
 		}
@@ -401,12 +413,12 @@ func (s GlobalAccountService) SyncTenants() error {
 
 	// Order of event processing matters
 	if len(tenantsToCreate) > 0 {
-		if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, s.tenantsRegion, s.providerName, s.tenantInsertChunkSize); err != nil {
+		if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, s.tenantsRegion, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 			return errors.Wrap(err, "while storing accounts")
 		}
 	}
 	if len(tenantsToDelete) > 0 {
-		if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize); err != nil {
+		if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 			return errors.Wrap(err, "moving deleting accounts")
 		}
 	}
@@ -418,7 +430,7 @@ func (s GlobalAccountService) SyncTenants() error {
 	return nil
 }
 
-func createTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, region string, provider string, maxChunkSize int) error {
+func createTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, region string, provider string, maxChunkSize int, converter TenantConverter) error {
 	tenantsToCreate := parents(currTenants, eventsTenants, provider)
 	for _, eventTenant := range eventsTenants {
 		if parentGUID, ok := currTenants[eventTenant.Parent]; ok {
@@ -427,12 +439,14 @@ func createTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTen
 		eventTenant.Region = region
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
-	return executeInChunks(ctx, tenantsToCreate, func(ctx context.Context, chunk []model.BusinessTenantMappingInput) error {
+
+	tenantsToCreateGQL := converter.MultipleInputToGraphQLInput(tenantsToCreate)
+	return executeInChunks(ctx, tenantsToCreateGQL, func(ctx context.Context, chunk []graphql.BusinessTenantMappingInput) error {
 		return gqlClient.WriteTenants(ctx, chunk)
 	}, maxChunkSize)
 }
 
-func executeInChunks(ctx context.Context, tenants []model.BusinessTenantMappingInput, f func(ctx context.Context, chunk []model.BusinessTenantMappingInput) error, maxChunkSize int) error {
+func executeInChunks(ctx context.Context, tenants []graphql.BusinessTenantMappingInput, f func(ctx context.Context, chunk []graphql.BusinessTenantMappingInput) error, maxChunkSize int) error {
 	for {
 		if len(tenants) == 0 {
 			return nil
@@ -545,7 +559,7 @@ func checkForScenarios(ctx context.Context, labelService LabelService, runtime *
 	return nil
 }
 
-func deleteTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, maxChunkSize int) error {
+func deleteTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, maxChunkSize int, converter TenantConverter) error {
 	tenantsToDelete := make([]model.BusinessTenantMappingInput, 0)
 	for _, toDelete := range eventsTenants {
 		if _, ok := currTenants[toDelete.ExternalTenant]; ok {
@@ -553,7 +567,8 @@ func deleteTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTen
 		}
 	}
 
-	return executeInChunks(ctx, tenantsToDelete, func(ctx context.Context, chunk []model.BusinessTenantMappingInput) error {
+	tenantsToDeleteGQL := converter.MultipleInputToGraphQLInput(tenantsToDelete)
+	return executeInChunks(ctx, tenantsToDeleteGQL, func(ctx context.Context, chunk []graphql.BusinessTenantMappingInput) error {
 		return gqlClient.DeleteTenants(ctx, chunk)
 	}, maxChunkSize)
 }

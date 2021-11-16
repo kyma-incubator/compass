@@ -571,7 +571,7 @@ func (g *Graphqlizer) AutomaticScenarioAssignmentSetInputToGQL(in graphql.Automa
 }
 
 // TenantsInputToGQL creates tenant input from multiple tenants
-func (g *Graphqlizer) TenantsInputToGQL(in []graphql.BusinessTenantMappingInput) (string, error) {
+func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingInput) (string, error) {
 	return g.genericToGQL(in, `
 		{{ $n := (len .) }}
 		{{range $i, $tenant := .}}
@@ -590,6 +590,14 @@ func (g *Graphqlizer) TenantsInputToGQL(in []graphql.BusinessTenantMappingInput)
 			type: "{{$tenant.Type}}",
 			provider: "{{$tenant.Provider}}"
 		}{{if ne (inc $i) $n }},{{end}}
+		{{end}}`)
+}
+
+func (g *Graphqlizer) DeleteTenantsInputToGQL(in []graphql.BusinessTenantMappingInput) (string, error) {
+	return g.genericToGQL(in, `
+		{{ $n := (len .) }}
+		{{range $i, $tenant := .}}
+		{"{{$tenant.ExternalTenant}}"}{{if ne (inc $i) $n }},{{end}}
 		{{end}}`)
 }
 

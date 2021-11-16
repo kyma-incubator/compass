@@ -366,7 +366,7 @@ type ComplexityRoot struct {
 		DeleteSystemAuthForApplication                func(childComplexity int, authID string) int
 		DeleteSystemAuthForIntegrationSystem          func(childComplexity int, authID string) int
 		DeleteSystemAuthForRuntime                    func(childComplexity int, authID string) int
-		DeleteTenants                                 func(childComplexity int, in []*BusinessTenantMappingInput) int
+		DeleteTenants                                 func(childComplexity int, in []string) int
 		DeleteWebhook                                 func(childComplexity int, webhookID string) int
 		RefetchAPISpec                                func(childComplexity int, apiID string) int
 		RefetchEventDefinitionSpec                    func(childComplexity int, eventID string) int
@@ -658,7 +658,7 @@ type MutationResolver interface {
 	DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 	WriteTenants(ctx context.Context, in []*BusinessTenantMappingInput) (int, error)
-	DeleteTenants(ctx context.Context, in []*BusinessTenantMappingInput) (int, error)
+	DeleteTenants(ctx context.Context, in []string) (int, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -2310,7 +2310,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteTenants(childComplexity, args["in"].([]*BusinessTenantMappingInput)), true
+		return e.complexity.Mutation.DeleteTenants(childComplexity, args["in"].([]string)), true
 
 	case "Mutation.deleteWebhook":
 		if e.complexity.Mutation.DeleteWebhook == nil {
@@ -5078,7 +5078,7 @@ type Mutation {
 	"""
 	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
-	deleteTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
+	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 }
 
 `, BuiltIn: false},
@@ -5917,9 +5917,9 @@ func (ec *executionContext) field_Mutation_deleteSystemAuthForRuntime_args(ctx c
 func (ec *executionContext) field_Mutation_deleteTenants_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 []*BusinessTenantMappingInput
+	var arg0 []string
 	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalOBusinessTenantMappingInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenantMappingInputᚄ(ctx, tmp)
+		arg0, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -17546,7 +17546,7 @@ func (ec *executionContext) _Mutation_deleteTenants(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteTenants(rctx, args["in"].([]*BusinessTenantMappingInput))
+			return ec.resolvers.Mutation().DeleteTenants(rctx, args["in"].([]string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteTenants")
@@ -30130,6 +30130,38 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

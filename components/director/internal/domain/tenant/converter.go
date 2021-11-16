@@ -63,6 +63,18 @@ func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 	}
 }
 
+func (c *converter) ToGraphQLInput(in model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput {
+	return graphql.BusinessTenantMappingInput{
+		Name:           in.Name,
+		ExternalTenant: in.ExternalTenant,
+		Parent:         str.Ptr(in.Parent),
+		Subdomain:      str.Ptr(in.Subdomain),
+		Region:         str.Ptr(in.Region),
+		Type:           in.Type,
+		Provider:       in.Provider,
+	}
+}
+
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {
 	res := make([]model.BusinessTenantMappingInput, 0, len(in))
 
@@ -92,5 +104,13 @@ func (c *converter) MultipleToGraphQL(in []*model.BusinessTenantMapping) []*grap
 		tenants = append(tenants, c.ToGraphQL(r))
 	}
 
+	return tenants
+}
+
+func (c *converter) MultipleInputToGraphQLInput(in []model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput {
+	tenants := make([]graphql.BusinessTenantMappingInput, 0, len(in))
+	for _, tnt := range in {
+		tenants = append(tenants, c.ToGraphQLInput(tnt))
+	}
 	return tenants
 }

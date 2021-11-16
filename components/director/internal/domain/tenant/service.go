@@ -217,10 +217,10 @@ func tenantLocality(tenants []model.BusinessTenantMappingInput) (map[string]stri
 	return subdomains, regions
 }
 
-// DeleteMany removes all provided tenants from the Compass storage.
-func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
-	for _, tenantInput := range tenantInputs {
-		err := s.tenantMappingRepo.DeleteByExternalTenant(ctx, tenantInput.ExternalTenant)
+// DeleteMany removes all tenants with the provided external tenant ids from the Compass storage.
+func (s *service) DeleteMany(ctx context.Context, externalTenantIDs []string) error {
+	for _, externalTenantID := range externalTenantIDs {
+		err := s.tenantMappingRepo.DeleteByExternalTenant(ctx, externalTenantID)
 		if err != nil {
 			return errors.Wrap(err, "while deleting tenant")
 		}
