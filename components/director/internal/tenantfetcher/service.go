@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -76,6 +77,7 @@ type PageConfig struct {
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // LabelService missing godoc
@@ -107,6 +109,7 @@ type TenantSyncService interface {
 type DirectorGraphQLClient interface {
 	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
 	DeleteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
+	UpdateTenant(context.Context, string, graphql.BusinessTenantMappingInput) error
 	CreateLabelDefinition(context.Context, graphql.LabelDefinitionInput, string) error
 	UpdateLabelDefinition(context.Context, graphql.LabelDefinitionInput, string) error
 	SetRuntimeTenant(ctx context.Context, runtimeID, tenantID string) error
@@ -122,6 +125,7 @@ type LabelDefConverter interface {
 //go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore
 type TenantConverter interface {
 	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
+	ToGraphQLInput(model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput
 }
 
 const (
@@ -489,6 +493,23 @@ func getTenantParentType(tenantType string) string {
 
 func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntimeMappings []model.MovedRuntimeByLabelMappingInput) error {
 	for _, mapping := range movedRuntimeMappings {
+		subaccountID := mapping.LabelValue
+		subaccountTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, subaccountID)
+
+		targetInternalTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, mapping.TargetTenant)
+		if err != nil {
+			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
+		}
+		subaccountTenant.Parent = targetInternalTenant.ID
+		subaccountTenantGQL := s.tenantConverter.ToGraphQLInput(subaccountTenant.ToInput())
+		if err := s.gqlClient.UpdateTenant(ctx, subaccountTenant.ID, subaccountTenantGQL); err != nil {
+			return errors.Wrapf(err, "while updating tenant with id %s", subaccountTenant.ID)
+		}
+
+		if err != nil {
+			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", subaccountID)
+		}
+
 		filters := []*labelfilter.LabelFilter{
 			{
 				Key:   s.movedRuntimeLabelKey,
@@ -505,17 +526,12 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 			return errors.Wrapf(err, "while listing runtimes for label key %s", s.movedRuntimeLabelKey)
 		}
 
-		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, mapping.TargetTenant)
-		if err != nil {
-			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
-		}
-
 		if err := checkForScenarios(ctx, s.labelService, runtime); err != nil {
 			return err
 		}
 
 		labelDef := model.LabelDefinition{
-			Tenant: targetInternalTenant,
+			Tenant: targetInternalTenant.ID,
 			Key:    s.movedRuntimeLabelKey,
 		}
 
@@ -523,16 +539,17 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 		if err != nil {
 			return err
 		}
-		if err := s.gqlClient.CreateLabelDefinition(ctx, labelDefGQL, targetInternalTenant); err != nil {
-			if apperrors.IsNotUniqueError(errors.Unwrap(err)) {
-				if err = s.gqlClient.UpdateLabelDefinition(ctx, labelDefGQL, targetInternalTenant); err != nil {
+		if err := s.gqlClient.CreateLabelDefinition(ctx, labelDefGQL, targetInternalTenant.ID); err != nil {
+			// TODO find better way for error handling
+			if strings.Contains(err.Error(), apperrors.NotUniqueMsg) {
+				if err = s.gqlClient.UpdateLabelDefinition(ctx, labelDefGQL, targetInternalTenant.ID); err != nil {
 					return errors.Wrap(err, "while updating label definition")
 				}
 			}
 			return errors.Wrap(err, "while creating label definition")
 		}
 
-		err = s.gqlClient.SetRuntimeTenant(ctx, runtime.ID, targetInternalTenant)
+		err = s.gqlClient.SetRuntimeTenant(ctx, runtime.ID, targetInternalTenant.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while updating tenant ID of runtime with label key-value match %s-%s",
 				s.movedRuntimeLabelKey, mapping.LabelValue)

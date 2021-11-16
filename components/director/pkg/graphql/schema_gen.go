@@ -402,6 +402,7 @@ type ComplexityRoot struct {
 		UpdateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
 		UpdateRuntime                                 func(childComplexity int, id string, in RuntimeInput) int
 		UpdateRuntimeContext                          func(childComplexity int, id string, in RuntimeContextInput) int
+		UpdateTenant                                  func(childComplexity int, id string, in BusinessTenantMappingInput) int
 		UpdateWebhook                                 func(childComplexity int, webhookID string, in WebhookInput) int
 		WriteTenants                                  func(childComplexity int, in []*BusinessTenantMappingInput) int
 	}
@@ -659,6 +660,7 @@ type MutationResolver interface {
 	DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 	WriteTenants(ctx context.Context, in []*BusinessTenantMappingInput) (int, error)
 	DeleteTenants(ctx context.Context, in []string) (int, error)
+	UpdateTenant(ctx context.Context, id string, in BusinessTenantMappingInput) (*Tenant, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -2731,6 +2733,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateRuntimeContext(childComplexity, args["id"].(string), args["in"].(RuntimeContextInput)), true
+
+	case "Mutation.updateTenant":
+		if e.complexity.Mutation.UpdateTenant == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateTenant_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateTenant(childComplexity, args["id"].(string), args["in"].(BusinessTenantMappingInput)), true
 
 	case "Mutation.updateWebhook":
 		if e.complexity.Mutation.UpdateWebhook == nil {
@@ -5079,6 +5093,7 @@ type Mutation {
 	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
+	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
 }
 
 `, BuiltIn: false},
@@ -6836,6 +6851,28 @@ func (ec *executionContext) field_Mutation_updateRuntime_args(ctx context.Contex
 			arg1 = data
 		} else {
 			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeInput`, tmp)
+		}
+	}
+	args["in"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateTenant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 BusinessTenantMappingInput
+	if tmp, ok := rawArgs["in"]; ok {
+		arg1, err = ec.unmarshalNBusinessTenantMappingInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBusinessTenantMappingInput(ctx, tmp)
+		if err != nil {
+			return nil, err
 		}
 	}
 	args["in"] = arg1
@@ -17586,6 +17623,71 @@ func (ec *executionContext) _Mutation_deleteTenants(ctx context.Context, field g
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_updateTenant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateTenant_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateTenant(rctx, args["id"].(string), args["in"].(BusinessTenantMappingInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateTenant")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Tenant); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Tenant`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Tenant)
+	fc.Result = res
+	return ec.marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *OAuthCredentialData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -25957,6 +26059,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteTenants":
 			out.Values[i] = ec._Mutation_deleteTenants(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateTenant":
+			out.Values[i] = ec._Mutation_updateTenant(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

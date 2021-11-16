@@ -19,6 +19,7 @@ type BusinessTenantMappingService interface {
 	ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error)
 	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
 	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
+	Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []string) error
 }
 
@@ -28,6 +29,7 @@ type BusinessTenantMappingService interface {
 type BusinessTenantMappingConverter interface {
 	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
 	MultipleInputFromGraphQL(in []*graphql.BusinessTenantMappingInput) []model.BusinessTenantMappingInput
+	ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant
 }
 
 // Resolver is the resolver responsible for tenant-related GraphQL requests.
@@ -162,6 +164,32 @@ func (r *Resolver) Delete(ctx context.Context, externalTenantIDs []string) (int,
 	}
 
 	return len(externalTenantIDs), nil
+}
+
+// Update update single tenant
+func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+	tenantModels := r.conv.MultipleInputFromGraphQL([]*graphql.BusinessTenantMappingInput{&in})
+	if err := r.srv.Update(ctx, id, tenantModels[0]); err != nil {
+		return nil, errors.Wrap(err, "while deleting tenants")
+	}
+
+	tenant, err := r.srv.GetTenantByExternalID(ctx, in.ExternalTenant)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting tenant with external id %s", in.ExternalTenant)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(tenant), nil
 }
 
 // NewResolver returns the GraphQL resolver for tenants.

@@ -64,6 +64,23 @@ func (d *Director) DeleteTenants(ctx context.Context, tenants []graphql.Business
 	return nil
 }
 
+// UpdateTenant makes graphql query for tenant update
+func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.BusinessTenantMappingInput) error {
+	var res map[string]interface{}
+
+	gqlizer := graphqlizer.Graphqlizer{}
+	in, err := gqlizer.UpdateTenantsInputToGQL(tenant)
+	if err != nil {
+		return errors.Wrap(err, "while creating tenants input")
+	}
+	tenantsQuery := fmt.Sprintf("mutation { updateTenants(id: %s, in:%s)}", id, in)
+	gRequest := gcli.NewRequest(tenantsQuery)
+	if err := d.client.Run(ctx, gRequest, &res); err != nil {
+		return errors.Wrap(err, "while executing gql query")
+	}
+	return nil
+}
+
 // CreateLabelDefinition makes graphql query for labeldef creation
 func (d *Director) CreateLabelDefinition(ctx context.Context, lblDef graphql.LabelDefinitionInput, tenant string) error {
 	return modifyLabelDefs(ctx, lblDef, tenant, "createLabelDefinition", d.client)

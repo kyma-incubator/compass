@@ -26,6 +26,18 @@ func (t BusinessTenantMapping) WithStatus(status tenant.Status) BusinessTenantMa
 	return t
 }
 
+func (t BusinessTenantMapping) ToInput() BusinessTenantMappingInput {
+	return BusinessTenantMappingInput{
+		Name:           t.Name,
+		ExternalTenant: t.ExternalTenant,
+		Parent:         t.Parent,
+		Subdomain:      "",
+		Region:         "",
+		Type:           tenant.TypeToStr(t.Type),
+		Provider:       t.Provider,
+	}
+}
+
 // BusinessTenantMappingInput missing godoc
 type BusinessTenantMappingInput struct {
 	Name           string `json:"name"`

@@ -22,6 +22,7 @@ const (
 type TenantMappingRepository interface {
 	UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error
 	Upsert(ctx context.Context, item model.BusinessTenantMapping) error
+	Update(ctx context.Context, model *model.BusinessTenantMapping) error
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 	Exists(ctx context.Context, id string) (bool, error)
@@ -132,6 +133,16 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 		}
 	}
 	return tenants
+}
+
+func (s *service) Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error {
+	tenant := tenantInput.ToBusinessTenantMapping(id)
+
+	if err := s.tenantMappingRepo.Update(ctx, tenant); err != nil {
+		return errors.Wrapf(err, "while updating tenant with id %s", id)
+	}
+
+	return nil
 }
 
 // CreateManyIfNotExists creates all provided tenants if they do not exist.

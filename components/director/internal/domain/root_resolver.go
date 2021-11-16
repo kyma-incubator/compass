@@ -791,6 +791,11 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 	return r.tenant.Delete(ctx, in)
 }
 
+// UpdateTenant updates tenant by external id
+func (r *mutationResolver) UpdateTenant(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {
+	return r.tenant.Update(ctx, id, in)
+}
+
 type applicationResolver struct {
 	*RootResolver
 }
