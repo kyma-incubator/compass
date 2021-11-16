@@ -139,33 +139,41 @@ func TestRepositoryCreate(t *testing.T) {
 	})
 }
 
-/*
 func TestRepositoryCreateMany(t *testing.T) {
-	const expectedInsert = "INSERT INTO public.webhooks ( id, tenant_id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )"
+	expectedParentAccess := regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3")
+	expectedInsert := regexp.QuoteMeta("INSERT INTO public.webhooks ( id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")
+
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
-		given := []*model.Webhook{{ID: "one"}, {ID: "two"}, {ID: "three"}}
-		mockConverter.On("ToEntity", *given[0]).Return(webhook.Entity{ID: "one"}, nil)
-		mockConverter.On("ToEntity", *given[1]).Return(webhook.Entity{ID: "two"}, nil)
-		mockConverter.On("ToEntity", *given[2]).Return(webhook.Entity{ID: "three"}, nil)
+		given := []*model.Webhook{
+			{ID: "one", ObjectID: givenApplicationID(), ObjectType: model.ApplicationWebhookReference},
+			{ID: "two", ObjectID: givenApplicationID(), ObjectType: model.ApplicationWebhookReference},
+			{ID: "three", ObjectID: givenApplicationID(), ObjectType: model.ApplicationWebhookReference},
+		}
+		mockConverter.On("ToEntity", given[0]).Return(&webhook.Entity{ID: "one", ApplicationID: repo.NewValidNullableString(givenApplicationID())}, nil)
+		mockConverter.On("ToEntity", given[1]).Return(&webhook.Entity{ID: "two", ApplicationID: repo.NewValidNullableString(givenApplicationID())}, nil)
+		mockConverter.On("ToEntity", given[2]).Return(&webhook.Entity{ID: "three", ApplicationID: repo.NewValidNullableString(givenApplicationID())}, nil)
 
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"one", nil, nil, nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
-		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"two", nil, nil, nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
-		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"three", nil, nil, nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectQuery(expectedParentAccess).WithArgs(givenTenant(), givenApplicationID(), true).WillReturnRows(testdb.RowWhenObjectExist())
+		dbMock.ExpectExec(expectedInsert).WithArgs(
+			"one", givenApplicationID(), nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectQuery(expectedParentAccess).WithArgs(givenTenant(), givenApplicationID(), true).WillReturnRows(testdb.RowWhenObjectExist())
+		dbMock.ExpectExec(expectedInsert).WithArgs(
+			"two", givenApplicationID(), nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectQuery(expectedParentAccess).WithArgs(givenTenant(), givenApplicationID(), true).WillReturnRows(testdb.RowWhenObjectExist())
+		dbMock.ExpectExec(expectedInsert).WithArgs(
+			"three", givenApplicationID(), nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(mockConverter)
 		// WHEN
-		err := sut.CreateMany(ctx, given)
+		err := sut.CreateMany(ctx, givenTenant(), given)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -175,15 +183,18 @@ func TestRepositoryCreateMany(t *testing.T) {
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
-		given := []*model.Webhook{{ID: "one", URL: stringPtr("unlucky"), Type: model.WebhookTypeConfigurationChanged}, {ID: "two"}, {ID: "three"}}
-		mockConverter.On("ToEntity", *given[0]).Return(webhook.Entity{}, givenError())
+		given := []*model.Webhook{
+			{ID: "one", URL: stringPtr("unlucky"), Type: model.WebhookTypeConfigurationChanged, ObjectID: givenApplicationID(), ObjectType: model.ApplicationWebhookReference},
+			{ID: "two", ObjectID: givenApplicationID(), ObjectType: model.ApplicationWebhookReference},
+			{ID: "three", ObjectID: givenApplicationID(), ObjectType: model.ApplicationWebhookReference}}
+		mockConverter.On("ToEntity", given[0]).Return(&webhook.Entity{}, givenError())
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		sut := webhook.NewRepository(mockConverter)
 		// WHEN
-		err := sut.CreateMany(ctx, given)
+		err := sut.CreateMany(ctx, givenTenant(), given)
 		// THEN
-		expectedErr := fmt.Sprintf("while creating Webhook with type %s and id %s for %s: while converting model to entity: some error", model.WebhookTypeConfigurationChanged, "one", webhook.PrintOwnerInfo(given[0]))
+		expectedErr := fmt.Sprintf("while creating Webhook with type %s and id %s for %s: while converting model to entity: some error", model.WebhookTypeConfigurationChanged, "one", model.ApplicationWebhookReference)
 		require.EqualError(t, err, expectedErr)
 	})
 
@@ -192,25 +203,28 @@ func TestRepositoryCreateMany(t *testing.T) {
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
-		given := []*model.Webhook{{ID: "one", URL: stringPtr("unlucky"), Type: model.WebhookTypeConfigurationChanged}, {ID: "two"}, {ID: "three"}}
-		mockConverter.On("ToEntity", *given[0]).Return(webhook.Entity{ID: "one"}, nil)
+		given := []*model.Webhook{
+			{ID: "one", URL: stringPtr("unlucky"), Type: model.WebhookTypeConfigurationChanged, ObjectID: givenApplicationID(), ObjectType: model.ApplicationWebhookReference},
+			{ID: "two", ObjectID: givenApplicationID(), ObjectType: model.ApplicationWebhookReference},
+			{ID: "three", ObjectID: givenApplicationID(), ObjectType: model.ApplicationWebhookReference}}
+		mockConverter.On("ToEntity", given[0]).Return(&webhook.Entity{ID: "one", ApplicationID: repo.NewValidNullableString(givenApplicationID())}, nil)
 
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WillReturnError(givenError())
+		dbMock.ExpectQuery(expectedParentAccess).WithArgs(givenTenant(), givenApplicationID(), true).WillReturnRows(testdb.RowWhenObjectExist())
+		dbMock.ExpectExec(expectedInsert).WillReturnError(givenError())
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(mockConverter)
 		// WHEN
-		err := sut.CreateMany(ctx, given)
+		err := sut.CreateMany(ctx, givenTenant(), given)
 		// THEN
-		expectedErr := fmt.Sprintf("while creating Webhook with type %s and id %s for %s: Internal Server Error: Unexpected error while executing SQL query", model.WebhookTypeConfigurationChanged, "one", webhook.PrintOwnerInfo(given[0]))
+		expectedErr := fmt.Sprintf("while creating Webhook with type %s and id %s for %s: Internal Server Error: Unexpected error while executing SQL query", model.WebhookTypeConfigurationChanged, "one", model.ApplicationWebhookReference)
 		require.EqualError(t, err, expectedErr)
 	})
 }
 
-*/
 func TestRepositoryUpdate(t *testing.T) {
 	var nilWebhookModel *model.Webhook
 

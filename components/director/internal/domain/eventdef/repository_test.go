@@ -1,10 +1,14 @@
 package eventdef_test
 
 import (
+	"context"
 	"database/sql/driver"
 	"fmt"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -220,7 +224,6 @@ func TestPgRepository_Create(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestPgRepository_CreateMany(t *testing.T) {
 	insertQuery := `^INSERT INTO "public"."event_api_definitions" (.+) VALUES (.+)$`
 
@@ -234,21 +237,21 @@ func TestPgRepository_CreateMany(t *testing.T) {
 
 		convMock := &automock.EventAPIDefinitionConverter{}
 		for _, item := range items {
-			convMock.On("ToEntity", *item).Return(fixFullEntityEventDefinition(item.ID, item.Name), nil).Once()
+			convMock.On("ToEntity", item).Return(fixFullEntityEventDefinition(item.ID, item.Name), nil).Once()
+			sqlMock.ExpectQuery(regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3")).WithArgs(tenantID, appID, true).WillReturnRows(testdb.RowWhenObjectExist())
 			sqlMock.ExpectExec(insertQuery).
 				WithArgs(fixEventCreateArgs(item.ID, item)...).
 				WillReturnResult(sqlmock.NewResult(-1, 1))
 		}
 		pgRepository := event.NewRepository(convMock)
 		//WHEN
-		err := pgRepository.CreateMany(ctx, items)
+		err := pgRepository.CreateMany(ctx, tenantID, items)
 		//THEN
 		require.NoError(t, err)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
 	})
 }
-*/
 
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE "public"."event_api_definitions" SET package_id = ?, name = ?, description = ?, group_name = ?, ord_id = ?,

@@ -1,10 +1,14 @@
 package document_test
 
 import (
+	"context"
 	"database/sql/driver"
 	"errors"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -57,8 +61,10 @@ func TestRepository_Create(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestRepository_CreateMany(t *testing.T) {
+	parentAccessQuery := regexp.QuoteMeta("SELECT 1 FROM bundles_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3")
+	insertQuery := regexp.QuoteMeta("INSERT INTO public.documents ( id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )")
+
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		conv := &automock.Converter{}
@@ -80,16 +86,17 @@ func TestRepository_CreateMany(t *testing.T) {
 
 		for i, givenModel := range given {
 			expectedEntity := expected[i]
-			conv.On("ToEntity", *givenModel).Return(expectedEntity, nil).Once()
-			dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-				expectedEntity.ID, expectedEntity.TenantID, expectedEntity.BndlID, expectedEntity.Title, expectedEntity.DisplayName, expectedEntity.Description, expectedEntity.Format, expectedEntity.Kind, expectedEntity.Data,
-				expectedEntity.Ready, expectedEntity.CreatedAt, expectedEntity.UpdatedAt, expectedEntity.DeletedAt, expectedEntity.Error).WillReturnResult(sqlmock.NewResult(-1, 1))
+			conv.On("ToEntity", givenModel).Return(expectedEntity, nil).Once()
+			dbMock.ExpectQuery(parentAccessQuery).WithArgs(givenTenant(), bndlID(), true).WillReturnRows(testdb.RowWhenObjectExist())
+			dbMock.ExpectExec(insertQuery).
+				WithArgs(givenModel.ID, bndlID(), appID, givenModel.Title, givenModel.DisplayName, givenModel.Description, givenModel.Format, givenModel.Kind, givenModel.Data,
+					givenModel.Ready, givenModel.CreatedAt, givenModel.UpdatedAt, givenModel.DeletedAt, givenModel.Error).WillReturnResult(sqlmock.NewResult(-1, 1))
 		}
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := document.NewRepository(conv)
 		// WHEN
-		err := repo.CreateMany(ctx, given)
+		err := repo.CreateMany(ctx, givenTenant(), given)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -112,20 +119,24 @@ func TestRepository_CreateMany(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		conv.On("ToEntity", *given[0]).Return(expected[0], nil).Once()
-		conv.On("ToEntity", *given[1]).Return(expected[1], nil).Once()
-		dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-			expected[0].ID, expected[0].TenantID, expected[0].BndlID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data,
-			expected[0].Ready, expected[0].CreatedAt, expected[0].UpdatedAt, expected[0].DeletedAt, expected[0].Error).WillReturnResult(sqlmock.NewResult(-1, 1))
-		dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-			expected[1].ID, expected[1].TenantID, expected[1].BndlID, expected[1].Title, expected[1].DisplayName, expected[1].Description, expected[1].Format, expected[1].Kind, expected[1].Data,
-			expected[1].Ready, expected[1].CreatedAt, expected[1].UpdatedAt, expected[1].DeletedAt, expected[1].Error).WillReturnError(givenError())
+		conv.On("ToEntity", given[0]).Return(expected[0], nil).Once()
+		conv.On("ToEntity", given[1]).Return(expected[1], nil).Once()
+
+		dbMock.ExpectQuery(parentAccessQuery).WithArgs(givenTenant(), bndlID(), true).WillReturnRows(testdb.RowWhenObjectExist())
+		dbMock.ExpectExec(insertQuery).
+			WithArgs(expected[0].ID, bndlID(), appID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data,
+				expected[0].Ready, expected[0].CreatedAt, expected[0].UpdatedAt, expected[0].DeletedAt, expected[0].Error).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		dbMock.ExpectQuery(parentAccessQuery).WithArgs(givenTenant(), bndlID(), true).WillReturnRows(testdb.RowWhenObjectExist())
+		dbMock.ExpectExec(insertQuery).
+			WithArgs(expected[1].ID, bndlID(), appID, expected[1].Title, expected[1].DisplayName, expected[1].Description, expected[1].Format, expected[1].Kind, expected[1].Data,
+				expected[1].Ready, expected[1].CreatedAt, expected[1].UpdatedAt, expected[1].DeletedAt, expected[1].Error).WillReturnError(givenError())
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := document.NewRepository(conv)
 
 		// WHEN
-		err := repo.CreateMany(ctx, given)
+		err := repo.CreateMany(ctx, givenTenant(), given)
 		// THEN
 		require.EqualError(t, err, "while creating Document with ID 2: Internal Server Error: Unexpected error while executing SQL query")
 	})
@@ -148,22 +159,22 @@ func TestRepository_CreateMany(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		//defer dbMock.AssertExpectations(t)
 
-		conv.On("ToEntity", *given[0]).Return(expected[0], nil).Once()
-		conv.On("ToEntity", *given[1]).Return(nil, givenError()).Once()
-		dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-			expected[0].ID, expected[0].TenantID, expected[0].BndlID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data,
-			expected[0].Ready, expected[0].CreatedAt, expected[0].UpdatedAt, expected[0].DeletedAt, expected[0].Error).WillReturnResult(sqlmock.NewResult(-1, 1))
+		conv.On("ToEntity", given[0]).Return(expected[0], nil).Once()
+		conv.On("ToEntity", given[1]).Return(nil, givenError()).Once()
+		dbMock.ExpectQuery(parentAccessQuery).WithArgs(givenTenant(), bndlID(), true).WillReturnRows(testdb.RowWhenObjectExist())
+		dbMock.ExpectExec(insertQuery).
+			WithArgs(expected[0].ID, bndlID(), appID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data,
+				expected[0].Ready, expected[0].CreatedAt, expected[0].UpdatedAt, expected[0].DeletedAt, expected[0].Error).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := document.NewRepository(conv)
 
 		// WHEN
-		err := repo.CreateMany(ctx, given)
+		err := repo.CreateMany(ctx, givenTenant(), given)
 		// THEN
 		require.EqualError(t, err, "while creating Document with ID 2: while creating Document entity from model: some error")
 	})
 }
-*/
 
 func TestRepository_ListAllForBundle(t *testing.T) {
 	pageSize := 1
