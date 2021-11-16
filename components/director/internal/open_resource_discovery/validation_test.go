@@ -1641,6 +1641,13 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		},
+		{
+			Name: "Success when `correlationIds` are valid",
+			DocumentProvider: func() []*ord.Document {
+				return []*ord.Document{fixORDDocument()}
+			},
+			ExpectedToBeValid: true,
+		},
 	}
 
 	for _, test := range tests {
