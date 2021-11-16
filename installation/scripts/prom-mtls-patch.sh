@@ -100,6 +100,8 @@ EOF
       sed -i 's/- metricRelabelings:/  metricRelabelings:/g' ${sm}.yaml
     fi
 
+    cat ${sm}.yaml
+
     kubectl apply -f ${sm}.yaml || true
 
     rm ${sm}.yaml
