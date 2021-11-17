@@ -540,13 +540,12 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 			return err
 		}
 		if err := s.gqlClient.CreateLabelDefinition(ctx, labelDefGQL, targetInternalTenant.ID); err != nil {
-			// TODO: find better way for error handling
+			// graphql client does not expose complete error object, but only error message
 			if strings.Contains(err.Error(), apperrors.NotUniqueMsg) {
-				if err = s.gqlClient.UpdateLabelDefinition(ctx, labelDefGQL, targetInternalTenant.ID); err != nil {
-					return errors.Wrap(err, "while updating label definition")
-				}
+				log.C(ctx).Infof("LabelDef with key %s for tenant %s already exists", s.movedRuntimeLabelKey, targetInternalTenant.ID)
+			} else {
+				return errors.Wrap(err, "while creating label definition")
 			}
-			return errors.Wrap(err, "while creating label definition")
 		}
 
 		err = s.gqlClient.SetRuntimeTenant(ctx, runtime.ID, targetInternalTenant.ID, targetInternalTenant.ID)
