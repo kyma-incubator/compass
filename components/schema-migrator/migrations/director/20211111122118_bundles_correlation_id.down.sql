@@ -48,21 +48,19 @@ FROM bundles b
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? a_s.tenant_id::text) t_apps ON b.app_id = t_apps.id;
 
-CREATE OR REPLACE VIEW  correlation_ids(application_id, product_id, value) as
-SELECT app_correlation_ids.application_id,
-       app_correlation_ids.product_id,
-       app_correlation_ids.value
-FROM (SELECT applications.id AS application_id,
-             NULL::uuid      AS product_id,
-             elements.value
+CREATE VIEW correlation_ids AS
+SELECT *
+FROM (SELECT applications.id            AS application_id,
+             NULL::uuid                 AS product_id,
+             elements.value             AS value
       FROM applications,
-           LATERAL jsonb_array_elements_text(applications.correlation_ids) elements(value)) app_correlation_ids
+           jsonb_array_elements_text(applications.correlation_ids) AS elements) AS app_correlation_ids
 UNION ALL
-SELECT NULL::uuid  AS application_id,
-       products.id AS product_id,
-       elements.value
-FROM products,
-     LATERAL jsonb_array_elements_text(products.correlation_ids) elements(value);
+(SELECT NULL::uuid         AS application_id,
+        products.id        AS product_id,
+        elements.value     AS value
+ FROM products,
+      jsonb_array_elements_text(products.correlation_ids) AS elements);
 
 ALTER TABLE bundles DROP COLUMN correlation_ids;
 
