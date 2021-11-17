@@ -46,8 +46,8 @@ const (
 	subaccountDeleteSubPath    = "subaccount-delete"
 
 	namespace                 = "compass-system"
-	globalAccountsJobName     = "tenant-fetcher-test"
-	globalAccountsCronJobName = "compass-tenant-fetcher-external-mock"
+	globalAccountsJobName     = "tenant-fetcher-account-test"
+	globalAccountsCronJobName = "compass-tenant-fetcher-account-fetcher"
 	subaccountsJobName        = "tenant-fetcher-subaccount-test"
 	subaccountsCronJobName    = "compass-tenant-fetcher-subaccount-fetcher"
 
