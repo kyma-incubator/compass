@@ -141,7 +141,7 @@ EOF
     sed -i '' -e '/- .\/test-monitoring/r patchSidecarContainerCommand.yaml' testdef.yaml
     sed -i '' -e 's/- .\/test-monitoring//g' testdef.yaml
   else # assume Linux otherwise
-    sed -i 's/sidecar.istio.io/inject: "false"/sidecar.istio.io/inject: "true"/g' testdef.yaml
+    sed -i 's/sidecar.istio.io\/inject: "false"/sidecar.istio.io\/inject: "true"/g' testdef.yaml
     sed -i '/- .\/test-monitoring/r patchSidecarContainerCommand.yaml' testdef.yaml
     sed -i 's/- .\/test-monitoring//g' testdef.yaml
   fi
