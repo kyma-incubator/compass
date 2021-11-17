@@ -70,7 +70,7 @@ UNION ALL
 UNION ALL
 (SELECT NULL::uuid        AS application_id,
         NULL::uuid        AS product_id,
-        bundle.id         AS bundle_id,
+        bundles.id        AS bundle_id,
         elements.value    AS value
  FROM bundles,
       jsonb_array_elements_text(bundles.correlation_ids) AS elements);
