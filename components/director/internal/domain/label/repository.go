@@ -278,7 +278,7 @@ func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string)
 	return r.deleter.DeleteMany(ctx, resource.Label, tenant, repo.Conditions{repo.NewEqualCondition("key", key)})
 }
 
-// GetRuntimesIDsByStringLabel missing godoc
+// GetRuntimesIDsByStringLabel missing godoc TODO: <storage-redesign> DELETE this
 func (r *repository) GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, key, value string) ([]string, error) {
 	var entities Collection
 	if err := r.lister.List(ctx, resource.RuntimeLabel, tenantID, &entities,
@@ -323,7 +323,7 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	return labelModels, nil
 }
 
-// GetRuntimeScenariosWhereLabelsMatchSelector missing godoc
+// GetRuntimeScenariosWhereLabelsMatchSelector missing godoc TODO: <storage-redesign> DELETE this
 func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {
 	subquery, args, err := r.queryBuilder.BuildQuery(resource.RuntimeLabel, tenantID, false,
 		repo.NewEqualCondition("key", selectorKey),

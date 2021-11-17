@@ -3,6 +3,7 @@ package scenarioassignment
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -23,6 +24,12 @@ type LabelRepository interface {
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 }
 
+//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
+type RuntimeRepository interface {
+	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	Exists(ctx context.Context, tenant, id string) (bool, error)
+}
+
 // LabelUpsertService missing godoc
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
 type LabelUpsertService interface {
@@ -33,42 +40,37 @@ type engine struct {
 	labelRepo              LabelRepository
 	scenarioAssignmentRepo Repository
 	labelService           LabelUpsertService
+	runtimeRepo            RuntimeRepository
 }
 
 // NewEngine missing godoc
-func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository) *engine {
+func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository, runtimeRepo RuntimeRepository) *engine {
 	return &engine{
 		labelRepo:              labelRepo,
 		scenarioAssignmentRepo: scenarioAssignmentRepo,
 		labelService:           labelService,
+		runtimeRepo:            runtimeRepo,
 	}
 }
 
 // EnsureScenarioAssigned missing godoc
 func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	runtimesIDs, err := e.labelRepo.GetRuntimesIDsByStringLabel(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
+	labels, runtimeIDs, err := e.getScenarioLabelsForRuntimes(ctx, in)
 	if err != nil {
-		return errors.Wrapf(err, "while fetching runtimes id which match given selector:%+v", in)
+		return err
 	}
 
-	if len(runtimesIDs) == 0 {
-		return nil
-	}
-	labels, err := e.labelRepo.GetScenarioLabelsForRuntimes(ctx, in.Tenant, runtimesIDs)
-	if err != nil {
-		return errors.Wrap(err, "while fetching scenarios labels for matched runtimes")
-	}
-
-	labels = e.appendMissingScenarioLabelsForRuntimes(in.Tenant, runtimesIDs, labels)
+	labels = e.appendMissingScenarioLabelsForRuntimes(in.Tenant, runtimeIDs, labels)
 	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.uniqueScenarios)
 }
 
 // RemoveAssignedScenario missing godoc
 func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	labels, err := e.labelRepo.GetRuntimeScenariosWhereLabelsMatchSelector(ctx, in.Tenant, in.Selector.Key, in.Selector.Value)
+	labels, _, err := e.getScenarioLabelsForRuntimes(ctx, in)
 	if err != nil {
-		return errors.Wrap(err, "while getting runtimes scenarios which match given selector")
+		return err
 	}
+
 	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.removeScenario)
 }
 
@@ -83,45 +85,11 @@ func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.Automa
 	return nil
 }
 
-// GetScenariosForSelectorLabels missing godoc
-func (e engine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels map[string]string) ([]string, error) {
-	tenantID, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	scenariosSet := make(map[string]struct{})
-
-	for k, v := range inputLabels {
-		selector := model.LabelSelector{
-			Key:   k,
-			Value: v,
-		}
-
-		scenarioAssignments, err := e.scenarioAssignmentRepo.ListForSelector(ctx, selector, tenantID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while getting Automatic Scenario Assignments for selector [key: %s, val: %s]", k, v)
-		}
-
-		for _, sa := range scenarioAssignments {
-			scenariosSet[sa.ScenarioName] = struct{}{}
-		}
-	}
-
-	scenarios := make([]string, 0)
-	for k := range scenariosSet {
-		scenarios = append(scenarios, k)
-	}
-	return scenarios, nil
-}
-
 // MergeScenariosFromInputLabelsAndAssignments missing godoc
-func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}) ([]interface{}, error) {
+func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
 	scenariosSet := make(map[string]struct{})
 
-	possibleSelectorLabels := e.convertMapStringInterfaceToMapStringString(inputLabels)
-
-	scenariosFromAssignments, err := e.GetScenariosForSelectorLabels(ctx, possibleSelectorLabels)
+	scenariosFromAssignments, err := e.getScenariosFromMatchingASAs(ctx, runtimeID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting scenarios for selector labels")
 	}
@@ -171,6 +139,71 @@ func (e engine) MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd 
 	}
 	return scenarios
 }
+
+func (e engine) getScenarioLabelsForRuntimes(ctx context.Context, in model.AutomaticScenarioAssignment) ([]model.Label, []string, error) {
+	// Currently. it is not possible to have non-owner access of a runtime in a tenant.
+	// It is enough to list all the runtimes in the target tenant.
+	runtimes, err := e.runtimeRepo.ListAll(ctx, in.TargetTenantID, nil)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
+	}
+
+	if len(runtimes) == 0 {
+		return nil, nil, nil
+	}
+
+	runtimeIDs := make([]string, 0, len(runtimes))
+	for _, runtime := range runtimes {
+		runtimeIDs = append(runtimeIDs, runtime.ID)
+	}
+
+	labels, err := e.labelRepo.GetScenarioLabelsForRuntimes(ctx, in.Tenant, runtimeIDs)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "while fetching scenarios labels for matched runtimes")
+	}
+
+	return labels, runtimeIDs, nil
+}
+
+func (e engine) getScenariosFromMatchingASAs(ctx context.Context, runtimeID string) ([]string, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	scenariosSet := make(map[string]struct{})
+
+	scenarioAssignments, err := e.scenarioAssignmentRepo.ListAll(ctx, tenantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listinng Automatic Scenario Assignments in tenant: %s", tenantID)
+	}
+
+	matchingASAs := make([]*model.AutomaticScenarioAssignment,0, len(scenarioAssignments))
+	for _, scenarioAssignment := range scenarioAssignments {
+		matches, err := e.isASAMatchingRuntime(ctx, scenarioAssignment, runtimeID);
+		if err != nil {
+			return nil, errors.Wrapf(err, "while checkig if asa matches runtime with ID %s", runtimeID)
+		}
+		if matches {
+			matchingASAs = append(matchingASAs, scenarioAssignment)
+		}
+	}
+
+	for _, sa := range matchingASAs {
+		scenariosSet[sa.ScenarioName] = struct{}{}
+	}
+
+	scenarios := make([]string, 0)
+	for k := range scenariosSet {
+		scenarios = append(scenarios, k)
+	}
+	return scenarios, nil
+}
+
+func (e engine) isASAMatchingRuntime(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error) {
+	return e.runtimeRepo.Exists(ctx, asa.TargetTenantID, runtimeID)
+}
+
 
 func (e *engine) appendMissingScenarioLabelsForRuntimes(tenantID string, runtimesIDs []string, labels []model.Label) []model.Label {
 	rtmWithScenario := make(map[string]struct{})

@@ -13,13 +13,12 @@ import (
 
 const tableName string = `public.automatic_scenario_assignments`
 
-var columns = []string{scenarioColumn, tenantColumn, selectorKeyColumn, selectorValueColumn}
+var columns = []string{scenarioColumn, tenantColumn, targetTenantColumn}
 
 var (
-	tenantColumn        = "tenant_id"
-	selectorKeyColumn   = "selector_key"
-	selectorValueColumn = "selector_value"
-	scenarioColumn      = "scenario"
+	scenarioColumn     = "scenario"
+	tenantColumn       = "tenant_id"
+	targetTenantColumn = "target_tenant_id"
 )
 
 // NewRepository missing godoc
@@ -56,13 +55,28 @@ func (r *repository) Create(ctx context.Context, model model.AutomaticScenarioAs
 	return r.creator.Create(ctx, entity)
 }
 
-// ListForSelector missing godoc
-func (r *repository) ListForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error) {
+func (r *repository) ListAll(ctx context.Context, tenantID string) ([]*model.AutomaticScenarioAssignment, error) {
+	var out EntityCollection
+
+	if err := r.lister.List(ctx, resource.AutomaticScenarioAssigment, tenantID, &out); err != nil {
+		return nil, errors.Wrap(err, "while getting automatic scenario assignments from db")
+	}
+
+	items := make([]*model.AutomaticScenarioAssignment, 0, len(out))
+
+	for _, v := range out {
+		item := r.conv.FromEntity(v)
+		items = append(items, &item)
+	}
+
+	return items, nil
+}
+
+func (r *repository) ListForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) ([]*model.AutomaticScenarioAssignment, error) {
 	var out EntityCollection
 
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(selectorKeyColumn, in.Key),
-		repo.NewEqualCondition(selectorValueColumn, in.Value),
+		repo.NewEqualCondition(targetTenantColumn, targetTenantID),
 	}
 
 	if err := r.lister.List(ctx, resource.AutomaticScenarioAssigment, tenantID, &out, conditions...); err != nil {
@@ -118,11 +132,9 @@ func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cu
 	}, nil
 }
 
-// DeleteForSelector missing godoc
-func (r *repository) DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error {
+func (r *repository) DeleteForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) error {
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(selectorKeyColumn, selector.Key),
-		repo.NewEqualCondition(selectorValueColumn, selector.Value),
+		repo.NewEqualCondition(targetTenantColumn, targetTenantID),
 	}
 
 	return r.deleter.DeleteMany(ctx, resource.AutomaticScenarioAssigment, tenantID, conditions)

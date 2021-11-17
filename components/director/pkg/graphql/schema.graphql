@@ -1204,7 +1204,7 @@ type Query {
 	**Examples**
 	- [query automatic scenario assignments for selector](examples/query-automatic-scenario-assignments-for-selector/query-automatic-scenario-assignments-for-selector.graphql)
 	"""
-	automaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentsForSelector")
+	automaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentsForSelector")
 	"""
 	**Examples**
 	- [query automatic scenario assignments](examples/query-automatic-scenario-assignments/query-automatic-scenario-assignments.graphql)
@@ -1444,7 +1444,7 @@ type Mutation {
 	**Examples**
 	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)
 	"""
-	createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.createAutomaticScenarioAssignment")
+	createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput! @validate): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.createAutomaticScenarioAssignment")
 	"""
 	**Examples**
 	- [delete automatic scenario assignment for scenario](examples/delete-automatic-scenario-assignment-for-scenario/delete-automatic-scenario-assignment-for-scenario.graphql)
@@ -1454,6 +1454,6 @@ type Mutation {
 	**Examples**
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
-	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
+	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
 }
 

@@ -15,10 +15,8 @@ import (
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput) model.AutomaticScenarioAssignment
-	ToGraphQL(in model.AutomaticScenarioAssignment) graphql.AutomaticScenarioAssignment
-	LabelSelectorFromInput(in graphql.LabelSelectorInput) model.LabelSelector
-	MultipleToGraphQL(assignments []*model.AutomaticScenarioAssignment) []*graphql.AutomaticScenarioAssignment
+	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, targetTenantInternalID string) model.AutomaticScenarioAssignment
+	ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment
 }
 
 // Service missing godoc
@@ -26,26 +24,34 @@ type Converter interface {
 type Service interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
-	ListForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error)
+	ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
-	DeleteManyForSameSelector(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
+	DeleteManyForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
+type TenantService interface {
+	GetExternalTenant(ctx context.Context, id string) (string, error)
+	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
+}
+
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, svc Service, converter Converter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc Service, converter Converter, tenantService TenantService) *Resolver {
 	return &Resolver{
-		transact:  transact,
-		svc:       svc,
-		converter: converter,
+		transact:      transact,
+		svc:           svc,
+		converter:     converter,
+		tenantService: tenantService,
 	}
 }
 
 // Resolver missing godoc
 type Resolver struct {
-	transact  persistence.Transactioner
-	converter Converter
-	svc       Service
+	transact      persistence.Transactioner
+	converter     Converter
+	svc           Service
+	tenantService TenantService
 }
 
 // CreateAutomaticScenarioAssignment missing godoc
@@ -58,7 +64,12 @@ func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in gra
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.converter.FromInputGraphQL(in)
+	targetTenant, err := r.tenantService.GetInternalTenant(ctx, in.Selector.Value)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting tenant")
+	}
+
+	convertedIn := r.converter.FromInputGraphQL(in, targetTenant)
 
 	out, err := r.svc.Create(ctx, convertedIn)
 	if err != nil {
@@ -70,7 +81,7 @@ func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in gra
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	assignment := r.converter.ToGraphQL(out)
+	assignment := r.converter.ToGraphQL(out, in.Selector.Value)
 
 	return &assignment, nil
 }
@@ -90,12 +101,17 @@ func (r *Resolver) GetAutomaticScenarioAssignmentForScenarioName(ctx context.Con
 		return nil, errors.Wrap(err, "while getting Assignment")
 	}
 
+	targetTenant, err := r.tenantService.GetExternalTenant(ctx, out.TargetTenantID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting tenant")
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	assignment := r.converter.ToGraphQL(out)
+	assignment := r.converter.ToGraphQL(out, targetTenant)
 
 	return &assignment, nil
 }
@@ -110,18 +126,27 @@ func (r *Resolver) AutomaticScenarioAssignmentsForSelector(ctx context.Context, 
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	modelInput := r.converter.LabelSelectorFromInput(in)
+	targetTenant, err := r.tenantService.GetInternalTenant(ctx, in.Value)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting tenant")
+	}
 
-	assignments, err := r.svc.ListForSelector(ctx, modelInput)
+	assignments, err := r.svc.ListForTargetTenant(ctx, targetTenant)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting the assignments")
 	}
 
-	gqlAssignments := r.converter.MultipleToGraphQL(assignments)
-
 	if err = tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
+
+	gqlAssignments := make([]*graphql.AutomaticScenarioAssignment, 0, len(assignments))
+
+	for _, v := range assignments {
+		assignment := r.converter.ToGraphQL(*v, in.Value)
+		gqlAssignments = append(gqlAssignments, &assignment)
+	}
+
 	return gqlAssignments, nil
 }
 
@@ -148,15 +173,25 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 		return nil, errors.Wrap(err, "while listing the assignments")
 	}
 
+	gqlAssignments := make([]*graphql.AutomaticScenarioAssignment, 0, len(page.Data))
+
+	for _, v := range page.Data {
+		targetTenant, err := r.tenantService.GetExternalTenant(ctx, v.TargetTenantID)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting tenant")
+		}
+
+		assignment := r.converter.ToGraphQL(*v, targetTenant)
+		gqlAssignments = append(gqlAssignments, &assignment)
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	gqlApps := r.converter.MultipleToGraphQL(page.Data)
-
 	return &graphql.AutomaticScenarioAssignmentPage{
-		Data:       gqlApps,
+		Data:       gqlAssignments,
 		TotalCount: page.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
@@ -176,16 +211,19 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Con
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	selector := r.converter.LabelSelectorFromInput(in)
-
-	assignments, err := r.svc.ListForSelector(ctx, selector)
+	targetTenant, err := r.tenantService.GetInternalTenant(ctx, in.Value)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting the Assignments for selector [%v]", selector)
+		return nil, errors.Wrap(err, "while converting tenant")
 	}
 
-	err = r.svc.DeleteManyForSameSelector(ctx, assignments)
+	assignments, err := r.svc.ListForTargetTenant(ctx, targetTenant)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while deleting the Assignments for selector [%v]", selector)
+		return nil, errors.Wrapf(err, "while getting the Assignments for target tenant [%v]", targetTenant)
+	}
+
+	err = r.svc.DeleteManyForSameTargetTenant(ctx, assignments)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while deleting the Assignments for target tenant [%v]", targetTenant)
 	}
 
 	err = tx.Commit()
@@ -193,7 +231,14 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Con
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	return r.converter.MultipleToGraphQL(assignments), nil
+	gqlAssignments := make([]*graphql.AutomaticScenarioAssignment, 0, len(assignments))
+
+	for _, v := range assignments {
+		assignment := r.converter.ToGraphQL(*v, in.Value)
+		gqlAssignments = append(gqlAssignments, &assignment)
+	}
+
+	return gqlAssignments, nil
 }
 
 // DeleteAutomaticScenarioAssignmentForScenario missing godoc
@@ -216,12 +261,17 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Cont
 		return nil, errors.Wrapf(err, "while deleting the Assignment for scenario [name=%s]", scenarioName)
 	}
 
+	targetTenant, err := r.tenantService.GetExternalTenant(ctx, assignment.TargetTenantID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting tenant")
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	gql := r.converter.ToGraphQL(assignment)
+	gql := r.converter.ToGraphQL(assignment, targetTenant)
 
 	return &gql, nil
 }

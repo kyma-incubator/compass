@@ -4773,7 +4773,7 @@ type Query {
 	**Examples**
 	- [query automatic scenario assignments for selector](examples/query-automatic-scenario-assignments-for-selector/query-automatic-scenario-assignments-for-selector.graphql)
 	"""
-	automaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentsForSelector")
+	automaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.query.automaticScenarioAssignmentsForSelector")
 	"""
 	**Examples**
 	- [query automatic scenario assignments](examples/query-automatic-scenario-assignments/query-automatic-scenario-assignments.graphql)
@@ -5013,7 +5013,7 @@ type Mutation {
 	**Examples**
 	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)
 	"""
-	createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.createAutomaticScenarioAssignment")
+	createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput! @validate): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.createAutomaticScenarioAssignment")
 	"""
 	**Examples**
 	- [delete automatic scenario assignment for scenario](examples/delete-automatic-scenario-assignment-for-scenario/delete-automatic-scenario-assignment-for-scenario.graphql)
@@ -5023,7 +5023,7 @@ type Mutation {
 	**Examples**
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
-	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
+	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
 }
 
 `, BuiltIn: false},
@@ -5559,9 +5559,24 @@ func (ec *executionContext) field_Mutation_createAutomaticScenarioAssignment_arg
 	args := map[string]interface{}{}
 	var arg0 AutomaticScenarioAssignmentSetInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalNAutomaticScenarioAssignmentSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentSetInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNAutomaticScenarioAssignmentSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentSetInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Validate == nil {
+				return nil, errors.New("directive validate is not implemented")
+			}
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(AutomaticScenarioAssignmentSetInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.AutomaticScenarioAssignmentSetInput`, tmp)
 		}
 	}
 	args["in"] = arg0
@@ -5680,9 +5695,24 @@ func (ec *executionContext) field_Mutation_deleteAutomaticScenarioAssignmentsFor
 	args := map[string]interface{}{}
 	var arg0 LabelSelectorInput
 	if tmp, ok := rawArgs["selector"]; ok {
-		arg0, err = ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Validate == nil {
+				return nil, errors.New("directive validate is not implemented")
+			}
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(LabelSelectorInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.LabelSelectorInput`, tmp)
 		}
 	}
 	args["selector"] = arg0
@@ -6931,9 +6961,24 @@ func (ec *executionContext) field_Query_automaticScenarioAssignmentsForSelector_
 	args := map[string]interface{}{}
 	var arg0 LabelSelectorInput
 	if tmp, ok := rawArgs["selector"]; ok {
-		arg0, err = ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Validate == nil {
+				return nil, errors.New("directive validate is not implemented")
+			}
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
 			return nil, err
+		}
+		if data, ok := tmp.(LabelSelectorInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.LabelSelectorInput`, tmp)
 		}
 	}
 	args["selector"] = arg0

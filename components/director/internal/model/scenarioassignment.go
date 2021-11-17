@@ -6,13 +6,7 @@ import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
 type AutomaticScenarioAssignment struct {
 	ScenarioName string
 	Tenant       string
-	Selector     LabelSelector
-}
-
-// LabelSelector missing godoc
-type LabelSelector struct {
-	Key   string
-	Value string
+	TargetTenantID string
 }
 
 // AutomaticScenarioAssignmentPage missing godoc

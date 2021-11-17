@@ -257,11 +257,8 @@ func newLabelInput(formation, objectID string, objectType model.LabelableObject)
 
 func newAutomaticScenarioAssignmentModel(formation, callerTenant, targetTenant string) model.AutomaticScenarioAssignment {
 	return model.AutomaticScenarioAssignment{
-		ScenarioName: formation,
-		Tenant:       callerTenant,
-		Selector: model.LabelSelector{
-			Key:   "global_subaccount_id",
-			Value: targetTenant,
-		},
+		ScenarioName:   formation,
+		Tenant:         callerTenant,
+		TargetTenantID: targetTenant,
 	}
 }

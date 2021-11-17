@@ -384,9 +384,11 @@ ALTER TABLE automatic_scenario_assignments DROP COLUMN selector_value;
 
 CREATE OR REPLACE FUNCTION check_tenant_id_is_direct_parent_of_target_tenant_id() RETURNS TRIGGER AS
 $$
+DECLARE
+    count INTEGER;
 BEGIN
-    EXECUTE format('SELECT 1 FROM business_tenant_mappings WHERE id = %L AND parent = %L', TG_TABLE_NAME, NEW.target_tenant_id, NEW.tenant_id);
-    IF NOT FOUND THEN
+    EXECUTE format('SELECT COUNT(1) FROM business_tenant_mappings WHERE id = %L AND parent = %L', NEW.target_tenant_id, NEW.tenant_id) INTO count;
+    IF count = 0 THEN
         RAISE EXCEPTION 'target_tenant_id should be direct child of tenant_id';
     END IF;
     RETURN NULL;

@@ -16,10 +16,11 @@ import (
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
-	ListForSelector(ctx context.Context, in model.LabelSelector, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
+	ListForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	ListAll(ctx context.Context, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
-	DeleteForSelector(ctx context.Context, tenantID string, selector model.LabelSelector) error
+	DeleteForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) error
 	DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error
 }
 
@@ -109,13 +110,13 @@ func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([
 }
 
 // ListForSelector missing godoc
-func (s *service) ListForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error) {
+func (s *service) ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	assignments, err := s.repo.ListForSelector(ctx, in, tenantID)
+	assignments, err := s.repo.ListForTargetTenant(ctx, tenantID, targetTenantInternalID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting the assignments")
 	}
@@ -151,13 +152,13 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 }
 
 // DeleteManyForSameSelector missing godoc
-func (s *service) DeleteManyForSameSelector(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+func (s *service) DeleteManyForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	selector, err := s.ensureSameSelector(in)
+	targetTenant, err := s.ensureSameTargetTenant(in)
 	if err != nil {
 		return errors.Wrap(err, "while ensuring input is valid")
 	}
@@ -167,7 +168,7 @@ func (s *service) DeleteManyForSameSelector(ctx context.Context, in []*model.Aut
 		return errors.Wrap(err, "while unassigning scenario from runtimes")
 	}
 
-	err = s.repo.DeleteForSelector(ctx, tenantID, selector)
+	err = s.repo.DeleteForTargetTenant(ctx, tenantID, targetTenant)
 	if err != nil {
 		return errors.Wrap(err, "while deleting the Assignments")
 	}
@@ -195,18 +196,18 @@ func (s *service) Delete(ctx context.Context, in model.AutomaticScenarioAssignme
 	return nil
 }
 
-func (s *service) ensureSameSelector(in []*model.AutomaticScenarioAssignment) (model.LabelSelector, error) {
+func (s *service) ensureSameTargetTenant(in []*model.AutomaticScenarioAssignment) (string, error) {
 	if len(in) == 0 || in[0] == nil {
-		return model.LabelSelector{}, apperrors.NewInternalError("expected at least one item in Assignments slice")
+		return "", apperrors.NewInternalError("expected at least one item in Assignments slice")
 	}
 
-	selector := in[0].Selector
+	targetTenant := in[0].TargetTenantID
 
 	for _, item := range in {
-		if item != nil && item.Selector != selector {
-			return model.LabelSelector{}, apperrors.NewInternalError("all input items have to have the same selector")
+		if item != nil && item.TargetTenantID != targetTenant {
+			return "", apperrors.NewInternalError("all input items have to have the same target tenant")
 		}
 	}
 
-	return selector, nil
+	return targetTenant, nil
 }
