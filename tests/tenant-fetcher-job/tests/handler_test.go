@@ -26,18 +26,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
-
 	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -132,15 +128,17 @@ func TestMoveSubaccounts(t *testing.T) {
 	gaNames := []string{"ga1", "ga2"}
 	subdomains := []string{"ga1", "ga1"}
 
-	subaccountName := "sub1"
-	subaccountExternalTenant := "sub1"
+	subaccountNames := []string{"sub1", "sub2"}
+	subaccountExternalTenants := []string{"sub1", "sub2"}
 	subaccountRegion := "test"
 	subaccountSubdomain := "sub1"
 	subaccountParent := "ga1"
 
 	region := "local"
 	provider := "test"
-	// 2 global accounts, 1 subaccount, 1 runtime
+
+	runtimeNames := []string{"runtime1", "runtime2"}
+
 	tenants := []graphql.BusinessTenantMappingInput{
 		{
 			Name:           gaNames[0],
@@ -161,8 +159,17 @@ func TestMoveSubaccounts(t *testing.T) {
 			Provider:       provider,
 		},
 		{
-			Name:           subaccountName,
-			ExternalTenant: subaccountExternalTenant,
+			Name:           subaccountNames[0],
+			ExternalTenant: subaccountExternalTenants[0],
+			Parent:         &subaccountParent,
+			Subdomain:      &subaccountSubdomain,
+			Region:         &subaccountRegion,
+			Type:           string(tenant.Subaccount),
+			Provider:       provider,
+		},
+		{
+			Name:           subaccountNames[1],
+			ExternalTenant: subaccountExternalTenants[1],
 			Parent:         &subaccountParent,
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
@@ -172,22 +179,19 @@ func TestMoveSubaccounts(t *testing.T) {
 	}
 	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
 	assert.NoError(t, err)
-	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(gaExternalTenantIDs, subaccountExternalTenant))
+	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(gaExternalTenantIDs, subaccountExternalTenants...))
 
 	tenant1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, gaExternalTenantIDs[0])
 	assert.NoError(t, err)
 	tenant2, err := fixtures.GetTenantByExternalID(dexGraphQLClient, gaExternalTenantIDs[1])
 	assert.NoError(t, err)
 
-	input := &graphql.RuntimeInput{
-		Name:   "runtime",
-		Labels: map[string]interface{}{cfg.MovedRuntimeLabelKey: subaccountExternalTenant},
-	}
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorInternalGQLClient, tenant1.InternalID, input)
-	assert.NoError(t, err)
+	runtime1 := registerRuntime(t, ctx, runtimeNames[0], subaccountExternalTenants[0], tenant1.InternalID)
+	runtime2 := registerRuntime(t, ctx, runtimeNames[1], subaccountExternalTenants[1], tenant1.InternalID)
 
-	event1 := genMockSubaccountMoveEvent(subaccountExternalTenant, subaccountName, subaccountSubdomain, subaccountParent, cfg.MovedRuntimeLabelKey, tenant1.ID, tenant2.ID, subaccountRegion)
-	setMockTenantEvents(t, []byte(genMockPage(event1, 1)), subaccountMoveSubPath)
+	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, subaccountParent, cfg.MovedRuntimeLabelKey, tenant1.ID, tenant2.ID, subaccountRegion)
+	event2 := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, subaccountParent, cfg.MovedRuntimeLabelKey, tenant1.ID, tenant2.ID, subaccountRegion)
+	setMockTenantEvents(t, []byte(genMockPage(strings.Join([]string{event1, event2}, ","), 2)), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
@@ -198,12 +202,19 @@ func TestMoveSubaccounts(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
 
-	subaccount, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenant)
+	subaccount1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[0])
 	assert.NoError(t, err)
-	assert.Equal(t, tenant2.InternalID, subaccount.ParentID)
+	assert.Equal(t, tenant2.InternalID, subaccount1.ParentID)
 
-	rtm := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.InternalID, runtime.ID)
-	assert.Equal(t, runtime.Name, rtm.Name)
+	subaccount2, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[1])
+	assert.NoError(t, err)
+	assert.Equal(t, tenant2.InternalID, subaccount2.ParentID)
+
+	rtm1 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.InternalID, runtime1.ID)
+	assert.Equal(t, runtime1.Name, rtm1.Name)
+
+	rtm2 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.InternalID, runtime2.ID)
+	assert.Equal(t, runtime2.Name, rtm2.Name)
 }
 
 func TestCreateDeleteSubaccounts(t *testing.T) {
@@ -272,68 +283,6 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	assert.Equal(t, subaccountNames[1], *subaccount2.Name)
 }
 
-//func TestMoveSubaccountsFailure(t *testing.T) {
-//	ctx := context.TODO()
-//
-//	subdomain1 := "ga1"
-//	region := "local"
-//
-//	subaccountRegion := "test"
-//	subaccountParent := "ga1"
-//	subaccountSubdomain := "sub1"
-//	// global account, 2 runtimes
-//	globalAccounts := []graphql.BusinessTenantMappingInput{
-//		{
-//			Name:           "ga1",
-//			ExternalTenant: "ga1",
-//			Parent:         nil,
-//			Subdomain:      &subdomain1,
-//			Region:         &region,
-//			Type:           string(tenant.Account),
-//			Provider:       "test",
-//		},
-//		{
-//			Name:           "sub1",
-//			ExternalTenant: "sub1",
-//			Parent:         &subaccountParent,
-//			Subdomain:      &subaccountSubdomain,
-//			Region:         &subaccountRegion,
-//			Type:           string(tenant.Subaccount),
-//			Provider:       "test",
-//		},
-//	}
-//	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, globalAccounts)
-//	assert.NoError(t, err)
-//	defer fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, globalAccounts)
-//
-//	tenant1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, "ga1")
-//	assert.NoError(t, err)
-//	input := &graphql.RuntimeInput{
-//		Name:   "runtime",
-//		Labels: map[string]interface{}{cfg.MovedRuntimeLabelKey: tenant1.InternalID},
-//	}
-//	_, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorInternalGQLClient, tenant1.InternalID, input)
-//	assert.NoError(t, err)
-//	_, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorInternalGQLClient, tenant1.InternalID, input)
-//	assert.NoError(t, err)
-//
-//	event1 := genMockSubaccountMoveEvent("sub1", "sub1", subaccountSubdomain, subaccountParent, cfg.MovedRuntimeLabelKey, "ga1", "ga2", subaccountRegion)
-//	setMockTenantEvents(t, []byte(genMockPage(event1, 1)), subaccountMoveSubPath)
-//	defer cleanupMockEvents(t, subaccountMoveSubPath)
-//
-//	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-//	assert.NoError(t, err)
-//	jobName := "tenant-fetcher-test"
-//	namespace := "compass-system"
-//
-//	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-tenant-fetcher-external-mock", jobName, namespace)
-//	defer func() {
-//		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
-//	}()
-//
-//	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
-//}
-
 func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain string) string {
 	return fmt.Sprintf(mockGlobalAccountEventPattern, guid, displayName, customerID, subdomain)
 }
@@ -391,4 +340,14 @@ func cleanupTenants(t require.TestingT, ctx context.Context, gqlClient *gcli.Cli
 	err := fixtures.DeleteTenants(t, ctx, gqlClient, tenantsToDelete)
 	assert.NoError(t, err)
 	log.D().Info("Successfully cleanup tenants")
+}
+
+func registerRuntime(t require.TestingT, ctx context.Context, runtimeName, externalTenantID, globalAccountInternalID string) graphql.RuntimeExt {
+	input := &graphql.RuntimeInput{
+		Name:   runtimeName,
+		Labels: map[string]interface{}{cfg.MovedRuntimeLabelKey: externalTenantID},
+	}
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorInternalGQLClient, globalAccountInternalID, input)
+	assert.NoError(t, err)
+	return runtime
 }
