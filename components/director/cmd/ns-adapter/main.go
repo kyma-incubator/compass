@@ -32,7 +32,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	directorHandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -62,8 +61,6 @@ func main() {
 
 	err = calculateTemplateMappings(ctx, conf, transact)
 	exitOnError(err, "while calculating template mappings")
-
-	cfgProvider := createAndRunConfigProvider(ctx, conf)
 
 	uidSvc := uid.NewService()
 
@@ -111,7 +108,7 @@ func main() {
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc)
 
 	tntSvc := tenant.NewService(tenantRepo, uidSvc)
 
@@ -121,8 +118,12 @@ func main() {
 	}()
 
 	h := handler.NewHandler(appSvc, tntSvc, transact)
+	ch := handler.NewChunkedHandler()
 
 	handlerWithTimeout, err := directorHandler.WithTimeoutWithErrorMessage(h, conf.ServerTimeout, httputil.GetTimeoutMessage())
+	exitOnError(err, "Failed configuring timeout on handler")
+
+	chunkedHandlerWithTimeout, err := directorHandler.WithTimeoutWithErrorMessage(ch, conf.ServerTimeout, httputil.GetTimeoutMessage())
 	exitOnError(err, "Failed configuring timeout on handler")
 
 	router := mux.NewRouter()
@@ -132,6 +133,10 @@ func main() {
 		Methods(http.MethodPut).
 		Path("/api/v1/notifications").
 		Handler(handlerWithTimeout)
+	router.NewRoute().
+		Methods(http.MethodPost).
+		Path("/api/v1/chinked").
+		Handler(chunkedHandlerWithTimeout)
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	})
@@ -156,11 +161,6 @@ func exitOnError(err error, context string) {
 		wrappedError := errors.Wrap(err, context)
 		log.D().Fatal(wrappedError)
 	}
-}
-
-func createAndRunConfigProvider(ctx context.Context, cfg adapter.Configuration) *configprovider.Provider {
-	//TODO look at the cfg provider
-	return nil
 }
 
 func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, transact persistence.Transactioner) error {
