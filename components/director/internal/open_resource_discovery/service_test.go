@@ -52,7 +52,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 		transact := &persistenceautomock.Transactioner{}
 		transact.On("Begin").Return(persistTx, nil).Twice()
-		transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Twice()
+		transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
 		return persistTx, transact
 	}
 
@@ -528,7 +528,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Twice()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
 				return persistTx, transact
 			},
 			labelRepoFn: successfulLabelRepo,

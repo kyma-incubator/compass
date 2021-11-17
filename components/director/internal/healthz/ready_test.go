@@ -31,7 +31,7 @@ func TestNewReadinessHandler(t *testing.T) {
 		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(false)
 		transactioner.On("PingContext", ctx).Once().Return(nil)
 		defer transactioner.AssertExpectations(t)
 
@@ -53,7 +53,7 @@ func TestNewReadinessHandler(t *testing.T) {
 		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(false)
 		transactioner.On("PingContext", ctx).Twice().Return(nil)
 		defer transactioner.AssertExpectations(t)
 
@@ -76,7 +76,7 @@ func TestNewReadinessHandler(t *testing.T) {
 		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
 		transactioner.On("PingContext", ctx).Once().Return(errors.New("Ping failure"))
 		defer transactioner.AssertExpectations(t)
 
@@ -98,7 +98,7 @@ func TestNewReadinessHandler(t *testing.T) {
 		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
 
 		repository := &automock.Repository{}
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("YYYYYYYYYYYYY", nil)
@@ -118,7 +118,7 @@ func TestNewReadinessHandler(t *testing.T) {
 		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(tx, nil)
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
 
 		repository := &automock.Repository{}
 		repository.On("GetVersion", ctxWithTransaction).Once().Return("", errors.New("db error"))
@@ -136,7 +136,7 @@ func TestNewReadinessHandler(t *testing.T) {
 
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(nil, errors.New("error while opening transaction"))
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
 
 		repository := &automock.Repository{}
 
@@ -153,7 +153,7 @@ func TestNewReadinessHandler(t *testing.T) {
 
 		transactioner := &persistautomock.Transactioner{}
 		transactioner.On("Begin").Once().Return(nil, errors.New("error while opening transaction"))
-		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return()
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
 
 		repository := &automock.Repository{}
 

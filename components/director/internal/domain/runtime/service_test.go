@@ -2520,6 +2520,86 @@ func TestService_ListByFiltersGlobal(t *testing.T) {
 	}
 }
 
+func TestService_ListByFilters(t *testing.T) {
+	// given
+	tnt := "tenant"
+	testErr := errors.New("Test error")
+	filters := []*labelfilter.LabelFilter{
+		{Key: "test-key", Query: str.Ptr("test-filter")},
+	}
+	modelRuntimes := []*model.Runtime{
+		fixModelRuntime(t, "foo", tnt, "Foo", "Lorem Ipsum"),
+		fixModelRuntime(t, "bar", tnt, "Bar", "Lorem Ipsum"),
+	}
+	ctx := tenant.SaveToContext(context.TODO(), tnt, tnt)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeRepository
+		Context            context.Context
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", contextThatHasTenant(tnt), tnt, filters).Return(modelRuntimes, nil).Once()
+				return repo
+			},
+			Context:            ctx,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Fails on repository error",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", contextThatHasTenant(tnt), tnt, filters).Return(nil, testErr).Once()
+				return repo
+			},
+			Context:            ctx,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Fails when no tenant in the context",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				return &automock.RuntimeRepository{}
+			},
+			Context:            context.TODO(),
+			ExpectedErrMessage: "while loading tenant from context",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			labelRepository := &automock.LabelRepository{}
+			labelUpsertService := &automock.LabelUpsertService{}
+			scenariosService := &automock.ScenariosService{}
+			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
+			uidSvc := &automock.UIDService{}
+			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$")
+
+			// when
+			actualRuntimes, err := svc.ListByFilters(testCase.Context, filters)
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				require.Equal(t, modelRuntimes, actualRuntimes)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+			labelRepository.AssertExpectations(t)
+			labelUpsertService.AssertExpectations(t)
+			scenariosService.AssertExpectations(t)
+			scenarioAssignmentEngine.AssertExpectations(t)
+			uidSvc.AssertExpectations(t)
+		})
+	}
+}
+
 func contextThatHasTenant(expectedTenant string) interface{} {
 	return mock.MatchedBy(func(actual context.Context) bool {
 		actualTenant, err := tenant.LoadFromContext(actual)

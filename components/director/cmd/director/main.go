@@ -128,6 +128,8 @@ type config struct {
 
 	Features features.Config
 
+	SelfRegConfig runtime.SelfRegConfig
+
 	OperationsNamespace string `envconfig:"default=compass-system"`
 
 	DisableAsyncMode bool `envconfig:"default=false"`
@@ -183,6 +185,7 @@ func main() {
 		Timeout:   cfg.ClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
+	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
 
 	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
@@ -205,6 +208,7 @@ func main() {
 		metricsCollector,
 		httpClient,
 		internalHTTPClient,
+		cfg.SelfRegConfig,
 		cfg.OneTimeToken.Length,
 		adminURL,
 	)
@@ -221,9 +225,10 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
+	claimsValidator := claims.NewValidator(runtimeSvc(cfg), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountIDsLabelKey)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claims.NewValidator())
+	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
 
 	if cfg.JWKSSyncPeriod != 0 {
 		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
@@ -670,4 +675,27 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 		app.Error = errorMsg
 		return appRepo.TechnicalUpdate(ctx, app)
 	}
+}
+
+func runtimeSvc(cfg config) claims.RuntimeService {
+	uidSvc := uid.NewService()
+
+	rtConverter := runtime.NewConverter()
+	rtRepo := runtime.NewRepository(rtConverter)
+
+	lblRepo := label.NewRepository(label.NewConverter())
+
+	assignmentConv := scenarioassignment.NewConverter()
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+
+	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+
+	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
+	labelDefSvc := labeldef.NewService(labelDefRepo, lblRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+
+	labelSvc := label.NewLabelService(lblRepo, labelDefRepo, uidSvc)
+
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, lblRepo, scenarioAssignmentRepo)
+
+	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, cfg.Features.ProtectedLabelPattern)
 }

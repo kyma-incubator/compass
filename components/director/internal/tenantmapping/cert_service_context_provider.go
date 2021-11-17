@@ -59,12 +59,12 @@ func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 				log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 				log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-				return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider), nil
+				return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider), nil
 			}
 			return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 		}
 
-		objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
+		objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
 
 		log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
@@ -72,7 +72,7 @@ func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 	}
 
 	// ORD Flow, set the external tenant ID both for internal and external tenants
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, "", authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
 
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 

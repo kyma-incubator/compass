@@ -4,28 +4,27 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/google/uuid"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/rtmtest"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -56,11 +55,12 @@ func TestResolver_CreateRuntime(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.RuntimeService
-		ConverterFn     func() *automock.RuntimeConverter
+		Name             string
+		PersistenceFn    func() *persistenceautomock.PersistenceTx
+		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn        func() *automock.RuntimeService
+		ConverterFn      func() *automock.RuntimeConverter
+		SelfRegManagerFn func() *automock.SelfRegisterManager
 
 		Input           graphql.RuntimeInput
 		ExpectedRuntime *graphql.Runtime
@@ -73,13 +73,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
@@ -92,9 +86,10 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
-			Input:           gqlInput,
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(modelInput),
+			Input:            gqlInput,
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Returns error when runtime creation failed",
@@ -102,13 +97,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Create", contextParam, modelInput).Return("", testErr).Once()
@@ -119,9 +108,10 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			Input:           gqlInput,
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
+			Input:            gqlInput,
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name: "Returns error when runtime retrieval failed",
@@ -129,13 +119,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Create", contextParam, modelInput).Return("foo", nil).Once()
@@ -147,9 +131,29 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			Input:           gqlInput,
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
+			Input:            gqlInput,
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
+		},
+		{
+			Name: "Returns error when preaparation for self-registration failed",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: txtest.NoopTransactioner,
+			ServiceFn: func() *automock.RuntimeService {
+				return &automock.RuntimeService{}
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				return conv
+			},
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsErrorOnPrep,
+			Input:            gqlInput,
+			ExpectedRuntime:  nil,
+			ExpectedErr:      errors.New(rtmtest.SelfRegErrorMsg),
 		},
 	}
 
@@ -159,17 +163,22 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			transact := testCase.TransactionerFn(persistTx)
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			selfRegManager := testCase.SelfRegManagerFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager)
 
 			// when
 			result, err := resolver.RegisterRuntime(context.TODO(), testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.ExpectedRuntime, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if testCase.ExpectedErr != nil {
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.NoError(t, err)
+			}
 
-			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx, selfRegManager)
 		})
 	}
 }
@@ -192,15 +201,16 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 	runtimeID := "foo"
 
 	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.RuntimeService
-		ConverterFn     func() *automock.RuntimeConverter
-		RuntimeID       string
-		Input           graphql.RuntimeInput
-		ExpectedRuntime *graphql.Runtime
-		ExpectedErr     error
+		Name             string
+		PersistenceFn    func() *persistenceautomock.PersistenceTx
+		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn        func() *automock.RuntimeService
+		ConverterFn      func() *automock.RuntimeConverter
+		SelfRegManagerFn func() *automock.SelfRegisterManager
+		RuntimeID        string
+		Input            graphql.RuntimeInput
+		ExpectedRuntime  *graphql.Runtime
+		ExpectedErr      error
 	}{
 		{
 			Name: "Success",
@@ -209,13 +219,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
@@ -228,10 +232,11 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
-			RuntimeID:       runtimeID,
-			Input:           gqlInput,
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
+			RuntimeID:        runtimeID,
+			Input:            gqlInput,
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Returns error when runtime update failed",
@@ -239,13 +244,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Update", contextParam, runtimeID, modelInput).Return(testErr).Once()
@@ -256,10 +255,11 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			RuntimeID:       runtimeID,
-			Input:           gqlInput,
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
+			RuntimeID:        runtimeID,
+			Input:            gqlInput,
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name: "Returns error when runtime retrieval failed",
@@ -267,13 +267,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Update", contextParam, runtimeID, modelInput).Return(nil).Once()
@@ -285,10 +279,11 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			RuntimeID:       runtimeID,
-			Input:           gqlInput,
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
+			RuntimeID:        runtimeID,
+			Input:            gqlInput,
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 	}
 
@@ -298,8 +293,9 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			transact := testCase.TransactionerFn(persistTx)
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			selfRegMng := testCase.SelfRegManagerFn
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegMng())
 
 			// when
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
@@ -318,7 +314,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
 	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
-	scenariosNotFoundErr := apperrors.NewNotFoundError(resource.Label, "")
+	labelNotFoundErr := apperrors.NewNotFoundError(resource.Label, "")
 	scenarioAssignmentNotFoundErr := apperrors.NewNotFoundError(resource.AutomaticScenarioAssigment, "")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	testAuths := fixOAuths()
@@ -335,6 +331,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 		OAuth20ServiceFn        func() *automock.OAuth20Service
 		ConverterFn             func() *automock.RuntimeConverter
 		BundleInstanceAuthSvcFn func() *automock.BundleInstanceAuthService
+		SelfRegManagerFn        func() *automock.SelfRegisterManager
 		InputID                 string
 		ExpectedRuntime         *graphql.Runtime
 		ExpectedErr             error
@@ -346,7 +343,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(&model.Label{Key: rtmtest.TestDistinguishLabel}, nil).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -380,9 +378,57 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("Update", contextParam, auth).Return(nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
+		},
+		{
+			Name:            "Success when self-registration had been done even if cleanup fails",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				auth := &model.BundleInstanceAuth{
+					RuntimeID: &modelRuntime.ID,
+					Status: &model.BundleInstanceAuthStatus{
+						Condition: model.BundleInstanceAuthStatusConditionSucceeded,
+					},
+				}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{auth}, nil)
+				svc.On("Update", contextParam, auth).Return(nil)
+				return svc
+			},
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsErrorOnCleanup,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
 		},
 		{
 			Name:            "Returns error when runtime deletion failed",
@@ -391,7 +437,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(testErr).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -424,9 +471,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("Update", contextParam, auth).Return(nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name:            "Returns error when runtime retrieval failed",
@@ -456,9 +504,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.BundleInstanceAuthService{}
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name:            "Returns error when transaction starting failed",
@@ -487,9 +536,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.BundleInstanceAuthService{}
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name:            "Returns error when transaction commit failed",
@@ -498,7 +548,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, modelRuntime.ID).Return(nil)
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -525,9 +576,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name:            "Return error when listing all system auths failed",
@@ -535,6 +587,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -559,9 +612,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name:            "Fails when cannot list bundle instance auths by runtime id",
@@ -592,9 +646,45 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return(nil, testErr)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
+		},
+		{
+			Name:            "Fails when cannot list self-register distinguishing label because of error which is other than not found",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, testErr).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
+				return svc
+			},
+			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name:            "Fails when cannot update bundle instance auths status to unused",
@@ -602,6 +692,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -632,9 +723,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("Update", contextParam, auth).Return(testErr)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name:            "Return error when removing oauth from hydra",
@@ -643,7 +735,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -670,9 +763,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name:            "Returns error when listing scenarios label",
@@ -681,6 +775,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, testErr)
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -705,9 +800,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name:            "Returns empty scenarios when listing scenarios label should succeed",
@@ -716,6 +812,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(emptyScenariosLabel, nil)
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
 				return svc
 			},
@@ -745,9 +842,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
 		},
 		{
 			Name:            "Returns scenario when listing scenarios label and error when listing scenario assignments should fail",
@@ -756,6 +854,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -784,9 +883,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name:            "Returns scenario when listing scenarios label and not found when listing scenario assignments should succeed",
@@ -795,6 +895,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
 				return svc
 			},
@@ -825,9 +926,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
 		},
 		{
 			Name:            "Returns scenario when listing scenarios label and scenario assignment when listing scenario assignments but fails on deletion of scenario assignment should fail",
@@ -836,6 +938,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -865,9 +968,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name:            "Returns scenario when listing scenarios label and scenario assignment when listing scenario assignments and succeeds on deletion of scenario assignment should succeed",
@@ -876,6 +980,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
 				return svc
 			},
@@ -908,9 +1013,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
 		},
 		{
 			Name:            "Returns multiple scenarios when listing scenarios label and only some are created by a scenario assignment should succeed",
@@ -919,6 +1025,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(multiScenariosLabel, nil)
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
 				return svc
 			},
@@ -961,9 +1068,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
 		},
 		{
 			Name:            "Returns multiple scenarios when listing scenarios label and all are created by a scenario assignment should succeed",
@@ -972,6 +1080,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(multiScenariosLabel, nil)
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
 				return svc
 			},
@@ -1017,9 +1126,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
 		},
 		{
 			Name:            "Returns multiple scenarios when listing scenarios label and none are created by a scenario assignment should succeed",
@@ -1028,6 +1138,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(multiScenariosLabel, nil)
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
 				return svc
 			},
@@ -1065,9 +1176,60 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
 				return svc
 			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
+		},
+		{
+			Name:            "Returns multiple scenarios when listing scenarios label and none are created by a scenario assignment should succeed",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(multiScenariosLabel, nil)
+				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				scenarios, err := label.ValueToStringsSlice(multiScenariosLabel.Value)
+				assert.NoError(t, err)
+
+				emptyAssignment := model.AutomaticScenarioAssignment{}
+
+				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
+				svc.On("GetForScenarioName", contextParam, scenarios[1]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
+				svc.On("GetForScenarioName", contextParam, scenarios[2]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
+				svc.On("GetForScenarioName", contextParam, scenarios[3]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
+
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+				return svc
+			},
+			BundleInstanceAuthSvcFn: func() *automock.BundleInstanceAuthService {
+				svc := &automock.BundleInstanceAuthService{}
+				svc.On("ListByRuntimeID", contextParam, modelRuntime.ID).Return([]*model.BundleInstanceAuth{}, nil)
+				return svc
+			},
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
 		},
 	}
 	for _, testCase := range testCases {
@@ -1079,8 +1241,9 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			sysAuthSvc := testCase.SysAuthServiceFn()
 			oAuth20Svc := testCase.OAuth20ServiceFn()
 			bundleInstanceAuthSvc := testCase.BundleInstanceAuthSvcFn()
+			selfRegisterManager := testCase.SelfRegManagerFn()
 
-			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc)
+			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc, selfRegisterManager)
 
 			// when
 			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
@@ -1088,12 +1251,12 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			// then
 			assert.Equal(t, testCase.ExpectedRuntime, result)
 			if testCase.ExpectedErr != nil {
-				assert.EqualError(t, testCase.ExpectedErr, err.Error())
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			} else {
 				assert.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, svc, scenarioAssignmentSvc, converter, transact, persistTx, sysAuthSvc, oAuth20Svc)
+			mock.AssertExpectationsForObjects(t, svc, scenarioAssignmentSvc, converter, transact, persistTx, sysAuthSvc, oAuth20Svc, selfRegisterManager)
 		})
 	}
 }
@@ -1105,14 +1268,15 @@ func TestResolver_Runtime(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.RuntimeService
-		ConverterFn     func() *automock.RuntimeConverter
-		InputID         string
-		ExpectedRuntime *graphql.Runtime
-		ExpectedErr     error
+		Name             string
+		PersistenceFn    func() *persistenceautomock.PersistenceTx
+		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn        func() *automock.RuntimeService
+		ConverterFn      func() *automock.RuntimeConverter
+		SelfRegManagerFn func() *automock.SelfRegisterManager
+		InputID          string
+		ExpectedRuntime  *graphql.Runtime
+		ExpectedErr      error
 	}{
 		{
 			Name: "Success",
@@ -1121,13 +1285,7 @@ func TestResolver_Runtime(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
@@ -1139,9 +1297,10 @@ func TestResolver_Runtime(t *testing.T) {
 				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Success when runtime not found returns nil",
@@ -1150,13 +1309,7 @@ func TestResolver_Runtime(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, apperrors.NewNotFoundError(resource.Runtime, "foo")).Once()
@@ -1167,9 +1320,10 @@ func TestResolver_Runtime(t *testing.T) {
 				conv := &automock.RuntimeConverter{}
 				return conv
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     nil,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Returns error when runtime retrieval failed",
@@ -1177,13 +1331,7 @@ func TestResolver_Runtime(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(nil, testErr).Once()
@@ -1194,9 +1342,10 @@ func TestResolver_Runtime(t *testing.T) {
 				conv := &automock.RuntimeConverter{}
 				return conv
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 	}
 
@@ -1206,8 +1355,9 @@ func TestResolver_Runtime(t *testing.T) {
 			transact := testCase.TransactionerFn(persistTx)
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			selfRegManager := testCase.SelfRegManagerFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager)
 
 			// when
 			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
@@ -1246,6 +1396,7 @@ func TestResolver_Runtimes(t *testing.T) {
 		TransactionerFn   func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn         func() *automock.RuntimeService
 		ConverterFn       func() *automock.RuntimeConverter
+		SelfRegManagerFn  func() *automock.SelfRegisterManager
 		InputLabelFilters []*graphql.LabelFilter
 		InputFirst        *int
 		InputAfter        *graphql.PageCursor
@@ -1259,13 +1410,7 @@ func TestResolver_Runtimes(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("List", contextParam, filter, first, after).Return(fixRuntimePage(modelRuntimes), nil).Once()
@@ -1276,6 +1421,7 @@ func TestResolver_Runtimes(t *testing.T) {
 				conv.On("MultipleToGraphQL", modelRuntimes).Return(gqlRuntimes).Once()
 				return conv
 			},
+			SelfRegManagerFn:  rtmtest.NoopSelfRegManager,
 			InputFirst:        &first,
 			InputAfter:        &gqlAfter,
 			InputLabelFilters: gqlFilter,
@@ -1288,13 +1434,7 @@ func TestResolver_Runtimes(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("List", contextParam, filter, first, after).Return(nil, testErr).Once()
@@ -1304,6 +1444,7 @@ func TestResolver_Runtimes(t *testing.T) {
 				conv := &automock.RuntimeConverter{}
 				return conv
 			},
+			SelfRegManagerFn:  rtmtest.NoopSelfRegManager,
 			InputFirst:        &first,
 			InputAfter:        &gqlAfter,
 			InputLabelFilters: gqlFilter,
@@ -1318,8 +1459,9 @@ func TestResolver_Runtimes(t *testing.T) {
 			transact := testCase.TransactionerFn(persistTx)
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			selfRegManager := testCase.SelfRegManagerFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager)
 
 			// when
 			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
@@ -1360,16 +1502,17 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.RuntimeService
-		ConverterFn     func() *automock.RuntimeConverter
-		InputRuntimeID  string
-		InputKey        string
-		InputValue      interface{}
-		ExpectedLabel   *graphql.Label
-		ExpectedErr     error
+		Name             string
+		PersistenceFn    func() *persistenceautomock.PersistenceTx
+		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn        func() *automock.RuntimeService
+		ConverterFn      func() *automock.RuntimeConverter
+		SelfRegManagerFn func() *automock.SelfRegisterManager
+		InputRuntimeID   string
+		InputKey         string
+		InputValue       interface{}
+		ExpectedLabel    *graphql.Label
+		ExpectedErr      error
 	}{
 		{
 			Name: "Success",
@@ -1378,13 +1521,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("SetLabel", contextParam, modelLabelInput).Return(nil).Once()
@@ -1395,11 +1532,12 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 				conv := &automock.RuntimeConverter{}
 				return conv
 			},
-			InputRuntimeID: runtimeID,
-			InputKey:       gqlLabel.Key,
-			InputValue:     gqlLabel.Value,
-			ExpectedLabel:  gqlLabel,
-			ExpectedErr:    nil,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputRuntimeID:   runtimeID,
+			InputKey:         gqlLabel.Key,
+			InputValue:       gqlLabel.Value,
+			ExpectedLabel:    gqlLabel,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Returns error when adding label to runtime failed",
@@ -1407,13 +1545,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("SetLabel", contextParam, modelLabelInput).Return(testErr).Once()
@@ -1423,11 +1555,12 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 				conv := &automock.RuntimeConverter{}
 				return conv
 			},
-			InputRuntimeID: runtimeID,
-			InputKey:       gqlLabel.Key,
-			InputValue:     gqlLabel.Value,
-			ExpectedLabel:  nil,
-			ExpectedErr:    testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputRuntimeID:   runtimeID,
+			InputKey:         gqlLabel.Key,
+			InputValue:       gqlLabel.Value,
+			ExpectedLabel:    nil,
+			ExpectedErr:      testErr,
 		},
 	}
 
@@ -1437,8 +1570,9 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			transact := testCase.TransactionerFn(persistTx)
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			selfRegManager := testCase.SelfRegManagerFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager)
 
 			// when
 			result, err := resolver.SetRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -1452,7 +1586,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 	}
 
 	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// when
 		result, err := resolver.SetRuntimeLabel(context.TODO(), "", "", "")
@@ -1481,15 +1615,16 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.RuntimeService
-		ConverterFn     func() *automock.RuntimeConverter
-		InputRuntimeID  string
-		InputKey        string
-		ExpectedLabel   *graphql.Label
-		ExpectedErr     error
+		Name             string
+		PersistenceFn    func() *persistenceautomock.PersistenceTx
+		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn        func() *automock.RuntimeService
+		ConverterFn      func() *automock.RuntimeConverter
+		SelfRegManagerFn func() *automock.SelfRegisterManager
+		InputRuntimeID   string
+		InputKey         string
+		ExpectedLabel    *graphql.Label
+		ExpectedErr      error
 	}{
 		{
 			Name: "Success",
@@ -1498,13 +1633,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("GetLabel", contextParam, runtimeID, gqlLabel.Key).Return(modelLabel, nil).Once()
@@ -1515,10 +1644,11 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 				conv := &automock.RuntimeConverter{}
 				return conv
 			},
-			InputRuntimeID: runtimeID,
-			InputKey:       gqlLabel.Key,
-			ExpectedLabel:  gqlLabel,
-			ExpectedErr:    nil,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputRuntimeID:   runtimeID,
+			InputKey:         gqlLabel.Key,
+			ExpectedLabel:    gqlLabel,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Returns error when label retrieval failed",
@@ -1526,13 +1656,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("GetLabel", contextParam, runtimeID, gqlLabel.Key).Return(nil, testErr).Once()
@@ -1542,10 +1666,11 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 				conv := &automock.RuntimeConverter{}
 				return conv
 			},
-			InputRuntimeID: runtimeID,
-			InputKey:       gqlLabel.Key,
-			ExpectedLabel:  nil,
-			ExpectedErr:    testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputRuntimeID:   runtimeID,
+			InputKey:         gqlLabel.Key,
+			ExpectedLabel:    nil,
+			ExpectedErr:      testErr,
 		},
 		{
 			Name: "Returns error when deleting runtime's label failed",
@@ -1553,13 +1678,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("GetLabel", contextParam, runtimeID, gqlLabel.Key).Return(modelLabel, nil).Once()
@@ -1570,10 +1689,11 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 				conv := &automock.RuntimeConverter{}
 				return conv
 			},
-			InputRuntimeID: runtimeID,
-			InputKey:       gqlLabel.Key,
-			ExpectedLabel:  nil,
-			ExpectedErr:    testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputRuntimeID:   runtimeID,
+			InputKey:         gqlLabel.Key,
+			ExpectedLabel:    nil,
+			ExpectedErr:      testErr,
 		},
 	}
 
@@ -1583,8 +1703,9 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			transact := testCase.TransactionerFn(persistTx)
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			selfRegManager := testCase.SelfRegManagerFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager)
 
 			// when
 			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)
@@ -1637,14 +1758,15 @@ func TestResolver_Labels(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.RuntimeService
-		InputRuntime    *graphql.Runtime
-		InputKey        *string
-		ExpectedResult  graphql.Labels
-		ExpectedErr     error
+		Name             string
+		PersistenceFn    func() *persistenceautomock.PersistenceTx
+		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn        func() *automock.RuntimeService
+		SelfRegManagerFn func() *automock.SelfRegisterManager
+		InputRuntime     *graphql.Runtime
+		InputKey         *string
+		ExpectedResult   graphql.Labels
+		ExpectedErr      error
 	}{
 		{
 			Name: "Success",
@@ -1653,20 +1775,16 @@ func TestResolver_Labels(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("ListLabels", contextParam, id).Return(modelLabels, nil).Once()
 				return svc
 			},
-			InputKey:       nil,
-			ExpectedResult: gqlLabels,
-			ExpectedErr:    nil,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputKey:         nil,
+			ExpectedResult:   gqlLabels,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Success when labels are filtered",
@@ -1675,20 +1793,16 @@ func TestResolver_Labels(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("ListLabels", contextParam, id).Return(modelLabels, nil).Once()
 				return svc
 			},
-			InputKey:       &labelKey1,
-			ExpectedResult: gqlLabels1,
-			ExpectedErr:    nil,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputKey:         &labelKey1,
+			ExpectedResult:   gqlLabels1,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Success returns nil when labels not found",
@@ -1697,20 +1811,16 @@ func TestResolver_Labels(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("ListLabels", contextParam, id).Return(nil, errors.New("doesn't exist")).Once()
 				return svc
 			},
-			InputKey:       &labelKey1,
-			ExpectedResult: nil,
-			ExpectedErr:    nil,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputKey:         &labelKey1,
+			ExpectedResult:   nil,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Returns error when label listing failed",
@@ -1718,20 +1828,16 @@ func TestResolver_Labels(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("ListLabels", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
-			InputKey:       &labelKey1,
-			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputKey:         &labelKey1,
+			ExpectedResult:   nil,
+			ExpectedErr:      testErr,
 		},
 	}
 
@@ -1740,8 +1846,9 @@ func TestResolver_Labels(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			svc := testCase.ServiceFn()
 			transact := testCase.TransactionerFn(persistTx)
+			selfRegManager := testCase.SelfRegManagerFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager)
 
 			// when
 			result, err := resolver.Labels(context.TODO(), gqlRuntime, testCase.InputKey)
@@ -1776,14 +1883,15 @@ func TestResolver_GetLabel(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.RuntimeService
-		InputRuntime    *graphql.Runtime
-		InputKey        string
-		ExpectedResult  *graphql.Labels
-		ExpectedErr     error
+		Name             string
+		PersistenceFn    func() *persistenceautomock.PersistenceTx
+		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn        func() *automock.RuntimeService
+		SelfRegManagerFn func() *automock.SelfRegisterManager
+		InputRuntime     *graphql.Runtime
+		InputKey         string
+		ExpectedResult   *graphql.Labels
+		ExpectedErr      error
 	}{
 		{
 			Name: "Success",
@@ -1792,20 +1900,16 @@ func TestResolver_GetLabel(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("GetLabel", contextParam, runtimeID, labelKey).Return(modelLabel, nil).Once()
 				return svc
 			},
-			InputKey:       labelKey,
-			ExpectedResult: gqlLabels,
-			ExpectedErr:    nil,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputKey:         labelKey,
+			ExpectedResult:   gqlLabels,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Success returns nil when label not found",
@@ -1814,20 +1918,16 @@ func TestResolver_GetLabel(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("GetLabel", contextParam, runtimeID, labelKey).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID)).Once()
 				return svc
 			},
-			InputKey:       labelKey,
-			ExpectedResult: nil,
-			ExpectedErr:    nil,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputKey:         labelKey,
+			ExpectedResult:   nil,
+			ExpectedErr:      nil,
 		},
 		{
 			Name: "Returns error when label listing fails",
@@ -1835,20 +1935,16 @@ func TestResolver_GetLabel(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
-				return transact
-			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("GetLabel", contextParam, runtimeID, labelKey).Return(nil, testErr).Once()
 				return svc
 			},
-			InputKey:       labelKey,
-			ExpectedResult: nil,
-			ExpectedErr:    testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputKey:         labelKey,
+			ExpectedResult:   nil,
+			ExpectedErr:      testErr,
 		},
 	}
 
@@ -1857,8 +1953,9 @@ func TestResolver_GetLabel(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			svc := testCase.ServiceFn()
 			transact := testCase.TransactionerFn(persistTx)
+			selfRegManager := testCase.SelfRegManagerFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager)
 
 			// when
 			result, err := resolver.GetLabel(context.TODO(), runtimeID, labelKey)
@@ -1897,12 +1994,13 @@ func TestResolver_Auths(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		SysAuthSvcFn    func() *automock.SystemAuthService
-		SysAuthConvFn   func() *automock.SystemAuthConverter
-		ExpectedOutput  []*graphql.RuntimeSystemAuth
-		ExpectedError   error
+		Name             string
+		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		SysAuthSvcFn     func() *automock.SystemAuthService
+		SysAuthConvFn    func() *automock.SystemAuthConverter
+		SelfRegManagerFn func() *automock.SelfRegisterManager
+		ExpectedOutput   []*graphql.RuntimeSystemAuth
+		ExpectedError    error
 	}{
 		{
 			Name:            "Success",
@@ -1919,8 +2017,9 @@ func TestResolver_Auths(t *testing.T) {
 				sysAuthConv.On("ToGraphQL", &modelSysAuths[2]).Return(gqlSysAuths[2], nil).Once()
 				return sysAuthConv
 			},
-			ExpectedOutput: gqlSysAuths,
-			ExpectedError:  nil,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			ExpectedOutput:   gqlSysAuths,
+			ExpectedError:    nil,
 		},
 		{
 			Name:            "Error when listing for object",
@@ -1934,8 +2033,9 @@ func TestResolver_Auths(t *testing.T) {
 				sysAuthConv := &automock.SystemAuthConverter{}
 				return sysAuthConv
 			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			ExpectedOutput:   nil,
+			ExpectedError:    testErr,
 		},
 		{
 			Name:            "Error when beginning transaction",
@@ -1948,8 +2048,9 @@ func TestResolver_Auths(t *testing.T) {
 				sysAuthConv := &automock.SystemAuthConverter{}
 				return sysAuthConv
 			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			ExpectedOutput:   nil,
+			ExpectedError:    testErr,
 		},
 		{
 			Name:            "Error when committing transaction",
@@ -1963,8 +2064,9 @@ func TestResolver_Auths(t *testing.T) {
 				sysAuthConv := &automock.SystemAuthConverter{}
 				return sysAuthConv
 			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			ExpectedOutput:   nil,
+			ExpectedError:    testErr,
 		},
 	}
 
@@ -1973,8 +2075,9 @@ func TestResolver_Auths(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			sysAuthSvc := testCase.SysAuthSvcFn()
 			sysAuthConv := testCase.SysAuthConvFn()
+			selfRegManager := testCase.SelfRegManagerFn()
 
-			resolver := runtime.NewResolver(transact, nil, nil, sysAuthSvc, nil, nil, sysAuthConv, nil, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, sysAuthSvc, nil, nil, sysAuthConv, nil, nil, selfRegManager)
 
 			// WHEN
 			result, err := resolver.Auths(ctx, parentRuntime)
@@ -1993,7 +2096,7 @@ func TestResolver_Auths(t *testing.T) {
 	}
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.Auths(context.TODO(), nil)
@@ -2023,11 +2126,12 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 	gqlRuntimeEventingCfg := fixGQLRuntimeEventingConfiguration(defaultEveningURL)
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		EventingSvcFn   func() *automock.EventingService
-		ExpectedOutput  *graphql.RuntimeEventingConfiguration
-		ExpectedError   error
+		Name             string
+		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		EventingSvcFn    func() *automock.EventingService
+		SelfRegManagerFn func() *automock.SelfRegisterManager
+		ExpectedOutput   *graphql.RuntimeEventingConfiguration
+		ExpectedError    error
 	}{
 		{
 			Name:            "Success",
@@ -2038,8 +2142,9 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 				return eventingSvc
 			},
-			ExpectedOutput: gqlRuntimeEventingCfg,
-			ExpectedError:  nil,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			ExpectedOutput:   gqlRuntimeEventingCfg,
+			ExpectedError:    nil,
 		}, {
 			Name:            "Error when getting the configuration for runtime failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
@@ -2049,8 +2154,9 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 				return eventingSvc
 			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			ExpectedOutput:   nil,
+			ExpectedError:    testErr,
 		}, {
 			Name:            "Error when beginning transaction",
 			TransactionerFn: txGen.ThatFailsOnBegin,
@@ -2058,8 +2164,9 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 				eventingSvc := &automock.EventingService{}
 				return eventingSvc
 			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			ExpectedOutput:   nil,
+			ExpectedError:    testErr,
 		}, {
 			Name:            "Error when committing transaction",
 			TransactionerFn: txGen.ThatFailsOnCommit,
@@ -2069,8 +2176,9 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 				return eventingSvc
 			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			ExpectedOutput:   nil,
+			ExpectedError:    testErr,
 		},
 	}
 
@@ -2078,8 +2186,9 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			eventingSvc := testCase.EventingSvcFn()
+			selfRegManager := testCase.SelfRegManagerFn()
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, eventingSvc, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, eventingSvc, nil, selfRegManager)
 
 			// WHEN
 			result, err := resolver.EventingConfiguration(ctx, gqlRuntime)
@@ -2099,7 +2208,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(ctx, &graphql.Runtime{ID: "abc"})
@@ -2112,7 +2221,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(context.TODO(), nil)

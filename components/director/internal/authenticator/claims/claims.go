@@ -19,26 +19,30 @@ import (
 
 // Claims missing godoc
 type Claims struct {
-	Tenant       map[string]string     `json:"tenant"`
-	Scopes       string                `json:"scopes"`
-	ConsumerID   string                `json:"consumerID"`
-	ConsumerType consumer.ConsumerType `json:"consumerType"`
-	OnBehalfOf   string                `json:"onBehalfOf"`
-	Flow         oathkeeper.AuthFlow   `json:"flow"`
-	ZID          string                `json:"zid"`
+	Tenant        map[string]string     `json:"tenant"`
+	Scopes        string                `json:"scopes"`
+	ConsumerID    string                `json:"consumerID"`
+	ConsumerType  consumer.ConsumerType `json:"consumerType"`
+	OnBehalfOf    string                `json:"onBehalfOf"`
+	Region        string                `json:"region"`
+	TokenClientID string                `json:"tokenClientID"`
+	Flow          oathkeeper.AuthFlow   `json:"flow"`
+	ZID           string                `json:"zid"`
 	jwt.StandardClaims
 }
 
 // UnmarshalJSON implements Unmarshaler interface. The method unmarshal the data from b into Claims structure.
 func (c *Claims) UnmarshalJSON(b []byte) error {
 	tokenClaims := struct {
-		TenantString string                `json:"tenant"`
-		Scopes       string                `json:"scopes"`
-		ConsumerID   string                `json:"consumerID"`
-		ConsumerType consumer.ConsumerType `json:"consumerType"`
-		OnBehalfOf   string                `json:"onBehalfOf"`
-		Flow         oathkeeper.AuthFlow   `json:"flow"`
-		ZID          string                `json:"zid"`
+		TenantString  string                `json:"tenant"`
+		Scopes        string                `json:"scopes"`
+		ConsumerID    string                `json:"consumerID"`
+		ConsumerType  consumer.ConsumerType `json:"consumerType"`
+		OnBehalfOf    string                `json:"onBehalfOf"`
+		Region        string                `json:"region"`
+		TokenClientID string                `json:"tokenClientID"`
+		Flow          oathkeeper.AuthFlow   `json:"flow"`
+		ZID           string                `json:"zid"`
 		jwt.StandardClaims
 	}{}
 
@@ -51,6 +55,8 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 	c.ConsumerID = tokenClaims.ConsumerID
 	c.ConsumerType = tokenClaims.ConsumerType
 	c.OnBehalfOf = tokenClaims.OnBehalfOf
+	c.Region = tokenClaims.Region
+	c.TokenClientID = tokenClaims.TokenClientID
 	c.Flow = tokenClaims.Flow
 	c.ZID = tokenClaims.ZID
 	c.StandardClaims = tokenClaims.StandardClaims
@@ -67,8 +73,7 @@ func (c *Claims) ContextWithClaims(ctx context.Context) context.Context {
 	ctxWithTenants := tenant.SaveToContext(ctx, c.Tenant[tenantmapping.ConsumerTenantKey], c.Tenant[tenantmapping.ExternalTenantKey])
 	scopesArray := strings.Split(c.Scopes, " ")
 	ctxWithScopes := scope.SaveToContext(ctxWithTenants, scopesArray)
-	apiConsumer := consumer.Consumer{}
-	apiConsumer = consumer.Consumer{ConsumerID: c.ConsumerID, ConsumerType: c.ConsumerType, Flow: c.Flow, OnBehalfOf: c.OnBehalfOf}
+	apiConsumer := consumer.Consumer{ConsumerID: c.ConsumerID, ConsumerType: c.ConsumerType, Flow: c.Flow, OnBehalfOf: c.OnBehalfOf}
 	ctxWithConsumerInfo := consumer.SaveToContext(ctxWithScopes, apiConsumer)
 	return ctxWithConsumerInfo
 }
