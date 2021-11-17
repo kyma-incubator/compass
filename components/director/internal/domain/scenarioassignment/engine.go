@@ -3,6 +3,7 @@ package scenarioassignment
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -18,8 +19,6 @@ import (
 // LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
-	GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error)
-	GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]string, error)
 	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 }
@@ -118,28 +117,6 @@ func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context,
 	return scenarios, nil
 }
 
-// MergeScenarios missing godoc
-func (e engine) MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd []interface{}) []interface{} {
-	scenariosSet := map[interface{}]struct{}{}
-	for _, scenario := range baseScenarios {
-		scenariosSet[scenario] = struct{}{}
-	}
-
-	for _, scenario := range scenariosToDelete {
-		delete(scenariosSet, scenario)
-	}
-
-	for _, scenario := range scenariosToAdd {
-		scenariosSet[scenario] = struct{}{}
-	}
-
-	scenarios := make([]interface{}, 0)
-	for k := range scenariosSet {
-		scenarios = append(scenarios, k)
-	}
-	return scenarios
-}
-
 func (e engine) getScenarioLabelsForRuntimes(ctx context.Context, in model.AutomaticScenarioAssignment) ([]model.Label, []string, error) {
 	// Currently. it is not possible to have non-owner access of a runtime in a tenant.
 	// It is enough to list all the runtimes in the target tenant.
@@ -178,9 +155,9 @@ func (e engine) getScenariosFromMatchingASAs(ctx context.Context, runtimeID stri
 		return nil, errors.Wrapf(err, "while listinng Automatic Scenario Assignments in tenant: %s", tenantID)
 	}
 
-	matchingASAs := make([]*model.AutomaticScenarioAssignment,0, len(scenarioAssignments))
+	matchingASAs := make([]*model.AutomaticScenarioAssignment, 0, len(scenarioAssignments))
 	for _, scenarioAssignment := range scenarioAssignments {
-		matches, err := e.isASAMatchingRuntime(ctx, scenarioAssignment, runtimeID);
+		matches, err := e.isASAMatchingRuntime(ctx, scenarioAssignment, runtimeID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while checkig if asa matches runtime with ID %s", runtimeID)
 		}
@@ -203,7 +180,6 @@ func (e engine) getScenariosFromMatchingASAs(ctx context.Context, runtimeID stri
 func (e engine) isASAMatchingRuntime(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error) {
 	return e.runtimeRepo.Exists(ctx, asa.TargetTenantID, runtimeID)
 }
-
 
 func (e *engine) appendMissingScenarioLabelsForRuntimes(tenantID string, runtimesIDs []string, labels []model.Label) []model.Label {
 	rtmWithScenario := make(map[string]struct{})
@@ -298,17 +274,4 @@ func (e *engine) removeScenario(scenarios []string, toRemove string) []string {
 		}
 	}
 	return newScenarios
-}
-
-func (e engine) convertMapStringInterfaceToMapStringString(inputLabels map[string]interface{}) map[string]string {
-	convertedLabels := make(map[string]string)
-
-	for k, v := range inputLabels {
-		val, ok := v.(string)
-		if ok {
-			convertedLabels[k] = val
-		}
-	}
-
-	return convertedLabels
 }

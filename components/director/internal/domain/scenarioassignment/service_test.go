@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -187,19 +186,18 @@ func TestService_GetByScenarioName(t *testing.T) {
 	})
 }
 
-func TestService_ListForSelector(t *testing.T) {
+func TestService_ListForTargetTenant(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// GIVEN
-		selector := fixLabelSelector()
 		assignment := fixModel()
 		result := []*model.AutomaticScenarioAssignment{&assignment}
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("ListForSelector", mock.Anything, selector, tenantID).Return(result, nil).Once()
+		mockRepo.On("ListForTargetTenant", mock.Anything, tenantID, targetTenantID).Return(result, nil).Once()
 		sut := scenarioassignment.NewService(mockRepo, nil, nil)
 
 		// WHEN
-		actual, err := sut.ListForSelector(fixCtxWithTenant(), selector)
+		actual, err := sut.ListForTargetTenant(fixCtxWithTenant(), targetTenantID)
 
 		// THEN
 		require.NoError(t, err)
@@ -208,14 +206,13 @@ func TestService_ListForSelector(t *testing.T) {
 
 	t.Run("returns error on error from repository", func(t *testing.T) {
 		// GIVEN
-		selector := fixLabelSelector()
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("ListForSelector", mock.Anything, selector, tenantID).Return(nil, fixError()).Once()
+		mockRepo.On("ListForTargetTenant", mock.Anything, tenantID, targetTenantID).Return(nil, fixError()).Once()
 		sut := scenarioassignment.NewService(mockRepo, nil, nil)
 
 		// WHEN
-		actual, err := sut.ListForSelector(fixCtxWithTenant(), selector)
+		actual, err := sut.ListForTargetTenant(fixCtxWithTenant(), targetTenantID)
 
 		// THEN
 		require.EqualError(t, err, "while getting the assignments: some error")
@@ -224,7 +221,7 @@ func TestService_ListForSelector(t *testing.T) {
 
 	t.Run("returns error when no tenant in context", func(t *testing.T) {
 		sut := scenarioassignment.NewService(nil, nil, nil)
-		_, err := sut.ListForSelector(context.TODO(), fixLabelSelector())
+		_, err := sut.ListForTargetTenant(context.TODO(), targetTenantID)
 
 		require.EqualError(t, err, "cannot read tenant from context")
 	})
@@ -329,40 +326,33 @@ func TestService_List(t *testing.T) {
 	})
 }
 
-func TestService_DeleteManyForSameSelector(t *testing.T) {
+func TestService_DeleteManyForSameTargetTenant(t *testing.T) {
 	ctx := fixCtxWithTenant()
-	selector := fixLabelSelector()
 
 	scenarioNameA := "scenario-A"
 	scenarioNameB := "scenario-B"
 	models := []*model.AutomaticScenarioAssignment{
 		{
-			ScenarioName: scenarioNameA,
-			Selector: model.LabelSelector{
-				Key:   "key",
-				Value: "value",
-			},
+			ScenarioName:   scenarioNameA,
+			TargetTenantID: targetTenantID,
 		},
 		{
-			ScenarioName: scenarioNameB,
-			Selector: model.LabelSelector{
-				Key:   "key",
-				Value: "value",
-			},
+			ScenarioName:   scenarioNameB,
+			TargetTenantID: targetTenantID,
 		},
 	}
 
 	t.Run("happy path", func(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
-		mockRepo.On("DeleteForSelector", ctx, tenantID, selector).Return(nil).Once()
+		mockRepo.On("DeleteForTargetTenant", ctx, tenantID, targetTenantID).Return(nil).Once()
 		mockEngine := &automock.AssignmentEngine{}
 		mockEngine.On("RemoveAssignedScenarios", ctx, models).Return(nil).Once()
 		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngine)
 
 		sut := scenarioassignment.NewService(mockRepo, nil, mockEngine)
 		// WHEN
-		err := sut.DeleteManyForSameSelector(ctx, models)
+		err := sut.DeleteManyForSameTargetTenant(ctx, models)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -375,7 +365,7 @@ func TestService_DeleteManyForSameSelector(t *testing.T) {
 
 		sut := scenarioassignment.NewService(nil, nil, mockEngine)
 		// WHEN
-		err := sut.DeleteManyForSameSelector(ctx, models)
+		err := sut.DeleteManyForSameTargetTenant(ctx, models)
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), fixError().Error())
@@ -388,7 +378,7 @@ func TestService_DeleteManyForSameSelector(t *testing.T) {
 
 		sut := scenarioassignment.NewService(nil, nil, mockEngine)
 		// WHEN
-		err := sut.DeleteManyForSameSelector(ctx, []*model.AutomaticScenarioAssignment{})
+		err := sut.DeleteManyForSameTargetTenant(ctx, []*model.AutomaticScenarioAssignment{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "expected at least one item in Assignments slice")
@@ -398,18 +388,12 @@ func TestService_DeleteManyForSameSelector(t *testing.T) {
 		// GIVEN
 		modelsWithDifferentSelectors := []*model.AutomaticScenarioAssignment{
 			{
-				ScenarioName: scenarioNameA,
-				Selector: model.LabelSelector{
-					Key:   "key",
-					Value: "value",
-				},
+				ScenarioName:   scenarioNameA,
+				TargetTenantID: targetTenantID,
 			},
 			{
-				ScenarioName: scenarioNameB,
-				Selector: model.LabelSelector{
-					Key:   "key",
-					Value: "bar",
-				},
+				ScenarioName:   scenarioNameB,
+				TargetTenantID: "differentTargetTenantID",
 			},
 		}
 
@@ -418,10 +402,10 @@ func TestService_DeleteManyForSameSelector(t *testing.T) {
 
 		sut := scenarioassignment.NewService(nil, nil, mockEngine)
 		// WHEN
-		err := sut.DeleteManyForSameSelector(ctx, modelsWithDifferentSelectors)
+		err := sut.DeleteManyForSameTargetTenant(ctx, modelsWithDifferentSelectors)
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "all input items have to have the same selector")
+		assert.Contains(t, err.Error(), "all input items have to have the same target tenant")
 	})
 
 	t.Run("returns error on error from repository", func(t *testing.T) {
@@ -430,17 +414,17 @@ func TestService_DeleteManyForSameSelector(t *testing.T) {
 		mockEngine.On("RemoveAssignedScenarios", ctx, models).Return(nil).Once()
 		defer mock.AssertExpectationsForObjects(t, mockRepo, mockEngine)
 
-		mockRepo.On("DeleteForSelector", ctx, tenantID, selector).Return(fixError()).Once()
+		mockRepo.On("DeleteForTargetTenant", ctx, tenantID, targetTenantID).Return(fixError()).Once()
 		sut := scenarioassignment.NewService(mockRepo, nil, mockEngine)
 		// WHEN
-		err := sut.DeleteManyForSameSelector(ctx, models)
+		err := sut.DeleteManyForSameTargetTenant(ctx, models)
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while deleting the Assignments: %s", errMsg))
 	})
 
 	t.Run("returns error when empty tenant", func(t *testing.T) {
 		sut := scenarioassignment.NewService(nil, nil, nil)
-		err := sut.DeleteManyForSameSelector(context.TODO(), models)
+		err := sut.DeleteManyForSameTargetTenant(context.TODO(), models)
 		require.EqualError(t, err, "cannot read tenant from context")
 	})
 }

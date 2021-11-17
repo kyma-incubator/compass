@@ -62,7 +62,6 @@ type ScenariosService interface {
 //go:generate mockery --name=ScenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore
 type ScenarioAssignmentEngine interface {
 	MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error)
-	MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd []interface{}) []interface{}
 }
 
 // UIDService missing godoc

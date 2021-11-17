@@ -49,8 +49,8 @@ func (_m *Service) Delete(ctx context.Context, in model.AutomaticScenarioAssignm
 	return r0
 }
 
-// DeleteManyForSameSelector provides a mock function with given fields: ctx, in
-func (_m *Service) DeleteManyForSameSelector(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+// DeleteManyForSameTargetTenant provides a mock function with given fields: ctx, in
+func (_m *Service) DeleteManyForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	ret := _m.Called(ctx, in)
 
 	var r0 error
@@ -107,13 +107,13 @@ func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*mode
 	return r0, r1
 }
 
-// ListForSelector provides a mock function with given fields: ctx, in
-func (_m *Service) ListForSelector(ctx context.Context, in model.LabelSelector) ([]*model.AutomaticScenarioAssignment, error) {
-	ret := _m.Called(ctx, in)
+// ListForTargetTenant provides a mock function with given fields: ctx, targetTenantInternalID
+func (_m *Service) ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error) {
+	ret := _m.Called(ctx, targetTenantInternalID)
 
 	var r0 []*model.AutomaticScenarioAssignment
-	if rf, ok := ret.Get(0).(func(context.Context, model.LabelSelector) []*model.AutomaticScenarioAssignment); ok {
-		r0 = rf(ctx, in)
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.AutomaticScenarioAssignment); ok {
+		r0 = rf(ctx, targetTenantInternalID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.AutomaticScenarioAssignment)
@@ -121,8 +121,8 @@ func (_m *Service) ListForSelector(ctx context.Context, in model.LabelSelector) 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.LabelSelector) error); ok {
-		r1 = rf(ctx, in)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, targetTenantInternalID)
 	} else {
 		r1 = ret.Error(1)
 	}

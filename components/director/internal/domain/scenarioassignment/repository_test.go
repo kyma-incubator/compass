@@ -30,8 +30,8 @@ func TestRepository_Create(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.automatic_scenario_assignments ( scenario, tenant_id, selector_key, selector_value ) VALUES ( ?, ?, ?, ? )`)).
-			WithArgs(scenarioName, tenantID, "key", "value").
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.automatic_scenario_assignments ( scenario, tenant_id, target_tenant_id ) VALUES ( ?, ?, ? )`)).
+			WithArgs(scenarioName, tenantID, targetTenantID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -69,19 +69,18 @@ func TestRepository_Create(t *testing.T) {
 
 func TestRepository_GetByScenarioName(t *testing.T) {
 	ent := scenarioassignment.Entity{
-		Scenario:      scenarioName,
-		TenantID:      tenantID,
-		SelectorKey:   "key",
-		SelectorValue: "value",
+		Scenario:       scenarioName,
+		TenantID:       tenantID,
+		TargetTenantID: targetTenantID,
 	}
 
-	selectQuery := fmt.Sprintf(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE %s AND scenario = \$2`, fixTenantIsolationSubquery())
+	selectQuery := `SELECT scenario, tenant_id, target_tenant_id FROM public.automatic_scenario_assignments WHERE tenant_id = \$1 AND scenario = \$2`
 
 	t.Run("Success", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		rows := sqlmock.NewRows(fixAutomaticScenarioAssignmentColumns()).
-			AddRow(fixAutomaticScenarioAssignmentRow(scenarioName, tenantID)...)
+			AddRow(fixAutomaticScenarioAssignmentRow(scenarioName, tenantID, targetTenantID)...)
 
 		dbMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, scenarioName).
@@ -118,7 +117,7 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 	})
 }
 
-func TestRepository_ListForSelector(t *testing.T) {
+func TestRepository_ListAll(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		scenarioEntities := []scenarioassignment.Entity{fixEntityWithScenarioName(scenarioName),
@@ -134,18 +133,18 @@ func TestRepository_ListForSelector(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		rowsToReturn := fixSQLRows([]sqlRow{
-			{scenario: scenarioName, tenantID: tenantID, selectorKey: "key", selectorValue: "value"},
-			{scenario: "scenario-B", tenantID: tenantID, selectorKey: "key", selectorValue: "value"},
+			{scenario: scenarioName, tenantID: tenantID, targetTenantID: targetTenantID},
+			{scenario: "scenario-B", tenantID: tenantID, targetTenantID: targetTenantID},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(`SELECT scenario, tenant_id, selector_key, selector_value FROM public.automatic_scenario_assignments WHERE %s AND selector_key = $2 AND selector_value = $3`, fixUnescapedTenantIsolationSubquery()))).
-			WithArgs(tenantID, "key", "value").
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT scenario, tenant_id, target_tenant_id FROM public.automatic_scenario_assignments WHERE tenant_id = $1`)).
+			WithArgs(tenantID).
 			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := scenarioassignment.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := repo.ListForSelector(ctx, fixLabelSelector(), tenantID)
+		result, err := repo.ListAll(ctx, tenantID)
 
 		// THEN
 		assert.NoError(t, err)
@@ -165,7 +164,62 @@ func TestRepository_ListForSelector(t *testing.T) {
 		repo := scenarioassignment.NewRepository(nil)
 
 		// WHEN
-		result, err := repo.ListForSelector(ctx, fixLabelSelector(), tenantID)
+		result, err := repo.ListAll(ctx, tenantID)
+
+		// THEN
+		require.EqualError(t, err, "while getting automatic scenario assignments from db: Internal Server Error: Unexpected error while executing SQL query")
+		assert.Nil(t, result)
+	})
+}
+
+func TestRepository_ListForTargetTenant(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		scenarioEntities := []scenarioassignment.Entity{fixEntityWithScenarioName(scenarioName),
+			fixEntityWithScenarioName("scenario-B")}
+		scenarioModels := []model.AutomaticScenarioAssignment{fixModelWithScenarioName(scenarioName),
+			fixModelWithScenarioName("scenario-B")}
+
+		mockConverter := &automock.EntityConverter{}
+		mockConverter.On("FromEntity", scenarioEntities[0]).Return(scenarioModels[0]).Once()
+		mockConverter.On("FromEntity", scenarioEntities[1]).Return(scenarioModels[1]).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		rowsToReturn := fixSQLRows([]sqlRow{
+			{scenario: scenarioName, tenantID: tenantID, targetTenantID: targetTenantID},
+			{scenario: "scenario-B", tenantID: tenantID, targetTenantID: targetTenantID},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT scenario, tenant_id, target_tenant_id FROM public.automatic_scenario_assignments WHERE tenant_id = $1 AND target_tenant_id = $2`)).
+			WithArgs(tenantID, targetTenantID).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := scenarioassignment.NewRepository(mockConverter)
+
+		// WHEN
+		result, err := repo.ListForTargetTenant(ctx, tenantID, targetTenantID)
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Equal(t, scenarioModels[0], *result[0])
+		assert.Equal(t, scenarioModels[1], *result[1])
+	})
+
+	t.Run("DB error", func(t *testing.T) {
+		// GIVEN
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectQuery("SELECT .*").WillReturnError(fixError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := scenarioassignment.NewRepository(nil)
+
+		// WHEN
+		result, err := repo.ListForTargetTenant(ctx, tenantID, targetTenantID)
 
 		// THEN
 		require.EqualError(t, err, "while getting automatic scenario assignments from db: Internal Server Error: Unexpected error while executing SQL query")
@@ -192,18 +246,18 @@ func TestRepository_List(t *testing.T) {
 	mod2 := fixModelWithScenarioName(scenarioName2)
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.automatic_scenario_assignments
-		WHERE %s
-		ORDER BY scenario LIMIT %d OFFSET %d`, fixTenantIsolationSubquery(), ExpectedLimit, ExpectedOffset)
+		WHERE tenant_id = \$1
+		ORDER BY scenario LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
 	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM public.automatic_scenario_assignments
-		WHERE %s`, fixUnescapedTenantIsolationSubquery())
+		WHERE tenant_id = $1`)
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("Success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		rows := sqlmock.NewRows(fixAutomaticScenarioAssignmentColumns()).
-			AddRow(fixAutomaticScenarioAssignmentRow(scenarioName1, tenantID)...).
-			AddRow(fixAutomaticScenarioAssignmentRow(scenarioName2, tenantID)...)
+			AddRow(fixAutomaticScenarioAssignmentRow(scenarioName1, tenantID, targetTenantID)...).
+			AddRow(fixAutomaticScenarioAssignmentRow(scenarioName2, tenantID, targetTenantID)...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID).
@@ -254,8 +308,8 @@ func TestRepository_List(t *testing.T) {
 	})
 }
 
-func TestRepository_DeleteForSelector(t *testing.T) {
-	deleteQuery := regexp.QuoteMeta(fmt.Sprintf(`DELETE FROM public.automatic_scenario_assignments WHERE %s AND selector_key = $2 AND selector_value = $3`, fixUnescapedTenantIsolationSubquery()))
+func TestRepository_DeleteForTargetTenant(t *testing.T) {
+	deleteQuery := regexp.QuoteMeta(`DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = $1 AND target_tenant_id = $2`)
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
@@ -263,14 +317,14 @@ func TestRepository_DeleteForSelector(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectExec(deleteQuery).
-			WithArgs(tenantID, "key", "value").
+			WithArgs(tenantID, targetTenantID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := scenarioassignment.NewRepository(nil)
 
 		// WHEN
-		err := repo.DeleteForSelector(ctx, tenantID, fixLabelSelector())
+		err := repo.DeleteForTargetTenant(ctx, tenantID, targetTenantID)
 
 		// THEN
 		require.NoError(t, err)
@@ -282,14 +336,14 @@ func TestRepository_DeleteForSelector(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectExec(deleteQuery).
-			WithArgs(tenantID, "key", "value").
+			WithArgs(tenantID, targetTenantID).
 			WillReturnError(fixError())
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := scenarioassignment.NewRepository(nil)
 
 		// WHEN
-		err := repo.DeleteForSelector(ctx, tenantID, fixLabelSelector())
+		err := repo.DeleteForTargetTenant(ctx, tenantID, targetTenantID)
 
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
@@ -302,7 +356,7 @@ func TestRepository_DeleteForScenarioName(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.automatic_scenario_assignments WHERE %s AND scenario = \$2$`, fixTenantIsolationSubquery())).
+		dbMock.ExpectExec(`^DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = \$1 AND scenario = \$2$`).
 			WithArgs(tenantID, scenarioName).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -320,7 +374,7 @@ func TestRepository_DeleteForScenarioName(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(fmt.Sprintf(`^DELETE FROM public.automatic_scenario_assignments WHERE %s AND scenario = \$2$`, fixTenantIsolationSubquery())).
+		dbMock.ExpectExec(`^DELETE FROM public.automatic_scenario_assignments WHERE tenant_id = \$1 AND scenario = \$2$`).
 			WithArgs(tenantID, scenarioName).
 			WillReturnError(fixError())
 

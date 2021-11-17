@@ -1,9 +1,10 @@
 package graphql_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestLabelSelectorInput_Validate_Key(t *testing.T) {

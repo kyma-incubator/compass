@@ -278,23 +278,6 @@ func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string)
 	return r.deleter.DeleteMany(ctx, resource.Label, tenant, repo.Conditions{repo.NewEqualCondition("key", key)})
 }
 
-// GetRuntimesIDsByStringLabel missing godoc TODO: <storage-redesign> DELETE this
-func (r *repository) GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, key, value string) ([]string, error) {
-	var entities Collection
-	if err := r.lister.List(ctx, resource.RuntimeLabel, tenantID, &entities,
-		repo.NewEqualCondition("key", key),
-		repo.NewJSONArrMatchAnyStringCondition("value", value),
-		repo.NewNotNullCondition("runtime_id")); err != nil {
-		return nil, err
-	}
-
-	matchedRtmsIDs := make([]string, 0, len(entities))
-	for _, entity := range entities {
-		matchedRtmsIDs = append(matchedRtmsIDs, entity.RuntimeID.String)
-	}
-	return matchedRtmsIDs, nil
-}
-
 // GetScenarioLabelsForRuntimes missing godoc
 func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error) {
 	if len(runtimesIDs) == 0 {
@@ -310,33 +293,6 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	err := r.lister.List(ctx, resource.RuntimeLabel, tenantID, &labels, conditions...)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
-	}
-
-	labelModels := make([]model.Label, 0, len(labels))
-	for _, label := range labels {
-		labelModel, err := r.conv.FromEntity(&label)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting label entity to model")
-		}
-		labelModels = append(labelModels, *labelModel)
-	}
-	return labelModels, nil
-}
-
-// GetRuntimeScenariosWhereLabelsMatchSelector missing godoc TODO: <storage-redesign> DELETE this
-func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {
-	subquery, args, err := r.queryBuilder.BuildQuery(resource.RuntimeLabel, tenantID, false,
-		repo.NewEqualCondition("key", selectorKey),
-		repo.NewJSONArrMatchAnyStringCondition("value", selectorValue),
-		repo.NewNotNullCondition("runtime_id"))
-
-	if err != nil {
-		return nil, errors.Wrap(err, "while building subquery")
-	}
-
-	var labels Collection
-	if err := r.lister.List(ctx, resource.RuntimeLabel, tenantID, &labels, repo.NewEqualCondition("key", "scenarios"), repo.NewInConditionForSubQuery("runtime_id", subquery, args)); err != nil {
-		return nil, err
 	}
 
 	labelModels := make([]model.Label, 0, len(labels))

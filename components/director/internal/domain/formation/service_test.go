@@ -384,12 +384,9 @@ func TestServiceAssignFormation(t *testing.T) {
 	}
 
 	asa := model.AutomaticScenarioAssignment{
-		ScenarioName: testFormation,
-		Tenant:       tnt,
-		Selector: model.LabelSelector{
-			Key:   "global_subaccount_id",
-			Value: objectID,
-		},
+		ScenarioName:   testFormation,
+		Tenant:         tnt,
+		TargetTenantID: objectID,
 	}
 
 	testCases := []struct {
@@ -704,12 +701,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 	}
 
 	asa := model.AutomaticScenarioAssignment{
-		ScenarioName: testFormation,
-		Tenant:       tnt,
-		Selector: model.LabelSelector{
-			Key:   "global_subaccount_id",
-			Value: objectID,
-		},
+		ScenarioName:   testFormation,
+		Tenant:         tnt,
+		TargetTenantID: objectID,
 	}
 
 	testCases := []struct {

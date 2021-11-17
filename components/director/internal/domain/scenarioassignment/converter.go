@@ -17,7 +17,7 @@ type converter struct{}
 // FromInputGraphQL missing godoc
 func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, targetTenantInternalID string) model.AutomaticScenarioAssignment {
 	return model.AutomaticScenarioAssignment{
-		ScenarioName: in.ScenarioName,
+		ScenarioName:   in.ScenarioName,
 		TargetTenantID: targetTenantInternalID,
 	}
 }
