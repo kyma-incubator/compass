@@ -219,7 +219,7 @@ func TestService_DeleteMany(t *testing.T) {
 			svc := tenant.NewService(tenantMappingRepo, nil)
 
 			// WHEN
-			err := svc.DeleteMany(ctx, []model.BusinessTenantMappingInput{tenantInput})
+			err := svc.DeleteMany(ctx, []string{tenantInput.ExternalTenant})
 
 			// THEN
 			if testCase.ExpectedOutput != nil {

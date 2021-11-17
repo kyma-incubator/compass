@@ -45,3 +45,19 @@ func (_m *BusinessTenantMappingConverter) MultipleToGraphQL(in []*model.Business
 
 	return r0
 }
+
+// ToGraphQL provides a mock function with given fields: in
+func (_m *BusinessTenantMappingConverter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
+	ret := _m.Called(in)
+
+	var r0 *graphql.Tenant
+	if rf, ok := ret.Get(0).(func(*model.BusinessTenantMapping) *graphql.Tenant); ok {
+		r0 = rf(in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*graphql.Tenant)
+		}
+	}
+
+	return r0
+}
