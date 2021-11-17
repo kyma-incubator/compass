@@ -1,9 +1,10 @@
 package cert
 
 import (
-	"github.com/google/uuid"
 	"regexp"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 // GetOrganization returns the O part of the subject
