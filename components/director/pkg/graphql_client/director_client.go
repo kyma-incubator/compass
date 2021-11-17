@@ -93,7 +93,7 @@ func (d *Director) UpdateLabelDefinition(ctx context.Context, lblDef graphql.Lab
 }
 
 // SetRuntimeTenant makes graphql query for setting runtime's tenant
-func (d *Director) SetRuntimeTenant(ctx context.Context, runtimeID, tenantID string) error {
+func (d *Director) SetRuntimeTenant(ctx context.Context, runtimeID, tenantID, tenantHeader string) error {
 	res := struct {
 		Runtime graphql.Runtime `json:"result"`
 	}{}
@@ -101,6 +101,7 @@ func (d *Director) SetRuntimeTenant(ctx context.Context, runtimeID, tenantID str
 	gqlFieldProvider := graphqlizer.GqlFieldsProvider{}
 	lblDefQuery := fmt.Sprintf(`mutation { result: setRuntimeTenant(runtimeID:"%s", tenantID:"%s") {%s}}`, runtimeID, tenantID, gqlFieldProvider.ForRuntime())
 	gRequest := gcli.NewRequest(lblDefQuery)
+	gRequest.Header.Set("Tenant", tenantHeader)
 
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql query")

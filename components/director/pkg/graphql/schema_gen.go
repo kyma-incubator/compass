@@ -4897,7 +4897,7 @@ type Mutation {
 	- [update runtime](examples/update-runtime/update-runtime.graphql)
 	"""
 	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
-	setRuntimeTenant(runtimeID: ID!, tenantID: ID!): Runtime! @hasScopes(path: "graphql.mutation.setRuntimeTenant")
+	setRuntimeTenant(runtimeID: ID!, tenantID: String!): Runtime! @hasScopes(path: "graphql.mutation.setRuntimeTenant")
 	"""
 	**Examples**
 	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
@@ -6407,7 +6407,7 @@ func (ec *executionContext) field_Mutation_setRuntimeTenant_args(ctx context.Con
 	args["runtimeID"] = arg0
 	var arg1 string
 	if tmp, ok := rawArgs["tenantID"]; ok {
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}

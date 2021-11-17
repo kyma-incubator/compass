@@ -112,7 +112,7 @@ type DirectorGraphQLClient interface {
 	UpdateTenant(context.Context, string, graphql.BusinessTenantMappingInput) error
 	CreateLabelDefinition(context.Context, graphql.LabelDefinitionInput, string) error
 	UpdateLabelDefinition(context.Context, graphql.LabelDefinitionInput, string) error
-	SetRuntimeTenant(ctx context.Context, runtimeID, tenantID string) error
+	SetRuntimeTenant(ctx context.Context, runtimeID, tenantID, tenantHeader string) error
 }
 
 // LabelDefConverter missing godoc
@@ -495,7 +495,7 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 	for _, mapping := range movedRuntimeMappings {
 		subaccountID := mapping.LabelValue
 		subaccountTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, subaccountID)
-		// TODO upsert global account if not exists
+		// TODO: upsert global account if not exists
 		targetInternalTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, mapping.TargetTenant)
 		if err != nil {
 			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
@@ -540,7 +540,7 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 			return err
 		}
 		if err := s.gqlClient.CreateLabelDefinition(ctx, labelDefGQL, targetInternalTenant.ID); err != nil {
-			// TODO find better way for error handling
+			// TODO: find better way for error handling
 			if strings.Contains(err.Error(), apperrors.NotUniqueMsg) {
 				if err = s.gqlClient.UpdateLabelDefinition(ctx, labelDefGQL, targetInternalTenant.ID); err != nil {
 					return errors.Wrap(err, "while updating label definition")
@@ -549,7 +549,7 @@ func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntime
 			return errors.Wrap(err, "while creating label definition")
 		}
 
-		err = s.gqlClient.SetRuntimeTenant(ctx, runtime.ID, targetInternalTenant.ID)
+		err = s.gqlClient.SetRuntimeTenant(ctx, runtime.ID, targetInternalTenant.ID, targetInternalTenant.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while updating tenant ID of runtime with label key-value match %s-%s",
 				s.movedRuntimeLabelKey, mapping.LabelValue)

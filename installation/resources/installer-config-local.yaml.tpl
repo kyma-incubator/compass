@@ -129,6 +129,7 @@ data:
   global.tenantFetchers.subaccount-fetcher.fieldMapping.tenantEventsField: "events"
   global.tenantFetchers.subaccount-fetcher.fieldMapping.detailsField: "eventData"
   global.tenantFetchers.subaccount-fetcher.fieldMapping.entityTypeField: "type"
+  global.tenantFetchers.subaccount-fetcher.fieldMapping.movedRuntimeLabelKey: "moved_runtime"
   global.tenantFetchers.subaccount-fetcher.queryMapping.pageNumField: "page"
   global.tenantFetchers.subaccount-fetcher.queryMapping.pageSizeField: "resultsPerPage"
   global.tenantFetchers.subaccount-fetcher.queryMapping.timestampField: "ts"
