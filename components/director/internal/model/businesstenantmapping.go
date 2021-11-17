@@ -26,6 +26,7 @@ func (t BusinessTenantMapping) WithStatus(status tenant.Status) BusinessTenantMa
 	return t
 }
 
+// ToInput converts BusinessTenantMapping to BusinessTenantMappingInput
 func (t BusinessTenantMapping) ToInput() BusinessTenantMappingInput {
 	return BusinessTenantMappingInput{
 		Name:           t.Name,
