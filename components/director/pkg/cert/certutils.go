@@ -1,9 +1,9 @@
 package cert
 
 import (
-	"regexp"
-
 	"github.com/google/uuid"
+	"regexp"
+	"strings"
 )
 
 // GetOrganization returns the O part of the subject
@@ -25,6 +25,31 @@ func GetUUIDOrganizationalUnit(subject string) string {
 		}
 	}
 	return ""
+}
+
+// GetUnmatchedOrganizationalUnit returns the OU that is remaining after matching previously expected ones based on a given pattern
+func GetUnmatchedOrganizationalUnit(organizationalUnitPattern string) func(string) string {
+	return func(subject string) string {
+		orgUnitRegex := regexp.MustCompile(organizationalUnitPattern)
+		orgUnits := GetAllOrganizationalUnits(subject)
+
+		unmatchedOrgUnit := ""
+		matchedOrgUnits := 0
+		for _, orgUnit := range orgUnits {
+			if !orgUnitRegex.MatchString(orgUnit) {
+				unmatchedOrgUnit = orgUnit
+			} else {
+				matchedOrgUnits++
+			}
+		}
+
+		expectedOrgUnits := len(strings.Split(organizationalUnitPattern, "|"))
+		if expectedOrgUnits-matchedOrgUnits != 1 { // there should be only 1 unmatched OU
+			return ""
+		}
+
+		return unmatchedOrgUnit
+	}
 }
 
 // GetAllOrganizationalUnits returns all OU parts of the subject
