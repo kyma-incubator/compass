@@ -202,7 +202,7 @@ func TestORDAggregator(t *testing.T) {
 
 		ctx = context.WithValue(ctx, oauth2.HTTPClient, unsecuredHttpClient)
 		httpClient := conf.Client(ctx)
-		httpClient.Timeout = 10 * time.Second
+		httpClient.Timeout = 20 * time.Second
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
