@@ -2,7 +2,6 @@ package cert
 
 import (
 	"regexp"
-	"strings"
 
 	"github.com/google/uuid"
 )
@@ -44,7 +43,7 @@ func GetRemainingOrganizationalUnit(organizationalUnitPattern string) func(strin
 			}
 		}
 
-		expectedOrgUnits := len(strings.Split(organizationalUnitPattern, "|"))
+		expectedOrgUnits := GetPossibleRegexTopLevelMatches(organizationalUnitPattern)
 		singleRemainingOrgUnitExists := len(orgUnits)-expectedOrgUnits == 1 || expectedOrgUnits-matchedOrgUnits == 0
 		if !singleRemainingOrgUnitExists {
 			return ""
@@ -77,6 +76,30 @@ func GetLocality(subject string) string {
 // GetCommonName returns the CN part of the subject
 func GetCommonName(subject string) string {
 	return getRegexMatch("CN=([^,]+)", subject)
+}
+
+func GetPossibleRegexTopLevelMatches(pattern string) int {
+	if pattern == "" {
+		return 0
+	}
+
+	count := 1
+	openedGroups := 0
+	for _, char := range pattern {
+		switch char {
+		case '|':
+			if openedGroups == 0 {
+				count++
+			}
+		case '(':
+			openedGroups++
+		case ')':
+			openedGroups--
+		default:
+			continue
+		}
+	}
+	return count
 }
 
 func getRegexMatch(regex, text string) string {
