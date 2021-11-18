@@ -491,68 +491,16 @@ func getTenantParentType(tenantType string) string {
 
 func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntimeMappings []model.MovedRuntimeByLabelMappingInput) error {
 	for _, mapping := range movedRuntimeMappings {
-		subaccountID := mapping.LabelValue
-		subaccountTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, subaccountID)
+		targetInternalTenant, err := s.moveSubaccount(ctx, mapping)
 		if err != nil {
-			return errors.Wrapf(err, "while getting subaccount internal tenant ID for external tenant ID %s", subaccountID)
+			return errors.Wrap(err, "while moving subaccount")
 		}
 
-		targetInternalTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, mapping.TargetTenant)
-		if err != nil {
-			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
-		}
-		subaccountTenant.Parent = targetInternalTenant.ID
-		subaccountTenantGQL := s.tenantConverter.ToGraphQLInput(subaccountTenant.ToInput())
-		if err := s.gqlClient.UpdateTenant(ctx, subaccountTenant.ID, subaccountTenantGQL); err != nil {
-			return errors.Wrapf(err, "while updating tenant with id %s", subaccountTenant.ID)
-		}
-
-		if err != nil {
-			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", subaccountID)
-		}
-
-		filters := []*labelfilter.LabelFilter{
-			{
-				Key:   s.movedRuntimeLabelKey,
-				Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)),
-			},
-		}
-
-		runtime, err := s.runtimeStorageService.GetByFiltersGlobal(ctx, filters)
-		if err != nil {
+		if err = s.moveRuntime(ctx, mapping, targetInternalTenant); err != nil {
 			if apperrors.IsNotFoundError(err) {
-				log.C(ctx).Debugf("No runtime found for label key %s with value %s", s.movedRuntimeLabelKey, mapping.LabelValue)
 				continue
 			}
-			return errors.Wrapf(err, "while listing runtimes for label key %s", s.movedRuntimeLabelKey)
-		}
-
-		if err := checkForScenarios(ctx, s.labelService, runtime); err != nil {
-			return err
-		}
-
-		labelDef := model.LabelDefinition{
-			Tenant: targetInternalTenant.ID,
-			Key:    s.movedRuntimeLabelKey,
-		}
-
-		labelDefGQL, err := s.labelDefConverter.ToGraphQLInput(labelDef)
-		if err != nil {
-			return err
-		}
-		if err := s.gqlClient.CreateLabelDefinition(ctx, labelDefGQL, targetInternalTenant.ID); err != nil {
-			// graphql client does not expose complete error object, but only error message
-			if strings.Contains(err.Error(), apperrors.NotUniqueMsg) {
-				log.C(ctx).Infof("LabelDef with key %s for tenant %s already exists", s.movedRuntimeLabelKey, targetInternalTenant.ID)
-			} else {
-				return errors.Wrap(err, "while creating label definition")
-			}
-		}
-
-		err = s.gqlClient.SetRuntimeTenant(ctx, runtime.ID, targetInternalTenant.ID, targetInternalTenant.ID)
-		if err != nil {
-			return errors.Wrapf(err, "while updating tenant ID of runtime with label key-value match %s-%s",
-				s.movedRuntimeLabelKey, mapping.LabelValue)
+			return errors.Wrap(err, "while moving runtime")
 		}
 	}
 
@@ -878,4 +826,70 @@ func shouldFullResync(lastFullResyncTimestamp string, fullResyncInterval time.Du
 
 func convertTimeToUnixMilliSecondString(timestamp time.Time) string {
 	return strconv.FormatInt(timestamp.UnixNano()/int64(time.Millisecond), 10)
+}
+
+func (s *SubaccountService) moveSubaccount(ctx context.Context, mapping model.MovedRuntimeByLabelMappingInput) (*model.BusinessTenantMapping, error) {
+	subaccountID := mapping.LabelValue
+	subaccountTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, subaccountID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting subaccount internal tenant ID for external tenant ID %s", subaccountID)
+	}
+
+	targetInternalTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, mapping.TargetTenant)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
+	}
+	subaccountTenant.Parent = targetInternalTenant.ID
+	subaccountTenantGQL := s.tenantConverter.ToGraphQLInput(subaccountTenant.ToInput())
+	if err := s.gqlClient.UpdateTenant(ctx, subaccountTenant.ID, subaccountTenantGQL); err != nil {
+		return nil, errors.Wrapf(err, "while updating tenant with id %s", subaccountTenant.ID)
+	}
+	return targetInternalTenant, nil
+}
+
+func (s *SubaccountService) moveRuntime(ctx context.Context, mapping model.MovedRuntimeByLabelMappingInput, targetInternalTenant *model.BusinessTenantMapping) error {
+	filters := []*labelfilter.LabelFilter{
+		{
+			Key:   s.movedRuntimeLabelKey,
+			Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)),
+		},
+	}
+
+	runtime, err := s.runtimeStorageService.GetByFiltersGlobal(ctx, filters)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			log.C(ctx).Debugf("No runtime found for label key %s with value %s", s.movedRuntimeLabelKey, mapping.LabelValue)
+			return err
+		}
+		return errors.Wrapf(err, "while listing runtimes for label key %s", s.movedRuntimeLabelKey)
+	}
+
+	if err := checkForScenarios(ctx, s.labelService, runtime); err != nil {
+		return err
+	}
+
+	labelDef := model.LabelDefinition{
+		Tenant: targetInternalTenant.ID,
+		Key:    s.movedRuntimeLabelKey,
+	}
+
+	labelDefGQL, err := s.labelDefConverter.ToGraphQLInput(labelDef)
+	if err != nil {
+		return err
+	}
+	if err := s.gqlClient.CreateLabelDefinition(ctx, labelDefGQL, targetInternalTenant.ID); err != nil {
+		// graphql client does not expose complete error object, but only error message
+		if strings.Contains(err.Error(), apperrors.NotUniqueMsg) {
+			log.C(ctx).Infof("LabelDef with key %s for tenant %s already exists", s.movedRuntimeLabelKey, targetInternalTenant.ID)
+		} else {
+			return errors.Wrap(err, "while creating label definition")
+		}
+	}
+
+	err = s.gqlClient.SetRuntimeTenant(ctx, runtime.ID, targetInternalTenant.ID, targetInternalTenant.ID)
+	if err != nil {
+		return errors.Wrapf(err, "while updating tenant ID of runtime with label key-value match %s-%s",
+			s.movedRuntimeLabelKey, mapping.LabelValue)
+	}
+	return nil
 }
