@@ -2,7 +2,6 @@ package oathkeeper
 
 import (
 	"regexp"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
@@ -25,7 +24,7 @@ func ExternalCertIssuerSubjectMatcher(externalSubjectConsts certificates.Externa
 			}
 		}
 
-		expectedOrgUnits := len(strings.Split(externalSubjectConsts.OrganizationalUnitPattern, "|"))
+		expectedOrgUnits := cert.GetPossibleRegexTopLevelMatches(externalSubjectConsts.OrganizationalUnitPattern)
 		return len(orgUnits)-expectedOrgUnits == 1 || expectedOrgUnits-matchedOrgUnits == 0
 	}
 }
