@@ -757,7 +757,7 @@ func integrationSystemClient(t require.TestingT, ctx context.Context, base *http
 
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, base)
 	httpClient := conf.Client(ctx)
-	httpClient.Timeout = 10 * time.Second
+	httpClient.Timeout = 20 * time.Second
 
 	return httpClient
 }
@@ -768,7 +768,7 @@ func extIssuerCertClient(t require.TestingT, subTenantID string) *http.Client {
 	clientKey, certChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subTenantID)
 
 	return &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 20 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				Certificates: []tls.Certificate{
