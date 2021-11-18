@@ -85,7 +85,6 @@ func GetPossibleRegexTopLevelMatches(pattern string) int {
 	if pattern == "" {
 		return 0
 	}
-
 	count := 1
 	openedGroups := 0
 	for _, char := range pattern {
