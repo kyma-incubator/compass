@@ -28,28 +28,29 @@ func GetUUIDOrganizationalUnit(subject string) string {
 	return ""
 }
 
-// GetUnmatchedOrganizationalUnit returns the OU that is remaining after matching previously expected ones based on a given pattern
-func GetUnmatchedOrganizationalUnit(organizationalUnitPattern string) func(string) string {
+// GetRemainingOrganizationalUnit returns the OU that is remaining after matching previously expected ones based on a given pattern
+func GetRemainingOrganizationalUnit(organizationalUnitPattern string) func(string) string {
 	return func(subject string) string {
 		orgUnitRegex := regexp.MustCompile(organizationalUnitPattern)
 		orgUnits := GetAllOrganizationalUnits(subject)
 
-		unmatchedOrgUnit := ""
+		remainingOrgUnit := ""
 		matchedOrgUnits := 0
 		for _, orgUnit := range orgUnits {
 			if !orgUnitRegex.MatchString(orgUnit) {
-				unmatchedOrgUnit = orgUnit
+				remainingOrgUnit = orgUnit
 			} else {
 				matchedOrgUnits++
 			}
 		}
 
 		expectedOrgUnits := len(strings.Split(organizationalUnitPattern, "|"))
-		if expectedOrgUnits-matchedOrgUnits != 1 { // there should be only 1 unmatched OU
+		singleRemainingOrgUnitExists := len(orgUnits)-expectedOrgUnits == 1 || expectedOrgUnits-matchedOrgUnits == 0
+		if !singleRemainingOrgUnitExists {
 			return ""
 		}
 
-		return unmatchedOrgUnit
+		return remainingOrgUnit
 	}
 }
 
