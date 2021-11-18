@@ -7,6 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -64,6 +68,11 @@ type ScenarioAssignmentEngine interface {
 	MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error)
 }
 
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
+type TenantService interface {
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
 // UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
 type UIDService interface {
@@ -78,6 +87,7 @@ type service struct {
 	uidService               UIDService
 	scenariosService         ScenariosService
 	scenarioAssignmentEngine ScenarioAssignmentEngine
+	tenantSvc                TenantService
 
 	protectedLabelPattern string
 }
@@ -89,7 +99,8 @@ func NewService(repo RuntimeRepository,
 	labelUpsertService LabelUpsertService,
 	uidService UIDService,
 	scenarioAssignmentEngine ScenarioAssignmentEngine,
-	protectedLabelPattern string) *service {
+	protectedLabelPattern string,
+	tenantService TenantService) *service {
 	return &service{
 		repo:                     repo,
 		labelRepo:                labelRepo,
@@ -97,6 +108,7 @@ func NewService(repo RuntimeRepository,
 		labelUpsertService:       labelUpsertService,
 		uidService:               uidService,
 		scenarioAssignmentEngine: scenarioAssignmentEngine,
+		tenantSvc:                tenantService,
 		protectedLabelPattern:    protectedLabelPattern,
 	}
 }
@@ -200,10 +212,19 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 
 // Create missing godoc
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
+	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok {
+		tnt, err := s.extractTenantFromSubaccountLabel(ctx, saVal)
+		if err != nil {
+			return "", err
+		}
+		ctx = tenant.SaveToContext(ctx, tnt.ID, tnt.ExternalTenant)
+	}
+
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
+
 	id := s.uidService.Generate()
 	rtm := in.ToRuntime(id, time.Now(), time.Now())
 
@@ -528,6 +549,28 @@ func (s *service) getCurrentLabelsForRuntime(ctx context.Context, tenantID, runt
 	return currentLabels, nil
 }
 
+func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value interface{}) (*model.BusinessTenantMapping, error) {
+	rtmTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	sa, err := convertLabelValue(value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
+	}
+	log.C(ctx).Infof("Runtime registered by tenant %s with %s label with value %s. Will proceed with the subaccount as tenant...", rtmTenant, scenarioassignment.SubaccountIDKey, sa)
+	tnt, err := s.tenantSvc.GetTenantByExternalID(ctx, sa)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting tenant %s", sa)
+	}
+	if tnt.Parent != rtmTenant {
+		log.C(ctx).Errorf("Caller tenant %s is not parent of the subaccount %s in the %s label", rtmTenant, sa, scenarioassignment.SubaccountIDKey)
+		return nil, apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey))
+	}
+	return tnt, nil
+}
+
 func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {
 	result := make(map[string]*model.Label)
 	for labelKey, label := range labels {
@@ -564,24 +607,17 @@ func isProtected(labelKey string, labelKeyPattern string) (bool, error) {
 	return matched, nil
 }
 
-func (s *service) convertMapStringInterfaceToMapStringString(in map[string]interface{}) map[string]string {
-	out := make(map[string]string)
-
-	for k, v := range in {
-		val, ok := v.(string)
-		if ok {
-			out[k] = val
+func convertLabelValue(value interface{}) (string, error) {
+	values, err := label.ValueToStringsSlice(value)
+	if err != nil {
+		result := str.CastOrEmpty(value)
+		if len(result) == 0 {
+			return "", errors.New("cannot cast label value: expected []string or string")
 		}
+		return result, nil
 	}
-
-	return out
-}
-
-func (s *service) convertStringSliceToInterfaceSlice(in []string) []interface{} {
-	out := make([]interface{}, 0)
-	for _, v := range in {
-		out = append(out, v)
+	if len(values) != 1 {
+		return "", errors.New("expected single value for label")
 	}
-
-	return out
+	return values[0], nil
 }

@@ -49,7 +49,7 @@ DECLARE
 BEGIN
     resource_table := TG_ARGV[0];
     EXECUTE format('SELECT COUNT(1) FROM %I WHERE id = %L AND owner = true', TG_TABLE_NAME, OLD.id) INTO count;
-    IF count = 0 THEN
+    IF OLD.owner = true OR count = 0 THEN
         EXECUTE format('DELETE FROM %I WHERE id = %L;', resource_table, OLD.id);
     END IF;
     RETURN NULL;
