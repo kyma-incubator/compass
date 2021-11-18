@@ -1282,7 +1282,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
-
 				subaccountToExpect := model.BusinessTenantMappingInput{
 					Name:           busSubaccount4.Name,
 					ExternalTenant: busSubaccount4.ExternalTenant,
