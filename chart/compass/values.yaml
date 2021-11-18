@@ -89,7 +89,7 @@ global:
       version: "PR-2077"
     operations_controller:
       dir:
-      version: "PR-2063"
+      version: "PR-2110"
     ord_service:
       dir:
       version: "PR-46"
