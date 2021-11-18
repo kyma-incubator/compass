@@ -78,6 +78,9 @@ func GetCommonName(subject string) string {
 	return getRegexMatch("CN=([^,]+)", subject)
 }
 
+// GetPossibleRegexTopLevelMatches returns the number of possible top level matches of a regex pattern.
+// This means that the pattern will be inspected and split only based on the most top level '|' delimiter
+// and inner group '|' delimiters won't be taken into account.
 func GetPossibleRegexTopLevelMatches(pattern string) int {
 	if pattern == "" {
 		return 0
