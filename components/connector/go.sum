@@ -235,6 +235,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20211118093824-1af3
 github.com/kyma-incubator/compass/components/director v0.0.0-20211118093824-1af3f23bbfcc/go.mod h1:s6XA3JWYsLKqIe+zA9eYzSWbbDE6MqwVvWcWjhdEWRs=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211118121939-8befa01340cc h1:gMyqJemVYzy6Rj6L9gSoDmixOwiu33ONB1vyumqFiaQ=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211118121939-8befa01340cc/go.mod h1:s6XA3JWYsLKqIe+zA9eYzSWbbDE6MqwVvWcWjhdEWRs=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211118123436-2be1b1dbf97b h1:m44OJU9zutoXNg6Doq295aMBJeBDl/D0CShJJxuO0UI=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211118123436-2be1b1dbf97b/go.mod h1:s6XA3JWYsLKqIe+zA9eYzSWbbDE6MqwVvWcWjhdEWRs=
 github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
 github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225 h1:guHWmqIKr4G+gQ4uYU5vcZjsUhhklRA2uOcGVfcfqis=
 github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225/go.mod h1:F+kbVMHuwrQ5tYgU9JXlnskM8nOaFxCAEolaQybkjWA=
