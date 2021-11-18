@@ -579,9 +579,18 @@ DROP TRIGGER delete_application_resource ON tenant_applications;
 
 DROP FUNCTION IF EXISTS delete_resource();
 
+DROP TRIGGER delete_runtime_from_parent_tenants ON tenant_runtimes;
+DROP TRIGGER delete_app_from_parent_tenants ON tenant_applications;
+
+DROP FUNCTION IF EXISTS delete_parent_chain();
+
 DROP TRIGGER insert_parent ON business_tenant_mappings;
 
 DROP FUNCTION IF EXISTS on_insert_new_parent();
+
+DROP TRIGGER delete_tenant ON business_tenant_mappings;
+
+DROP FUNCTION IF EXISTS on_delete_tenant();
 
 DROP TABLE tenant_runtimes;
 DROP TABLE tenant_applications;
