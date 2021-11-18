@@ -529,8 +529,7 @@ func fixApplicationPage() *model.ApplicationPage {
 	return &model.ApplicationPage{
 		Data: []*model.Application{
 			{
-				Name:   "testApp",
-				Tenant: tenantID,
+				Name: "testApp",
 				BaseEntity: &model.BaseEntity{
 					ID:    appID,
 					Ready: true,
@@ -550,11 +549,11 @@ func fixApplicationPage() *model.ApplicationPage {
 func fixWebhooks() []*model.Webhook {
 	return []*model.Webhook{
 		{
-			ID:            whID,
-			TenantID:      str.Ptr(tenantID),
-			ApplicationID: str.Ptr(appID),
-			Type:          model.WebhookTypeOpenResourceDiscovery,
-			URL:           str.Ptr(baseURL),
+			ID:         whID,
+			ObjectID:   appID,
+			ObjectType: model.ApplicationWebhookReference,
+			Type:       model.WebhookTypeOpenResourceDiscovery,
+			URL:        str.Ptr(baseURL),
 		},
 	}
 }
@@ -564,7 +563,6 @@ func fixVendors() []*model.Vendor {
 		{
 			ID:            vendorID,
 			OrdID:         vendorORDID,
-			TenantID:      tenantID,
 			ApplicationID: appID,
 			Title:         "SAP",
 			Partners:      json.RawMessage(partners),
@@ -585,7 +583,6 @@ func fixProducts() []*model.Product {
 		{
 			ID:               productID,
 			OrdID:            productORDID,
-			TenantID:         tenantID,
 			ApplicationID:    appID,
 			Title:            "PRODUCT TITLE",
 			ShortDescription: "lorem ipsum",
@@ -601,7 +598,6 @@ func fixPackages() []*model.Package {
 	return []*model.Package{
 		{
 			ID:               packageID,
-			TenantID:         tenantID,
 			ApplicationID:    appID,
 			OrdID:            packageORDID,
 			Vendor:           str.Ptr(vendorORDID),
@@ -626,7 +622,6 @@ func fixPackages() []*model.Package {
 func fixBundles() []*model.Bundle {
 	return []*model.Bundle{
 		{
-			TenantID:                     tenantID,
 			ApplicationID:                appID,
 			Name:                         "BUNDLE TITLE",
 			Description:                  str.Ptr("lorem ipsum dolor nsq sme"),
@@ -705,7 +700,6 @@ func fixAPIs() []*model.APIDefinition {
 		{
 			ApplicationID:                           appID,
 			PackageID:                               str.Ptr(packageORDID),
-			Tenant:                                  tenantID,
 			Name:                                    "API TITLE",
 			Description:                             str.Ptr("lorem ipsum dolor sit amet"),
 			TargetURLs:                              json.RawMessage(`["/test/v1"]`),
@@ -738,7 +732,6 @@ func fixAPIs() []*model.APIDefinition {
 		{
 			ApplicationID:                           appID,
 			PackageID:                               str.Ptr(packageORDID),
-			Tenant:                                  tenantID,
 			Name:                                    "Gateway Sample Service",
 			Description:                             str.Ptr("lorem ipsum dolor sit amet"),
 			TargetURLs:                              json.RawMessage(`["/some-api/v1"]`),
@@ -808,7 +801,6 @@ func fixEventPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
 func fixEvents() []*model.EventDefinition {
 	return []*model.EventDefinition{
 		{
-			Tenant:           tenantID,
 			ApplicationID:    appID,
 			PackageID:        str.Ptr(packageORDID),
 			Name:             "EVENT TITLE",
@@ -835,7 +827,6 @@ func fixEvents() []*model.EventDefinition {
 			},
 		},
 		{
-			Tenant:           tenantID,
 			ApplicationID:    appID,
 			PackageID:        str.Ptr(packageORDID),
 			Name:             "EVENT TITLE 2",
@@ -1057,7 +1048,6 @@ func fixTombstones() []*model.Tombstone {
 		{
 			ID:            tombstoneID,
 			OrdID:         api2ORDID,
-			TenantID:      tenantID,
 			ApplicationID: appID,
 			RemovalDate:   "2020-12-02T14:12:59Z",
 		},

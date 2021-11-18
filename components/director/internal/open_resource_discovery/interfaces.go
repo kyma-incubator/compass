@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
@@ -61,9 +62,9 @@ type EventService interface {
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	DeleteByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error
-	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
+	GetFetchRequest(ctx context.Context, specID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error)
 	ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
-	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
+	RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 }
 
 // PackageService is responsible for the service-layer Package operations.
@@ -100,4 +101,10 @@ type TombstoneService interface {
 	Update(ctx context.Context, id string, in model.TombstoneInput) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Tombstone, error)
+}
+
+// TenantService missing godoc
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
+type TenantService interface {
+	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 }

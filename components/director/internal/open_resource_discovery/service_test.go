@@ -2,6 +2,7 @@ package ord_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -75,6 +76,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return appSvc
 	}
 
+	successfulTenantSvc := func() *automock.TenantService {
+		tenantSvc := &automock.TenantService{}
+		tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return(tenantID, nil).Once()
+		return tenantSvc
+	}
+
 	successfulWebhookList := func() *automock.WebhookService {
 		whSvc := &automock.WebhookService{}
 		whSvc.On("ListForApplication", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooks(), nil).Once()
@@ -139,7 +146,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			{
 				ID:            vendorID,
 				OrdID:         ord.SapVendor,
-				TenantID:      tenantID,
 				ApplicationID: appID,
 				Title:         ord.SapTitle,
 			}}
@@ -169,7 +175,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		modelVendor := []*model.Vendor{
 			{
 				OrdID:         ord.SapVendor,
-				TenantID:      tenantID,
 				ApplicationID: appID,
 				Title:         ord.SapTitle,
 			}}
@@ -257,27 +262,27 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulSpecRefetch := func() *automock.SpecService {
 		specSvc := &automock.SpecService{}
 		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(fixAPI1Specs(), nil).Once()
-		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec1ID).Return(fixSuccessfulFetchRequest(), nil).Once()
-		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec2ID).Return(fixSuccessfulFetchRequest(), nil).Once()
-		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec3ID).Return(fixFailedFetchRequest(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec1ID, model.APISpecReference).Return(fixSuccessfulFetchRequest(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec2ID, model.APISpecReference).Return(fixSuccessfulFetchRequest(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec3ID, model.APISpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
-		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api1spec3ID).Return(nil, nil).Once()
+		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api1spec3ID, model.APISpecReference).Return(nil, nil).Once()
 
 		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(fixAPI2Specs(), nil).Once()
-		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api2spec1ID).Return(fixSuccessfulFetchRequest(), nil).Once()
-		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api2spec2ID).Return(fixFailedFetchRequest(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api2spec1ID, model.APISpecReference).Return(fixSuccessfulFetchRequest(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api2spec2ID, model.APISpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
-		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api2spec2ID).Return(nil, nil).Once()
+		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api2spec2ID, model.APISpecReference).Return(nil, nil).Once()
 
 		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
-		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID).Return(fixFailedFetchRequest(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID, model.EventSpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
-		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event1specID).Return(nil, nil).Once()
+		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event1specID, model.EventSpecReference).Return(nil, nil).Once()
 
 		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(fixEvent2Specs(), nil).Once()
-		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event2specID).Return(fixFailedFetchRequest(), nil).Once()
+		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event2specID, model.EventSpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
-		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event2specID).Return(nil, nil).Once()
+		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event2specID, model.EventSpecReference).Return(nil, nil).Once()
 
 		return specSvc
 	}
@@ -355,6 +360,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		productSvcFn    func() *automock.ProductService
 		vendorSvcFn     func() *automock.VendorService
 		tombstoneSvcFn  func() *automock.TombstoneService
+		tenantSvcFn     func() *automock.TenantService
 		clientFn        func() *automock.Client
 		ExpectedErr     error
 	}{
@@ -365,6 +371,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:    successfulLabelRepo,
 			appSvcFn:       successfulAppList,
+			tenantSvcFn:    successfulTenantSvc,
 			webhookSvcFn:   successfulWebhookList,
 			bundleSvcFn:    successfulBundleUpdate,
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
@@ -398,6 +405,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:    successfulLabelRepo,
 			appSvcFn:       successfulAppList,
+			tenantSvcFn:    successfulTenantSvc,
 			webhookSvcFn:   successfulWebhookList,
 			bundleSvcFn:    successfulBundleUpdate,
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
@@ -438,6 +446,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:  successfulLabelRepo,
 			appSvcFn:     successfulAppList,
+			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
 			bundleSvcFn:  successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
@@ -490,12 +499,25 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
+			Name:            "Returns error when get tenant fails",
+			TransactionerFn: secondTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppList,
+			tenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return("", testErr).Once()
+				return tenantSvc
+			},
+			ExpectedErr: testErr,
+		},
+		{
 			Name:            "Does not resync resources when event list fails",
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			webhookSvcFn:    successfulWebhookList,
 			clientFn:        successfulClientFetch,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -514,6 +536,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			webhookSvcFn:    successfulWebhookList,
 			clientFn:        successfulClientFetch,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -533,6 +556,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn: successfulLabelRepo,
 			appSvcFn:    successfulAppList,
+			tenantSvcFn: successfulTenantSvc,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("ListForApplication", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -545,6 +569,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
@@ -557,6 +582,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
@@ -574,6 +600,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
@@ -590,6 +617,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
@@ -607,6 +635,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
@@ -624,6 +653,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn:     successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
@@ -641,6 +671,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn:     successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
@@ -659,6 +690,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn:     successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
@@ -677,6 +709,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -695,6 +728,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -714,6 +748,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductCreate,
 			vendorSvcFn:     successfulVendorCreate,
@@ -733,6 +768,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -751,6 +787,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -770,6 +807,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductCreate,
 			vendorSvcFn:     successfulVendorCreate,
@@ -789,6 +827,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -808,6 +847,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -834,6 +874,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -855,6 +896,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductCreate,
 			vendorSvcFn:     successfulVendorCreate,
@@ -875,6 +917,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -901,6 +944,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -928,6 +972,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -953,6 +998,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -968,7 +1014,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(fixAPI1Specs(), nil).Once()
-				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec1ID).Return(nil, testErr).Once()
+				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec1ID, model.APISpecReference).Return(nil, testErr).Once()
 				return specSvc
 			},
 			eventSvcFn: successfulEmptyEventList,
@@ -979,6 +1025,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -994,8 +1041,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(fixAPI1Specs(), nil).Once()
-				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec1ID).Return(fixFailedFetchRequest(), nil).Once()
-				specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api1spec1ID).Return(nil, testErr).Once()
+				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec1ID, model.APISpecReference).Return(fixFailedFetchRequest(), nil).Once()
+				specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api1spec1ID, model.APISpecReference).Return(nil, testErr).Once()
 				return specSvc
 			},
 			eventSvcFn: successfulEmptyEventList,
@@ -1006,6 +1053,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -1027,6 +1075,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -1057,6 +1106,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -1079,6 +1129,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductCreate,
 			vendorSvcFn:     successfulVendorCreate,
@@ -1100,6 +1151,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -1134,6 +1186,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -1171,6 +1224,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -1205,6 +1259,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -1224,7 +1279,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil).Once()
 
 				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
-				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID).Return(nil, testErr).Once()
+				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID, model.EventSpecReference).Return(nil, testErr).Once()
 				return specSvc
 			},
 			eventSvcFn: func() *automock.EventService {
@@ -1240,6 +1295,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -1259,9 +1315,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil).Once()
 
 				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
-				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID).Return(fixFailedFetchRequest(), nil).Once()
+				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID, model.EventSpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
-				specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event1specID).Return(nil, testErr).Once()
+				specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event1specID, model.EventSpecReference).Return(nil, testErr).Once()
 				return specSvc
 			},
 			eventSvcFn: func() *automock.EventService {
@@ -1277,6 +1333,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -1298,6 +1355,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductUpdate,
 			vendorSvcFn:     successfulVendorUpdate,
@@ -1320,6 +1378,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			productSvcFn:    successfulProductCreate,
 			vendorSvcFn:     successfulVendorCreate,
@@ -1340,6 +1399,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			bundleSvcFn:     successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
@@ -1370,6 +1430,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			bundleSvcFn:     successfulBundleCreate,
 			apiSvcFn:        successfulAPICreate,
@@ -1409,6 +1470,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			bundleSvcFn:     successfulBundleCreate,
 			apiSvcFn:        successfulAPICreate,
@@ -1449,6 +1511,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			bundleSvcFn:     successfulBundleCreate,
 			apiSvcFn:        successfulAPICreate,
@@ -1488,6 +1551,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			bundleSvcFn:     successfulBundleCreate,
 			apiSvcFn:        successfulAPICreate,
@@ -1526,6 +1590,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: secondTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppList,
+			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
@@ -1567,6 +1632,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:  successfulLabelRepo,
 			appSvcFn:     successfulAppList,
+			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
 			bundleSvcFn:  successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
@@ -1605,6 +1671,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:    successfulLabelRepo,
 			appSvcFn:       successfulAppList,
+			tenantSvcFn:    successfulTenantSvc,
 			webhookSvcFn:   successfulWebhookList,
 			bundleSvcFn:    successfulBundleUpdate,
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
@@ -1691,12 +1758,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			if test.tombstoneSvcFn != nil {
 				tombstoneSvc = test.tombstoneSvcFn()
 			}
+			tenantSvc := &automock.TenantService{}
+			if test.tenantSvcFn != nil {
+				tenantSvc = test.tenantSvcFn()
+			}
 			client := &automock.Client{}
 			if test.clientFn != nil {
 				client = test.clientFn()
 			}
 
-			svc := ord.NewAggregatorService(tx, labelRepo, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, client)
+			svc := ord.NewAggregatorService(tx, labelRepo, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, client)
 			err := svc.SyncORDDocuments(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -1705,7 +1776,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, tx, labelRepo, appSvc, whSvc, bndlSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, client)
+			mock.AssertExpectationsForObjects(t, tx, labelRepo, appSvc, whSvc, bndlSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, client)
 		})
 	}
 }
