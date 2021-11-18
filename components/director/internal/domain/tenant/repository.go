@@ -1,9 +1,11 @@
 package tenant
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
+	"text/template"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -171,23 +173,40 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 	return r.deleterGlobal.DeleteManyGlobal(ctx, conditions)
 }
 
-// GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource. TODO: <storage-redesign> refactor / validate
+// GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
 func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	rawStmt := `(SELECT %s FROM %s ta
-                WHERE ta.%s = ? AND ta.%s = true AND
-                      (NOT EXISTS(SELECT 1 FROM %s WHERE %s = ta.%[1]s) -- the tenant has no children
-                          OR
-                      (NOT EXISTS(SELECT 1 FROM %[2]s ta2
-                                            WHERE ta2.%[3]s = ? AND ta.%[4]s = true AND
-                                                  %[1]s IN (SELECT %s FROM %[5]s WHERE %[6]s = ta.%[1]s))) -- there is no child that has owner access
-                       ))`
+	rawStmt := `(SELECT {{ .m2mTenantID }} FROM {{ .m2mTable }} ta WHERE ta.{{ .m2mID }} = ? AND ta.{{ .owner }} = true
+				  AND (NOT EXISTS(SELECT 1 FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})` +  // the tenant has no children
+				 ` OR (NOT EXISTS(SELECT 1 FROM {{ .m2mTable }} ta2
+                                            WHERE ta2.{{ .m2mID }} = ? AND ta2.{{ .owner }} = true AND
+                                                  {{ .m2mTenantID }} IN (SELECT {{ .id }} FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})))))` // there is no child that has owner access
+
+	t, err := template.New("").Parse(rawStmt)
+	if err != nil {
+		return "", err
+	}
 
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return "", errors.Errorf("No tenant access table for %s", resourceType)
 	}
 
-	stmt := fmt.Sprintf(rawStmt, repo.M2MTenantIDColumn, m2mTable, repo.M2MResourceIDColumn, repo.M2MOwnerColumn, tableName, parentColumn, idColumn)
+	data := map[string]string{
+		"m2mTenantID": repo.M2MTenantIDColumn,
+		"m2mTable": m2mTable,
+		"m2mID": repo.M2MResourceIDColumn,
+		"owner": repo.M2MOwnerColumn,
+		"tenantsTable": tableName,
+		"parent": parentColumn,
+		"id": idColumn,
+	}
+
+	res := new(bytes.Buffer)
+	if err = t.Execute(res, data); err != nil {
+		return "", errors.Wrapf(err, "while executing template")
+	}
+
+	stmt := res.String()
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
