@@ -66,6 +66,18 @@ func TestSubjectExtraction(t *testing.T) {
 		},
 		{
 			subject:                "CN=,OU=,O=,L=,ST=,C=",
+			orgUnitPattern:         "(OrgUnit1|OrgUnit2|OrgUnit3)|OrgUnit4",
+			country:                "",
+			locality:               "",
+			province:               "",
+			org:                    "",
+			orgUnit:                "",
+			orgUnits:               []string{},
+			commonName:             "",
+			possibleOrgUnitMatches: 2,
+		},
+		{
+			subject:                "CN=,OU=,O=,L=,ST=,C=",
 			country:                "",
 			locality:               "",
 			province:               "",
