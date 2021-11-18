@@ -33,10 +33,11 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 	}
 	expectedTestWebhooks := []model.Webhook{
 		{
-			ApplicationTemplateID: str.Ptr(testID),
-			Type:                  testWebhooks[0].Type,
-			URL:                   testWebhooks[0].URL,
-			Mode:                  testWebhooks[0].Mode,
+			ObjectID:   testID,
+			ObjectType: model.ApplicationTemplateWebhookReference,
+			Type:       testWebhooks[0].Type,
+			URL:        testWebhooks[0].URL,
+			Mode:       testWebhooks[0].Mode,
 		},
 	}
 

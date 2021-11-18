@@ -12,7 +12,6 @@ func TestRuntimeContextInput_ToRuntimeContext(t *testing.T) {
 	// given
 	id := "foo"
 	runtimeID := "bar"
-	tenant := "sample"
 	key := "key"
 	val := "val"
 	testCases := []struct {
@@ -33,7 +32,6 @@ func TestRuntimeContextInput_ToRuntimeContext(t *testing.T) {
 			Expected: &model.RuntimeContext{
 				ID:        id,
 				RuntimeID: runtimeID,
-				Tenant:    tenant,
 				Key:       key,
 				Value:     val,
 			},
@@ -48,7 +46,7 @@ func TestRuntimeContextInput_ToRuntimeContext(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
-			result := testCase.Input.ToRuntimeContext(id, tenant)
+			result := testCase.Input.ToRuntimeContext(id)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

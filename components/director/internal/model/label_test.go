@@ -32,8 +32,24 @@ func TestToLabel(t *testing.T) {
 			},
 			Expected: &model.Label{
 				ID:         id,
-				Tenant:     tenant,
 				Key:        labelKey,
+				Value:      labelValue,
+				ObjectID:   id,
+				ObjectType: model.ApplicationLabelableObject,
+			},
+		},
+		{
+			Name: "All properties given for scenario label",
+			Input: &model.LabelInput{
+				Key:        model.ScenariosKey,
+				Value:      labelValue,
+				ObjectID:   id,
+				ObjectType: model.ApplicationLabelableObject,
+			},
+			Expected: &model.Label{
+				ID:         id,
+				Tenant:     &tenant,
+				Key:        model.ScenariosKey,
 				Value:      labelValue,
 				ObjectID:   id,
 				ObjectType: model.ApplicationLabelableObject,
@@ -43,8 +59,7 @@ func TestToLabel(t *testing.T) {
 			Name:  "Empty",
 			Input: &model.LabelInput{},
 			Expected: &model.Label{
-				ID:     id,
-				Tenant: tenant,
+				ID: id,
 			},
 		},
 	}

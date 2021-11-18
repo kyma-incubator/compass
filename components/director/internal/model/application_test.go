@@ -16,7 +16,6 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 	url := "https://foo.bar"
 	desc := "Sample"
 	id := "foo"
-	tenant := "sample"
 	intSysID := "bar"
 	providerName := "provider name"
 	timestamp := time.Now()
@@ -43,7 +42,6 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 			},
 			Expected: &model.Application{
 				Name:                "Foo",
-				Tenant:              tenant,
 				Description:         &desc,
 				HealthCheckURL:      &url,
 				IntegrationSystemID: &intSysID,
@@ -68,7 +66,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
-			result := testCase.Input.ToApplication(timestamp, id, tenant)
+			result := testCase.Input.ToApplication(timestamp, id)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

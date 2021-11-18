@@ -15,7 +15,6 @@ func TestProductInput_ToProduct(t *testing.T) {
 	appID := "bar"
 	vendor := "Sample"
 	name := "sample"
-	tenant := "tenant"
 	labels := json.RawMessage("{}")
 
 	testCases := []struct {
@@ -34,7 +33,6 @@ func TestProductInput_ToProduct(t *testing.T) {
 			Expected: &model.Product{
 				ID:            id,
 				OrdID:         ordID,
-				TenantID:      tenant,
 				ApplicationID: appID,
 				Title:         name,
 				Vendor:        vendor,
@@ -51,7 +49,7 @@ func TestProductInput_ToProduct(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// when
-			result := testCase.Input.ToProduct(id, tenant, appID)
+			result := testCase.Input.ToProduct(id, appID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

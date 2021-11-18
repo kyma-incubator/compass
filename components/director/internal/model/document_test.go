@@ -13,7 +13,6 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 	bundleID := "foo"
 	appID := "appID"
 	id := "bar"
-	tenant := "baz"
 	kind := "fookind"
 	data := "foodata"
 	displayName := "foodisplay"
@@ -40,7 +39,6 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 			Expected: &model.Document{
 				BundleID:    bundleID,
 				AppID:       appID,
-				Tenant:      tenant,
 				Title:       title,
 				DisplayName: displayName,
 				Description: description,
@@ -67,7 +65,6 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 			Expected: &model.Document{
 				BundleID:    bundleID,
 				AppID:       appID,
-				Tenant:      tenant,
 				Title:       title,
 				DisplayName: displayName,
 				Description: description,
@@ -86,7 +83,6 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 			Expected: &model.Document{
 				BundleID: bundleID,
 				AppID:    appID,
-				Tenant:   tenant,
 				BaseEntity: &model.BaseEntity{
 					ID:    id,
 					Ready: true,
@@ -103,7 +99,7 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
-			result := testCase.Input.ToDocumentWithinBundle(id, tenant, bundleID, appID)
+			result := testCase.Input.ToDocumentWithinBundle(id, bundleID, appID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

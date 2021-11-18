@@ -97,7 +97,7 @@ func (s *labelService) UpsertLabel(ctx context.Context, tenant string, labelInpu
 	return nil
 }
 
-// UpsertLabel missing godoc
+// UpdateLabel missing godoc
 func (s *labelService) UpdateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error {
 	if err := s.validateLabel(ctx, tenant, labelInput); err != nil {
 		return err
@@ -113,7 +113,7 @@ func (s *labelService) UpdateLabel(ctx context.Context, tenant, id string, label
 	return nil
 }
 
-// UpsertLabel missing godoc
+// GetLabel missing godoc
 func (s *labelService) GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error) {
 	label, err := s.labelRepo.GetByKey(ctx, tenant, labelInput.ObjectType, labelInput.ObjectID, labelInput.Key)
 	if err != nil {

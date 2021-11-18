@@ -15,7 +15,6 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 	desc := "Sample"
 	name := "sample"
 	group := "sampleGroup"
-	tenant := "tenant"
 
 	testCases := []struct {
 		Name     string
@@ -31,7 +30,6 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 			},
 			Expected: &model.EventDefinition{
 				ApplicationID: appID,
-				Tenant:        tenant,
 				Name:          name,
 				Description:   &desc,
 				Group:         &group,
@@ -51,7 +49,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// when
-			result := testCase.Input.ToEventDefinitionWithinBundle(id, appID, bndlID, tenant, 0)
+			result := testCase.Input.ToEventDefinitionWithinBundle(id, appID, bndlID, 0)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

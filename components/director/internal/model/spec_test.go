@@ -13,7 +13,6 @@ func TestSpecInput_ToSpec(t *testing.T) {
 	// given
 	id := "id"
 	refID := "ref-id"
-	tenant := "tnt"
 	data := "data"
 	apiType := model.APISpecTypeOdata
 	eventType := model.EventSpecTypeAsyncAPI
@@ -38,7 +37,6 @@ func TestSpecInput_ToSpec(t *testing.T) {
 			},
 			Expected: &model.Spec{
 				ID:         id,
-				Tenant:     tenant,
 				ObjectType: model.APISpecReference,
 				ObjectID:   refID,
 				Data:       &data,
@@ -70,7 +68,6 @@ func TestSpecInput_ToSpec(t *testing.T) {
 			},
 			Expected: &model.Spec{
 				ID:         id,
-				Tenant:     tenant,
 				ObjectType: model.EventSpecReference,
 				ObjectID:   refID,
 				Data:       &data,
@@ -100,7 +97,7 @@ func TestSpecInput_ToSpec(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
-			result, err := testCase.SpecInput.ToSpec(testCase.InputID, tenant, testCase.InputReferenceObjectType, testCase.InputReferenceObjectID)
+			result, err := testCase.SpecInput.ToSpec(testCase.InputID, testCase.InputReferenceObjectType, testCase.InputReferenceObjectID)
 
 			// then
 			if testCase.ExpectedErr != nil {

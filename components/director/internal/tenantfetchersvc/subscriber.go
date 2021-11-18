@@ -3,6 +3,7 @@ package tenantfetchersvc
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	labelutils "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -47,17 +48,19 @@ type subscriber struct {
 	runtimeSvc                    RuntimeService
 	labelSvc                      LabelService
 	uidSvc                        UIDService
+	tenantSvc                     TenantService
 	SubscriptionProviderLabelKey  string
 	ConsumerSubaccountIDsLabelKey string
 }
 
 // NewSubscriber creates new subscriber
-func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, labelService LabelService, uuidSvc UIDService, subscriptionProviderLabelKey, consumerSubaccountIDsLabelKey string) *subscriber {
+func NewSubscriber(provisioner TenantProvisioner, service RuntimeService, labelService LabelService, uuidSvc UIDService, tenantSvc TenantService, subscriptionProviderLabelKey, consumerSubaccountIDsLabelKey string) *subscriber {
 	return &subscriber{
 		provisioner:                   provisioner,
 		runtimeSvc:                    service,
 		labelSvc:                      labelService,
 		uidSvc:                        uuidSvc,
+		tenantSvc:                     tenantSvc,
 		SubscriptionProviderLabelKey:  subscriptionProviderLabelKey,
 		ConsumerSubaccountIDsLabelKey: consumerSubaccountIDsLabelKey,
 	}
@@ -93,7 +96,12 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 	}
 
 	for _, runtime := range runtimes {
-		label, err := s.labelSvc.GetLabel(ctx, runtime.Tenant, &model.LabelInput{
+		tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Runtime, runtime.ID)
+		if err != nil {
+			return err
+		}
+
+		label, err := s.labelSvc.GetLabel(ctx, tnt, &model.LabelInput{
 			Key:        s.ConsumerSubaccountIDsLabelKey,
 			ObjectID:   runtime.ID,
 			ObjectType: model.RuntimeLabelableObject,
@@ -104,7 +112,7 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 				return errors.Wrap(err, fmt.Sprintf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, s.ConsumerSubaccountIDsLabelKey))
 			}
 			// if the error is not found, create a label
-			if err := s.createLabel(ctx, runtime, subaccountTenantID); err != nil {
+			if err := s.createLabel(ctx, tnt, runtime, subaccountTenantID); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Failed to create label with key: %s", s.ConsumerSubaccountIDsLabelKey))
 			}
 		} else {
@@ -114,7 +122,7 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 			}
 			labelNewValue := mutateLabelsFunc(labelOldValue, subaccountTenantID)
 
-			if err := s.updateLabel(ctx, runtime, label, labelNewValue); err != nil {
+			if err := s.updateLabel(ctx, tnt, runtime, label, labelNewValue); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", runtime.ID))
 			}
 		}
@@ -123,8 +131,8 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 	return nil
 }
 
-func (s *subscriber) createLabel(ctx context.Context, runtime *model.Runtime, subaccountTenantID string) error {
-	return s.labelSvc.CreateLabel(ctx, runtime.Tenant, s.uidSvc.Generate(), &model.LabelInput{
+func (s *subscriber) createLabel(ctx context.Context, tenant string, runtime *model.Runtime, subaccountTenantID string) error {
+	return s.labelSvc.CreateLabel(ctx, tenant, s.uidSvc.Generate(), &model.LabelInput{
 		Key:        s.ConsumerSubaccountIDsLabelKey,
 		Value:      []string{subaccountTenantID},
 		ObjectType: model.RuntimeLabelableObject,
@@ -132,8 +140,8 @@ func (s *subscriber) createLabel(ctx context.Context, runtime *model.Runtime, su
 	})
 }
 
-func (s *subscriber) updateLabel(ctx context.Context, runtime *model.Runtime, label *model.Label, labelNewValue []string) error {
-	return s.labelSvc.UpdateLabel(ctx, runtime.Tenant, label.ID, &model.LabelInput{
+func (s *subscriber) updateLabel(ctx context.Context, tenant string, runtime *model.Runtime, label *model.Label, labelNewValue []string) error {
+	return s.labelSvc.UpdateLabel(ctx, tenant, label.ID, &model.LabelInput{
 		Key:        s.ConsumerSubaccountIDsLabelKey,
 		Value:      labelNewValue,
 		ObjectType: model.RuntimeLabelableObject,

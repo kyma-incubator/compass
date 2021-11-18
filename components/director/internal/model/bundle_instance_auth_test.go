@@ -43,7 +43,7 @@ func TestBundleInstanceAuthRequestInput_ToBundleInstanceAuth(t *testing.T) {
 		ID:               testID,
 		BundleID:         testBundleID,
 		RuntimeContextID: nil,
-		Tenant:           testTenant,
+		Owner:           testTenant,
 		Context:          str.Ptr(`"test"`),
 		InputParams:      str.Ptr(`"test"`),
 		Auth:             &inputAuth,

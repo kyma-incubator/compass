@@ -225,7 +225,7 @@ func TestListPageable(t *testing.T) {
 		var dest AppCollection
 
 		_, _, err := sut.List(ctx, resourceType, tenantID, 2, "", "id", &dest)
-		require.EqualError(t, err, "while counting objects: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -434,7 +434,7 @@ func TestListPageableWithEmbeddedTenant(t *testing.T) {
 		var dest UserCollection
 
 		_, _, err := sut.List(ctx, UserType, tenantID, 2, "", "id", &dest)
-		require.EqualError(t, err, "while counting objects: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -644,6 +644,6 @@ func TestListPageableGlobal(t *testing.T) {
 		var dest UserCollection
 
 		_, _, err := sut.ListGlobal(ctx, 2, "", "id", &dest)
-		require.EqualError(t, err, "while counting objects: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
