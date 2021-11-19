@@ -260,6 +260,9 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 				},
 			}, validateCustomType, validateCustomDescription)
 		})),
+		validation.Field(&bndl.CorrelationIDs, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
+		})),
 	)
 }
 
