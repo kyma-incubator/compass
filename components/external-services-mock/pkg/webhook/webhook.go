@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sync"
+	"time"
 )
 
 const (
@@ -14,12 +15,14 @@ const (
 )
 
 var (
-	isInProgress = true
-	mutex        = sync.Mutex{}
+	isInProgress      = true
+	operationDuration = 0 * time.Second
+	mutex             = sync.Mutex{}
 )
 
 type OperationStatusRequestData struct {
-	InProgress bool
+	InProgress        bool
+	OperationDuration time.Duration
 }
 
 type OperationResponseData struct {
@@ -38,6 +41,7 @@ func NewDeleteHTTPHandler() func(rw http.ResponseWriter, r *http.Request) {
 		if isInProgress {
 			rw.WriteHeader(http.StatusLocked)
 		} else {
+			time.Sleep(operationDuration * time.Second)
 			isInProgress = true
 			rw.WriteHeader(http.StatusOK)
 		}
@@ -61,6 +65,7 @@ func NewWebHookOperationPostHTTPHandler() func(rw http.ResponseWriter, r *http.R
 		mutex.Lock()
 		defer mutex.Unlock()
 		isInProgress = okReqData.InProgress
+		operationDuration = okReqData.OperationDuration
 		rw.WriteHeader(http.StatusOK)
 	}
 }

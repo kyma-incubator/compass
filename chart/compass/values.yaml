@@ -106,13 +106,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2096"
+      version: "PR-2110"
     console:
       dir:
       version: "PR-46"
     e2e_tests:
       dir:
-      version: "PR-2101"
+      version: "PR-2110"
   isLocalEnv: false
   oauth2:
     host: oauth2
