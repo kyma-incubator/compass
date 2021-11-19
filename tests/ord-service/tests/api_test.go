@@ -749,7 +749,7 @@ func extIssuerCertClient(t require.TestingT, subTenantID string) *http.Client {
 	clientKey, certChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subTenantID)
 
 	return &http.Client{
-		Timeout: 15 * time.Second,
+		Timeout: 20 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				Certificates: []tls.Certificate{

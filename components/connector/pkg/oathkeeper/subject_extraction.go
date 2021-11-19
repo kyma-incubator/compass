@@ -17,12 +17,15 @@ func ExternalCertIssuerSubjectMatcher(externalSubjectConsts certificates.Externa
 		}
 		orgUnitRegex := regexp.MustCompile(externalSubjectConsts.OrganizationalUnitPattern)
 		orgUnits := cert.GetAllOrganizationalUnits(subject)
+		matchedOrgUnits := 0
 		for _, orgUnit := range orgUnits {
-			if !orgUnitRegex.MatchString(orgUnit) {
-				return false
+			if orgUnitRegex.MatchString(orgUnit) {
+				matchedOrgUnits++
 			}
 		}
-		return true
+
+		expectedOrgUnits := cert.GetPossibleRegexTopLevelMatches(externalSubjectConsts.OrganizationalUnitPattern)
+		return len(orgUnits)-expectedOrgUnits == 1 || expectedOrgUnits-matchedOrgUnits == 0
 	}
 }
 

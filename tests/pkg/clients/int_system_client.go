@@ -33,7 +33,7 @@ func NewIntegrationSystemClient(ctx context.Context, intSystemCredentials *direc
 
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, unsecuredHttpClient)
 	httpClient := conf.Client(ctx)
-	httpClient.Timeout = 15 * time.Second
+	httpClient.Timeout = 20 * time.Second
 
 	return httpClient, nil
 }
