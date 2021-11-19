@@ -38,11 +38,13 @@ const emptyBody = `{}`
 
 type client struct {
 	httpClient *http.Client
+	mtlsClient *http.Client
 }
 
-func NewClient(httpClient *http.Client) *client {
+func NewClient(httpClient *http.Client, mtlsClient *http.Client) *client {
 	return &client{
 		httpClient: httpClient,
+		mtlsClient: mtlsClient,
 	}
 }
 
@@ -94,11 +96,12 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 
 	req.Header = headers
 
+	//TODO: Add branching for MTLS auth
 	if webhook.Auth != nil {
 		ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
 		req = req.WithContext(ctx)
 	}
-
+	//if webhook
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err

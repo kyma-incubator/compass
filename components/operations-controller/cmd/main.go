@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"os"
 
@@ -110,6 +111,9 @@ func main() {
 	httpClient, err := prepareHttpClient(cfg.HttpClient)
 	fatalOnError(err)
 
+	dc := &DummyCache{}
+	httpMTLSClient := prepareMTLSClient(cfg.HttpClient, dc)
+
 	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, httpClient)
 	fatalOnError(err)
 
@@ -119,7 +123,7 @@ func main() {
 		status.NewManager(mgr.GetClient()),
 		k8s.NewClient(mgr.GetClient()),
 		directorClient,
-		webhook.NewClient(httpClient),
+		webhook.NewClient(httpClient, httpMTLSClient),
 		collector)
 
 	if err = controller.SetupWithManager(mgr); err != nil {
@@ -169,4 +173,28 @@ func prepareHttpClient(cfg *httputil.Config) (*http.Client, error) {
 	}
 
 	return securedClient, nil
+}
+
+func prepareMTLSClient(cfg *httputil.Config, cache CertificateCache) *http.Client {
+	basicTransport := httputil.NewHTTPTransport(cfg)
+	basicTransport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+		return cache.Get()
+	}
+	httpTransport := directorhttputil.NewCorrelationIDTransport(basicTransport)
+
+	return &http.Client{
+		Transport: httpTransport,
+		Timeout:   cfg.Timeout,
+	}
+}
+
+type CertificateCache interface {
+	Get() (*tls.Certificate, error)
+}
+
+type DummyCache struct {
+}
+
+func (d *DummyCache) Get() (*tls.Certificate, error) {
+	return &tls.Certificate{}, nil
 }
