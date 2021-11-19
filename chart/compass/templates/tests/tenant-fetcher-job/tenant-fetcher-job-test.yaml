@@ -1,3 +1,4 @@
+{{ if (index .Values.global.tenantFetchers "subaccount-fetcher") }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -9,7 +10,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    disable-db-dump: "true"
+    disable-db-dump: "false"
   namespace: {{ .Values.global.tests.namespace }}
 spec:
   template:
@@ -123,3 +124,4 @@ spec:
             secretName: cloudsql-instance-credentials
         {{end}}
       restartPolicy: Never
+{{end}}
