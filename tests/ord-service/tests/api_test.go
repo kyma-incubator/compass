@@ -37,8 +37,6 @@ import (
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
@@ -745,30 +743,13 @@ func makeRequestWithStatusExpect(t require.TestingT, httpClient *http.Client, ur
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus, testConfig.ORDServiceDefaultResponseType)
 }
 
-func integrationSystemClient(t require.TestingT, ctx context.Context, base *http.Client, intSystemCredentials *directorSchema.IntSysSystemAuth) *http.Client {
-	oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
-	require.True(t, ok)
-
-	conf := &clientcredentials.Config{
-		ClientID:     oauthCredentialData.ClientID,
-		ClientSecret: oauthCredentialData.ClientSecret,
-		TokenURL:     oauthCredentialData.URL,
-	}
-
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, base)
-	httpClient := conf.Client(ctx)
-	httpClient.Timeout = 10 * time.Second
-
-	return httpClient
-}
-
 // extIssuerCertClient returns http client configured with client certificate manually signed by connector's CA
 // and a subject matching external issuer's subject contract.
 func extIssuerCertClient(t require.TestingT, subTenantID string) *http.Client {
 	clientKey, certChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subTenantID)
 
 	return &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 20 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				Certificates: []tls.Certificate{
