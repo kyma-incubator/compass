@@ -36,11 +36,6 @@ func TestCertServiceContextProvider(t *testing.T) {
 	tenantRepo := &tenantmappingmock.TenantRepository{}
 	provider := tenantmapping.NewCertServiceContextProvider(tenantRepo)
 
-	componentHeaderKey := "X-Component-Name"
-	ordComponentHeader := map[string][]string{componentHeaderKey: {"ord"}}
-	directorComponentHeader := map[string][]string{componentHeaderKey: {"director"}}
-	reqData := oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: directorComponentHeader}}
-
 	testTenant := &model.BusinessTenantMapping{
 		ID:             internalTenant,
 		Name:           "testTenant",
@@ -48,25 +43,11 @@ func TestCertServiceContextProvider(t *testing.T) {
 		Type:           "subaccount",
 	}
 
-	t.Run("Error when there is no matching component name", func(t *testing.T) {
-		headers := map[string][]string{"invalidKey": {""}}
-		reqData = oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: headers}}
-
-		objectCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "empty matched component header")
-		require.Empty(t, objectCtx)
-
-		tenantRepo.AssertExpectations(t)
-	})
-
-	t.Run("Success when component is director and cannot find internal tenant", func(t *testing.T) {
-		reqData = oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: directorComponentHeader}}
-
+	t.Run("Success when cannot find internal tenant", func(t *testing.T) {
 		tenantRepo.On("GetByExternalTenant", ctxWithLogger, subaccount).Return(nil, notFoundErr).Once()
 		provider = tenantmapping.NewCertServiceContextProvider(tenantRepo)
 
-		objectCtx, err := provider.GetObjectContext(emptyCtx, reqData, authDetails)
+		objectCtx, err := provider.GetObjectContext(emptyCtx, oathkeeper.ReqData{}, authDetails)
 		require.NoError(t, err)
 		require.Empty(t, objectCtx.TenantContext.TenantID)
 		require.Equal(t, subaccount, objectCtx.TenantContext.ExternalTenantID)
@@ -76,13 +57,11 @@ func TestCertServiceContextProvider(t *testing.T) {
 		tenantRepo.AssertExpectations(t)
 	})
 
-	t.Run("Error when component is director and the error is different from not found", func(t *testing.T) {
-		reqData = oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: directorComponentHeader}}
-
+	t.Run("Error when the error is different from not found", func(t *testing.T) {
 		tenantRepo.On("GetByExternalTenant", ctxWithLogger, subaccount).Return(nil, testError).Once()
 		provider = tenantmapping.NewCertServiceContextProvider(tenantRepo)
 
-		objectCtx, err := provider.GetObjectContext(emptyCtx, reqData, authDetails)
+		objectCtx, err := provider.GetObjectContext(emptyCtx, oathkeeper.ReqData{}, authDetails)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), fmt.Sprintf("while getting external tenant mapping [ExternalTenantID=%s]", subaccount))
 		require.Empty(t, objectCtx)
@@ -90,13 +69,11 @@ func TestCertServiceContextProvider(t *testing.T) {
 		tenantRepo.AssertExpectations(t)
 	})
 
-	t.Run("Success when component is director and internal tenant exists", func(t *testing.T) {
-		reqData = oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: directorComponentHeader}}
-
+	t.Run("Success when internal tenant exists", func(t *testing.T) {
 		tenantRepo.On("GetByExternalTenant", ctxWithLogger, subaccount).Return(testTenant, nil).Once()
 		provider = tenantmapping.NewCertServiceContextProvider(tenantRepo)
 
-		objectCtx, err := provider.GetObjectContext(emptyCtx, reqData, authDetails)
+		objectCtx, err := provider.GetObjectContext(emptyCtx, oathkeeper.ReqData{}, authDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, consumer.Runtime, objectCtx.ConsumerType)
@@ -104,21 +81,6 @@ func TestCertServiceContextProvider(t *testing.T) {
 		require.Equal(t, internalTenant, objectCtx.TenantContext.TenantID)
 		require.Equal(t, subaccount, objectCtx.TenantContext.ExternalTenantID)
 		require.Equal(t, directorScopes, objectCtx.Scopes)
-
-		tenantRepo.AssertExpectations(t)
-	})
-
-	t.Run("Success when component is ord", func(t *testing.T) {
-		reqData = oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: ordComponentHeader}}
-
-		objectCtx, err := provider.GetObjectContext(emptyCtx, reqData, authDetails)
-
-		require.NoError(t, err)
-		require.Equal(t, consumer.Runtime, objectCtx.ConsumerType)
-		require.Equal(t, subaccount, objectCtx.ConsumerID)
-		require.Equal(t, subaccount, objectCtx.TenantContext.TenantID)
-		require.Equal(t, subaccount, objectCtx.TenantContext.ExternalTenantID)
-		require.Empty(t, objectCtx.Scopes)
 
 		tenantRepo.AssertExpectations(t)
 	})
