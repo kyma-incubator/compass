@@ -208,7 +208,7 @@ func main() {
 	kubeConfig := kubernetes.Config{}
 	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
 	exitOnError(err, "Failed to initialize Kubernetes client.")
-	certsCache := certloader.NewCertificateCache()
+	certsCache := certloader.NewCertificateCache(externalClientCertSecret.Name)
 	certsLoader := certloader.NewCertificatesLoader(certsCache, k8sClientSet.CoreV1().Secrets(externalClientCertSecret.Namespace), externalClientCertSecret.Name, time.Second)
 	go certsLoader.Run(ctx)
 
