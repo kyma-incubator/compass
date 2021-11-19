@@ -143,19 +143,6 @@ global:
       port: 3002
       path: "/operation"
       lastOperationPath: "/last_operation"
-    secrets:
-      externalCertSvcSecret:
-        manage: true
-        name: "cert-svc-secret"
-        namespace: compass-system
-        certSvcUrlKey: cert-svc-url
-        oauthUrlKey: url
-        clientIdKey: client-id
-        clientSecretKey: client-secret
-      externalClientCertSecret:
-        name: "external-client-certificate"
-        namespace: compass-system
-
     info:
       path: "/v1/info"
     selfRegister:
@@ -429,9 +416,29 @@ global:
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
 
-  externalCertJob:
-    name: "external-certificate-rotation"
-    schedule: "0 0 */3 * *" # Executes on every 3rd day
+  externalCertConfiguration:
+    issuerLocality: "local"
+    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=123e4567-e89b-12d3-a456-426614174001/L=%s/CN=%s"
+    commonName: "compass"
+    locality: "local"
+    certSvcApiPath: "/cert"
+    secrets:
+      externalCertSvcSecret:
+        manage: true
+        name: "cert-svc-secret"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
+        csrEndpointKey: csr-endpoint
+        policyKey: policy
+      externalClientCertSecret:
+        name: "external-client-certificate"
+        namespace: compass-system
+    rotationCronjob:
+      name: "external-certificate-rotation"
+      schedule: "0 0 */3 * *" # Executes on every 3rd day
+      certValidity: "7"
+      clientCertRetryAttempts: "8"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
