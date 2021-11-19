@@ -731,10 +731,6 @@ func TestORDService(stdT *testing.T) {
 	})
 }
 
-func makeRequest(t *testing.T, httpClient *http.Client, url string) string {
-	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
-}
-
 func makeRequestWithHeaders(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string) string {
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
 }
