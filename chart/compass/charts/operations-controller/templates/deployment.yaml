@@ -41,9 +41,9 @@ spec:
           name: https
       - env:
           - name: SERVER_METRIC_ADDRESS
-            value: "127.0.0.1:{{ .Values.metrics.port }}"
+            value: ":{{ .Values.metrics.port }}"
           - name: SERVER_HEALTH_ADDRESS
-            value: "127.0.0.1:{{ .Values.health.port }}"
+            value: ":{{ .Values.health.port }}"
           - name: SERVER_ENABLE_LEADER_ELECTION
             value: "true"
           - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT
