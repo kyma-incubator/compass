@@ -575,6 +575,42 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsNotDelet
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
 
+func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsSucceeded_ShouldResultNoRequeueNoError(t *testing.T) {
+	// GIVEN:
+	stubLoggerAssertion(t, notFoundErr.Error(), fmt.Sprintf("Unable to fetch application with ID %s", appGUID))
+	defer func() { ctrl.Log = &originalLogger }()
+
+	operation := *mockedOperation
+	operation.Status = v1alpha1.OperationStatus{Phase: v1alpha1.StateSuccess}
+
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
+	k8sClient.GetReturns(&operation, nil)
+
+	statusMgrClient := &controllersfakes.FakeStatusManager{}
+	statusMgrClient.InitializeReturns(nil)
+
+	directorClient := &controllersfakes.FakeDirectorClient{}
+	directorClient.FetchApplicationReturns(nil, notFoundErr)
+
+	// WHEN:
+	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, nil, collector.NewCollector())
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
+
+	// THEN:
+	// GENERAL ASSERTIONS:
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	// SPECIFIC CLIENT ASSERTIONS:
+	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
+	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
+		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
+}
+
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}

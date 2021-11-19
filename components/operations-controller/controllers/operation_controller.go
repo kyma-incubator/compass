@@ -198,6 +198,11 @@ func (r *OperationReconciler) handleFetchApplicationError(ctx context.Context, o
 	}
 
 	if isNotFoundError(err) {
+		if operation.Status.Phase == v1alpha1.StateSuccess || operation.Status.Phase == v1alpha1.StateFailed {
+			log.C(ctx).Info(fmt.Sprintf("Last state of operation for application with ID %s is %s, will not requeue", operation.Spec.ResourceID, operation.Status.Phase))
+			return ctrl.Result{}, nil
+		}
+
 		if operation.Spec.OperationType == v1alpha1.OperationTypeDelete && operation.Status.Phase == v1alpha1.StateInProgress {
 			return r.finalizeStatus(ctx, operation, nil, nil)
 		}
