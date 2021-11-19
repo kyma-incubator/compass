@@ -64,17 +64,13 @@ global:
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
-    - name: TestSelfRegisterSubaccount
-      id: 08b6da37-e911-48fb-a0cb-fa635a6c665a
-      type: subaccount
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
 
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2082"
+      version: "PR-2107"
     connectivity_adapter:
       dir:
       version: "PR-2082"
@@ -83,7 +79,11 @@ global:
       version: "PR-2082"
     director:
       dir:
+<<<<<<< HEAD
       version: "PR-2105"
+=======
+      version: "PR-2107"
+>>>>>>> main
     gateway:
       dir:
       version: "PR-2077"
