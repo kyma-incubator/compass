@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
-	accessstrategyautomock "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy/automock"
+	accessstrategy2 "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	automock2 "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
@@ -121,7 +121,7 @@ func TestService_HandleSpec(t *testing.T) {
 		Name                 string
 		Client               func(t *testing.T) *http.Client
 		InputFr              model.FetchRequest
-		ExecutorProviderFunc func() accessstrategy.ExecutorProvider
+		ExecutorProviderFunc func() accessstrategy2.ExecutorProvider
 		ExpectedResult       *string
 		ExpectedStatus       *model.FetchRequestStatus
 	}{
@@ -166,15 +166,15 @@ func TestService_HandleSpec(t *testing.T) {
 		},
 		{
 			Name: "Success with access strategy",
-			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
-				executor := &accessstrategyautomock.Executor{}
+			ExecutorProviderFunc: func() accessstrategy2.ExecutorProvider {
+				executor := &automock2.Executor{}
 				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
 				}, nil).Once()
 
-				executorProvider := &accessstrategyautomock.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
+				executorProvider := &automock2.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy2.Type(testAccessStrategy)).Return(executor, nil).Once()
 				return executorProvider
 			},
 			Client: func(t *testing.T) *http.Client {
@@ -186,9 +186,9 @@ func TestService_HandleSpec(t *testing.T) {
 		},
 		{
 			Name: "Fails when access strategy is unknown",
-			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
-				executorProvider := &accessstrategyautomock.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(nil, testErr).Once()
+			ExecutorProviderFunc: func() accessstrategy2.ExecutorProvider {
+				executorProvider := &automock2.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy2.Type(testAccessStrategy)).Return(nil, testErr).Once()
 				return executorProvider
 			},
 			Client: func(t *testing.T) *http.Client {
@@ -199,12 +199,12 @@ func TestService_HandleSpec(t *testing.T) {
 		},
 		{
 			Name: "Fails when access strategy execution fail",
-			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
-				executor := &accessstrategyautomock.Executor{}
+			ExecutorProviderFunc: func() accessstrategy2.ExecutorProvider {
+				executor := &automock2.Executor{}
 				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL).Return(nil, testErr).Once()
 
-				executorProvider := &accessstrategyautomock.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
+				executorProvider := &automock2.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy2.Type(testAccessStrategy)).Return(executor, nil).Once()
 				return executorProvider
 			},
 			Client: func(t *testing.T) *http.Client {
@@ -333,7 +333,7 @@ func TestService_HandleSpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider()
+			var executorProviderMock accessstrategy2.ExecutorProvider = accessstrategy2.NewDefaultExecutorProvider()
 			if testCase.ExecutorProviderFunc != nil {
 				executorProviderMock = testCase.ExecutorProviderFunc()
 			}
@@ -368,7 +368,7 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 			StatusCode: http.StatusOK,
 			Body:       ioutil.NopCloser(bytes.NewBufferString("spec")),
 		}
-	}), accessstrategy.NewDefaultExecutorProvider())
+	}), accessstrategy2.NewDefaultExecutorProvider())
 	svc.SetTimestampGen(func() time.Time { return timestamp })
 
 	modelInput := &model.FetchRequest{

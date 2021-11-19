@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
-
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	hydraClient "github.com/ory/hydra-client-go/client"

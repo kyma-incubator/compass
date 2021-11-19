@@ -9,10 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	accessstrategy2 "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	automock2 "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy/automock"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy/automock"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -97,7 +98,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		Credentials          *model.Auth
 		AccessStrategy       string
 		RoundTripFunc        func(req *http.Request) *http.Response
-		ExecutorProviderFunc func() accessstrategy.ExecutorProvider
+		ExecutorProviderFunc func() accessstrategy2.ExecutorProvider
 		ExpectedResult       ord.Documents
 		ExpectedBaseURL      string
 		ExpectedErr          error
@@ -172,19 +173,19 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		},
 		{
 			Name: "Well-known config success fetch with access strategy",
-			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
+			ExecutorProviderFunc: func() accessstrategy2.ExecutorProvider {
 				data, err := json.Marshal(fixWellKnownConfig())
 				require.NoError(t, err)
 
-				executor := &automock.Executor{}
+				executor := &automock2.Executor{}
 				executor.On("Execute", mock.Anything, mock.Anything, baseURL+ord.WellKnownEndpoint).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
 				}, nil).Once()
 
-				executorProvider := &automock.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
-				executorProvider.On("Provide", accessstrategy.OpenAccessStrategy).Return(accessstrategy.NewOpenAccessStrategyExecutor(), nil).Once()
+				executorProvider := &automock2.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy2.Type(testAccessStrategy)).Return(executor, nil).Once()
+				executorProvider.On("Provide", accessstrategy2.OpenAccessStrategy).Return(accessstrategy2.NewOpenAccessStrategyExecutor(), nil).Once()
 				return executorProvider
 			},
 			AccessStrategy: testAccessStrategy,
@@ -196,9 +197,9 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		},
 		{
 			Name: "Well-known config fetch with access strategy fails when access strategy provider returns error",
-			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
-				executorProvider := &automock.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(nil, testErr).Once()
+			ExecutorProviderFunc: func() accessstrategy2.ExecutorProvider {
+				executorProvider := &automock2.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy2.Type(testAccessStrategy)).Return(nil, testErr).Once()
 				return executorProvider
 			},
 			AccessStrategy: testAccessStrategy,
@@ -207,12 +208,12 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		},
 		{
 			Name: "Well-known config fetch with access strategy fails when access strategy executor returns error",
-			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
-				executor := &automock.Executor{}
+			ExecutorProviderFunc: func() accessstrategy2.ExecutorProvider {
+				executor := &automock2.Executor{}
 				executor.On("Execute", mock.Anything, mock.Anything, baseURL+ord.WellKnownEndpoint).Return(nil, testErr).Once()
 
-				executorProvider := &automock.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
+				executorProvider := &automock2.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy2.Type(testAccessStrategy)).Return(executor, nil).Once()
 				return executorProvider
 			},
 			AccessStrategy: testAccessStrategy,
@@ -294,7 +295,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				statusCode := http.StatusOK
 				if strings.Contains(req.URL.String(), ord.WellKnownEndpoint) {
 					config := fixWellKnownConfig()
-					config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = accessstrategy.CustomAccessStrategy
+					config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].Type = accessstrategy2.CustomAccessStrategy
 					config.OpenResourceDiscoveryV1.Documents[0].AccessStrategies[0].CustomType = "foo.bar:test:v1"
 					data, err = json.Marshal(config)
 					require.NoError(t, err)
@@ -361,7 +362,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
-			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider()
+			var executorProviderMock accessstrategy2.ExecutorProvider = accessstrategy2.NewDefaultExecutorProvider()
 			if test.ExecutorProviderFunc != nil {
 				executorProviderMock = test.ExecutorProviderFunc()
 			}

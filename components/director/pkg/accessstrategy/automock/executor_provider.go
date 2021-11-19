@@ -3,7 +3,7 @@
 package automock
 
 import (
-	accessstrategy "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	mock "github.com/stretchr/testify/mock"
 )
 
