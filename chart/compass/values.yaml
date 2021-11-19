@@ -79,7 +79,7 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2107"
+      version: "PR-2105"
     gateway:
       dir:
       version: "PR-2077"
@@ -88,10 +88,10 @@ global:
       version: "PR-2063"
     ord_service:
       dir:
-      version: "PR-46"
+      version: "PR-47"
     schema_migrator:
       dir:
-      version: "PR-2085"
+      version: "PR-2105"
     system_broker:
       dir:
       version: "PR-2082"
@@ -102,13 +102,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2096"
+      version: "PR-2105"
     console:
       dir:
       version: "PR-47"
     e2e_tests:
       dir:
-      version: "PR-2109"
+      version: "PR-2105"
   isLocalEnv: false
   oauth2:
     host: oauth2
