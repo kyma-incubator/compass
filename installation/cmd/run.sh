@@ -185,7 +185,7 @@ fi
 
 mount_minikube_ca_to_oathkeeper
 
-promMtlsPatch
+prometheusMTLSPatch
 
 bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh --kyma-installation ${KYMA_INSTALLATION}
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
