@@ -79,11 +79,7 @@ global:
       version: "PR-2082"
     director:
       dir:
-<<<<<<< HEAD
       version: "PR-2105"
-=======
-      version: "PR-2107"
->>>>>>> main
     gateway:
       dir:
       version: "PR-2077"
