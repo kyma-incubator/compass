@@ -14,8 +14,8 @@ import (
 )
 
 func BuildMockedWebhook(externalSystemURL string, webhookType graphql.WebhookType) *graphql.WebhookInput {
-	operationFullPath := BuildOperationFullPath(externalSystemURL)
 	deleteFullPath := BuildDeleteFullPath(externalSystemURL)
+	operationFullPath := BuildOperationFullPath(externalSystemURL)
 
 	return &graphql.WebhookInput{
 		Type:           webhookType,
@@ -25,6 +25,12 @@ func BuildMockedWebhook(externalSystemURL string, webhookType graphql.WebhookTyp
 		OutputTemplate: str.Ptr(fmt.Sprintf("{ \\\"location\\\": \\\"%s\\\", \\\"success_status_code\\\": 200, \\\"error\\\": \\\"{{.Body.error}}\\\" }", operationFullPath)),
 		StatusTemplate: str.Ptr("{ \\\"status\\\": \\\"{{.Body.status}}\\\", \\\"success_status_code\\\": 200, \\\"success_status_identifier\\\": \\\"SUCCEEDED\\\", \\\"in_progress_status_identifier\\\": \\\"IN_PROGRESS\\\", \\\"failed_status_identifier\\\": \\\"FAILED\\\", \\\"error\\\": \\\"{{.Body.error}}\\\" }"),
 	}
+}
+
+func BuildMockedWebhookWithTimeout(externalSystemURL string, webhookType graphql.WebhookType, timeout int) *graphql.WebhookInput {
+	mockedWebhook := BuildMockedWebhook(externalSystemURL, webhookType)
+	mockedWebhook.Timeout = &timeout
+	return mockedWebhook
 }
 
 func BuildOperationFullPath(externalSystemURL string) string {

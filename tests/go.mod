@@ -30,7 +30,7 @@ require (
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210922143733-cb93bcfd3cd6
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
 	github.com/kyma-incubator/compass/components/director v0.0.0-20211022125007-080192a5068e
-	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20211119135236-241dc04b7c63
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20211014123116-dd19192a2e8f
 	github.com/lib/pq v1.10.3 // indirect
