@@ -18,12 +18,10 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
-	"net/http"
 	"os"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-	directorhttputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/utils"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
@@ -35,7 +33,6 @@ import (
 	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
-	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -108,11 +105,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	httpClient, err := prepareHttpClient(cfg.HttpClient)
+	httpClient, err := utils.PrepareHttpClient(cfg.HttpClient)
 	fatalOnError(err)
 
-	dc := &DummyCache{}
-	httpMTLSClient := prepareMTLSClient(cfg.HttpClient, dc)
+	dc := &utils.DummyCache{}
+	httpMTLSClient := utils.PrepareMTLSClient(cfg.HttpClient, dc)
 
 	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, httpClient)
 	fatalOnError(err)
@@ -152,49 +149,4 @@ func fatalOnError(err error) {
 	if err != nil {
 		log.D().Fatal(err.Error())
 	}
-}
-
-func prepareHttpClient(cfg *httputil.Config) (*http.Client, error) {
-	httpTransport := directorhttputil.NewCorrelationIDTransport(httputil.NewHTTPTransport(cfg))
-
-	unsecuredClient := &http.Client{
-		Transport: httpTransport,
-		Timeout:   cfg.Timeout,
-	}
-
-	basicProvider := auth.NewBasicAuthorizationProvider()
-	tokenProvider := auth.NewTokenAuthorizationProvider(unsecuredClient)
-	saTokenProvider := auth.NewServiceAccountTokenAuthorizationProvider()
-
-	securedTransport := directorhttputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, saTokenProvider)
-	securedClient := &http.Client{
-		Transport: securedTransport,
-		Timeout:   cfg.Timeout,
-	}
-
-	return securedClient, nil
-}
-
-func prepareMTLSClient(cfg *httputil.Config, cache CertificateCache) *http.Client {
-	basicTransport := httputil.NewHTTPTransport(cfg)
-	basicTransport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-		return cache.Get()
-	}
-	httpTransport := directorhttputil.NewCorrelationIDTransport(basicTransport)
-
-	return &http.Client{
-		Transport: httpTransport,
-		Timeout:   cfg.Timeout,
-	}
-}
-
-type CertificateCache interface {
-	Get() (*tls.Certificate, error)
-}
-
-type DummyCache struct {
-}
-
-func (d *DummyCache) Get() (*tls.Certificate, error) {
-	return &tls.Certificate{}, nil
 }

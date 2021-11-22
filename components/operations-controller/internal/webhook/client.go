@@ -24,6 +24,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	recerr "github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
@@ -96,13 +100,18 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 
 	req.Header = headers
 
-	//TODO: Add branching for MTLS auth
 	if webhook.Auth != nil {
 		ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
 		req = req.WithContext(ctx)
 	}
-	//if webhook
-	resp, err := c.httpClient.Do(req)
+	var resp *http.Response
+
+	if webhook.Auth != nil && str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
+		resp, err = c.mtlsClient.Do(req)
+	} else {
+		resp, err = c.httpClient.Do(req)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +178,13 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 		req = req.WithContext(ctx)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	var resp *http.Response
+	if webhook.Auth != nil && str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
+		resp, err = c.mtlsClient.Do(req)
+	} else {
+		resp, err = c.httpClient.Do(req)
+	}
+
 	if err != nil {
 		return nil, err
 	}
