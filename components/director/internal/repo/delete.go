@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -45,20 +47,26 @@ func NewDeleterGlobal(resourceType resource.Type, tableName string) DeleterGloba
 }
 
 // DeleteOne missing godoc
-func (g *universalDeleter) DeleteOne(ctx context.Context, tenant string, conditions Conditions) error {
-	if tenant == "" {
+func (g *universalDeleter) DeleteOne(ctx context.Context, tenantID string, conditions Conditions) error {
+	if tenantID == "" {
 		return apperrors.NewTenantRequiredError()
 	}
-	conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
+
+	it := tenant.LoadIsolationTypeFromContext(ctx)
+	conditions = append(Conditions{NewTenantIsolationCondition(it, *g.tenantColumn, tenantID)}, conditions...)
+
 	return g.unsafeDelete(ctx, conditions, true)
 }
 
 // DeleteMany missing godoc
-func (g *universalDeleter) DeleteMany(ctx context.Context, tenant string, conditions Conditions) error {
-	if tenant == "" {
+func (g *universalDeleter) DeleteMany(ctx context.Context, tenantID string, conditions Conditions) error {
+	if tenantID == "" {
 		return apperrors.NewTenantRequiredError()
 	}
-	conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
+
+	it := tenant.LoadIsolationTypeFromContext(ctx)
+	conditions = append(Conditions{NewTenantIsolationCondition(it, *g.tenantColumn, tenantID)}, conditions...)
+
 	return g.unsafeDelete(ctx, conditions, false)
 }
 

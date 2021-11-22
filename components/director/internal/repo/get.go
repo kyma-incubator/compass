@@ -58,12 +58,8 @@ func (g *universalSingleGetter) Get(ctx context.Context, tenantID string, condit
 		return apperrors.NewTenantRequiredError()
 	}
 
-	switch tnt.LoadIsolationTypeFromContext(ctx) {
-	case tnt.RecursiveIsolationType:
-		conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenantID)}, conditions...)
-	case tnt.SimpleIsolationType:
-		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenantID)}, conditions...)
-	}
+	it := tnt.LoadIsolationTypeFromContext(ctx)
+	conditions = append(Conditions{NewTenantIsolationCondition(it, *g.tenantColumn, tenantID)}, conditions...)
 
 	return g.unsafeGet(ctx, conditions, orderByParams, dest)
 }

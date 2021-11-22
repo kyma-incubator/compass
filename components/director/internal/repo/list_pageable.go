@@ -63,12 +63,8 @@ func (g *universalPageableQuerier) List(ctx context.Context, tenantID string, pa
 		return nil, -1, apperrors.NewTenantRequiredError()
 	}
 
-	switch tnt.LoadIsolationTypeFromContext(ctx) {
-	case tnt.RecursiveIsolationType:
-		additionalConditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenantID)}, additionalConditions...)
-	case tnt.SimpleIsolationType:
-		additionalConditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenantID)}, additionalConditions...)
-	}
+	it := tnt.LoadIsolationTypeFromContext(ctx)
+	additionalConditions = append(Conditions{NewTenantIsolationCondition(it, *g.tenantColumn, tenantID)}, additionalConditions...)
 
 	return g.unsafeList(ctx, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -58,7 +60,8 @@ func (l *unionLister) List(ctx context.Context, tenant string, ids []string, ids
 	if tenant == "" {
 		return nil, apperrors.NewTenantRequiredError()
 	}
-	additionalConditions = append(Conditions{NewTenantIsolationCondition(*l.tenantColumn, tenant)}, additionalConditions...)
+	it := tnt.LoadIsolationTypeFromContext(ctx)
+	additionalConditions = append(Conditions{NewTenantIsolationCondition(it, *l.tenantColumn, tenant)}, additionalConditions...)
 	return l.unsafeList(ctx, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
 }
 

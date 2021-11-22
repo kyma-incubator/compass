@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -40,7 +42,7 @@ func (b *universalQueryBuilder) BuildQuery(tenantID string, isRebindingNeeded bo
 	if tenantID == "" {
 		return "", nil, apperrors.NewTenantRequiredError()
 	}
-	conditions = append(Conditions{NewTenantIsolationCondition(*b.tenantColumn, tenantID)}, conditions...)
+	conditions = append(Conditions{NewTenantIsolationCondition(tenant.RecursiveIsolationType, *b.tenantColumn, tenantID)}, conditions...)
 
 	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, isRebindingNeeded)
 }

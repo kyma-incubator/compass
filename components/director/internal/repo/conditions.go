@@ -3,6 +3,8 @@ package repo
 import (
 	"fmt"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 )
 
 // Condition missing godoc
@@ -234,8 +236,15 @@ func (c *jsonArrAnyMatchCondition) GetQueryArgs() ([]interface{}, bool) {
 }
 
 // NewTenantIsolationCondition returns a repo condition filtering all resources based on the tenant provided (recursively iterating over all the child tenants)
-func NewTenantIsolationCondition(field string, val interface{}) Condition {
-	return NewTenantIsolationConditionWithPlaceholder(field, "?", []interface{}{val})
+func NewTenantIsolationCondition(isolationType tenant.IsolationType, field string, val interface{}) Condition {
+	switch isolationType {
+	case tenant.SimpleIsolationType:
+		return NewEqualCondition(field, val)
+	case tenant.RecursiveIsolationType:
+		fallthrough
+	default:
+		return NewTenantIsolationConditionWithPlaceholder(field, "?", []interface{}{val})
+	}
 }
 
 // NewTenantIsolationConditionWithPlaceholder return tenant isolation repo condition with different tenant_id input placeholder.

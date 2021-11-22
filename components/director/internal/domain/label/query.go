@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/pkg/errors"
@@ -60,19 +62,19 @@ func FilterQueryGlobal(queryFor model.LabelableObject, setCombination SetCombina
 	return buildFilterQuery(stmtPrefix, nil, setCombination, filters, false)
 }
 
-func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, tenant uuid.UUID, filter []*labelfilter.LabelFilter, isSubQuery bool) (string, []interface{}, error) {
+func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, tenantUUID uuid.UUID, filter []*labelfilter.LabelFilter, isSubQuery bool) (string, []interface{}, error) {
 	if filter == nil {
 		return "", nil, nil
 	}
 
 	objectField := labelableObjectField(queryFor)
 
-	cond := repo.NewTenantIsolationCondition("tenant_id", tenant)
+	cond := repo.NewTenantIsolationCondition(tenant.RecursiveIsolationType, "tenant_id", tenantUUID)
 	stmtPrefixFormatWithTenantIsolation := stmtPrefixFormat + " " + cond.GetQueryPart()
 
 	stmtPrefix := fmt.Sprintf(stmtPrefixFormatWithTenantIsolation, objectField, tableName, objectField)
 	var stmtPrefixArgs []interface{}
-	stmtPrefixArgs = append(stmtPrefixArgs, tenant)
+	stmtPrefixArgs = append(stmtPrefixArgs, tenantUUID)
 
 	return buildFilterQuery(stmtPrefix, stmtPrefixArgs, setCombination, filter, isSubQuery)
 }

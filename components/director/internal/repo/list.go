@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
@@ -67,11 +69,14 @@ func NewListerGlobal(resourceType resource.Type, tableName string, selectedColum
 }
 
 // List missing godoc
-func (l *universalLister) List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error {
-	if tenant == "" {
+func (l *universalLister) List(ctx context.Context, tenantID string, dest Collection, additionalConditions ...Condition) error {
+	if tenantID == "" {
 		return apperrors.NewTenantRequiredError()
 	}
-	additionalConditions = append(Conditions{NewTenantIsolationCondition(*l.tenantColumn, tenant)}, additionalConditions...)
+
+	it := tnt.LoadIsolationTypeFromContext(ctx)
+	additionalConditions = append(Conditions{NewTenantIsolationCondition(it, *l.tenantColumn, tenantID)}, additionalConditions...)
+
 	return l.unsafeList(ctx, dest, additionalConditions...)
 }
 

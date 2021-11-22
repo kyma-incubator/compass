@@ -49,12 +49,8 @@ func (g *universalExistQuerier) Exists(ctx context.Context, tenantID string, con
 		return false, apperrors.NewTenantRequiredError()
 	}
 
-	switch tnt.LoadIsolationTypeFromContext(ctx) {
-	case tnt.RecursiveIsolationType:
-		conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenantID)}, conditions...)
-	case tnt.SimpleIsolationType:
-		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenantID)}, conditions...)
-	}
+	it := tnt.LoadIsolationTypeFromContext(ctx)
+	conditions = append(Conditions{NewTenantIsolationCondition(it, *g.tenantColumn, tenantID)}, conditions...)
 
 	return g.unsafeExists(ctx, conditions)
 }
