@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -63,10 +63,10 @@ func (g *universalPageableQuerier) List(ctx context.Context, tenantID string, pa
 		return nil, -1, apperrors.NewTenantRequiredError()
 	}
 
-	switch tenant.LoadIsolationTypeFromContext(ctx) {
-	case tenant.RecursiveIsolationType:
+	switch tnt.LoadIsolationTypeFromContext(ctx) {
+	case tnt.RecursiveIsolationType:
 		additionalConditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenantID)}, additionalConditions...)
-	case tenant.SimpleIsolationType:
+	case tnt.SimpleIsolationType:
 		additionalConditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenantID)}, additionalConditions...)
 	}
 

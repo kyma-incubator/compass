@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -257,7 +259,7 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	ctx = tenant.SaveIsolationTypeToContext(ctx, r.isolationType)
+	ctx = tnt.SaveIsolationTypeToContext(ctx, r.isolationType)
 
 	if first == nil {
 		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")

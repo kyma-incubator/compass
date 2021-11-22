@@ -4,7 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -57,10 +58,10 @@ func (g *universalSingleGetter) Get(ctx context.Context, tenantID string, condit
 		return apperrors.NewTenantRequiredError()
 	}
 
-	switch tenant.LoadIsolationTypeFromContext(ctx) {
-	case tenant.RecursiveIsolationType:
+	switch tnt.LoadIsolationTypeFromContext(ctx) {
+	case tnt.RecursiveIsolationType:
 		conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenantID)}, conditions...)
-	case tenant.SimpleIsolationType:
+	case tnt.SimpleIsolationType:
 		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenantID)}, conditions...)
 	}
 

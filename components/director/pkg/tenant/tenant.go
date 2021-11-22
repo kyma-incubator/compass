@@ -22,10 +22,22 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
-type contextKey string
+type key string
 
-// ContextKey missing godoc
-const ContextKey contextKey = "TenantCtxKey"
+const (
+	// ContextKey missing godoc
+	ContextKey key = "TenantCtxKey"
+
+	// IsolationTypeKey is the key under which the IsolationType is saved in a given context.Context.
+	IsolationTypeKey key = "IsolationTypeKey"
+)
+
+type IsolationType string
+
+const (
+	SimpleIsolationType    IsolationType = "simple"
+	RecursiveIsolationType IsolationType = "recursive"
+)
 
 // LoadFromContext retrieves the tenantID from the provided context or returns error if missing
 func LoadFromContext(ctx context.Context) (string, error) {
@@ -45,4 +57,23 @@ func LoadFromContext(ctx context.Context) (string, error) {
 // SaveToContext saves the provided tenantID into the respective context
 func SaveToContext(ctx context.Context, tenantID string) context.Context {
 	return context.WithValue(ctx, ContextKey, tenantID)
+}
+
+// LoadIsolationTypeFromContext loads the tenant isolation type from context.
+// If no valid isolation type is set, consider the recursive type as the default one.
+func LoadIsolationTypeFromContext(ctx context.Context) IsolationType {
+	if isolationType, ok := ctx.Value(IsolationTypeKey).(IsolationType); ok && isolationType.IsValid() {
+		return isolationType
+	}
+	return RecursiveIsolationType
+}
+
+// SaveIsolationTypeToContext saves the isolation type into the provided context.
+func SaveIsolationTypeToContext(ctx context.Context, isolationTypeString string) context.Context {
+	return context.WithValue(ctx, IsolationTypeKey, IsolationType(isolationTypeString))
+}
+
+func (it IsolationType) IsValid() bool {
+	return it == SimpleIsolationType ||
+		it == RecursiveIsolationType
 }
