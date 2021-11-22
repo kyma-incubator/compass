@@ -89,13 +89,13 @@ ALTER TABLE runtime_contexts ADD COLUMN tenant_id UUID;
 
 UPDATE applications a
 SET tenant_id = (SELECT tenant_id FROM tenant_applications ta
-                WHERE ta.id = a.id AND
-                      (NOT EXISTS(SELECT 1 FROM business_tenant_mappings WHERE parent = ta.tenant_id) -- the tenant has no children
-                          OR
+                 WHERE ta.id = a.id AND
+                     (NOT EXISTS(SELECT 1 FROM business_tenant_mappings WHERE parent = ta.tenant_id) -- the tenant has no children
+                         OR
                       (NOT EXISTS (SELECT 1 FROM tenant_applications ta2
-                                            WHERE ta2.id = a.id AND
-                                                  tenant_id IN (SELECT id FROM business_tenant_mappings WHERE parent = ta.tenant_id))) -- there is no child that has access
-                       ));
+                                   WHERE ta2.id = a.id AND
+                                           tenant_id IN (SELECT id FROM business_tenant_mappings WHERE parent = ta.tenant_id))) -- there is no child that has access
+                         ));
 
 UPDATE api_definitions SET tenant_id = (SELECT tenant_id FROM applications WHERE id = app_id);
 UPDATE bundles SET tenant_id = (SELECT tenant_id FROM applications WHERE id = app_id);
@@ -171,10 +171,10 @@ CREATE UNIQUE INDEX fetch_requests_tenant_id_coalesce_coalesce1_coalesce2_idx ON
 ALTER TABLE webhooks DROP CONSTRAINT webhook_owner_id_unique;
 
 ALTER TABLE webhooks ADD CONSTRAINT webhook_owner_id_unique
-        CHECK ((app_template_id IS NOT NULL AND tenant_id IS NULL AND app_id IS NULL AND runtime_id IS NULL AND integration_system_id IS NULL)
-            OR (app_template_id IS NULL AND tenant_id IS NOT NULL AND app_id IS NOT NULL AND runtime_id IS NULL AND integration_system_id IS NULL)
-            OR (app_template_id IS NULL AND tenant_id IS NOT NULL AND app_id IS NULL AND runtime_id IS NOT NULL AND integration_system_id IS NULL)
-            OR (app_template_id IS NULL AND tenant_id IS NULL AND app_id IS NULL AND runtime_id IS NULL AND integration_system_id IS  NOT NULL));
+    CHECK ((app_template_id IS NOT NULL AND tenant_id IS NULL AND app_id IS NULL AND runtime_id IS NULL AND integration_system_id IS NULL)
+        OR (app_template_id IS NULL AND tenant_id IS NOT NULL AND app_id IS NOT NULL AND runtime_id IS NULL AND integration_system_id IS NULL)
+        OR (app_template_id IS NULL AND tenant_id IS NOT NULL AND app_id IS NULL AND runtime_id IS NOT NULL AND integration_system_id IS NULL)
+        OR (app_template_id IS NULL AND tenant_id IS NULL AND app_id IS NULL AND runtime_id IS NULL AND integration_system_id IS  NOT NULL));
 
 ALTER TABLE applications ADD CONSTRAINT application_tenant_id_name_unique UNIQUE (tenant_id, name, system_number);
 
@@ -408,7 +408,7 @@ CREATE OR REPLACE VIEW tenants_bundles
             (tenant_id, provider_tenant_id, id, app_id, name, description, instance_auth_request_json_schema,
              default_instance_auth, ord_id,
              short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at,
-             deleted_at, error)
+             deleted_at, error, correlation_ids)
 AS
 SELECT DISTINCT t_apps.tenant_id,
                 t_apps.provider_tenant_id,
@@ -427,7 +427,8 @@ SELECT DISTINCT t_apps.tenant_id,
                 b.created_at,
                 b.updated_at,
                 b.deleted_at,
-                b.error
+                b.error,
+                b.correlation_ids
 FROM bundles b
          JOIN (SELECT a1.id,
                       a1.tenant_id::text,
@@ -600,24 +601,24 @@ DROP TABLE tenant_runtimes;
 DROP TABLE tenant_applications;
 
 create table api_runtime_auths(
-    id         uuid not null
-        constraint runtime_auths_pkey
-            primary key
-        constraint runtime_auths_id_check
-            check (id <> '00000000-0000-0000-0000-000000000000'::uuid),
-    tenant_id  uuid not null
-        constraint api_runtime_auths_tenant_constraint
-            references business_tenant_mappings
-            on delete cascade,
-    runtime_id uuid not null,
-    api_def_id uuid not null,
-    value      jsonb,
-    constraint runtime_auths_tenant_id_fkey1
-        foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id)
-            on delete cascade,
-    constraint runtime_auths_tenant_id_fkey
-        foreign key (tenant_id, runtime_id) references runtimes (tenant_id, id)
-            on update cascade on delete cascade
+                                  id         uuid not null
+                                      constraint runtime_auths_pkey
+                                          primary key
+                                      constraint runtime_auths_id_check
+                                          check (id <> '00000000-0000-0000-0000-000000000000'::uuid),
+                                  tenant_id  uuid not null
+                                      constraint api_runtime_auths_tenant_constraint
+                                          references business_tenant_mappings
+                                          on delete cascade,
+                                  runtime_id uuid not null,
+                                  api_def_id uuid not null,
+                                  value      jsonb,
+                                  constraint runtime_auths_tenant_id_fkey1
+                                      foreign key (tenant_id, api_def_id) references api_definitions (tenant_id, id)
+                                          on delete cascade,
+                                  constraint runtime_auths_tenant_id_fkey
+                                      foreign key (tenant_id, runtime_id) references runtimes (tenant_id, id)
+                                          on update cascade on delete cascade
 );
 
 create index runtime_auths_tenant_id_idx

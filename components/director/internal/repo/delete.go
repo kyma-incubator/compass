@@ -176,8 +176,12 @@ func (g *universalDeleter) unsafeDeleteTenantAccess(ctx context.Context, resourc
 		return err
 	}
 
-	if requireSingleRemoval && len(ids) == 0 {
-		return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+	if len(ids) == 0 {
+		if requireSingleRemoval {
+			return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+		} else {
+			return nil
+		}
 	}
 
 	if requireSingleRemoval && len(ids) != 1 {

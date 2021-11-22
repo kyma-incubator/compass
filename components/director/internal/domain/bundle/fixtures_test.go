@@ -174,6 +174,7 @@ const (
 	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	ordID            = "com.compass.v1"
+	correlationIDs   = `["id1", "id2"]`
 )
 
 func fixBundleModel(name, desc string) *model.Bundle {
@@ -192,6 +193,7 @@ func fixBundleModelWithID(id, name, desc string) *model.Bundle {
 		Links:                          json.RawMessage("[]"),
 		Labels:                         json.RawMessage("[]"),
 		CredentialExchangeStrategies:   json.RawMessage("[]"),
+		CorrelationIDs:                 json.RawMessage(correlationIDs),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -398,6 +400,7 @@ func fixEntityBundle(id, name, desc string) *bundle.Entity {
 		Links:                         repo.NewValidNullableString("[]"),
 		Labels:                        repo.NewValidNullableString("[]"),
 		CredentialExchangeStrategies:  repo.NewValidNullableString("[]"),
+		CorrelationIDs:                repo.NewValidNullableString(correlationIDs),
 		BaseEntity: &repo.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -410,19 +413,19 @@ func fixEntityBundle(id, name, desc string) *bundle.Entity {
 }
 
 func fixBundleColumns() []string {
-	return []string{"id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	return []string{"id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
 }
 
 func fixBundleRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
+	return []driver.Value{id, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(correlationIDs)}
 }
 
 func fixBundleRowWithAppID(id, applicationID string) []driver.Value {
-	return []driver.Value{id, applicationID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
+	return []driver.Value{id, applicationID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(correlationIDs)}
 }
 
 func fixBundleCreateArgs(defAuth, schema string, bndl *model.Bundle) []driver.Value {
-	return []driver.Value{bundleID, appID, bndl.Name, bndl.Description, schema, defAuth, ordID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies), bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error}
+	return []driver.Value{bundleID, appID, bndl.Name, bndl.Description, schema, defAuth, ordID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies), bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error, repo.NewNullableStringFromJSONRawMessage(bndl.CorrelationIDs)}
 }
 
 func fixDefaultAuth() string {

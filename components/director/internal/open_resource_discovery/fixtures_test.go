@@ -274,6 +274,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Links:                        json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				Labels:                       json.RawMessage(labels),
 				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, providedBaseURL)),
+				CorrelationIDs:               json.RawMessage(correlationIDs),
 			},
 		},
 		Products: []*model.ProductInput{
@@ -630,6 +631,7 @@ func fixBundles() []*model.Bundle {
 			Links:                        json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
 			Labels:                       json.RawMessage(labels),
 			CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, baseURL)),
+			CorrelationIDs:               json.RawMessage(correlationIDs),
 			BaseEntity: &model.BaseEntity{
 				ID:    bundleID,
 				Ready: true,
@@ -646,6 +648,7 @@ func fixBundleCreateInput() []*model.BundleCreateInput {
 			OrdID:            str.Ptr(bundleORDID),
 			ShortDescription: str.Ptr("lorem ipsum"),
 			Labels:           json.RawMessage(labels),
+			CorrelationIDs:   json.RawMessage(correlationIDs),
 		},
 		{
 			Name:             "BUNDLE TITLE 2 ",
@@ -653,6 +656,7 @@ func fixBundleCreateInput() []*model.BundleCreateInput {
 			OrdID:            str.Ptr(secondBundleORDID),
 			ShortDescription: str.Ptr("bar foo"),
 			Labels:           json.RawMessage(labels),
+			CorrelationIDs:   json.RawMessage(correlationIDs),
 		},
 	}
 }
@@ -1081,6 +1085,7 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 		Links:                          in.Links,
 		Labels:                         in.Labels,
 		CredentialExchangeStrategies:   in.CredentialExchangeStrategies,
+		CorrelationIDs:                 in.CorrelationIDs,
 	}
 }
 

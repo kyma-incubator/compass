@@ -63,7 +63,7 @@ func TestPgRepository_Create(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ? WHERE id = ? AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID))
+	updateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, correlation_ids = ? WHERE id = ? AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID))
 
 	var nilBundleMode *model.Bundle
 	bndl := fixBundleModel("foo", "update")
@@ -76,7 +76,7 @@ func TestPgRepository_Update(t *testing.T) {
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
 				Query:         updateQuery,
-				Args:          []driver.Value{entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, entity.OrdID, entity.ShortDescription, entity.Links, entity.Labels, entity.CredentialExchangeStrategies, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.ID},
+				Args:          []driver.Value{entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, entity.OrdID, entity.ShortDescription, entity.Links, entity.Labels, entity.CredentialExchangeStrategies, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs, entity.ID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -149,7 +149,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		Name: "Get Bundle",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{bundleID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -184,7 +184,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 		Name: "Get Bundle For Application",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error FROM public.bundles WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $3))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.bundles WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{bundleID, appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -238,11 +238,11 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 		Name: "List Bundles for multiple Applications with paging",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) AND app_id = $2 ORDER BY app_id ASC, id ASC LIMIT $3 OFFSET $4)
+				Query: regexp.QuoteMeta(`(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) AND app_id = $2 ORDER BY app_id ASC, id ASC LIMIT $3 OFFSET $4)
 												UNION
-												(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $5)) AND app_id = $6 ORDER BY app_id ASC, id ASC LIMIT $7 OFFSET $8)
+												(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $5)) AND app_id = $6 ORDER BY app_id ASC, id ASC LIMIT $7 OFFSET $8)
 												UNION
-												(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $9)) AND app_id = $10 ORDER BY app_id ASC, id ASC LIMIT $11 OFFSET $12)`),
+												(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $9)) AND app_id = $10 ORDER BY app_id ASC, id ASC LIMIT $11 OFFSET $12)`),
 
 				Args:     []driver.Value{tenantID, emptyPageAppID, pageSize, 0, tenantID, onePageAppID, pageSize, 0, tenantID, multiplePagesAppID, pageSize, 0},
 				IsSelect: true,
@@ -323,7 +323,7 @@ func TestPgRepository_ListByApplicationIDNoPaging(t *testing.T) {
 		Name: "List Bundles No Paging",
 		SqlQueryDetails: []testdb.SqlQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error FROM public.bundles WHERE app_id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.bundles WHERE app_id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {

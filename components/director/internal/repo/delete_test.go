@@ -102,8 +102,12 @@ func TestDelete(t *testing.T) {
 				// WHEN
 				err := testedMethod(ctx, resourceType, tenantID, repo.Conditions{repo.NewEqualCondition("description", appDescription), repo.NewEqualCondition("name", appName)})
 				// THEN
-				require.Error(t, err)
-				require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
+				if tn == "DeleteMany" {
+					require.NoError(t, err)
+				} else {
+					require.Error(t, err)
+					require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
+				}
 			})
 
 			t.Run(fmt.Sprintf("[%s] returns error when select operation returns error", tn), func(t *testing.T) {
@@ -278,8 +282,12 @@ func TestDelete(t *testing.T) {
 				// WHEN
 				err := testedMethod(ctx, resourceType, tenantID, repo.Conditions{repo.NewEqualCondition("description", bundleDescription), repo.NewEqualCondition("name", bundleName)})
 				// THEN
-				require.Error(t, err)
-				require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
+				if tn == "DeleteMany" {
+					require.NoError(t, err)
+				} else {
+					require.Error(t, err)
+					require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
+				}
 			})
 
 			t.Run(fmt.Sprintf("[%s] returns error when delete operation returns error", tn), func(t *testing.T) {

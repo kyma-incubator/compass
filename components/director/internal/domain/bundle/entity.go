@@ -18,6 +18,7 @@ type Entity struct {
 	Links                         sql.NullString `db:"links"`
 	Labels                        sql.NullString `db:"labels"`
 	CredentialExchangeStrategies  sql.NullString `db:"credential_exchange_strategies"`
+	CorrelationIDs                sql.NullString `db:"correlation_ids"`
 	*repo.BaseEntity
 }
 

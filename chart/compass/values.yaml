@@ -64,17 +64,13 @@ global:
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
-    - name: TestSelfRegisterSubaccount
-      id: 08b6da37-e911-48fb-a0cb-fa635a6c665a
-      type: subaccount
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
 
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2082"
+      version: "PR-2111"
     connectivity_adapter:
       dir:
       version: "PR-2082"
@@ -83,22 +79,22 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2096"
+      version: "PR-2105"
     gateway:
       dir:
       version: "PR-2077"
     operations_controller:
       dir:
-      version: "PR-2063"
+      version: "PR-2084"
     ord_service:
       dir:
       version: "PR-48"
     schema_migrator:
       dir:
-      version: "PR-2085"
+      version: "PR-2105"
     system_broker:
       dir:
-      version: "PR-2082"
+      version: "PR-2084"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -106,13 +102,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2096"
+      version: "PR-2067"
     console:
       dir:
-      version: "PR-46"
+      version: "PR-47"
     e2e_tests:
       dir:
-      version: "PR-2101"
+      version: "PR-2105"
   isLocalEnv: false
   oauth2:
     host: oauth2

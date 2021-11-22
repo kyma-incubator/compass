@@ -306,8 +306,8 @@ SELECT e.*, ta.tenant_id, ta.owner FROM event_api_definitions AS e
 -- Specs
 CREATE VIEW api_specifications_tenants AS
 (SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
-                                            INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
-                                            INNER JOIN tenant_applications ta on ta.id = ad.app_id);
+                                             INNER JOIN api_definitions AS ad ON ad.id = s.api_def_id
+                                             INNER JOIN tenant_applications ta on ta.id = ad.app_id);
 
 CREATE VIEW event_specifications_tenants AS
 SELECT s.*, ta.tenant_id, ta.owner FROM specifications AS s
@@ -353,16 +353,16 @@ SELECT l.id, tr.tenant_id, tr.owner FROM labels AS l
 -- Aggregated labels view
 CREATE OR REPLACE VIEW labels_tenants AS
 (SELECT l.id, ta.tenant_id, ta.owner FROM labels AS l
-                                             INNER JOIN tenant_applications ta
-                                                        ON l.app_id = ta.id AND (l.tenant_id IS NULL OR l.tenant_id = ta.tenant_id))
+                                              INNER JOIN tenant_applications ta
+                                                         ON l.app_id = ta.id AND (l.tenant_id IS NULL OR l.tenant_id = ta.tenant_id))
 UNION ALL
 (SELECT l.id, tr.tenant_id, tr.owner FROM labels AS l
-                                             INNER JOIN tenant_runtimes tr
-                                                        ON l.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id))
+                                              INNER JOIN tenant_runtimes tr
+                                                         ON l.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id))
 UNION ALL
 (SELECT l.id, tr.tenant_id, tr.owner FROM labels AS l
-                                             INNER JOIN runtime_contexts rc ON l.runtime_context_id = rc.id
-                                             INNER JOIN tenant_runtimes tr ON rc.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id));
+                                              INNER JOIN runtime_contexts rc ON l.runtime_context_id = rc.id
+                                              INNER JOIN tenant_runtimes tr ON rc.runtime_id = tr.id AND (l.tenant_id IS NULL OR l.tenant_id = tr.tenant_id));
 
 -- Runtime Context
 CREATE OR REPLACE VIEW runtime_contexts_tenants AS
@@ -402,20 +402,20 @@ SELECT w.*, tr.tenant_id, tr.owner FROM webhooks AS w
 -- Aggregated Webhooks
 CREATE OR REPLACE VIEW webhooks_tenants AS
 (SELECT w.*, ta.tenant_id, ta.owner FROM webhooks AS w
-                                            INNER JOIN tenant_applications ta ON w.app_id = ta.id)
+                                             INNER JOIN tenant_applications ta ON w.app_id = ta.id)
 UNION ALL
 (SELECT w.*, tr.tenant_id, tr.owner FROM webhooks AS w
-                                            INNER JOIN tenant_runtimes tr ON w.runtime_id = tr.id);
+                                             INNER JOIN tenant_runtimes tr ON w.runtime_id = tr.id);
 
 -- ASAs Redesign
 ALTER TABLE automatic_scenario_assignments ADD COLUMN target_tenant_id UUID REFERENCES business_tenant_mappings(id) ON DELETE CASCADE;
 
 UPDATE automatic_scenario_assignments asa SET target_tenant_id = (SELECT id
-                                                              FROM business_tenant_mappings
-                                                              WHERE external_tenant = asa.selector_value)
+                                                                  FROM business_tenant_mappings
+                                                                  WHERE external_tenant = asa.selector_value)
 WHERE selector_key = 'global_subaccount_id' AND EXISTS(SELECT id
-                                                        FROM business_tenant_mappings
-                                                        WHERE external_tenant = asa.selector_value);
+                                                       FROM business_tenant_mappings
+                                                       WHERE external_tenant = asa.selector_value);
 
 DELETE FROM automatic_scenario_assignments WHERE target_tenant_id IS NULL;
 

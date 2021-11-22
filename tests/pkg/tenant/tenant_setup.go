@@ -43,7 +43,6 @@ const (
 	ApplicationsForRuntimeWithHiddenAppsTenantName             = "TestApplicationsForRuntimeWithHiddenApps"
 	TestDeleteApplicationIfInScenario                          = "TestDeleteApplicationIfInScenario"
 	TestProviderSubaccount                                     = "TestProviderSubaccount"
-	TestSelfRegisterSubaccount                                 = "TestSelfRegisterSubaccount"
 )
 
 type Tenant struct {
@@ -180,14 +179,6 @@ func (mgr *TestTenantsManager) Init() {
 		TestProviderSubaccount: {
 			Name:           TestProviderSubaccount,
 			ExternalTenant: "f8075207-1478-4a80-bd26-24a4785a2bfd",
-			ProviderName:   testProvider,
-			Type:           Subaccount,
-			Status:         Active,
-			Parent:         testDefaultTenant,
-		},
-		TestSelfRegisterSubaccount: {
-			Name:           TestSelfRegisterSubaccount,
-			ExternalTenant: "08b6da37-e911-48fb-a0cb-fa635a6c665a",
 			ProviderName:   testProvider,
 			Type:           Subaccount,
 			Status:         Active,
