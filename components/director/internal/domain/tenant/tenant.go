@@ -8,10 +8,8 @@ import (
 
 type key int
 
-const (
-	// TenantContextKey is the key under which the TenantCtx is saved in a given context.Context.
-	TenantContextKey key = iota
-)
+// TenantContextKey is the key under which the TenantCtx is saved in a given context.Context.
+const TenantContextKey key = iota
 
 // TenantCtx is the structure can be saved in a request context. It is used to determine the tenant context in which the request is being executed.
 type TenantCtx struct {
