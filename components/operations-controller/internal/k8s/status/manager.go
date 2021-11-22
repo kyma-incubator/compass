@@ -154,6 +154,9 @@ func (m *manager) updateStatusFunc(ctx context.Context, operation *v1alpha1.Oper
 
 		statusUpdaterFunc(operation)
 
+		// The following error might be observed if we try to update an operation that was retrieved from an outdated K8s client cache:
+		// "the object has been modified; please apply your changes to the latest version and try again"
+		// The error is expected, and should be ignored - kubernetes-sigs/controller-runtime#1464
 		return m.k8sClient.Status().Update(ctx, operation)
 	})
 }
