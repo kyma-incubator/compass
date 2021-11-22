@@ -775,6 +775,48 @@ func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T)
 	require.NoError(t, err)
 }
 
+func TestClient_Poll_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
+	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	mtlsCalled := false
+
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	pollRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: graphql.Webhook{
+				OutputTemplate: &outputTemplate,
+				StatusTemplate: &statusTemplate,
+				Mode:           &webhookAsyncMode,
+				Auth: &graphql.Auth{
+					AccessStrategy: str.Ptr(string(accessstrategy2.CMPmTLSAccessStrategy)),
+				},
+			},
+			Object: web_hook.RequestObject{Application: app},
+		},
+		PollURL: "https://test-domain.com/poll/",
+	}
+
+	mtlsClient := &http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Header:     http.Header{"Location": []string{mockedLocationURL}},
+				StatusCode: http.StatusOK,
+			},
+			roundTripExpectations: func(r *http.Request) {
+				mtlsCalled = true
+			},
+		},
+	}
+
+	client := webhook.NewClient(nil, mtlsClient)
+
+	_, err := client.Poll(context.Background(), pollRequest)
+
+	require.NoError(t, err)
+	require.True(t, mtlsCalled)
+}
+
 func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsNullErrorField_ShouldBeSuccessful(t *testing.T) {
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
