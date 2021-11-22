@@ -82,3 +82,56 @@ func TestSaveToLoadFromContext(t *testing.T) {
 	// then
 	assert.Equal(t, value, result.Value(tenant.ContextKey))
 }
+
+func TestLoadIsolationTypeFromContext(t *testing.T) {
+	validValue := tenant.RecursiveIsolationType
+	invalidValue := "foo"
+
+	testCases := []struct {
+		Name           string
+		Context        context.Context
+		ExpectedResult string
+	}{
+		{
+			Name:           "Success",
+			Context:        context.WithValue(context.TODO(), tenant.IsolationTypeKey, validValue),
+			ExpectedResult: string(tenant.RecursiveIsolationType),
+		},
+		{
+			Name:           "Default Recursive when isolation type value is invalid",
+			Context:        context.WithValue(context.TODO(), tenant.IsolationTypeKey, invalidValue),
+			ExpectedResult: string(tenant.RecursiveIsolationType),
+		},
+		{
+			Name:           "Default Recursive when isolation type value is empty",
+			Context:        context.WithValue(context.TODO(), tenant.IsolationTypeKey, ""),
+			ExpectedResult: string(tenant.RecursiveIsolationType),
+		},
+		{
+			Name:           "Default Recursive when isolation type value is missing",
+			Context:        context.TODO(),
+			ExpectedResult: string(tenant.RecursiveIsolationType),
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+			//when
+			result := tenant.LoadIsolationTypeFromContext(testCase.Context)
+
+			// then
+			assert.Equal(t, tenant.IsolationType(testCase.ExpectedResult), result)
+		})
+	}
+}
+
+func TestSaveIsolationTypeToContext(t *testing.T) {
+	// given
+	value := "foo"
+
+	// when
+	result := tenant.SaveIsolationTypeToContext(context.TODO(), value)
+
+	// then
+	assert.Equal(t, tenant.IsolationType(value), result.Value(tenant.IsolationTypeKey))
+}
