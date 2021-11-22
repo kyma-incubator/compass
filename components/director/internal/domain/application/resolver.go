@@ -141,6 +141,8 @@ type Resolver struct {
 	sysAuthConv      SystemAuthConverter
 	eventingSvc      EventingService
 	bndlConv         BundleConverter
+
+	isolationType string
 }
 
 // NewResolver missing godoc
@@ -154,7 +156,8 @@ func NewResolver(transact persistence.Transactioner,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
 	bndlSvc BundleService,
-	bndlConverter BundleConverter) *Resolver {
+	bndlConverter BundleConverter,
+	isolationType string) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		appSvc:           svc,
@@ -167,6 +170,7 @@ func NewResolver(transact persistence.Transactioner,
 		eventingSvc:      eventingSvc,
 		bndlSvc:          bndlSvc,
 		bndlConv:         bndlConverter,
+		isolationType:    isolationType,
 	}
 }
 
@@ -253,6 +257,7 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+	ctx = tenant.SaveIsolationTypeToContext(ctx, r.isolationType)
 
 	if first == nil {
 		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")

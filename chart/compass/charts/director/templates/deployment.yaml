@@ -208,6 +208,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.tenantQueryParam }}
             - name: APP_SELF_REGISTER_REQUEST_BODY_PATTERN
               value: {{ .Values.global.director.selfRegister.requestBodyPattern | quote }}
+            - name: APP_TENANT_ISOLATION_TYPE
+              value: {{ .Values.global.director.tenantIsolationType }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

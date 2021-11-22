@@ -144,6 +144,8 @@ type config struct {
 
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
+
+	IsolationType string `envconfig:"default=recursive,APP_TENANT_ISOLATION_TYPE"`
 }
 
 func main() {
@@ -213,6 +215,7 @@ func main() {
 		cfg.SelfRegConfig,
 		cfg.OneTimeToken.Length,
 		adminURL,
+		cfg.IsolationType,
 	)
 
 	gqlCfg := graphql.Config{

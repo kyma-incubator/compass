@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -56,12 +58,18 @@ type Collection interface {
 }
 
 // List returns Page, TotalCount or error
-func (g *universalPageableQuerier) List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
-	if tenant == "" {
+func (g *universalPageableQuerier) List(ctx context.Context, tenantID string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
+	if tenantID == "" {
 		return nil, -1, apperrors.NewTenantRequiredError()
 	}
 
-	additionalConditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, additionalConditions...)
+	switch tenant.LoadIsolationTypeFromContext(ctx) {
+	case tenant.RecursiveIsolationType:
+		additionalConditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenantID)}, additionalConditions...)
+	case tenant.SimpleIsolationType:
+		additionalConditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenantID)}, additionalConditions...)
+	}
+
 	return g.unsafeList(ctx, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 

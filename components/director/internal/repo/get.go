@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -51,11 +52,18 @@ func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selecte
 }
 
 // Get missing godoc
-func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	if tenant == "" {
+func (g *universalSingleGetter) Get(ctx context.Context, tenantID string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+	if tenantID == "" {
 		return apperrors.NewTenantRequiredError()
 	}
-	conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
+
+	switch tenant.LoadIsolationTypeFromContext(ctx) {
+	case tenant.RecursiveIsolationType:
+		conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenantID)}, conditions...)
+	case tenant.SimpleIsolationType:
+		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenantID)}, conditions...)
+	}
+
 	return g.unsafeGet(ctx, conditions, orderByParams, dest)
 }
 

@@ -156,9 +156,9 @@ global:
       nameQueryParam: "name"
       tenantQueryParam: "tenant"
       requestBodyPattern: '{"key": "%s"}'
-
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
+    tenantIsolationType: "recursive"
 
   auditlog:
     configMapName: "compass-gateway-auditlog-config"

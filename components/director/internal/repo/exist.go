@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -42,11 +44,18 @@ func NewExistQuerierGlobal(resourceType resource.Type, tableName string) ExistQu
 }
 
 // Exists missing godoc
-func (g *universalExistQuerier) Exists(ctx context.Context, tenant string, conditions Conditions) (bool, error) {
-	if tenant == "" {
+func (g *universalExistQuerier) Exists(ctx context.Context, tenantID string, conditions Conditions) (bool, error) {
+	if tenantID == "" {
 		return false, apperrors.NewTenantRequiredError()
 	}
-	conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
+
+	switch tenant.LoadIsolationTypeFromContext(ctx) {
+	case tenant.RecursiveIsolationType:
+		conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenantID)}, conditions...)
+	case tenant.SimpleIsolationType:
+		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenantID)}, conditions...)
+	}
+
 	return g.unsafeExists(ctx, conditions)
 }
 
