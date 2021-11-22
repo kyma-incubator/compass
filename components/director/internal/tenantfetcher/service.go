@@ -829,15 +829,46 @@ func convertTimeToUnixMilliSecondString(timestamp time.Time) string {
 }
 
 func (s *SubaccountService) moveSubaccount(ctx context.Context, mapping model.MovedRuntimeByLabelMappingInput) (*model.BusinessTenantMapping, error) {
+	targetInternalTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, mapping.TargetTenant)
+	if err != nil && strings.Contains(err.Error(), apperrors.NotFoundMsg) {
+		parentTenant := model.BusinessTenantMappingInput{
+			Name:           mapping.TargetTenant,
+			ExternalTenant: mapping.TargetTenant,
+			Parent:         "", // crm ID is assumed that it can be empty
+			Subdomain:      "", // it is not available when event is for moving a subaccount
+			Region:         "",
+			Type:           tenant.TypeToStr(tenant.Account),
+			Provider:       s.providerName,
+		}
+		tenantsToCreateGQL := s.tenantConverter.MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput{parentTenant})
+		if err := s.gqlClient.WriteTenants(ctx, tenantsToCreateGQL); err != nil {
+			return nil, err
+		}
+
+		targetInternalTenant, err = s.tenantStorageService.GetTenantByExternalID(ctx, mapping.TargetTenant)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting internal tenant for external tenant ID %s", mapping.TargetTenant)
+		}
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "while getting internal tenant for external tenant ID %s", mapping.TargetTenant)
+	}
+
 	subaccountID := mapping.LabelValue
 	subaccountTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, subaccountID)
-	if err != nil {
+	if err != nil && strings.Contains(err.Error(), apperrors.NotFoundMsg) {
+		mapping.TenantMappingInput.Parent = targetInternalTenant.ID
+		tenantsToCreateGQL := s.tenantConverter.MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput{mapping.TenantMappingInput})
+		if err := s.gqlClient.WriteTenants(ctx, tenantsToCreateGQL); err != nil {
+			return nil, err
+		}
+		return targetInternalTenant, nil
+	} else if err != nil {
 		return nil, errors.Wrapf(err, "while getting subaccount internal tenant ID for external tenant ID %s", subaccountID)
 	}
 
-	targetInternalTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, mapping.TargetTenant)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
+	if subaccountTenant.Parent == targetInternalTenant.ID {
+		log.C(ctx).Infof("Subaccount with external id %s is already moved in global account with external id %s", subaccountTenant.ExternalTenant, mapping.TargetTenant)
+		return targetInternalTenant, nil
 	}
 	subaccountTenant.Parent = targetInternalTenant.ID
 	subaccountTenantGQL := s.tenantConverter.ToGraphQLInput(subaccountTenant.ToInput())

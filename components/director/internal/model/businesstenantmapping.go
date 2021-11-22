@@ -52,9 +52,10 @@ type BusinessTenantMappingInput struct {
 
 // MovedRuntimeByLabelMappingInput missing godoc
 type MovedRuntimeByLabelMappingInput struct {
-	LabelValue   string
-	SourceTenant string
-	TargetTenant string
+	TenantMappingInput BusinessTenantMappingInput
+	LabelValue         string
+	SourceTenant       string
+	TargetTenant       string
 }
 
 // ToBusinessTenantMapping missing godoc

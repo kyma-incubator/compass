@@ -781,7 +781,7 @@ func (r *mutationResolver) CreateAutomaticScenarioAssignment(ctx context.Context
 	return r.scenarioAssignment.CreateAutomaticScenarioAssignment(ctx, in)
 }
 
-// WriteTenants missing godoc
+// WriteTenants creates global accounts and/or subaccounts
 func (r *mutationResolver) WriteTenants(ctx context.Context, in []*graphql.BusinessTenantMappingInput) (int, error) {
 	return r.tenant.Write(ctx, in)
 }

@@ -91,6 +91,8 @@ func TestGlobalAccounts(t *testing.T) {
 	customerIDs := []string{"customerID1", "customerID2"}
 	subdomains := []string{"subdomain1", "subdomain2"}
 
+	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(externalTenantIDs, customerIDs...))
+
 	createEvent1 := genMockGlobalAccountEvent(externalTenantIDs[0], names[0], customerIDs[0], subdomains[0])
 	createEvent2 := genMockGlobalAccountEvent(externalTenantIDs[1], names[1], customerIDs[1], subdomains[1])
 	setMockTenantEvents(t, []byte(genMockPage(strings.Join([]string{createEvent1, createEvent2}, ","), 2)), globalAccountCreateSubPath)
@@ -100,7 +102,6 @@ func TestGlobalAccounts(t *testing.T) {
 	setMockTenantEvents(t, []byte(genMockPage(deleteEvent1, 1)), globalAccountDeleteSubPath)
 	defer cleanupMockEvents(t, globalAccountDeleteSubPath)
 
-	defer cleanupTenants(t, ctx, directorInternalGQLClient, externalTenantIDs)
 
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
@@ -124,7 +125,7 @@ func TestGlobalAccounts(t *testing.T) {
 func TestMoveSubaccounts(t *testing.T) {
 	ctx := context.TODO()
 
-	gaExternalTenantIDs := []string{"ga1", "ga1"}
+	gaExternalTenantIDs := []string{"ga1", "ga2"}
 	gaNames := []string{"ga1", "ga2"}
 	subdomains := []string{"ga1", "ga1"}
 
@@ -281,6 +282,42 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	subaccount2, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[1])
 	assert.NoError(t, err)
 	assert.Equal(t, subaccountNames[1], *subaccount2.Name)
+}
+
+func TestMoveSubaccountsWhenMissing(t *testing.T) {
+	ctx := context.TODO()
+
+	gaExternalTenantIDs := []string{"ga1", "ga2"}
+
+	subaccountName := "sub1"
+	subaccountExternalTenant := "sub1"
+	subaccountRegion := "test"
+	subaccountSubdomain := "sub1"
+	subaccountParent := "ga1"
+
+	defer cleanupTenants(t, ctx, directorInternalGQLClient, []string{subaccountExternalTenant, gaExternalTenantIDs[1]})
+
+	event := genMockSubaccountMoveEvent(subaccountExternalTenant, subaccountName, subaccountSubdomain, subaccountParent, cfg.MovedRuntimeLabelKey, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
+	setMockTenantEvents(t, []byte(genMockPage(event, 1)), subaccountMoveSubPath)
+	defer cleanupMockEvents(t, subaccountMoveSubPath)
+
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	assert.NoError(t, err)
+
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
+	defer k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
+
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
+
+	parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, gaExternalTenantIDs[1])
+	assert.NoError(t, err)
+	assert.Equal(t, *parent.Name, gaExternalTenantIDs[1])
+	assert.Equal(t, parent.ID, gaExternalTenantIDs[1])
+
+	subaccount, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenant)
+	assert.NoError(t, err)
+	assert.Equal(t, subaccount.ID, subaccountExternalTenant)
+	assert.Equal(t, subaccount.ParentID, parent.InternalID)
 }
 
 func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain string) string {

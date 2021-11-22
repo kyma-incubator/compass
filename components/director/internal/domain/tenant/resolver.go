@@ -122,7 +122,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Tenant, key *string)
 	return resultLabels, nil
 }
 
-// Write creates new tenants
+// Write creates new global and subaccounts
 func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTenantMappingInput) (int, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

@@ -853,98 +853,60 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 	provider := "default"
 	testRegion := "test-region"
 	movedRuntimeLabelKey := "moved_runtime_key"
-	targetInternalTenant := &model.BusinessTenantMapping{
-		ID:             "internalID",
-		Name:           "targetInternalTenant",
-		ExternalTenant: "targetInternalTenant",
-		Type:           tenant.Account,
-		Provider:       provider,
-	}
+
 	runtimeID := "runtime-id"
 
-	tenantFieldMapping := tenantfetcher.TenantFieldMapping{
-		NameField:       "name",
-		IDField:         "id",
-		CustomerIDField: "customerId",
-		SubdomainField:  "subdomain",
-		EntityTypeField: "type",
-		RegionField:     "region",
-		ParentIDField:   "parentId",
-	}
+	var (
+		targetInternalTenantInput model.BusinessTenantMappingInput
+		targetInternalTenant      *model.BusinessTenantMapping
+		tenantFieldMapping        tenantfetcher.TenantFieldMapping
+		busTenant1GUID            string
+		busTenant2GUID            string
+		busTenant3GUID            string
+		busTenant4GUID            string
 
-	busTenant1GUID := "d1f08f02-2fda-4511-962a-17fd1f1aa477"
-	busTenant2GUID := "49af7161-7dc7-472b-a969-d2f0430fc41d"
-	busTenant3GUID := "72409a54-2b1a-4cbb-803b-515315c74d02"
-	busTenant4GUID := "72409a54-2b1a-4cbb-803b-515315123212"
+		parentTenant1 model.BusinessTenantMappingInput
+		parentTenant2 model.BusinessTenantMappingInput
+		parentTenant3 model.BusinessTenantMappingInput
+		parentTenant4 model.BusinessTenantMappingInput
+		parentTenants []model.BusinessTenantMappingInput
 
-	parentTenant1 := fixBusinessTenantMappingInput(busTenant1GUID, busTenant1GUID, provider, "", "", "", tenant.Account)
-	parentTenant2 := fixBusinessTenantMappingInput(busTenant2GUID, busTenant2GUID, provider, "", "", "", tenant.Account)
-	parentTenant3 := fixBusinessTenantMappingInput(busTenant3GUID, busTenant3GUID, provider, "", "", "", tenant.Account)
-	parentTenant4 := fixBusinessTenantMappingInput(busTenant4GUID, busTenant4GUID, provider, "", "", "", tenant.Account)
-	parentTenants := []model.BusinessTenantMappingInput{parentTenant1, parentTenant2, parentTenant3, parentTenant4}
+		parentTenant1BusinessMapping *model.BusinessTenantMapping
+		parentTenant2BusinessMapping *model.BusinessTenantMapping
+		parentTenant3BusinessMapping *model.BusinessTenantMapping
+		parentTenant4BusinessMapping *model.BusinessTenantMapping
 
-	parentTenant1BusinessMapping := parentTenant1.ToBusinessTenantMapping(busTenant1GUID)
-	parentTenant2BusinessMapping := parentTenant2.ToBusinessTenantMapping(busTenant2GUID)
-	parentTenant3BusinessMapping := parentTenant3.ToBusinessTenantMapping(busTenant3GUID)
-	parentTenant4BusinessMapping := parentTenant4.ToBusinessTenantMapping(busTenant4GUID)
+		busSubaccount1 model.BusinessTenantMappingInput
+		busSubaccount2 model.BusinessTenantMappingInput
+		busSubaccount3 model.BusinessTenantMappingInput
+		busSubaccount4 model.BusinessTenantMappingInput
+		busSubaccounts []model.BusinessTenantMappingInput
 
-	busSubaccount1 := fixBusinessTenantMappingInput("foo", "S1", provider, "subdomain-1", "test-region", parentTenant1.ExternalTenant, tenant.Subaccount)
-	busSubaccount2 := fixBusinessTenantMappingInput("bar", "S2", provider, "subdomain-2", "test-region", parentTenant2.ExternalTenant, tenant.Subaccount)
-	busSubaccount3 := fixBusinessTenantMappingInput("baz", "S3", provider, "subdomain-3", "test-region", parentTenant3.ExternalTenant, tenant.Subaccount)
-	busSubaccount4 := fixBusinessTenantMappingInput("bsk", "S4", provider, "subdomain-4", "test-region", parentTenant4.ExternalTenant, tenant.Subaccount)
-	busSubaccounts := []model.BusinessTenantMappingInput{busSubaccount1, busSubaccount2, busSubaccount3, busSubaccount4}
+		businessSubaccount1BusinessMapping *model.BusinessTenantMapping
+		businessSubaccount2BusinessMapping *model.BusinessTenantMapping
+		businessSubaccount3BusinessMapping *model.BusinessTenantMapping
+		businessSubaccount4BusinessMapping *model.BusinessTenantMapping
 
-	businessSubaccount1BusinessMapping := busSubaccount1.ToBusinessTenantMapping(busTenant1GUID)
-	businessSubaccount2BusinessMapping := busSubaccount2.ToBusinessTenantMapping(busTenant2GUID)
-	businessSubaccount3BusinessMapping := busSubaccount3.ToBusinessTenantMapping(busTenant3GUID)
-	businessSubaccount4BusinessMapping := busSubaccount4.ToBusinessTenantMapping(busTenant4GUID)
+		businessSubaccountsMappingPointers []*model.BusinessTenantMapping
 
-	businessSubaccountsMappingPointers := []*model.BusinessTenantMapping{businessSubaccount1BusinessMapping, businessSubaccount2BusinessMapping, businessSubaccount3BusinessMapping}
+		subaccountEvent1Fields map[string]string
+		subaccountEvent2Fields map[string]string
+		subaccountEvent3Fields map[string]string
+		subaccountEvent4Fields map[string]string
 
-	subaccountEvent1Fields := map[string]string{
-		tenantFieldMapping.IDField:         "S1",
-		tenantFieldMapping.NameField:       "foo",
-		tenantFieldMapping.ParentIDField:   busTenant1GUID,
-		tenantFieldMapping.RegionField:     "test-region",
-		tenantFieldMapping.SubdomainField:  "subdomain-1",
-		tenantFieldMapping.EntityTypeField: "Subaccount",
-	}
-	subaccountEvent2Fields := map[string]string{
-		tenantFieldMapping.IDField:         "S2",
-		tenantFieldMapping.NameField:       "bar",
-		tenantFieldMapping.ParentIDField:   busTenant2GUID,
-		tenantFieldMapping.RegionField:     "test-region",
-		tenantFieldMapping.SubdomainField:  "subdomain-2",
-		tenantFieldMapping.EntityTypeField: "Subaccount",
-	}
-	subaccountEvent3Fields := map[string]string{
-		tenantFieldMapping.IDField:         "S3",
-		tenantFieldMapping.NameField:       "baz",
-		tenantFieldMapping.ParentIDField:   busTenant3GUID,
-		tenantFieldMapping.RegionField:     "test-region",
-		tenantFieldMapping.SubdomainField:  "subdomain-3",
-		tenantFieldMapping.EntityTypeField: "Subaccount",
-	}
-	subaccountEvent4Fields := map[string]string{
-		tenantFieldMapping.IDField:         "S4",
-		tenantFieldMapping.NameField:       "bsk",
-		tenantFieldMapping.ParentIDField:   busTenant4GUID,
-		tenantFieldMapping.RegionField:     "test-region",
-		tenantFieldMapping.SubdomainField:  "subdomain-4",
-		tenantFieldMapping.EntityTypeField: "Subaccount",
-		"source_tenant":                    "source",
-		"target_tenant":                    "target",
-	}
+		subaccountEvent1 []byte
+		subaccountEvent2 []byte
+		subaccountEvent3 []byte
+		subaccountEvent4 []byte
 
-	subaccountEvent1 := fixEvent(t, "Subaccount", subaccountEvent1Fields)
-	subaccountEvent2 := fixEvent(t, "Subaccount", subaccountEvent2Fields)
-	subaccountEvent3 := fixEvent(t, "Subaccount", subaccountEvent3Fields)
-	subaccountEvent4 := fixEvent(t, "Subaccount", subaccountEvent4Fields)
+		subaccountEvents []byte
+
+		lblDef model.LabelDefinition
+	)
 
 	eventsToJSONArray := func(events ...[]byte) []byte {
 		return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
 	}
-	subaccountEvents := eventsToJSONArray(subaccountEvent1, subaccountEvent2, subaccountEvent3, subaccountEvent4)
 
 	pageOneQueryParams := tenantfetcher.QueryParams{
 		"pageSize":  "1",
@@ -965,17 +927,106 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		"region":    "test-region",
 	}
 
-	lblDef := model.LabelDefinition{
-		Tenant: targetInternalTenant.ID,
-		Key:    "moved_runtime_key",
-	}
 	lblDefGQL := graphql.LabelDefinitionInput{
 		Key: "moved_runtime_key",
 	}
 	errLblDefNotUnique := errors.New(apperrors.NotUniqueMsg)
 
 	testErr := errors.New("test error")
+	notFoundErr := errors.New("Object not found")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	beforeEach := func() {
+		targetInternalTenantInput = fixBusinessTenantMappingInput("target", "target", provider, "", "", "", tenant.Account)
+		targetInternalTenant = targetInternalTenantInput.ToBusinessTenantMapping("internalID")
+
+		tenantFieldMapping = tenantfetcher.TenantFieldMapping{
+			NameField:       "name",
+			IDField:         "id",
+			CustomerIDField: "customerId",
+			SubdomainField:  "subdomain",
+			EntityTypeField: "type",
+			RegionField:     "region",
+			ParentIDField:   "parentId",
+		}
+
+		busTenant1GUID = "d1f08f02-2fda-4511-962a-17fd1f1aa477"
+		busTenant2GUID = "49af7161-7dc7-472b-a969-d2f0430fc41d"
+		busTenant3GUID = "72409a54-2b1a-4cbb-803b-515315c74d02"
+		busTenant4GUID = "72409a54-2b1a-4cbb-803b-515315123212"
+
+		parentTenant1 = fixBusinessTenantMappingInput(busTenant1GUID, busTenant1GUID, provider, "", "", "", tenant.Account)
+		parentTenant2 = fixBusinessTenantMappingInput(busTenant2GUID, busTenant2GUID, provider, "", "", "", tenant.Account)
+		parentTenant3 = fixBusinessTenantMappingInput(busTenant3GUID, busTenant3GUID, provider, "", "", "", tenant.Account)
+		parentTenant4 = fixBusinessTenantMappingInput(busTenant4GUID, busTenant4GUID, provider, "", "", "", tenant.Account)
+		parentTenants = []model.BusinessTenantMappingInput{parentTenant1, parentTenant2, parentTenant3, parentTenant4}
+
+		parentTenant1BusinessMapping = parentTenant1.ToBusinessTenantMapping(busTenant1GUID)
+		parentTenant2BusinessMapping = parentTenant2.ToBusinessTenantMapping(busTenant2GUID)
+		parentTenant3BusinessMapping = parentTenant3.ToBusinessTenantMapping(busTenant3GUID)
+		parentTenant4BusinessMapping = parentTenant4.ToBusinessTenantMapping(busTenant4GUID)
+
+		busSubaccount1 = fixBusinessTenantMappingInput("foo", "S1", provider, "subdomain-1", "test-region", parentTenant1.ExternalTenant, tenant.Subaccount)
+		busSubaccount2 = fixBusinessTenantMappingInput("bar", "S2", provider, "subdomain-2", "test-region", parentTenant2.ExternalTenant, tenant.Subaccount)
+		busSubaccount3 = fixBusinessTenantMappingInput("baz", "S3", provider, "subdomain-3", "test-region", parentTenant3.ExternalTenant, tenant.Subaccount)
+		busSubaccount4 = fixBusinessTenantMappingInput("bsk", "S4", provider, "subdomain-4", "test-region", parentTenant4.ExternalTenant, tenant.Subaccount)
+		busSubaccounts = []model.BusinessTenantMappingInput{busSubaccount1, busSubaccount2, busSubaccount3, busSubaccount4}
+
+		businessSubaccount1BusinessMapping = busSubaccount1.ToBusinessTenantMapping(busTenant1GUID)
+		businessSubaccount2BusinessMapping = busSubaccount2.ToBusinessTenantMapping(busTenant2GUID)
+		businessSubaccount3BusinessMapping = busSubaccount3.ToBusinessTenantMapping(busTenant3GUID)
+		businessSubaccount4BusinessMapping = busSubaccount4.ToBusinessTenantMapping(busTenant4GUID)
+
+		businessSubaccountsMappingPointers = []*model.BusinessTenantMapping{businessSubaccount1BusinessMapping, businessSubaccount2BusinessMapping, businessSubaccount3BusinessMapping}
+
+		subaccountEvent1Fields = map[string]string{
+			tenantFieldMapping.IDField:         "S1",
+			tenantFieldMapping.NameField:       "foo",
+			tenantFieldMapping.ParentIDField:   busTenant1GUID,
+			tenantFieldMapping.RegionField:     "test-region",
+			tenantFieldMapping.SubdomainField:  "subdomain-1",
+			tenantFieldMapping.EntityTypeField: "Subaccount",
+		}
+		subaccountEvent2Fields = map[string]string{
+			tenantFieldMapping.IDField:         "S2",
+			tenantFieldMapping.NameField:       "bar",
+			tenantFieldMapping.ParentIDField:   busTenant2GUID,
+			tenantFieldMapping.RegionField:     "test-region",
+			tenantFieldMapping.SubdomainField:  "subdomain-2",
+			tenantFieldMapping.EntityTypeField: "Subaccount",
+		}
+		subaccountEvent3Fields = map[string]string{
+			tenantFieldMapping.IDField:         "S3",
+			tenantFieldMapping.NameField:       "baz",
+			tenantFieldMapping.ParentIDField:   busTenant3GUID,
+			tenantFieldMapping.RegionField:     "test-region",
+			tenantFieldMapping.SubdomainField:  "subdomain-3",
+			tenantFieldMapping.EntityTypeField: "Subaccount",
+		}
+		subaccountEvent4Fields = map[string]string{
+			tenantFieldMapping.IDField:         "S4",
+			tenantFieldMapping.NameField:       "bsk",
+			tenantFieldMapping.ParentIDField:   busTenant4GUID,
+			tenantFieldMapping.RegionField:     "test-region",
+			tenantFieldMapping.SubdomainField:  "subdomain-4",
+			tenantFieldMapping.EntityTypeField: "Subaccount",
+			"source_tenant":                    "source",
+			"target_tenant":                    "target",
+		}
+
+		subaccountEvent1 = fixEvent(t, "Subaccount", subaccountEvent1Fields)
+		subaccountEvent2 = fixEvent(t, "Subaccount", subaccountEvent2Fields)
+		subaccountEvent3 = fixEvent(t, "Subaccount", subaccountEvent3Fields)
+		subaccountEvent4 = fixEvent(t, "Subaccount", subaccountEvent4Fields)
+
+		subaccountEvents = eventsToJSONArray(subaccountEvent1, subaccountEvent2, subaccountEvent3, subaccountEvent4)
+
+		lblDef = model.LabelDefinition{
+			Tenant: targetInternalTenant.ID,
+			Key:    "moved_runtime_key",
+		}
+
+	}
 
 	tNowInMillis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
 
@@ -1007,8 +1058,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 
 				// Moved tenants
-				svc.On("GetTenantByExternalID", mock.Anything, busSubaccount4.ExternalTenant).Return(businessSubaccount4BusinessMapping, nil).Once()
 				svc.On("GetTenantByExternalID", mock.Anything, "target").Return(targetInternalTenant, nil).Once()
+				svc.On("GetTenantByExternalID", mock.Anything, busSubaccount4.ExternalTenant).Return(businessSubaccount4BusinessMapping, nil).Once()
 
 				return svc
 			},
@@ -1899,6 +1950,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
+				svc.On("GetTenantByExternalID", mock.Anything, "target").Return(targetInternalTenant, nil).Once()
 				svc.On("GetTenantByExternalID", mock.Anything, busSubaccount4.ExternalTenant).Return(nil, testErr).Once()
 				return svc
 			},
@@ -1914,6 +1966,90 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
+			Name:            "Success when moving subaccount and can't find target parent by external ID should create it",
+			TransactionerFn: txGen.ThatSucceeds,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+
+				return client
+			},
+			TenantStorageSvcFn: func() *automock.TenantStorageService {
+				svc := &automock.TenantStorageService{}
+				svc.On("GetTenantByExternalID", mock.Anything, "target").Return(nil, notFoundErr).Once()
+				svc.On("GetTenantByExternalID", mock.Anything, "target").Return(targetInternalTenant, nil).Once()
+				svc.On("GetTenantByExternalID", mock.Anything, busSubaccount4.ExternalTenant).Return(businessSubaccount4BusinessMapping, nil).Once()
+				return svc
+			},
+			RuntimeStorageSvcFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFiltersGlobal", mock.Anything, mock.Anything).Return(nil, apperrors.NewNotFoundError(resource.Runtime, "")).Once()
+				return runtimeSvc
+			},
+			LabelSvcFn: UnusedLabelSvc,
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+				return client
+			},
+			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				subaccountToExpect := model.BusinessTenantMappingInput{
+					Name:           busSubaccount4.Name,
+					ExternalTenant: busSubaccount4.ExternalTenant,
+					Parent:         targetInternalTenant.ID,
+					Type:           busSubaccount4.Type,
+					Provider:       busSubaccount4.Provider,
+				}
+
+				gqlClient := &automock.DirectorGraphQLClient{}
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantConverter.MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput{targetInternalTenantInput}))).Return(nil)
+				gqlClient.On("UpdateTenant", mock.Anything, busTenant4GUID, tenantConverter.ToGraphQLInput(subaccountToExpect)).Return(nil)
+				return gqlClient
+			},
+			ConverterFn:   UnusedLabelDefConverter,
+			ExpectedError: nil,
+		},
+		{
+			Name:            "Success when moving subaccount and it is not found in our database, test should create it",
+			TransactionerFn: txGen.ThatSucceeds,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+
+				return client
+			},
+			TenantStorageSvcFn: func() *automock.TenantStorageService {
+				svc := &automock.TenantStorageService{}
+				svc.On("GetTenantByExternalID", mock.Anything, "target").Return(targetInternalTenant, nil).Once()
+				svc.On("GetTenantByExternalID", mock.Anything, busSubaccount4.ExternalTenant).Return(nil, notFoundErr).Once()
+				return svc
+			},
+			RuntimeStorageSvcFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFiltersGlobal", mock.Anything, mock.Anything).Return(nil, apperrors.NewNotFoundError(resource.Runtime, "")).Once()
+				return runtimeSvc
+			},
+			LabelSvcFn: UnusedLabelSvc,
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+				return client
+			},
+			GqlClientFn: func() *automock.DirectorGraphQLClient {
+				busSubaccounts[3].Parent = targetInternalTenant.ID
+
+				gqlClient := &automock.DirectorGraphQLClient{}
+				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantConverter.MultipleInputToGraphQLInput(busSubaccounts[3:]))).Return(nil)
+				return gqlClient
+			},
+			ConverterFn:   UnusedLabelDefConverter,
+			ExpectedError: nil,
+		},
+		{
 			Name:            "Error when moving subaccount and can't get target tenant by external ID",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 
@@ -1926,7 +2062,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("GetTenantByExternalID", mock.Anything, busSubaccount4.ExternalTenant).Return(businessSubaccount4BusinessMapping, nil).Once()
 				svc.On("GetTenantByExternalID", mock.Anything, "target").Return(nil, testErr).Once()
 				return svc
 			},
@@ -1953,8 +2088,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("GetTenantByExternalID", mock.Anything, busSubaccount4.ExternalTenant).Return(businessSubaccount4BusinessMapping, nil).Once()
 				svc.On("GetTenantByExternalID", mock.Anything, "target").Return(targetInternalTenant, nil).Once()
+				svc.On("GetTenantByExternalID", mock.Anything, busSubaccount4.ExternalTenant).Return(businessSubaccount4BusinessMapping, nil).Once()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
@@ -2409,6 +2544,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
+			beforeEach()
 			persist, transact := testCase.TransactionerFn()
 			apiClient := testCase.APIClientFn()
 			tenantStorageSvc := testCase.TenantStorageSvcFn()
@@ -2462,6 +2598,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 
 	t.Run("Success after retry", func(t *testing.T) {
 		// GIVEN
+		beforeEach()
+
 		persist, transact := txGen.ThatSucceeds()
 		apiClient := &automock.EventAPIClient{}
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
