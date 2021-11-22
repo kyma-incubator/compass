@@ -140,11 +140,10 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 
-	key := "test_validation_ld"
-	ld := fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, key, map[string]string{"type": "string"}, tenantId)
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ld.Key, true, tenantId)
+	ld := fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{"test"})
+	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, ld.Key, true, tenantID)
 	invalidInput := graphql.LabelDefinitionInput{
 		Key: "",
 	}

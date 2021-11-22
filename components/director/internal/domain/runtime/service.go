@@ -550,7 +550,7 @@ func (s *service) getCurrentLabelsForRuntime(ctx context.Context, tenantID, runt
 }
 
 func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value interface{}) (*model.BusinessTenantMapping, error) {
-	rtmTenant, err := tenant.LoadFromContext(ctx)
+	callingTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
@@ -559,13 +559,13 @@ func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value in
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
 	}
-	log.C(ctx).Infof("Runtime registered by tenant %s with %s label with value %s. Will proceed with the subaccount as tenant...", rtmTenant, scenarioassignment.SubaccountIDKey, sa)
+	log.C(ctx).Infof("Runtime registered by tenant %s with %s label with value %s. Will proceed with the subaccount as tenant...", callingTenant, scenarioassignment.SubaccountIDKey, sa)
 	tnt, err := s.tenantSvc.GetTenantByExternalID(ctx, sa)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting tenant %s", sa)
 	}
-	if tnt.Parent != rtmTenant {
-		log.C(ctx).Errorf("Caller tenant %s is not parent of the subaccount %s in the %s label", rtmTenant, sa, scenarioassignment.SubaccountIDKey)
+	if callingTenant != tnt.ID && callingTenant != tnt.Parent {
+		log.C(ctx).Errorf("Caller tenant %s is not parent of the subaccount %s in the %s label", callingTenant, sa, scenarioassignment.SubaccountIDKey)
 		return nil, apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey))
 	}
 	return tnt, nil

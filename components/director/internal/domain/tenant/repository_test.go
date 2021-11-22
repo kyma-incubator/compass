@@ -491,7 +491,7 @@ func TestPgRepository_GetLowestOwnerForResource(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		rowsToReturn := sqlmock.NewRows([]string{"tenant_id"}).AddRow(testID)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = ? AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = ? AND ta2.owner = true AND tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
 			WithArgs(runtimeID, runtimeID).
 			WillReturnRows(rowsToReturn)
 
@@ -510,7 +510,7 @@ func TestPgRepository_GetLowestOwnerForResource(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = ? AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = ? AND ta2.owner = true AND tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
 			WithArgs(runtimeID, runtimeID).WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)

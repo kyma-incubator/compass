@@ -92,6 +92,12 @@ func TestService_Create(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 	ctxWithSubaccount := tenant.SaveToContext(ctx, subaccountID, extSubaccountID)
 
+	ctxWithSubaccountMatcher := mock.MatchedBy(func(ctx context.Context) bool {
+		tenantCtx, err := tenant.LoadTenantPairFromContext(ctx)
+		require.NoError(t, err)
+		return subaccountID == tenantCtx.InternalID && extSubaccountID == tenantCtx.ExternalID
+	})
+
 	testCases := []struct {
 		Name                 string
 		RuntimeRepositoryFn  func() *automock.RuntimeRepository
@@ -101,6 +107,7 @@ func TestService_Create(t *testing.T) {
 		UIDServiceFn         func() *automock.UIDService
 		EngineServiceFn      func() *automock.ScenarioAssignmentEngine
 		Input                model.RuntimeInput
+		Context              context.Context
 		ExpectedErr          error
 	}{
 		{
@@ -129,6 +136,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInput,
+			Context:     ctx,
 			ExpectedErr: nil,
 		},
 		{
@@ -162,6 +170,41 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInputWithSubaccountLabel,
+			Context:     ctx,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Success with Subaccount label when caller and label are the same",
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Create", ctxWithSubaccountMatcher, subaccountID, runtimeModel).Return(nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				return &automock.ScenariosService{}
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				repo := &automock.LabelUpsertService{}
+				repo.On("UpsertMultipleLabels", ctxWithSubaccountMatcher, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
+				return repo
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccount, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				return tenantSvc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(runtimeID)
+				return svc
+			},
+			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+				svc := &automock.ScenarioAssignmentEngine{}
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithSubaccountMatcher, modelInputWithSubaccountLabel.Labels, runtimeID).Return([]interface{}{"DEFAULT"}, nil)
+				return svc
+			},
+			Input:       modelInputWithSubaccountLabel,
+			Context:     ctxWithSubaccount,
 			ExpectedErr: nil,
 		},
 		{
@@ -192,6 +235,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInputWithoutLabels,
+			Context:     ctx,
 			ExpectedErr: nil,
 		},
 		{
@@ -220,6 +264,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInputWithInvalidSubaccountLabel,
+			Context:     ctx,
 			ExpectedErr: errors.New("while converting global_subaccount_id label"),
 		},
 		{
@@ -249,6 +294,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInputWithSubaccountLabel,
+			Context:     ctx,
 			ExpectedErr: testErr,
 		},
 		{
@@ -276,6 +322,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInput,
+			Context:     ctx,
 			ExpectedErr: testErr,
 		},
 		{
@@ -305,6 +352,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInputWithSubaccountLabel,
+			Context:     ctx,
 			ExpectedErr: apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey)),
 		},
 		{
@@ -332,6 +380,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInput,
+			Context:     ctx,
 			ExpectedErr: testErr,
 		},
 		{
@@ -360,6 +409,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInput,
+			Context:     ctx,
 			ExpectedErr: testErr,
 		},
 	}
@@ -378,7 +428,7 @@ func TestService_Create(t *testing.T) {
 			svc := runtime.NewService(repo, nil, scenariosSvc, labelSvc, idSvc, engineSvc, protectedLabelPattern, tenantSvc)
 
 			// when
-			result, err := svc.Create(ctx, testCase.Input)
+			result, err := svc.Create(testCase.Context, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)

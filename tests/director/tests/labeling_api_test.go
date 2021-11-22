@@ -413,26 +413,16 @@ func TestListLabelDefinitions(t *testing.T) {
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 	ctx := context.TODO()
 
-	firstSchema := map[string]interface{}{
-		"test": "test",
-	}
-	firstLabelDefinition := fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, "first", firstSchema, tenantID)
+	firstLabelDefinition := fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{"test"})
 	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, firstLabelDefinition.Key, false, tenantID)
-
-	secondSchema := map[string]interface{}{
-		"test": "test",
-	}
-	secondLabelDefinition := fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, "second", secondSchema, tenantID)
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, secondLabelDefinition.Key, false, tenantID)
 
 	//WHEN
 	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, tenantID)
 
 	//THEN
 	require.NoError(t, err)
-	require.Len(t, labelDefinitions, 2)
+	require.Len(t, labelDefinitions, 1)
 	assert.Contains(t, labelDefinitions, firstLabelDefinition)
-	assert.Contains(t, labelDefinitions, secondLabelDefinition)
 }
 
 func TestDeleteLastScenarioForApplication(t *testing.T) {
