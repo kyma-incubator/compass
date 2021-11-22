@@ -32,10 +32,14 @@ const (
 	IsolationTypeKey key = "IsolationTypeKey"
 )
 
+// IsolationType represents the isolation type.
 type IsolationType string
 
 const (
-	SimpleIsolationType    IsolationType = "simple"
+	// SimpleIsolationType is an isolation type that works by matching resources to tenants directly.
+	SimpleIsolationType IsolationType = "simple"
+
+	// RecursiveIsolationType is an isolation type that works by matching tenants recursively.
 	RecursiveIsolationType IsolationType = "recursive"
 )
 
@@ -73,6 +77,7 @@ func SaveIsolationTypeToContext(ctx context.Context, isolationTypeString string)
 	return context.WithValue(ctx, IsolationTypeKey, IsolationType(isolationTypeString))
 }
 
+// IsValid checks whether the isolation type is a valid value.
 func (it IsolationType) IsValid() bool {
 	return it == SimpleIsolationType ||
 		it == RecursiveIsolationType
