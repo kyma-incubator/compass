@@ -32,7 +32,7 @@ spec:
           serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
           containers:
           - name: fetcher
-            image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
+            image: compass-director:latest
             imagePullPolicy: IfNotPresent
             env:
               - name: APP_USE_KUBERNETES

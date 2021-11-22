@@ -221,6 +221,10 @@ DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_apps;
 DROP VIEW IF EXISTS tenants_bundles;
 DROP VIEW IF EXISTS tenants_events;
+DROP VIEW IF EXISTS tenants_packages;
+DROP VIEW IF EXISTS tenants_products;
+DROP VIEW IF EXISTS tenants_vendors;
+DROP VIEW IF EXISTS tenants_tombstones;
 
 DROP FUNCTION IF EXISTS apps_subaccounts_func();
 DROP FUNCTION IF EXISTS consumers_provider_for_runtimes_func();

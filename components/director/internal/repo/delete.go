@@ -176,7 +176,7 @@ func (g *universalDeleter) unsafeDeleteTenantAccess(ctx context.Context, resourc
 		return err
 	}
 
-	if len(ids) == 0 {
+	if requireSingleRemoval && len(ids) == 0 {
 		return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
 	}
 
@@ -238,7 +238,7 @@ func (g *universalDeleter) unsafeDeleteChildEntity(ctx context.Context, resource
 		return errors.Wrap(err, "while checking affected rows")
 	}
 
-	if affected == 0 {
+	if requireSingleRemoval && affected == 0 {
 		return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
 	}
 

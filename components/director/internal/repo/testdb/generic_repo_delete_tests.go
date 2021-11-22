@@ -56,61 +56,61 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 			convMock.AssertExpectations(t)
 		})
 
-		if suite.IsTopLeveEntity {
-			t.Run("returns unauthorized if no entity matches criteria", func(t *testing.T) {
-				sqlxDB, sqlMock := MockDatabase(t)
-				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-				for _, sqlDetails := range suite.SqlQueryDetails {
-					if sqlDetails.IsSelect {
-						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlmock.NewRows([]string{}))
-						break
-					} else {
-						sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
-					}
-				}
-
-				convMock := suite.ConverterMockProvider()
-				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
-				err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-				//THEN
-				require.Error(t, err)
-				require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
-				require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
-
-				sqlMock.AssertExpectations(t)
-				convMock.AssertExpectations(t)
-			})
-		} else {
-			t.Run("returns unauthorized if no entity matches criteria", func(t *testing.T) {
-				sqlxDB, sqlMock := MockDatabase(t)
-				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-				for _, sqlDetails := range suite.SqlQueryDetails {
-					if sqlDetails.IsSelect {
-						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-					} else {
-						sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlmock.NewResult(-1, 0))
-						break
-					}
-				}
-
-				convMock := suite.ConverterMockProvider()
-				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
-				err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-				//THEN
-				require.Error(t, err)
-				require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
-				require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
-
-				sqlMock.AssertExpectations(t)
-				convMock.AssertExpectations(t)
-			})
-		}
-
 		if !suite.IsDeleteMany {
+			if suite.IsTopLeveEntity {
+				t.Run("returns unauthorized if no entity matches criteria", func(t *testing.T) {
+					sqlxDB, sqlMock := MockDatabase(t)
+					ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+					for _, sqlDetails := range suite.SqlQueryDetails {
+						if sqlDetails.IsSelect {
+							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlmock.NewRows([]string{}))
+							break
+						} else {
+							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
+						}
+					}
+
+					convMock := suite.ConverterMockProvider()
+					pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
+					//WHEN
+					err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
+					//THEN
+					require.Error(t, err)
+					require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
+					require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
+
+					sqlMock.AssertExpectations(t)
+					convMock.AssertExpectations(t)
+				})
+			} else {
+				t.Run("returns unauthorized if no entity matches criteria", func(t *testing.T) {
+					sqlxDB, sqlMock := MockDatabase(t)
+					ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+					for _, sqlDetails := range suite.SqlQueryDetails {
+						if sqlDetails.IsSelect {
+							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
+						} else {
+							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlmock.NewResult(-1, 0))
+							break
+						}
+					}
+
+					convMock := suite.ConverterMockProvider()
+					pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
+					//WHEN
+					err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
+					//THEN
+					require.Error(t, err)
+					require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
+					require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
+
+					sqlMock.AssertExpectations(t)
+					convMock.AssertExpectations(t)
+				})
+			}
+
 			if suite.IsTopLeveEntity {
 				t.Run("returns error if more than one entity matches criteria", func(t *testing.T) {
 					sqlxDB, sqlMock := MockDatabase(t)

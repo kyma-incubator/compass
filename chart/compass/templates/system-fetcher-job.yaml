@@ -28,7 +28,7 @@ spec:
           {{ end }}
           containers:
             - name: system-fetcher
-              image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
+              image: compass-director:latest
               imagePullPolicy: IfNotPresent
               volumeMounts:
                 - name: director-config

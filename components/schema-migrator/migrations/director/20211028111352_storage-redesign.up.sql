@@ -504,17 +504,9 @@ BEGIN
 END
 $$;
 
-CREATE OR REPLACE VIEW tenants_apis
-            (tenant_id, provider_tenant_id, id, app_id, name, description, group_name, default_auth, version_value,
-             version_deprecated,
-             version_deprecated_since, version_for_removal, ord_id, short_description, system_instance_aware,
-             api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries,
-             labels, package_id, visibility, disabled, part_of_products, line_of_business, industry, ready, created_at,
-             updated_at, deleted_at, error, implementation_standard, custom_implementation_standard,
-             custom_implementation_standard_description, target_urls, extensible, successors, resource_hash)
-AS
-SELECT DISTINCT t_apps.tenant_id,
-                t_apps.provider_tenant_id,
+CREATE OR REPLACE VIEW tenants_apis AS
+SELECT DISTINCT t_apps.tenant_id AS tenant_id,
+                t_apps.provider_tenant_id  AS provider_tenant_id,
                 apis.id,
                 apis.app_id,
                 apis.name,
@@ -574,31 +566,10 @@ FROM api_definitions apis
                              ON cpr.consumer_tenants ? (SELECT external_tenant FROM business_tenant_mappings WHERE id = a_s.tenant_id::uuid)) t_apps ON apis.app_id = t_apps.id
          LEFT JOIN specifications specs ON apis.id = specs.api_def_id;
 
-CREATE OR REPLACE VIEW tenants_apps
-            (tenant_id, provider_tenant_id, id, name, description, status_condition, status_timestamp, healthcheck_url,
-             integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error,
-             app_template_id, correlation_ids, system_number, product_type)
-AS
-SELECT DISTINCT t_apps.tenant_id,
-                t_apps.provider_tenant_id,
-                apps.id,
-                apps.name,
-                apps.description,
-                apps.status_condition,
-                apps.status_timestamp,
-                apps.healthcheck_url,
-                apps.integration_system_id,
-                apps.provider_name,
-                apps.base_url,
-                apps.labels,
-                apps.ready,
-                apps.created_at,
-                apps.updated_at,
-                apps.deleted_at,
-                apps.error,
-                apps.app_template_id,
-                apps.correlation_ids,
-                apps.system_number,
+CREATE OR REPLACE VIEW tenants_apps AS
+SELECT DISTINCT t_apps.tenant_id AS tenant_id,
+                t_apps.provider_tenant_id AS provider_tenant_id,
+                apps.*,
                 tmpl.name AS product_type
 FROM applications apps
          LEFT JOIN app_templates tmpl ON apps.app_template_id = tmpl.id
@@ -616,30 +587,10 @@ FROM applications apps
                              ON cpr.consumer_tenants ? (SELECT external_tenant FROM business_tenant_mappings WHERE id = a_s.tenant_id::uuid)) t_apps
               ON apps.id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_bundles
-            (tenant_id, provider_tenant_id, id, app_id, name, description, instance_auth_request_json_schema,
-             default_instance_auth, ord_id,
-             short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at,
-             deleted_at, error)
-AS
-SELECT DISTINCT t_apps.tenant_id,
-                t_apps.provider_tenant_id,
-                b.id,
-                b.app_id,
-                b.name,
-                b.description,
-                b.instance_auth_request_json_schema,
-                b.default_instance_auth,
-                b.ord_id,
-                b.short_description,
-                b.links,
-                b.labels,
-                b.credential_exchange_strategies,
-                b.ready,
-                b.created_at,
-                b.updated_at,
-                b.deleted_at,
-                b.error
+CREATE OR REPLACE VIEW tenants_bundles AS
+SELECT DISTINCT t_apps.tenant_id AS tenant_id,
+                t_apps.provider_tenant_id AS provider_tenant_id,
+                b.*
 FROM bundles b
          JOIN (SELECT a1.id,
                       a1.tenant_id::text,
@@ -654,49 +605,10 @@ FROM bundles b
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? (SELECT external_tenant FROM business_tenant_mappings WHERE id = a_s.tenant_id::uuid)) t_apps ON b.app_id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_events
-            (tenant_id, provider_tenant_id, id, app_id, name, description, group_name, version_value,
-             version_deprecated,
-             version_deprecated_since, version_for_removal, ord_id, short_description, system_instance_aware,
-             changelog_entries, links, tags, countries, release_status, sunset_date, labels, package_id, visibility,
-             disabled, part_of_products, line_of_business, industry, ready, created_at, updated_at, deleted_at, error,
-             extensible, successors, resource_hash)
-AS
-SELECT DISTINCT t_apps.tenant_id,
-                t_apps.provider_tenant_id,
-                events.id,
-                events.app_id,
-                events.name,
-                events.description,
-                events.group_name,
-                events.version_value,
-                events.version_deprecated,
-                events.version_deprecated_since,
-                events.version_for_removal,
-                events.ord_id,
-                events.short_description,
-                events.system_instance_aware,
-                events.changelog_entries,
-                events.links,
-                events.tags,
-                events.countries,
-                events.release_status,
-                events.sunset_date,
-                events.labels,
-                events.package_id,
-                events.visibility,
-                events.disabled,
-                events.part_of_products,
-                events.line_of_business,
-                events.industry,
-                events.ready,
-                events.created_at,
-                events.updated_at,
-                events.deleted_at,
-                events.error,
-                events.extensible,
-                events.successors,
-                events.resource_hash
+CREATE OR REPLACE VIEW tenants_events AS
+SELECT DISTINCT t_apps.tenant_id AS tenant_id,
+                t_apps.provider_tenant_id  AS provider_tenant_id,
+                events.*
 FROM event_api_definitions events
          JOIN (SELECT a1.id,
                       a1.tenant_id::text,
@@ -711,23 +623,10 @@ FROM event_api_definitions events
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? (SELECT external_tenant FROM business_tenant_mappings WHERE id = a_s.tenant_id::uuid)) t_apps ON events.app_id = t_apps.id;
 
-CREATE OR REPLACE VIEW tenants_specifications
-            (tenant_id, provider_tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type,
-             event_spec_format,
-             event_spec_type, custom_type, created_at)
-AS
-SELECT DISTINCT t_api_event_def.tenant_id,
-                t_api_event_def.provider_tenant_id,
-                spec.id,
-                spec.api_def_id,
-                spec.event_def_id,
-                spec.spec_data,
-                spec.api_spec_format,
-                spec.api_spec_type,
-                spec.event_spec_format,
-                spec.event_spec_type,
-                spec.custom_type,
-                spec.created_at
+CREATE OR REPLACE VIEW tenants_specifications AS
+SELECT DISTINCT t_api_event_def.tenant_id AS tenant_id,
+                t_api_event_def.provider_tenant_id  AS provider_tenant_id,
+                spec.*
 FROM specifications spec
          JOIN (SELECT a.id,
                       a.tenant_id::text,
@@ -739,5 +638,77 @@ FROM specifications spec
                       e.provider_tenant_id::text
                FROM tenants_events e) t_api_event_def
               ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
+
+CREATE OR REPLACE VIEW tenants_packages AS
+SELECT DISTINCT t_apps.tenant_id AS tenant_id,
+                t_apps.provider_tenant_id AS provider_tenant_id,
+                p.*
+FROM packages p
+         JOIN (SELECT a1.id,
+                      a1.tenant_id::text,
+                      a1.tenant_id::text AS provider_tenant_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT *
+               FROM apps_subaccounts_func()
+               UNION ALL
+               SELECT a_s.id, a_s.tenant_id, (SELECT id::text FROM business_tenant_mappings WHERE external_tenant = cpr.provider_tenant) AS provider_tenant_id
+               FROM apps_subaccounts_func() a_s
+                        JOIN consumers_provider_for_runtimes_func() cpr
+                             ON cpr.consumer_tenants ? (SELECT external_tenant FROM business_tenant_mappings WHERE id = a_s.tenant_id::uuid)) t_apps ON p.app_id = t_apps.id;
+
+CREATE OR REPLACE VIEW tenants_products AS
+SELECT DISTINCT t_apps.tenant_id AS tenant_id,
+                t_apps.provider_tenant_id AS provider_tenant_id,
+                p.*
+FROM products p
+         JOIN (SELECT a1.id,
+                      a1.tenant_id::text,
+                      a1.tenant_id::text AS provider_tenant_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT *
+               FROM apps_subaccounts_func()
+               UNION ALL
+               SELECT a_s.id, a_s.tenant_id, (SELECT id::text FROM business_tenant_mappings WHERE external_tenant = cpr.provider_tenant) AS provider_tenant_id
+               FROM apps_subaccounts_func() a_s
+                        JOIN consumers_provider_for_runtimes_func() cpr
+                             ON cpr.consumer_tenants ? (SELECT external_tenant FROM business_tenant_mappings WHERE id = a_s.tenant_id::uuid)) t_apps ON p.app_id = t_apps.id;
+
+CREATE OR REPLACE VIEW tenants_vendors AS
+SELECT DISTINCT t_apps.tenant_id AS tenant_id,
+                t_apps.provider_tenant_id AS provider_tenant_id,
+                v.*
+FROM vendors v
+         JOIN (SELECT a1.id,
+                      a1.tenant_id::text,
+                      a1.tenant_id::text AS provider_tenant_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT *
+               FROM apps_subaccounts_func()
+               UNION ALL
+               SELECT a_s.id, a_s.tenant_id, (SELECT id::text FROM business_tenant_mappings WHERE external_tenant = cpr.provider_tenant) AS provider_tenant_id
+               FROM apps_subaccounts_func() a_s
+                        JOIN consumers_provider_for_runtimes_func() cpr
+                             ON cpr.consumer_tenants ? (SELECT external_tenant FROM business_tenant_mappings WHERE id = a_s.tenant_id::uuid)) t_apps ON v.app_id = t_apps.id;
+
+CREATE OR REPLACE VIEW tenants_tombstones AS
+SELECT DISTINCT t_apps.tenant_id AS tenant_id,
+                t_apps.provider_tenant_id AS provider_tenant_id,
+                t.*
+FROM tombstones t
+         JOIN (SELECT a1.id,
+                      a1.tenant_id::text,
+                      a1.tenant_id::text AS provider_tenant_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT *
+               FROM apps_subaccounts_func()
+               UNION ALL
+               SELECT a_s.id, a_s.tenant_id, (SELECT id::text FROM business_tenant_mappings WHERE external_tenant = cpr.provider_tenant) AS provider_tenant_id
+               FROM apps_subaccounts_func() a_s
+                        JOIN consumers_provider_for_runtimes_func() cpr
+                             ON cpr.consumer_tenants ? (SELECT external_tenant FROM business_tenant_mappings WHERE id = a_s.tenant_id::uuid)) t_apps ON t.app_id = t_apps.id;
 
 COMMIT;
