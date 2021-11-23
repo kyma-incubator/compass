@@ -79,7 +79,7 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2105"
+      version: "PR-2112"
     gateway:
       dir:
       version: "PR-2077"
@@ -102,7 +102,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2067"
+      version: "PR-2112"
     console:
       dir:
       version: "PR-47"
