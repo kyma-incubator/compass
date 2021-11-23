@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
@@ -36,12 +35,11 @@ func (cc *certificatesCache) Put(secretData map[string][]byte) {
 func (cc *certificatesCache) Get() (*tls.Certificate, error) {
 	secretData, err := cc.getSecretDataFromCache()
 	if err != nil {
-		log.D().Error(errors.Wrap(err, "Failed to get client certificate data from cache"))
 		return nil, errors.Wrap(err, "Failed to get client certificate data from cache")
 	}
 
 	certBytes := secretData["tls.crt"]
-	clientKeyBytes := secretData["tls.key"]
+	privateKeyBytes := secretData["tls.key"]
 
 	clientCrtPem, _ := pem.Decode(certBytes)
 	if clientCrtPem == nil {
@@ -53,28 +51,28 @@ func (cc *certificatesCache) Get() (*tls.Certificate, error) {
 		return nil, err
 	}
 
-	clientKeyPem, _ := pem.Decode(clientKeyBytes)
-	if clientKeyPem == nil {
-		return nil, errors.New("Error while decoding private ket pem block.")
+	privateKeyPem, _ := pem.Decode(privateKeyBytes)
+	if privateKeyPem == nil {
+		return nil, errors.New("Error while decoding private key pem block.")
 	}
 
-	if pkcs1PrivateKey, err := x509.ParsePKCS1PrivateKey(clientKeyPem.Bytes); err == nil {
-		return &tls.Certificate{
-			Certificate: [][]byte{clientCert.Raw},
-			PrivateKey:  pkcs1PrivateKey,
-		}, nil
-	}
-
-	pkcs8PrivateKey, err := x509.ParsePKCS8PrivateKey(clientKeyPem.Bytes)
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyPem.Bytes)
 	if err != nil {
-		return nil, err
+		pkcs8PrivateKey, err := x509.ParsePKCS8PrivateKey(privateKeyPem.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		var ok bool
+		privateKey, ok = pkcs8PrivateKey.(*rsa.PrivateKey)
+		if !ok {
+			return nil, err
+		}
 	}
 
 	return &tls.Certificate{
 		Certificate: [][]byte{clientCert.Raw},
-		PrivateKey:  pkcs8PrivateKey.(*rsa.PrivateKey),
+		PrivateKey: privateKey,
 	}, nil
-
 }
 
 func (cc *certificatesCache) getSecretDataFromCache() (map[string][]byte, error) {

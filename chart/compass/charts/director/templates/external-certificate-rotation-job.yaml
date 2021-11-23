@@ -23,7 +23,7 @@ spec:
           hostAliases:
             - ip: {{ .Values.global.minikubeIP }}
               hostnames:
-                - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+                - "{{ .Values.global.externalServicesMock.host }}.{{ .Values.global.ingress.domainName }}"
           {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
           restartPolicy: Never
@@ -42,10 +42,12 @@ spec:
 
                 set -e
 
+                IS_CERT_ISSUER_LOCALITY_VALID=false
+
                 function getClientCert() {
                   echo -e "${YELLOW}Getting the certificate chain... ${NC}"
                   CERT_CHAIN_PKCS7_RESP=$(curl -s -m 30 -X POST \
-                    "$CERT_SVC_URL" \
+                    "$CERT_SVC_CSR_ENDPOINT$CERT_SVC_API_PATH" \
                     -H "Authorization: Bearer $TOKEN" \
                     -H 'Content-Type: application/json' \
                     -H 'Accept: application/json' \
@@ -78,11 +80,12 @@ spec:
                 function confirmValidIssuerLocalityOrRetry() {
                   for (( i = 0; i < "$CLIENT_CERT_RETRY_ATTEMPTS"; i++ )); do
                     echo -e "${YELLOW}Checking issuer locality... ${NC}"
-                    ISSUER_LOCALITY=$(openssl x509 -in /tmp/client-certificate.pem -noout -text | grep "Issuer:" | awk '{print $3}' | cut -d '=' -f2 | sed 's/,$//g')
+                    ISSUER_LOCALITY=$(openssl x509 -in /tmp/client-certificate.pem -noout -text | grep "Issuer:" | awk '{print $7}' | cut -d '=' -f2 | sed 's/,$//g')
                     if [[ "$ISSUER_LOCALITY" != "$EXPECTED_ISSUER_LOCALITY" ]]; then
                       echo -e "${RED}The issuer locality of the client certificate didn't match the expected one. We expect \"$EXPECTED_ISSUER_LOCALITY\" but have: \"$ISSUER_LOCALITY\" ${NC}"
                       echo -e "${YELLOW}[Retry $(($i+1))] Getting new client certificate... ${NC}"
                       getClientCert # This will override the client certificate file content with the newly issued certificate
+                      sleep 0.2 # Sleep for 200ms before next retry
                     else
                       echo -e "${GREEN}Issuer locality of the client certificate is valid. Proceeding with the next steps... ${NC}"
                       IS_CERT_ISSUER_LOCALITY_VALID=true
@@ -98,9 +101,9 @@ spec:
 
                 echo -e "${YELLOW}Issuing token... ${NC}"
                 TOKEN=$(curl -s -m 30 -X POST \
-                  "$CERT_SVC_TOKEN_URL/oauth/token" \
-                  -H 'Content-Type: application/x-www-form-urlencoded' \
-                  -H 'Accept: application/json' \
+                  "$CERT_SVC_OAUTH_URL$CERT_SVC_TOKEN_PATH" \
+                  -H "Content-Type: application/x-www-form-urlencoded" \
+                  -H "Accept: application/json" \
                   -d "grant_type=client_credentials&token_format=bearer&client_id=$CERT_SVC_CLIENT_ID&client_secret=$CERT_SVC_CLIENT_SECRET" \
                   | jq -r .access_token)
 
@@ -112,8 +115,7 @@ spec:
                 openssl rsa -in /tmp/encrypted-private-key.pem -out /tmp/unencrypted-private-key.pem -passin pass:"$PASS_PHRASE"
 
                 echo -e "${YELLOW}Creating a CSR in json... ${NC}"
-                openssl req -new -sha256 -key /tmp/encrypted-private-key.pem -passin pass:"$PASS_PHRASE" -out /tmp/my-csr.pem \
-                   -subj '$CERT_SUBJECT_PATTERN'
+                openssl req -new -sha256 -key /tmp/encrypted-private-key.pem -passin pass:"$PASS_PHRASE" -out /tmp/my-csr.pem -subj "$CERT_SUBJECT_PATTERN"
                 JSON_CSR=$(jq -sR '.' /tmp/my-csr.pem)
 
                 getClientCert
@@ -123,13 +125,17 @@ spec:
                 echo -e "${YELLOW}Creating/Updating client certificate secret... ${NC}"
                 kubectl create secret tls external-client-certificate --namespace=compass-system --cert=/tmp/client-certificate.pem --key=/tmp/unencrypted-private-key.pem --save-config --dry-run=client -o yaml | kubectl apply -f -
 
+                exit_code=$?; curl -X POST http://127.0.0.1:15020/quitquitquit; sleep 3; exit $exit_code;
+
                 set +e
             env:
-              - name: CERT_SVC_URL
+              - name: CERT_SVC_CSR_ENDPOINT
                 valueFrom:
                   secretKeyRef:
                     name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
-                    key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.csrEndpointKey }}{{ .Values.global.externalCertConfiguration.certSvcApiPath }}
+                    key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.csrEndpointKey }}
+              - name: CERT_SVC_API_PATH
+                value: {{ .Values.global.externalCertConfiguration.certSvcApiPath }}
               - name: CERT_SUBJECT_PATTERN
                 value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
               - name: EXPECTED_ISSUER_LOCALITY
@@ -148,11 +154,13 @@ spec:
                   secretKeyRef:
                     name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
                     key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientSecretKey }}
-              - name: CERT_SVC_TOKEN_URL
+              - name: CERT_SVC_OAUTH_URL
                 valueFrom:
                   secretKeyRef:
                     name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
                     key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.oauthUrlKey }}
+              - name: CERT_SVC_TOKEN_PATH
+                value: {{ .Values.global.externalCertConfiguration.tokenPath }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -182,7 +190,7 @@ metadata:
 rules:
   - apiGroups: ["*"]
     resources: ["secrets"]
-    verbs: ["get", "create", "update"]
+    verbs: ["get", "create", "update", "patch"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
