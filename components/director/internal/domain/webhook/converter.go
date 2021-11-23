@@ -288,11 +288,11 @@ func (c *converter) objectReferenceFromEntity(in Entity) (string, model.WebhookR
 	}
 
 	if in.ApplicationTemplateID.Valid {
-		return in.RuntimeID.String, model.ApplicationTemplateWebhookReference, nil
+		return in.ApplicationTemplateID.String, model.ApplicationTemplateWebhookReference, nil
 	}
 
 	if in.IntegrationSystemID.Valid {
-		return in.RuntimeID.String, model.IntegrationSystemWebhookReference, nil
+		return in.IntegrationSystemID.String, model.IntegrationSystemWebhookReference, nil
 	}
 
 	return "", "", fmt.Errorf("incorrect Object Reference ID and its type for Entity with ID '%s'", in.ID)

@@ -223,7 +223,7 @@ func (u *universalUpdater) buildQuery(fieldsToSet []string, tenant string, resou
 		stmtBuilder.WriteString(fmt.Sprintf(" (id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true)", M2MResourceIDColumn, accessTable, M2MTenantIDColumn, tenant, M2MOwnerColumn))
 
 		if resourceType == resource.BundleInstanceAuth {
-			stmtBuilder.WriteString(" OR owner_id = :owner_id") // TODO: <storage-redesign> externalize
+			stmtBuilder.WriteString(" OR owner_id = :owner_id")
 		}
 
 		stmtBuilder.WriteString(")")

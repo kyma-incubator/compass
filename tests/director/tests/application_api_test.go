@@ -473,32 +473,6 @@ func TestUpdateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	require.Contains(t, err.Error(), "Object not found")
 }
 
-func TestCreateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-
-	appName := "samename"
-
-	actualApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant.TestTenants.GetDefaultTenantID())
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
-	require.NoError(t, err)
-	require.NotEmpty(t, actualApp.ID)
-
-	t.Run("Error when creating second Application with same name", func(t *testing.T) {
-		in := fixtures.FixSampleApplicationRegisterInputWithNameAndWebhooks("first", appName)
-		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
-		require.NoError(t, err)
-		request := fixtures.FixRegisterApplicationRequest(appInputGQL)
-
-		// WHEN
-		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, nil)
-
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "not unique")
-	})
-}
-
 func TestDeleteApplication(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
