@@ -1025,7 +1025,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			Tenant: targetInternalTenant.ID,
 			Key:    "moved_runtime_key",
 		}
-
 	}
 
 	tNowInMillis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
