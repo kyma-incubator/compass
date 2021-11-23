@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
@@ -186,7 +187,7 @@ func (r *OperationReconciler) handleGetOperationError(ctx context.Context, req *
 }
 
 func (r *OperationReconciler) handleFetchApplicationError(ctx context.Context, operation *v1alpha1.Operation, err error) (ctrl.Result, error) {
-	log.C(ctx).Error(err, "Unable to fetch application")
+	log.C(ctx).Error(err, fmt.Sprintf("Unable to fetch application with ID %s", operation.Spec.ResourceID))
 	if operation.TimeoutReached(time.Duration(r.config.TimeoutFactor) * r.config.WebhookTimeout) {
 		if err := r.k8sClient.Delete(ctx, operation); err != nil {
 			return ctrl.Result{}, err
@@ -196,6 +197,21 @@ func (r *OperationReconciler) handleFetchApplicationError(ctx context.Context, o
 		return ctrl.Result{}, nil
 	}
 
+	if isNotFoundError(err) {
+		if operation.Status.Phase == v1alpha1.StateSuccess || operation.Status.Phase == v1alpha1.StateFailed {
+			log.C(ctx).Info(fmt.Sprintf("Last state of operation for application with ID %s is %s, will not requeue", operation.Spec.ResourceID, operation.Status.Phase))
+			return ctrl.Result{}, nil
+		}
+
+		if operation.Spec.OperationType == v1alpha1.OperationTypeDelete && operation.Status.Phase == v1alpha1.StateInProgress {
+			return r.finalizeStatus(ctx, operation, nil, nil)
+		}
+		if operation.Spec.OperationType == v1alpha1.OperationTypeUpdate && operation.Status.Phase == v1alpha1.StateInProgress {
+			return r.finalizeStatus(ctx, operation, str.Ptr("Application not found in director"), nil)
+		}
+	}
+
+	// requeue in case of async create (app is not created in director yet), or a glitch in controller<->director communication
 	return ctrl.Result{}, err
 }
 
@@ -267,7 +283,6 @@ func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1a
 	}
 
 	if errorMsg != nil && *errorMsg != "" {
-
 		r.metricsCollector.RecordError(operation.ObjectMeta.Name,
 			operation.Spec.CorrelationID,
 			string(operation.Spec.OperationType),
@@ -278,14 +293,16 @@ func (r *OperationReconciler) finalizeStatus(ctx context.Context, operation *v1a
 		if err := r.statusManager.FailedStatus(ctx, operation, *errorMsg); err != nil {
 			return ctrl.Result{}, err
 		}
-	} else {
-		if err := r.statusManager.SuccessStatus(ctx, operation); err != nil {
-			return ctrl.Result{}, err
-		}
 
-		duration := time.Now().Sub(operation.Status.InitializedAt.Time)
-		r.metricsCollector.RecordLatency(string(operation.Spec.OperationType), duration)
+		return ctrl.Result{}, nil
 	}
+
+	if err := r.statusManager.SuccessStatus(ctx, operation); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	duration := time.Now().Sub(operation.Status.InitializedAt.Time)
+	r.metricsCollector.RecordLatency(string(operation.Spec.OperationType), duration)
 
 	return ctrl.Result{}, nil
 }
