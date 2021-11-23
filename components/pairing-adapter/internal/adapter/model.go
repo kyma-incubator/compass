@@ -12,13 +12,15 @@ const (
 	AuthStyleAutoDetect AuthStyle = "AuthDetect"
 	AuthStyleInParams   AuthStyle = "InParams"
 	AuthStyleInHeader   AuthStyle = "InHeader"
+	AuthTypeOauth                 = "oauth"
+	AuthTypeMTLS                  = "mtls"
 )
 
 type AuthStyle string
 
 type Configuration struct {
 	Mapping       Mapping
-	OAuth         OAuth
+	Auth          Auth
 	Port          string        `envconfig:"default=8080"`
 	ClientTimeout time.Duration `envconfig:"default=30s"`
 	ServerTimeout time.Duration `envconfig:"default=30s"`
@@ -32,10 +34,11 @@ type Mapping struct {
 	TemplateTokenFromResponse string
 }
 
-type OAuth struct {
+type Auth struct {
 	URL          string
-	ClientID     string
-	ClientSecret string
+	Type         string
+	ClientID     string    `envconfig:"optional"`
+	ClientSecret string    `envconfig:"optional"`
 	AuthStyle    AuthStyle `envconfig:"default=AuthDetect"`
 }
 

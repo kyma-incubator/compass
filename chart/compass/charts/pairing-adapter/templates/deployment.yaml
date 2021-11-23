@@ -41,21 +41,30 @@ spec:
                 value: {{ $config.envs.mappingTemplateJSONBody | quote }}
               - name: MAPPING_TEMPLATE_TOKEN_FROM_RESPONSE
                 value: {{ $config.envs.mappingTemplateTokenFromResponse | quote }}
-              - name: OAUTH_URL
+              - name: AUTH_TYPE
                 valueFrom:
                     secretKeyRef:
-                        name: {{ $config.oauthSecret }}
+                        name: {{ $config.authSecret }}
+                        key: type
+              - name: AUTH_URL
+                valueFrom:
+                    secretKeyRef:
+                        name: {{ $config.authSecret }}
                         key: url
+{{ $secret := (lookup "v1" "Secret" $.Release.Namespace  $config.authSecret ) }}
+{{if eq $secret.data.type "oauth" }}
               - name: OAUTH_CLIENT_ID
                 valueFrom:
                     secretKeyRef:
-                        name: {{ $config.oauthSecret }}
+                        name: {{ $config.authSecret }}
                         key: clientID
               - name: OAUTH_CLIENT_SECRET
                 valueFrom:
                     secretKeyRef:
-                        name: {{ $config.oauthSecret }}
+                        name: {{ $config.authSecret }}
                         key: clientSecret
+{{ end }}
+{{ end }}
               - name: OAUTH_AUTH_STYLE
                 value: {{ $config.envs.oauthStyle | quote }}
               - name: LOG_FORMAT

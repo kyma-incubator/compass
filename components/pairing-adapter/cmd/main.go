@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 
@@ -26,23 +27,33 @@ func main() {
 	ctx, err := log.Configure(context.Background(), conf.Log)
 	exitOnError(err, "while configuring logger")
 
-	authStyle, err := getAuthStyle(conf.OAuth.AuthStyle)
+	authStyle, err := getAuthStyle(conf.Auth.AuthStyle)
 	exitOnError(err, "while getting Auth Style")
 
-	cc := clientcredentials.Config{
-		TokenURL:     conf.OAuth.URL,
-		ClientID:     conf.OAuth.ClientID,
-		ClientSecret: conf.OAuth.ClientSecret,
-		AuthStyle:    authStyle,
+	transport := &http.Transport{}
+	client := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(transport),
+		Timeout:   conf.ClientTimeout,
 	}
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
 
-	baseClient := &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+	if conf.Auth.Type == adapter.AuthTypeOauth {
+		cc := clientcredentials.Config{
+			TokenURL:     conf.Auth.URL,
+			ClientID:     conf.Auth.ClientID,
+			ClientSecret: conf.Auth.ClientSecret,
+			AuthStyle:    authStyle,
+		}
+		client = cc.Client(ctx)
+	} else {
+		//TODO: Init cache
+		var cache CertificateCache
+		transport.TLSClientConfig = &tls.Config{
+			GetClientCertificate: func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+				return cache.Get()
+			},
+		}
 	}
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, baseClient)
-
-	client := cc.Client(ctx)
-	client.Timeout = conf.ClientTimeout
 
 	cli := adapter.NewClient(client, conf.Mapping)
 
@@ -65,6 +76,10 @@ func main() {
 	}
 
 	exitOnError(server.ListenAndServe(), "on starting HTTP server")
+}
+
+type CertificateCache interface {
+	Get() (*tls.Certificate, error)
 }
 
 func exitOnError(err error, context string) {
