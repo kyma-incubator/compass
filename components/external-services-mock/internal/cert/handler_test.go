@@ -21,7 +21,7 @@ import (
 )
 
 type csrRequest struct {
-	Csr csrPayload `json:"csr"`
+	Csr csrPayload `json:"certificate-signing-request"`
 }
 
 type csrPayload struct {
