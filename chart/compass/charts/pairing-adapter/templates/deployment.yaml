@@ -51,8 +51,8 @@ spec:
                     secretKeyRef:
                         name: {{ $config.authSecret }}
                         key: url
-{{ $secret := (lookup "v1" "Secret" $.Release.Namespace  $config.authSecret ) }}
-{{if eq $secret.data.type "oauth" }}
+{{ $secret := (lookup "v1" "Secret" $.Release.Namespace $config.authSecret ) }}
+{{if eq (b64dec (index $secret.data "type")) "oauth" }}
               - name: OAUTH_CLIENT_ID
                 valueFrom:
                     secretKeyRef:
@@ -63,7 +63,6 @@ spec:
                     secretKeyRef:
                         name: {{ $config.authSecret }}
                         key: clientSecret
-{{ end }}
 {{ end }}
               - name: OAUTH_AUTH_STYLE
                 value: {{ $config.envs.oauthStyle | quote }}
