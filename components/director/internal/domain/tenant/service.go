@@ -110,6 +110,11 @@ func (s *service) GetTenantByExternalID(ctx context.Context, id string) (*model.
 	return s.tenantMappingRepo.GetByExternalTenant(ctx, id)
 }
 
+// GetTenantByID returns the tenant with the provided ID.
+func (s *service) GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.Get(ctx, id)
+}
+
 func (s *service) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
 	return s.tenantMappingRepo.GetLowestOwnerForResource(ctx, resourceType, objectID)
 }

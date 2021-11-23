@@ -22,6 +22,7 @@ import (
 
 const (
 	tnt         = "tenant"
+	targetTenant = "targetTenant"
 	externalTnt = "external-tnt"
 )
 
@@ -179,7 +180,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			lblDefRepo := testCase.LabelDefRepositoryFn()
 			lblDefService := testCase.LabelDefServiceFn()
 
-			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil)
+			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil, nil)
 
 			// WHEN
 			actual, err := svc.CreateFormation(ctx, tnt, in)
@@ -325,7 +326,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			lblDefRepo := testCase.LabelDefRepositoryFn()
 			lblDefService := testCase.LabelDefServiceFn()
 
-			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil)
+			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil, nil)
 
 			// WHEN
 			actual, err := svc.DeleteFormation(ctx, tnt, in)
@@ -386,13 +387,14 @@ func TestServiceAssignFormation(t *testing.T) {
 	asa := model.AutomaticScenarioAssignment{
 		ScenarioName:   testFormation,
 		Tenant:         tnt,
-		TargetTenantID: objectID,
+		TargetTenantID: targetTenant,
 	}
 
 	testCases := []struct {
 		Name               string
 		UIDServiceFn       func() *automock.UIDService
 		LabelServiceFn     func() *automock.LabelService
+		TenantServiceFn     func() *automock.TenantService
 		AsaServiceFN       func() *automock.AutomaticFormationAssignmentService
 		ObjectType         graphql.FormationObjectType
 		InputFormation     model.Formation
@@ -474,6 +476,11 @@ func TestServiceAssignFormation(t *testing.T) {
 			Name: "success for tenant",
 			UIDServiceFn: func() *automock.UIDService {
 				return &automock.UIDService{}
+			},
+			TenantServiceFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetInternalTenant", ctx, objectID).Return(targetTenant, nil)
+				return svc
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				return &automock.LabelService{}
@@ -600,9 +607,35 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
+			Name: "error for tenant when tenant convertion fails",
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			TenantServiceFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetInternalTenant", ctx, objectID).Return("", testErr)
+				return svc
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				asaService := &automock.AutomaticFormationAssignmentService{}
+				return asaService
+			},
+			ObjectType:         graphql.FormationObjectTypeTenant,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
 			Name: "error for tenant when create fails",
 			UIDServiceFn: func() *automock.UIDService {
 				return &automock.UIDService{}
+			},
+			TenantServiceFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetInternalTenant", ctx, objectID).Return(targetTenant, nil)
+				return svc
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				return &automock.LabelService{}
@@ -639,8 +672,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			uidService := testCase.UIDServiceFn()
 			labelService := testCase.LabelServiceFn()
 			asaService := testCase.AsaServiceFN()
+			tenantSvc := &automock.TenantService{}
+			if testCase.TenantServiceFn != nil {
+				tenantSvc = testCase.TenantServiceFn()
+			}
 
-			svc := formation.NewService(nil, nil, labelService, uidService, nil, asaService)
+			svc := formation.NewService(nil, nil, labelService, uidService, nil, asaService, tenantSvc)
 
 			// WHEN
 			actual, err := svc.AssignFormation(ctx, tnt, objectID, testCase.ObjectType, testCase.InputFormation)
@@ -655,7 +692,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				require.Nil(t, actual)
 			}
 
-			mock.AssertExpectationsForObjects(t, uidService, labelService, asaService)
+			mock.AssertExpectationsForObjects(t, uidService, labelService, asaService, tenantSvc)
 		})
 	}
 }
@@ -1018,7 +1055,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			labelRepo := testCase.LabelRepoFn()
 			asaService := testCase.AsaServiceFN()
 
-			svc := formation.NewService(nil, labelRepo, labelService, uidService, nil, asaService)
+			svc := formation.NewService(nil, labelRepo, labelService, uidService, nil, asaService, nil)
 
 			// WHEN
 			actual, err := svc.UnassignFormation(ctx, tnt, objectID, testCase.ObjectType, testCase.InputFormation)

@@ -413,8 +413,8 @@ func TestListLabelDefinitions(t *testing.T) {
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 	ctx := context.TODO()
 
-	firstLabelDefinition := fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{"test"})
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, firstLabelDefinition.Key, false, tenantID)
+	firstLabelDefinition := fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{"DEFAULT", "test"})
+	defer tenant.TestTenants.CleanupTenant(tenantID)
 
 	//WHEN
 	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, tenantID)

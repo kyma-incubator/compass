@@ -58,6 +58,11 @@ type AutomaticFormationAssignmentService interface {
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
+type TenantService interface {
+	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
+}
+
 type service struct {
 	labelDefRepository LabelDefRepository
 	labelRepository    LabelRepository
@@ -65,10 +70,11 @@ type service struct {
 	labelDefService    LabelDefService
 	asaService         AutomaticFormationAssignmentService
 	uuidService        UIDService
+	tenantSvc          TenantService
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository LabelDefRepository, labelRepository LabelRepository, labelService LabelService, uuidService UIDService, labelDefService LabelDefService, asaService AutomaticFormationAssignmentService) *service {
+func NewService(labelDefRepository LabelDefRepository, labelRepository LabelRepository, labelService LabelService, uuidService UIDService, labelDefService LabelDefService, asaService AutomaticFormationAssignmentService, tenantSvc TenantService) *service {
 	return &service{
 		labelDefRepository: labelDefRepository,
 		labelRepository:    labelRepository,
@@ -76,6 +82,7 @@ func NewService(labelDefRepository LabelDefRepository, labelRepository LabelRepo
 		labelDefService:    labelDefService,
 		asaService:         asaService,
 		uuidService:        uuidService,
+		tenantSvc:          tenantSvc,
 	}
 }
 
@@ -120,7 +127,11 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}
 		return f, nil
 	case graphql.FormationObjectTypeTenant:
-		_, err := s.asaService.Create(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, objectID))
+		tenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
+		if err != nil {
+			return nil, err
+		}
+		_, err = s.asaService.Create(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, tenantID))
 		if err != nil {
 			return nil, err
 		}

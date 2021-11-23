@@ -54,6 +54,12 @@ func DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t require.TestingT
 	return assignment
 }
 
+func CleanUpAutomaticScenarioAssignmentForScenarioWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, scenarioName string) {
+	assignment := graphql.AutomaticScenarioAssignment{}
+	req := FixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName)
+	testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &assignment)
+}
+
 func DeleteAutomaticScenarioAssigmentForSelector(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, selector graphql.LabelSelectorInput) []graphql.AutomaticScenarioAssignment {
 	paylaod, err := testctx.Tc.Graphqlizer.LabelSelectorInputToGQL(selector)
 	require.NoError(t, err)

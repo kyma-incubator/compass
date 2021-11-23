@@ -71,6 +71,7 @@ type ScenarioAssignmentEngine interface {
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
 type TenantService interface {
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // UIDService missing godoc
@@ -233,16 +234,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return "", errors.Wrapf(err, "while creating Runtime")
 	}
 
-	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, in.Labels, id)
-	if err != nil {
-		return "", errors.Wrap(err, "while merging scenarios from input and assignments")
-	}
-
-	if len(scenarios) > 0 {
-		in.Labels[model.ScenariosKey] = scenarios
-	} else {
-		s.scenariosService.AddDefaultScenarioIfEnabled(ctx, rtmTenant, &in.Labels)
-	}
+	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, rtmTenant, &in.Labels)
 
 	if in.Labels == nil || in.Labels[IsNormalizedLabel] == nil {
 		if in.Labels == nil {
@@ -259,6 +251,35 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
+	if err != nil {
+		return id, errors.Wrapf(err, "while creating multiple labels for Runtime")
+	}
+
+	// The runtime is created successfully, however there can be ASAs in the parent that should be processed.
+	tnt, err := s.tenantSvc.GetTenantByID(ctx, rtmTenant)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting tenant with id %s", rtmTenant)
+	}
+
+	if len(tnt.Parent) == 0 {
+		return id, nil
+	}
+
+	ctxWithParentTenant := tenant.SaveToContext(ctx, tnt.Parent, "")
+	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctxWithParentTenant, map[string]interface{}{}, id)
+	if err != nil {
+		return "", errors.Wrap(err, "while merging scenarios from input and assignments")
+	}
+
+	if len(scenarios) == 0 { // No ASAs in parent tenant
+		return id, nil
+	}
+
+	scenariosLabels := map[string]interface{}{
+		model.ScenariosKey: scenarios,
+	}
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctxWithParentTenant, tnt.Parent, model.RuntimeLabelableObject, id, scenariosLabels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}

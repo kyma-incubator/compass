@@ -36,7 +36,7 @@ func TestService_Create(t *testing.T) {
 
 	desc := "Lorem ipsum"
 	labels := map[string]interface{}{
-		model.ScenariosKey:          "DEFAULT",
+		model.ScenariosKey:          []interface{}{"DEFAULT"},
 		"protected_defaultEventing": "true",
 		"consumer_subaccount_ids":   []string{"subaccountID-1", "subaccountID-2"},
 	}
@@ -55,7 +55,7 @@ func TestService_Create(t *testing.T) {
 		Name:        "foo.bar-not",
 		Description: &desc,
 		Labels: map[string]interface{}{
-			model.ScenariosKey:                 "DEFAULT",
+			model.ScenariosKey:                []interface{}{"DEFAULT"},
 			scenarioassignment.SubaccountIDKey: extSubaccountID,
 		},
 	}
@@ -64,7 +64,7 @@ func TestService_Create(t *testing.T) {
 		Name:        "foo.bar-not",
 		Description: &desc,
 		Labels: map[string]interface{}{
-			model.ScenariosKey:                 "DEFAULT",
+			model.ScenariosKey:                 []interface{}{"DEFAULT"},
 			scenarioassignment.SubaccountIDKey: 213,
 		},
 	}
@@ -73,6 +73,15 @@ func TestService_Create(t *testing.T) {
 		model.ScenariosKey:                 []interface{}{"DEFAULT"},
 		runtime.IsNormalizedLabel:          "true",
 		scenarioassignment.SubaccountIDKey: extSubaccountID,
+	}
+
+	labelsForDBMockWithoutNormalization := map[string]interface{}{
+		model.ScenariosKey:                 []interface{}{"DEFAULT"},
+		scenarioassignment.SubaccountIDKey: extSubaccountID,
+	}
+
+	parentScenarios := map[string]interface{}{
+		model.ScenariosKey:                 []interface{}{"test"},
 	}
 
 	modelInputWithoutLabels := model.RuntimeInput{
@@ -98,6 +107,31 @@ func TestService_Create(t *testing.T) {
 		return subaccountID == tenantCtx.InternalID && extSubaccountID == tenantCtx.ExternalID
 	})
 
+	ctxWithGlobalaccountMatcher := mock.MatchedBy(func(ctx context.Context) bool {
+		tenantCtx, err := tenant.LoadTenantPairFromContext(ctx)
+		require.NoError(t, err)
+		return tnt == tenantCtx.InternalID
+	})
+
+	ga := &model.BusinessTenantMapping{
+		ID:             tnt,
+		Name:           "ga",
+		ExternalTenant: externalTnt,
+		Type:           "account",
+		Provider:       "test",
+		Status:         "Active",
+	}
+
+	subaccount := &model.BusinessTenantMapping{
+		ID:             subaccountID,
+		Name:           "sa",
+		ExternalTenant: extSubaccountID,
+		Parent:         tnt,
+		Type:           "subaccount",
+		Provider:       "test",
+		Status:         "Active",
+	}
+
 	testCases := []struct {
 		Name                 string
 		RuntimeRepositoryFn  func() *automock.RuntimeRepository
@@ -118,12 +152,19 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				return &automock.ScenariosService{}
+				svc := &automock.ScenariosService{}
+				svc.On("AddDefaultScenarioIfEnabled", ctx, tnt, &labels).Return().Once()
+				return svc
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMock).Return(nil).Once()
 				return repo
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetTenantByID", ctx, tnt).Return(ga, nil).Once()
+				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -132,7 +173,6 @@ func TestService_Create(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels, runtimeID).Return([]interface{}{"DEFAULT"}, nil)
 				return svc
 			},
 			Input:       modelInput,
@@ -147,16 +187,20 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				return &automock.ScenariosService{}
+				svc := &automock.ScenariosService{}
+				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccount, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
+				return svc
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithSubaccount, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
+				repo.On("UpsertMultipleLabels", ctxWithGlobalaccountMatcher, tnt, model.RuntimeLabelableObject, runtimeID, parentScenarios).Return(nil).Once()
 				return repo
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -166,7 +210,7 @@ func TestService_Create(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithSubaccount, modelInputWithSubaccountLabel.Labels, runtimeID).Return([]interface{}{"DEFAULT"}, nil)
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
 				return svc
 			},
 			Input:       modelInputWithSubaccountLabel,
@@ -181,16 +225,20 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				return &automock.ScenariosService{}
+				svc := &automock.ScenariosService{}
+				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccountMatcher, subaccountID, &labelsForDBMockWithSubaccount).Return().Once()
+				return svc
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithSubaccountMatcher, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
+				repo.On("UpsertMultipleLabels", ctxWithGlobalaccountMatcher, tnt, model.RuntimeLabelableObject, runtimeID, parentScenarios).Return(nil).Once()
 				return repo
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccount, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -200,11 +248,48 @@ func TestService_Create(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithSubaccountMatcher, modelInputWithSubaccountLabel.Labels, runtimeID).Return([]interface{}{"DEFAULT"}, nil)
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
 				return svc
 			},
 			Input:       modelInputWithSubaccountLabel,
 			Context:     ctxWithSubaccount,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Success with Subaccount label and no scenarios from ASAs in parent",
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Create", ctxWithSubaccount, subaccountID, runtimeModel).Return(nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				svc := &automock.ScenariosService{}
+				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccount, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
+				return svc
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				repo := &automock.LabelUpsertService{}
+				repo.On("UpsertMultipleLabels", ctxWithSubaccount, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
+				return repo
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
+				return tenantSvc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(runtimeID)
+				return svc
+			},
+			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+				svc := &automock.ScenarioAssignmentEngine{}
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{}, nil)
+				return svc
+			},
+			Input:       modelInputWithSubaccountLabel,
+			Context:     ctx,
 			ExpectedErr: nil,
 		},
 		{
@@ -224,6 +309,11 @@ func TestService_Create(t *testing.T) {
 				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, runtimeID, labelsWithNormalization).Return(nil).Once()
 				return repo
 			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetTenantByID", ctx, tnt).Return(ga, nil).Once()
+				return tenantSvc
+			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(runtimeID)
@@ -231,7 +321,6 @@ func TestService_Create(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, nilLabels, runtimeID).Return([]interface{}{}, nil)
 				return svc
 			},
 			Input:       modelInputWithoutLabels,
@@ -356,18 +445,27 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey)),
 		},
 		{
-			Name: "Return error when merge of scenarios and assignments failed",
+			Name: "Return error when get calling tenant from DB fail",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("Create", ctx, tnt, runtimeModel).Return(nil).Once()
+				repo.On("Create", ctxWithSubaccount, subaccountID, runtimeModel).Return(nil).Once()
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				return &automock.ScenariosService{}
+				svc := &automock.ScenariosService{}
+				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccount, subaccountID, &labelsForDBMockWithSubaccount).Return().Once()
+				return svc
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
+				repo.On("UpsertMultipleLabels", ctxWithSubaccount, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
 				return repo
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(nil, testErr).Once()
+				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -376,10 +474,46 @@ func TestService_Create(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels, runtimeID).Return(nil, testErr)
 				return svc
 			},
-			Input:       modelInput,
+			Input:       modelInputWithSubaccountLabel,
+			Context:     ctx,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Return error when merge of scenarios and assignments failed",
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Create", ctxWithSubaccount, subaccountID, runtimeModel).Return(nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				svc := &automock.ScenariosService{}
+				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccount, subaccountID, &labelsForDBMockWithSubaccount).Return().Once()
+				return svc
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				repo := &automock.LabelUpsertService{}
+				repo.On("UpsertMultipleLabels", ctxWithSubaccount, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
+				return repo
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
+				return tenantSvc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(runtimeID)
+				return svc
+			},
+			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+				svc := &automock.ScenarioAssignmentEngine{}
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return(nil, testErr)
+				return svc
+			},
+			Input:       modelInputWithSubaccountLabel,
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -391,7 +525,9 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
-				return &automock.ScenariosService{}
+				svc := &automock.ScenariosService{}
+				svc.On("AddDefaultScenarioIfEnabled", ctx, tnt, &labels).Return().Once()
+				return svc
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
@@ -405,10 +541,47 @@ func TestService_Create(t *testing.T) {
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
-				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, labels, runtimeID).Return([]interface{}{"DEFAULT"}, nil)
 				return svc
 			},
 			Input:       modelInput,
+			Context:     ctx,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Returns error when parent label upserting failed",
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Create", ctxWithSubaccount, subaccountID, runtimeModel).Return(nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				svc := &automock.ScenariosService{}
+				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccount, subaccountID, &labelsForDBMockWithSubaccount).Return().Once()
+				return svc
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				repo := &automock.LabelUpsertService{}
+				repo.On("UpsertMultipleLabels", ctxWithSubaccount, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
+				repo.On("UpsertMultipleLabels", ctxWithGlobalaccountMatcher, tnt, model.RuntimeLabelableObject, runtimeID, parentScenarios).Return(testErr).Once()
+				return repo
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
+				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
+				return tenantSvc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(runtimeID)
+				return svc
+			},
+			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+				svc := &automock.ScenarioAssignmentEngine{}
+				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
+				return svc
+			},
+			Input:       modelInputWithSubaccountLabel,
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},

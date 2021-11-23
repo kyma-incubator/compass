@@ -3,7 +3,7 @@ package scenarioassignment
 import (
 	"context"
 	"fmt"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -12,7 +12,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
@@ -52,7 +51,7 @@ func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scena
 	}
 }
 
-// EnsureScenarioAssigned missing godoc
+// EnsureScenarioAssigned ensures that the scenario is assigned to all the runtimes that are in the ASAs target_tenant_id
 func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
 	labels, runtimeIDs, err := e.getScenarioLabelsForRuntimes(ctx, in)
 	if err != nil {
@@ -63,7 +62,7 @@ func (e *engine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticS
 	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.uniqueScenarios)
 }
 
-// RemoveAssignedScenario missing godoc
+// RemoveAssignedScenario removes all the scenarios that are coming from the provided ASA
 func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
 	labels, _, err := e.getScenarioLabelsForRuntimes(ctx, in)
 	if err != nil {
@@ -73,7 +72,7 @@ func (e *engine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticS
 	return e.upsertScenarios(ctx, in.Tenant, labels, in.ScenarioName, e.removeScenario)
 }
 
-// RemoveAssignedScenarios missing godoc
+// RemoveAssignedScenarios removes all the scenarios that are coming from any of the provided ASAs
 func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	for _, asa := range in {
 		err := e.RemoveAssignedScenario(ctx, *asa)
@@ -84,7 +83,8 @@ func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.Automa
 	return nil
 }
 
-// MergeScenariosFromInputLabelsAndAssignments missing godoc
+// MergeScenariosFromInputLabelsAndAssignments merges all the scenarios that are part of the resource labels (already added + to be added with the current operation)
+// with all the scenarios that should be assigned based on ASAs.
 func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
 	scenariosSet := make(map[string]struct{})
 
@@ -142,6 +142,9 @@ func (e engine) getScenarioLabelsForRuntimes(ctx context.Context, in model.Autom
 	return labels, runtimeIDs, nil
 }
 
+// getScenariosFromMatchingASAs gets all the scenarios that should be added to the runtime based on the matching Automatic Scenario Assignments
+// In order to do that, the ASAs should be searched in the caller tenant as this is the tenant that modifies the runtime and this is the tenant that the ASA
+// produced labels should be added to.
 func (e engine) getScenariosFromMatchingASAs(ctx context.Context, runtimeID string) ([]string, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
