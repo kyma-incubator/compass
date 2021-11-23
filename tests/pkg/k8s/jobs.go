@@ -15,7 +15,7 @@ import (
 func CreateJobByCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, cronJobName, jobName, namespace string) {
 	cronjob, err := k8sClient.BatchV1beta1().CronJobs(namespace).Get(ctx, cronJobName, metav1.GetOptions{})
 	require.NoError(t, err)
-	t.Log("Got the cronjob")
+	t.Logf("Got the cronjob %s", cronJobName)
 
 	job := &v1.Job{
 		Spec: v1.JobSpec{
@@ -32,14 +32,14 @@ func CreateJobByCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes
 			Name: jobName,
 		},
 	}
-	t.Log("Creating test job")
+	t.Logf("Creating test job %s", jobName)
 	_, err = k8sClient.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 	require.NoError(t, err)
-	t.Log("Test job created")
+	t.Logf("Test job created %s", jobName)
 }
 
 func DeleteJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
-	t.Log("Deleting test job")
+	t.Logf("Deleting test job %s", jobName)
 	err := k8sClient.BatchV1().Jobs(namespace).Delete(ctx, jobName, *metav1.NewDeleteOptions(0))
 	require.NoError(t, err)
 
@@ -47,17 +47,17 @@ func DeleteJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientse
 	for {
 		select {
 		case <-elapsed:
-			t.Fatal("Timeout reached waiting for job to be deleted. Exiting...")
+			t.Fatalf("Timeout reached waiting for job %s to be deleted. Exiting...", jobName)
 		default:
 		}
-		t.Log("Waiting for job to be deleted")
+		t.Logf("Waiting for job %s to be deleted", jobName)
 		_, err = k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
 		if errors.IsNotFound(err) {
 			break
 		}
 		time.Sleep(time.Second * 2)
 	}
-	t.Log("Test job deleted")
+	t.Logf("Test job %s deleted", jobName)
 }
 
 func WaitForJobToSucceed(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
@@ -65,14 +65,14 @@ func WaitForJobToSucceed(t *testing.T, ctx context.Context, k8sClient *kubernete
 	for {
 		select {
 		case <-elapsed:
-			t.Fatal("Timeout reached waiting for job to complete. Exiting...")
+			t.Fatalf("Timeout reached waiting for job %s to complete. Exiting...", jobName)
 		default:
 		}
-		t.Log("Waiting for job to finish")
+		t.Logf("Waiting for job %s to finish", jobName)
 		job, err := k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
 		require.NoError(t, err)
 		if job.Status.Failed > 0 {
-			t.Fatal("Job has failed. Exiting...")
+			t.Fatalf("Job %s has failed. Exiting...", jobName)
 		}
 		if job.Status.Succeeded > 0 {
 			break

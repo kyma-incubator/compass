@@ -1,17 +1,16 @@
-package graphqlclient
+package graphqlclient_test
 
 import (
 	"context"
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql_client/automock"
-
+	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
 	gcli "github.com/machinebox/graphql"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql_client/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -76,7 +75,7 @@ func TestDirector_WriteTenants(t *testing.T) {
 			//GIVEN
 			ctx := context.TODO()
 			gqlClient := testCase.GQLClient()
-			director := NewDirector(gqlClient)
+			director := graphqlclient.NewDirector(gqlClient)
 
 			//WHEN
 			err := director.WriteTenants(ctx, testCase.Input)
@@ -151,7 +150,7 @@ func TestDirector_DeleteTenants(t *testing.T) {
 			//GIVEN
 			ctx := context.TODO()
 			gqlClient := testCase.GQLClient()
-			director := NewDirector(gqlClient)
+			director := graphqlclient.NewDirector(gqlClient)
 
 			//WHEN
 			err := director.DeleteTenants(ctx, testCase.Input)
@@ -220,7 +219,7 @@ func TestDirector_CreateLabelDefinition(t *testing.T) {
 			//GIVEN
 			ctx := context.TODO()
 			gqlClient := testCase.GQLClient()
-			director := NewDirector(gqlClient)
+			director := graphqlclient.NewDirector(gqlClient)
 
 			//WHEN
 			err := director.CreateLabelDefinition(ctx, testCase.Input, tenant)
@@ -289,7 +288,7 @@ func TestDirector_UpdateLabelDefinition(t *testing.T) {
 			//GIVEN
 			ctx := context.TODO()
 			gqlClient := testCase.GQLClient()
-			director := NewDirector(gqlClient)
+			director := graphqlclient.NewDirector(gqlClient)
 
 			//WHEN
 			err := director.UpdateLabelDefinition(ctx, testCase.Input, tenant)
@@ -400,7 +399,7 @@ func TestDirector_SetRuntimeTenant(t *testing.T) {
 			//GIVEN
 			ctx := context.TODO()
 			gqlClient := testCase.GQLClient()
-			director := NewDirector(gqlClient)
+			director := graphqlclient.NewDirector(gqlClient)
 
 			//WHEN
 			err := director.SetRuntimeTenant(ctx, testCase.RuntimeID, testCase.TenantID, testCase.TenantID)
@@ -484,7 +483,7 @@ func TestDirector_UpdateTenant(t *testing.T) {
 			//GIVEN
 			ctx := context.TODO()
 			gqlClient := testCase.GQLClient()
-			director := NewDirector(gqlClient)
+			director := graphqlclient.NewDirector(gqlClient)
 
 			//WHEN
 			err := director.UpdateTenant(ctx, testCase.TenantID, testCase.Input)

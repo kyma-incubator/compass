@@ -283,8 +283,7 @@ func (r *Resolver) SetRuntimeTenant(ctx context.Context, runtimeID, tenantID str
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = r.runtimeService.UpdateTenantID(ctx, runtimeID, tenantID)
-	if err != nil {
+	if err := r.runtimeService.UpdateTenantID(ctx, runtimeID, tenantID); err != nil {
 		return nil, err
 	}
 
@@ -293,8 +292,7 @@ func (r *Resolver) SetRuntimeTenant(ctx context.Context, runtimeID, tenantID str
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 

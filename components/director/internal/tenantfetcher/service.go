@@ -917,8 +917,7 @@ func (s *SubaccountService) moveRuntime(ctx context.Context, mapping model.Moved
 		}
 	}
 
-	err = s.gqlClient.SetRuntimeTenant(ctx, runtime.ID, targetInternalTenant.ID, targetInternalTenant.ID)
-	if err != nil {
+	if err := s.gqlClient.SetRuntimeTenant(ctx, runtime.ID, targetInternalTenant.ID, targetInternalTenant.ID); err != nil {
 		return errors.Wrapf(err, "while updating tenant ID of runtime with label key-value match %s-%s",
 			s.movedRuntimeLabelKey, mapping.LabelValue)
 	}

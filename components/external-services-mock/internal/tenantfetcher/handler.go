@@ -3,27 +3,27 @@ package tenantfetcher
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
 )
 
-type TenantFetcherHandler struct {
+type Handler struct {
 	mutex        sync.Mutex
 	mockedEvents map[string][][]byte
 }
 
-func NewTenantFetcherHandler(defaultTenant string) *TenantFetcherHandler {
-	return &TenantFetcherHandler{
+func NewHandler() *Handler {
+	return &Handler{
 		mutex:        sync.Mutex{},
 		mockedEvents: make(map[string][][]byte),
 	}
 }
 
-func (s *TenantFetcherHandler) HandleConfigure(typee string) func(rw http.ResponseWriter, req *http.Request) {
+func (s *Handler) HandleConfigure(typee string) func(rw http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
@@ -34,7 +34,7 @@ func (s *TenantFetcherHandler) HandleConfigure(typee string) func(rw http.Respon
 		}
 		defer func() {
 			if err := req.Body.Close(); err != nil {
-				log.Printf("Could not close request body: %s", err)
+				log.C(req.Context()).Errorf("Could not close request body: %s", err)
 			}
 		}()
 
@@ -50,10 +50,11 @@ func (s *TenantFetcherHandler) HandleConfigure(typee string) func(rw http.Respon
 		eventsPages = append(eventsPages, bodyBytes)
 		s.mockedEvents[typee] = eventsPages
 		rw.WriteHeader(http.StatusOK)
+		log.C(req.Context()).Infof("Tenant fetcher handler for type %s configured successfully", typee)
 	}
 }
 
-func (s *TenantFetcherHandler) HandleFunc(typee string) func(rw http.ResponseWriter, req *http.Request) {
+func (s *Handler) HandleFunc(typee string) func(rw http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		rw.WriteHeader(http.StatusOK)
 
@@ -72,11 +73,11 @@ func (s *TenantFetcherHandler) HandleFunc(typee string) func(rw http.ResponseWri
 	}
 }
 
-func (s *TenantFetcherHandler) HandleReset(typee string) func(rw http.ResponseWriter, _ *http.Request) {
-	return func(rw http.ResponseWriter, _ *http.Request) {
+func (s *Handler) HandleReset(typee string) func(rw http.ResponseWriter, req *http.Request) {
+	return func(rw http.ResponseWriter, req *http.Request) {
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
-		log.Println("Recieved a reset call. TenantFetcher queue will be emptied...")
+		log.C(req.Context()).Infof("Received a reset call for type %s. TenantFetcher queue will be emptied...", typee)
 		delete(s.mockedEvents, typee)
 		rw.WriteHeader(http.StatusOK)
 	}

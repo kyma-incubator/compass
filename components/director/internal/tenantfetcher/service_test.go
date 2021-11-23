@@ -2011,7 +2011,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
-			Name:            "Success when moving subaccount and it is not found in our database, test should create it",
+			Name:            "Success when moving subaccount and it is not found in our database it should be created",
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}

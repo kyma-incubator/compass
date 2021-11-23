@@ -584,6 +584,7 @@ func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in grap
 	return r.runtime.UpdateRuntime(ctx, id, in)
 }
 
+// SetRuntimeTenant sets internal tenant id for runtime
 func (r *mutationResolver) SetRuntimeTenant(ctx context.Context, runtimeID string, tenantID string) (*graphql.Runtime, error) {
 	return r.runtime.SetRuntimeTenant(ctx, runtimeID, tenantID)
 }
@@ -781,7 +782,7 @@ func (r *mutationResolver) CreateAutomaticScenarioAssignment(ctx context.Context
 	return r.scenarioAssignment.CreateAutomaticScenarioAssignment(ctx, in)
 }
 
-// WriteTenants creates global accounts and/or subaccounts
+// WriteTenants creates tenants of type customer, account, or subaccount
 func (r *mutationResolver) WriteTenants(ctx context.Context, in []*graphql.BusinessTenantMappingInput) (int, error) {
 	return r.tenant.Write(ctx, in)
 }

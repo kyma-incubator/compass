@@ -135,6 +135,7 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 	return tenants
 }
 
+// Update updates tenant
 func (s *service) Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error {
 	tenant := tenantInput.ToBusinessTenantMapping(id)
 

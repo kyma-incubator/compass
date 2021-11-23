@@ -4,7 +4,7 @@ BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.17.0
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/installation/scripts
 export GO111MODULE = on
-export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
+export SKIP_STEP_MESSAGE = "Do nothing for E2E tests project"
 
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
