@@ -413,11 +413,36 @@ func TestListLabelDefinitions(t *testing.T) {
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 	ctx := context.TODO()
 
-	firstLabelDefinition := fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{"DEFAULT", "test"})
+	jsonSchema := map[string]interface{}{
+		"items": map[string]interface{}{
+			"enum": []string{"DEFAULT", "test"},
+			"type": "string",
+		},
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+	}
+
+	input := graphql.LabelDefinitionInput{
+		Key:    "scenarios",
+		Schema: json.MarshalJSONSchema(t, jsonSchema),
+	}
+
+	in, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(input)
+	require.NoError(t, err)
+
+	createRequest := fixtures.FixCreateLabelDefinitionRequest(in)
+	saveExample(t, createRequest.Query(), "create label definition")
+
+	output := graphql.LabelDefinition{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createRequest, &output)
+
+	firstLabelDefinition := &output
 	defer tenant.TestTenants.CleanupTenant(tenantID)
 
 	//WHEN
 	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, tenantID)
+	saveExample(t, fixtures.FixLabelDefinitionsRequest().Query(), "query label definition")
 
 	//THEN
 	require.NoError(t, err)
