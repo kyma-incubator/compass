@@ -77,6 +77,7 @@ function patchDeploymentsToInjectSidecar() {
     monitoring-kube-state-metrics
     monitoring-operator
     monitoring-prometheus-istio-server
+    kiali-server
   )
 
   resource="deployment"
@@ -169,7 +170,6 @@ function removeKymaPeerAuthsForPrometheus() {
     ory-hydra-maester-metrics
     tracing-jaeger-operator-metrics
     tracing-jaeger-metrics
-    dex-service
     monitoring-prometheus-pushgateway
   )
 
