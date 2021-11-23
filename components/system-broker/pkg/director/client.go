@@ -82,17 +82,14 @@ func (c *GraphQLClient) FetchApplication(ctx context.Context, id string) (*Appli
 		"auths",
 		"eventingConfiguration",
 	}))
-
 	app := ApplicationOutput{}
-
 	req := gcli.NewRequest(query)
 
-	err := c.gcli.Do(ctx, req, &app)
-	if err != nil {
+	if err := c.gcli.Do(ctx, req, &app); err != nil {
 		return nil, errors.Wrap(err, "while fetching application in gqlclient")
 	}
 	if app.Result == nil {
-		return nil, errors.New("failed to fetch application")
+		return nil, &NotFoundError{}
 	}
 
 	return &app, nil
@@ -112,13 +109,10 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 		"bundles.apiDefinitions.spec.fetchRequest",
 		"bundles.eventDefinitions.spec.fetchRequest",
 	})))
-
 	apps := ApplicationsOutput{}
-
 	req := gcli.NewRequest(query)
 
-	err := c.gcli.Do(ctx, req, &apps)
-	if err != nil {
+	if err := c.gcli.Do(ctx, req, &apps); err != nil {
 		return nil, errors.Wrap(err, "while fetching applications in gqlclient")
 	}
 	if apps.Result == nil {
