@@ -8,7 +8,6 @@ import (
 )
 
 func TestParse(t *testing.T) {
-
 	t.Run("should parse string", func(t *testing.T) {
 		// given
 		namespace := "namespace"
@@ -39,20 +38,19 @@ func TestParse(t *testing.T) {
 
 	t.Run("should return name with default namespace", func(t *testing.T) {
 		// given
-		name := "name"
-		str := fmt.Sprintf("%s", name)
+		str := "name"
 
 		// when
 		namespacedname := Parse(str)
 
 		// then
 		assert.Equal(t, namespacedname.Namespace, "default")
-		assert.Equal(t, namespacedname.Name, name)
+		assert.Equal(t, namespacedname.Name, str)
 	})
 
 	t.Run("should return empty name if slash provided", func(t *testing.T) {
 		// given
-		str := fmt.Sprintf("/")
+		str := "/"
 
 		// when
 		namespacedname := Parse(str)
@@ -64,7 +62,7 @@ func TestParse(t *testing.T) {
 
 	t.Run("should return empty name if empty string provided", func(t *testing.T) {
 		// given
-		str := fmt.Sprintf("")
+		str := ""
 
 		// when
 		namespacedname := Parse(str)

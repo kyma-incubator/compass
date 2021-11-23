@@ -8,6 +8,8 @@ import (
 
 const defaultNamespace = "default"
 
+// Parse is responsible to convert string into NamespacedName structure,
+// comprising the resource name and mandatory namespace
 func Parse(value string) types.NamespacedName {
 	parts := strings.Split(value, string(types.Separator))
 

@@ -12,11 +12,13 @@ import (
 
 const certsListLoaderCorrelationID = "certs-list-loader"
 
+// Loader constantly monitor and update in-memory cache with a client certificate
 type Loader interface {
 	Run(ctx context.Context)
 }
 
-//go:generate mockery --name=Manager
+// Manager is a kubernetes secret manager that has methods to work with secret resources
+//go:generate mockery --name=Manager --output=automock --outpkg=automock --case=underscore
 type Manager interface {
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
@@ -28,6 +30,8 @@ type certificatesLoader struct {
 	reconnectInterval time.Duration
 }
 
+// NewCertificatesLoader creates new certificate loader which is responsible to watch a secret containing client certificate
+// and update in-memory cache with that certificate if there is any change
 func NewCertificatesLoader(certsCache Cache, secretManager Manager, secretName string, reconnectInterval time.Duration) Loader {
 	return &certificatesLoader{
 		certsCache:        certsCache,
@@ -86,7 +90,7 @@ func (cl *certificatesLoader) processEvents(ctx context.Context, events <-chan w
 			case watch.Added:
 				fallthrough
 			case watch.Modified:
-				log.C(ctx).Info("Certificate secret is updated")
+				log.C(ctx).Info("Updating certificate secret...")
 				secret, ok := ev.Object.(*v1.Secret)
 				if !ok {
 					log.C(ctx).Error("Unexpected error: object is not secret. Try again")

@@ -6,11 +6,13 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 )
 
+// Cache is used to interact with the cache
 type Cache interface {
 	Put(secretData map[string][]byte)
 	Get() (*tls.Certificate, error)
@@ -21,6 +23,7 @@ type certificatesCache struct {
 	cache      *cache.Cache
 }
 
+// NewCertificateCache creates a cache that will store a client certificate
 func NewCertificateCache(secretName string) Cache {
 	return &certificatesCache{
 		secretName: secretName,
@@ -28,10 +31,12 @@ func NewCertificateCache(secretName string) Cache {
 	}
 }
 
+// Put inserts secret data containing client certificate and private key in the cache
 func (cc *certificatesCache) Put(secretData map[string][]byte) {
 	cc.cache.Set(cc.secretName, secretData, 0)
 }
 
+// Get returns a parsed certificate, build from the cache or error
 func (cc *certificatesCache) Get() (*tls.Certificate, error) {
 	secretData, err := cc.getSecretDataFromCache()
 	if err != nil {
@@ -41,9 +46,13 @@ func (cc *certificatesCache) Get() (*tls.Certificate, error) {
 	certBytes := secretData["tls.crt"]
 	privateKeyBytes := secretData["tls.key"]
 
+	if certBytes == nil || privateKeyBytes == nil {
+		return nil, errors.New("There is no certificate data in the cache")
+	}
+
 	clientCrtPem, _ := pem.Decode(certBytes)
 	if clientCrtPem == nil {
-		return nil, errors.New("Error while decoding certificate pem block.")
+		return nil, errors.New("Error while decoding certificate pem block")
 	}
 
 	clientCert, err := x509.ParseCertificate(clientCrtPem.Bytes)
@@ -53,7 +62,7 @@ func (cc *certificatesCache) Get() (*tls.Certificate, error) {
 
 	privateKeyPem, _ := pem.Decode(privateKeyBytes)
 	if privateKeyPem == nil {
-		return nil, errors.New("Error while decoding private key pem block.")
+		return nil, errors.New("Error while decoding private key pem block")
 	}
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyPem.Bytes)
@@ -71,7 +80,7 @@ func (cc *certificatesCache) Get() (*tls.Certificate, error) {
 
 	return &tls.Certificate{
 		Certificate: [][]byte{clientCert.Raw},
-		PrivateKey: privateKey,
+		PrivateKey:  privateKey,
 	}, nil
 }
 
