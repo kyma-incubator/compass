@@ -102,7 +102,6 @@ func TestGlobalAccounts(t *testing.T) {
 	setMockTenantEvents(t, []byte(genMockPage(deleteEvent1, 1)), globalAccountDeleteSubPath)
 	defer cleanupMockEvents(t, globalAccountDeleteSubPath)
 
-
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
 
