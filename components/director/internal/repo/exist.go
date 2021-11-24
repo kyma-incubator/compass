@@ -15,12 +15,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ExistQuerier missing godoc
+// ExistQuerier is an interface for checking existence of tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type ExistQuerier interface {
 	Exists(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions) (bool, error)
 }
 
-// ExistQuerierGlobal missing godoc
+// ExistQuerierGlobal is an interface for checking existence of global entities.
 type ExistQuerierGlobal interface {
 	ExistsGlobal(ctx context.Context, conditions Conditions) (bool, error)
 }
@@ -32,27 +32,29 @@ type universalExistQuerier struct {
 	ownerCheck   bool
 }
 
-// NewExistQuerier missing godoc
+// NewExistQuerier is a constructor for ExistQuerier about entities with externally managed tenant accesses (m2m table or view)
 func NewExistQuerier(tableName string) ExistQuerier {
 	return &universalExistQuerier{tableName: tableName}
 }
 
-// NewExistQuerierWithOwnerCheck missing godoc
+// NewExistQuerierWithOwnerCheck is a constructor for ExistQuerier about entities with externally managed tenant accesses (m2m table or view) with additional owner check.
 func NewExistQuerierWithOwnerCheck(tableName string) ExistQuerier {
 	return &universalExistQuerier{tableName: tableName, ownerCheck: true}
 }
 
-// NewExistQuerierWithEmbeddedTenant missing godoc
+// NewExistQuerierWithEmbeddedTenant is a constructor for ExistQuerier about entities with tenant embedded in them.
 func NewExistQuerierWithEmbeddedTenant(tableName string, tenantColumn string) ExistQuerier {
 	return &universalExistQuerier{tableName: tableName, tenantColumn: &tenantColumn}
 }
 
-// NewExistQuerierGlobal missing godoc
+// NewExistQuerierGlobal is a constructor for ExistQuerierGlobal about global entities.
 func NewExistQuerierGlobal(resourceType resource.Type, tableName string) ExistQuerierGlobal {
 	return &universalExistQuerier{tableName: tableName, resourceType: resourceType}
 }
 
-// Exists missing godoc
+// Exists checks for existence of tenant scoped entities with tenant isolation subquery.
+// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
+// If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
 func (g *universalExistQuerier) Exists(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions) (bool, error) {
 	if tenant == "" {
 		return false, apperrors.NewTenantRequiredError()
@@ -60,7 +62,7 @@ func (g *universalExistQuerier) Exists(ctx context.Context, resourceType resourc
 
 	if g.tenantColumn != nil {
 		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
-		return g.unsafeExists(ctx, tenant, resourceType, conditions)
+		return g.unsafeExists(ctx, resourceType, conditions)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, g.ownerCheck)
@@ -70,15 +72,15 @@ func (g *universalExistQuerier) Exists(ctx context.Context, resourceType resourc
 
 	conditions = append(conditions, tenantIsolation)
 
-	return g.unsafeExists(ctx, tenant, resourceType, conditions)
+	return g.unsafeExists(ctx, resourceType, conditions)
 }
 
-// ExistsGlobal missing godoc
+// ExistsGlobal checks for existence of global entities without tenant isolation.
 func (g *universalExistQuerier) ExistsGlobal(ctx context.Context, conditions Conditions) (bool, error) {
-	return g.unsafeExists(ctx, "", g.resourceType, conditions)
+	return g.unsafeExists(ctx, g.resourceType, conditions)
 }
 
-func (g *universalExistQuerier) unsafeExists(ctx context.Context, tenant string, resourceType resource.Type, conditions Conditions) (bool, error) {
+func (g *universalExistQuerier) unsafeExists(ctx context.Context, resourceType resource.Type, conditions Conditions) (bool, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, err

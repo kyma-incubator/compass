@@ -42,10 +42,10 @@ func TestRepository_Create(t *testing.T) {
 		convMock.On("ToEntity", *modelSysAuth).Return(entSysAuth, nil).Once()
 		pgRepository := systemauth.NewRepository(&convMock)
 
-		//WHEN
+		// WHEN
 		err := pgRepository.Create(ctx, *modelSysAuth)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		dbMock.AssertExpectations(t)
 		convMock.AssertExpectations(t)
@@ -66,10 +66,10 @@ func TestRepository_Create(t *testing.T) {
 		convMock.On("ToEntity", *modelSysAuth).Return(entSysAuth, nil).Once()
 		pgRepository := systemauth.NewRepository(&convMock)
 
-		//WHEN
+		// WHEN
 		err := pgRepository.Create(ctx, *modelSysAuth)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		dbMock.AssertExpectations(t)
 		convMock.AssertExpectations(t)
@@ -90,10 +90,10 @@ func TestRepository_Create(t *testing.T) {
 		convMock.On("ToEntity", *modelSysAuth).Return(entSysAuth, nil).Once()
 		pgRepository := systemauth.NewRepository(&convMock)
 
-		//WHEN
+		// WHEN
 		err := pgRepository.Create(ctx, *modelSysAuth)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		dbMock.AssertExpectations(t)
 		convMock.AssertExpectations(t)
@@ -108,10 +108,10 @@ func TestRepository_Create(t *testing.T) {
 		convMock.On("ToEntity", *modelSysAuth).Return(systemauth.Entity{}, testErr).Once()
 		pgRepository := systemauth.NewRepository(&convMock)
 
-		//WHEN
+		// WHEN
 		err := pgRepository.Create(ctx, *modelSysAuth)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		convMock.AssertExpectations(t)
@@ -338,10 +338,10 @@ func TestRepository_ListForObject(t *testing.T) {
 		convMock.On("FromEntity", entSysAuths[1]).Return(*modelSysAuths[1], nil).Once()
 		pgRepository := systemauth.NewRepository(&convMock)
 
-		//WHEN
+		// WHEN
 		result, err := pgRepository.ListForObject(ctx, testTenant, model.RuntimeReference, objID)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		dbMock.AssertExpectations(t)
@@ -386,10 +386,10 @@ func TestRepository_ListForObject(t *testing.T) {
 		convMock.On("FromEntity", entSysAuths[1]).Return(*modelSysAuths[1], nil).Once()
 		pgRepository := systemauth.NewRepository(&convMock)
 
-		//WHEN
+		// WHEN
 		result, err := pgRepository.ListForObject(ctx, testTenant, model.ApplicationReference, objID)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		dbMock.AssertExpectations(t)
@@ -434,10 +434,10 @@ func TestRepository_ListForObject(t *testing.T) {
 		convMock.On("FromEntity", entSysAuths[1]).Return(*modelSysAuths[1], nil).Once()
 		pgRepository := systemauth.NewRepository(&convMock)
 
-		//WHEN
+		// WHEN
 		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		dbMock.AssertExpectations(t)
@@ -448,10 +448,10 @@ func TestRepository_ListForObject(t *testing.T) {
 		pgRepository := systemauth.NewRepository(nil)
 		errorMsg := "unsupported reference object type"
 
-		//WHEN
+		// WHEN
 		result, err := pgRepository.ListForObject(context.TODO(), testTenant, "unsupported", objID)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), errorMsg)
 		require.Nil(t, result)
@@ -468,10 +468,10 @@ func TestRepository_ListForObject(t *testing.T) {
 
 		pgRepository := systemauth.NewRepository(nil)
 
-		//WHEN
+		// WHEN
 		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
 		require.Nil(t, result)
@@ -515,10 +515,10 @@ func TestRepository_ListForObject(t *testing.T) {
 		convMock.On("FromEntity", entSysAuths[0]).Return(model.SystemAuth{}, testErr).Once()
 		pgRepository := systemauth.NewRepository(&convMock)
 
-		//WHEN
+		// WHEN
 		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		require.Nil(t, result)
@@ -604,10 +604,10 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 		pgRepository := systemauth.NewRepository(nil)
 		errorMsg := "unsupported reference object type"
 
-		//WHEN
+		// WHEN
 		err := pgRepository.DeleteAllForObject(context.TODO(), testTenant, "unsupported", "foo")
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), errorMsg)
 	})

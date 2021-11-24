@@ -98,7 +98,7 @@ func (c *universalCreator) Create(ctx context.Context, resourceType resource.Typ
 		return c.unsafeCreateTopLevelEntity(ctx, id, tenant, dbEntity, resourceType)
 	}
 
-	return c.unsafeCreateChildEntity(ctx, id, tenant, dbEntity, resourceType)
+	return c.unsafeCreateChildEntity(ctx, tenant, dbEntity, resourceType)
 }
 
 func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id string, tenant string, dbEntity interface{}, resourceType resource.Type) error {
@@ -155,7 +155,7 @@ func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id st
 	return persistence.MapSQLError(ctx, err, resourceType, resource.Create, "while inserting tenant access record to '%s' table", m2mTable)
 }
 
-func (c *universalCreator) unsafeCreateChildEntity(ctx context.Context, id string, tenant string, dbEntity interface{}, resourceType resource.Type) error {
+func (c *universalCreator) unsafeCreateChildEntity(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
 	if err := c.checkParentAccess(ctx, tenant, dbEntity, resourceType); err != nil {
 		return apperrors.NewUnauthorizedError(fmt.Sprintf("Tenant %s does not have access to the parent of the currently created %s: %v", tenant, resourceType, err))
 	}
@@ -233,7 +233,7 @@ func (c *globalCreator) Create(ctx context.Context, dbEntity interface{}) error 
 		return err
 	}
 
-	var values []string
+	values := make([]string, 0, len(c.columns))
 	for _, c := range c.columns {
 		values = append(values, fmt.Sprintf(":%s", c))
 	}

@@ -31,7 +31,7 @@ func TestPgRepository_Create(t *testing.T) {
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create Bundle",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, appID, true},
@@ -73,7 +73,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Bundle",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateQuery,
 				Args:          []driver.Value{entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, entity.OrdID, entity.ShortDescription, entity.Links, entity.Labels, entity.CredentialExchangeStrategies, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs, entity.ID},
@@ -97,7 +97,7 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Bundle Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{bundleID, tenantID},
@@ -118,7 +118,7 @@ func TestPgRepository_Delete(t *testing.T) {
 func TestPgRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Bundle Exists",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{bundleID, tenantID},
@@ -147,7 +147,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Bundle",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{bundleID, tenantID},
@@ -182,7 +182,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Bundle For Application",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.bundles WHERE id = $1 AND app_id = $2 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{bundleID, appID, tenantID},
@@ -236,7 +236,7 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 
 	suite := testdb.RepoListPageableTestSuite{
 		Name: "List Bundles for multiple Applications with paging",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`(SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.bundles WHERE (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) AND app_id = $2 ORDER BY app_id ASC, id ASC LIMIT $3 OFFSET $4)
 												UNION
@@ -321,7 +321,7 @@ func TestPgRepository_ListByApplicationIDNoPaging(t *testing.T) {
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Bundles No Paging",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.bundles WHERE app_id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{appID, tenantID},

@@ -32,7 +32,7 @@ func TestRepository_Create(t *testing.T) {
 
 	apiFRSuite := testdb.RepoCreateTestSuite{
 		Name: "Create API FR",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM api_specifications_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, refID, true},
@@ -62,7 +62,7 @@ func TestRepository_Create(t *testing.T) {
 
 	eventFRSuite := testdb.RepoCreateTestSuite{
 		Name: "Create Event FR",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM event_specifications_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, refID, true},
@@ -92,7 +92,7 @@ func TestRepository_Create(t *testing.T) {
 
 	docFRSuite := testdb.RepoCreateTestSuite{
 		Name: "Create Doc FR",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM documents_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, refID, true},
@@ -137,7 +137,7 @@ func TestRepository_Update(t *testing.T) {
 
 	apiFRSuite := testdb.RepoUpdateTestSuite{
 		Name: "Update API Fetch Request",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM api_specifications_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
 				Args:          []driver.Value{apiFREntity.StatusCondition, apiFREntity.StatusMessage, apiFREntity.StatusTimestamp, givenID()},
@@ -159,7 +159,7 @@ func TestRepository_Update(t *testing.T) {
 
 	eventFRSuite := testdb.RepoUpdateTestSuite{
 		Name: "Update Event Fetch Request",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM event_specifications_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
 				Args:          []driver.Value{eventFREntity.StatusCondition, eventFREntity.StatusMessage, eventFREntity.StatusTimestamp, givenID()},
@@ -181,7 +181,7 @@ func TestRepository_Update(t *testing.T) {
 
 	docFRSuite := testdb.RepoUpdateTestSuite{
 		Name: "Update Document Fetch Request",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.fetch_requests SET status_condition = ?, status_message = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM document_fetch_requests_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
 				Args:          []driver.Value{docFREntity.StatusCondition, docFREntity.StatusMessage, docFREntity.StatusTimestamp, givenID()},
@@ -213,7 +213,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 
 	apiFRSuite := testdb.RepoGetTestSuite{
 		Name: "Get Fetch Request by API ReferenceObjectID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE spec_id = $1 AND (id IN (SELECT id FROM api_specifications_fetch_requests_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{refID, tenantID},
@@ -244,7 +244,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 
 	eventFRSuite := testdb.RepoGetTestSuite{
 		Name: "Get Fetch Request by Event ReferenceObjectID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE spec_id = $1 AND (id IN (SELECT id FROM event_specifications_fetch_requests_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{refID, tenantID},
@@ -275,7 +275,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 
 	docFRSuite := testdb.RepoGetTestSuite{
 		Name: "Get Fetch Request by Document ReferenceObjectID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE document_id = $1 AND (id IN (SELECT id FROM document_fetch_requests_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{refID, tenantID},
@@ -326,7 +326,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 func TestRepository_Delete(t *testing.T) {
 	apiFRSuite := testdb.RepoDeleteTestSuite{
 		Name: "API Fetch Request Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE id = $1 AND (id IN (SELECT id FROM api_specifications_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{givenID(), tenantID},
@@ -343,7 +343,7 @@ func TestRepository_Delete(t *testing.T) {
 
 	eventFRSuite := testdb.RepoDeleteTestSuite{
 		Name: "Event Fetch Request Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE id = $1 AND (id IN (SELECT id FROM event_specifications_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{givenID(), tenantID},
@@ -360,7 +360,7 @@ func TestRepository_Delete(t *testing.T) {
 
 	docFRSuite := testdb.RepoDeleteTestSuite{
 		Name: "Documents Fetch Request Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE id = $1 AND (id IN (SELECT id FROM document_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{givenID(), tenantID},
@@ -383,7 +383,7 @@ func TestRepository_Delete(t *testing.T) {
 func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 	apiFRSuite := testdb.RepoDeleteTestSuite{
 		Name: "API Fetch Request Delete By ObjectID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE spec_id = $1 AND (id IN (SELECT id FROM api_specifications_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{refID, tenantID},
@@ -402,7 +402,7 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 
 	eventFRSuite := testdb.RepoDeleteTestSuite{
 		Name: "Event Fetch Request Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE spec_id = $1 AND (id IN (SELECT id FROM event_specifications_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{refID, tenantID},
@@ -421,7 +421,7 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 
 	docFRSuite := testdb.RepoDeleteTestSuite{
 		Name: "Documents Fetch Request Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.fetch_requests WHERE document_id = $1 AND (id IN (SELECT id FROM document_fetch_requests_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{refID, tenantID},
@@ -450,22 +450,22 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 	secondFrID := "222222222-2222-2222-2222-222222222222"
 	secondRefID := "refID2"
 
-	firstApiFRModel := fixFullFetchRequestModelWithRefID(firstFrID, timestamp, model.APISpecFetchRequestReference, firstRefID)
-	firstApiFREntity := fixFullFetchRequestEntityWithRefID(t, firstFrID, timestamp, model.APISpecFetchRequestReference, firstRefID)
-	secondApiFRModel := fixFullFetchRequestModelWithRefID(secondFrID, timestamp, model.APISpecFetchRequestReference, secondRefID)
-	secondApiFREntity := fixFullFetchRequestEntityWithRefID(t, secondFrID, timestamp, model.APISpecFetchRequestReference, secondRefID)
+	firstAPIFRModel := fixFullFetchRequestModelWithRefID(firstFrID, timestamp, model.APISpecFetchRequestReference, firstRefID)
+	firstAPIFREntity := fixFullFetchRequestEntityWithRefID(t, firstFrID, timestamp, model.APISpecFetchRequestReference, firstRefID)
+	secondAPIFRModel := fixFullFetchRequestModelWithRefID(secondFrID, timestamp, model.APISpecFetchRequestReference, secondRefID)
+	secondAPIFREntity := fixFullFetchRequestEntityWithRefID(t, secondFrID, timestamp, model.APISpecFetchRequestReference, secondRefID)
 
 	apiFRSuite := testdb.RepoListTestSuite{
 		Name: "List API Fetch Requests by Object IDs",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE spec_id IN ($1, $2) AND (id IN (SELECT id FROM api_specifications_fetch_requests_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{firstRefID, secondRefID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).
-						AddRow(firstFrID, firstApiFREntity.DocumentID, "foo.bar", firstApiFREntity.Auth, firstApiFREntity.Mode, firstApiFREntity.Filter, firstApiFREntity.StatusCondition, firstApiFREntity.StatusMessage, firstApiFREntity.StatusTimestamp, firstApiFREntity.SpecID).
-						AddRow(secondFrID, secondApiFREntity.DocumentID, "foo.bar", secondApiFREntity.Auth, secondApiFREntity.Mode, secondApiFREntity.Filter, secondApiFREntity.StatusCondition, secondApiFREntity.StatusMessage, secondApiFREntity.StatusTimestamp, secondApiFREntity.SpecID),
+						AddRow(firstFrID, firstAPIFREntity.DocumentID, "foo.bar", firstAPIFREntity.Auth, firstAPIFREntity.Mode, firstAPIFREntity.Filter, firstAPIFREntity.StatusCondition, firstAPIFREntity.StatusMessage, firstAPIFREntity.StatusTimestamp, firstAPIFREntity.SpecID).
+						AddRow(secondFrID, secondAPIFREntity.DocumentID, "foo.bar", secondAPIFREntity.Auth, secondAPIFREntity.Mode, secondAPIFREntity.Filter, secondAPIFREntity.StatusCondition, secondAPIFREntity.StatusMessage, secondAPIFREntity.StatusTimestamp, secondAPIFREntity.SpecID),
 					}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
@@ -478,8 +478,8 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 		},
 		AdditionalConverterArgs: []interface{}{model.APISpecFetchRequestReference},
 		RepoConstructorFunc:     fetchrequest.NewRepository,
-		ExpectedModelEntities:   []interface{}{firstApiFRModel, secondApiFRModel},
-		ExpectedDBEntities:      []interface{}{firstApiFREntity, secondApiFREntity},
+		ExpectedModelEntities:   []interface{}{firstAPIFRModel, secondAPIFRModel},
+		ExpectedDBEntities:      []interface{}{firstAPIFREntity, secondAPIFREntity},
 		MethodArgs:              []interface{}{tenantID, model.APISpecFetchRequestReference, []string{firstRefID, secondRefID}},
 		MethodName:              "ListByReferenceObjectIDs",
 		DisableEmptySliceTest:   true,
@@ -492,7 +492,7 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 
 	eventFRSuite := testdb.RepoListTestSuite{
 		Name: "List Event Fetch Requests by Object IDs",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE spec_id IN ($1, $2) AND (id IN (SELECT id FROM event_specifications_fetch_requests_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{firstRefID, secondRefID, tenantID},
@@ -527,7 +527,7 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 
 	docFRSuite := testdb.RepoListTestSuite{
 		Name: "List Doc Fetch Requests by Object IDs",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, document_id, url, auth, mode, filter, status_condition, status_message, status_timestamp, spec_id FROM public.fetch_requests WHERE document_id IN ($1, $2) AND (id IN (SELECT id FROM document_fetch_requests_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{firstRefID, secondRefID, tenantID},

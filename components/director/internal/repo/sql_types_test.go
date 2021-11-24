@@ -10,17 +10,17 @@ func TestNewNullableBool(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		//GIVEN
 		input := true
-		//WHEN
+		// WHEN
 		result := NewNullableBool(&input)
-		//THEN
+		// THEN
 		assert.True(t, result.Valid)
 		assert.Equal(t, input, result.Bool)
 	})
 
 	t.Run("return not valid when nil bool", func(t *testing.T) {
-		//WHEN
+		// WHEN
 		result := NewNullableBool(nil)
-		//THEN
+		// THEN
 		assert.False(t, result.Valid)
 	})
 }
@@ -29,9 +29,9 @@ func TestNewNullableString(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		//GIVEN
 		text := "lorem ipsum"
-		//WHEN
+		// WHEN
 		result := NewNullableString(&text)
-		//THEN
+		// THEN
 		assert.True(t, result.Valid)
 		assert.Equal(t, text, result.String)
 	})
@@ -39,17 +39,17 @@ func TestNewNullableString(t *testing.T) {
 	t.Run("success when empty string", func(t *testing.T) {
 		//GIVEN
 		text := ""
-		//WHEN
+		// WHEN
 		result := NewNullableString(&text)
-		//THEN
+		// THEN
 		assert.True(t, result.Valid)
 		assert.Equal(t, text, result.String)
 	})
 
 	t.Run("return not valid when nil string", func(t *testing.T) {
-		//WHEN
+		// WHEN
 		result := NewNullableString(nil)
-		//THEN
+		// THEN
 		assert.False(t, result.Valid)
 	})
 }

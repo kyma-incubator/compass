@@ -105,7 +105,7 @@ func TestRepository_GetByID(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get BIA",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, owner_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE id = $1 AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = $2) OR owner_id = $3)`),
 				Args:     []driver.Value{testID, testTenant, testTenant},
@@ -140,7 +140,7 @@ func TestRepository_GetForBundle(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get BIA For Bundle",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, owner_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE id = $1 AND bundle_id = $2 AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = $3) OR owner_id = $4)`),
 				Args:     []driver.Value{testID, testBundleID, testTenant, testTenant},
@@ -173,7 +173,7 @@ func TestRepository_GetForBundle(t *testing.T) {
 func TestRepository_ListByBundleID(t *testing.T) {
 	suite := testdb.RepoListTestSuite{
 		Name: "List BIA by BundleID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, owner_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE bundle_id = $1 AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = $2) OR owner_id = $3)`),
 				Args:     []driver.Value{testBundleID, testTenant, testTenant},
@@ -205,7 +205,7 @@ func TestRepository_ListByBundleID(t *testing.T) {
 func TestRepository_ListByRuntimeID(t *testing.T) {
 	suite := testdb.RepoListTestSuite{
 		Name: "List BIA by RuntimeID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, owner_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE runtime_id = $1 AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = $2) OR owner_id = $3)`),
 				Args:     []driver.Value{testRuntimeID, testTenant, testTenant},
@@ -243,7 +243,7 @@ func TestRepository_Update(t *testing.T) {
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update BIA",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateStmt,
 				Args:          []driver.Value{biaEntity.AuthValue, biaEntity.StatusCondition, biaEntity.StatusTimestamp, biaEntity.StatusMessage, biaEntity.StatusReason, testID, testTenant},
@@ -267,7 +267,7 @@ func TestRepository_Update(t *testing.T) {
 func TestRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Delete BIA",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.bundle_instance_auths WHERE id = $1 AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = $2 AND owner = true) OR owner_id = $3)`),
 				Args:          []driver.Value{testID, testTenant, testTenant},

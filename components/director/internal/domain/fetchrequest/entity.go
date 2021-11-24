@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Entity missing godoc
+// Entity represents a fetch request.
 type Entity struct {
 	ID              string         `db:"id"`
 	URL             string         `db:"url"`
@@ -19,10 +19,12 @@ type Entity struct {
 	StatusTimestamp time.Time      `db:"status_timestamp"`
 }
 
+// GetID returns the ID of the fetch request.
 func (e *Entity) GetID() string {
 	return e.ID
 }
 
+// GetParentID returns the ID of the parent.
 func (e *Entity) GetParentID() string {
 	if e.SpecID.Valid {
 		return e.SpecID.String

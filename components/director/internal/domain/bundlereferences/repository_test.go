@@ -43,7 +43,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		// WHEN
 		modelAPIBundleRef, err := pgRepository.GetByID(ctx, model.BundleAPIReference, str.Ptr(apiDefID), nil)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, apiDefID, *modelAPIBundleRef.ObjectID)
 		convMock.AssertExpectations(t)
@@ -66,7 +66,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		// WHEN
 		modelAPIBundleRef, err := pgRepository.GetByID(ctx, model.BundleAPIReference, str.Ptr(apiDefID), str.Ptr(bundleID))
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, apiDefID, *modelAPIBundleRef.ObjectID)
 		convMock.AssertExpectations(t)
@@ -95,7 +95,7 @@ func TestPgRepository_GetBundleIDsForObject(t *testing.T) {
 		// WHEN
 		bundleIDs, err := pgRepository.GetBundleIDsForObject(ctx, model.BundleAPIReference, str.Ptr(apiDefID))
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, bundleID, bundleIDs[0])
 		assert.Equal(t, secondBundleID, bundleIDs[1])
@@ -122,9 +122,9 @@ func TestPgRepository_Create(t *testing.T) {
 		convMock.On("ToEntity", bundleRefModel).Return(bundleRefEntity, nil).Once()
 		pgRepository := bundlereferences.NewRepository(&convMock)
 
-		//WHEN
+		// WHEN
 		err := pgRepository.Create(ctx, &bundleRefModel)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		sqlMock.AssertExpectations(t)
 		convMock.AssertExpectations(t)
@@ -162,9 +162,9 @@ func TestPgRepository_Update(t *testing.T) {
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		pgRepository := bundlereferences.NewRepository(convMock)
-		//WHEN
+		// WHEN
 		err := pgRepository.Update(ctx, &apiBundleReferenceModel)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
@@ -183,10 +183,10 @@ func TestPgRepository_Update(t *testing.T) {
 
 		pgRepository := bundlereferences.NewRepository(convMock)
 
-		//WHEN
+		// WHEN
 		err := pgRepository.Update(ctx, &apiBundleReferenceModel)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
@@ -218,10 +218,10 @@ func TestPgRepository_DeleteByReferenceObjectID(t *testing.T) {
 		convMock := &automock.BundleReferenceConverter{}
 		pgRepository := bundlereferences.NewRepository(convMock)
 
-		//WHEN
+		// WHEN
 		err := pgRepository.DeleteByReferenceObjectID(ctx, bundleID, model.BundleAPIReference, apiDefID)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		sqlMock.AssertExpectations(t)
 		convMock.AssertExpectations(t)
@@ -292,7 +292,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		pgRepository := bundlereferences.NewRepository(convMock)
 		// WHEN
 		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, inputPageSize, inputCursor)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.Len(t, modelBndlRefs, 2)
 		assert.Equal(t, firstBndlID, *modelBndlRefs[0].BundleID)
@@ -351,7 +351,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		pgRepository := bundlereferences.NewRepository(convMock)
 		// WHEN
 		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleEventReference, bundleIDs, inputPageSize, inputCursor)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.Len(t, modelBndlRefs, 2)
 		assert.Equal(t, firstBndlID, *modelBndlRefs[0].BundleID)
@@ -404,7 +404,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		pgRepository := bundlereferences.NewRepository(convMock)
 		// WHEN
 		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, inputPageSize, inputCursor)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.Len(t, modelBndlRefs, 2)
 		assert.Equal(t, firstBndlID, *modelBndlRefs[0].BundleID)
@@ -449,7 +449,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		pgRepository := bundlereferences.NewRepository(convMock)
 		// WHEN
 		_, _, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, inputPageSize, inputCursor)
-		//THEN
+		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())
 		convMock.AssertExpectations(t)

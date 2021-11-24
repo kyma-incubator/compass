@@ -85,8 +85,6 @@ func (a User) GetID() string {
 	return a.ID
 }
 
-var userColumns = []string{"id", "tenant_id", "first_name", "last_name", "age"}
-
 const UserType = resource.Type("UserType")
 
 type UserCollection []User
@@ -130,12 +128,6 @@ func (a *Bundle) GetParentID() string {
 
 var bundleColumns = []string{"id", "name", "description", "app_id"}
 
-type BundleCollection []Bundle
-
-func (a BundleCollection) Len() int {
-	return len(a)
-}
-
 type BundleInstanceAuth struct {
 	ID          string `db:"id"`
 	Name        string `db:"name"`
@@ -150,14 +142,6 @@ func (a *BundleInstanceAuth) GetID() string {
 
 func (a *BundleInstanceAuth) GetParentID() string {
 	return a.BundleID
-}
-
-var biaColumns = []string{"id", "name", "description", "owner_id"}
-
-type BundleInstanceAuthCollection []BundleInstanceAuth
-
-func (a BundleInstanceAuthCollection) Len() int {
-	return len(a)
 }
 
 func someError() error {

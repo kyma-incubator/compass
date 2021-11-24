@@ -4,7 +4,7 @@ import (
 	"database/sql"
 )
 
-// Entity missing godoc
+// Entity is a webhook entity.
 type Entity struct {
 	ID                    string         `db:"id"`
 	ApplicationID         sql.NullString `db:"app_id"`
@@ -25,10 +25,12 @@ type Entity struct {
 	StatusTemplate        sql.NullString `db:"status_template"`
 }
 
+// GetID returns the ID of the entity.
 func (e *Entity) GetID() string {
 	return e.ID
 }
 
+// GetParentID returns the parent ID of the entity.
 func (e *Entity) GetParentID() string {
 	if e.RuntimeID.Valid {
 		return e.RuntimeID.String
@@ -38,10 +40,10 @@ func (e *Entity) GetParentID() string {
 	return ""
 }
 
-// Collection missing godoc
+// Collection is a collection of webhook entities.
 type Collection []Entity
 
-// Len missing godoc
+// Len returns the number of entities in the collection.
 func (c Collection) Len() int {
 	return len(c)
 }

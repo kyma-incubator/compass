@@ -15,6 +15,7 @@ type Runtime struct {
 	CreationTimestamp time.Time      `db:"creation_timestamp"`
 }
 
+// GetID returns ID of the runtime
 func (e *Runtime) GetID() string {
 	return e.ID
 }

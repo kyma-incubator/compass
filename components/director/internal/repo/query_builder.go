@@ -13,12 +13,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// QueryBuilder missing godoc
+// QueryBuilder is an interface for building queries about tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type QueryBuilder interface {
 	BuildQuery(resourceType resource.Type, tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
 }
 
-// QueryBuilder missing godoc
+// QueryBuilderGlobal is an interface for building queries about global entities.
 type QueryBuilderGlobal interface {
 	BuildQueryGlobal(isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
 }
@@ -30,7 +30,7 @@ type universalQueryBuilder struct {
 	resourceType    resource.Type
 }
 
-// NewQueryBuilderWithEmbeddedTenant missing godoc
+// NewQueryBuilderWithEmbeddedTenant is a constructor for QueryBuilder about entities with tenant embedded in them.
 func NewQueryBuilderWithEmbeddedTenant(tableName string, tenantColumn string, selectedColumns []string) QueryBuilder {
 	return &universalQueryBuilder{
 		tableName:       tableName,
@@ -39,6 +39,7 @@ func NewQueryBuilderWithEmbeddedTenant(tableName string, tenantColumn string, se
 	}
 }
 
+// NewQueryBuilder is a constructor for QueryBuilder about entities with externally managed tenant accesses (m2m table or view)
 func NewQueryBuilder(tableName string, selectedColumns []string) QueryBuilder {
 	return &universalQueryBuilder{
 		tableName:       tableName,
@@ -46,6 +47,7 @@ func NewQueryBuilder(tableName string, selectedColumns []string) QueryBuilder {
 	}
 }
 
+// NewQueryBuilderGlobal is a constructor for QueryBuilderGlobal about global entities.
 func NewQueryBuilderGlobal(resourceType resource.Type, tableName string, selectedColumns []string) QueryBuilderGlobal {
 	return &universalQueryBuilder{
 		resourceType:    resourceType,
@@ -54,11 +56,14 @@ func NewQueryBuilderGlobal(resourceType resource.Type, tableName string, selecte
 	}
 }
 
+// BuildQueryGlobal builds a SQL query for global entities without tenant isolation.
 func (b *universalQueryBuilder) BuildQueryGlobal(isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error) {
-	return buildSelectQuery(b.resourceType, b.tableName, b.selectedColumns, "", conditions, OrderByParams{}, isRebindingNeeded)
+	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, isRebindingNeeded)
 }
 
-// BuildQuery missing godoc
+// BuildQuery builds a SQL query for tenant scoped entities with tenant isolation subquery.
+// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
+// If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
 func (b *universalQueryBuilder) BuildQuery(resourceType resource.Type, tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error) {
 	if tenantID == "" {
 		return "", nil, apperrors.NewTenantRequiredError()
@@ -66,7 +71,7 @@ func (b *universalQueryBuilder) BuildQuery(resourceType resource.Type, tenantID 
 
 	if b.tenantColumn != nil {
 		conditions = append(Conditions{NewEqualCondition(*b.tenantColumn, tenantID)}, conditions...)
-		return buildSelectQuery(resourceType, b.tableName, b.selectedColumns, tenantID, conditions, OrderByParams{}, isRebindingNeeded)
+		return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, isRebindingNeeded)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenantID, false)
@@ -76,11 +81,11 @@ func (b *universalQueryBuilder) BuildQuery(resourceType resource.Type, tenantID 
 
 	conditions = append(conditions, tenantIsolation)
 
-	return buildSelectQuery(resourceType, b.tableName, b.selectedColumns, tenantID, conditions, OrderByParams{}, isRebindingNeeded)
+	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, isRebindingNeeded)
 }
 
 // TODO: Refactor builder
-func buildSelectQuery(resourceType resource.Type, tableName string, selectedColumns string, tenantID string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+func buildSelectQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder
 
 	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
@@ -162,8 +167,8 @@ func buildCountQuery(tableName string, idColumn string, conditions Conditions, g
 	return stmtBuilder.String(), allArgs, nil
 }
 
-func buildSelectQueryWithLimitAndOffset(resourceType resource.Type, tableName string, selectedColumns string, tenant string, conditions Conditions, orderByParams OrderByParams, limit, offset int, isRebindingNeeded bool) (string, []interface{}, error) {
-	query, args, err := buildSelectQuery(resourceType, tableName, selectedColumns, tenant, conditions, orderByParams, isRebindingNeeded)
+func buildSelectQueryWithLimitAndOffset(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, limit, offset int, isRebindingNeeded bool) (string, []interface{}, error) {
+	query, args, err := buildSelectQuery(tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
 	if err != nil {
 		return "", nil, err
 	}

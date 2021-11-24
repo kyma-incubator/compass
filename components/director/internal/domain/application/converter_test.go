@@ -403,11 +403,11 @@ func TestConverter_ConvertToModel(t *testing.T) {
 		tenantID := uuid.New().String()
 		appGraphql := fixGQLApplication(uuid.New().String(), "app", "desc")
 
-		//WHEN
+		// WHEN
 		appModel := conv.GraphQLToModel(appGraphql, tenantID)
 		outputGraphql := conv.ToGraphQL(appModel)
 
-		//THEN
+		// THEN
 		assert.Equal(t, appGraphql, outputGraphql)
 	})
 
@@ -415,19 +415,19 @@ func TestConverter_ConvertToModel(t *testing.T) {
 		//GIVEN
 		appGraphql := &graphql.Application{BaseEntity: &graphql.BaseEntity{}}
 
-		//WHEN
+		// WHEN
 		appModel := conv.GraphQLToModel(appGraphql, uuid.New().String())
 		outputGraphql := conv.ToGraphQL(appModel)
 
-		//THEN
+		// THEN
 		appGraphql.Status = &graphql.ApplicationStatus{Condition: graphql.ApplicationStatusConditionInitial}
 		assert.Equal(t, appGraphql, outputGraphql)
 	})
 
 	t.Run("Nil model", func(t *testing.T) {
-		//WHEN
+		// WHEN
 		output := conv.GraphQLToModel(nil, uuid.New().String())
-		//THEN
+		// THEN
 		require.Nil(t, output)
 	})
 }

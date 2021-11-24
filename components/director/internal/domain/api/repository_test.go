@@ -25,7 +25,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get API",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash FROM "public"."api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{apiDefID, tenantID},
@@ -59,7 +59,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List APIs",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash FROM "public"."api_definitions" WHERE app_id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{appID, tenantID},
@@ -113,7 +113,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 
 	suite := testdb.RepoListPageableTestSuite{
 		Name: "List APIs for multiple bundles with paging",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, api_protocol, tags, countries, links, api_resource_links, release_status, sunset_date, changelog_entries, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, implementation_standard, custom_implementation_standard, custom_implementation_standard_description, target_urls, extensible, successors, resource_hash FROM "public"."api_definitions" WHERE id IN ($1, $2) AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{firstAPIDefID, secondAPIDefID, tenantID},
@@ -178,13 +178,13 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 }
 
 func TestPgRepository_Create(t *testing.T) {
-	var nilApiDefModel *model.APIDefinition
+	var nilAPIDefModel *model.APIDefinition
 	apiDefModel, _, _ := fixFullAPIDefinitionModel("placeholder")
 	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create API",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, appID, true},
@@ -208,7 +208,7 @@ func TestPgRepository_Create(t *testing.T) {
 		RepoConstructorFunc:       api.NewRepository,
 		ModelEntity:               &apiDefModel,
 		DBEntity:                  &apiDefEntity,
-		NilModelEntity:            nilApiDefModel,
+		NilModelEntity:            nilAPIDefModel,
 		TenantID:                  tenantID,
 		DisableConverterErrorTest: true,
 	}
@@ -238,9 +238,9 @@ func TestPgRepository_CreateMany(t *testing.T) {
 				WillReturnResult(sqlmock.NewResult(-1, 1))
 		}
 		pgRepository := api.NewRepository(convMock)
-		//WHEN
+		// WHEN
 		err := pgRepository.CreateMany(ctx, tenantID, items)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
@@ -254,7 +254,7 @@ func TestPgRepository_Update(t *testing.T) {
 		industry = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, implementation_standard = ?, custom_implementation_standard = ?, custom_implementation_standard_description = ?, target_urls = ?, extensible = ?, successors = ?, resource_hash = ?
 		WHERE id = ? AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID))
 
-	var nilApiDefModel *model.APIDefinition
+	var nilAPIDefModel *model.APIDefinition
 	apiModel, _, _ := fixFullAPIDefinitionModel("update")
 	entity := fixFullEntityAPIDefinition(apiDefID, "update")
 	entity.UpdatedAt = &fixedTimestamp
@@ -262,7 +262,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update API",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: updateQuery,
 				Args: []driver.Value{entity.PackageID, entity.Name, entity.Description, entity.Group,
@@ -279,7 +279,7 @@ func TestPgRepository_Update(t *testing.T) {
 		RepoConstructorFunc:       api.NewRepository,
 		ModelEntity:               &apiModel,
 		DBEntity:                  &entity,
-		NilModelEntity:            nilApiDefModel,
+		NilModelEntity:            nilAPIDefModel,
 		TenantID:                  tenantID,
 		DisableConverterErrorTest: true,
 	}
@@ -290,7 +290,7 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "API Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM "public"."api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{apiDefID, tenantID},
@@ -311,7 +311,7 @@ func TestPgRepository_Delete(t *testing.T) {
 func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "API Delete By BundleID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM "public"."api_definitions" WHERE id IN (SELECT api_def_id FROM public.bundle_references WHERE bundle_id = $1 AND api_def_id IS NOT NULL) AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{bundleID, tenantID},
@@ -334,7 +334,7 @@ func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 func TestPgRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "API Exists",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM "public"."api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM api_definitions_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{apiDefID, tenantID},

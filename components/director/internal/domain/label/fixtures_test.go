@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	labelId  = "lblId"
+	labelID  = "lblId"
 	refID    = "refID"
 	key      = "test"
 	value    = "test"
@@ -19,7 +19,7 @@ const (
 var fixColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "runtime_context_id", "key", "value", "version"}
 
 func fixModelLabel(objectType model.LabelableObject) *model.Label {
-	return fixModelLabelWithID(labelId, key, objectType)
+	return fixModelLabelWithID(labelID, key, objectType)
 }
 
 func fixModelLabelWithID(id, key string, objectType model.LabelableObject) *model.Label {
@@ -42,7 +42,7 @@ func fixModelLabelWithRefID(id, key string, objectType model.LabelableObject, re
 }
 
 func fixEntityLabel(objectType model.LabelableObject) *label.Entity {
-	return fixEntityLabelWithID(labelId, key, objectType)
+	return fixEntityLabelWithID(labelID, key, objectType)
 }
 
 func fixEntityLabelWithID(id, key string, objectType model.LabelableObject) *label.Entity {

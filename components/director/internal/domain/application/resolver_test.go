@@ -1020,10 +1020,10 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 
 			resolver := application.NewResolver(transact, applicationSvc, nil, nil, nil, applicationConverter, nil, nil, nil, nil, nil)
 
-			//WHEN
+			// WHEN
 			result, err := resolver.ApplicationsForRuntime(context.TODO(), testCase.InputRuntimeID, &first, &gqlAfter)
 
-			//THEN
+			// THEN
 			if testCase.ExpectedError != nil {
 				require.NotNil(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
@@ -1702,9 +1702,9 @@ func TestResolver_Auths(t *testing.T) {
 
 	t.Run("Returns error when application is nil", func(t *testing.T) {
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//WHEN
+		// WHEN
 		_, err := resolver.Auths(context.TODO(), nil)
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "Internal Server Error: Application cannot be empty")
 	})
@@ -1817,10 +1817,10 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 		//GIVEN
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
-		//WHEN
+		// WHEN
 		_, err := resolver.EventingConfiguration(context.TODO(), &graphql.Application{})
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "cannot read tenant from context")
 	})
@@ -1991,9 +1991,9 @@ func TestResolver_Bundles(t *testing.T) {
 
 	t.Run("Returns error when there are no Applications", func(t *testing.T) {
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.BundlesDataLoader([]dataloader.ParamBundle{})
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No Applications found").Error())
 	})
@@ -2003,9 +2003,9 @@ func TestResolver_Bundles(t *testing.T) {
 		keys := []dataloader.ParamBundle{firstAppParams}
 
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.BundlesDataLoader(keys)
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
 	})
@@ -2166,9 +2166,9 @@ func TestResolver_Bundle(t *testing.T) {
 
 	t.Run("Returns error when application is nil", func(t *testing.T) {
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.Bundle(context.TODO(), nil, "")
-		//then
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, apperrors.NewInternalError("Application cannot be empty").Error())
 	})

@@ -30,9 +30,9 @@ func TestLabelSelectorInput_Validate_Key(t *testing.T) {
 			//GIVEN
 			fr := fixValidLabelSelector()
 			fr.Key = testCase.Key
-			//WHEN
+			// WHEN
 			err := fr.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

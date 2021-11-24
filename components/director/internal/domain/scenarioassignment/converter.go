@@ -5,16 +5,17 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+// SubaccountIDKey is the key used for the subaccount_id label
 const SubaccountIDKey = "global_subaccount_id"
 
-// NewConverter missing godoc
+// NewConverter creates a new instance of gqlConverter
 func NewConverter() *converter {
 	return &converter{}
 }
 
 type converter struct{}
 
-// FromInputGraphQL missing godoc
+// FromInputGraphQL converts from GraphQL input to internal model
 func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, targetTenantInternalID string) model.AutomaticScenarioAssignment {
 	return model.AutomaticScenarioAssignment{
 		ScenarioName:   in.ScenarioName,
@@ -22,7 +23,7 @@ func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetIn
 	}
 }
 
-// ToGraphQL missing godoc
+// ToGraphQL converts from internal model to GraphQL output
 func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment {
 	return graphql.AutomaticScenarioAssignment{
 		ScenarioName: in.ScenarioName,
@@ -33,7 +34,7 @@ func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment, targetTenant
 	}
 }
 
-// ToEntity missing godoc
+// ToEntity converts from internal model to entity
 func (c *converter) ToEntity(in model.AutomaticScenarioAssignment) Entity {
 	return Entity{
 		TenantID:       in.Tenant,
@@ -42,7 +43,7 @@ func (c *converter) ToEntity(in model.AutomaticScenarioAssignment) Entity {
 	}
 }
 
-// FromEntity missing godoc
+// FromEntity converts from entity to internal model
 func (c *converter) FromEntity(in Entity) model.AutomaticScenarioAssignment {
 	return model.AutomaticScenarioAssignment{
 		ScenarioName:   in.Scenario,

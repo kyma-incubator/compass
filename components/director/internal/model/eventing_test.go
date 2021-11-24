@@ -33,10 +33,10 @@ func TestNewRuntimeEventingConfiguration(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//WHEN
+			// WHEN
 			config, err := model.NewRuntimeEventingConfiguration(testCase.RawURL)
 
-			//THEN
+			// THEN
 			if testCase.ExpectedError == nil {
 				require.NotNil(t, config)
 				require.Equal(t, testCase.RawURL, config.DefaultURL.String())
@@ -57,10 +57,10 @@ func TestNewApplicationEventingConfiguration(t *testing.T) {
 		//GIVEN
 		expectedEventURL := "https://eventing.runtime/app.name-super/v1/events"
 
-		//WHEN
+		// WHEN
 		config, err := model.NewApplicationEventingConfiguration(*validURL, "app.name-super")
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, config)
 
@@ -73,10 +73,10 @@ func TestNewApplicationEventingConfiguration(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, emptyURL)
 
-		//WHEN
+		// WHEN
 		config, err := model.NewApplicationEventingConfiguration(*emptyURL, "")
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, config)
 		assert.Equal(t, "", config.DefaultURL.String())
@@ -84,9 +84,9 @@ func TestNewApplicationEventingConfiguration(t *testing.T) {
 }
 
 func TestNewEmptyApplicationEventingConfig(t *testing.T) {
-	//WHEN
+	// WHEN
 	config, err := model.NewEmptyApplicationEventingConfig()
-	//THEN
+	// THEN
 	require.NoError(t, err)
 	assert.Equal(t, "", config.DefaultURL.String())
 }

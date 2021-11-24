@@ -12,9 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// RepoExistTestSuite represents a generic test suite for repository Exists method of any entity that has externally managed tenants in m2m table/view.
+// This test suite is not suitable for global entities or entities with embedded tenant in them.
 type RepoExistTestSuite struct {
 	Name                  string
-	SqlQueryDetails       []SqlQueryDetails
+	SQLQueryDetails       []SQLQueryDetails
 	ConverterMockProvider func() Mock
 	RepoConstructorFunc   interface{}
 	TargetID              string
@@ -22,8 +24,9 @@ type RepoExistTestSuite struct {
 	RefEntity             interface{}
 }
 
+// Run runs the generic repo exists test suite
 func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
-	for _, queryDetails := range suite.SqlQueryDetails {
+	for _, queryDetails := range suite.SQLQueryDetails {
 		if !queryDetails.IsSelect {
 			panic("exist suite should expect only select SQL statements")
 		}
@@ -36,15 +39,15 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SqlQueryDetails {
+			for _, sqlDetails := range suite.SQLQueryDetails {
 				sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 			}
 
 			convMock := suite.ConverterMockProvider()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-			//WHEN
+			// WHEN
 			found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity)
-			//THEN
+			// THEN
 			require.NoError(t, err)
 			require.True(t, found)
 
@@ -56,15 +59,15 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SqlQueryDetails {
+			for _, sqlDetails := range suite.SQLQueryDetails {
 				sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
 			}
 
 			convMock := suite.ConverterMockProvider()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-			//WHEN
+			// WHEN
 			found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity)
-			//THEN
+			// THEN
 			require.NoError(t, err)
 			require.False(t, found)
 
@@ -72,13 +75,13 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 			convMock.AssertExpectations(t)
 		})
 
-		for i := range suite.SqlQueryDetails {
+		for i := range suite.SQLQueryDetails {
 			t.Run(fmt.Sprintf("error if SQL query %d fail", i), func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SqlQueryDetails {
-					if sqlDetails.Query == suite.SqlQueryDetails[i].Query {
+				for _, sqlDetails := range suite.SQLQueryDetails {
+					if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
 						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
 						break
 					} else {
@@ -88,9 +91,9 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
+				// WHEN
 				found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity)
-				//THEN
+				// THEN
 				require.Error(t, err)
 				require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
 				require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")

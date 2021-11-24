@@ -4,7 +4,7 @@ import (
 	"database/sql"
 )
 
-// Entity missing godoc
+// Entity is a label entity.
 type Entity struct {
 	ID               string         `db:"id"`
 	TenantID         sql.NullString `db:"tenant_id"`
@@ -16,10 +16,12 @@ type Entity struct {
 	Version          int            `db:"version"`
 }
 
+// GetID returns the ID of the label.
 func (e *Entity) GetID() string {
 	return e.ID
 }
 
+// GetParentID returns the parent ID of the label.
 func (e *Entity) GetParentID() string {
 	if e.AppID.Valid {
 		return e.AppID.String
@@ -31,10 +33,10 @@ func (e *Entity) GetParentID() string {
 	return e.TenantID.String
 }
 
-// Collection missing godoc
+// Collection is a collection of label entities.
 type Collection []Entity
 
-// Len missing godoc
+// Len returns the number of entities in the collection.
 func (c Collection) Len() int {
 	return len(c)
 }

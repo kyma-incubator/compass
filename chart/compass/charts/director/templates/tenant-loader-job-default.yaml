@@ -21,7 +21,7 @@ spec:
             shareProcessNamespace: true
             containers:
                 - name: loader
-                  image: compass-director:latest
+                  image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
                   imagePullPolicy: IfNotPresent
                   env:
                       - name: APP_DB_USER

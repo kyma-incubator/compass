@@ -1240,9 +1240,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 
 	t.Run("Returns error when there are no Specs", func(t *testing.T) {
 		resolver := api.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestAPIDefDataLoader([]dataloader.ParamFetchRequestAPIDef{})
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No APIDef specs found").Error())
 	})
@@ -1252,9 +1252,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 		keys := []dataloader.ParamFetchRequestAPIDef{params}
 
 		resolver := api.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestAPIDefDataLoader(keys)
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition Spec ID is empty").Error())
 	})

@@ -607,7 +607,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "error for tenant when tenant convertion fails",
+			Name: "error for tenant when tenant conversion fails",
 			UIDServiceFn: func() *automock.UIDService {
 				return &automock.UIDService{}
 			},

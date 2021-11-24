@@ -92,9 +92,9 @@ func TestConverter_FromEntity(t *testing.T) {
 		//GIVEN
 		versionEntity := *fixVersionEntity("v1.2", true, "v1.1", false)
 		versionConv := version.NewConverter()
-		//WHEN
+		// WHEN
 		versionModel := versionConv.FromEntity(versionEntity)
-		//THEN
+		// THEN
 		require.NotNil(t, versionModel)
 		assertVersion(t, versionEntity, *versionModel)
 	})
@@ -105,7 +105,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		versionConv := version.NewConverter()
 		// WHEN
 		versionModel := versionConv.FromEntity(versionEntity)
-		//THEN
+		// THEN
 		require.Nil(t, versionModel)
 	})
 }
@@ -113,18 +113,18 @@ func TestConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
 		versionModel := *fixModelVersion("v1.2", true, "v1.1", false)
 		versionConv := version.NewConverter()
-		//WHEN
+		// WHEN
 		versionEntity := versionConv.ToEntity(versionModel)
-		//THEN
+		// THEN
 		assertVersion(t, versionEntity, versionModel)
 	})
 
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		versionModel := model.Version{}
 		versionConv := version.NewConverter()
-		//WHEN
+		// WHEN
 		versionEntity := versionConv.ToEntity(versionModel)
-		//THEN
+		// THEN
 		assertVersion(t, versionEntity, versionModel)
 	})
 }

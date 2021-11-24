@@ -30,9 +30,9 @@ func TestResolver_Viewer(t *testing.T) {
 		ctx = consumer.SaveToContext(ctx, cons)
 		resolver := viewer.NewViewerResolver()
 
-		//WHEN
+		// WHEN
 		vwr, err := resolver.Viewer(ctx)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, vwr)
 		assert.Equal(t, expectedViewer, *vwr)
@@ -47,9 +47,9 @@ func TestResolver_Viewer(t *testing.T) {
 		}
 		ctx = consumer.SaveToContext(ctx, invalidConsumer)
 		resolver := viewer.NewViewerResolver()
-		//WHEN
+		// WHEN
 		_, err := resolver.Viewer(ctx)
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, apperrors.NewInternalError("viewer does not exist").Error())
 	})
@@ -59,10 +59,10 @@ func TestResolver_Viewer(t *testing.T) {
 		ctx := context.TODO()
 		resolver := viewer.NewViewerResolver()
 
-		//WHEN
+		// WHEN
 		_, err := resolver.Viewer(ctx)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while getting viewer from context: Internal Server Error: cannot read consumer from context")
 	})

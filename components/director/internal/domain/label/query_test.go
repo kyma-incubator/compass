@@ -1,7 +1,6 @@
 package label_test
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -49,7 +48,7 @@ func Test_FilterQuery(t *testing.T) {
 		Query: &scenariosBarPongQuery,
 	}
 
-	stmtPrefix := fmt.Sprintf(`SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = ?))`)
+	stmtPrefix := `SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = ?))`
 
 	testCases := []struct {
 		Name                 string
@@ -498,7 +497,7 @@ func TestFilterSubquery(t *testing.T) {
 		Query: &scenariosBarPongQuery,
 	}
 
-	stmtPrefix := fmt.Sprintf(`SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = ?))`)
+	stmtPrefix := `SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = ?))`
 
 	testCases := []struct {
 		Name                 string

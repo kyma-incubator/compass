@@ -45,28 +45,34 @@ func TestService_Create(t *testing.T) {
 		runtime.IsNormalizedLabel: "true",
 	}
 
-	modelInput := model.RuntimeInput{
-		Name:        "foo.bar-not",
-		Description: &desc,
-		Labels:      labels,
+	modelInput := func() model.RuntimeInput {
+		return model.RuntimeInput{
+			Name:        "foo.bar-not",
+			Description: &desc,
+			Labels:      labels,
+		}
 	}
 
-	modelInputWithSubaccountLabel := model.RuntimeInput{
-		Name:        "foo.bar-not",
-		Description: &desc,
-		Labels: map[string]interface{}{
-			model.ScenariosKey:                 []interface{}{"DEFAULT"},
-			scenarioassignment.SubaccountIDKey: extSubaccountID,
-		},
+	modelInputWithSubaccountLabel := func() model.RuntimeInput {
+		return model.RuntimeInput{
+			Name:        "foo.bar-not",
+			Description: &desc,
+			Labels: map[string]interface{}{
+				model.ScenariosKey:                 []interface{}{"DEFAULT"},
+				scenarioassignment.SubaccountIDKey: extSubaccountID,
+			},
+		}
 	}
 
-	modelInputWithInvalidSubaccountLabel := model.RuntimeInput{
-		Name:        "foo.bar-not",
-		Description: &desc,
-		Labels: map[string]interface{}{
-			model.ScenariosKey:                 []interface{}{"DEFAULT"},
-			scenarioassignment.SubaccountIDKey: 213,
-		},
+	modelInputWithInvalidSubaccountLabel := func() model.RuntimeInput {
+		return model.RuntimeInput{
+			Name:        "foo.bar-not",
+			Description: &desc,
+			Labels: map[string]interface{}{
+				model.ScenariosKey:                 []interface{}{"DEFAULT"},
+				scenarioassignment.SubaccountIDKey: 213,
+			},
+		}
 	}
 
 	labelsForDBMockWithSubaccount := map[string]interface{}{
@@ -84,14 +90,17 @@ func TestService_Create(t *testing.T) {
 		model.ScenariosKey: []interface{}{"test"},
 	}
 
-	modelInputWithoutLabels := model.RuntimeInput{
-		Name:        "foo.bar-not",
-		Description: &desc,
+	modelInputWithoutLabels := func() model.RuntimeInput {
+		return model.RuntimeInput{
+			Name:        "foo.bar-not",
+			Description: &desc,
+		}
 	}
+
 	var nilLabels map[string]interface{}
 
 	runtimeModel := mock.MatchedBy(func(rtm *model.Runtime) bool {
-		return rtm.Name == modelInput.Name && rtm.Description == modelInput.Description &&
+		return rtm.Name == modelInput().Name && rtm.Description == modelInput().Description &&
 			rtm.Status.Condition == model.RuntimeStatusConditionInitial
 	})
 
@@ -175,7 +184,7 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInput,
+			Input:       modelInput(),
 			Context:     ctx,
 			ExpectedErr: nil,
 		},
@@ -213,7 +222,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel,
+			Input:       modelInputWithSubaccountLabel(),
 			Context:     ctx,
 			ExpectedErr: nil,
 		},
@@ -226,7 +235,7 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccountMatcher, subaccountID, &labelsForDBMockWithSubaccount).Return().Once()
+				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccountMatcher, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
 				return svc
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -251,7 +260,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel,
+			Input:       modelInputWithSubaccountLabel(),
 			Context:     ctxWithSubaccount,
 			ExpectedErr: nil,
 		},
@@ -288,7 +297,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{}, nil)
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel,
+			Input:       modelInputWithSubaccountLabel(),
 			Context:     ctx,
 			ExpectedErr: nil,
 		},
@@ -323,12 +332,12 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInputWithoutLabels,
+			Input:       modelInputWithoutLabels(),
 			Context:     ctx,
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Returns error when subaccount label convertion fail",
+			Name: "Returns error when subaccount label conversion fail",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				return repo
@@ -352,7 +361,7 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInputWithInvalidSubaccountLabel,
+			Input:       modelInputWithInvalidSubaccountLabel(),
 			Context:     ctx,
 			ExpectedErr: errors.New("while converting global_subaccount_id label"),
 		},
@@ -382,7 +391,7 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel,
+			Input:       modelInputWithSubaccountLabel(),
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -410,7 +419,7 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInput,
+			Input:       modelInput(),
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -440,7 +449,7 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel,
+			Input:       modelInputWithSubaccountLabel(),
 			Context:     ctx,
 			ExpectedErr: apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey)),
 		},
@@ -453,7 +462,7 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccount, subaccountID, &labelsForDBMockWithSubaccount).Return().Once()
+				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccount, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
 				return svc
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -476,7 +485,7 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel,
+			Input:       modelInputWithSubaccountLabel(),
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -489,7 +498,7 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccount, subaccountID, &labelsForDBMockWithSubaccount).Return().Once()
+				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccount, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
 				return svc
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -513,7 +522,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return(nil, testErr)
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel,
+			Input:       modelInputWithSubaccountLabel(),
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -543,7 +552,7 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInput,
+			Input:       modelInput(),
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -556,7 +565,7 @@ func TestService_Create(t *testing.T) {
 			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccount, subaccountID, &labelsForDBMockWithSubaccount).Return().Once()
+				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccount, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
 				return svc
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -581,7 +590,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel,
+			Input:       modelInputWithSubaccountLabel(),
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},

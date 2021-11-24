@@ -5,7 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
-// Label missing godoc
+// Label represents a label with additional metadata for a given entity.
 type Label struct {
 	ID         string
 	Tenant     *string
@@ -16,7 +16,7 @@ type Label struct {
 	Version    int
 }
 
-// LabelInput missing godoc
+// LabelInput is an input for creating a new label.
 type LabelInput struct {
 	Key        string
 	Value      interface{}
@@ -25,7 +25,7 @@ type LabelInput struct {
 	Version    int
 }
 
-// ToLabel missing godoc
+// ToLabel converts a LabelInput to a Label.
 func (i *LabelInput) ToLabel(id, tenant string) *Label {
 	var tenantID *string
 	if i.Key == ScenariosKey || i.ObjectType == TenantLabelableObject {
@@ -43,20 +43,21 @@ func (i *LabelInput) ToLabel(id, tenant string) *Label {
 	}
 }
 
-// LabelableObject missing godoc
+// LabelableObject represents the type of entity that can have labels.
 type LabelableObject string
 
 const (
-	// RuntimeLabelableObject missing godoc
+	// RuntimeLabelableObject represents a runtime entity.
 	RuntimeLabelableObject LabelableObject = "Runtime"
-	// RuntimeContextLabelableObject missing godoc
+	// RuntimeContextLabelableObject represents a runtime context entity.
 	RuntimeContextLabelableObject LabelableObject = "Runtime Context"
-	// ApplicationLabelableObject missing godoc
+	// ApplicationLabelableObject represents an application entity.
 	ApplicationLabelableObject LabelableObject = "Application"
-	// TenantLabelableObject missing godoc
+	// TenantLabelableObject represents a tenant entity.
 	TenantLabelableObject LabelableObject = "Tenant"
 )
 
+// GetResourceType returns the resource type of the label based on the referenced entity.
 func (obj LabelableObject) GetResourceType() resource.Type {
 	switch obj {
 	case RuntimeLabelableObject:
@@ -71,7 +72,7 @@ func (obj LabelableObject) GetResourceType() resource.Type {
 	return ""
 }
 
-// NewLabelForRuntimeContext missing godoc
+// NewLabelForRuntimeContext creates a new label for a runtime context.
 func NewLabelForRuntimeContext(runtimeCtxID, tenant, key string, value interface{}) *Label {
 	var tenantID *string
 	if key == ScenariosKey {
@@ -88,7 +89,7 @@ func NewLabelForRuntimeContext(runtimeCtxID, tenant, key string, value interface
 	}
 }
 
-// NewLabelForRuntime missing godoc
+// NewLabelForRuntime creates a new label for a runtime.
 func NewLabelForRuntime(runtimeID, tenant, key string, value interface{}) *Label {
 	var tenantID *string
 	if key == ScenariosKey {
@@ -105,7 +106,7 @@ func NewLabelForRuntime(runtimeID, tenant, key string, value interface{}) *Label
 	}
 }
 
-// NewLabelForApplication missing godoc
+// NewLabelForApplication creates a new label for an application.
 func NewLabelForApplication(appID, tenant, key string, value interface{}) *Label {
 	var tenantID *string
 	if key == ScenariosKey {

@@ -21,7 +21,7 @@ func TestConverter(t *testing.T) {
 		entity := c.ToEntity(input)
 		outputModel := c.FromEntity(entity)
 
-		//then
+		// THEN
 		assert.Equal(t, input, outputModel)
 	})
 

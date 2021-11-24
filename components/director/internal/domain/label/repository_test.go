@@ -32,7 +32,7 @@ func TestRepository_Create(t *testing.T) {
 
 	appLabelSuite := testdb.RepoCreateTestSuite{
 		Name: "Create Application Label",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, refID, true},
@@ -62,7 +62,7 @@ func TestRepository_Create(t *testing.T) {
 
 	runtimeLabelSuite := testdb.RepoCreateTestSuite{
 		Name: "Create Runtime Label",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_runtimes WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, refID, true},
@@ -92,7 +92,7 @@ func TestRepository_Create(t *testing.T) {
 
 	runtimeCtxLabelSuite := testdb.RepoCreateTestSuite{
 		Name: "Create RuntimeCtx Label",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM runtime_contexts_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, refID, true},
@@ -174,7 +174,7 @@ func TestRepository_Upsert(t *testing.T) {
 
 		mockedRows := sqlmock.NewRows(fixColumns).AddRow(labelEntity.ID, labelEntity.TenantID, labelEntity.AppID, labelEntity.RuntimeID, labelEntity.RuntimeContextID, labelEntity.Key, labelEntity.Value, labelEntity.Version)
 		dbMock.ExpectQuery(escapedGetQuery).WithArgs(key, refID, tenantID).WillReturnRows(mockedRows)
-		dbMock.ExpectQuery(escapedExsistsQuery).WithArgs(labelId, tenantID).WillReturnRows(testdb.RowWhenObjectExist())
+		dbMock.ExpectQuery(escapedExsistsQuery).WithArgs(labelID, tenantID).WillReturnRows(testdb.RowWhenObjectExist())
 		dbMock.ExpectExec(escapedUpdateQuery).WithArgs(labelEntity.Value, labelEntity.ID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := context.TODO()
@@ -206,7 +206,7 @@ func TestRepository_Upsert(t *testing.T) {
 
 		mockedRows := sqlmock.NewRows(fixColumns).AddRow(labelEntity.ID, labelEntity.TenantID, labelEntity.AppID, labelEntity.RuntimeID, labelEntity.RuntimeContextID, labelEntity.Key, labelEntity.Value, labelEntity.Version)
 		dbMock.ExpectQuery(escapedGetQuery).WithArgs(key, refID, tenantID).WillReturnRows(mockedRows)
-		dbMock.ExpectQuery(escapedExsistsQuery).WithArgs(labelId, tenantID).WillReturnRows(testdb.RowWhenObjectExist())
+		dbMock.ExpectQuery(escapedExsistsQuery).WithArgs(labelID, tenantID).WillReturnRows(testdb.RowWhenObjectExist())
 		dbMock.ExpectExec(escapedUpdateQuery).WithArgs(labelEntity.Value, labelEntity.ID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := context.TODO()
@@ -237,7 +237,7 @@ func TestRepository_Upsert(t *testing.T) {
 
 		mockedRows := sqlmock.NewRows(fixColumns).AddRow(labelEntity.ID, labelEntity.TenantID, labelEntity.AppID, labelEntity.RuntimeID, labelEntity.RuntimeContextID, labelEntity.Key, labelEntity.Value, labelEntity.Version)
 		dbMock.ExpectQuery(escapedGetQuery).WithArgs(key, refID, tenantID).WillReturnRows(mockedRows)
-		dbMock.ExpectQuery(escapedExsistsQuery).WithArgs(labelId, tenantID).WillReturnRows(testdb.RowWhenObjectExist())
+		dbMock.ExpectQuery(escapedExsistsQuery).WithArgs(labelID, tenantID).WillReturnRows(testdb.RowWhenObjectExist())
 		dbMock.ExpectExec(escapedUpdateQuery).WithArgs(labelEntity.Value, labelEntity.ID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := context.TODO()
@@ -460,10 +460,10 @@ func TestRepository_UpdateWithVersion(t *testing.T) {
 
 	appLabelSuite := testdb.RepoUpdateTestSuite{
 		Name: "Update Application Label",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM public.labels WHERE id = $1 AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $2 AND owner = true))"),
-				Args:     []driver.Value{labelId, tenantID},
+				Args:     []driver.Value{labelID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
@@ -492,10 +492,10 @@ func TestRepository_UpdateWithVersion(t *testing.T) {
 
 	runtimeLabelSuite := testdb.RepoUpdateTestSuite{
 		Name: "Update Runtime Label",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM public.labels WHERE id = $1 AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2 AND owner = true))"),
-				Args:     []driver.Value{labelId, tenantID},
+				Args:     []driver.Value{labelID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
@@ -524,10 +524,10 @@ func TestRepository_UpdateWithVersion(t *testing.T) {
 
 	runtimeCtxLabelSuite := testdb.RepoUpdateTestSuite{
 		Name: "Update RuntimeCtx Label",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM public.labels WHERE id = $1 AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $2 AND owner = true))"),
-				Args:     []driver.Value{labelId, tenantID},
+				Args:     []driver.Value{labelID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
@@ -595,7 +595,7 @@ func TestRepository_GetByKey(t *testing.T) {
 
 	appLabelSuite := testdb.RepoGetTestSuite{
 		Name: "Get Application Label",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version FROM public.labels WHERE key = $1 AND app_id = $2 AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{key, refID, tenantID},
@@ -621,7 +621,7 @@ func TestRepository_GetByKey(t *testing.T) {
 
 	rtLabelSuite := testdb.RepoGetTestSuite{
 		Name: "Get Runtime Label",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version FROM public.labels WHERE key = $1 AND runtime_id = $2 AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{key, refID, tenantID},
@@ -647,7 +647,7 @@ func TestRepository_GetByKey(t *testing.T) {
 
 	rtCtxLabelSuite := testdb.RepoGetTestSuite{
 		Name: "Get Runtime Context Label",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version FROM public.labels WHERE key = $1 AND runtime_context_id = $2 AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{key, refID, tenantID},
@@ -688,7 +688,7 @@ func TestRepository_GetByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version FROM public.labels WHERE tenant_id = $1 AND key = $2`))
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version FROM public.labels WHERE tenant_id = $1 AND key = $2`)
 		mockedRows := sqlmock.NewRows(fixColumns).AddRow(tenantLabelEntity.ID, tenantLabelEntity.TenantID, tenantLabelEntity.AppID, tenantLabelEntity.RuntimeID, tenantLabelEntity.RuntimeContextID, tenantLabelEntity.Key, tenantLabelEntity.Value, tenantLabelEntity.Version)
 		dbMock.ExpectQuery(escapedQuery).WithArgs(tenantID, key).WillReturnRows(mockedRows)
 
@@ -928,7 +928,7 @@ func TestRepository_ListByKey(t *testing.T) {
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Labels by key",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version FROM public.labels WHERE key = $1 AND (id IN (SELECT id FROM labels_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{key, tenantID},
@@ -1068,7 +1068,7 @@ func TestRepository_ListGlobalByKeyAndObjects(t *testing.T) {
 func TestRepository_Delete(t *testing.T) {
 	appLabelSuite := testdb.RepoDeleteTestSuite{
 		Name: "App Label Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND app_id = $2 AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
 				Args:          []driver.Value{key, refID, tenantID},
@@ -1086,7 +1086,7 @@ func TestRepository_Delete(t *testing.T) {
 
 	rtLabelSuite := testdb.RepoDeleteTestSuite{
 		Name: "Runtime Label Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND runtime_id = $2 AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
 				Args:          []driver.Value{key, refID, tenantID},
@@ -1104,7 +1104,7 @@ func TestRepository_Delete(t *testing.T) {
 
 	rtCtxLabelSuite := testdb.RepoDeleteTestSuite{
 		Name: "Runtime Context Label Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND runtime_context_id = $2 AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
 				Args:          []driver.Value{key, refID, tenantID},
@@ -1148,7 +1148,7 @@ func TestRepository_Delete(t *testing.T) {
 func TestRepository_DeleteAll(t *testing.T) {
 	appLabelSuite := testdb.RepoDeleteTestSuite{
 		Name: "App Label Delete All",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE app_id = $1 AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{refID, tenantID},
@@ -1167,7 +1167,7 @@ func TestRepository_DeleteAll(t *testing.T) {
 
 	rtLabelSuite := testdb.RepoDeleteTestSuite{
 		Name: "Runtime Label Delete All",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE runtime_id = $1 AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{refID, tenantID},
@@ -1186,7 +1186,7 @@ func TestRepository_DeleteAll(t *testing.T) {
 
 	rtCtxLabelSuite := testdb.RepoDeleteTestSuite{
 		Name: "Runtime Context Label Delete All",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE runtime_context_id = $1 AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{refID, tenantID},
@@ -1231,7 +1231,7 @@ func TestRepository_DeleteAll(t *testing.T) {
 func TestRepository_DeleteByKey(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Label Delete By Key",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE key = $1 AND (id IN (SELECT id FROM labels_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{key, tenantID},
@@ -1256,7 +1256,7 @@ func TestRepository_DeleteByKeyNegationPattern(t *testing.T) {
 
 	appLabelSuite := testdb.RepoDeleteTestSuite{
 		Name: "App Label DeleteByKeyNegationPattern",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE NOT key ~ $1 AND app_id = $2 AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
 				Args:          []driver.Value{pattern, refID, tenantID},
@@ -1275,7 +1275,7 @@ func TestRepository_DeleteByKeyNegationPattern(t *testing.T) {
 
 	rtLabelSuite := testdb.RepoDeleteTestSuite{
 		Name: "Runtime Label DeleteByKeyNegationPattern",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE NOT key ~ $1 AND runtime_id = $2 AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
 				Args:          []driver.Value{pattern, refID, tenantID},
@@ -1294,7 +1294,7 @@ func TestRepository_DeleteByKeyNegationPattern(t *testing.T) {
 
 	rtCtxLabelSuite := testdb.RepoDeleteTestSuite{
 		Name: "Runtime Context Label DeleteByKeyNegationPattern",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.labels WHERE NOT key ~ $1 AND runtime_context_id = $2 AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $3 AND owner = true))`),
 				Args:          []driver.Value{pattern, refID, tenantID},
@@ -1348,7 +1348,7 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Runtime Scenarios Matching Selector",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version FROM public.labels WHERE key = $1 AND runtime_id IN ($2, $3) AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $4))`),
 				Args:     []driver.Value{model.ScenariosKey, rt1ID, rt2ID, tenantID},

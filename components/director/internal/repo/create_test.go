@@ -214,7 +214,6 @@ func TestCreate(t *testing.T) {
 			// THEN
 			require.EqualError(t, err, "Internal Server Error: id cannot be empty, check if the entity implements Identifiable")
 		})
-
 	})
 }
 

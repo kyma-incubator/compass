@@ -37,7 +37,7 @@ spec:
               readOnly: true
         {{- end }}
         - name: migrator
-          image: compass-schema-migrator:latest
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
           imagePullPolicy: IfNotPresent
           env:
             - name: DB_USER

@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// UpdaterGlobal missing godoc
+// UpdaterGlobal is an interface for updating global entities without tenant or entities with tenant embedded in them.
 type UpdaterGlobal interface {
 	UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error
 	UpdateSingleWithVersionGlobal(ctx context.Context, dbEntity interface{}) error
@@ -26,6 +26,7 @@ type UpdaterGlobal interface {
 	Clone() UpdaterGlobal
 }
 
+// Updater is an interface for updating entities with externally managed tenant accesses (m2m table or view)
 type Updater interface {
 	UpdateSingle(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error
 	UpdateSingleWithVersion(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error
@@ -39,7 +40,7 @@ type universalUpdater struct {
 	idColumns        []string
 }
 
-// NewUpdater missing godoc
+// NewUpdater is a constructor for Updater about entities with externally managed tenant accesses (m2m table or view)
 func NewUpdater(tableName string, updatableColumns []string, idColumns []string) Updater {
 	return &universalUpdater{
 		tableName:        tableName,
@@ -48,7 +49,7 @@ func NewUpdater(tableName string, updatableColumns []string, idColumns []string)
 	}
 }
 
-// NewUpdaterGlobal missing godoc
+// NewUpdaterGlobal is a constructor for UpdaterGlobal about global entities without tenant.
 func NewUpdaterGlobal(resourceType resource.Type, tableName string, updatableColumns []string, idColumns []string) UpdaterGlobal {
 	return &universalUpdater{
 		resourceType:     resourceType,
@@ -58,7 +59,7 @@ func NewUpdaterGlobal(resourceType resource.Type, tableName string, updatableCol
 	}
 }
 
-// NewUpdaterWithEmbeddedTenant missing godoc
+// NewUpdaterWithEmbeddedTenant is a constructor for UpdaterGlobal about entities with tenant embedded in them.
 func NewUpdaterWithEmbeddedTenant(resourceType resource.Type, tableName string, updatableColumns []string, tenantColumn string, idColumns []string) UpdaterGlobal {
 	return &universalUpdater{
 		resourceType:     resourceType,
@@ -69,6 +70,9 @@ func NewUpdaterWithEmbeddedTenant(resourceType resource.Type, tableName string, 
 	}
 }
 
+// UpdateSingleWithVersion updates the entity while checking its version as a way of optimistic locking.
+// It is suitable for entities with externally managed tenant accesses (m2m table or view).
+//
 // UpdateSingleWithVersion performs get of the resource with owner check before updating the entity with version.
 // This is needed in order to distinguish the generic Unauthorized error due to the tenant has no owner access to the entity
 // and the case of concurrent modification where the version differs. In both cases the affected rows would be 0.
@@ -98,29 +102,36 @@ func (u *universalUpdater) UpdateSingleWithVersion(ctx context.Context, resource
 	return u.updateSingleWithVersion(ctx, tenant, dbEntity, resourceType)
 }
 
+// UpdateSingle updates the given entity if the tenant has owner access to it.
+// It is suitable for entities with externally managed tenant accesses (m2m table or view).
 func (u *universalUpdater) UpdateSingle(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error {
 	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, tenant, u.buildFieldsToSet(), resourceType)
 }
 
+// UpdateSingleGlobal updates the given entity. In case of configured tenant column it checks if it matches the tenant inside the dbEntity.
+// It is suitable for entities without tenant or entities with tenant embedded in them.
 func (u *universalUpdater) UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error {
 	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, "", u.buildFieldsToSet(), u.resourceType)
 }
 
+// UpdateSingleWithVersionGlobal updates the entity while checking its version as a way of optimistic locking.
+// In case of configured tenant column it checks if it matches the tenant inside the dbEntity.
+// It is suitable for entities without tenant or entities with tenant embedded in them.
 func (u *universalUpdater) UpdateSingleWithVersionGlobal(ctx context.Context, dbEntity interface{}) error {
 	return u.updateSingleWithVersion(ctx, "", dbEntity, u.resourceType)
 }
 
-// SetIDColumns missing godoc
+// SetIDColumns is a setter for idColumns.
 func (u *universalUpdater) SetIDColumns(idColumns []string) {
 	u.idColumns = idColumns
 }
 
-// SetUpdatableColumns missing godoc
+// SetUpdatableColumns is a setter for updatableColumns.
 func (u *universalUpdater) SetUpdatableColumns(updatableColumns []string) {
 	u.updatableColumns = updatableColumns
 }
 
-// TechnicalUpdate missing godoc
+// TechnicalUpdate is a global single update which maintains the updated at property of the entity.
 func (u *universalUpdater) TechnicalUpdate(ctx context.Context, dbEntity interface{}) error {
 	entity, ok := dbEntity.(Entity)
 	if ok && entity.GetDeletedAt().IsZero() {
@@ -130,7 +141,7 @@ func (u *universalUpdater) TechnicalUpdate(ctx context.Context, dbEntity interfa
 	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, "", u.buildFieldsToSet(), u.resourceType)
 }
 
-// Clone missing godoc
+// Clone clones the updater.
 func (u *universalUpdater) Clone() UpdaterGlobal {
 	var clonedUpdater universalUpdater
 

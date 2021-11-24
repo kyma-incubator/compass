@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
-// Upserter missing godoc
+// Upserter is an interface for upserting global entities without tenant or entities with tenant embedded in them.
 type Upserter interface {
 	Upsert(ctx context.Context, dbEntity interface{}) error
 }
@@ -25,7 +25,7 @@ type universalUpserter struct {
 	updateColumns      []string
 }
 
-// NewUpserter missing godoc
+// NewUpserter is a constructor for Upserter about entities without tenant or entities with tenant embedded in them.
 func NewUpserter(resourceType resource.Type, tableName string, insertColumns []string, conflictingColumns []string, updateColumns []string) Upserter {
 	return &universalUpserter{
 		resourceType:       resourceType,

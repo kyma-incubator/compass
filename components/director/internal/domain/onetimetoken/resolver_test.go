@@ -37,10 +37,10 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		persist, transact := txGen.ThatSucceeds()
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		oneTimeToken, err := r.RequestOneTimeTokenForApplication(ctx, appID, nil)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, oneTimeToken)
 		assert.Equal(t, expectedToken, *oneTimeToken)
@@ -56,10 +56,10 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		persist, transact := txGen.ThatSucceeds()
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		oneTimeToken, err := r.RequestOneTimeTokenForApplication(ctx, appID, &systemID)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, oneTimeToken)
 		assert.Equal(t, expectedToken, *oneTimeToken)
@@ -74,10 +74,10 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		_, err := r.RequestOneTimeTokenForApplication(ctx, appID, nil)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		mock.AssertExpectationsForObjects(t, persist, transact, svc, conv)
 	})
@@ -90,10 +90,10 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		_, err := r.RequestOneTimeTokenForApplication(ctx, appID, nil)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		mock.AssertExpectationsForObjects(t, persist, transact, svc, conv)
 	})
@@ -105,10 +105,10 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		_, err := r.RequestOneTimeTokenForApplication(ctx, appID, nil)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		mock.AssertExpectationsForObjects(t, persist, transact, svc, conv)
 	})
@@ -122,10 +122,10 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 		persist, transact := txGen.ThatSucceeds()
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		_, err := r.RequestOneTimeTokenForApplication(ctx, appID, nil)
 
-		//THEN
+		// THEN
 		require.EqualError(t, err, "while converting one-time token to graphql: some-error")
 		mock.AssertExpectationsForObjects(t, persist, transact, svc, conv)
 	})
@@ -147,10 +147,10 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		conv.On("ToGraphQLForRuntime", *tokenModel).Return(expectedToken)
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		oneTimeToken, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID, nil)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, oneTimeToken)
 		assert.Equal(t, expectedToken, *oneTimeToken)
@@ -168,10 +168,10 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		_, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID, nil)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
@@ -187,10 +187,10 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		_, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID, nil)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
@@ -205,10 +205,10 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		_, err := r.RequestOneTimeTokenForRuntime(ctx, runtimeID, nil)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
@@ -227,10 +227,10 @@ func TestResolver_RawEncoded(t *testing.T) {
 		//GIVEN
 		r := onetimetoken.NewTokenResolver(nil, nil, nil, "")
 
-		//WHEN
+		// WHEN
 		baseEncodedToken, err := r.RawEncoded(ctx, &tokenGraphql.TokenWithURL)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, &expectedBaseToken, baseEncodedToken)
 	})
@@ -239,10 +239,10 @@ func TestResolver_RawEncoded(t *testing.T) {
 		//GIVEN
 		r := onetimetoken.NewTokenResolver(nil, nil, nil, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		_, err := r.RawEncoded(ctx, nil)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 	})
 }
@@ -257,10 +257,10 @@ func TestResolver_Raw(t *testing.T) {
 		//GIVEN
 		r := onetimetoken.NewTokenResolver(nil, nil, nil, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		baseEncodedToken, err := r.Raw(ctx, &tokenGraphql.TokenWithURL)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, &expectedRawToken, baseEncodedToken)
 	})
@@ -269,10 +269,10 @@ func TestResolver_Raw(t *testing.T) {
 		//GIVEN
 		r := onetimetoken.NewTokenResolver(nil, nil, nil, suggestTokenHeaderKey)
 
-		//WHEN
+		// WHEN
 		_, err := r.Raw(ctx, nil)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 	})
 }

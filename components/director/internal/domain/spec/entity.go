@@ -4,7 +4,7 @@ import (
 	"database/sql"
 )
 
-// Entity missing godoc
+// Entity represents a specification entity.
 type Entity struct {
 	ID            string         `db:"id"`
 	APIDefID      sql.NullString `db:"api_def_id"`
@@ -20,10 +20,12 @@ type Entity struct {
 	CustomType sql.NullString `db:"custom_type"`
 }
 
+// GetID returns the ID of the entity.
 func (e *Entity) GetID() string {
 	return e.ID
 }
 
+// GetParentID returns the parent ID of the entity.
 func (e *Entity) GetParentID() string {
 	if e.APIDefID.Valid {
 		return e.APIDefID.String

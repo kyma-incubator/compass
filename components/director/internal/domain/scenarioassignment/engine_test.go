@@ -54,10 +54,10 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, runtimeRepo)
 	})
@@ -77,10 +77,10 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, runtimeRepo)
@@ -106,10 +106,10 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, runtimeRepo)
@@ -125,10 +125,10 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
@@ -143,10 +143,10 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
@@ -161,10 +161,10 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.EnsureScenarioAssigned(ctx, in)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
 	})
@@ -204,10 +204,10 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, runtimeRepo)
 	})
@@ -233,10 +233,10 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, runtimeRepo)
 	})
@@ -265,10 +265,10 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, runtimeRepo)
@@ -284,10 +284,10 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
@@ -305,10 +305,10 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
 	})
@@ -350,10 +350,10 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 
 		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, runtimeRepo)
 
-		//WHEN
+		// WHEN
 		err := eng.RemoveAssignedScenarios(ctx, in)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, runtimeRepo)
 	})
@@ -367,10 +367,10 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 
 		labelRepo := &automock.LabelRepository{}
 		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, runtimeRepo)
-		//WHEN
+		// WHEN
 		err := eng.RemoveAssignedScenarios(ctx, in)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
@@ -387,10 +387,10 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 		labelRepo.On("GetScenarioLabelsForRuntimes", ctx, tenantID, []string{rtmID}).
 			Return(nil, testErr)
 		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, runtimeRepo)
-		//WHEN
+		// WHEN
 		err := eng.RemoveAssignedScenarios(ctx, in)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)

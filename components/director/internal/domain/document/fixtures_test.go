@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	docTenant      = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	docKind        = "fookind"
 	docTitle       = "footitle"
 	docData        = "foodata"

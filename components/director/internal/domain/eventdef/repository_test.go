@@ -25,7 +25,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Document",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{eventID, tenantID},
@@ -66,7 +66,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List APIs",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash FROM "public"."event_api_definitions" WHERE app_id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{appID, tenantID},
@@ -120,7 +120,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 
 	suite := testdb.RepoListPageableTestSuite{
 		Name: "List Events for multiple bundles with paging",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash FROM "public"."event_api_definitions" WHERE id IN ($1, $2) AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{firstEventDefID, secondEventDefID, tenantID},
@@ -192,7 +192,7 @@ func TestPgRepository_Create(t *testing.T) {
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create Event",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, appID, true},
@@ -244,9 +244,9 @@ func TestPgRepository_CreateMany(t *testing.T) {
 				WillReturnResult(sqlmock.NewResult(-1, 1))
 		}
 		pgRepository := event.NewRepository(convMock)
-		//WHEN
+		// WHEN
 		err := pgRepository.CreateMany(ctx, tenantID, items)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
@@ -267,7 +267,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Event",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: updateQuery,
 				Args: []driver.Value{entity.PackageID, entity.Name, entity.Description, entity.GroupName, entity.OrdID, entity.ShortDescription, entity.SystemInstanceAware, entity.ChangeLogEntries, entity.Links,
@@ -294,7 +294,7 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Event Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{eventID, tenantID},
@@ -315,7 +315,7 @@ func TestPgRepository_Delete(t *testing.T) {
 func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Event Delete By BundleID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM "public"."event_api_definitions" WHERE id IN (SELECT event_def_id FROM public.bundle_references WHERE bundle_id = $1 AND event_def_id IS NOT NULL) AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{bundleID, tenantID},
@@ -338,7 +338,7 @@ func TestPgRepository_DeleteAllByBundleID(t *testing.T) {
 func TestPgRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Event Exists",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{eventID, tenantID},

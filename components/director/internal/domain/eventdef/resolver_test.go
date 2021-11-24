@@ -1240,9 +1240,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 	}
 	t.Run("Returns error when there are no Specs", func(t *testing.T) {
 		resolver := event.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestEventDefDataLoader([]dataloader.ParamFetchRequestEventDef{})
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No EventDef specs found").Error())
 	})
@@ -1252,9 +1252,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 		keys := []dataloader.ParamFetchRequestEventDef{params}
 
 		resolver := event.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestEventDefDataLoader(keys)
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("Cannot fetch FetchRequest. EventDefinition Spec ID is empty").Error())
 	})

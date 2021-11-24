@@ -15,7 +15,7 @@ import (
 func TestPgRepository_Create(t *testing.T) {
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create Vendor",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, appID, true},
@@ -52,7 +52,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Vendor",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.vendors SET title = ?, labels = ?, partners = ? WHERE id = ? AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
 				Args:          append(fixVendorUpdateArgs(), entity.ID),
@@ -77,7 +77,7 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Vendor Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.vendors WHERE id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{vendorID, tenantID},
@@ -98,7 +98,7 @@ func TestPgRepository_Delete(t *testing.T) {
 func TestPgRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Vendor Exists",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.vendors WHERE id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{vendorID, tenantID},
@@ -125,7 +125,7 @@ func TestPgRepository_Exists(t *testing.T) {
 func TestPgRepository_GetByID(t *testing.T) {
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Vendor",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id FROM public.vendors WHERE id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{vendorID, tenantID},
@@ -153,7 +153,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 func TestPgRepository_ListByApplicationID(t *testing.T) {
 	suite := testdb.RepoListTestSuite{
 		Name: "List Vendors",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id FROM public.vendors WHERE app_id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{appID, tenantID},

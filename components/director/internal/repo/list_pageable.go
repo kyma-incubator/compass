@@ -14,12 +14,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// PageableQuerier missing godoc
+// PageableQuerier is an interface for listing with paging of tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type PageableQuerier interface {
 	List(ctx context.Context, resourceType resource.Type, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error)
 }
 
-// PageableQuerierGlobal missing godoc
+// PageableQuerierGlobal is an interface for listing with paging of global entities.
 type PageableQuerierGlobal interface {
 	ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error)
 }
@@ -31,7 +31,7 @@ type universalPageableQuerier struct {
 	resourceType    resource.Type
 }
 
-// NewPageableQuerierWithEmbeddedTenant missing godoc
+// NewPageableQuerierWithEmbeddedTenant is a constructor for PageableQuerier about entities with tenant embedded in them.
 func NewPageableQuerierWithEmbeddedTenant(tableName string, tenantColumn string, selectedColumns []string) PageableQuerier {
 	return &universalPageableQuerier{
 		tableName:       tableName,
@@ -40,7 +40,7 @@ func NewPageableQuerierWithEmbeddedTenant(tableName string, tenantColumn string,
 	}
 }
 
-// NewPageableQuerier missing godoc
+// NewPageableQuerier is a constructor for PageableQuerier about entities with externally managed tenant accesses (m2m table or view)
 func NewPageableQuerier(tableName string, selectedColumns []string) PageableQuerier {
 	return &universalPageableQuerier{
 		tableName:       tableName,
@@ -48,7 +48,7 @@ func NewPageableQuerier(tableName string, selectedColumns []string) PageableQuer
 	}
 }
 
-// NewPageableQuerierGlobal missing godoc
+// NewPageableQuerierGlobal is a constructor for PageableQuerierGlobal about global entities.
 func NewPageableQuerierGlobal(resourceType resource.Type, tableName string, selectedColumns []string) PageableQuerierGlobal {
 	return &universalPageableQuerier{
 		tableName:       tableName,
@@ -57,12 +57,14 @@ func NewPageableQuerierGlobal(resourceType resource.Type, tableName string, sele
 	}
 }
 
-// Collection missing godoc
+// Collection is an interface for a collection of entities.
 type Collection interface {
 	Len() int
 }
 
-// List returns Page, TotalCount or error
+// List lists a page of tenant scoped entities with tenant isolation subquery.
+// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
+// If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
 func (g *universalPageableQuerier) List(ctx context.Context, resourceType resource.Type, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
 	if tenant == "" {
 		return nil, -1, apperrors.NewTenantRequiredError()
@@ -70,7 +72,7 @@ func (g *universalPageableQuerier) List(ctx context.Context, resourceType resour
 
 	if g.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, additionalConditions...)
-		return g.unsafeList(ctx, resourceType, tenant, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+		return g.unsafeList(ctx, resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -80,15 +82,15 @@ func (g *universalPageableQuerier) List(ctx context.Context, resourceType resour
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return g.unsafeList(ctx, resourceType, tenant, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+	return g.unsafeList(ctx, resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 
-// ListGlobal missing godoc
+// ListGlobal lists a page of global entities without tenant isolation.
 func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
-	return g.unsafeList(ctx, g.resourceType, "", pageSize, cursor, orderByColumn, dest, additionalConditions...)
+	return g.unsafeList(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 
-func (g *universalPageableQuerier) unsafeList(ctx context.Context, resourceType resource.Type, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, conditions ...Condition) (*pagination.Page, int, error) {
+func (g *universalPageableQuerier) unsafeList(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions ...Condition) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, -1, err
@@ -104,7 +106,7 @@ func (g *universalPageableQuerier) unsafeList(ctx context.Context, resourceType 
 		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
 	}
 
-	query, args, err := buildSelectQuery(resourceType, g.tableName, g.selectedColumns, tenant, conditions, OrderByParams{}, true)
+	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, OrderByParams{}, true)
 	if err != nil {
 		return nil, -1, errors.Wrap(err, "while building list query")
 	}

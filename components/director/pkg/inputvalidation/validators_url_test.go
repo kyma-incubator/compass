@@ -52,10 +52,10 @@ func TestValidateURL(t *testing.T) {
 			//GIVEN
 			urlValidator := inputvalidation.IsURL
 
-			//WHEN
+			// WHEN
 			err := validation.Validate(testCase.Input, urlValidator)
 
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {

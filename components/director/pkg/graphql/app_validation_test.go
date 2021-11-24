@@ -38,9 +38,9 @@ func TestApplicationRegisterInput_Validate_Name(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationCreateInput()
 			app.Name = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -83,9 +83,9 @@ func TestApplicationRegisterInput_Validate_ProviderName(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationCreateInput()
 			app.ProviderName = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -128,9 +128,9 @@ func TestApplicationRegisterInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationCreateInput()
 			app.Description = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -178,9 +178,9 @@ func TestApplicationRegisterInput_Validate_Labels(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationCreateInput()
 			app.Labels = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -223,9 +223,9 @@ func TestApplicationRegisterInput_Validate_HealthCheckURL(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationCreateInput()
 			app.HealthCheckURL = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -265,9 +265,9 @@ func TestApplicationRegisterInput_Validate_Webhooks(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationCreateInput()
 			app.Webhooks = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -310,9 +310,9 @@ func TestApplicationUpdateInput_Validate_ProviderName(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationCreateInput()
 			app.ProviderName = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -355,9 +355,9 @@ func TestApplicationUpdateInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationUpdateInput()
 			app.Description = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -405,9 +405,9 @@ func TestApplicationUpdateInput_Validate_HealthCheckURL(t *testing.T) {
 			//GIVEN
 			app := fixValidApplicationUpdateInput()
 			app.HealthCheckURL = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

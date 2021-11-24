@@ -60,7 +60,7 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, mockConverter, tenantSvc)
 	})
 
-	t.Run("error when tenant convertion fail", func(t *testing.T) {
+	t.Run("error when tenant conversion fail", func(t *testing.T) {
 		tx, transact := txGen.ThatDoesntExpectCommit()
 
 		mockConverter := &automock.Converter{}

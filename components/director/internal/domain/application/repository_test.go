@@ -31,7 +31,7 @@ import (
 func TestRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Application Exists",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2))`),
 				Args:     []driver.Value{givenID(), givenTenant()},
@@ -58,7 +58,7 @@ func TestRepository_Exists(t *testing.T) {
 func TestRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Application Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2 AND owner = true))`),
 				Args:     []driver.Value{givenID(), givenTenant()},
@@ -281,7 +281,7 @@ func TestRepository_Create(t *testing.T) {
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Generic Create Application",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       regexp.QuoteMeta(`INSERT INTO public.applications ( id, app_template_id, system_number,  name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`),
 				Args:        []driver.Value{givenID(), nil, appModel.SystemNumber, appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error, repo.NewNullableStringFromJSONRawMessage(appModel.CorrelationIDs)},
@@ -362,7 +362,7 @@ func TestRepository_Update(t *testing.T) {
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Application",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateStmt,
 				Args:          []driver.Value{appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error, appEntity.CorrelationIDs, givenID()},
@@ -387,7 +387,7 @@ func TestRepository_GetByID(t *testing.T) {
 	entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Application",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2))`),
 				Args:     []driver.Value{givenID(), givenTenant()},
@@ -429,7 +429,7 @@ func TestPgRepository_List(t *testing.T) {
 
 	suite := testdb.RepoListPageableTestSuite{
 		Name: "List Applications",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.applications
 												WHERE id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
@@ -552,7 +552,7 @@ func TestPgRepository_ListGlobal(t *testing.T) {
 		// when
 		_, err := pgRepository.ListGlobal(ctx, inputPageSize, inputCursor)
 
-		//then
+		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
 	})
@@ -569,7 +569,7 @@ func TestPgRepository_ListAll(t *testing.T) {
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Applications",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.applications WHERE (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $1))`),
 				Args:     []driver.Value{givenTenant()},
@@ -612,7 +612,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 
 	suite := testdb.RepoListPageableTestSuite{
 		Name: "List Applications By Scenarios",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.applications
 												WHERE id IN (SELECT "app_id" FROM public.labels
@@ -682,7 +682,7 @@ func TestPgRepository_GetByNameAndSystemNumber(t *testing.T) {
 	entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), appName, "Test app description")
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Application By Name and System Number",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.applications WHERE name = $1 AND system_number = $2 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $3))`),
 				Args:     []driver.Value{appName, systemNumber, givenTenant()},

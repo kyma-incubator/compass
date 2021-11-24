@@ -16,34 +16,32 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-// LabelRepository missing godoc
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
-type LabelRepository interface {
+//go:generate mockery --exported --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+type labelRepository interface {
 	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 }
 
-//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
-type RuntimeRepository interface {
+//go:generate mockery --exported --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
+type runtimeRepository interface {
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
-// LabelUpsertService missing godoc
-//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
-type LabelUpsertService interface {
+//go:generate mockery --exported --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
+type labelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 type engine struct {
-	labelRepo              LabelRepository
+	labelRepo              labelRepository
 	scenarioAssignmentRepo Repository
-	labelService           LabelUpsertService
-	runtimeRepo            RuntimeRepository
+	labelService           labelUpsertService
+	runtimeRepo            runtimeRepository
 }
 
 // NewEngine missing godoc
-func NewEngine(labelService LabelUpsertService, labelRepo LabelRepository, scenarioAssignmentRepo Repository, runtimeRepo RuntimeRepository) *engine {
+func NewEngine(labelService labelUpsertService, labelRepo labelRepository, scenarioAssignmentRepo Repository, runtimeRepo runtimeRepository) *engine {
 	return &engine{
 		labelRepo:              labelRepo,
 		scenarioAssignmentRepo: scenarioAssignmentRepo,

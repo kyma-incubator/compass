@@ -44,7 +44,7 @@ func NewDeleterWithEmbeddedTenant(tableName string, tenantColumn string) Deleter
 	return &universalDeleter{tableName: tableName, tenantColumn: &tenantColumn}
 }
 
-// NewDeleterGlobal is a constructor for Deleter about global entities.
+// NewDeleterGlobal is a constructor for DeleterGlobal about global entities.
 func NewDeleterGlobal(resourceType resource.Type, tableName string) DeleterGlobal {
 	return &universalDeleter{tableName: tableName, resourceType: resourceType}
 }
@@ -52,6 +52,8 @@ func NewDeleterGlobal(resourceType resource.Type, tableName string) DeleterGloba
 // DeleteOne deletes exactly one entity from the database if the calling tenant has owner access to it. It returns an error if more than one entity matches the provided conditions.
 // In case of top-level entity it only deletes the tenant access records from the m2m table, then a trigger is responsible for deleting the entity.
 // In case of child entity it deletes the entity directly.
+//
+// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
 func (g *universalDeleter) DeleteOne(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
@@ -72,6 +74,8 @@ func (g *universalDeleter) DeleteOne(ctx context.Context, resourceType resource.
 // DeleteMany deletes all the entities that match the provided conditions from the database if the calling tenant has owner access to them.
 // In case of top-level entity it only deletes the tenant access records from the m2m table, then a trigger is responsible for deleting the entity.
 // In case of child entity it deletes the entity directly.
+//
+// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
 func (g *universalDeleter) DeleteMany(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()

@@ -47,37 +47,37 @@ func TestMapTenants(t *testing.T) {
 	}
 
 	t.Run("should return tenants", func(t *testing.T) {
-		//when
+		// WHEN
 		actualTenants, err := externaltenant.MapTenants(validTenantSrcPath)
 
-		//then
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, expectedTenants, actualTenants)
 	})
 
 	t.Run("should fail while reading tenants directory", func(t *testing.T) {
-		//when
+		// WHEN
 		_, err := externaltenant.MapTenants(invalidPath)
 
-		//then
+		// THEN
 		require.Error(t, err)
 		assert.Equal(t, err.Error(), fmt.Sprintf("while reading directory with tenant files [%s]: open %s: no such file or directory", invalidPath, invalidPath))
 	})
 
 	t.Run("should fail while reading file with tenants - unsupported file extension", func(t *testing.T) {
-		//when
+		// WHEN
 		_, err := externaltenant.MapTenants(directoryWithInvalidFiles)
 
-		//then
+		// THEN
 		require.Error(t, err)
 		assert.Equal(t, err.Error(), apperrors.NewInternalError("unsupported file format [.txt]").Error())
 	})
 
 	t.Run("should fail while unmarshalling tenants", func(t *testing.T) {
-		//when
+		// WHEN
 		_, err := externaltenant.MapTenants(directoryWithInvalidTenantJSON)
 
-		//then
+		// THEN
 		require.Error(t, err)
 		assert.Equal(t, err.Error(), fmt.Sprintf("while unmarshalling tenants from file [%s%s]: invalid character '\\n' in string literal", directoryWithInvalidTenantJSON, "invalid.json"))
 	})

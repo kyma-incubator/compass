@@ -259,7 +259,7 @@ func TestService_Create(t *testing.T) {
 			req := testCase.Request
 			w := httptest.NewRecorder()
 
-			//WHEN
+			// WHEN
 			handler.Create(w, req)
 
 			// THEN
@@ -491,7 +491,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 
 			w := httptest.NewRecorder()
 
-			//WHEN
+			// WHEN
 			handler.SubscribeTenant(w, req)
 
 			// THEN
@@ -530,7 +530,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		//WHEN
+		// WHEN
 		handler.UnSubscribeTenant(w, req)
 
 		// THEN
@@ -566,7 +566,7 @@ func TestService_Delete(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, target, bytes.NewBuffer(requestBody))
 		w := httptest.NewRecorder()
 
-		//WHEN
+		// WHEN
 		handler.DeleteByExternalID(w, req)
 		// THEN
 		resp := w.Result()
@@ -581,7 +581,7 @@ func TestService_Delete(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, target, errReader(0))
 		w := httptest.NewRecorder()
 
-		//WHEN
+		// WHEN
 		handler.DeleteByExternalID(w, req)
 
 		// THEN
@@ -604,7 +604,7 @@ func TestService_Delete(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, target, bytes.NewBuffer(requestBody))
 		w := httptest.NewRecorder()
 
-		//WHEN
+		// WHEN
 		handler.DeleteByExternalID(w, req)
 
 		// THEN

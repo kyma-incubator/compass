@@ -8,10 +8,12 @@ type RuntimeContext struct {
 	Value     string `db:"value"`
 }
 
+// GetID returns ID of RuntimeContext
 func (e *RuntimeContext) GetID() string {
 	return e.ID
 }
 
+// GetParentID returns ID of parent entity
 func (e *RuntimeContext) GetParentID() string {
 	return e.RuntimeID
 }

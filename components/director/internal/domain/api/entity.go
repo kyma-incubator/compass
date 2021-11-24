@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
-// Entity missing godoc
+// Entity is a representation of a API in the database.
 type Entity struct {
 	ApplicationID                           string         `db:"app_id"`
 	PackageID                               sql.NullString `db:"package_id"`
@@ -43,6 +43,7 @@ type Entity struct {
 	version.Version
 }
 
+// GetParentID returns the parent ID of the entity.
 func (e *Entity) GetParentID() string {
 	return e.ApplicationID
 }

@@ -33,10 +33,10 @@ func TestRepository_IsConnected(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := statusupdate.NewRepository()
 
-		//WHEN
+		// WHEN
 		res, err := repo.IsConnected(ctx, testID, "applications")
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.True(t, res)
 	})
@@ -51,10 +51,10 @@ func TestRepository_IsConnected(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := statusupdate.NewRepository()
 
-		//WHEN
+		// WHEN
 		res, err := repo.IsConnected(ctx, testID, "runtimes")
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.True(t, res)
 	})
@@ -69,10 +69,10 @@ func TestRepository_IsConnected(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := statusupdate.NewRepository()
 
-		//WHEN
+		// WHEN
 		res, err := repo.IsConnected(ctx, testID, "applications")
 
-		//THEN
+		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while getting object from DB: %s", testError))
 		assert.False(t, res)
 	})
@@ -87,10 +87,10 @@ func TestRepository_IsConnected(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := statusupdate.NewRepository()
 
-		//WHEN
+		// WHEN
 		res, err := repo.IsConnected(ctx, testID, "runtimes")
 
-		//THEN
+		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while getting object from DB: %s", testError))
 		assert.False(t, res)
 	})
@@ -111,10 +111,10 @@ func TestRepository_UpdateStatus(t *testing.T) {
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		//WHEN
+		// WHEN
 		err := repo.UpdateStatus(ctx, testID, "applications")
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 	})
 	t.Run("Success for runtimes", func(t *testing.T) {
@@ -126,10 +126,10 @@ func TestRepository_UpdateStatus(t *testing.T) {
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		//WHEN
+		// WHEN
 		err := repo.UpdateStatus(ctx, testID, "runtimes")
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 	})
 	t.Run("Error for applications", func(t *testing.T) {
@@ -141,10 +141,10 @@ func TestRepository_UpdateStatus(t *testing.T) {
 			WillReturnError(testError)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		//WHEN
+		// WHEN
 		err := repo.UpdateStatus(ctx, testID, "applications")
 
-		//THEN
+		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while updating applications status: %s", testError.Error()))
 	})
 
@@ -157,10 +157,10 @@ func TestRepository_UpdateStatus(t *testing.T) {
 			WillReturnError(testError)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		//WHEN
+		// WHEN
 		err := repo.UpdateStatus(ctx, testID, "runtimes")
 
-		//THEN
+		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while updating runtimes status: %s", testError.Error()))
 	})
 }

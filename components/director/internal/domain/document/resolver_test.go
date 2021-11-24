@@ -475,9 +475,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 	}
 	t.Run("Returns error when there are no Docs", func(t *testing.T) {
 		resolver := document.NewResolver(nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestDocumentDataLoader([]dataloader.ParamFetchRequestDocument{})
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No Documents found").Error())
 	})
@@ -487,9 +487,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 		keys := []dataloader.ParamFetchRequestDocument{params}
 
 		resolver := document.NewResolver(nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestDocumentDataLoader(keys)
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("Cannot fetch FetchRequest. Document ID is empty").Error())
 	})

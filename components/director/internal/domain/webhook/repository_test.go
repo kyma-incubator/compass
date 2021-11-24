@@ -28,7 +28,7 @@ func TestRepositoryGetByID(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Webhook By ID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{givenID(), givenTenant()},
@@ -86,7 +86,7 @@ func TestRepositoryCreate(t *testing.T) {
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create Application webhook",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{givenTenant(), givenApplicationID(), true},
@@ -230,7 +230,7 @@ func TestRepositoryUpdate(t *testing.T) {
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Application webhook",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.webhooks SET type = ?, url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND app_id = ? AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = '%s' AND owner = true))`, givenTenant())),
 				Args:          []driver.Value{string(model.WebhookTypeConfigurationChanged), "http://kyma.io", fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenApplicationID()},
@@ -310,7 +310,7 @@ func TestRepositoryDelete(t *testing.T) {
 func TestRepositoryDeleteAllByApplicationID(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Webhook Delete by ApplicationID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.webhooks WHERE app_id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{givenApplicationID(), givenTenant()},
@@ -341,7 +341,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Webhooks by Application ID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE app_id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{givenApplicationID(), givenTenant()},

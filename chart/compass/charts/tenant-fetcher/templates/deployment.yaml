@@ -37,7 +37,7 @@ spec:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: compass-director:latest
+          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           command:
             - "/bin/sh"

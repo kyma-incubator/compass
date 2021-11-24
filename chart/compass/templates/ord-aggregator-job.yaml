@@ -27,7 +27,7 @@ spec:
             {{ end }}
           containers:
             - name: aggregator
-              image: compass-director:latest
+              image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
               imagePullPolicy: IfNotPresent
               volumeMounts:
                 - name: director-config

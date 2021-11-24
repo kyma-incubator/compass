@@ -27,7 +27,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Runtime By ID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes WHERE id = $1 AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2))`),
 				Args:     []driver.Value{runtimeID, tenantID},
@@ -59,7 +59,7 @@ func TestPgRepository_GetByFiltersAndID(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Runtime By Filters and ID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes WHERE id = $1 
 												AND id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4]) 
@@ -114,7 +114,7 @@ func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeModelForRuntimeEntit
 	filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
 	modelRuntime, err := pgRepository.GetByFiltersGlobal(ctx, filters)
 
-	//then
+	// THEN
 	require.NoError(t, err)
 	require.Equal(t, rtModel, modelRuntime)
 	mockConverter.AssertExpectations(t)
@@ -126,7 +126,7 @@ func TestPgRepository_GetOldestForFilters(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Oldest Runtime By Filters",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes WHERE  
 												id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3]) 
@@ -218,7 +218,7 @@ func TestPgRepository_List(t *testing.T) {
 
 	suite := testdb.RepoListPageableTestSuite{
 		Name: "List Runtimes",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes
 												WHERE id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
@@ -281,7 +281,7 @@ func TestPgRepository_ListAll(t *testing.T) {
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List Runtimes Without Paging",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes 
 												WHERE id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
@@ -320,7 +320,7 @@ func TestPgRepository_Create(t *testing.T) {
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Generic Create Runtime",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       regexp.QuoteMeta(`INSERT INTO public.runtimes ( id, name, description, status_condition, status_timestamp, creation_timestamp ) VALUES ( ?, ?, ?, ?, ?, ? )`),
 				Args:        []driver.Value{rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp},
@@ -353,7 +353,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Runtime",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.runtimes SET name = ?, description = ?, status_condition = ?, status_timestamp = ? WHERE id = ? AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
 				Args:          []driver.Value{rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.ID},
@@ -377,7 +377,7 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Runtime Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id FROM public.runtimes WHERE id = $1 AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2 AND owner = true))`),
 				Args:     []driver.Value{runtimeID, tenantID},
@@ -409,7 +409,7 @@ func TestPgRepository_Delete(t *testing.T) {
 func TestPgRepository_Exist(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Runtime Exists",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.runtimes WHERE id = $1 AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2))`),
 				Args:     []driver.Value{runtimeID, tenantID},

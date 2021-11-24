@@ -14,12 +14,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SingleGetter missing godoc
+// SingleGetter is an interface for getting tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type SingleGetter interface {
 	Get(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
 
-// SingleGetterGlobal missing godoc
+// SingleGetterGlobal is an interface for getting global entities.
 type SingleGetterGlobal interface {
 	GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
@@ -31,7 +31,7 @@ type universalSingleGetter struct {
 	selectedColumns string
 }
 
-// NewSingleGetterWithEmbeddedTenant missing godoc
+// NewSingleGetterWithEmbeddedTenant is a constructor for SingleGetter about entities with tenant embedded in them.
 func NewSingleGetterWithEmbeddedTenant(tableName string, tenantColumn string, selectedColumns []string) SingleGetter {
 	return &universalSingleGetter{
 		tableName:       tableName,
@@ -40,6 +40,7 @@ func NewSingleGetterWithEmbeddedTenant(tableName string, tenantColumn string, se
 	}
 }
 
+// NewSingleGetter is a constructor for SingleGetter about entities with externally managed tenant accesses (m2m table or view)
 func NewSingleGetter(tableName string, selectedColumns []string) SingleGetter {
 	return &universalSingleGetter{
 		tableName:       tableName,
@@ -47,7 +48,7 @@ func NewSingleGetter(tableName string, selectedColumns []string) SingleGetter {
 	}
 }
 
-// NewSingleGetterGlobal missing godoc
+// NewSingleGetterGlobal is a constructor for SingleGetterGlobal about global entities.
 func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selectedColumns []string) SingleGetterGlobal {
 	return &universalSingleGetter{
 		resourceType:    resourceType,
@@ -56,7 +57,9 @@ func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selecte
 	}
 }
 
-// Get missing godoc
+// Get gets tenant scoped entities with tenant isolation subquery.
+// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
+// If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
 func (g *universalSingleGetter) Get(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
@@ -64,7 +67,7 @@ func (g *universalSingleGetter) Get(ctx context.Context, resourceType resource.T
 
 	if g.tenantColumn != nil {
 		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
-		return g.unsafeGet(ctx, tenant, resourceType, conditions, orderByParams, dest)
+		return g.unsafeGet(ctx, resourceType, conditions, orderByParams, dest)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -74,15 +77,15 @@ func (g *universalSingleGetter) Get(ctx context.Context, resourceType resource.T
 
 	conditions = append(conditions, tenantIsolation)
 
-	return g.unsafeGet(ctx, tenant, resourceType, conditions, orderByParams, dest)
+	return g.unsafeGet(ctx, resourceType, conditions, orderByParams, dest)
 }
 
-// GetGlobal missing godoc
+// GetGlobal gets global entities without tenant isolation.
 func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	return g.unsafeGet(ctx, "", g.resourceType, conditions, orderByParams, dest)
+	return g.unsafeGet(ctx, g.resourceType, conditions, orderByParams, dest)
 }
 
-func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant string, resourceType resource.Type, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+func (g *universalSingleGetter) unsafeGet(ctx context.Context, resourceType resource.Type, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if dest == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -91,7 +94,7 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, tenant string, re
 		return err
 	}
 
-	query, args, err := buildSelectQuery(resourceType, g.tableName, g.selectedColumns, tenant, conditions, orderByParams, true)
+	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, orderByParams, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}

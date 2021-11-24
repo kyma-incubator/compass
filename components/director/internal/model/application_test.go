@@ -94,10 +94,10 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 		}
 		app := model.Application{}
 
-		//WHEN
+		// WHEN
 		app.SetFromUpdateInput(filledAppUpdate, timestamp)
 
-		//THEN
+		// THEN
 		assert.Equal(t, filledAppUpdate.Description, app.Description)
 		assert.Equal(t, filledAppUpdate.HealthCheckURL, app.HealthCheckURL)
 		assert.Equal(t, filledAppUpdate.IntegrationSystemID, app.IntegrationSystemID)
@@ -120,10 +120,10 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 			IntegrationSystemID: str.Ptr(intSysID),
 		}
 
-		//WHEN
+		// WHEN
 		app.SetFromUpdateInput(filledAppUpdate, timestamp)
 
-		//THEN
+		// THEN
 		assert.Equal(t, description, *app.Description)
 		assert.Equal(t, healthCheckURL, *app.HealthCheckURL)
 		assert.Equal(t, intSysID, *app.IntegrationSystemID)

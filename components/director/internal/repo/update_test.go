@@ -520,6 +520,5 @@ func TestUpdater(t *testing.T) {
 			require.Error(t, err)
 			require.Contains(t, err.Error(), "id cannot be empty, check if the entity implements Identifiable")
 		})
-
 	})
 }

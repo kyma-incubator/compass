@@ -17,7 +17,7 @@ import (
 // This test suite is not suitable for global entities or entities with embedded tenant in them.
 type RepoUpdateTestSuite struct {
 	Name                      string
-	SqlQueryDetails           []SqlQueryDetails
+	SQLQueryDetails           []SQLQueryDetails
 	ConverterMockProvider     func() Mock
 	RepoConstructorFunc       interface{}
 	ModelEntity               interface{}
@@ -41,7 +41,7 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SqlQueryDetails {
+			for _, sqlDetails := range suite.SQLQueryDetails {
 				if sqlDetails.IsSelect {
 					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 				} else {
@@ -52,29 +52,29 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 			convMock := suite.ConverterMockProvider()
 			convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-			//WHEN
+			// WHEN
 			err := callUpdate(pgRepository, ctx, suite.TenantID, suite.ModelEntity, suite.UpdateMethodName)
-			//THEN
+			// THEN
 			require.NoError(t, err)
 			sqlMock.AssertExpectations(t)
 			convMock.AssertExpectations(t)
 		})
 
-		for i := range suite.SqlQueryDetails {
+		for i := range suite.SQLQueryDetails {
 			t.Run(fmt.Sprintf("error if SQL query %d fail", i), func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SqlQueryDetails {
+				for _, sqlDetails := range suite.SQLQueryDetails {
 					if sqlDetails.IsSelect {
-						if sqlDetails.Query == suite.SqlQueryDetails[i].Query {
+						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
 							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
 							break
 						} else {
 							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 						}
 					} else {
-						if sqlDetails.Query == suite.SqlQueryDetails[i].Query {
+						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
 							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
 							break
 						} else {
@@ -86,9 +86,9 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
+				// WHEN
 				err := callUpdate(pgRepository, ctx, suite.TenantID, suite.ModelEntity, suite.UpdateMethodName)
-				//THEN
+				// THEN
 				require.Error(t, err)
 				require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
 				require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
@@ -103,7 +103,7 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SqlQueryDetails {
+				for _, sqlDetails := range suite.SQLQueryDetails {
 					if sqlDetails.IsSelect {
 						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
 						break
@@ -113,9 +113,9 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
+				// WHEN
 				err := callUpdate(pgRepository, ctx, suite.TenantID, suite.ModelEntity, suite.UpdateMethodName)
-				//THEN
+				// THEN
 				require.Error(t, err)
 				require.Equal(t, apperrors.InvalidOperation, apperrors.ErrorCode(err))
 				require.Contains(t, err.Error(), "entity does not exist or caller tenant does not have owner access")
@@ -133,9 +133,9 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(nil, testErr).Once()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
+				// WHEN
 				err := callUpdate(pgRepository, ctx, suite.TenantID, suite.ModelEntity, suite.UpdateMethodName)
-				//THEN
+				// THEN
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testErr.Error())
 
@@ -148,7 +148,7 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SqlQueryDetails {
+			for _, sqlDetails := range suite.SQLQueryDetails {
 				if sqlDetails.IsSelect {
 					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 				} else {
@@ -159,9 +159,9 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 			convMock := suite.ConverterMockProvider()
 			convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-			//WHEN
+			// WHEN
 			err := callUpdate(pgRepository, ctx, suite.TenantID, suite.ModelEntity, suite.UpdateMethodName)
-			//THEN
+			// THEN
 			require.Error(t, err)
 			if suite.UpdateMethodName == "UpdateWithVersion" {
 				require.Equal(t, apperrors.ConcurrentUpdate, apperrors.ErrorCode(err))
@@ -179,7 +179,7 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SqlQueryDetails {
+			for _, sqlDetails := range suite.SQLQueryDetails {
 				if sqlDetails.IsSelect {
 					sqlDetails.Args[len(sqlDetails.Args)-1] = "tenantID" // Override the tenantID expected argument in order to use non-uuid value for the test.
 					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
@@ -189,9 +189,9 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 			convMock := suite.ConverterMockProvider()
 			convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-			//WHEN
+			// WHEN
 			err := callUpdate(pgRepository, ctx, "tenantID", suite.ModelEntity, suite.UpdateMethodName)
-			//THEN
+			// THEN
 			require.Error(t, err)
 			require.Contains(t, err.Error(), "tenant_id tenantID should be UUID")
 

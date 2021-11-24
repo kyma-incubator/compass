@@ -30,17 +30,17 @@ type pgRepository struct {
 	pageableQuerier    repo.PageableQuerier
 	creator            repo.Creator
 	updater            repo.Updater
-	conv               EntityConverter
+	conv               entityConverter
 }
 
-//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
-type EntityConverter interface {
+//go:generate mockery --exported --name=EntityConverter --output=automock --outpkg=automock --case=underscore
+type entityConverter interface {
 	ToEntity(in *model.RuntimeContext) *RuntimeContext
 	FromEntity(entity *RuntimeContext) *model.RuntimeContext
 }
 
 // NewRepository missing godoc
-func NewRepository(conv EntityConverter) *pgRepository {
+func NewRepository(conv entityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier:       repo.NewExistQuerier(runtimeContextsTable),
 		singleGetter:       repo.NewSingleGetter(runtimeContextsTable, runtimeContextColumns),

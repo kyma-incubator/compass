@@ -14,9 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// RepoDeleteTestSuite represents a generic test suite for repository Delete method of any entity that has externally managed tenants in m2m table/view.
+// This test suite is not suitable for global entities or entities with embedded tenant in them.
 type RepoDeleteTestSuite struct {
 	Name                  string
-	SqlQueryDetails       []SqlQueryDetails
+	SQLQueryDetails       []SQLQueryDetails
 	ConverterMockProvider func() Mock
 	RepoConstructorFunc   interface{}
 	MethodName            string
@@ -25,6 +27,7 @@ type RepoDeleteTestSuite struct {
 	IsDeleteMany          bool
 }
 
+// Run runs the generic repo delete test suite
 func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 	if len(suite.MethodName) == 0 {
 		suite.MethodName = "Delete"
@@ -37,7 +40,7 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SqlQueryDetails {
+			for _, sqlDetails := range suite.SQLQueryDetails {
 				if sqlDetails.IsSelect {
 					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 				} else {
@@ -47,9 +50,9 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 
 			convMock := suite.ConverterMockProvider()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-			//WHEN
+			// WHEN
 			err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-			//THEN
+			// THEN
 			require.NoError(t, err)
 
 			sqlMock.AssertExpectations(t)
@@ -62,7 +65,7 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 					sqlxDB, sqlMock := MockDatabase(t)
 					ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-					for _, sqlDetails := range suite.SqlQueryDetails {
+					for _, sqlDetails := range suite.SQLQueryDetails {
 						if sqlDetails.IsSelect {
 							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlmock.NewRows([]string{}))
 							break
@@ -73,9 +76,9 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 
 					convMock := suite.ConverterMockProvider()
 					pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-					//WHEN
+					// WHEN
 					err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-					//THEN
+					// THEN
 					require.Error(t, err)
 					require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
 					require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
@@ -88,7 +91,7 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 					sqlxDB, sqlMock := MockDatabase(t)
 					ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-					for _, sqlDetails := range suite.SqlQueryDetails {
+					for _, sqlDetails := range suite.SQLQueryDetails {
 						if sqlDetails.IsSelect {
 							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 						} else {
@@ -99,9 +102,9 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 
 					convMock := suite.ConverterMockProvider()
 					pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-					//WHEN
+					// WHEN
 					err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-					//THEN
+					// THEN
 					require.Error(t, err)
 					require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
 					require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
@@ -116,7 +119,7 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 					sqlxDB, sqlMock := MockDatabase(t)
 					ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-					for _, sqlDetails := range suite.SqlQueryDetails {
+					for _, sqlDetails := range suite.SQLQueryDetails {
 						if sqlDetails.IsSelect {
 							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
 							break
@@ -127,9 +130,9 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 
 					convMock := suite.ConverterMockProvider()
 					pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-					//WHEN
+					// WHEN
 					err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-					//THEN
+					// THEN
 					require.Error(t, err)
 					require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
 					require.Contains(t, err.Error(), "delete should remove single row, but removed")
@@ -142,7 +145,7 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 					sqlxDB, sqlMock := MockDatabase(t)
 					ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-					for _, sqlDetails := range suite.SqlQueryDetails {
+					for _, sqlDetails := range suite.SQLQueryDetails {
 						if sqlDetails.IsSelect {
 							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 						} else {
@@ -153,9 +156,9 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 
 					convMock := suite.ConverterMockProvider()
 					pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-					//WHEN
+					// WHEN
 					err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-					//THEN
+					// THEN
 					require.Error(t, err)
 					require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
 					require.Contains(t, err.Error(), "delete should remove single row, but removed")
@@ -166,21 +169,21 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 			}
 		}
 
-		for i := range suite.SqlQueryDetails {
+		for i := range suite.SQLQueryDetails {
 			t.Run(fmt.Sprintf("error if SQL query %d fail", i), func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SqlQueryDetails {
+				for _, sqlDetails := range suite.SQLQueryDetails {
 					if sqlDetails.IsSelect {
-						if sqlDetails.Query == suite.SqlQueryDetails[i].Query {
+						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
 							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
 							break
 						} else {
 							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 						}
 					} else {
-						if sqlDetails.Query == suite.SqlQueryDetails[i].Query {
+						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
 							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
 							break
 						} else {
@@ -191,9 +194,9 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
+				// WHEN
 				err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-				//THEN
+				// THEN
 				require.Error(t, err)
 				require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
 				require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")

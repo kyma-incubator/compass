@@ -357,9 +357,9 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
-		//WHEN
+		// WHEN
 		entity := conv.ToEntity(&eventModel)
-		//THEN
+		// THEN
 		assert.Equal(t, fixFullEntityEventDefinition(eventID, "foo"), entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
@@ -368,9 +368,9 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		require.NotNil(t, eventModel)
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
-		//WHEN
+		// WHEN
 		entity := conv.ToEntity(eventModel)
-		//THEN
+		// THEN
 		assert.Equal(t, fixEntityEventDefinition("id", "name"), entity)
 	})
 }
@@ -381,9 +381,9 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		entity := fixFullEntityEventDefinition(eventID, "placeholder")
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
-		//WHEN
+		// WHEN
 		eventModel := conv.FromEntity(entity)
-		//THEN
+		// THEN
 		expectedModel, _, _ := fixFullEventDefinitionModel("placeholder")
 		assert.Equal(t, &expectedModel, eventModel)
 	})
@@ -392,9 +392,9 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		entity := fixEntityEventDefinition("id", "name")
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
-		//WHEN
+		// WHEN
 		eventModel := conv.FromEntity(entity)
-		//THEN
+		// THEN
 		expectedModel := fixEventDefinitionModel("id", "name")
 		require.NotNil(t, expectedModel)
 		assert.Equal(t, expectedModel, eventModel)

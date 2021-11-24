@@ -33,9 +33,9 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		require.NotNil(t, bndlModel)
 		authConv := auth.NewConverter()
 		conv := bundle.NewConverter(authConv, nil, nil, nil)
-		//WHEN
+		// WHEN
 		entity, err := conv.ToEntity(bndlModel)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 
 		expectedBndl := fixEntityBundle(bundleID, name, desc)
@@ -69,9 +69,9 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		require.NotNil(t, bndlModel)
 		authConv := auth.NewConverter()
 		conv := bundle.NewConverter(authConv, nil, nil, nil)
-		//WHEN
+		// WHEN
 		entity, err := conv.ToEntity(bndlModel)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, expectedEntity, entity)
 	})
@@ -90,9 +90,9 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		}
 		authConv := auth.NewConverter()
 		conv := bundle.NewConverter(authConv, nil, nil, nil)
-		//WHEN
+		// WHEN
 		bndlModel, err := conv.FromEntity(entity)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		expectedBdnl := fixBundleModel(name, desc)
 		expectedBdnl.Error = &testErrMsg
@@ -119,9 +119,9 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		}
 		authConv := auth.NewConverter()
 		conv := bundle.NewConverter(authConv, nil, nil, nil)
-		//WHEN
+		// WHEN
 		bndlModel, err := conv.FromEntity(entity)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, expectedModel)
 		assert.Equal(t, expectedModel, bndlModel)

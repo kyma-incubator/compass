@@ -141,7 +141,7 @@ func TestProvisioner_CreateTenant(t *testing.T) {
 
 			provisioner := tenantfetchersvc.NewTenantProvisioner(tenantSvc, testProviderName)
 
-			//WHEN
+			// WHEN
 			err := provisioner.ProvisionTenants(ctx, testCase.Request, "")
 
 			// THEN
@@ -195,7 +195,7 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 
 			provisioner := tenantfetchersvc.NewTenantProvisioner(tenantSvc, testProviderName)
 
-			//WHEN
+			// WHEN
 			err := provisioner.ProvisionTenants(ctx, testCase.Request, "asd")
 
 			// THEN

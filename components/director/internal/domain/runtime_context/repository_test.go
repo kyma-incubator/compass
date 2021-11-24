@@ -25,7 +25,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Runtime Context By ID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE id = $1 AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{runtimeCtxID, tenantID},
@@ -57,7 +57,7 @@ func TestPgRepository_GetByFiltersAndID(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Runtime Context By Filters and ID",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE id = $1
 												AND id IN (SELECT "runtime_context_id" FROM public.labels WHERE "runtime_context_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4])
@@ -110,7 +110,7 @@ func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeContextModelForRunti
 	filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
 	modelRuntimeCtx, err := pgRepository.GetByFiltersGlobal(ctx, filters)
 
-	//then
+	// THEN
 	require.NoError(t, err)
 	require.Equal(t, runtimeCtxModel, modelRuntimeCtx)
 	mockConverter.AssertExpectations(t)
@@ -127,7 +127,7 @@ func TestPgRepository_List(t *testing.T) {
 
 	suite := testdb.RepoListPageableTestSuite{
 		Name: "List Runtime Contexts",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1
 												AND id IN (SELECT "runtime_context_id" FROM public.labels WHERE "runtime_context_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4])
@@ -186,7 +186,7 @@ func TestPgRepository_Create(t *testing.T) {
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create Runtime Context",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_runtimes WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, runtimeID, true},
@@ -225,7 +225,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Runtime Context",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.runtime_contexts SET key = ?, value = ? WHERE id = ? AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
 				Args:          []driver.Value{runtimeCtxModel.Key, runtimeCtxModel.Value, runtimeCtxModel.ID},
@@ -250,7 +250,7 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Runtime Context Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.runtime_contexts WHERE id = $1 AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{runtimeCtxID, tenantID},
@@ -271,7 +271,7 @@ func TestPgRepository_Delete(t *testing.T) {
 func TestPgRepository_Exist(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Runtime Context Exists",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.runtime_contexts WHERE id = $1 AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{runtimeCtxID, tenantID},

@@ -22,8 +22,8 @@ type Mock interface {
 	On(methodName string, arguments ...interface{}) *mock.Call
 }
 
-// SqlQueryDetails represent an SQL expected query details to provide to the DB mock.
-type SqlQueryDetails struct {
+// SQLQueryDetails represent an SQL expected query details to provide to the DB mock.
+type SQLQueryDetails struct {
 	Query               string
 	IsSelect            bool
 	Args                []driver.Value
@@ -37,7 +37,7 @@ type SqlQueryDetails struct {
 // This test suite is not suitable for global entities or entities with embedded tenant in them.
 type RepoCreateTestSuite struct {
 	Name                      string
-	SqlQueryDetails           []SqlQueryDetails
+	SQLQueryDetails           []SQLQueryDetails
 	ConverterMockProvider     func() Mock
 	RepoConstructorFunc       interface{}
 	ModelEntity               interface{}
@@ -57,7 +57,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SqlQueryDetails {
+			for _, sqlDetails := range suite.SQLQueryDetails {
 				if sqlDetails.IsSelect {
 					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 				} else {
@@ -68,9 +68,11 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 			convMock := suite.ConverterMockProvider()
 			convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-			//WHEN
+
+			// WHEN
 			err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
-			//THEN
+
+			// THEN
 			require.NoError(t, err)
 			sqlMock.AssertExpectations(t)
 			convMock.AssertExpectations(t)
@@ -81,7 +83,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SqlQueryDetails {
+				for _, sqlDetails := range suite.SQLQueryDetails {
 					if sqlDetails.IsSelect {
 						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
 						break
@@ -91,9 +93,9 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
+				// WHEN
 				err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
-				//THEN
+				// THEN
 				require.Error(t, err)
 				require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
 				require.Contains(t, err.Error(), fmt.Sprintf("Tenant %s does not have access to the parent", suite.TenantID))
@@ -103,21 +105,21 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 			})
 		}
 
-		for i := range suite.SqlQueryDetails {
+		for i := range suite.SQLQueryDetails {
 			t.Run(fmt.Sprintf("error if SQL query %d fail", i), func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SqlQueryDetails {
+				for _, sqlDetails := range suite.SQLQueryDetails {
 					if sqlDetails.IsSelect {
-						if sqlDetails.Query == suite.SqlQueryDetails[i].Query {
+						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
 							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
 							break
 						} else {
 							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 						}
 					} else {
-						if sqlDetails.Query == suite.SqlQueryDetails[i].Query {
+						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
 							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
 							break
 						} else {
@@ -129,11 +131,11 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
+				// WHEN
 				err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
-				//THEN
+				// THEN
 				require.Error(t, err)
-				if suite.SqlQueryDetails[i].IsSelect {
+				if suite.SQLQueryDetails[i].IsSelect {
 					require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
 					require.Contains(t, err.Error(), fmt.Sprintf("Tenant %s does not have access to the parent", suite.TenantID))
 				} else {
@@ -153,9 +155,9 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(nil, testErr).Once()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
+				// WHEN
 				err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
-				//THEN
+				// THEN
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testErr.Error())
 

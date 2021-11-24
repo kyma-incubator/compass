@@ -12,9 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// RepoListTestSuite represents a generic test suite for repository List without paging method of any entity that has externally managed tenants in m2m table/view.
+// This test suite is not suitable for global entities or entities with embedded tenant in them.
 type RepoListTestSuite struct {
 	Name                      string
-	SqlQueryDetails           []SqlQueryDetails
+	SQLQueryDetails           []SQLQueryDetails
 	ConverterMockProvider     func() Mock
 	RepoConstructorFunc       interface{}
 	ExpectedModelEntities     []interface{}
@@ -26,12 +28,13 @@ type RepoListTestSuite struct {
 	DisableEmptySliceTest     bool
 }
 
+// Run runs the generic repo list without paging test suite
 func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 	if len(suite.MethodName) == 0 {
 		panic("missing method name")
 	}
 
-	for _, queryDetails := range suite.SqlQueryDetails {
+	for _, queryDetails := range suite.SQLQueryDetails {
 		if !queryDetails.IsSelect {
 			panic("list suite should expect only select SQL statements")
 		}
@@ -48,7 +51,7 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SqlQueryDetails {
+			for _, sqlDetails := range suite.SQLQueryDetails {
 				sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 			}
 
@@ -57,9 +60,9 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 				convMock.On("FromEntity", append([]interface{}{suite.ExpectedDBEntities[i]}, suite.AdditionalConverterArgs...)...).Return(suite.ExpectedModelEntities[i], nil).Once()
 			}
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-			//WHEN
+			// WHEN
 			res, err := callList(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-			//THEN
+			// THEN
 			require.NoError(t, err)
 			assertEqualElements(t, suite.ExpectedModelEntities, res)
 			sqlMock.AssertExpectations(t)
@@ -71,15 +74,15 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SqlQueryDetails {
+				for _, sqlDetails := range suite.SQLQueryDetails {
 					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
 				}
 
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
+				// WHEN
 				res, err := callList(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-				//THEN
+				// THEN
 				require.NoError(t, err)
 				require.Empty(t, res)
 				sqlMock.AssertExpectations(t)
@@ -87,13 +90,13 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 			})
 		}
 
-		for i := range suite.SqlQueryDetails {
+		for i := range suite.SQLQueryDetails {
 			t.Run(fmt.Sprintf("error if SQL query %d fail", i), func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SqlQueryDetails {
-					if sqlDetails.Query == suite.SqlQueryDetails[i].Query {
+				for _, sqlDetails := range suite.SQLQueryDetails {
+					if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
 						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
 						break
 					} else {
@@ -104,10 +107,10 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 
-				//WHEN
+				// WHEN
 				res, err := callList(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
 
-				//THEN
+				// THEN
 				require.Nil(t, res)
 
 				require.Error(t, err)
@@ -124,16 +127,16 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SqlQueryDetails {
+				for _, sqlDetails := range suite.SQLQueryDetails {
 					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 				}
 
 				convMock := suite.ConverterMockProvider()
 				convMock.On("FromEntity", append([]interface{}{suite.ExpectedDBEntities[0]}, suite.AdditionalConverterArgs...)...).Return(nil, testErr).Once()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
+				// WHEN
 				res, err := callList(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-				//THEN
+				// THEN
 				require.Nil(t, res)
 
 				require.Error(t, err)

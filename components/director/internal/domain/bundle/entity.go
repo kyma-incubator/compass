@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
-// Entity missing godoc
+// Entity is a bundle entity
 type Entity struct {
 	ApplicationID                 string         `db:"app_id"`
 	Name                          string         `db:"name"`
@@ -22,6 +22,7 @@ type Entity struct {
 	*repo.BaseEntity
 }
 
+// GetParentID returns the parent ID of the entity
 func (e *Entity) GetParentID() string {
 	return e.ApplicationID
 }

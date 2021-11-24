@@ -12,16 +12,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Converter missing godoc
-//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
-type Converter interface {
+//go:generate mockery --exported --name=Converter --output=automock --outpkg=automock --case=underscore
+type gqlConverter interface {
 	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, targetTenantInternalID string) model.AutomaticScenarioAssignment
 	ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment
 }
 
-// Service missing godoc
-//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
-type Service interface {
+//go:generate mockery --exported --name=Service --output=automock --outpkg=automock --case=underscore
+type asaService interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 	ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error)
@@ -30,14 +28,14 @@ type Service interface {
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
-//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
-type TenantService interface {
+//go:generate mockery --exported --name=TenantService --output=automock --outpkg=automock --case=underscore
+type tenantService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, svc Service, converter Converter, tenantService TenantService) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
@@ -49,9 +47,9 @@ func NewResolver(transact persistence.Transactioner, svc Service, converter Conv
 // Resolver missing godoc
 type Resolver struct {
 	transact      persistence.Transactioner
-	converter     Converter
-	svc           Service
-	tenantService TenantService
+	converter     gqlConverter
+	svc           asaService
+	tenantService tenantService
 }
 
 // CreateAutomaticScenarioAssignment missing godoc

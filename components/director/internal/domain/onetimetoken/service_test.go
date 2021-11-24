@@ -816,10 +816,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 			tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator, ottConfig, test.intSystemToAdapterMapping, timeService)
 
-			//WHEN
+			// WHEN
 			token, err := tokenSvc.GenerateOneTimeToken(test.ctx, test.objectID, test.tokenType)
 
-			//THEN
+			// THEN
 			if test.shouldHaveError {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), test.errorMsg)
@@ -1153,10 +1153,10 @@ func TestIsTokenValid(t *testing.T) {
 			// GIVEN
 			tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator, ottConfig, intSystemToAdapterMapping, timeService)
 
-			//WHEN
+			// WHEN
 			isValid, err := tokenSvc.IsTokenValid(test.systemAuth)
 
-			//THEN
+			// THEN
 			if test.shouldHaveError {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), test.errorMsg)

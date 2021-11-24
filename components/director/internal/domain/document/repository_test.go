@@ -29,7 +29,7 @@ func TestRepository_Create(t *testing.T) {
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create Document",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM bundles_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{givenTenant(), refID, true},
@@ -195,7 +195,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 
 	suite := testdb.RepoListPageableTestSuite{
 		Name: "List Documents for multiple bundles with paging",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`(SELECT id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $1)) AND bundle_id = $2 ORDER BY bundle_id ASC, id ASC LIMIT $3 OFFSET $4)
 												UNION
@@ -276,7 +276,7 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 func TestRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Document Exists",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.documents WHERE id = $1 AND (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{givenID(), givenTenant()},
@@ -306,7 +306,7 @@ func TestRepository_GetByID(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Document",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE id = $1 AND (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{givenID(), givenTenant()},
@@ -342,7 +342,7 @@ func TestRepository_GetForBundle(t *testing.T) {
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Document For Bundle",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, bundle_id, app_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error FROM public.documents WHERE id = $1 AND bundle_id = $2 AND (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{givenID(), bndlID(), givenTenant()},
@@ -376,7 +376,7 @@ func TestRepository_GetForBundle(t *testing.T) {
 func TestRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Document Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.documents WHERE id = $1 AND (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{givenID(), givenTenant()},

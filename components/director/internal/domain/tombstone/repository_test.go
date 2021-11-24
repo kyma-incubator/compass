@@ -16,12 +16,12 @@ import (
 
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
-	var nilTsModel *model.Tombstone
+	var nilTSModel *model.Tombstone
 	tombstoneModel := fixTombstoneModel()
 	tombstoneEntity := fixEntityTombstone()
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create Tombstone",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_applications WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, appID, true},
@@ -45,7 +45,7 @@ func TestPgRepository_Create(t *testing.T) {
 		RepoConstructorFunc:       tombstone.NewRepository,
 		ModelEntity:               tombstoneModel,
 		DBEntity:                  tombstoneEntity,
-		NilModelEntity:            nilTsModel,
+		NilModelEntity:            nilTSModel,
 		TenantID:                  tenantID,
 		DisableConverterErrorTest: true,
 	}
@@ -54,12 +54,12 @@ func TestPgRepository_Create(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	var nilTsModel *model.Tombstone
+	var nilTSModel *model.Tombstone
 	entity := fixEntityTombstone()
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Tombstone",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.tombstones SET removal_date = ? WHERE id = ? AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
 				Args:          append(fixTombstoneUpdateArgs(), entity.ID),
@@ -73,7 +73,7 @@ func TestPgRepository_Update(t *testing.T) {
 		RepoConstructorFunc:       tombstone.NewRepository,
 		ModelEntity:               fixTombstoneModel(),
 		DBEntity:                  entity,
-		NilModelEntity:            nilTsModel,
+		NilModelEntity:            nilTSModel,
 		TenantID:                  tenantID,
 		DisableConverterErrorTest: true,
 	}
@@ -84,7 +84,7 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Tombstone Delete",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.tombstones WHERE id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2 AND owner = true))`),
 				Args:          []driver.Value{tombstoneID, tenantID},
@@ -105,7 +105,7 @@ func TestPgRepository_Delete(t *testing.T) {
 func TestPgRepository_Exists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Tombstone Exists",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.tombstones WHERE id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{tombstoneID, tenantID},
@@ -132,7 +132,7 @@ func TestPgRepository_Exists(t *testing.T) {
 func TestPgRepository_GetByID(t *testing.T) {
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Tombstone",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, removal_date, id FROM public.tombstones WHERE id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{tombstoneID, tenantID},
@@ -160,7 +160,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 func TestPgRepository_ListByApplicationID(t *testing.T) {
 	suite := testdb.RepoListTestSuite{
 		Name: "List Tombstones",
-		SqlQueryDetails: []testdb.SqlQueryDetails{
+		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, removal_date, id FROM public.tombstones WHERE app_id = $1 AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{appID, tenantID},

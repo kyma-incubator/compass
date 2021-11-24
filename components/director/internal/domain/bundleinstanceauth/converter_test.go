@@ -276,10 +276,10 @@ func TestConverter_ToEntity(t *testing.T) {
 
 		conv := bundleinstanceauth.NewConverter(nil)
 
-		//WHEN
+		// WHEN
 		entity, err := conv.ToEntity(piaModel)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, piaEntity, entity)
 	})
@@ -291,10 +291,10 @@ func TestConverter_ToEntity(t *testing.T) {
 
 		conv := bundleinstanceauth.NewConverter(nil)
 
-		//WHEN
+		// WHEN
 		entity, err := conv.ToEntity(piaModel)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, piaEntity, entity)
 	})
@@ -308,10 +308,10 @@ func TestConverter_FromEntity(t *testing.T) {
 
 		conv := bundleinstanceauth.NewConverter(nil)
 
-		//WHEN
+		// WHEN
 		result, err := conv.FromEntity(piaEntity)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, piaModel, result)
 	})
@@ -323,10 +323,10 @@ func TestConverter_FromEntity(t *testing.T) {
 
 		conv := bundleinstanceauth.NewConverter(nil)
 
-		//WHEN
+		// WHEN
 		result, err := conv.FromEntity(piaEntity)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, piaModel, result)
 	})

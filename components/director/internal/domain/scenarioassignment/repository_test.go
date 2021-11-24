@@ -93,7 +93,7 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 		repo := scenarioassignment.NewRepository(convMock)
 		// WHEN
 		_, err := repo.GetForScenarioName(ctx, tenantID, scenarioName)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 	})
 
@@ -249,8 +249,7 @@ func TestRepository_List(t *testing.T) {
 		WHERE tenant_id = \$1
 		ORDER BY scenario LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
-	rawCountQuery := fmt.Sprintf(`SELECT COUNT(*) FROM public.automatic_scenario_assignments
-		WHERE tenant_id = $1`)
+	rawCountQuery := `SELECT COUNT(*) FROM public.automatic_scenario_assignments WHERE tenant_id = $1`
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("Success", func(t *testing.T) {
@@ -274,7 +273,7 @@ func TestRepository_List(t *testing.T) {
 		repo := scenarioassignment.NewRepository(convMock)
 		// WHEN
 		modelAssignment, err := repo.List(ctx, tenantID, inputPageSize, inputCursor)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.Len(t, modelAssignment.Data, 2)
 		assert.Equal(t, scenarioName1, modelAssignment.Data[0].ScenarioName)

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 )
 
-// Entity missing godoc
+// Entity represents the ORD package entity.
 type Entity struct {
 	ID                string         `db:"id"`
 	ApplicationID     string         `db:"app_id"`
@@ -28,10 +28,12 @@ type Entity struct {
 	ResourceHash      sql.NullString `db:"resource_hash"`
 }
 
+// GetID returns the ID of the entity.
 func (e *Entity) GetID() string {
 	return e.ID
 }
 
+// GetParentID returns the parent ID of the entity.
 func (e *Entity) GetParentID() string {
 	return e.ApplicationID
 }

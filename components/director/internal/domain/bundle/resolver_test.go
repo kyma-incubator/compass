@@ -594,9 +594,9 @@ func TestResolver_APIs(t *testing.T) {
 
 	t.Run("Returns error when there are no Bundles", func(t *testing.T) {
 		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.APIDefinitionsDataLoader([]dataloader.ParamAPIDef{})
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No Bundles found").Error())
 	})
@@ -606,9 +606,9 @@ func TestResolver_APIs(t *testing.T) {
 		keys := []dataloader.ParamAPIDef{params}
 
 		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.APIDefinitionsDataLoader(keys)
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
 	})
@@ -1160,9 +1160,9 @@ func TestResolver_Events(t *testing.T) {
 
 	t.Run("Returns error when there are no Bundles", func(t *testing.T) {
 		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.EventDefinitionsDataLoader([]dataloader.ParamEventDef{})
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No Bundles found").Error())
 	})
@@ -1172,9 +1172,9 @@ func TestResolver_Events(t *testing.T) {
 		keys := []dataloader.ParamEventDef{params}
 
 		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.EventDefinitionsDataLoader(keys)
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
 	})
@@ -1424,9 +1424,9 @@ func TestResolver_Documents(t *testing.T) {
 
 	t.Run("Returns error when there are no Bundles", func(t *testing.T) {
 		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.DocumentsDataLoader([]dataloader.ParamDocument{})
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No Bundles found").Error())
 	})
@@ -1436,9 +1436,9 @@ func TestResolver_Documents(t *testing.T) {
 		keys := []dataloader.ParamDocument{params}
 
 		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.DocumentsDataLoader(keys)
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
 	})
@@ -2185,9 +2185,9 @@ func TestResolver_InstanceAuth(t *testing.T) {
 
 	t.Run("Returns error when Bundle is nil", func(t *testing.T) {
 		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.InstanceAuth(context.TODO(), nil, "")
-		//then
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, apperrors.NewInternalError("Bundle cannot be empty").Error())
 	})
@@ -2321,9 +2321,9 @@ func TestResolver_InstanceAuths(t *testing.T) {
 
 	t.Run("Returns error when Bundle is nil", func(t *testing.T) {
 		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.InstanceAuths(context.TODO(), nil)
-		//then
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, apperrors.NewInternalError("Bundle cannot be empty").Error())
 	})

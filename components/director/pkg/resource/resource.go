@@ -1,80 +1,80 @@
 package resource
 
-// Type missing godoc
+// Type represents a resource type in compass.
 type Type string
 
 const (
-	// Application missing godoc
+	// Application type represents application resource.
 	Application Type = "application"
-	// ApplicationTemplate missing godoc
+	// ApplicationTemplate type represents application template resource.
 	ApplicationTemplate Type = "applicationTemplate"
-	// Runtime missing godoc
+	// Runtime type represents runtime resource.
 	Runtime Type = "runtime"
-	// RuntimeContext missing godoc
+	// RuntimeContext type represents runtime context resource.
 	RuntimeContext Type = "runtimeContext"
-	// LabelDefinition missing godoc
+	// LabelDefinition type represents label definition resource.
 	LabelDefinition Type = "labelDefinition"
-	// Label missing godoc
+	// Label type represents generic label resource. This resource type does not assume the referenced resource type of the label.
 	Label Type = "label"
-	// RuntimeLabel missing godoc
+	// RuntimeLabel type represents runtime label resource.
 	RuntimeLabel Type = "runtimeLabel"
-	// RuntimeContextLabel missing godoc
+	// RuntimeContextLabel type represents runtime context label resource.
 	RuntimeContextLabel Type = "runtimeContextLabel"
-	// ApplicationLabel missing godoc
+	// ApplicationLabel type represents application label resource.
 	ApplicationLabel Type = "applicationLabel"
-	// TenantLabel missing godoc
+	// TenantLabel type represents tenant label resource.
 	TenantLabel Type = "tenantLabel"
-	// Bundle missing godoc
+	// Bundle type represents bundle resource.
 	Bundle Type = "bundle"
-	// BundleReference missing godoc
+	// BundleReference type represents bundle reference resource.
 	BundleReference Type = "bundleReference"
-	// Package missing godoc
+	// Package type represents package resource.
 	Package Type = "package"
-	// Product missing godoc
+	// Product type represents product resource.
 	Product Type = "product"
-	// Vendor missing godoc
+	// Vendor type represents vendor resource.
 	Vendor Type = "vendor"
-	// Tombstone missing godoc
+	// Tombstone type represents tombstone resource.
 	Tombstone Type = "tombstone"
-	// IntegrationSystem missing godoc
+	// IntegrationSystem type represents integration system resource.
 	IntegrationSystem Type = "integrationSystem"
-	// SystemAuth missing godoc
+	// SystemAuth type represents system auth resource.
 	SystemAuth Type = "systemAuth"
-	// FetchRequest missing godoc
+	// FetchRequest type represents generic fetch request resource. This resource does not assume the referenced resource type of the FR.
 	FetchRequest Type = "fetchRequest"
-	// DocFetchRequest missing godoc
+	// DocFetchRequest type represents document fetch request resource.
 	DocFetchRequest Type = "docFetchRequest"
-	// APISpecFetchRequest missing godoc
+	// APISpecFetchRequest type represents API specification fetch request resource.
 	APISpecFetchRequest Type = "apiSpecFetchRequest"
-	// EventSpecFetchRequest missing godoc
+	// EventSpecFetchRequest type represents Event specification fetch request resource.
 	EventSpecFetchRequest Type = "eventSpecFetchRequest"
-	// Specification missing godoc
+	// Specification type represents generic specification resource. This resource does not assume the referenced resource type of the Spec.
 	Specification Type = "specification"
-	// APISpecification missing godoc
+	// APISpecification type represents API specification resource.
 	APISpecification Type = "apiSpecification"
-	// EventSpecification missing godoc
+	// EventSpecification type represents Event specification resource.
 	EventSpecification Type = "eventSpecification"
-	// Document missing godoc
+	// Document type represents document resource.
 	Document Type = "document"
-	// BundleInstanceAuth missing godoc
+	// BundleInstanceAuth type represents bundle instance auth resource.
 	BundleInstanceAuth Type = "bundleInstanceAuth"
-	// API missing godoc
+	// API type represents api resource.
 	API Type = "api"
-	// EventDefinition missing godoc
+	// EventDefinition type represents event resource.
 	EventDefinition Type = "eventDefinition"
-	// AutomaticScenarioAssigment missing godoc
+	// AutomaticScenarioAssigment type represents ASA resource.
 	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
-	// Webhook missing godoc
+	// Webhook type represents generic webhook resource. This resource does not assume the referenced resource type of the Webhook.
 	Webhook Type = "webhook"
-	// AppWebhook missing godoc
+	// AppWebhook type represents application webhook resource.
 	AppWebhook Type = "appWebhook"
-	// RuntimeWebhook missing godoc
+	// RuntimeWebhook type represents runtime webhook resource.
 	RuntimeWebhook Type = "runtimeWebhook"
-	// Tenant missing godoc
+	// Tenant type represents tenant resource.
 	Tenant Type = "tenant"
-	// TenantAccess missing godoc
+	// TenantAccess type represents tenant access resource.
 	TenantAccess Type = "tenantAccess"
-	// Schema missing godoc
+	// Schema type represents schema resource.
 	Schema Type = "schemaMigration"
 )
 
@@ -133,11 +133,13 @@ var parentRelation = map[Type]Type{
 	RuntimeWebhook:        Runtime,
 }
 
+// TenantAccessTable returns the table / view with tenant accesses of the given type.
 func (t Type) TenantAccessTable() (string, bool) {
 	tbl, ok := tenantAccessTable[t]
 	return tbl, ok
 }
 
+// Parent returns the parent type of the given type.
 func (t Type) Parent() (Type, bool) {
 	parent, ok := parentRelation[t]
 	return parent, ok
@@ -148,22 +150,22 @@ func (t Type) IsTopLevel() bool {
 	return t == Application || t == Runtime
 }
 
-// SQLOperation missing godoc
+// SQLOperation represents an SQL operation
 type SQLOperation string
 
 const (
-	// Create missing godoc
+	// Create represents Create SQL operation
 	Create SQLOperation = "Create"
-	// Update missing godoc
+	// Update represents Update SQL operation
 	Update SQLOperation = "Update"
-	// Upsert missing godoc
+	// Upsert represents Upsert SQL operation
 	Upsert SQLOperation = "Upsert"
-	// Delete missing godoc
+	// Delete represents Delete SQL operation
 	Delete SQLOperation = "Delete"
-	// Exists missing godoc
+	// Exists represents Exists SQL operation
 	Exists SQLOperation = "Exists"
-	// Get missing godoc
+	// Get represents Get SQL operation
 	Get SQLOperation = "Get"
-	// List missing godoc
+	// List represents List SQL operation
 	List SQLOperation = "List"
 )

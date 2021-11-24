@@ -21,9 +21,9 @@ func TestConverter_ToGraphQLForRuntime(t *testing.T) {
 	//GIVEN
 	tokenModel := model.OneTimeToken{Token: token, ConnectorURL: validConnectorURL}
 	conv := onetimetoken.NewConverter(validLegacyConnectorURL)
-	//WHEN
+	// WHEN
 	graphqlToken := conv.ToGraphQLForRuntime(tokenModel)
-	//THEN
+	// THEN
 	assert.Equal(t, token, graphqlToken.Token)
 	assert.Equal(t, validConnectorURL, graphqlToken.ConnectorURL)
 }
@@ -32,9 +32,9 @@ func TestConverter_ToGraphQLForApplication(t *testing.T) {
 	//GIVEN
 	tokenModel := model.OneTimeToken{Token: token, ConnectorURL: validConnectorURL}
 	conv := onetimetoken.NewConverter(validLegacyConnectorURL)
-	//WHEN
+	// WHEN
 	graphqlToken, err := conv.ToGraphQLForApplication(tokenModel)
-	//THEN
+	// THEN
 	assert.NoError(t, err)
 	assert.Equal(t, token, graphqlToken.Token)
 	assert.Equal(t, validConnectorURL, graphqlToken.ConnectorURL)
@@ -47,7 +47,7 @@ func TestConverter_ToGraphQLForApplication_WithLegacyURLWithQueryParam(t *testin
 	conv := onetimetoken.NewConverter(validLegacyConnectorURLWithQuery)
 	// WHEN
 	graphqlToken, err := conv.ToGraphQLForApplication(tokenModel)
-	//THEN
+	// THEN
 	assert.NoError(t, err)
 	assert.Equal(t, token, graphqlToken.Token)
 	assert.Equal(t, validConnectorURL, graphqlToken.ConnectorURL)
@@ -60,6 +60,6 @@ func TestConverter_ToGraphQLForApplication_ErrorWithInvalidLegacyURL(t *testing.
 	conv := onetimetoken.NewConverter(invalidURL)
 	// WHEN
 	_, err := conv.ToGraphQLForApplication(tokenModel)
-	//THEN
+	// THEN
 	assert.EqualError(t, err, "while parsing string (:123:invalid-url) as the URL: parse \":123:invalid-url\": missing protocol scheme")
 }

@@ -3241,10 +3241,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			cfgProvider := testCase.ConfigProviderFn()
 			svc := application.NewService(nil, cfgProvider, appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil)
 
-			//WHEN
+			// WHEN
 			results, err := svc.ListByRuntimeID(ctx, testCase.Input, first, cursor)
 
-			//THEN
+			// THEN
 			if testCase.ExpectedError != nil {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())

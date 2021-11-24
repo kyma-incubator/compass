@@ -11,15 +11,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// PageDetails represents the expected page returned from the List with paging operation.
+// In case of dataloaders a single List operation can return array of pages - a page for each entity that is collected by the dataloader.
 type PageDetails struct {
 	ExpectedModelEntities []interface{}
 	ExpectedDBEntities    []interface{}
 	ExpectedPage          interface{}
 }
 
+// RepoListPageableTestSuite represents a generic test suite for repository List with paging methods of any entity that has externally managed tenants in m2m table/view.
+// This test suite is not suitable for global entities or entities with embedded tenant in them.
 type RepoListPageableTestSuite struct {
 	Name                      string
-	SqlQueryDetails           []SqlQueryDetails
+	SQLQueryDetails           []SQLQueryDetails
 	ConverterMockProvider     func() Mock
 	RepoConstructorFunc       interface{}
 	AdditionalConverterArgs   []interface{}
@@ -29,12 +33,13 @@ type RepoListPageableTestSuite struct {
 	MethodName                string
 }
 
+// Run runs the generic repo list with paging test suite
 func (suite *RepoListPageableTestSuite) Run(t *testing.T) bool {
 	if len(suite.MethodName) == 0 {
 		panic("missing method name")
 	}
 
-	for _, queryDetails := range suite.SqlQueryDetails {
+	for _, queryDetails := range suite.SQLQueryDetails {
 		if !queryDetails.IsSelect {
 			panic("list pageable suite should expect only select SQL statements")
 		}
@@ -53,7 +58,7 @@ func (suite *RepoListPageableTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SqlQueryDetails {
+			for _, sqlDetails := range suite.SQLQueryDetails {
 				sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 			}
 
@@ -65,9 +70,9 @@ func (suite *RepoListPageableTestSuite) Run(t *testing.T) bool {
 			}
 
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-			//WHEN
+			// WHEN
 			res, err := callList(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-			//THEN
+			// THEN
 			require.NoError(t, err)
 			if len(suite.Pages) > 1 { // entity uses dataloaders and load more than one page on a single call.
 				require.Len(t, res, len(suite.Pages))
@@ -82,13 +87,13 @@ func (suite *RepoListPageableTestSuite) Run(t *testing.T) bool {
 			convMock.AssertExpectations(t)
 		})
 
-		for i := range suite.SqlQueryDetails {
+		for i := range suite.SQLQueryDetails {
 			t.Run(fmt.Sprintf("error if SQL query %d fail", i), func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SqlQueryDetails {
-					if sqlDetails.Query == suite.SqlQueryDetails[i].Query {
+				for _, sqlDetails := range suite.SQLQueryDetails {
+					if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
 						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
 						break
 					} else {
@@ -99,10 +104,10 @@ func (suite *RepoListPageableTestSuite) Run(t *testing.T) bool {
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 
-				//WHEN
+				// WHEN
 				res, err := callList(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
 
-				//THEN
+				// THEN
 				require.Nil(t, res)
 
 				require.Error(t, err)
@@ -119,7 +124,7 @@ func (suite *RepoListPageableTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SqlQueryDetails {
+				for _, sqlDetails := range suite.SQLQueryDetails {
 					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
 				}
 
@@ -131,9 +136,9 @@ func (suite *RepoListPageableTestSuite) Run(t *testing.T) bool {
 					}
 				}
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-				//WHEN
+				// WHEN
 				res, err := callList(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-				//THEN
+				// THEN
 				require.Nil(t, res)
 
 				require.Error(t, err)
