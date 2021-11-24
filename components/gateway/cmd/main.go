@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -37,6 +38,7 @@ type config struct {
 
 	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3001"`
 	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3002"`
+	NsadapterOrigin string `envconfig:"default=http://127.0.0.1:3005"`
 	MetricsAddress  string `envconfig:"default=127.0.0.1:3003"`
 	AuditlogEnabled bool   `envconfig:"default=false"`
 }
@@ -75,12 +77,20 @@ func main() {
 
 	correlationTr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
 	tr := proxy.NewTransport(auditlogSink, auditlogSvc, correlationTr)
+	adapterTr := proxy.NewAdapterTransport(auditlogSink, auditlogSvc, correlationTr)
 
-	err = proxyRequestsForComponent(ctx, router, "/connector", cfg.ConnectorOrigin, tr)
+	connectorHost, err := extractHost(cfg.ConnectorOrigin)
+	exitOnError(err, "Error while extracting host for Connector proxy")
+	err = proxyRequestsForComponent(ctx, router, "/connector", cfg.ConnectorOrigin, tr,connectorHost)
 	exitOnError(err, "Error while initializing proxy for Connector")
 
-	err = proxyRequestsForComponent(ctx, router, "/director", cfg.DirectorOrigin, tr)
+	directorHost, err := extractHost(cfg.DirectorOrigin)
+	exitOnError(err, "Error while extracting host for Director proxy")
+	err = proxyRequestsForComponent(ctx, router, "/director", cfg.DirectorOrigin, tr, directorHost)
 	exitOnError(err, "Error while initializing proxy for Director")
+
+	err = proxyRequestsForComponent(ctx, router, "/nsadapter", cfg.NsadapterOrigin, adapterTr, "ory-oathkeeper-proxy.kyma-system.svc.cluster.local:4455")
+	exitOnError(err, "Error while initializing proxy for NSAdapter")
 
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(200)
@@ -105,9 +115,18 @@ func main() {
 	wg.Wait()
 }
 
-func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path string, targetOrigin string, transport http.RoundTripper, middleware ...mux.MiddlewareFunc) error {
+func extractHost(targetOrigin string) (string, error) {
+	targetURL, err := url.Parse(targetOrigin)
+	if err != nil {
+		return "", errors.Wrapf(err, "while parsing URL %s", targetOrigin)
+	}
+	return targetURL.Host, nil
+}
+
+func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path string, targetOrigin string, transport http.RoundTripper, host string, middleware ...mux.MiddlewareFunc) error {
 	log.C(ctx).Infof("Proxying requests on path `%s` to `%s`", path, targetOrigin)
-	componentProxy, err := proxy.New(targetOrigin, path, transport)
+
+	componentProxy, err := proxy.New(targetOrigin, path, transport, host)
 	if err != nil {
 		return errors.Wrapf(err, "while initializing proxy for component")
 	}

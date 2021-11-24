@@ -16,7 +16,7 @@ type Proxy struct {
 	reverseProxy *httputil.ReverseProxy
 }
 
-func New(targetOrigin, proxyPath string, transport http.RoundTripper) (*httputil.ReverseProxy, error) {
+func New(targetOrigin, proxyPath string, transport http.RoundTripper, host string) (*httputil.ReverseProxy, error) {
 	targetURL, err := url.Parse(targetOrigin)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while parsing URL %s", targetOrigin)
@@ -25,9 +25,9 @@ func New(targetOrigin, proxyPath string, transport http.RoundTripper) (*httputil
 	targetQuery := targetURL.RawQuery
 	director := func(req *http.Request) {
 		req.URL.Scheme = targetURL.Scheme
-		req.URL.Host = targetURL.Host
+		req.URL.Host = host
 		req.URL.Path = requestURL(req.URL.Path, proxyPath)
-		req.Host = targetURL.Host
+		req.Host = host
 		if targetQuery == "" || req.URL.RawQuery == "" {
 			req.URL.RawQuery = targetQuery + req.URL.RawQuery
 		} else {
