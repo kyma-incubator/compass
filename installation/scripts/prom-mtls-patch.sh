@@ -74,9 +74,9 @@ EOF
 
 function patchDeploymentsToInjectSidecar() {
   allDeploy=(
-    monitoring-kube-state-metrics
-    monitoring-operator
-    monitoring-prometheus-istio-server
+    #monitoring-kube-state-metrics
+    #monitoring-operator
+    #monitoring-prometheus-istio-server
     kiali-server
   )
 
@@ -111,11 +111,12 @@ function patchKymaServiceMonitorsForMTLS() {
     tracing-jaeger
     monitoring-grafana
     monitoring-alertmanager
-    dex
-    monitoring-prometheus-pushgateway
-    monitoring-kube-state-metrics
-    monitoring-operator
-    monitoring-prometheus-istio-server-server
+    #dex # Not secured in Kyma
+    #monitoring-prometheus-pushgateway # Not secured in Kyma
+    #monitoring-operator # Kyma have a different mechanism -> check to override it (Note: # Prometheus-Operator v0.39.0 and later support TLS natively.)
+    #monitoring-prometheus # Not secured in Kyma
+    #monitoring-kube-state-metrics # Not secured in Kyma
+    #monitoring-prometheus-istio-server-server # Not secured in Kyma
   )
 
   crd="servicemonitors.monitoring.coreos.com"
@@ -170,7 +171,7 @@ function removeKymaPeerAuthsForPrometheus() {
     ory-hydra-maester-metrics
     tracing-jaeger-operator-metrics
     tracing-jaeger-metrics
-    monitoring-prometheus-pushgateway
+    #monitoring-prometheus-pushgateway
   )
 
   for pa in "${allPAs[@]}"; do
