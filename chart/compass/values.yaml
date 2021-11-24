@@ -68,6 +68,14 @@ global:
       id: 08b6da37-e911-48fb-a0cb-fa635a6c665a
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestNsAdapter
+      id: 08b6da37-e911-48fb-a0cb-fa635a6c5678
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestNsAdapterSubaccountWithApplications
+      id: 08b6da37-e911-48fb-a0cb-fa635a6c4321
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
 
   images:
     containerRegistry:
