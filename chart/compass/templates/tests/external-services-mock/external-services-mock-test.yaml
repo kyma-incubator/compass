@@ -29,6 +29,7 @@ spec:
             - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - "compass-external-services-mock.compass-system.svc.cluster.local"
+            - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}"
       {{ end }}
       containers:
         - name: external-services-mock-tests
@@ -81,6 +82,8 @@ spec:
               value: "{{ .Values.global.gateway.mtls.host }}"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080/"
+            - name: EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL
+              value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}:443"
             - name: APP_IS_WITH_TOKEN
               value: "{{.Values.global.tests.token.server.enabled}}"
             - name: APP_ADDRESS
