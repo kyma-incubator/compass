@@ -147,7 +147,7 @@ func TestService_Create(t *testing.T) {
 		ScenariosServiceFn   func() *automock.ScenariosService
 		TenantSvcFn          func() *automock.TenantService
 		LabelUpsertServiceFn func() *automock.LabelUpsertService
-		UIDServiceFn         func() *automock.UIDService
+		UIDServiceFn         func() *automock.UidService
 		EngineServiceFn      func() *automock.ScenarioAssignmentEngine
 		Input                model.RuntimeInput
 		Context              context.Context
@@ -175,8 +175,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctx, tnt).Return(ga, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				svc.On("Generate").Return(runtimeID)
 				return svc
 			},
@@ -212,8 +212,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				svc.On("Generate").Return(runtimeID)
 				return svc
 			},
@@ -250,8 +250,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				svc.On("Generate").Return(runtimeID)
 				return svc
 			},
@@ -287,8 +287,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				svc.On("Generate").Return(runtimeID)
 				return svc
 			},
@@ -323,8 +323,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctx, tnt).Return(ga, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				svc.On("Generate").Return(runtimeID)
 				return svc
 			},
@@ -353,8 +353,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc := &automock.TenantService{}
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				return svc
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
@@ -383,8 +383,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(nil, testErr).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				return svc
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
@@ -410,8 +410,8 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.ScenariosService{}
 				return repo
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				svc.On("Generate").Return("").Once()
 				return svc
 			},
@@ -441,8 +441,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: "anotherParent"}, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				return svc
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
@@ -476,8 +476,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(nil, testErr).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				svc.On("Generate").Return(runtimeID)
 				return svc
 			},
@@ -512,8 +512,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				svc.On("Generate").Return(runtimeID)
 				return svc
 			},
@@ -543,8 +543,8 @@ func TestService_Create(t *testing.T) {
 				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMock).Return(testErr).Once()
 				return repo
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				svc.On("Generate").Return(runtimeID)
 				return svc
 			},
@@ -580,8 +580,8 @@ func TestService_Create(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				svc := &automock.UidService{}
 				svc.On("Generate").Return(runtimeID)
 				return svc
 			},
@@ -2494,7 +2494,7 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 			labelUpsertService := &automock.LabelUpsertService{}
 			scenariosService := &automock.ScenariosService{}
 			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
-			uidSvc := &automock.UIDService{}
+			uidSvc := &automock.UidService{}
 			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, protectedLabelPattern, nil)
 
 			// when
@@ -2563,7 +2563,7 @@ func TestService_ListByFiltersGlobal(t *testing.T) {
 			labelUpsertService := &automock.LabelUpsertService{}
 			scenariosService := &automock.ScenariosService{}
 			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
-			uidSvc := &automock.UIDService{}
+			uidSvc := &automock.UidService{}
 			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, protectedLabelPattern, nil)
 
 			// when
@@ -2643,7 +2643,7 @@ func TestService_ListByFilters(t *testing.T) {
 			labelUpsertService := &automock.LabelUpsertService{}
 			scenariosService := &automock.ScenariosService{}
 			scenarioAssignmentEngine := &automock.ScenarioAssignmentEngine{}
-			uidSvc := &automock.UIDService{}
+			uidSvc := &automock.UidService{}
 			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$", nil)
 
 			// when

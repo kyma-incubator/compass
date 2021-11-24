@@ -12,13 +12,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery --exported --name=Converter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=gqlConverter --output=automock --outpkg=automock --case=underscore
 type gqlConverter interface {
 	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, targetTenantInternalID string) model.AutomaticScenarioAssignment
 	ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment
 }
 
-//go:generate mockery --exported --name=Service --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=asaService --output=automock --outpkg=automock --case=underscore
 type asaService interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
@@ -28,7 +28,7 @@ type asaService interface {
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
-//go:generate mockery --exported --name=TenantService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore
 type tenantService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)

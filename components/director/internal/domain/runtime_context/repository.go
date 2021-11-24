@@ -33,7 +33,7 @@ type pgRepository struct {
 	conv               entityConverter
 }
 
-//go:generate mockery --exported --name=EntityConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=entityConverter --output=automock --outpkg=automock --case=underscore
 type entityConverter interface {
 	ToEntity(in *model.RuntimeContext) *RuntimeContext
 	FromEntity(entity *RuntimeContext) *model.RuntimeContext
