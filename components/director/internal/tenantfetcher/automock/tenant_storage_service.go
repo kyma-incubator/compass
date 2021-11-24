@@ -14,34 +14,22 @@ type TenantStorageService struct {
 	mock.Mock
 }
 
-// DeleteMany provides a mock function with given fields: ctx, tenantInputs
-func (_m *TenantStorageService) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
-	ret := _m.Called(ctx, tenantInputs)
+// GetTenantByExternalID provides a mock function with given fields: ctx, id
+func (_m *TenantStorageService) GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, id)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []model.BusinessTenantMappingInput) error); ok {
-		r0 = rf(ctx, tenantInputs)
+	var r0 *model.BusinessTenantMapping
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, id)
 	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// GetInternalTenant provides a mock function with given fields: ctx, externalTenant
-func (_m *TenantStorageService) GetInternalTenant(ctx context.Context, externalTenant string) (string, error) {
-	ret := _m.Called(ctx, externalTenant)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, externalTenant)
-	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.BusinessTenantMapping)
+		}
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, externalTenant)
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -70,18 +58,4 @@ func (_m *TenantStorageService) List(ctx context.Context) ([]*model.BusinessTena
 	}
 
 	return r0, r1
-}
-
-// UpsertMany provides a mock function with given fields: ctx, tenantInputs
-func (_m *TenantStorageService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
-	ret := _m.Called(ctx, tenantInputs)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) error); ok {
-		r0 = rf(ctx, tenantInputs...)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }

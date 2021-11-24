@@ -3,7 +3,9 @@ package tenantfetcher
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/avast/retry-go"
@@ -11,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -72,15 +75,7 @@ type PageConfig struct {
 //go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
-	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
-	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
-}
-
-// LabelDefinitionService missing godoc
-//go:generate mockery --name=LabelDefinitionService --output=automock --outpkg=automock --case=underscore
-type LabelDefinitionService interface {
-	Upsert(ctx context.Context, def model.LabelDefinition) error
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // LabelService missing godoc
@@ -99,14 +94,36 @@ type EventAPIClient interface {
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
-	Update(ctx context.Context, id string, in model.RuntimeInput) error
-	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
 }
 
 // TenantSyncService missing godoc
 //go:generate mockery --name=TenantSyncService --output=automock --outpkg=automock --case=underscore
 type TenantSyncService interface {
 	SyncTenants() error
+}
+
+// DirectorGraphQLClient expects graphql implementation
+//go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore
+type DirectorGraphQLClient interface {
+	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
+	DeleteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
+	UpdateTenant(context.Context, string, graphql.BusinessTenantMappingInput) error
+	CreateLabelDefinition(context.Context, graphql.LabelDefinitionInput, string) error
+	UpdateLabelDefinition(context.Context, graphql.LabelDefinitionInput, string) error
+	SetRuntimeTenant(ctx context.Context, runtimeID, tenantID, tenantHeader string) error
+}
+
+// LabelDefConverter missing godoc
+//go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore
+type LabelDefConverter interface {
+	ToGraphQLInput(definition model.LabelDefinition) (graphql.LabelDefinitionInput, error)
+}
+
+// TenantConverter expects tenant converter implementation
+//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore
+type TenantConverter interface {
+	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
+	ToGraphQLInput(model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput
 }
 
 const (
@@ -116,17 +133,20 @@ const (
 
 // GlobalAccountService missing godoc
 type GlobalAccountService struct {
-	queryConfig          QueryConfig
-	transact             persistence.Transactioner
-	kubeClient           KubeClient
-	eventAPIClient       EventAPIClient
-	tenantStorageService TenantStorageService
-	providerName         string
-	tenantsRegion        string
-	fieldMapping         TenantFieldMapping
-	retryAttempts        uint
-	fullResyncInterval   time.Duration
-	toEventsPage         func([]byte) *eventsPage
+	queryConfig           QueryConfig
+	transact              persistence.Transactioner
+	kubeClient            KubeClient
+	eventAPIClient        EventAPIClient
+	tenantStorageService  TenantStorageService
+	providerName          string
+	tenantsRegion         string
+	fieldMapping          TenantFieldMapping
+	retryAttempts         uint
+	fullResyncInterval    time.Duration
+	toEventsPage          func([]byte) *eventsPage
+	gqlClient             DirectorGraphQLClient
+	tenantInsertChunkSize int
+	tenantConverter       TenantConverter
 }
 
 // SubaccountService missing godoc
@@ -141,12 +161,15 @@ type SubaccountService struct {
 	tenantsRegions                  []string
 	fieldMapping                    TenantFieldMapping
 	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
-	labelDefService                 LabelDefinitionService
 	labelService                    LabelService
 	retryAttempts                   uint
 	movedRuntimeLabelKey            string
 	fullResyncInterval              time.Duration
 	toEventsPage                    func([]byte) *eventsPage
+	gqlClient                       DirectorGraphQLClient
+	tenantInsertChunkSize           int
+	labelDefConverter               LabelDefConverter
+	tenantConverter                 TenantConverter
 }
 
 // NewGlobalAccountService missing godoc
@@ -156,7 +179,10 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 	fieldMapping TenantFieldMapping,
 	providerName string, regionName string, client EventAPIClient,
 	tenantStorageService TenantStorageService,
-	fullResyncInterval time.Duration) *GlobalAccountService {
+	fullResyncInterval time.Duration,
+	gqlClient DirectorGraphQLClient,
+	tenantInsertChunkSize int,
+	tenantConverter TenantConverter) *GlobalAccountService {
 	return &GlobalAccountService{
 		transact:             transact,
 		kubeClient:           kubeClient,
@@ -175,6 +201,9 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 				providerName: providerName,
 			}
 		},
+		gqlClient:             gqlClient,
+		tenantInsertChunkSize: tenantInsertChunkSize,
+		tenantConverter:       tenantConverter,
 	}
 }
 
@@ -184,13 +213,18 @@ func NewSubaccountService(queryConfig QueryConfig,
 	kubeClient KubeClient,
 	fieldMapping TenantFieldMapping,
 	movRuntime MovedRuntimeByLabelFieldMapping,
-	providerName string, regionNames []string, client EventAPIClient,
+	providerName string,
+	regionNames []string,
+	client EventAPIClient,
 	tenantStorageService TenantStorageService,
 	runtimeStorageService RuntimeService,
-	labelDefService LabelDefinitionService,
 	labelService LabelService,
 	movedRuntimeLabelKey string,
-	fullResyncInterval time.Duration) *SubaccountService {
+	fullResyncInterval time.Duration,
+	gqlClient DirectorGraphQLClient,
+	tenantInsertChunkSize int,
+	labelDefConverter LabelDefConverter,
+	tenantConverter TenantConverter) *SubaccountService {
 	return &SubaccountService{
 		transact:                        transact,
 		kubeClient:                      kubeClient,
@@ -203,7 +237,6 @@ func NewSubaccountService(queryConfig QueryConfig,
 		queryConfig:                     queryConfig,
 		movedRuntimeByLabelFieldMapping: movRuntime,
 		retryAttempts:                   retryAttempts,
-		labelDefService:                 labelDefService,
 		labelService:                    labelService,
 		movedRuntimeLabelKey:            movedRuntimeLabelKey,
 		fullResyncInterval:              fullResyncInterval,
@@ -215,6 +248,10 @@ func NewSubaccountService(queryConfig QueryConfig,
 				providerName:                    providerName,
 			}
 		},
+		gqlClient:             gqlClient,
+		tenantInsertChunkSize: tenantInsertChunkSize,
+		labelDefConverter:     labelDefConverter,
+		tenantConverter:       tenantConverter,
 	}
 }
 
@@ -285,7 +322,7 @@ func (s SubaccountService) SyncTenants() error {
 
 		// Order of event processing matters
 		if len(tenantsToCreate) > 0 {
-			if err := createTenants(ctx, s.tenantStorageService, currentTenants, tenantsToCreate, region, s.providerName); err != nil {
+			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 				return errors.Wrap(err, "while storing subaccounts")
 			}
 		}
@@ -295,15 +332,16 @@ func (s SubaccountService) SyncTenants() error {
 			}
 		}
 		if len(tenantsToDelete) > 0 {
-			if err := deleteTenants(ctx, s.tenantStorageService, currentTenants, tenantsToDelete); err != nil {
+			if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 				return errors.Wrap(err, "while deleting subaccounts")
 			}
 		}
 
+		log.C(ctx).Printf("Processed new events for region: %s", region)
+
 		if err = tx.Commit(); err != nil {
 			return err
 		}
-		log.C(ctx).Printf("Processed new events for region: %s", region)
 	}
 
 	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
@@ -371,21 +409,22 @@ func (s GlobalAccountService) SyncTenants() error {
 		}
 	}
 
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
 	// Order of event processing matters
 	if len(tenantsToCreate) > 0 {
-		if err := createTenants(ctx, s.tenantStorageService, currentTenants, tenantsToCreate, s.tenantsRegion, s.providerName); err != nil {
+		if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, s.tenantsRegion, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 			return errors.Wrap(err, "while storing accounts")
 		}
 	}
 	if len(tenantsToDelete) > 0 {
-		if err := deleteTenants(ctx, s.tenantStorageService, currentTenants, tenantsToDelete); err != nil {
+		if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 			return errors.Wrap(err, "moving deleting accounts")
 		}
 	}
 
-	if err = tx.Commit(); err != nil {
-		return err
-	}
 	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
 		return err
 	}
@@ -393,7 +432,7 @@ func (s GlobalAccountService) SyncTenants() error {
 	return nil
 }
 
-func createTenants(ctx context.Context, tenantStorageService TenantStorageService, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, region string, provider string) error {
+func createTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, region string, provider string, maxChunkSize int, converter TenantConverter) error {
 	tenantsToCreate := parents(currTenants, eventsTenants, provider)
 	for _, eventTenant := range eventsTenants {
 		if parentGUID, ok := currTenants[eventTenant.Parent]; ok {
@@ -402,12 +441,25 @@ func createTenants(ctx context.Context, tenantStorageService TenantStorageServic
 		eventTenant.Region = region
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
-	if len(tenantsToCreate) > 0 {
-		if err := tenantStorageService.UpsertMany(ctx, tenantsToCreate...); err != nil {
-			return errors.Wrap(err, "while storing new tenants")
+
+	tenantsToCreateGQL := converter.MultipleInputToGraphQLInput(tenantsToCreate)
+	return executeInChunks(ctx, tenantsToCreateGQL, func(ctx context.Context, chunk []graphql.BusinessTenantMappingInput) error {
+		return gqlClient.WriteTenants(ctx, chunk)
+	}, maxChunkSize)
+}
+
+func executeInChunks(ctx context.Context, tenants []graphql.BusinessTenantMappingInput, f func(ctx context.Context, chunk []graphql.BusinessTenantMappingInput) error, maxChunkSize int) error {
+	for {
+		if len(tenants) == 0 {
+			return nil
 		}
+		chunkSize := int(math.Min(float64(len(tenants)), float64(maxChunkSize)))
+		tenantsChunk := tenants[:chunkSize]
+		if err := f(ctx, tenantsChunk); err != nil {
+			return err
+		}
+		tenants = tenants[chunkSize:]
 	}
-	return nil
 }
 
 func parents(currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, providerName string) []model.BusinessTenantMappingInput {
@@ -439,44 +491,16 @@ func getTenantParentType(tenantType string) string {
 
 func (s SubaccountService) moveRuntimesByLabel(ctx context.Context, movedRuntimeMappings []model.MovedRuntimeByLabelMappingInput) error {
 	for _, mapping := range movedRuntimeMappings {
-		filters := []*labelfilter.LabelFilter{
-			{
-				Key:   s.movedRuntimeLabelKey,
-				Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)),
-			},
+		targetInternalTenant, err := s.moveSubaccount(ctx, mapping)
+		if err != nil {
+			return errors.Wrap(err, "while moving subaccount")
 		}
 
-		runtime, err := s.runtimeStorageService.GetByFiltersGlobal(ctx, filters)
-		if err != nil {
+		if err = s.moveRuntime(ctx, mapping, targetInternalTenant); err != nil {
 			if apperrors.IsNotFoundError(err) {
-				log.D().Debugf("No runtime found for label key %s with value %s", s.movedRuntimeLabelKey, mapping.LabelValue)
 				continue
 			}
-			return errors.Wrapf(err, "while listing runtimes for label key %s", s.movedRuntimeLabelKey)
-		}
-
-		targetInternalTenant, err := s.tenantStorageService.GetInternalTenant(ctx, mapping.TargetTenant) // should move runtime here
-		if err != nil {
-			return errors.Wrapf(err, "while getting internal tenant ID for external tenant ID %s", mapping.TargetTenant)
-		}
-
-		if err := checkForScenarios(ctx, s.labelService, runtime); err != nil {
-			return err
-		}
-
-		labelDef := model.LabelDefinition{
-			Tenant: targetInternalTenant,
-			Key:    s.movedRuntimeLabelKey,
-		}
-
-		if err := s.labelDefService.Upsert(ctx, labelDef); err != nil {
-			return errors.Wrapf(err, "while upserting label definition to internal tenant with ID %s", targetInternalTenant)
-		}
-
-		err = s.runtimeStorageService.UpdateTenantID(ctx, runtime.ID, targetInternalTenant)
-		if err != nil {
-			return errors.Wrapf(err, "while updating tenant ID of runtime with label key-value match %s-%s",
-				s.movedRuntimeLabelKey, mapping.LabelValue)
+			return errors.Wrap(err, "while moving runtime")
 		}
 	}
 
@@ -500,7 +524,7 @@ func checkForScenarios(ctx context.Context, labelService LabelService, runtime *
 	return nil
 }
 
-func deleteTenants(ctx context.Context, tenantStorageService TenantStorageService, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput) error {
+func deleteTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, maxChunkSize int, converter TenantConverter) error {
 	tenantsToDelete := make([]model.BusinessTenantMappingInput, 0)
 	for _, toDelete := range eventsTenants {
 		if _, ok := currTenants[toDelete.ExternalTenant]; ok {
@@ -508,11 +532,10 @@ func deleteTenants(ctx context.Context, tenantStorageService TenantStorageServic
 		}
 	}
 
-	if err := tenantStorageService.DeleteMany(ctx, tenantsToDelete); err != nil {
-		return errors.Wrap(err, "while removing tenants")
-	}
-
-	return nil
+	tenantsToDeleteGQL := converter.MultipleInputToGraphQLInput(tenantsToDelete)
+	return executeInChunks(ctx, tenantsToDeleteGQL, func(ctx context.Context, chunk []graphql.BusinessTenantMappingInput) error {
+		return gqlClient.DeleteTenants(ctx, chunk)
+	}, maxChunkSize)
 }
 
 func (s GlobalAccountService) getAccountsToCreate(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
@@ -803,4 +826,100 @@ func shouldFullResync(lastFullResyncTimestamp string, fullResyncInterval time.Du
 
 func convertTimeToUnixMilliSecondString(timestamp time.Time) string {
 	return strconv.FormatInt(timestamp.UnixNano()/int64(time.Millisecond), 10)
+}
+
+func (s *SubaccountService) moveSubaccount(ctx context.Context, mapping model.MovedRuntimeByLabelMappingInput) (*model.BusinessTenantMapping, error) {
+	targetInternalTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, mapping.TargetTenant)
+	if err != nil && strings.Contains(err.Error(), apperrors.NotFoundMsg) {
+		parentTenant := model.BusinessTenantMappingInput{
+			Name:           mapping.TargetTenant,
+			ExternalTenant: mapping.TargetTenant,
+			Parent:         "", // crm ID is assumed that it can be empty
+			Subdomain:      "", // it is not available when event is for moving a subaccount
+			Region:         "",
+			Type:           tenant.TypeToStr(tenant.Account),
+			Provider:       s.providerName,
+		}
+		tenantsToCreateGQL := s.tenantConverter.MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput{parentTenant})
+		if err := s.gqlClient.WriteTenants(ctx, tenantsToCreateGQL); err != nil {
+			return nil, err
+		}
+
+		targetInternalTenant, err = s.tenantStorageService.GetTenantByExternalID(ctx, mapping.TargetTenant)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting internal tenant for external tenant ID %s", mapping.TargetTenant)
+		}
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "while getting internal tenant for external tenant ID %s", mapping.TargetTenant)
+	}
+
+	subaccountID := mapping.LabelValue
+	subaccountTenant, err := s.tenantStorageService.GetTenantByExternalID(ctx, subaccountID)
+	if err != nil && strings.Contains(err.Error(), apperrors.NotFoundMsg) {
+		mapping.TenantMappingInput.Parent = targetInternalTenant.ID
+		tenantsToCreateGQL := s.tenantConverter.MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput{mapping.TenantMappingInput})
+		if err := s.gqlClient.WriteTenants(ctx, tenantsToCreateGQL); err != nil {
+			return nil, err
+		}
+		return targetInternalTenant, nil
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "while getting subaccount internal tenant ID for external tenant ID %s", subaccountID)
+	}
+
+	if subaccountTenant.Parent == targetInternalTenant.ID {
+		log.C(ctx).Infof("Subaccount with external id %s is already moved in global account with external id %s", subaccountTenant.ExternalTenant, mapping.TargetTenant)
+		return targetInternalTenant, nil
+	}
+	subaccountTenant.Parent = targetInternalTenant.ID
+	subaccountTenantGQL := s.tenantConverter.ToGraphQLInput(subaccountTenant.ToInput())
+	if err := s.gqlClient.UpdateTenant(ctx, subaccountTenant.ID, subaccountTenantGQL); err != nil {
+		return nil, errors.Wrapf(err, "while updating tenant with id %s", subaccountTenant.ID)
+	}
+	return targetInternalTenant, nil
+}
+
+func (s *SubaccountService) moveRuntime(ctx context.Context, mapping model.MovedRuntimeByLabelMappingInput, targetInternalTenant *model.BusinessTenantMapping) error {
+	filters := []*labelfilter.LabelFilter{
+		{
+			Key:   s.movedRuntimeLabelKey,
+			Query: str.Ptr(fmt.Sprintf("\"%s\"", mapping.LabelValue)),
+		},
+	}
+
+	runtime, err := s.runtimeStorageService.GetByFiltersGlobal(ctx, filters)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			log.C(ctx).Debugf("No runtime found for label key %s with value %s", s.movedRuntimeLabelKey, mapping.LabelValue)
+			return err
+		}
+		return errors.Wrapf(err, "while listing runtimes for label key %s", s.movedRuntimeLabelKey)
+	}
+
+	if err := checkForScenarios(ctx, s.labelService, runtime); err != nil {
+		return err
+	}
+
+	labelDef := model.LabelDefinition{
+		Tenant: targetInternalTenant.ID,
+		Key:    s.movedRuntimeLabelKey,
+	}
+
+	labelDefGQL, err := s.labelDefConverter.ToGraphQLInput(labelDef)
+	if err != nil {
+		return err
+	}
+	if err := s.gqlClient.CreateLabelDefinition(ctx, labelDefGQL, targetInternalTenant.ID); err != nil {
+		// graphql client does not expose complete error object, but only error message
+		if strings.Contains(err.Error(), apperrors.NotUniqueMsg) {
+			log.C(ctx).Infof("LabelDef with key %s for tenant %s already exists", s.movedRuntimeLabelKey, targetInternalTenant.ID)
+		} else {
+			return errors.Wrap(err, "while creating label definition")
+		}
+	}
+
+	if err := s.gqlClient.SetRuntimeTenant(ctx, runtime.ID, targetInternalTenant.ID, targetInternalTenant.ID); err != nil {
+		return errors.Wrapf(err, "while updating tenant ID of runtime with label key-value match %s-%s",
+			s.movedRuntimeLabelKey, mapping.LabelValue)
+	}
+	return nil
 }
