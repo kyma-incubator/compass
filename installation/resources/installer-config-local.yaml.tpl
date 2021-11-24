@@ -61,7 +61,6 @@ data:
   operations-controller.http.client.skipSSLValidation: "true"
   global.systemFetcher.http.client.skipSSLValidation: "true"
   global.ordAggregator.http.client.skipSSLValidation: "true"
-  global.metrics.enabled: "false"
   global.http.client.skipSSLValidation: "true"
 
   global.tenantFetchers.account-fetcher.enabled: "true"
