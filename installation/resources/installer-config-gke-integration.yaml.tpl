@@ -33,6 +33,7 @@ data:
   operations-controller.http.client.skipSSLValidation: "true"
   global.systemFetcher.http.client.skipSSLValidation: "true"
   global.ordAggregator.http.client.skipSSLValidation: "true"
+  global.http.client.skipSSLValidation: "true"
 
   global.tenantFetchers.account-fetcher.enabled: "true"
   global.tenantFetchers.account-fetcher.dbPool.maxOpenConnections: "1"
@@ -71,8 +72,6 @@ data:
   global.tenantFetchers.account-fetcher.endpoints.accountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-create"
   global.tenantFetchers.account-fetcher.endpoints.accountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-delete"
   global.tenantFetchers.account-fetcher.endpoints.accountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-update"
-  global.metrics.enabled: "false"
-  global.http.client.skipSSLValidation: "true"
 
   global.tenantFetchers.subaccount-fetcher.enabled: "true"
   global.tenantFetchers.subaccount-fetcher.dbPool.maxOpenConnections: "1"
