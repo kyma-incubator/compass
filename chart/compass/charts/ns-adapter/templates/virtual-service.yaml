@@ -11,14 +11,15 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   hosts:
-    - director.{{ .Values.global.ingress.domainName }}
+    - compass-ns-adapter.{{ .Values.global.ingress.domainName }}
   gateways:
     - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
   http:
     - match:
         - uri:
-            exact: /healthz
+            exact: /nsadapter/api/v1/chinked
       route:
         - destination:
             port:
-              number: {{ .Values.deployment.external.port }}
+              number: {{ .Values.global.gateway.port }}
+            host: {{ .Values.global.gateway.tls.host }}

@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
+    reqlimit: big
     release: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.deployment.minReplicas }}
@@ -13,7 +14,7 @@ spec:
       app: {{ .Chart.Name }}
       release: {{ .Release.Name }}
   strategy:
-  {{- toYaml .Values.deployment.strategy | nindent 4 }}
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:
     metadata:
       annotations:
@@ -28,41 +29,37 @@ spec:
         {{ end }}
         {{ if .Values.deployment.resourcesIstioProxy.limits.memory }}
         sidecar.istio.io/proxyMemoryLimit: {{ .Values.deployment.resourcesIstioProxy.limits.memory }}
-      {{ end }}
+        {{ end }}
       labels:
         app: {{ .Chart.Name }}
+        reqlimit: big
         release: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
-      {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+        {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.director.dir }}compass-director:{{ .Values.global.images.director.version }}
+          image: customimage:latest
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           command:
             - "/bin/sh"
           args:
-            - "-c"
-            - "./ns-adapter; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+              - "-c"
+              - "./ns-adapter; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
           ports:
             - name: http
               containerPort: {{ .Values.deployment.external.port }}
               protocol: TCP
-            - name: metrics
-              containerPort: {{ .Values.global.metrics.port }}
-              protocol: TCP
           resources:
-          {{- toYaml .Values.deployment.resources | nindent 12 }}
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
-          {{ toYaml . | indent 12 }}
+{{ toYaml . | indent 12 }}
           {{- end }}
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.external.port }}"
-           # - name: APP_PORT
-           #   value: "{{ .Values.deployment.port }}"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -109,28 +106,16 @@ spec:
                   name: {{ .Values.global.expectedSchemaVersionUpdateJob.cm.name }}
                   key: schemaVersion
             - name: APP_SYSTEM_TO_TEMPLATE_MAPPINGS
-              value: {{ .Values.deployment.systemToTemplateMappings}}
-
+              value: {{ .Values.deployment.systemToTemplateMappings | quote }}
           livenessProbe:
             httpGet:
-              port: {{ .Values.global.director.graphql.external.port }}
-              path: "/livez"
+              port: {{ .Values.deployment.external.port }}
+              path: "/healthz"
             initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
-          #readinessProbe:
-          #  httpGet:
-          #    port: {{ .Values.global.director.graphql.external.port }}
-          #    path: "/readyz"
-          #  initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
-          #  timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-          #  periodSeconds: {{.Values.readinessProbe.periodSeconds }}
           volumeMounts:
-            - mountPath: /config
-              name: director-config
-
-
-            {{if eq .Values.global.database.embedded.enabled false}}
+        {{if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
@@ -148,9 +133,9 @@ spec:
               readOnly: true
           {{- with .Values.deployment.securityContext }}
           securityContext:
-          {{ toYaml . | indent 12 }}
+{{ toYaml . | indent 12 }}
           {{- end }}
-      {{end}}
+          {{end}}
       volumes:
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-instance-credentials
