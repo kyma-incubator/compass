@@ -79,7 +79,7 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2105"
+      version: "PR-2102"
     gateway:
       dir:
       version: "PR-2077"
@@ -102,13 +102,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2067"
+      version: "PR-2102"
     console:
       dir:
       version: "PR-47"
     e2e_tests:
       dir:
-      version: "PR-2105"
+      version: "PR-2102"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -326,7 +326,7 @@ global:
     timeout_ms: 120000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read","tenant":"{\"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\",\"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:write label_definition:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -509,6 +509,7 @@ global:
       manageSecrets: true
       providerName: "compass"
       schedule: "*/5 * * * *"
+      tenantInsertChunkSize: "500"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: 2s
@@ -612,6 +613,10 @@ global:
       name: "compass-director-migrations"
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
+
+  http:
+    client:
+      skipSSLValidation: false
 
 pairing-adapter:
   enabled: false

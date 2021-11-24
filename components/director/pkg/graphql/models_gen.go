@@ -271,7 +271,7 @@ type BundleInstanceAuthStatusInput struct {
 	// - CredentialsNotProvided
 	// - PendingDeletion
 	//
-	//    **Validation**: required, if condition is FAILED
+	// **Validation**: required, if condition is FAILED
 	Reason string `json:"reason"`
 }
 
@@ -291,6 +291,16 @@ type BundleUpdateInput struct {
 	InstanceAuthRequestInputSchema *JSONSchema `json:"instanceAuthRequestInputSchema"`
 	// While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
 	DefaultInstanceAuth *AuthInput `json:"defaultInstanceAuth"`
+}
+
+type BusinessTenantMappingInput struct {
+	Name           string  `json:"name"`
+	ExternalTenant string  `json:"externalTenant"`
+	Parent         *string `json:"parent"`
+	Subdomain      *string `json:"subdomain"`
+	Region         *string `json:"region"`
+	Type           string  `json:"type"`
+	Provider       string  `json:"provider"`
 }
 
 type CSRFTokenCredentialRequestAuth struct {
