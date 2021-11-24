@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -53,7 +52,7 @@ func main() {
 	signal.HandleInterrupts(ctx, cancel, term)
 
 	conf := adapter.Configuration{}
-	err := envconfig.Init(&conf)
+	err := envconfig.InitWithPrefix(&conf, "APP")
 	exitOnError(err, "while reading Pairing Adapter configuration")
 
 	transact, closeFunc, err := persistence.Configure(ctx, conf.Database)
@@ -145,7 +144,7 @@ func main() {
 	validation.ErrNotNilRequired = validation.ErrNotNilRequired.SetMessage("the value can not be nil")
 
 	server := &http.Server{
-		Addr:              fmt.Sprintf(":%s", conf.Port),
+		Addr:              conf.Address,
 		Handler:           router,
 		ReadHeaderTimeout: conf.ServerTimeout,
 	}
