@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
+    reqlimit: big
     release: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.deployment.minReplicas }}
@@ -18,13 +19,14 @@ spec:
     metadata:
       labels:
         app: {{ .Chart.Name }}
+        reqlimit: big
         release: {{ .Release.Name }}
     spec:
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.gateway.dir }}compass-gateway:{{ .Values.global.images.gateway.version }}
+          image: gateway:latest
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
@@ -40,6 +42,8 @@ spec:
               value: "0.0.0.0:{{ .Values.global.gateway.port }}"
             - name: APP_DIRECTOR_ORIGIN
               value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
+            - name: APP_NSADAPTER_ORIGIN
+              value: "http://compass-ns-adapter.{{ .Release.Namespace }}.svc.cluster.local:3005"
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_CONNECTOR_ORIGIN

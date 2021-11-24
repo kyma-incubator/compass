@@ -127,6 +127,9 @@ global:
 
   agentPreconfiguration: false
 
+  nsAdapter:
+    prefix: /nsadapter
+
   director:
     host: compass-director.compass-system.svc.cluster.local
     prefix: /director
@@ -235,6 +238,7 @@ global:
     port: 3000
     tls:
       host: compass-gateway
+      adapterHost: compass-ns-adapter
       secure:
         internal:
           host: compass-gateway-internal
