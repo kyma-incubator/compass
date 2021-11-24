@@ -3,6 +3,7 @@ package tenantfetchersvc
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	labelutils "github.com/kyma-incubator/compass/components/director/internal/domain/label"

@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	tenantID = "tenantID"
-	runtimeID = "runtimeID"
+	tenantID        = "tenantID"
+	runtimeID       = "runtimeID"
 	tenantExtID     = "tenant-external-id"
 	tenantSubdomain = "mytenant"
 	tenantRegion    = "myregion"
@@ -58,7 +58,6 @@ var (
 
 	emptyLabelSvcFn = func() *automock.LabelService { return &automock.LabelService{} }
 	emptyUIDSvcFn   = func() *automock.UIDService { return &automock.UIDService{} }
-
 
 	testRuntime = model.Runtime{
 		ID:                runtimeID,

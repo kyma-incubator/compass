@@ -2,11 +2,12 @@ package tenant
 
 import (
 	"context"
+	"log"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/require"
 	"github.com/vrischmann/envconfig"
-	"log"
 )
 
 type TenantStatus string

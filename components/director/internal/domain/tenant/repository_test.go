@@ -3,9 +3,10 @@ package tenant_test
 import (
 	"context"
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"

@@ -12,7 +12,7 @@ import (
 )
 
 func CreateLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
-    output, err := CreateLabelDefinitionWithinTenantError(t, ctx, gqlClient, key, schema, tenantID)
+	output, err := CreateLabelDefinitionWithinTenantError(t, ctx, gqlClient, key, schema, tenantID)
 	require.NoError(t, err)
 
 	return output

@@ -21,9 +21,9 @@ import (
 )
 
 const (
-	tnt         = "tenant"
+	tnt          = "tenant"
 	targetTenant = "targetTenant"
-	externalTnt = "external-tnt"
+	externalTnt  = "external-tnt"
 )
 
 func TestServiceCreateFormation(t *testing.T) {
@@ -394,7 +394,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		Name               string
 		UIDServiceFn       func() *automock.UIDService
 		LabelServiceFn     func() *automock.LabelService
-		TenantServiceFn     func() *automock.TenantService
+		TenantServiceFn    func() *automock.TenantService
 		AsaServiceFN       func() *automock.AutomaticFormationAssignmentService
 		ObjectType         graphql.FormationObjectType
 		InputFormation     model.Formation

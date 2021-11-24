@@ -55,7 +55,7 @@ func TestService_Create(t *testing.T) {
 		Name:        "foo.bar-not",
 		Description: &desc,
 		Labels: map[string]interface{}{
-			model.ScenariosKey:                []interface{}{"DEFAULT"},
+			model.ScenariosKey:                 []interface{}{"DEFAULT"},
 			scenarioassignment.SubaccountIDKey: extSubaccountID,
 		},
 	}
@@ -81,7 +81,7 @@ func TestService_Create(t *testing.T) {
 	}
 
 	parentScenarios := map[string]interface{}{
-		model.ScenariosKey:                 []interface{}{"test"},
+		model.ScenariosKey: []interface{}{"test"},
 	}
 
 	modelInputWithoutLabels := model.RuntimeInput{

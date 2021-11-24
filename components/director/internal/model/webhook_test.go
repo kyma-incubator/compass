@@ -108,11 +108,11 @@ func TestWebhookInput_ToApplicationTemplateWebhook(t *testing.T) {
 				OutputTemplate: &template,
 			},
 			Expected: &model.Webhook{
-				ObjectID: applicationTemplateID,
+				ObjectID:   applicationTemplateID,
 				ObjectType: model.ApplicationTemplateWebhookReference,
-				ID:                    id,
-				Type:                  model.WebhookTypeConfigurationChanged,
-				URL:                   &webhookURL,
+				ID:         id,
+				Type:       model.WebhookTypeConfigurationChanged,
+				URL:        &webhookURL,
 				Auth: &model.Auth{
 					AdditionalHeaders: map[string][]string{
 						"foo": {"foo", "bar"},
@@ -130,9 +130,9 @@ func TestWebhookInput_ToApplicationTemplateWebhook(t *testing.T) {
 			Name:  "Empty",
 			Input: &model.WebhookInput{},
 			Expected: &model.Webhook{
-				ObjectID: applicationTemplateID,
+				ObjectID:   applicationTemplateID,
 				ObjectType: model.ApplicationTemplateWebhookReference,
-				ID:                    id,
+				ID:         id,
 			},
 		},
 	}

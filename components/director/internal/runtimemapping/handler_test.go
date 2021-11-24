@@ -1,12 +1,13 @@
 package runtimemapping
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/stretchr/testify/assert"
 

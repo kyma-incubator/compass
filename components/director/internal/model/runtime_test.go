@@ -52,7 +52,7 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// when
-			result := testCase.Input.ToRuntime(id,creationTimestamp, conditionTimestamp)
+			result := testCase.Input.ToRuntime(id, creationTimestamp, conditionTimestamp)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

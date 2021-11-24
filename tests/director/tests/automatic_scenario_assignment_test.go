@@ -327,7 +327,7 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	defer fixtures.CleanUpAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, tenantID, scenario)
 
 	rtmInput := graphql.RuntimeInput{
-		Name:   "test-name",
+		Name: "test-name",
 	}
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, subaccountID, &rtmInput)
