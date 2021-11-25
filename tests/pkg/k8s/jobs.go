@@ -40,7 +40,11 @@ func CreateJobByCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes
 
 func DeleteJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
 	t.Logf("Deleting test job %s", jobName)
-	err := k8sClient.BatchV1().Jobs(namespace).Delete(ctx, jobName, *metav1.NewDeleteOptions(0))
+
+	var gracePeriod int64 = 0
+	propagationPolicy := metav1.DeletePropagationForeground
+	err := k8sClient.BatchV1().Jobs(namespace).Delete(ctx, jobName, metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod, PropagationPolicy: &propagationPolicy})
+
 	require.NoError(t, err)
 
 	elapsed := time.After(time.Minute * 2)

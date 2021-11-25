@@ -74,7 +74,6 @@ const (
 		"displayName": "%s",
 		"subdomain": "%s",
 		"parentGuid": "%s",
-		"global_subaccount_id": "%s",
 		"sourceGlobalAccountGUID": "%s",
 		"targetGlobalAccountGUID": "%s",
 		"region": "%s"
@@ -181,16 +180,16 @@ func TestMoveSubaccounts(t *testing.T) {
 	assert.NoError(t, err)
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(gaExternalTenantIDs, subaccountExternalTenants...))
 
-	tenant1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, gaExternalTenantIDs[0])
+	subaccount1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[0])
 	assert.NoError(t, err)
-	tenant2, err := fixtures.GetTenantByExternalID(dexGraphQLClient, gaExternalTenantIDs[1])
+	subaccount2, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[1])
 	assert.NoError(t, err)
 
-	runtime1 := registerRuntime(t, ctx, runtimeNames[0], subaccountExternalTenants[0], tenant1.InternalID)
-	runtime2 := registerRuntime(t, ctx, runtimeNames[1], subaccountExternalTenants[1], tenant1.InternalID)
+	runtime1 := registerRuntime(t, ctx, runtimeNames[0], subaccount1.InternalID)
+	runtime2 := registerRuntime(t, ctx, runtimeNames[1], subaccount2.InternalID)
 
-	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, subaccountParent, cfg.MovedRuntimeLabelKey, tenant1.ID, tenant2.ID, subaccountRegion)
-	event2 := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, subaccountParent, cfg.MovedRuntimeLabelKey, tenant1.ID, tenant2.ID, subaccountRegion)
+	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
+	event2 := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
 	setMockTenantEvents(t, []byte(genMockPage(strings.Join([]string{event1, event2}, ","), 2)), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
@@ -202,11 +201,14 @@ func TestMoveSubaccounts(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
 
-	subaccount1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[0])
+	tenant2, err := fixtures.GetTenantByExternalID(dexGraphQLClient, gaExternalTenantIDs[1])
+	assert.NoError(t, err)
+
+	subaccount1, err = fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[0])
 	assert.NoError(t, err)
 	assert.Equal(t, tenant2.InternalID, subaccount1.ParentID)
 
-	subaccount2, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[1])
+	subaccount2, err = fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[1])
 	assert.NoError(t, err)
 	assert.Equal(t, tenant2.InternalID, subaccount2.ParentID)
 
@@ -258,11 +260,11 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	// cleanup global account and subaccounts
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(subaccountExternalTenants, gaExternalTenant))
 
-	deleteEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, subaccountParent, "", "", "", subaccountDeleteSubPath)
+	deleteEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, subaccountParent, "", "", subaccountDeleteSubPath)
 	setMockTenantEvents(t, []byte(genMockPage(deleteEvent, 1)), subaccountDeleteSubPath)
 	defer cleanupMockEvents(t, subaccountDeleteSubPath)
 
-	createEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, subaccountParent, "", "", "", subaccountCreateSubPath)
+	createEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, subaccountParent, "", "", subaccountCreateSubPath)
 	setMockTenantEvents(t, []byte(genMockPage(createEvent, 1)), subaccountCreateSubPath)
 	defer cleanupMockEvents(t, subaccountCreateSubPath)
 
@@ -283,7 +285,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	assert.Equal(t, subaccountNames[1], *subaccount2.Name)
 }
 
-func TestMoveSubaccountsWhenMissing(t *testing.T) {
+func TestMoveMissingSubaccounts(t *testing.T) {
 	ctx := context.TODO()
 
 	gaExternalTenantIDs := []string{"ga1", "ga2"}
@@ -296,7 +298,7 @@ func TestMoveSubaccountsWhenMissing(t *testing.T) {
 
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, []string{subaccountExternalTenant, gaExternalTenantIDs[1]})
 
-	event := genMockSubaccountMoveEvent(subaccountExternalTenant, subaccountName, subaccountSubdomain, subaccountParent, cfg.MovedRuntimeLabelKey, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
+	event := genMockSubaccountMoveEvent(subaccountExternalTenant, subaccountName, subaccountSubdomain, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
 	setMockTenantEvents(t, []byte(genMockPage(event, 1)), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
@@ -323,8 +325,8 @@ func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain string) 
 	return fmt.Sprintf(mockGlobalAccountEventPattern, guid, displayName, customerID, subdomain)
 }
 
-func genMockSubaccountMoveEvent(guid, displayName, subdomain, parentGuid, movedLabelKey, sourceGlobalAccountGuid, targetGlobalAccountGuid, region string) string {
-	return fmt.Sprintf(mockSubaccountEventPattern, guid, displayName, subdomain, parentGuid, movedLabelKey, sourceGlobalAccountGuid, targetGlobalAccountGuid, region)
+func genMockSubaccountMoveEvent(guid, displayName, subdomain, parentGuid, sourceGlobalAccountGuid, targetGlobalAccountGuid, region string) string {
+	return fmt.Sprintf(mockSubaccountEventPattern, guid, displayName, subdomain, parentGuid, sourceGlobalAccountGuid, targetGlobalAccountGuid, region)
 }
 
 func genMockPage(events string, numEvents int) string {
@@ -378,12 +380,11 @@ func cleanupTenants(t require.TestingT, ctx context.Context, gqlClient *gcli.Cli
 	log.D().Info("Successfully cleanup tenants")
 }
 
-func registerRuntime(t require.TestingT, ctx context.Context, runtimeName, externalTenantID, globalAccountInternalID string) graphql.RuntimeExt {
+func registerRuntime(t require.TestingT, ctx context.Context, runtimeName, subaccountInternalID string) graphql.RuntimeExt {
 	input := &graphql.RuntimeInput{
 		Name:   runtimeName,
-		Labels: map[string]interface{}{cfg.MovedRuntimeLabelKey: externalTenantID},
 	}
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorInternalGQLClient, globalAccountInternalID, input)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorInternalGQLClient, subaccountInternalID, input)
 	assert.NoError(t, err)
 	return runtime
 }
