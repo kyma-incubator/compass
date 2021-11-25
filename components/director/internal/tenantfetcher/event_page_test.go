@@ -13,6 +13,12 @@ import (
 )
 
 func Test_getMovedRuntimes(t *testing.T) {
+	idField := "id"
+	entityTypeField := "type"
+	nameField := "name"
+	subdomainField := "subdomain"
+	regionField := "region"
+	parentIDField := "parent"
 	labelFieldMappingValue := "moved-label"
 	sourceTenantField := "source-tenant"
 	targetTenantField := "target-tenant"
@@ -20,10 +26,25 @@ func Test_getMovedRuntimes(t *testing.T) {
 		LabelValue:   "label-value",
 		SourceTenant: "123",
 		TargetTenant: "456",
+		TenantMappingInput: model.BusinessTenantMappingInput{
+			Name:           "subaccount-name",
+			ExternalTenant: "label-value",
+			Parent:         "parent",
+			Subdomain:      "subdomain",
+			Region:         "region",
+			Type:           string(tenant.Subaccount),
+			Provider:       "",
+		},
 	}
 	fieldMapping := TenantFieldMapping{
-		EventsField:  "events",
-		DetailsField: "details",
+		IDField:         idField,
+		NameField:       nameField,
+		SubdomainField:  subdomainField,
+		EntityTypeField: entityTypeField,
+		RegionField:     regionField,
+		ParentIDField:   parentIDField,
+		EventsField:     "events",
+		DetailsField:    "details",
 	}
 	tests := []struct {
 		name               string
@@ -38,6 +59,10 @@ func Test_getMovedRuntimes(t *testing.T) {
 					{labelFieldMappingValue, "label-value"},
 					{sourceTenantField, "123"},
 					{targetTenantField, "456"},
+					{nameField, "subaccount-name"},
+					{subdomainField, "subdomain"},
+					{regionField, "region"},
+					{parentIDField, "parent"},
 				},
 			},
 			assertRuntimesFunc: func(t *testing.T, runtimes []model.MovedRuntimeByLabelMappingInput) {
@@ -102,12 +127,18 @@ func Test_getMovedRuntimes(t *testing.T) {
 				{
 					{labelFieldMappingValue, "label-value"},
 					{sourceTenantField, "123"},
+					{nameField, "name"},
+					{regionField, "region"},
+					{parentIDField, "parent"},
 					{"wrong", "456"},
 				},
 				{
 					{labelFieldMappingValue, "label-value"},
 					{sourceTenantField, "123"},
 					{targetTenantField, "456"},
+					{nameField, "name"},
+					{regionField, "region"},
+					{parentIDField, "parent"},
 				},
 			},
 			errorFunc: func(t *testing.T, err error) {

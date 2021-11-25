@@ -184,3 +184,17 @@ func (_m *RuntimeService) Update(ctx context.Context, id string, in model.Runtim
 
 	return r0
 }
+
+// UpdateTenantID provides a mock function with given fields: ctx, runtimeID, newTenantID
+func (_m *RuntimeService) UpdateTenantID(ctx context.Context, runtimeID string, newTenantID string) error {
+	ret := _m.Called(ctx, runtimeID, newTenantID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, runtimeID, newTenantID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
