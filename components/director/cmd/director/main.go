@@ -8,11 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
-	"github.com/kyma-incubator/compass/components/director/pkg/namespacedname"
-
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/internal/info"
 
@@ -205,13 +202,10 @@ func main() {
 	adminURL, err := url.Parse(cfg.OAuth20.URL)
 	exitOnError(err, "Error while parsing Hydra URL")
 
-	externalClientCertSecret := namespacedname.Parse(cfg.ExternalClientCertSecret)
-	kubeConfig := kubernetes.Config{}
-	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
-	exitOnError(err, "Failed to initialize Kubernetes client.")
-	certsCache := certloader.NewCertificateCache(externalClientCertSecret.Name)
-	certsLoader := certloader.NewCertificatesLoader(certsCache, k8sClientSet.CoreV1().Secrets(externalClientCertSecret.Namespace), externalClientCertSecret.Name, time.Second)
-	go certsLoader.Run(ctx)
+	certCache, err := certloader.StartCertLoader(ctx, cfg.ExternalClientCertSecret)
+	exitOnError(err, "Failed to initialize certificate loader")
+
+	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
 
 	rootResolver := domain.NewRootResolver(
 		&normalizer.DefaultNormalizator{},
@@ -227,6 +221,7 @@ func main() {
 		cfg.SelfRegConfig,
 		cfg.OneTimeToken.Length,
 		adminURL,
+		accessStrategyExecutorProvider,
 	)
 
 	gqlCfg := graphql.Config{
@@ -327,7 +322,7 @@ func main() {
 	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationPath).Subrouter()
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
-	oneTimeTokenService := tokenService(cfg, cfgProvider, httpClient, internalHTTPClient, pairingAdapters)
+	oneTimeTokenService := tokenService(cfg, cfgProvider, httpClient, internalHTTPClient, pairingAdapters, accessStrategyExecutorProvider)
 	hydratorHandler, err := PrepareHydratorHandler(cfg, systemAuthSvc(), transact, oneTimeTokenService, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring hydrator handler")
 
@@ -566,7 +561,7 @@ func webhookService() webhook.WebhookService {
 	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
 }
 
-func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHTTPClient *http.Client, pairingAdapters map[string]string) oathkeeper.OneTimeTokenService {
+func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHTTPClient *http.Client, pairingAdapters map[string]string, accessStrategyExecutorProvider *accessstrategy.Provider) oathkeeper.OneTimeTokenService {
 	uidSvc := uid.NewService()
 	assignmentConv := scenarioassignment.NewConverter()
 	authConverter := auth.NewConverter()
@@ -604,7 +599,7 @@ func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, 
 	apiRepo := api.NewRepository(apiConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider())
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessStrategyExecutorProvider)
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
 	specRepo := spec.NewRepository(specConverter)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)

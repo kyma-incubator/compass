@@ -427,7 +427,6 @@ global:
         clientSecretKey: client-secret
         oauthUrlKey: url
         csrEndpointKey: csr-endpoint
-        policyKey: policy
       externalClientCertSecret:
         name: "external-client-certificate"
         namespace: compass-system
@@ -461,21 +460,6 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    accessStrategies:
-      cmpMtls:
-        certSvcApiPath: "/cert"
-        tokenPath: "/secured/oauth/token"
-        issuerLocality: "local"
-        retryAttempts: "8"
-        retryDelay: "250ms"
-        secret:
-          name: cert-svc-secret
-          manage: true
-          oauthUrlKey: url
-          clientIdKey: client-id
-          clientSecretKey: client-secret
-          csrEndpointKey: csr-endpoint
-          policyKey: policy
 
   systemFetcher:
     enabled: false

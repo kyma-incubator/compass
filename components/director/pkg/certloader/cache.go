@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Cache is used to interact with the cache
+// Cache is used to interact with the cache data
 type Cache interface {
 	Put(secretData map[string][]byte)
 	Get() (*tls.Certificate, error)

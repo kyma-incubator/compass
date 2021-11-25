@@ -4,6 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
+	"github.com/kyma-incubator/compass/components/director/pkg/namespacedname"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,7 +15,7 @@ import (
 
 const certsListLoaderCorrelationID = "certs-list-loader"
 
-// Loader constantly monitor and update in-memory cache with a client certificate
+// Loader provide mechanism to load certificate data into in-memory storage
 type Loader interface {
 	Run(ctx context.Context)
 }
@@ -41,6 +44,22 @@ func NewCertificatesLoader(certsCache Cache, secretManager Manager, secretName s
 	}
 }
 
+// StartCertLoader prepares and run certificate loader goroutine
+func StartCertLoader(ctx context.Context, externalClientCertSecret string) (Cache, error) {
+	parsedCertSecret := namespacedname.Parse(externalClientCertSecret)
+	kubeConfig := kubernetes.Config{}
+	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
+	if err != nil {
+		return nil, err
+	}
+	certCache := NewCertificateCache(parsedCertSecret.Name)
+	certLoader := NewCertificatesLoader(certCache, k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace), parsedCertSecret.Name, time.Second)
+	go certLoader.Run(ctx)
+
+	return certCache, nil
+}
+
+// Run uses kubernetes watch mechanism to listen for resource changes and update certificate cache
 func (cl *certificatesLoader) Run(ctx context.Context) {
 	entry := log.C(ctx)
 	entry = entry.WithField(log.FieldRequestID, certsListLoaderCorrelationID)

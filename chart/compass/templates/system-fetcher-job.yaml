@@ -127,6 +127,8 @@ spec:
                   value: "{{ .Values.global.systemFetcher.dbPool.maxIdleConnections }}"
                 - name: APP_CONFIGURATION_FILE
                   value: /config/config.yaml
+                - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
               command:
                 - "/bin/sh"
               args:

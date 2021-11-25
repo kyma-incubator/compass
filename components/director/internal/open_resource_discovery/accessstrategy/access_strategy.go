@@ -1,7 +1,6 @@
 package accessstrategy
 
 import (
-	"context"
 	"net/http"
 	"regexp"
 
@@ -10,39 +9,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-var supportedAccessStrategies = map[Type]Executor{
-	OpenAccessStrategy:    &openAccessStrategyExecutor{},
-	CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(),
+var supportedAccessStrategies = map[Type]bool{
+	OpenAccessStrategy:    true,
+	CMPmTLSAccessStrategy: true,
 }
 
 // UnsupportedErr is an error produced when execution of unsupported access strategy takes place.
 var UnsupportedErr = errors.New("unsupported access strategy")
-
-// AccessStrategy is an ORD object
-type AccessStrategy struct {
-	Type              Type   `json:"type"`
-	CustomType        Type   `json:"customType"`
-	CustomDescription string `json:"customDescription"`
-}
-
-// Validate validates a given access strategy
-func (as AccessStrategy) Validate() error {
-	const CustomTypeRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
-	return validation.ValidateStruct(&as,
-		validation.Field(&as.Type, validation.Required, validation.In(OpenAccessStrategy, CMPmTLSAccessStrategy, CustomAccessStrategy), validation.When(as.CustomType != "", validation.In(CustomAccessStrategy))),
-		validation.Field(&as.CustomType, validation.When(as.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
-		validation.Field(&as.CustomDescription, validation.When(as.Type != "custom", validation.Empty)),
-	)
-}
-
-// Type represents the possible type of the AccessStrategy
-type Type string
-
-// IsSupported checks if the given AccessStrategy is supported by CMP
-func (a Type) IsSupported() bool {
-	_, ok := supportedAccessStrategies[a]
-	return ok
-}
 
 const (
 	// OpenAccessStrategy is an AccessStrategyType indicating that the ORD document is not secured
@@ -58,27 +31,47 @@ const (
 // AccessStrategies is a slice of AccessStrategy objects
 type AccessStrategies []AccessStrategy
 
+// AccessStrategy is an ORD object
+type AccessStrategy struct {
+	Type              Type   `json:"type"`
+	CustomType        Type   `json:"customType"`
+	CustomDescription string `json:"customDescription"`
+}
+
+// Type represents the possible type of the AccessStrategy
+type Type string
+
+// Validate validates a given access strategy
+func (as AccessStrategy) Validate() error {
+	const CustomTypeRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	return validation.ValidateStruct(&as,
+		validation.Field(&as.Type, validation.Required, validation.In(OpenAccessStrategy, CMPmTLSAccessStrategy, CustomAccessStrategy), validation.When(as.CustomType != "", validation.In(CustomAccessStrategy))),
+		validation.Field(&as.CustomType, validation.When(as.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
+		validation.Field(&as.CustomDescription, validation.When(as.Type != "custom", validation.Empty)),
+	)
+}
+
 // GetSupported returns the first AccessStrategy in the slice that is supported by CMP
 func (as AccessStrategies) GetSupported() (Type, bool) {
 	for _, v := range as {
-		if v.Type.IsSupported() {
+		if v.Type.isSupported() {
 			return v.Type, true
 		}
-		if v.Type == CustomAccessStrategy && v.CustomType.IsSupported() {
+		if v.Type == CustomAccessStrategy && v.CustomType.isSupported() {
 			return v.CustomType, true
 		}
 	}
 	return "", false
 }
 
+// IsSupported checks if the given AccessStrategy is supported by CMP
+func (a Type) isSupported() bool {
+	_, ok := supportedAccessStrategies[a]
+	return ok
+}
+
 // Executor defines an interface for execution of different access strategies
 //go:generate mockery --name=Executor --output=automock --outpkg=automock --case=underscore
 type Executor interface {
-	Execute(ctx context.Context, client *http.Client, url string) (*http.Response, error)
-}
-
-// ExecutorProvider defines an interface for access strategy executor provider
-//go:generate mockery --name=ExecutorProvider --output=automock --outpkg=automock --case=underscore
-type ExecutorProvider interface {
-	Provide(accessStrategyType Type) (Executor, error)
+	Execute(client *http.Client, url string) (*http.Response, error)
 }

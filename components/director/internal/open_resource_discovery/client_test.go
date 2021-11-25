@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
@@ -177,7 +179,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				require.NoError(t, err)
 
 				executor := &automock.Executor{}
-				executor.On("Execute", mock.Anything, mock.Anything, baseURL+ord.WellKnownEndpoint).Return(&http.Response{
+				executor.On("Execute", mock.Anything, baseURL+ord.WellKnownEndpoint).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
 				}, nil).Once()
@@ -209,7 +211,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			Name: "Well-known config fetch with access strategy fails when access strategy executor returns error",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &automock.Executor{}
-				executor.On("Execute", mock.Anything, mock.Anything, baseURL+ord.WellKnownEndpoint).Return(nil, testErr).Once()
+				executor.On("Execute", mock.Anything, baseURL+ord.WellKnownEndpoint).Return(nil, testErr).Once()
 
 				executorProvider := &automock.ExecutorProvider{}
 				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
@@ -361,7 +363,8 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
-			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider()
+			certCache := certloader.NewCertificateCache("")
+			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache)
 			if test.ExecutorProviderFunc != nil {
 				executorProviderMock = test.ExecutorProviderFunc()
 			}

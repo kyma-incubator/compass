@@ -76,47 +76,8 @@ spec:
                 {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
                 - name: APP_METRICS_PUSH_ENDPOINT
                   value: {{ $.Values.global.metrics.pushEndpoint}}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_SUBJECT_PATTERN
-                  value: {{ $.Values.global.mtlsClient.subjectPattern }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_COMMON_NAME
-                  value: {{ $.Values.global.mtlsClient.commonName }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_LOCALITY
-                  value: {{ $.Values.global.mtlsClient.locality }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_POLICY
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.policyKey }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CSR_ENDPOINT
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.csrEndpointKey }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CLIENT_ID
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.clientIdKey }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CLIENT_SECRET
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.clientSecretKey }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_OAUTHURL
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.oauthUrlKey }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_TOKEN_PATH
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.tokenPath }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CERT_SVC_API_PATH
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.certSvcApiPath }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_ISSUER_LOCALITY
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.issuerLocality }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_RETRY_ATTEMPTS
-                  value: "{{ .Values.global.ordAggregator.accessStrategies.cmpMtls.retryAttempts }}"
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_RETRY_DELAY
-                  value: "{{ .Values.global.ordAggregator.accessStrategies.cmpMtls.retryDelay }}"
+                - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
               {{ end }}
               command:
                 - "/bin/sh"
