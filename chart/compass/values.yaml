@@ -433,7 +433,7 @@ global:
         namespace: compass-system
     rotationCronjob:
       name: "external-certificate-rotation"
-      schedule: "*/2 * * * *" # Executes on every two minutes
+      schedule: "*/1 * * * *" # Executes every minute
       certValidity: "7"
       clientCertRetryAttempts: "8"
 
