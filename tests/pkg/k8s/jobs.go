@@ -65,6 +65,14 @@ func DeleteJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientse
 }
 
 func WaitForJobToSucceed(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
+	WaitForJob(t, ctx, k8sClient, jobName, namespace, false)
+}
+
+func WaitForJobToFail(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
+	WaitForJob(t, ctx, k8sClient, jobName, namespace, true)
+}
+
+func WaitForJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string, shouldFail bool) {
 	elapsed := time.After(time.Minute * 15)
 	for {
 		select {
@@ -76,10 +84,18 @@ func WaitForJobToSucceed(t *testing.T, ctx context.Context, k8sClient *kubernete
 		job, err := k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
 		require.NoError(t, err)
 		if job.Status.Failed > 0 {
-			t.Fatalf("Job %s has failed. Exiting...", jobName)
+			if !shouldFail {
+				t.Fatalf("Job %s has failed while expecting to succeed. Exiting...", jobName)
+			} else {
+				break
+			}
 		}
 		if job.Status.Succeeded > 0 {
-			break
+			if shouldFail {
+				t.Fatalf("Job %s has succeeded while expecting to fail. Exiting...", jobName)
+			} else {
+				break
+			}
 		}
 		time.Sleep(time.Second * 2)
 	}

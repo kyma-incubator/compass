@@ -36,6 +36,8 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	tnt "github.com/kyma-incubator/compass/tests/pkg/tenant"
 )
 
 const (
@@ -217,6 +219,91 @@ func TestMoveSubaccounts(t *testing.T) {
 
 	rtm2 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.InternalID, runtime2.ID)
 	assert.Equal(t, runtime2.Name, rtm2.Name)
+}
+
+func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) {
+	ctx := context.TODO()
+
+	gaExternalTenantIDs := []string{"ga2"}
+	gaNames := []string{"ga2"}
+	subdomains := []string{"ga1"}
+
+	subaccountNames := []string{"sub1"}
+	subaccountExternalTenants := []string{"sub1"}
+	subaccountRegion := "test"
+	subaccountSubdomain := "sub1"
+
+	region := "local"
+	provider := "test"
+
+	runtimeNames := []string{"runtime1"}
+
+	defaultTenantID := tnt.TestTenants.GetDefaultTenantID()
+	defaultTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, defaultTenantID)
+	assert.NoError(t, err)
+
+	tenants := []graphql.BusinessTenantMappingInput{
+		{
+			Name:           gaNames[0],
+			ExternalTenant: gaExternalTenantIDs[0],
+			Parent:         nil,
+			Subdomain:      &subdomains[0],
+			Region:         &region,
+			Type:           string(tenant.Account),
+			Provider:       provider,
+		},
+		{
+			Name:           subaccountNames[0],
+			ExternalTenant: subaccountExternalTenants[0],
+			Parent:         &defaultTenant.InternalID,
+			Subdomain:      &subaccountSubdomain,
+			Region:         &subaccountRegion,
+			Type:           string(tenant.Subaccount),
+			Provider:       provider,
+		},
+	}
+
+	err = fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
+	assert.NoError(t, err)
+	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(gaExternalTenantIDs, subaccountExternalTenants...))
+
+	subaccount1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[0])
+	assert.NoError(t, err)
+
+	runtime1 := registerRuntime(t, ctx, runtimeNames[0], subaccount1.InternalID)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, defaultTenantID, &runtime1)
+
+	// Add the subaccount to formation
+	scenarioName := "testMoveSubaccountScenario"
+
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantID, []string{"DEFAULT", scenarioName})
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantID, []string{"DEFAULT"})
+
+	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarioName, "global_subaccount_id", subaccountExternalTenants[0])
+	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, defaultTenantID)
+	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, defaultTenantID, scenarioName)
+
+	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
+	setMockTenantEvents(t, []byte(genMockPage(strings.Join([]string{event1}, ","), 1)), subaccountMoveSubPath)
+	defer cleanupMockEvents(t, subaccountMoveSubPath)
+
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	assert.NoError(t, err)
+
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
+	defer k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
+
+	k8s.WaitForJobToFail(t, ctx, k8sClient, subaccountsJobName, namespace)
+
+	tenant1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, defaultTenantID)
+	assert.NoError(t, err)
+
+	subaccount1, err = fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[0])
+	assert.NoError(t, err)
+	assert.Equal(t, tenant1.InternalID, subaccount1.ParentID)
+
+	rtm1 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant1.InternalID, runtime1.ID)
+	assert.Equal(t, runtime1.Name, rtm1.Name)
 }
 
 func TestCreateDeleteSubaccounts(t *testing.T) {
