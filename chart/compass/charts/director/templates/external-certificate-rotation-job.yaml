@@ -26,7 +26,7 @@ spec:
                 - "{{ .Values.global.externalServicesMock.host }}.{{ .Values.global.ingress.domainName }}"
           {{ end }}
           serviceAccountName:
-            {{ $.Chart.Name }}- {{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+            {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
           restartPolicy: Never
           containers:
             - name: certificate-rotation
@@ -167,7 +167,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name:
-    {{ $.Chart.Name }}- {{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+    {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -182,7 +182,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name:
-    {{ $.Chart.Name }}- {{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+    {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -214,10 +214,10 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name:
-      {{ $.Chart.Name }}- {{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+      {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: Role
   name:
-    {{ $.Chart.Name }}- {{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+    {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
   apiGroup: rbac.authorization.k8s.io
