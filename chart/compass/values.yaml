@@ -547,8 +547,8 @@ global:
         entityTypeField: "entityType"
         parentIDField: "parentGuid"
         regionField: "region"
-        movedRuntimeByLabelTargetField: "targetGlobalAccountGUID"
-        movedRuntimeByLabelSourceField: "sourceGlobalAccountGUID"
+        movedSubaccountTargetField: "targetGlobalAccountGUID"
+        movedSubaccountSourceField: "sourceGlobalAccountGUID"
       queryMapping:
         pageNumField: "pageNum"
         pageSizeField: "pageSize"

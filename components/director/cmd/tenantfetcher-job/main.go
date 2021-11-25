@@ -30,13 +30,13 @@ import (
 )
 
 type config struct {
-	Database                        persistence.DatabaseConfig
-	KubernetesConfig                tenantfetcher.KubeConfig
-	OAuthConfig                     tenantfetcher.OAuth2Config
-	APIConfig                       tenantfetcher.APIConfig
-	QueryConfig                     tenantfetcher.QueryConfig
-	TenantFieldMapping              tenantfetcher.TenantFieldMapping
-	MovedRuntimeByLabelFieldMapping tenantfetcher.MovedRuntimeByLabelFieldMapping
+	Database                    persistence.DatabaseConfig
+	KubernetesConfig            tenantfetcher.KubeConfig
+	OAuthConfig                 tenantfetcher.OAuth2Config
+	APIConfig                   tenantfetcher.APIConfig
+	QueryConfig                 tenantfetcher.QueryConfig
+	TenantFieldMapping          tenantfetcher.TenantFieldMapping
+	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
 
 	Log      log.Config
 	Features features.Config
@@ -135,7 +135,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
 	if cfg.ShouldSyncSubaccounts {
-		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelRepository, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv)
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedSubaccountFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelRepository, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv)
 	}
 	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv)
 }

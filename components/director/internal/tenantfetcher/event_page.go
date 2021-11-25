@@ -15,10 +15,10 @@ import (
 const GlobalAccountRegex = "^GLOBALACCOUNT_.*|GlobalAccount"
 
 type eventsPage struct {
-	fieldMapping                    TenantFieldMapping
-	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
-	providerName                    string
-	payload                         []byte
+	fieldMapping                 TenantFieldMapping
+	movedSubaccountsFieldMapping MovedSubaccountsFieldMapping
+	providerName                 string
+	payload                      []byte
 }
 
 func (ep eventsPage) getEventsDetails() [][]byte {
@@ -92,19 +92,19 @@ func (ep eventsPage) eventDataToMovedSubaccount(eventData []byte) (*model.MovedS
 		return nil, errors.Errorf("invalid json payload")
 	}
 
-	id, ok := gjson.GetBytes(eventData, ep.movedRuntimeByLabelFieldMapping.LabelValue).Value().(string)
+	id, ok := gjson.GetBytes(eventData, ep.movedSubaccountsFieldMapping.LabelValue).Value().(string)
 	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", ep.movedRuntimeByLabelFieldMapping.LabelValue)
+		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountsFieldMapping.LabelValue)
 	}
 
-	source, ok := gjson.GetBytes(eventData, ep.movedRuntimeByLabelFieldMapping.SourceTenant).Value().(string)
+	source, ok := gjson.GetBytes(eventData, ep.movedSubaccountsFieldMapping.SourceTenant).Value().(string)
 	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", ep.movedRuntimeByLabelFieldMapping.SourceTenant)
+		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountsFieldMapping.SourceTenant)
 	}
 
-	target, ok := gjson.GetBytes(eventData, ep.movedRuntimeByLabelFieldMapping.TargetTenant).Value().(string)
+	target, ok := gjson.GetBytes(eventData, ep.movedSubaccountsFieldMapping.TargetTenant).Value().(string)
 	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", ep.movedRuntimeByLabelFieldMapping.TargetTenant)
+		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountsFieldMapping.TargetTenant)
 	}
 
 	nameResult := gjson.Get(jsonPayload, ep.fieldMapping.NameField)

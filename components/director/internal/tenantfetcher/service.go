@@ -48,11 +48,11 @@ type TenantFieldMapping struct {
 	ParentIDField   string `envconfig:"APP_MAPPING_FIELD_PARENT_ID"`
 }
 
-// MovedRuntimeByLabelFieldMapping missing godoc
-type MovedRuntimeByLabelFieldMapping struct {
+// MovedSubaccountsFieldMapping missing godoc
+type MovedSubaccountsFieldMapping struct {
 	LabelValue   string `envconfig:"APP_MAPPING_FIELD_ID"`
-	SourceTenant string `envconfig:"APP_MOVED_RUNTIME_BY_LABEL_SOURCE_TENANT_FIELD"`
-	TargetTenant string `envconfig:"APP_MOVED_RUNTIME_BY_LABEL_TARGET_TENANT_FIELD"`
+	SourceTenant string `envconfig:"APP_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD"`
+	TargetTenant string `envconfig:"APP_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD"`
 }
 
 // QueryConfig contains the name of query parameters fields and default/start values
@@ -149,23 +149,23 @@ type GlobalAccountService struct {
 
 // SubaccountService missing godoc
 type SubaccountService struct {
-	queryConfig                     QueryConfig
-	transact                        persistence.Transactioner
-	kubeClient                      KubeClient
-	eventAPIClient                  EventAPIClient
-	tenantStorageService            TenantStorageService
-	runtimeStorageService           RuntimeService
-	providerName                    string
-	tenantsRegions                  []string
-	fieldMapping                    TenantFieldMapping
-	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
-	labelRepo                       LabelRepo
-	retryAttempts                   uint
-	fullResyncInterval              time.Duration
-	toEventsPage                    func([]byte) *eventsPage
-	gqlClient                       DirectorGraphQLClient
-	tenantInsertChunkSize           int
-	tenantConverter                 TenantConverter
+	queryConfig                  QueryConfig
+	transact                     persistence.Transactioner
+	kubeClient                   KubeClient
+	eventAPIClient               EventAPIClient
+	tenantStorageService         TenantStorageService
+	runtimeStorageService        RuntimeService
+	providerName                 string
+	tenantsRegions               []string
+	fieldMapping                 TenantFieldMapping
+	movedSubaccountsFieldMapping MovedSubaccountsFieldMapping
+	labelRepo                    LabelRepo
+	retryAttempts                uint
+	fullResyncInterval           time.Duration
+	toEventsPage                 func([]byte) *eventsPage
+	gqlClient                    DirectorGraphQLClient
+	tenantInsertChunkSize        int
+	tenantConverter              TenantConverter
 }
 
 // NewGlobalAccountService missing godoc
@@ -208,7 +208,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 	transact persistence.Transactioner,
 	kubeClient KubeClient,
 	fieldMapping TenantFieldMapping,
-	movRuntime MovedRuntimeByLabelFieldMapping,
+	movRuntime MovedSubaccountsFieldMapping,
 	providerName string,
 	regionNames []string,
 	client EventAPIClient,
@@ -220,25 +220,25 @@ func NewSubaccountService(queryConfig QueryConfig,
 	tenantInsertChunkSize int,
 	tenantConverter TenantConverter) *SubaccountService {
 	return &SubaccountService{
-		transact:                        transact,
-		kubeClient:                      kubeClient,
-		fieldMapping:                    fieldMapping,
-		providerName:                    providerName,
-		tenantsRegions:                  regionNames,
-		eventAPIClient:                  client,
-		tenantStorageService:            tenantStorageService,
-		runtimeStorageService:           runtimeStorageService,
-		queryConfig:                     queryConfig,
-		movedRuntimeByLabelFieldMapping: movRuntime,
-		retryAttempts:                   retryAttempts,
-		labelRepo:                       labelRepo,
-		fullResyncInterval:              fullResyncInterval,
+		transact:                     transact,
+		kubeClient:                   kubeClient,
+		fieldMapping:                 fieldMapping,
+		providerName:                 providerName,
+		tenantsRegions:               regionNames,
+		eventAPIClient:               client,
+		tenantStorageService:         tenantStorageService,
+		runtimeStorageService:        runtimeStorageService,
+		queryConfig:                  queryConfig,
+		movedSubaccountsFieldMapping: movRuntime,
+		retryAttempts:                retryAttempts,
+		labelRepo:                    labelRepo,
+		fullResyncInterval:           fullResyncInterval,
 		toEventsPage: func(bytes []byte) *eventsPage {
 			return &eventsPage{
-				fieldMapping:                    fieldMapping,
-				movedRuntimeByLabelFieldMapping: movRuntime,
-				payload:                         bytes,
-				providerName:                    providerName,
+				fieldMapping:                 fieldMapping,
+				movedSubaccountsFieldMapping: movRuntime,
+				payload:                      bytes,
+				providerName:                 providerName,
 			}
 		},
 		gqlClient:             gqlClient,

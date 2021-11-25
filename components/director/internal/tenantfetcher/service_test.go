@@ -2213,7 +2213,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				EntityTypeField:    "type",
 				ParentIDField:      "parentId",
 				RegionField:        "region",
-			}, tenantfetcher.MovedRuntimeByLabelFieldMapping{
+			}, tenantfetcher.MovedSubaccountsFieldMapping{
 				LabelValue:   "id",
 				SourceTenant: "source_tenant",
 				TargetTenant: "target_tenant",
@@ -2279,7 +2279,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			EntityTypeField:    "type",
 			ParentIDField:      "parentId",
 			RegionField:        "region",
-		}, tenantfetcher.MovedRuntimeByLabelFieldMapping{
+		}, tenantfetcher.MovedSubaccountsFieldMapping{
 			LabelValue:   "id",
 			SourceTenant: "source_tenant",
 			TargetTenant: "target_tenant",

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_getMovedRuntimes(t *testing.T) {
+func Test_getMovedSubaccounts(t *testing.T) {
 	idField := "id"
 	entityTypeField := "type"
 	nameField := "name"
@@ -53,7 +53,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 		assertRuntimesFunc func(*testing.T, []model.MovedSubaccountMappingInput)
 	}{
 		{
-			name: "successfully gets MovedRuntimeByLabelMappingInputs for correct eventPage format",
+			name: "successfully gets MovedSubaccountsMappingInputs for correct eventPage format",
 			detailsPairs: [][]Pair{
 				{
 					{labelFieldMappingValue, "label-value"},
@@ -158,7 +158,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 			}
 			page := eventsPage{
 				fieldMapping: fieldMapping,
-				movedRuntimeByLabelFieldMapping: MovedRuntimeByLabelFieldMapping{
+				movedSubaccountsFieldMapping: MovedSubaccountsFieldMapping{
 					LabelValue:   labelFieldMappingValue,
 					SourceTenant: sourceTenantField,
 					TargetTenant: targetTenantField,
