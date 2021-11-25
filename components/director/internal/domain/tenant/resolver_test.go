@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -66,23 +68,14 @@ func TestResolver_Tenants(t *testing.T) {
 				TenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, testError).Once()
 				return TenantSvc
 			},
-			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
-				TenantConv := &automock.BusinessTenantMappingConverter{}
-				return TenantConv
-			},
+			TenantConvFn:  unusedTenantConverter,
 			ExpectedError: testError,
 		},
 		{
-			Name: "Returns error when failing on begin",
-			TxFn: txGen.ThatFailsOnBegin,
-			TenantSvcFn: func() *automock.BusinessTenantMappingService {
-				TenantSvc := &automock.BusinessTenantMappingService{}
-				return TenantSvc
-			},
-			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
-				TenantConv := &automock.BusinessTenantMappingConverter{}
-				return TenantConv
-			},
+			Name:          "Returns error when failing on begin",
+			TxFn:          txGen.ThatFailsOnBegin,
+			TenantSvcFn:   unusedTenantService,
+			TenantConvFn:  unusedTenantConverter,
 			ExpectedError: testError,
 		},
 		{
@@ -93,10 +86,7 @@ func TestResolver_Tenants(t *testing.T) {
 				TenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(modelTenants, nil).Once()
 				return TenantSvc
 			},
-			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
-				TenantConv := &automock.BusinessTenantMappingConverter{}
-				return TenantConv
-			},
+			TenantConvFn:  unusedTenantConverter,
 			ExpectedError: testError,
 		},
 	}
@@ -125,6 +115,127 @@ func TestResolver_Tenants(t *testing.T) {
 	}
 }
 
+func TestResolver_Tenant(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	tenantParent := ""
+	tenantInternalID := "internal"
+
+	expectedTenantsModel := []*model.BusinessTenantMapping{
+		{
+			ID:             testExternal,
+			Name:           testName,
+			ExternalTenant: testExternal,
+			Parent:         tenantParent,
+			Type:           tnt.Account,
+			Provider:       testProvider,
+			Status:         tnt.Active,
+			Initialized:    nil,
+		},
+	}
+
+	expectedTenantsGQL := []*graphql.Tenant{
+		{
+			ID:          testExternal,
+			InternalID:  tenantInternalID,
+			Name:        str.Ptr(testName),
+			Type:        string(tnt.Account),
+			ParentID:    tenantParent,
+			Initialized: nil,
+			Labels:      nil,
+		},
+	}
+
+	testCases := []struct {
+		Name           string
+		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TenantSvcFn    func() *automock.BusinessTenantMappingService
+		TenantConvFn   func() *automock.BusinessTenantMappingConverter
+		TenantInput    graphql.BusinessTenantMappingInput
+		IDInput        string
+		ExpectedError  error
+		ExpectedResult *graphql.Tenant
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), testExternal).Return(expectedTenantsModel[0], nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("MultipleToGraphQL", expectedTenantsModel).Return(expectedTenantsGQL)
+				return conv
+			},
+			IDInput:        testExternal,
+			ExpectedError:  nil,
+			ExpectedResult: expectedTenantsGQL[0],
+		},
+		{
+			Name:           "That returns error when can not start transaction",
+			TxFn:           txGen.ThatFailsOnBegin,
+			TenantSvcFn:    unusedTenantService,
+			TenantConvFn:   unusedTenantConverter,
+			IDInput:        testExternal,
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name: "That returns error when can not get tenant by external ID",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), testExternal).Return(nil, testError).Once()
+				return TenantSvc
+			},
+			TenantConvFn:   unusedTenantConverter,
+			IDInput:        testExternal,
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name: "That returns error when cannot commit",
+			TxFn: txGen.ThatFailsOnCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), testExternal).Return(expectedTenantsModel[0], nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn:   unusedTenantConverter,
+			IDInput:        testExternal,
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantSvc := testCase.TenantSvcFn()
+			tenantConv := testCase.TenantConvFn()
+			persist, transact := testCase.TxFn()
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+
+			// WHEN
+			result, err := resolver.Tenant(ctx, testCase.IDInput)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, result)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
+		})
+	}
+}
+
 func TestResolver_Labels(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
@@ -147,9 +258,9 @@ func TestResolver_Labels(t *testing.T) {
 	}
 
 	t.Run("Succeeds", func(t *testing.T) {
-		tenantSvc := &automock.BusinessTenantMappingService{}
+		tenantSvc := unusedTenantService()
 		tenantSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testTenant.InternalID).Return(testLabels, nil)
-		tenantConv := &automock.BusinessTenantMappingConverter{}
+		tenantConv := unusedTenantConverter()
 		persist, transact := txGen.ThatSucceeds()
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
@@ -164,9 +275,9 @@ func TestResolver_Labels(t *testing.T) {
 		assert.Equal(t, testLabels[testLabelKey].Value, result[testLabelKey])
 	})
 	t.Run("Succeeds when labels do not exist", func(t *testing.T) {
-		tenantSvc := &automock.BusinessTenantMappingService{}
+		tenantSvc := unusedTenantService()
 		tenantSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testTenant.InternalID).Return(nil, apperrors.NewNotFoundError(resource.Tenant, testTenant.InternalID))
-		tenantConv := &automock.BusinessTenantMappingConverter{}
+		tenantConv := unusedTenantConverter()
 		persist, transact := txGen.ThatSucceeds()
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
@@ -178,8 +289,8 @@ func TestResolver_Labels(t *testing.T) {
 		assert.Nil(t, labels)
 	})
 	t.Run("Returns error when the provided tenant is nil", func(t *testing.T) {
-		tenantSvc := &automock.BusinessTenantMappingService{}
-		tenantConv := &automock.BusinessTenantMappingConverter{}
+		tenantSvc := unusedTenantService()
+		tenantConv := unusedTenantConverter()
 		persist, transact := txGen.ThatDoesntStartTransaction()
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
@@ -191,8 +302,8 @@ func TestResolver_Labels(t *testing.T) {
 		assert.Contains(t, err.Error(), "Tenant cannot be empty")
 	})
 	t.Run("Returns error when starting transaction fails", func(t *testing.T) {
-		tenantSvc := &automock.BusinessTenantMappingService{}
-		tenantConv := &automock.BusinessTenantMappingConverter{}
+		tenantSvc := unusedTenantService()
+		tenantConv := unusedTenantConverter()
 		persist, transact := txGen.ThatFailsOnBegin()
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
@@ -204,9 +315,9 @@ func TestResolver_Labels(t *testing.T) {
 		assert.Nil(t, result)
 	})
 	t.Run("Returns error when it fails to list labels", func(t *testing.T) {
-		tenantSvc := &automock.BusinessTenantMappingService{}
+		tenantSvc := unusedTenantService()
 		tenantSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testTenant.InternalID).Return(nil, testError)
-		tenantConv := &automock.BusinessTenantMappingConverter{}
+		tenantConv := unusedTenantConverter()
 		persist, transact := txGen.ThatDoesntExpectCommit()
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
@@ -218,9 +329,9 @@ func TestResolver_Labels(t *testing.T) {
 		assert.Equal(t, testError, err)
 	})
 	t.Run("Returns error when commit fails", func(t *testing.T) {
-		tenantSvc := &automock.BusinessTenantMappingService{}
+		tenantSvc := unusedTenantService()
 		tenantSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testTenant.InternalID).Return(testLabels, nil)
-		tenantConv := &automock.BusinessTenantMappingConverter{}
+		tenantConv := unusedTenantConverter()
 		persist, transact := txGen.ThatFailsOnCommit()
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
@@ -231,4 +342,425 @@ func TestResolver_Labels(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, testError, err)
 	})
+}
+
+func TestResolver_Write(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	tenantNames := []string{"name1", "name2"}
+	tenantExternalTenants := []string{"external1", "external2"}
+	tenantParent := ""
+	tenantSubdomain := "subdomain"
+	tenantRegion := "region"
+	tenantProvider := "test"
+
+	tenantsToUpsertGQL := []*graphql.BusinessTenantMappingInput{
+		{
+			Name:           tenantNames[0],
+			ExternalTenant: tenantExternalTenants[0],
+			Parent:         str.Ptr(tenantParent),
+			Subdomain:      str.Ptr(tenantSubdomain),
+			Region:         str.Ptr(tenantRegion),
+			Type:           string(tnt.Account),
+			Provider:       tenantProvider,
+		},
+		{
+			Name:           tenantNames[1],
+			ExternalTenant: tenantExternalTenants[1],
+			Parent:         str.Ptr(tenantParent),
+			Subdomain:      str.Ptr(tenantSubdomain),
+			Region:         str.Ptr(tenantRegion),
+			Type:           string(tnt.Account),
+			Provider:       tenantProvider,
+		},
+	}
+	tenantsToUpsertModel := []model.BusinessTenantMappingInput{
+		{
+			Name:           tenantNames[0],
+			ExternalTenant: tenantExternalTenants[0],
+			Parent:         tenantParent,
+			Subdomain:      tenantSubdomain,
+			Region:         tenantRegion,
+			Type:           string(tnt.Account),
+			Provider:       tenantProvider,
+		},
+		{
+			Name:           tenantNames[1],
+			ExternalTenant: tenantExternalTenants[1],
+			Parent:         tenantParent,
+			Subdomain:      tenantSubdomain,
+			Region:         tenantRegion,
+			Type:           string(tnt.Account),
+			Provider:       tenantProvider,
+		},
+	}
+
+	testCases := []struct {
+		Name           string
+		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TenantSvcFn    func() *automock.BusinessTenantMappingService
+		TenantConvFn   func() *automock.BusinessTenantMappingConverter
+		TenantsInput   []*graphql.BusinessTenantMappingInput
+		ExpectedError  error
+		ExpectedResult int
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := unusedTenantService()
+				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				TenantConv := &automock.BusinessTenantMappingConverter{}
+				TenantConv.On("MultipleInputFromGraphQL", tenantsToUpsertGQL).Return(tenantsToUpsertModel).Once()
+				return TenantConv
+			},
+			TenantsInput:   tenantsToUpsertGQL,
+			ExpectedError:  nil,
+			ExpectedResult: 2,
+		},
+		{
+			Name:           "Returns error when can not start transaction",
+			TxFn:           txGen.ThatFailsOnBegin,
+			TenantSvcFn:    unusedTenantService,
+			TenantConvFn:   unusedTenantConverter,
+			TenantsInput:   tenantsToUpsertGQL,
+			ExpectedError:  testError,
+			ExpectedResult: -1,
+		},
+		{
+			Name: "Returns error when can not create the tenants",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(testError).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				TenantConv := &automock.BusinessTenantMappingConverter{}
+				TenantConv.On("MultipleInputFromGraphQL", tenantsToUpsertGQL).Return(tenantsToUpsertModel).Once()
+				return TenantConv
+			},
+			TenantsInput:   tenantsToUpsertGQL,
+			ExpectedError:  testError,
+			ExpectedResult: -1,
+		},
+		{
+			Name: "Returns error when can not commit",
+			TxFn: txGen.ThatFailsOnCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				TenantConv := &automock.BusinessTenantMappingConverter{}
+				TenantConv.On("MultipleInputFromGraphQL", tenantsToUpsertGQL).Return(tenantsToUpsertModel).Once()
+				return TenantConv
+			},
+			TenantsInput:   tenantsToUpsertGQL,
+			ExpectedError:  testError,
+			ExpectedResult: -1,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantSvc := testCase.TenantSvcFn()
+			tenantConv := testCase.TenantConvFn()
+			persist, transact := testCase.TxFn()
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+
+			// WHEN
+			result, err := resolver.Write(ctx, testCase.TenantsInput)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, result)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
+		})
+	}
+}
+
+func TestResolver_Delete(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	tenantExternalTenants := []string{"external1", "external2"}
+
+	testCases := []struct {
+		Name           string
+		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TenantSvcFn    func() *automock.BusinessTenantMappingService
+		TenantConvFn   func() *automock.BusinessTenantMappingConverter
+		TenantsInput   []string
+		ExpectedError  error
+		ExpectedResult int
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("DeleteMany", txtest.CtxWithDBMatcher(), tenantExternalTenants).Return(nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn:   unusedTenantConverter,
+			TenantsInput:   tenantExternalTenants,
+			ExpectedError:  nil,
+			ExpectedResult: 2,
+		},
+		{
+			Name:           "Returns error when can not start transaction",
+			TxFn:           txGen.ThatFailsOnBegin,
+			TenantSvcFn:    unusedTenantService,
+			TenantConvFn:   unusedTenantConverter,
+			TenantsInput:   tenantExternalTenants,
+			ExpectedError:  testError,
+			ExpectedResult: -1,
+		},
+		{
+			Name: "Returns error when can not create the tenants",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("DeleteMany", txtest.CtxWithDBMatcher(), tenantExternalTenants).Return(testError).Once()
+				return TenantSvc
+			},
+			TenantConvFn:   unusedTenantConverter,
+			TenantsInput:   tenantExternalTenants,
+			ExpectedError:  testError,
+			ExpectedResult: -1,
+		},
+		{
+			Name: "Returns error when can not commit",
+			TxFn: txGen.ThatFailsOnCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("DeleteMany", txtest.CtxWithDBMatcher(), tenantExternalTenants).Return(nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn:   unusedTenantConverter,
+			TenantsInput:   tenantExternalTenants,
+			ExpectedError:  testError,
+			ExpectedResult: -1,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantSvc := testCase.TenantSvcFn()
+			tenantConv := testCase.TenantConvFn()
+			persist, transact := testCase.TxFn()
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+
+			// WHEN
+			result, err := resolver.Delete(ctx, testCase.TenantsInput)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, result)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
+		})
+	}
+}
+
+func TestResolver_Update(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	tenantParent := ""
+	tenantInternalID := "internal"
+
+	tenantsToUpdateGQL := []*graphql.BusinessTenantMappingInput{
+		{
+			Name:           testName,
+			ExternalTenant: testExternal,
+			Parent:         str.Ptr(tenantParent),
+			Subdomain:      str.Ptr(testSubdomain),
+			Region:         str.Ptr(testRegion),
+			Type:           string(tnt.Account),
+			Provider:       testProvider,
+		},
+	}
+
+	tenantsToUpdateModel := []model.BusinessTenantMappingInput{
+		{
+			Name:           testName,
+			ExternalTenant: testExternal,
+			Parent:         tenantParent,
+			Subdomain:      testSubdomain,
+			Region:         testRegion,
+			Type:           string(tnt.Account),
+			Provider:       testProvider,
+		},
+	}
+
+	expectedTenantModel := &model.BusinessTenantMapping{
+		ID:             testExternal,
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parent:         tenantParent,
+		Type:           tnt.Account,
+		Provider:       testProvider,
+		Status:         tnt.Active,
+		Initialized:    nil,
+	}
+
+	expectedTenantGQL := &graphql.Tenant{
+		ID:          testExternal,
+		InternalID:  tenantInternalID,
+		Name:        str.Ptr(testName),
+		Type:        string(tnt.Account),
+		ParentID:    tenantParent,
+		Initialized: nil,
+		Labels:      nil,
+	}
+
+	testCases := []struct {
+		Name           string
+		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TenantSvcFn    func() *automock.BusinessTenantMappingService
+		TenantConvFn   func() *automock.BusinessTenantMappingConverter
+		TenantInput    graphql.BusinessTenantMappingInput
+		IDInput        string
+		ExpectedError  error
+		ExpectedResult *graphql.Tenant
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantsToUpdateGQL[0].ExternalTenant).Return(expectedTenantModel, nil).Once()
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				conv.On("ToGraphQL", expectedTenantModel).Return(expectedTenantGQL)
+				return conv
+			},
+			TenantInput:    *tenantsToUpdateGQL[0],
+			IDInput:        tenantInternalID,
+			ExpectedError:  nil,
+			ExpectedResult: expectedTenantGQL,
+		},
+		{
+			Name:           "Returns error when can not start transaction",
+			TxFn:           txGen.ThatFailsOnBegin,
+			TenantSvcFn:    unusedTenantService,
+			TenantConvFn:   unusedTenantConverter,
+			TenantInput:    *tenantsToUpdateGQL[0],
+			IDInput:        tenantInternalID,
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name: "Returns error when updating tenant fails",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(testError).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				return conv
+			},
+			TenantInput:    *tenantsToUpdateGQL[0],
+			IDInput:        tenantInternalID,
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name: "Returns error when can not get tenant by external ID",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantsToUpdateGQL[0].ExternalTenant).Return(nil, testError).Once()
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				return conv
+			},
+			TenantInput:    *tenantsToUpdateGQL[0],
+			IDInput:        tenantInternalID,
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name: "Returns error when can not commit",
+			TxFn: txGen.ThatFailsOnCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantsToUpdateGQL[0].ExternalTenant).Return(expectedTenantModel, nil).Once()
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				return conv
+			},
+			TenantInput:    *tenantsToUpdateGQL[0],
+			IDInput:        tenantInternalID,
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantSvc := testCase.TenantSvcFn()
+			tenantConv := testCase.TenantConvFn()
+			persist, transact := testCase.TxFn()
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+
+			// WHEN
+			result, err := resolver.Update(ctx, testCase.IDInput, testCase.TenantInput)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, result)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
+		})
+	}
+}
+
+func unusedTenantConverter() *automock.BusinessTenantMappingConverter {
+	return &automock.BusinessTenantMappingConverter{}
+}
+
+func unusedTenantService() *automock.BusinessTenantMappingService {
+	return &automock.BusinessTenantMappingService{}
 }

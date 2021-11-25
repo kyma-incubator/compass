@@ -651,6 +651,16 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210831121533-7e42
 github.com/kyma-incubator/compass/components/director v0.0.0-20210922113925-7ff5909fa72b/go.mod h1:V1sc1tdrDM6+pOxYLoUwatFeJXNfVTj1puB8iHrno3c=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211022125007-080192a5068e h1:LJXeTQK1ZM+OKg4ElgJ1KjKE8RqzF0IiFXhoZ1pCjcQ=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211022125007-080192a5068e/go.mod h1:IyRVAVl9xMTxBrd+tUumo7L3r4T8UQQHZNqOx3AerMk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211112120113-75e09411c8e8 h1:UOpi/cffiNtGaBB3d9i7YzHMKgvq5WzdaNzHhYWxXcg=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211112120113-75e09411c8e8/go.mod h1:c0/r3rldnN+/Bz+50JMnJssVWOICod4IWftvhm+hOJ8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211115133009-91bef88a7265 h1:XhTwYW7Xuw6L0En4L3Sz/jILHgNXyhEg6WAodZa9tIs=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211115133009-91bef88a7265/go.mod h1:c0/r3rldnN+/Bz+50JMnJssVWOICod4IWftvhm+hOJ8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211116100439-5f71f99aef04 h1:eNIQEqoKUM1Um/D1Kr9INuDg5R+xBYYvd0PbX1+N9Ec=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211116100439-5f71f99aef04/go.mod h1:c0/r3rldnN+/Bz+50JMnJssVWOICod4IWftvhm+hOJ8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211116112846-b83b1b9b542f h1:/lczom+2pW4qSJ7wyxZJbra9/7TFNLO61jXL/gXZWFE=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211116112846-b83b1b9b542f/go.mod h1:c0/r3rldnN+/Bz+50JMnJssVWOICod4IWftvhm+hOJ8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211116174001-2ae8eb42eaf3 h1:Ve0VVRQuV+AwCPQ1L+OpD5/xAXx+NJTdbqWBBG/oPFs=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211116174001-2ae8eb42eaf3/go.mod h1:c0/r3rldnN+/Bz+50JMnJssVWOICod4IWftvhm+hOJ8=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f h1:FvflJncP+u6Z2KqtZkAuD7wCDgMh8+kZPcE1xp9mQrg=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f/go.mod h1:jD4pOTINIMZlScN8KxgnxJ73PQV3JUKy0E+GwnFf2ww=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36 h1:/BmeBQXQWwsRm6mBmgDYAkukecCd6TPBrYLXrl85H1g=
@@ -1232,6 +1242,8 @@ golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1/go.mod h1:9tjilg8BloeKEkVJvy
 golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.0.0-20210510120150-4163338589ed h1:p9UgmWI9wKpfYmgaV/IZKGdXc5qEK45tDwwwDyjS26I=
 golang.org/x/net v0.0.0-20210510120150-4163338589ed/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
+golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d h1:20cMwl2fHAzkJMEA+8J4JgqBQcQGzbisXo31MIeenXI=
+golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
 golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=

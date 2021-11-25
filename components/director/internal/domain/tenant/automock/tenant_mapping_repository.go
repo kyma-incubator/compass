@@ -176,6 +176,20 @@ func (_m *TenantMappingRepository) UnsafeCreate(ctx context.Context, item model.
 	return r0
 }
 
+// Update provides a mock function with given fields: ctx, _a1
+func (_m *TenantMappingRepository) Update(ctx context.Context, _a1 *model.BusinessTenantMapping) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.BusinessTenantMapping) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Upsert provides a mock function with given fields: ctx, item
 func (_m *TenantMappingRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) error {
 	ret := _m.Called(ctx, item)

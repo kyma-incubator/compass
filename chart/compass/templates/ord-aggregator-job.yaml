@@ -76,6 +76,7 @@ spec:
                 {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
                 - name: APP_METRICS_PUSH_ENDPOINT
                   value: {{ $.Values.global.metrics.pushEndpoint}}
+                {{ end }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_SUBJECT_PATTERN
                   value: {{ $.Values.global.mtlsClient.subjectPattern }}
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_COMMON_NAME
@@ -117,7 +118,6 @@ spec:
                   value: "{{ .Values.global.ordAggregator.accessStrategies.cmpMtls.retryAttempts }}"
                 - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_RETRY_DELAY
                   value: "{{ .Values.global.ordAggregator.accessStrategies.cmpMtls.retryDelay }}"
-              {{ end }}
               command:
                 - "/bin/sh"
               args:

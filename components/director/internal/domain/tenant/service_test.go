@@ -221,7 +221,7 @@ func TestService_DeleteMany(t *testing.T) {
 			svc := tenant.NewService(tenantMappingRepo, nil)
 
 			// WHEN
-			err := svc.DeleteMany(ctx, []model.BusinessTenantMappingInput{tenantInput})
+			err := svc.DeleteMany(ctx, []string{tenantInput.ExternalTenant})
 
 			// THEN
 			if testCase.ExpectedOutput != nil {
@@ -560,6 +560,76 @@ func Test_MultipleToTenantMapping(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svc := tenant.NewService(nil, &serialUUIDService{})
 			require.Equal(t, testCase.ExpectedSlice, svc.MultipleToTenantMapping(testCase.InputSlice))
+		})
+	}
+}
+
+func Test_Update(t *testing.T) {
+	tnt := model.BusinessTenantMappingInput{
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parent:         testParentID,
+		Subdomain:      testSubdomain,
+		Region:         testRegion,
+		Type:           string(tenantEntity.Account),
+		Provider:       testProvider,
+	}
+	tntToBusinessTenantMapping := &model.BusinessTenantMapping{
+		ID:             testID,
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parent:         testParentID,
+		Type:           tenantEntity.Account,
+		Provider:       testProvider,
+		Status:         tenantEntity.Active,
+		Initialized:    nil,
+	}
+
+	testCases := []struct {
+		Name                      string
+		InputID                   string
+		InputTenant               model.BusinessTenantMappingInput
+		TenantMappingRepositoryFn func() *automock.TenantMappingRepository
+		ExpectedErr               error
+	}{
+		{
+			Name:        "Success",
+			InputID:     testID,
+			InputTenant: tnt,
+			TenantMappingRepositoryFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("Update", mock.Anything, tntToBusinessTenantMapping).Return(nil)
+				return tenantMappingRepo
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "Returns error when can't update the tenant",
+			InputID:     testID,
+			InputTenant: tnt,
+			TenantMappingRepositoryFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("Update", mock.Anything, tntToBusinessTenantMapping).Return(testError)
+				return tenantMappingRepo
+			},
+			ExpectedErr: testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			ctx := context.TODO()
+			tenantMappingRepo := testCase.TenantMappingRepositoryFn()
+			serialUUIDService := &serialUUIDService{}
+			svc := tenant.NewService(tenantMappingRepo, serialUUIDService)
+			err := svc.Update(ctx, testCase.InputID, testCase.InputTenant)
+
+			if testCase.ExpectedErr != nil {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }

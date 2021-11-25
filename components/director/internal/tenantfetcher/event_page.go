@@ -87,6 +87,11 @@ func (ep eventsPage) getTenantMappings(eventsType EventsType) []model.BusinessTe
 }
 
 func (ep eventsPage) eventDataToMovedRuntime(eventData []byte) (*model.MovedRuntimeByLabelMappingInput, error) {
+	jsonPayload := string(eventData)
+	if !gjson.Valid(jsonPayload) {
+		return nil, errors.Errorf("invalid json payload")
+	}
+
 	id, ok := gjson.GetBytes(eventData, ep.movedRuntimeByLabelFieldMapping.LabelValue).Value().(string)
 	if !ok {
 		return nil, errors.Errorf("invalid format of %s field", ep.movedRuntimeByLabelFieldMapping.LabelValue)
@@ -102,10 +107,26 @@ func (ep eventsPage) eventDataToMovedRuntime(eventData []byte) (*model.MovedRunt
 		return nil, errors.Errorf("invalid format of %s field", ep.movedRuntimeByLabelFieldMapping.TargetTenant)
 	}
 
+	nameResult := gjson.Get(jsonPayload, ep.fieldMapping.NameField)
+	if !nameResult.Exists() {
+		return nil, invalidFieldFormatError(ep.fieldMapping.NameField)
+	}
+
+	subdomain := gjson.Get(jsonPayload, ep.fieldMapping.SubdomainField)
+	if !subdomain.Exists() {
+		log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.SubdomainField, id)
+	}
+
+	subaccountInput, err := constructSubaccountTenant(jsonPayload, nameResult.String(), subdomain.String(), id, ep)
+	if err != nil {
+		return nil, err
+	}
+
 	return &model.MovedRuntimeByLabelMappingInput{
-		LabelValue:   id,
-		SourceTenant: source,
-		TargetTenant: target,
+		TenantMappingInput: *subaccountInput,
+		LabelValue:         id,
+		SourceTenant:       source,
+		TargetTenant:       target,
 	}, nil
 }
 

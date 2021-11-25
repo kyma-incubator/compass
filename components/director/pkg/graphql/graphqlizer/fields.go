@@ -505,7 +505,9 @@ func (fp *GqlFieldsProvider) ForTenant() string {
 		internalID
 		name
 		initialized
-		labels`
+		labels
+		parentID
+		type`
 }
 
 // OmitForBundle missing godoc
