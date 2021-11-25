@@ -24,7 +24,7 @@ spec:
             - ip: {{ .Values.global.minikubeIP }}
               hostnames:
                 - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
-            {{ end }}
+          {{ end }}
           containers:
             - name: aggregator
               image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
@@ -79,7 +79,6 @@ spec:
                 {{ end }}
                 - name: APP_EXTERNAL_CLIENT_CERT_SECRET
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-              {{ end }}
               command:
                 - "/bin/sh"
               args:
@@ -109,4 +108,4 @@ spec:
             - name: director-config
               configMap:
                 name: compass-director-config
-  {{ end }}
+{{ end }}
