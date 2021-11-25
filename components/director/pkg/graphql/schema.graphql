@@ -1276,7 +1276,6 @@ type Mutation {
 	- [update runtime](examples/update-runtime/update-runtime.graphql)
 	"""
 	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
-	setRuntimeTenant(runtimeID: ID!, tenantID: String!): Runtime! @hasScopes(path: "graphql.mutation.setRuntimeTenant")
 	"""
 	**Examples**
 	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)

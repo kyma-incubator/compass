@@ -22,8 +22,8 @@ func Test_getMovedRuntimes(t *testing.T) {
 	labelFieldMappingValue := "moved-label"
 	sourceTenantField := "source-tenant"
 	targetTenantField := "target-tenant"
-	expectedRuntime := model.MovedRuntimeByLabelMappingInput{
-		LabelValue:   "label-value",
+	expectedRuntime := model.MovedSubaccountMappingInput{
+		SubaccountID: "label-value",
 		SourceTenant: "123",
 		TargetTenant: "456",
 		TenantMappingInput: model.BusinessTenantMappingInput{
@@ -50,7 +50,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 		name               string
 		detailsPairs       [][]Pair
 		errorFunc          func(*testing.T, error)
-		assertRuntimesFunc func(*testing.T, []model.MovedRuntimeByLabelMappingInput)
+		assertRuntimesFunc func(*testing.T, []model.MovedSubaccountMappingInput)
 	}{
 		{
 			name: "successfully gets MovedRuntimeByLabelMappingInputs for correct eventPage format",
@@ -65,7 +65,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 					{parentIDField, "parent"},
 				},
 			},
-			assertRuntimesFunc: func(t *testing.T, runtimes []model.MovedRuntimeByLabelMappingInput) {
+			assertRuntimesFunc: func(t *testing.T, runtimes []model.MovedSubaccountMappingInput) {
 				assert.Equal(t, 1, len(runtimes))
 				assert.Equal(t, expectedRuntime, runtimes[0])
 			},
@@ -74,7 +74,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 			},
 		},
 		{
-			name: "empty mappings for get MovedRuntimeByLabelMappingInput when id field is invalid",
+			name: "empty mappings for get MovedSubaccountMappingInput when id field is invalid",
 			detailsPairs: [][]Pair{
 				{
 					{"wrong", "label-value"},
@@ -85,12 +85,12 @@ func Test_getMovedRuntimes(t *testing.T) {
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
 			},
-			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedRuntimeByLabelMappingInput) {
+			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedSubaccountMappingInput) {
 				assert.Len(t, inputs, 0)
 			},
 		},
 		{
-			name: "empty mappings for get MovedRuntimeByLabelMappingInput when sourceTenant field is invalid",
+			name: "empty mappings for get MovedSubaccountMappingInput when sourceTenant field is invalid",
 			detailsPairs: [][]Pair{
 				{
 					{labelFieldMappingValue, "label-value"},
@@ -101,12 +101,12 @@ func Test_getMovedRuntimes(t *testing.T) {
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
 			},
-			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedRuntimeByLabelMappingInput) {
+			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedSubaccountMappingInput) {
 				assert.Len(t, inputs, 0)
 			},
 		},
 		{
-			name: "empty mappings for get MovedRuntimeByLabelMappingInput when sourceTenant field is invalid",
+			name: "empty mappings for get MovedSubaccountMappingInput when sourceTenant field is invalid",
 			detailsPairs: [][]Pair{
 				{
 					{labelFieldMappingValue, "label-value"},
@@ -117,7 +117,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
 			},
-			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedRuntimeByLabelMappingInput) {
+			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedSubaccountMappingInput) {
 				assert.Len(t, inputs, 0)
 			},
 		},
@@ -144,7 +144,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
 			},
-			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedRuntimeByLabelMappingInput) {
+			assertRuntimesFunc: func(t *testing.T, inputs []model.MovedSubaccountMappingInput) {
 				assert.Len(t, inputs, 1)
 			},
 		},
@@ -166,7 +166,7 @@ func Test_getMovedRuntimes(t *testing.T) {
 				payload: []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
 
-			runtimes := page.getMovedRuntimes()
+			runtimes := page.getMovedSubaccounts()
 			test.assertRuntimesFunc(t, runtimes)
 		})
 	}
