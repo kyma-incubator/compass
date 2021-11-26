@@ -175,30 +175,6 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 			convMock.AssertExpectations(t)
 		})
 
-		t.Run("returns error if tenant_id is not uuid", func(t *testing.T) {
-			sqlxDB, sqlMock := MockDatabase(t)
-			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-			for _, sqlDetails := range suite.SQLQueryDetails {
-				if sqlDetails.IsSelect {
-					sqlDetails.Args[len(sqlDetails.Args)-1] = "tenantID" // Override the tenantID expected argument in order to use non-uuid value for the test.
-					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-				}
-			}
-
-			convMock := suite.ConverterMockProvider()
-			convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
-			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-			// WHEN
-			err := callUpdate(pgRepository, ctx, "tenantID", suite.ModelEntity, suite.UpdateMethodName)
-			// THEN
-			require.Error(t, err)
-			require.Contains(t, err.Error(), "tenant_id tenantID should be UUID")
-
-			convMock.AssertExpectations(t)
-			sqlMock.AssertExpectations(t)
-		})
-
 		t.Run("returns error when item is nil", func(t *testing.T) {
 			ctx := context.TODO()
 			convMock := suite.ConverterMockProvider()

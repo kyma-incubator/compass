@@ -84,7 +84,7 @@ func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.Automa
 
 // MergeScenariosFromInputLabelsAndAssignments merges all the scenarios that are part of the resource labels (already added + to be added with the current operation)
 // with all the scenarios that should be assigned based on ASAs.
-func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
+func (e *engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
 	scenariosSet := make(map[string]struct{})
 
 	scenariosFromAssignments, err := e.getScenariosFromMatchingASAs(ctx, runtimeID)
@@ -116,7 +116,7 @@ func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context,
 	return scenarios, nil
 }
 
-func (e engine) getScenarioLabelsForRuntimes(ctx context.Context, in model.AutomaticScenarioAssignment) ([]model.Label, []string, error) {
+func (e *engine) getScenarioLabelsForRuntimes(ctx context.Context, in model.AutomaticScenarioAssignment) ([]model.Label, []string, error) {
 	// Currently. it is not possible to have non-owner access of a runtime in a tenant.
 	// It is enough to list all the runtimes in the target tenant.
 	runtimes, err := e.runtimeRepo.ListAll(ctx, in.TargetTenantID, nil)
@@ -144,7 +144,7 @@ func (e engine) getScenarioLabelsForRuntimes(ctx context.Context, in model.Autom
 // getScenariosFromMatchingASAs gets all the scenarios that should be added to the runtime based on the matching Automatic Scenario Assignments
 // In order to do that, the ASAs should be searched in the caller tenant as this is the tenant that modifies the runtime and this is the tenant that the ASA
 // produced labels should be added to.
-func (e engine) getScenariosFromMatchingASAs(ctx context.Context, runtimeID string) ([]string, error) {
+func (e *engine) getScenariosFromMatchingASAs(ctx context.Context, runtimeID string) ([]string, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -179,7 +179,7 @@ func (e engine) getScenariosFromMatchingASAs(ctx context.Context, runtimeID stri
 	return scenarios, nil
 }
 
-func (e engine) isASAMatchingRuntime(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error) {
+func (e *engine) isASAMatchingRuntime(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error) {
 	return e.runtimeRepo.Exists(ctx, asa.TargetTenantID, runtimeID)
 }
 

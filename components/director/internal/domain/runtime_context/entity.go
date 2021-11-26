@@ -17,3 +17,14 @@ func (e *RuntimeContext) GetID() string {
 func (e *RuntimeContext) GetParentID() string {
 	return e.RuntimeID
 }
+
+// DecorateWithTenantID decorates the entity with the given tenant ID.
+func (e *RuntimeContext) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*RuntimeContext
+		TenantID string `db:"tenant_id"`
+	}{
+		RuntimeContext: e,
+		TenantID:       tenant,
+	}
+}

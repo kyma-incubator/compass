@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -182,6 +181,10 @@ func (u *universalUpdater) unsafeUpdateSingleWithFields(ctx context.Context, dbE
 		return err
 	}
 
+	if entityWithExternalTenant, ok := dbEntity.(EntityWithExternalTenant); ok && (u.tenantColumn == nil && len(tenant) > 0) {
+		dbEntity = entityWithExternalTenant.DecorateWithTenantID(tenant)
+	}
+
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 	res, err := persist.NamedExecContext(ctx, query, dbEntity)
 	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Update, "while updating single entity from '%s' table", u.tableName); err != nil {
@@ -222,22 +225,13 @@ func (u *universalUpdater) buildQuery(fieldsToSet []string, tenant string, resou
 	if u.tenantColumn != nil { // if embedded tenant
 		stmtBuilder.WriteString(fmt.Sprintf(" %s = :%s", *u.tenantColumn, *u.tenantColumn))
 	} else if len(tenant) > 0 { // if not global
-		accessTable, ok := resourceType.TenantAccessTable()
-		if !ok {
-			return "", errors.Errorf("entity %s does not have access table", resourceType)
+		tenantIsolationCondition, err := NewTenantIsolationConditionForNamedArgs(resourceType, tenant, true)
+		if err != nil {
+			return "", err
 		}
 
-		if _, err := uuid.Parse(tenant); err != nil { // SQL Injection protection
-			return "", errors.Wrapf(err, "tenant_id %s should be UUID", tenant)
-		}
-
-		stmtBuilder.WriteString(fmt.Sprintf(" (id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true)", M2MResourceIDColumn, accessTable, M2MTenantIDColumn, tenant, M2MOwnerColumn))
-
-		if resourceType == resource.BundleInstanceAuth {
-			stmtBuilder.WriteString(" OR owner_id = :owner_id")
-		}
-
-		stmtBuilder.WriteString(")")
+		stmtBuilder.WriteString(" ")
+		stmtBuilder.WriteString(tenantIsolationCondition.GetQueryPart())
 	}
 
 	return stmtBuilder.String(), nil

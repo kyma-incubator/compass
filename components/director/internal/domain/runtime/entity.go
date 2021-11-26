@@ -19,3 +19,14 @@ type Runtime struct {
 func (e *Runtime) GetID() string {
 	return e.ID
 }
+
+// DecorateWithTenantID decorates the entity with the given tenant ID.
+func (e *Runtime) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*Runtime
+		TenantID string `db:"tenant_id"`
+	}{
+		Runtime:  e,
+		TenantID: tenant,
+	}
+}

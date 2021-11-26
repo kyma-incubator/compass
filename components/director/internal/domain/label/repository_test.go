@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -169,13 +168,13 @@ func TestRepository_Upsert(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		escapedGetQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version FROM public.labels WHERE key = $1 AND runtime_id = $2 AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $3))`)
-		escapedUpdateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID))
+		escapedUpdateQuery := regexp.QuoteMeta(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = ? AND owner = true))`)
 		escapedExsistsQuery := regexp.QuoteMeta("SELECT 1 FROM public.labels WHERE id = $1 AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2 AND owner = true))")
 
 		mockedRows := sqlmock.NewRows(fixColumns).AddRow(labelEntity.ID, labelEntity.TenantID, labelEntity.AppID, labelEntity.RuntimeID, labelEntity.RuntimeContextID, labelEntity.Key, labelEntity.Value, labelEntity.Version)
 		dbMock.ExpectQuery(escapedGetQuery).WithArgs(key, refID, tenantID).WillReturnRows(mockedRows)
 		dbMock.ExpectQuery(escapedExsistsQuery).WithArgs(labelID, tenantID).WillReturnRows(testdb.RowWhenObjectExist())
-		dbMock.ExpectExec(escapedUpdateQuery).WithArgs(labelEntity.Value, labelEntity.ID).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(escapedUpdateQuery).WithArgs(labelEntity.Value, labelEntity.ID, tenantID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -201,13 +200,13 @@ func TestRepository_Upsert(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		escapedGetQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version FROM public.labels WHERE key = $1 AND runtime_context_id = $2 AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $3))`)
-		escapedUpdateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID))
+		escapedUpdateQuery := regexp.QuoteMeta(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = ? AND owner = true))`)
 		escapedExsistsQuery := regexp.QuoteMeta("SELECT 1 FROM public.labels WHERE id = $1 AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $2 AND owner = true))")
 
 		mockedRows := sqlmock.NewRows(fixColumns).AddRow(labelEntity.ID, labelEntity.TenantID, labelEntity.AppID, labelEntity.RuntimeID, labelEntity.RuntimeContextID, labelEntity.Key, labelEntity.Value, labelEntity.Version)
 		dbMock.ExpectQuery(escapedGetQuery).WithArgs(key, refID, tenantID).WillReturnRows(mockedRows)
 		dbMock.ExpectQuery(escapedExsistsQuery).WithArgs(labelID, tenantID).WillReturnRows(testdb.RowWhenObjectExist())
-		dbMock.ExpectExec(escapedUpdateQuery).WithArgs(labelEntity.Value, labelEntity.ID).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(escapedUpdateQuery).WithArgs(labelEntity.Value, labelEntity.ID, tenantID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -232,13 +231,13 @@ func TestRepository_Upsert(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		escapedGetQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version FROM public.labels WHERE key = $1 AND app_id = $2 AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $3))`)
-		escapedUpdateQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID))
+		escapedUpdateQuery := regexp.QuoteMeta(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = ? AND owner = true))`)
 		escapedExsistsQuery := regexp.QuoteMeta("SELECT 1 FROM public.labels WHERE id = $1 AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $2 AND owner = true))")
 
 		mockedRows := sqlmock.NewRows(fixColumns).AddRow(labelEntity.ID, labelEntity.TenantID, labelEntity.AppID, labelEntity.RuntimeID, labelEntity.RuntimeContextID, labelEntity.Key, labelEntity.Value, labelEntity.Version)
 		dbMock.ExpectQuery(escapedGetQuery).WithArgs(key, refID, tenantID).WillReturnRows(mockedRows)
 		dbMock.ExpectQuery(escapedExsistsQuery).WithArgs(labelID, tenantID).WillReturnRows(testdb.RowWhenObjectExist())
-		dbMock.ExpectExec(escapedUpdateQuery).WithArgs(labelEntity.Value, labelEntity.ID).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(escapedUpdateQuery).WithArgs(labelEntity.Value, labelEntity.ID, tenantID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -473,8 +472,8 @@ func TestRepository_UpdateWithVersion(t *testing.T) {
 				},
 			},
 			{
-				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND version = ? AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
-				Args:          []driver.Value{appLabelEntity.Value, appLabelEntity.ID, version},
+				Query:         regexp.QuoteMeta(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND version = ? AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{appLabelEntity.Value, appLabelEntity.ID, version, tenantID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -505,8 +504,8 @@ func TestRepository_UpdateWithVersion(t *testing.T) {
 				},
 			},
 			{
-				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND version = ? AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
-				Args:          []driver.Value{runtimeLabelEntity.Value, runtimeLabelEntity.ID, version},
+				Query:         regexp.QuoteMeta(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND version = ? AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{runtimeLabelEntity.Value, runtimeLabelEntity.ID, version, tenantID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -537,8 +536,8 @@ func TestRepository_UpdateWithVersion(t *testing.T) {
 				},
 			},
 			{
-				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND version = ? AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
-				Args:          []driver.Value{runtimeCtxLabelEntity.Value, runtimeCtxLabelEntity.ID, version},
+				Query:         regexp.QuoteMeta(`UPDATE public.labels SET value = ?, version = version+1 WHERE id = ? AND version = ? AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{runtimeCtxLabelEntity.Value, runtimeCtxLabelEntity.ID, version, tenantID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},

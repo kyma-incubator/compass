@@ -2,7 +2,6 @@ package tombstone_test
 
 import (
 	"database/sql/driver"
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -61,8 +60,8 @@ func TestPgRepository_Update(t *testing.T) {
 		Name: "Update Tombstone",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.tombstones SET removal_date = ? WHERE id = ? AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
-				Args:          append(fixTombstoneUpdateArgs(), entity.ID),
+				Query:         regexp.QuoteMeta(`UPDATE public.tombstones SET removal_date = ? WHERE id = ? AND (id IN (SELECT id FROM tombstones_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          append(fixTombstoneUpdateArgs(), entity.ID, tenantID),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},

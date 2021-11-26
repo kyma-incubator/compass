@@ -41,3 +41,14 @@ type Entity struct {
 func (e *Entity) GetParentID() string {
 	return e.ApplicationID
 }
+
+// DecorateWithTenantID decorates the entity with the given tenant ID.
+func (e *Entity) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*Entity
+		TenantID string `db:"tenant_id"`
+	}{
+		Entity:   e,
+		TenantID: tenant,
+	}
+}

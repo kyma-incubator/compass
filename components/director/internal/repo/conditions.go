@@ -255,20 +255,43 @@ func (c *tenantIsolationCondition) GetQueryArgs() ([]interface{}, bool) {
 // the entity table (m2m table or view). Conditionally an owner check is added to the subquery.
 // In case of resource.BundleInstanceAuth additional embedded owner check is added.
 func NewTenantIsolationCondition(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
+	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, true)
+}
+
+// NewTenantIsolationConditionForNamedArgs is the same as NewTenantIsolationCondition, but for update queries which use named args.
+func NewTenantIsolationConditionForNamedArgs(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
+	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, false)
+}
+
+func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tenant string, ownerCheck bool, positionalArgs bool) (Condition, error) {
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return nil, errors.Errorf("entity %s does not have access table", resourceType)
 	}
-	args := []interface{}{tenant}
-	tenantIsolationSubquery := fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = ?", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn)
+
+	var args []interface{}
+	var tenantIsolationSubquery string
+	if positionalArgs {
+		tenantIsolationSubquery = fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = ?", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn)
+		args = append(args, tenant)
+	} else {
+		tenantIsolationSubquery = fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = :tenant_id", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn)
+	}
+
 	if ownerCheck {
 		tenantIsolationSubquery += fmt.Sprintf(" AND %s = true", M2MOwnerColumn)
 	}
 	tenantIsolationSubquery += ")"
+
 	if resourceType == resource.BundleInstanceAuth {
-		tenantIsolationSubquery += " OR owner_id = ?"
-		args = append(args, tenant)
+		if positionalArgs {
+			tenantIsolationSubquery += " OR owner_id = ?"
+			args = append(args, tenant)
+		} else {
+			tenantIsolationSubquery += " OR owner_id = :owner_id"
+		}
 	}
 	tenantIsolationSubquery += ")"
+
 	return &tenantIsolationCondition{sql: tenantIsolationSubquery, args: args}, nil
 }

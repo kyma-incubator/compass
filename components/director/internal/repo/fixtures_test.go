@@ -111,6 +111,16 @@ func (a AppCollection) Len() int {
 	return len(a)
 }
 
+func (a *App) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*App
+		TenantID string `db:"tenant_id"`
+	}{
+		App:      a,
+		TenantID: tenant,
+	}
+}
+
 type Bundle struct {
 	ID          string `db:"id"`
 	Name        string `db:"name"`
@@ -124,6 +134,16 @@ func (a *Bundle) GetID() string {
 
 func (a *Bundle) GetParentID() string {
 	return a.AppID
+}
+
+func (a *Bundle) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*Bundle
+		TenantID string `db:"tenant_id"`
+	}{
+		Bundle:   a,
+		TenantID: tenant,
+	}
 }
 
 var bundleColumns = []string{"id", "name", "description", "app_id"}
@@ -142,6 +162,16 @@ func (a *BundleInstanceAuth) GetID() string {
 
 func (a *BundleInstanceAuth) GetParentID() string {
 	return a.BundleID
+}
+
+func (a *BundleInstanceAuth) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*BundleInstanceAuth
+		TenantID string `db:"tenant_id"`
+	}{
+		BundleInstanceAuth: a,
+		TenantID:           tenant,
+	}
 }
 
 func someError() error {

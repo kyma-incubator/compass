@@ -205,9 +205,11 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-// Create missing godoc
+// Create creates a runtime in a given tenant.
+// If the runtime has a global_subaccount_id label which value is a valid external subaccount from our DB and a child of the caller tenant. The subaccount is used to register the runtime.
+// After successful registration, the ASAs in the parent of the caller tenant are processed to add all matching scenarios for the runtime in the parent tenant.
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
-	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok {
+	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
 		tnt, err := s.extractTenantFromSubaccountLabel(ctx, saVal)
 		if err != nil {
 			return "", err
@@ -519,16 +521,12 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	finalScenarios := make([]interface{}, 0)
-
 	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, newRuntimeLabels, runtimeID)
 	if err != nil {
 		return errors.Wrap(err, "while merging scenarios from input and assignments")
 	}
 
-	finalScenarios = append(finalScenarios, scenarios...)
-
-	if len(finalScenarios) == 0 {
+	if len(scenarios) == 0 {
 		err := s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey)
 		if err != nil {
 			return errors.Wrapf(err, "while deleting scenarios label from runtime with id [%s]", runtimeID)
@@ -538,7 +536,7 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 
 	scenariosLabelInput := &model.LabelInput{
 		Key:        model.ScenariosKey,
-		Value:      finalScenarios,
+		Value:      scenarios,
 		ObjectID:   runtimeID,
 		ObjectType: model.RuntimeLabelableObject,
 	}

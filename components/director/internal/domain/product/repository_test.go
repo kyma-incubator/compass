@@ -2,7 +2,6 @@ package product_test
 
 import (
 	"database/sql/driver"
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -55,8 +54,8 @@ func TestPgRepository_Update(t *testing.T) {
 		Name: "Update Product",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.products SET title = ?, short_description = ?, vendor = ?, parent = ?, labels = ?, correlation_ids = ? WHERE id = ? AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
-				Args:          append(fixProductUpdateArgs(), entity.ID),
+				Query:         regexp.QuoteMeta(`UPDATE public.products SET title = ?, short_description = ?, vendor = ?, parent = ?, labels = ?, correlation_ids = ? WHERE id = ? AND (id IN (SELECT id FROM products_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          append(fixProductUpdateArgs(), entity.ID, tenantID),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},

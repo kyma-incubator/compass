@@ -31,3 +31,14 @@ type EntityCollection []Entity
 func (a EntityCollection) Len() int {
 	return len(a)
 }
+
+// DecorateWithTenantID decorates the entity with the given tenant ID.
+func (e *Entity) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*Entity
+		TenantID string `db:"tenant_id"`
+	}{
+		Entity:   e,
+		TenantID: tenant,
+	}
+}

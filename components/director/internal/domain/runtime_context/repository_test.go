@@ -3,7 +3,6 @@ package runtimectx_test
 import (
 	"context"
 	"database/sql/driver"
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -227,8 +226,8 @@ func TestPgRepository_Update(t *testing.T) {
 		Name: "Update Runtime Context",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.runtime_contexts SET key = ?, value = ? WHERE id = ? AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
-				Args:          []driver.Value{runtimeCtxModel.Key, runtimeCtxModel.Value, runtimeCtxModel.ID},
+				Query:         regexp.QuoteMeta(`UPDATE public.runtime_contexts SET key = ?, value = ? WHERE id = ? AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{runtimeCtxModel.Key, runtimeCtxModel.Value, runtimeCtxModel.ID, tenantID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},

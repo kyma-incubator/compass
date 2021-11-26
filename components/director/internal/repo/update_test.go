@@ -322,8 +322,8 @@ func TestUpdater(t *testing.T) {
 
 				test.AttachAdditionalQueries(mock, m2mTable, tenantID)
 
-				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true))", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, tenantID, repo.M2MOwnerColumn))).
-					WithArgs(appName, appDescription, appID).WillReturnResult(sqlmock.NewResult(0, 1))
+				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = ? AND %s = true))", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, repo.M2MOwnerColumn))).
+					WithArgs(appName, appDescription, appID, tenantID).WillReturnResult(sqlmock.NewResult(0, 1))
 				// WHEN
 				err := test.Method(updater)(ctx, resourceType, tenantID, fixApp)
 				// THEN
@@ -339,8 +339,8 @@ func TestUpdater(t *testing.T) {
 
 				test.AttachAdditionalQueries(mock, m2mTable, tenantID)
 
-				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE (id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true)", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, tenantID, repo.M2MOwnerColumn))).
-					WithArgs(appName, appDescription).WillReturnResult(sqlmock.NewResult(0, 1))
+				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE (id IN (SELECT %s FROM %s WHERE %s = ? AND %s = true)", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, repo.M2MOwnerColumn))).
+					WithArgs(appName, appDescription, tenantID).WillReturnResult(sqlmock.NewResult(0, 1))
 				// WHEN
 				err := test.Method(updater)(ctx, resourceType, tenantID, fixApp)
 				// THEN
@@ -355,8 +355,8 @@ func TestUpdater(t *testing.T) {
 
 				test.AttachAdditionalQueries(mock, m2mTable, tenantID)
 
-				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true)", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, tenantID, repo.M2MOwnerColumn))).
-					WithArgs(appName, appDescription, appID).WillReturnError(someError())
+				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = ? AND %s = true)", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, repo.M2MOwnerColumn))).
+					WithArgs(appName, appDescription, appID, tenantID).WillReturnError(someError())
 				// WHEN
 				err := test.Method(updater)(ctx, resourceType, tenantID, fixApp)
 				// THEN
@@ -385,8 +385,8 @@ func TestUpdater(t *testing.T) {
 
 				test.AttachAdditionalQueries(mock, m2mTable, tenantID)
 
-				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true)", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, tenantID, repo.M2MOwnerColumn))).
-					WithArgs(appName, appDescription, appID).WillReturnError(&pq.Error{Code: persistence.UniqueViolation})
+				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = ? AND %s = true)", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, repo.M2MOwnerColumn))).
+					WithArgs(appName, appDescription, appID, tenantID).WillReturnError(&pq.Error{Code: persistence.UniqueViolation})
 				// WHEN
 				err := test.Method(updater)(ctx, resourceType, tenantID, fixApp)
 				// THEN
@@ -401,8 +401,8 @@ func TestUpdater(t *testing.T) {
 
 				test.AttachAdditionalQueries(mock, m2mTable, tenantID)
 
-				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true)", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, tenantID, repo.M2MOwnerColumn))).
-					WithArgs(appName, appDescription, appID).WillReturnResult(sqlmock.NewResult(0, 157))
+				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = ? AND %s = true)", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, repo.M2MOwnerColumn))).
+					WithArgs(appName, appDescription, appID, tenantID).WillReturnResult(sqlmock.NewResult(0, 157))
 				// WHEN
 				err := test.Method(updater)(ctx, resourceType, tenantID, fixApp)
 				// THEN
@@ -418,8 +418,8 @@ func TestUpdater(t *testing.T) {
 
 				test.AttachAdditionalQueries(mock, m2mTable, tenantID)
 
-				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true)", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, tenantID, repo.M2MOwnerColumn))).
-					WithArgs(appName, appDescription, appID).WillReturnResult(sqlmock.NewResult(0, 0))
+				mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ?%s WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = ? AND %s = true)", appTableName, test.AdditionalCondition, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, repo.M2MOwnerColumn))).
+					WithArgs(appName, appDescription, appID, tenantID).WillReturnResult(sqlmock.NewResult(0, 0))
 				// WHEN
 				err := test.Method(updater)(ctx, resourceType, tenantID, fixApp)
 				// THEN
@@ -437,19 +437,6 @@ func TestUpdater(t *testing.T) {
 				err := test.Method(updater)(ctx, resource.Type("unknown"), tenantID, fixApp)
 				// THEN
 				assert.Contains(t, err.Error(), "entity unknown does not have access table")
-			})
-
-			t.Run("returns error if tenant is not UUID", func(t *testing.T) {
-				db, mock := testdb.MockDatabase(t)
-				ctx := persistence.SaveToContext(context.TODO(), db)
-				defer mock.AssertExpectations(t)
-
-				test.AttachAdditionalQueries(mock, m2mTable, "tenant_id")
-
-				// WHEN
-				err := test.Method(updater)(ctx, resourceType, "tenant_id", fixApp)
-				// THEN
-				assert.Contains(t, err.Error(), "tenant_id tenant_id should be UUID")
 			})
 
 			t.Run("returns error if missing persistence context", func(t *testing.T) {
@@ -478,8 +465,8 @@ func TestUpdater(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
 
-		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ? WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = '%s' AND %s = true) OR owner_id = ?)", biaTableName, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, tenantID, repo.M2MOwnerColumn))).
-			WithArgs(biaName, biaDescription, biaID, tenantID).WillReturnResult(sqlmock.NewResult(0, 1))
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("UPDATE %s SET name = ?, description = ? WHERE id = ? AND (id IN (SELECT %s FROM %s WHERE %s = ? AND %s = true) OR owner_id = ?)", biaTableName, repo.M2MResourceIDColumn, m2mTable, repo.M2MTenantIDColumn, repo.M2MOwnerColumn))).
+			WithArgs(biaName, biaDescription, biaID, tenantID, tenantID).WillReturnResult(sqlmock.NewResult(0, 1))
 		// WHEN
 		err := updater.UpdateSingle(ctx, resourceType, tenantID, fixBIA)
 		// THEN

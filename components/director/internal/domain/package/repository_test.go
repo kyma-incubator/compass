@@ -2,7 +2,6 @@ package ordpackage_test
 
 import (
 	"database/sql/driver"
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -55,9 +54,9 @@ func TestPgRepository_Update(t *testing.T) {
 		Name: "Update Package",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.packages SET vendor = ?, title = ?, short_description = ?, description = ?, version = ?, package_links = ?, links = ?,
-		licence_type = ?, tags = ?, countries = ?, labels = ?, policy_level = ?, custom_policy_level = ?, part_of_products = ?, line_of_business = ?, industry = ?, resource_hash = ? WHERE id = ? AND (id IN (SELECT id FROM packages_tenants WHERE tenant_id = '%s' AND owner = true))`, tenantID)),
-				Args:          append(fixPackageUpdateArgs(), entity.ID),
+				Query: regexp.QuoteMeta(`UPDATE public.packages SET vendor = ?, title = ?, short_description = ?, description = ?, version = ?, package_links = ?, links = ?,
+		licence_type = ?, tags = ?, countries = ?, labels = ?, policy_level = ?, custom_policy_level = ?, part_of_products = ?, line_of_business = ?, industry = ?, resource_hash = ? WHERE id = ? AND (id IN (SELECT id FROM packages_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          append(fixPackageUpdateArgs(), entity.ID, tenantID),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
