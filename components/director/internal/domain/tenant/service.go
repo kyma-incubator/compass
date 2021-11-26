@@ -22,6 +22,7 @@ const (
 type TenantMappingRepository interface {
 	UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error
 	Upsert(ctx context.Context, item model.BusinessTenantMapping) error
+	Update(ctx context.Context, model *model.BusinessTenantMapping) error
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 	Exists(ctx context.Context, id string) (bool, error)
@@ -134,6 +135,17 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 	return tenants
 }
 
+// Update updates tenant
+func (s *service) Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error {
+	tenant := tenantInput.ToBusinessTenantMapping(id)
+
+	if err := s.tenantMappingRepo.Update(ctx, tenant); err != nil {
+		return errors.Wrapf(err, "while updating tenant with id %s", id)
+	}
+
+	return nil
+}
+
 // CreateManyIfNotExists creates all provided tenants if they do not exist.
 // It creates or updates the subdomain and region labels of the provided tenants, no matter if they are pre-existing or not.
 func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
@@ -217,10 +229,10 @@ func tenantLocality(tenants []model.BusinessTenantMappingInput) (map[string]stri
 	return subdomains, regions
 }
 
-// DeleteMany removes all provided tenants from the Compass storage.
-func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
-	for _, tenantInput := range tenantInputs {
-		err := s.tenantMappingRepo.DeleteByExternalTenant(ctx, tenantInput.ExternalTenant)
+// DeleteMany removes all tenants with the provided external tenant ids from the Compass storage.
+func (s *service) DeleteMany(ctx context.Context, externalTenantIDs []string) error {
+	for _, externalTenantID := range externalTenantIDs {
+		err := s.tenantMappingRepo.DeleteByExternalTenant(ctx, externalTenantID)
 		if err != nil {
 			return errors.Wrap(err, "while deleting tenant")
 		}

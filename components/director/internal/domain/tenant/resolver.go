@@ -5,10 +5,11 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 // BusinessTenantMappingService is responsible for the service-layer tenant operations.
@@ -17,6 +18,9 @@ type BusinessTenantMappingService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error)
 	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
+	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
+	Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error
+	DeleteMany(ctx context.Context, tenantInputs []string) error
 }
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
@@ -24,6 +28,8 @@ type BusinessTenantMappingService interface {
 //go:generate mockery --name=BusinessTenantMappingConverter --output=automock --outpkg=automock --case=underscore
 type BusinessTenantMappingConverter interface {
 	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
+	MultipleInputFromGraphQL(in []*graphql.BusinessTenantMappingInput) []model.BusinessTenantMappingInput
+	ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant
 }
 
 // Resolver is the resolver responsible for tenant-related GraphQL requests.
@@ -114,6 +120,76 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Tenant, key *string)
 	}
 
 	return resultLabels, nil
+}
+
+// Write creates new global and subaccounts
+func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTenantMappingInput) (int, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return -1, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tenants := r.conv.MultipleInputFromGraphQL(inputTenants)
+
+	if err := r.srv.UpsertMany(ctx, tenants...); err != nil {
+		return -1, errors.Wrap(err, "while writing new tenants")
+	}
+
+	if err = tx.Commit(); err != nil {
+		return -1, err
+	}
+
+	return len(tenants), nil
+}
+
+// Delete deletes tenants
+func (r *Resolver) Delete(ctx context.Context, externalTenantIDs []string) (int, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return -1, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := r.srv.DeleteMany(ctx, externalTenantIDs); err != nil {
+		return -1, errors.Wrap(err, "while deleting tenants")
+	}
+
+	if err = tx.Commit(); err != nil {
+		return -1, err
+	}
+
+	return len(externalTenantIDs), nil
+}
+
+// Update update single tenant
+func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+	tenantModels := r.conv.MultipleInputFromGraphQL([]*graphql.BusinessTenantMappingInput{&in})
+	if err := r.srv.Update(ctx, id, tenantModels[0]); err != nil {
+		return nil, errors.Wrap(err, "while deleting tenants")
+	}
+
+	tenant, err := r.srv.GetTenantByExternalID(ctx, in.ExternalTenant)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting tenant with external id %s", in.ExternalTenant)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(tenant), nil
 }
 
 // NewResolver returns the GraphQL resolver for tenants.

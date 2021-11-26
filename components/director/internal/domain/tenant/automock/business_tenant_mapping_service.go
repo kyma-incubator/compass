@@ -14,6 +14,20 @@ type BusinessTenantMappingService struct {
 	mock.Mock
 }
 
+// DeleteMany provides a mock function with given fields: ctx, tenantInputs
+func (_m *BusinessTenantMappingService) DeleteMany(ctx context.Context, tenantInputs []string) error {
+	ret := _m.Called(ctx, tenantInputs)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) error); ok {
+		r0 = rf(ctx, tenantInputs)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetTenantByExternalID provides a mock function with given fields: ctx, externalID
 func (_m *BusinessTenantMappingService) GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, externalID)
@@ -81,4 +95,39 @@ func (_m *BusinessTenantMappingService) ListLabels(ctx context.Context, tenantID
 	}
 
 	return r0, r1
+}
+
+// Update provides a mock function with given fields: ctx, id, tenantInput
+func (_m *BusinessTenantMappingService) Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error {
+	ret := _m.Called(ctx, id, tenantInput)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.BusinessTenantMappingInput) error); ok {
+		r0 = rf(ctx, id, tenantInput)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertMany provides a mock function with given fields: ctx, tenantInputs
+func (_m *BusinessTenantMappingService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
+	_va := make([]interface{}, len(tenantInputs))
+	for _i := range tenantInputs {
+		_va[_i] = tenantInputs[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) error); ok {
+		r0 = rf(ctx, tenantInputs...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }

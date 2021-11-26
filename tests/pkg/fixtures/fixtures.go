@@ -7,6 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
@@ -123,4 +127,22 @@ func FixTenantRequest(externalID string) *gcli.Request {
 						%s
 					}
 				}`, externalID, testctx.Tc.GQLFieldsProvider.ForTenant()))
+}
+
+func FixWriteTenantsRequest(t require.TestingT, tenants []graphql.BusinessTenantMappingInput) *gcli.Request {
+	gqlizer := graphqlizer.Graphqlizer{}
+	in, err := gqlizer.WriteTenantsInputToGQL(tenants)
+	require.NoError(t, err)
+
+	tenantsQuery := fmt.Sprintf("mutation { writeTenants(in:[%s])}", in)
+	return gcli.NewRequest(tenantsQuery)
+}
+
+func FixDeleteTenantsRequest(t require.TestingT, tenants []graphql.BusinessTenantMappingInput) *gcli.Request {
+	gqlizer := graphqlizer.Graphqlizer{}
+	in, err := gqlizer.DeleteTenantsInputToGQL(tenants)
+	require.NoError(t, err)
+
+	tenantsQuery := fmt.Sprintf("mutation { deleteTenants(in:[%s])}", in)
+	return gcli.NewRequest(tenantsQuery)
 }
