@@ -109,7 +109,7 @@ func (cl *certificatesLoader) processEvents(ctx context.Context, events <-chan w
 			case watch.Added:
 				fallthrough
 			case watch.Modified:
-				log.C(ctx).Info("Updating certificate secret...")
+				log.C(ctx).Info("Updating the cache with certificate secret data...")
 				secret, ok := ev.Object.(*v1.Secret)
 				if !ok {
 					log.C(ctx).Error("Unexpected error: object is not secret. Try again")
@@ -117,7 +117,7 @@ func (cl *certificatesLoader) processEvents(ctx context.Context, events <-chan w
 				}
 				cl.certsCache.Put(secret.Data)
 			case watch.Deleted:
-				log.C(ctx).Info("Certificate secret is deleted")
+				log.C(ctx).Info("Removing certificate secret data from cache...")
 				cl.certsCache.Put(make(map[string][]byte))
 			case watch.Error:
 				log.C(ctx).Error("Error event is received, stop certificate secret watcher and try again...")

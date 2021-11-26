@@ -25,8 +25,7 @@ spec:
               hostnames:
                 - "{{ .Values.global.externalServicesMock.host }}.{{ .Values.global.ingress.domainName }}"
           {{ end }}
-          serviceAccountName:
-            {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+          serviceAccountName: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
           restartPolicy: Never
           containers:
             - name: certificate-rotation
@@ -124,9 +123,7 @@ spec:
                   confirmValidIssuerLocalityOrRetry
 
                   echo -e "${YELLOW}Creating/Updating client certificate secret... ${NC}"
-                  kubectl create secret tls external-client-certificate --namespace=compass-system --cert=/tmp/client-certificate.pem --key=/tmp/unencrypted-private-key.pem --save-config --dry-run=client -o yaml | kubectl apply -f -
-
-                  exit_code=$?; curl -X POST http://127.0.0.1:15020/quitquitquit; sleep 3; exit $exit_code;
+                  kubectl create secret tls external-client-certificate --namespace=compass-system --cert=/tmp/client-certificate.pem --key=/tmp/unencrypted-private-key.pem --save-config --dry-run=client -o yaml | kubectl apply -f - ; exit_code=$?; echo '# KILLING PILOT-AGENT #'; curl -X POST http://127.0.0.1:15020/quitquitquit; sleep 3; exit $exit_code;
 
                   set +e
               env:
@@ -166,14 +163,12 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name:
-    {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+  name: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}
-    helm.sh/chart:
-      {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
     app.kubernetes.io/name: {{ template "name" . }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
@@ -181,43 +176,56 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name:
-    {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+  name: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}
-    helm.sh/chart:
-      {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
     app.kubernetes.io/name: {{ template "name" . }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
 rules:
-  - apiGroups: [ "*" ]
-    resources: [ "secrets" ]
-    verbs: ["get", "create", "update", "patch" ]
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    resourceNames: ["{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"]
+    verbs: ["get", "create", "update", "patch"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name:
-    {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+  name: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}
-    helm.sh/chart:
-      {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
     app.kubernetes.io/name: {{ template "name" . }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
 subjects:
   - kind: ServiceAccount
-    name:
-      {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+    name: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: Role
-  name:
-    {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+  name: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
   apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: director-external-client-certificate
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    resourceNames: ["{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"]
+    verbs: ["watch"]
