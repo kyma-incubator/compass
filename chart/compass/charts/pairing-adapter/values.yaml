@@ -10,12 +10,14 @@ deployment:
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
   adapters:
-    adapter0:
-      enabled: false
-      authSecret: ""
+    adapterLocalMTLS:
+      enabled: true
+      auth:
+        type: "mtls"
+        secret: "" #TODO: Adapt prod configs
       envs:
-        mappingTemplateExternalURL: ""
+        mappingTemplateExternalURL: {{ quote (printf "%s.%s%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName "/cert/token") }}
         mappingTemplateHeaders: ""
         mappingTemplateJSONBody: ""
-        mappingTemplateTokenFromResponse: ""
+        mappingTemplateTokenFromResponse: "{{.access_token}}"
         oauthStyle: ""

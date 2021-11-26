@@ -42,17 +42,13 @@ spec:
               - name: MAPPING_TEMPLATE_TOKEN_FROM_RESPONSE
                 value: {{ $config.envs.mappingTemplateTokenFromResponse | quote }}
               - name: AUTH_TYPE
-                valueFrom:
-                    secretKeyRef:
-                        name: {{ $config.authSecret }}
-                        key: type
-              - name: AUTH_URL
+                value: {{ $config.auth.type }}
+{{if eq $config.auth.type "oauth" }}
+              - name: OAUTH_URL
                 valueFrom:
                     secretKeyRef:
                         name: {{ $config.authSecret }}
                         key: url
-{{ $secret := (lookup "v1" "Secret" $.Release.Namespace $config.authSecret ) }}
-{{if eq (b64dec (index $secret.data "type")) "oauth" }}
               - name: OAUTH_CLIENT_ID
                 valueFrom:
                     secretKeyRef:
@@ -63,9 +59,9 @@ spec:
                     secretKeyRef:
                         name: {{ $config.authSecret }}
                         key: clientSecret
-{{ end }}
               - name: OAUTH_AUTH_STYLE
                 value: {{ $config.envs.oauthStyle | quote }}
+{{ end }}
               - name: LOG_FORMAT
                 value: {{ $.Values.global.log.format | quote }}
               ports:

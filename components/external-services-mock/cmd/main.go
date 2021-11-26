@@ -122,6 +122,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	// CA server handlers
 	certHandler := cert.NewHandler(cfg.CACert, cfg.CAKey)
 	router.HandleFunc("/cert", certHandler.Generate).Methods(http.MethodPost)
+	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
 
 	// AL handlers
 	configChangeSvc := configurationchange.NewService()

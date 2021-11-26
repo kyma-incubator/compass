@@ -45,7 +45,7 @@ func main() {
 			AuthStyle:    authStyle,
 		}
 		client = cc.Client(ctx)
-	} else {
+	} else if conf.Auth.Type == adapter.AuthTypeMTLS {
 		//TODO: Init cache
 		var cache CertificateCache
 		transport.TLSClientConfig = &tls.Config{
@@ -53,6 +53,8 @@ func main() {
 				return cache.Get()
 			},
 		}
+	} else {
+		exitOnError(errors.Errorf("auth type %s is not supported", conf.Auth.Type), "while configuring auth")
 	}
 
 	cli := adapter.NewClient(client, conf.Mapping)

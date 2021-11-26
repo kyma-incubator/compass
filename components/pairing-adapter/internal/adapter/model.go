@@ -35,11 +35,11 @@ type Mapping struct {
 }
 
 type Auth struct {
-	URL          string
 	Type         string
 	ClientID     string    `envconfig:"optional"`
 	ClientSecret string    `envconfig:"optional"`
-	AuthStyle    AuthStyle `envconfig:"default=AuthDetect"`
+	URL          string    `envconfig:"optional"`
+	AuthStyle    AuthStyle `envconfig:"optional,default=AuthDetect"`
 }
 
 // swagger:response externalToken
