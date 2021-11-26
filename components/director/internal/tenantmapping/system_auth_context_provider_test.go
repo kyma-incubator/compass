@@ -38,7 +38,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		scopesGetterMock := getScopesGetterMock()
-		scopesGetterMock.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return(expectedScopes, nil).Once()
+		scopesGetterMock.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(expectedScopes, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, scopesGetterMock, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
@@ -165,7 +165,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		})).Return(nil).Once()
 
 		scopesGetterMock := getScopesGetterMock()
-		scopesGetterMock.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return(expectedScopes, nil).Once()
+		scopesGetterMock.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(expectedScopes, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, scopesGetterMock, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
@@ -383,7 +383,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		scopesGetterMock := getScopesGetterMock()
-		scopesGetterMock.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return([]string{}, errors.New("some-error")).Once()
+		scopesGetterMock.On("GetRequiredScopes", "scopesPerConsumerType.application").Return([]string{}, errors.New("some-error")).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, scopesGetterMock, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}

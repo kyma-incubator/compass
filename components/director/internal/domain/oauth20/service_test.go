@@ -56,7 +56,7 @@ func TestService_CreateClient(t *testing.T) {
 			},
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
-				clientDetailsCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
+				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil).Once()
 				clientDetailsCfgProvider.On("GetRequiredGrantTypes", "clientCredentialsRegistrationGrantTypes").Return(grantTypes, nil).Once()
 				return clientDetailsCfgProvider
 			},
@@ -77,7 +77,7 @@ func TestService_CreateClient(t *testing.T) {
 			},
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
-				clientDetailsCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
+				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil).Once()
 				clientDetailsCfgProvider.On("GetRequiredGrantTypes", "clientCredentialsRegistrationGrantTypes").Return(grantTypes, nil).Once()
 				return clientDetailsCfgProvider
 			},
@@ -96,7 +96,7 @@ func TestService_CreateClient(t *testing.T) {
 			},
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
-				clientDetailsCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return(nil, testErr).Once()
+				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(nil, testErr).Once()
 				return clientDetailsCfgProvider
 			},
 			HydraClient: func() *automock.OryHydraService {
@@ -112,7 +112,7 @@ func TestService_CreateClient(t *testing.T) {
 			},
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
-				clientDetailsCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return(scopes, nil).Once()
+				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(scopes, nil).Once()
 				clientDetailsCfgProvider.On("GetRequiredGrantTypes", "clientCredentialsRegistrationGrantTypes").Return(nil, testErr).Once()
 				return clientDetailsCfgProvider
 			},
@@ -165,7 +165,7 @@ func TestService_UpdateClient(t *testing.T) {
 			ExpectedError: nil,
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
-				clientDetailsCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
+				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil).Once()
 				clientDetailsCfgProvider.On("GetRequiredGrantTypes", "clientCredentialsRegistrationGrantTypes").Return(grantTypes, nil).Once()
 				return clientDetailsCfgProvider
 			},
@@ -181,7 +181,7 @@ func TestService_UpdateClient(t *testing.T) {
 			ExpectedError: testErr,
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
-				clientDetailsCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.integration_system").Return(scopes, nil).Once()
+				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil).Once()
 				clientDetailsCfgProvider.On("GetRequiredGrantTypes", "clientCredentialsRegistrationGrantTypes").Return(grantTypes, nil).Once()
 				return clientDetailsCfgProvider
 			},
@@ -197,7 +197,7 @@ func TestService_UpdateClient(t *testing.T) {
 			ExpectedError: testErr,
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
-				clientDetailsCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return(nil, testErr).Once()
+				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(nil, testErr).Once()
 				return clientDetailsCfgProvider
 			},
 			HydraClient: func() *automock.OryHydraService {
@@ -210,7 +210,7 @@ func TestService_UpdateClient(t *testing.T) {
 			ExpectedError: testErr,
 			ClientDetailsCfgProviderFn: func() *automock.ClientDetailsConfigProvider {
 				clientDetailsCfgProvider := &automock.ClientDetailsConfigProvider{}
-				clientDetailsCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return(scopes, nil).Once()
+				clientDetailsCfgProvider.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(scopes, nil).Once()
 				clientDetailsCfgProvider.On("GetRequiredGrantTypes", "clientCredentialsRegistrationGrantTypes").Return(nil, testErr).Once()
 				return clientDetailsCfgProvider
 			},
