@@ -34,6 +34,7 @@ const (
 )
 
 type repoCreatorFunc func(ctx context.Context, application *model.Application) error
+type repoUpserterFunc func(ctx context.Context, application *model.Application) error
 
 // ApplicationRepository missing godoc
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
@@ -48,6 +49,7 @@ type ApplicationRepository interface {
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
+	Upsert(ctx context.Context, model *model.Application) error
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
@@ -271,8 +273,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 // Create missing godoc
 func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
 	creator := func(ctx context.Context, application *model.Application) (err error) {
-		err = s.appRepo.Create(ctx, application)
-		if err != nil {
+		if err = s.appRepo.Create(ctx, application); err != nil {
 			return errors.Wrapf(err, "while creating Application with name %s", application.Name)
 		}
 		return
@@ -285,8 +286,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error) {
 	creator := func(ctx context.Context, application *model.Application) (err error) {
 		application.ApplicationTemplateID = appTemplateID
-		err = s.appRepo.Create(ctx, application)
-		if err != nil {
+		if err = s.appRepo.Create(ctx, application); err != nil {
 			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
 		}
 		return
@@ -295,28 +295,29 @@ func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRe
 	return s.genericCreate(ctx, in, creator)
 }
 
-// CreateManyIfNotExistsWithEventualTemplate missing godoc
-func (s *service) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error {
-	appsToAdd, err := s.filterUniqueNonExistingApplications(ctx, applicationInputs)
-	if err != nil {
-		return errors.Wrap(err, "while filtering unique and non-existing applications")
-	}
-	log.C(ctx).Infof("Will create %d systems", len(appsToAdd))
-	for _, a := range appsToAdd {
-		if a.TemplateID == "" {
-			_, err = s.Create(ctx, a.ApplicationRegisterInput)
-			if err != nil {
-				return errors.Wrap(err, "while creating application")
-			}
-			continue
+// Upsert missing godoc
+func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput) error {
+	upserterFunc := func(ctx context.Context, application *model.Application) (err error) {
+		if err = s.appRepo.Upsert(ctx, application); err != nil {
+			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
 		}
-		_, err = s.CreateFromTemplate(ctx, a.ApplicationRegisterInput, &a.TemplateID)
-		if err != nil {
-			return errors.Wrap(err, "while creating application")
-		}
+		return
 	}
 
-	return nil
+	return s.genericUpsert(ctx, in, upserterFunc)
+}
+
+// UpsertFromTemplate missing godoc
+func (s *service) UpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error {
+	upserterFunc := func(ctx context.Context, application *model.Application) (err error) {
+		application.ApplicationTemplateID = appTemplateID
+		if err = s.appRepo.Upsert(ctx, application); err != nil {
+			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
+		}
+		return
+	}
+
+	return s.genericUpsert(ctx, in, upserterFunc)
 }
 
 // Update missing godoc
@@ -337,8 +338,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 
 	app.SetFromUpdateInput(in, s.timestampGen())
 
-	err = s.appRepo.Update(ctx, app)
-	if err != nil {
+	if err = s.appRepo.Update(ctx, app); err != nil {
 		return errors.Wrapf(err, "while updating Application with id %s", id)
 	}
 
@@ -352,8 +352,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	}
 
 	label := createLabel(nameKey, s.appNameNormalizer.Normalize(app.Name), app.ID)
-	err = s.SetLabel(ctx, label)
-	if err != nil {
+	if err = s.SetLabel(ctx, label); err != nil {
 		return errors.Wrap(err, "while setting application name label")
 	}
 	log.C(ctx).Debugf("Successfully set Label for Application with id %s", app.ID)
@@ -615,62 +614,54 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	return id, nil
 }
 
-func (s *service) filterUniqueNonExistingApplications(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) ([]model.ApplicationRegisterInputWithTemplate, error) {
+func (s *service) genericUpsert(ctx context.Context, in model.ApplicationRegisterInput, repoUpserterFunc repoUpserterFunc) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "while loading tenant from context")
+		return err
 	}
-
-	allApps, err := s.appRepo.ListAll(ctx, appTenant)
+	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing all applications for tenant %s", appTenant)
-	}
-	log.C(ctx).Debugf("Found %d existing systems", len(allApps))
-
-	type key struct {
-		name         string
-		systemNumber string
+		return errors.Wrap(err, "while validating Integration System ID")
 	}
 
-	uniqueNonExistingApps := make(map[key]int)
-	keys := make([]key, 0)
-	for index, ai := range applicationInputs {
-		alreadyExits := false
-		systemNumber := ""
-		if ai.SystemNumber != nil {
-			systemNumber = *ai.SystemNumber
-		}
-		aiKey := key{
-			name:         ai.Name,
-			systemNumber: systemNumber,
-		}
-
-		if _, found := uniqueNonExistingApps[aiKey]; found {
-			continue
-		}
-
-		for _, a := range allApps {
-			bothSystemsAreWithoutSystemNumber := (ai.SystemNumber == nil && a.SystemNumber == nil)
-			bothSystemsHaveSystemNumber := (ai.SystemNumber != nil && a.SystemNumber != nil && *(ai.SystemNumber) == *(a.SystemNumber))
-			if ai.Name == a.Name && (bothSystemsAreWithoutSystemNumber || bothSystemsHaveSystemNumber) {
-				alreadyExits = true
-				break
-			}
-		}
-
-		if !alreadyExits {
-			uniqueNonExistingApps[aiKey] = index
-			keys = append(keys, aiKey)
-		}
+	if !exists {
+		return apperrors.NewNotFoundError(resource.IntegrationSystem, *in.IntegrationSystemID)
 	}
 
-	result := make([]model.ApplicationRegisterInputWithTemplate, 0, len(uniqueNonExistingApps))
-	for _, key := range keys {
-		appInputIndex := uniqueNonExistingApps[key]
-		result = append(result, applicationInputs[appInputIndex])
+	id := s.uidService.Generate()
+	log.C(ctx).Debugf("ID %s generated for Application with name %s", id, in.Name)
+	app := in.ToApplication(s.timestampGen(), id, appTenant)
+
+	if err := repoUpserterFunc(ctx, app); err != nil {
+		return errors.Wrap(err, "while upserting application")
 	}
 
-	return result, nil
+	if in.IntegrationSystemID != nil {
+		intSysLabel := createLabel(intSysKey, *in.IntegrationSystemID, id)
+		err = s.SetLabel(ctx, intSysLabel)
+		if err != nil {
+			return errors.Wrapf(err, "while setting the integration system label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
+		}
+		log.C(ctx).Debugf("Successfully set Label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
+	}
+
+	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, appTenant, &in.Labels)
+
+	if in.Labels == nil {
+		in.Labels = map[string]interface{}{}
+	}
+	in.Labels[intSysKey] = ""
+	if in.IntegrationSystemID != nil {
+		in.Labels[intSysKey] = *in.IntegrationSystemID
+	}
+	in.Labels[nameKey] = s.appNameNormalizer.Normalize(app.Name)
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
+	if err != nil {
+		return errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
+	}
+
+	return nil
 }
 
 func createLabel(key string, value string, objectID string) *model.LabelInput {

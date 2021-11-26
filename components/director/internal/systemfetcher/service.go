@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -32,7 +33,8 @@ type tenantService interface {
 
 //go:generate mockery --name=systemsService --output=automock --outpkg=automock --case=underscore --exported=true
 type systemsService interface {
-	CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error
+	Upsert(ctx context.Context, in model.ApplicationRegisterInput) error
+	UpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error
 	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
 }
 
@@ -110,8 +112,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 			wgDB.Done()
 		}()
 		for tenantSystems := range systemsQueue {
-			err = s.processSystemsForTenant(ctx, tenantSystems.tenant, tenantSystems.systems)
-			if err != nil {
+			if err = s.processSystemsForTenant(ctx, tenantSystems.tenant, tenantSystems.systems); err != nil {
 				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", tenantSystems.tenant.ExternalTenant)))
 				continue
 			}
@@ -174,59 +175,64 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 
 func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMapping *model.BusinessTenantMapping, systems []System) error {
 	log.C(ctx).Infof("Saving %d systems for tenant %s", len(systems), tenantMapping.Name)
-	appInputs := make([]model.ApplicationRegisterInputWithTemplate, 0, len(systems))
-
-	tx, err := s.transaction.Begin()
-	if err != nil {
-		return errors.Wrap(err, "failed to begin transaction")
-	}
-	defer s.transaction.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = tenant.SaveToContext(ctx, tenantMapping.ID, tenantMapping.ExternalTenant)
-	ctx = persistence.SaveToContext(ctx, tx)
 
 	for _, system := range systems {
-		if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted && s.config.EnableSystemDeletion {
-			log.C(ctx).Infof("Getting system by name %s and system number %s", system.DisplayName, system.SystemNumber)
-			app, err := s.systemsService.GetByNameAndSystemNumber(ctx, system.DisplayName, system.SystemNumber)
+		err := func() error {
+			tx, err := s.transaction.Begin()
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("Could not get system with name %s and system number %s", system.DisplayName, system.SystemNumber)
-				continue
+				return errors.Wrap(err, "failed to begin transaction")
 			}
-			if !app.Ready && !app.GetDeletedAt().IsZero() {
-				log.C(ctx).Infof("System with id %s is currently being deleted", app.ID)
-				continue
-			}
-			if err := s.directorClient.DeleteSystemAsync(ctx, app.ID, tenantMapping.ID); err != nil {
-				if strings.Contains(err.Error(), ConcurrentDeleteOperationErrMsg) {
-					log.C(ctx).Warnf("Delete operation is in progress for system with id %s", app.ID)
-				} else {
-					log.C(ctx).WithError(err).Errorf("Could not delete system with id %s", app.ID)
-				}
-				continue
-			}
-			log.C(ctx).Infof("Started asynchronously delete for system with id %s", app.ID)
-			continue
-		}
+			ctx = tenant.SaveToContext(ctx, tenantMapping.ID, tenantMapping.ExternalTenant)
+			ctx = persistence.SaveToContext(ctx, tx)
+			defer s.transaction.RollbackUnlessCommitted(ctx, tx)
 
-		appInput, err := s.convertSystemToAppRegisterInput(ctx, system)
+			if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted && s.config.EnableSystemDeletion {
+				log.C(ctx).Infof("Getting system by name %s and system number %s", system.DisplayName, system.SystemNumber)
+				app, err := s.systemsService.GetByNameAndSystemNumber(ctx, system.DisplayName, system.SystemNumber)
+				if err != nil {
+					log.C(ctx).WithError(err).Errorf("Could not get system with name %s and system number %s", system.DisplayName, system.SystemNumber)
+					return nil
+				}
+				if !app.Ready && !app.GetDeletedAt().IsZero() {
+					log.C(ctx).Infof("System with id %s is currently being deleted", app.ID)
+					return nil
+				}
+				if err := s.directorClient.DeleteSystemAsync(ctx, app.ID, tenantMapping.ID); err != nil {
+					if strings.Contains(err.Error(), ConcurrentDeleteOperationErrMsg) {
+						log.C(ctx).Warnf("Delete operation is in progress for system with id %s", app.ID)
+					} else {
+						log.C(ctx).WithError(err).Errorf("Could not delete system with id %s", app.ID)
+					}
+					return nil
+				}
+				log.C(ctx).Infof("Started asynchronously delete for system with id %s", app.ID)
+				return nil
+			}
+
+			appInput, err := s.convertSystemToAppRegisterInput(ctx, system)
+			if err != nil {
+				return err
+			}
+
+			if appInput.TemplateID == "" {
+				if err = s.systemsService.Upsert(ctx, appInput.ApplicationRegisterInput); err != nil {
+					return errors.Wrap(err, "while creating application")
+				}
+			} else {
+				if err = s.systemsService.UpsertFromTemplate(ctx, appInput.ApplicationRegisterInput, &appInput.TemplateID); err != nil {
+					return errors.Wrap(err, "while creating application")
+				}
+			}
+
+			if err = tx.Commit(); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("failed to commit applications for tenant %s", tenantMapping.ExternalTenant))
+			}
+			return nil
+		}()
 		if err != nil {
 			return err
 		}
-		appInputs = append(appInputs, *appInput)
 	}
-
-	if len(appInputs) > 0 {
-		err = s.systemsService.CreateManyIfNotExistsWithEventualTemplate(ctx, appInputs)
-		if err != nil {
-			return errors.Wrap(err, "failed to create applications")
-		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to commit applications for tenant %s", tenantMapping.ExternalTenant))
-	}
-
 	return nil
 }
 

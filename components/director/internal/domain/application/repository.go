@@ -46,6 +46,7 @@ type pgRepository struct {
 	globalPageableQuerier repo.PageableQuerierGlobal
 	creator               repo.Creator
 	updater               repo.Updater
+	upserter              repo.Upserter
 	conv                  EntityConverter
 }
 
@@ -62,6 +63,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
 		creator:               repo.NewCreator(resource.Application, applicationTable, applicationColumns),
 		updater:               repo.NewUpdater(resource.Application, applicationTable, updatableColumns, tenantColumn, []string{"id"}),
+		upserter:              repo.NewUpserter(resource.Application, applicationTable, applicationColumns, []string{"system_number"}, updatableColumns),
 		conv:                  conv,
 	}
 }
@@ -294,6 +296,11 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 // Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, model *model.Application) error {
 	return r.updateSingle(ctx, model, false)
+}
+
+// Upsert missing godoc
+func (r *pgRepository) Upsert(ctx context.Context, model *model.Application) error {
+	return r.upserter.Upsert(ctx, model)
 }
 
 // TechnicalUpdate missing godoc
