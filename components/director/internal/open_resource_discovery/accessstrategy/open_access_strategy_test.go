@@ -19,7 +19,7 @@ func TestOpenAccessStrategy(t *testing.T) {
 		return expectedResp, nil
 	})
 
-	cerCache := certloader.NewCertificateCache("")
+	cerCache := certloader.NewCertificateCache()
 	provider := accessstrategy.NewDefaultExecutorProvider(cerCache)
 	executor, err := provider.Provide(accessstrategy.OpenAccessStrategy)
 	require.NoError(t, err)

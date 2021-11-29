@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -63,8 +62,7 @@ func Test_CertificatesLoader(t *testing.T) {
 
 		// then
 		assert.Eventually(t, func() bool {
-			tlsCert, err := cache.Get()
-			require.NoError(t, err)
+			tlsCert := cache.Get()
 			require.NotNil(t, tlsCert)
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
@@ -93,8 +91,7 @@ func Test_CertificatesLoader(t *testing.T) {
 
 		// then
 		assert.Eventually(t, func() bool {
-			tlsCert, err := cache.Get()
-			require.NoError(t, err)
+			tlsCert := cache.Get()
 			require.NotNil(t, tlsCert)
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
@@ -120,9 +117,7 @@ func Test_CertificatesLoader(t *testing.T) {
 
 		// then
 		assert.Eventually(t, func() bool {
-			tlsCert, err := cache.Get()
-			require.Error(t, err)
-			require.Contains(t, err.Error(), fmt.Sprintf("Client certificate data not found in the cache for key: %s", secretName))
+			tlsCert := cache.Get()
 			require.Nil(t, tlsCert)
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
@@ -150,8 +145,7 @@ func Test_CertificatesLoader(t *testing.T) {
 		})
 
 		assert.Eventually(t, func() bool {
-			tlsCert, err := cache.Get()
-			require.NoError(t, err)
+			tlsCert := cache.Get()
 			require.NotNil(t, tlsCert)
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
@@ -162,9 +156,7 @@ func Test_CertificatesLoader(t *testing.T) {
 
 		// then
 		assert.Eventually(t, func() bool {
-			tlsCert, err := cache.Get()
-			require.Error(t, err)
-			require.Contains(t, err.Error(), "There is no certificate data in the cache")
+			tlsCert := cache.Get()
 			require.Nil(t, tlsCert)
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
@@ -197,8 +189,7 @@ func Test_CertificatesLoader(t *testing.T) {
 
 		// then
 		assert.Eventually(t, func() bool {
-			tlsCert, err := cache.Get()
-			require.NoError(t, err)
+			tlsCert := cache.Get()
 			require.NotNil(t, tlsCert)
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
@@ -238,8 +229,7 @@ func Test_CertificatesLoader(t *testing.T) {
 
 		// then
 		assert.Eventually(t, func() bool {
-			tlsCert, err := cache.Get()
-			require.NoError(t, err)
+			tlsCert := cache.Get()
 			require.NotNil(t, tlsCert)
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
@@ -252,8 +242,67 @@ func Test_CertificatesLoader(t *testing.T) {
 	})
 }
 
+func Test_CertificateParsing(t *testing.T) {
+	ctx := context.Background()
+	cl := certificatesLoader{}
+	certBytes, keyBytes := generateTestCertAndKey(t, testCN)
+	invalidCert := "-----BEGIN CERTIFICATE-----\naZOCUHlJ1wKwnYiLnOofB1xyIUZhVLaJy7Ob\n-----END CERTIFICATE-----\n"
+	invalidKey := "-----BEGIN RSA PRIVATE KEY-----\n7qFmWkbkOAM9CUPx5RwSRt45oxlQjvDniZALWqbYxgO5f8cYZsEAyOU1n2DXgiei\n-----END RSA PRIVATE KEY-----\n"
+
+	testCases := []struct {
+		Name             string
+		SecretData       map[string][]byte
+		ExpectedErrorMsg string
+	}{
+		{
+			Name:       "Successfully get certificate from cache",
+			SecretData: map[string][]byte{secretCertKey: certBytes, secretKeyKey: keyBytes},
+		},
+		{
+			Name:             "Error when secret data is empty",
+			SecretData:       map[string][]byte{},
+			ExpectedErrorMsg: "There is no certificate data in the secret",
+		},
+		{
+			Name:             "Error when certificate data is invalid",
+			SecretData:       map[string][]byte{secretCertKey: []byte("invalid"), secretKeyKey: []byte("invalid")},
+			ExpectedErrorMsg: "Error while decoding certificate pem block",
+		},
+		{
+			Name:             "Error when parsing certificate",
+			SecretData:       map[string][]byte{secretCertKey: []byte(invalidCert), secretKeyKey: []byte("invalid")},
+			ExpectedErrorMsg: "malformed certificate",
+		},
+		{
+			Name:             "Error when private key is invalid",
+			SecretData:       map[string][]byte{secretCertKey: certBytes, secretKeyKey: []byte("invalid")},
+			ExpectedErrorMsg: "Error while decoding private key pem block",
+		},
+		{
+			Name:             "Error when parsing private key",
+			SecretData:       map[string][]byte{secretCertKey: certBytes, secretKeyKey: []byte(invalidKey)},
+			ExpectedErrorMsg: "structure error",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tlsCert, err := cl.parseCertificate(ctx, testCase.SecretData)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+				require.Nil(t, tlsCert)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, tlsCert)
+			}
+		})
+	}
+}
+
 func preparation(ctx context.Context, number int) (Cache, *testWatch, *automock.Manager) {
-	cache := NewCertificateCache(secretName)
+	cache := NewCertificateCache()
 	watcher := &testWatch{
 		events: make(chan watch.Event, 50),
 	}

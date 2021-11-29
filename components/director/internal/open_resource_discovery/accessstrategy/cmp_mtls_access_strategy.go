@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"net/http"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 )
 
@@ -20,9 +22,9 @@ func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache) *cmpMTLSAccess
 
 // Execute performs the access strategy's specific execution logic
 func (as *cmpMTLSAccessStrategyExecutor) Execute(baseClient *http.Client, documentURL string) (*http.Response, error) {
-	clientCert, err := as.certCache.Get()
-	if err != nil {
-		return nil, err
+	clientCert := as.certCache.Get()
+	if clientCert == nil {
+		return nil, errors.New("did not find client certificate in the cache")
 	}
 
 	tr := &http.Transport{}

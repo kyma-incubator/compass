@@ -4,71 +4,89 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParse(t *testing.T) {
-	t.Run("should parse string", func(t *testing.T) {
+	namespace := "namespace"
+	name := "resource-name"
+	emptyStr := ""
+
+	t.Run("Should return error if empty string is provided", func(t *testing.T) {
 		// given
-		namespace := "namespace"
-		name := "name"
-		str := fmt.Sprintf("%s/%s", namespace, name)
+		str := emptyStr
 
 		// when
-		namespacedname := Parse(str)
+		namespacedname, err := Parse(str)
 
 		// then
-		assert.Equal(t, namespacedname.Namespace, namespace)
-		assert.Equal(t, namespacedname.Name, name)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "the value cannot be empty")
+		require.Empty(t, namespacedname)
 	})
 
-	t.Run("should return empty namespacedname", func(t *testing.T) {
+	t.Run("Should return error when the string is not in the expected format", func(t *testing.T) {
 		// given
-		namespace := ""
-		name := ""
-		str := fmt.Sprintf("%s/%s", namespace, name)
+		str := fmt.Sprintf("%s/%s/wrong", namespace, name)
 
 		// when
-		namespacedname := Parse(str)
+		namespacedname, err := Parse(str)
 
 		// then
-		assert.Equal(t, namespacedname.Namespace, "default")
-		assert.Equal(t, namespacedname.Name, name)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("the given value: %s is not in the expected format - <namespace>/<name>", str))
+		require.Empty(t, namespacedname)
 	})
 
-	t.Run("should return name with default namespace", func(t *testing.T) {
+	t.Run("If single value is provided should return it as resource name and use default namespace", func(t *testing.T) {
 		// given
-		str := "name"
+		str := name
 
 		// when
-		namespacedname := Parse(str)
+		namespacedname, err := Parse(str)
 
 		// then
-		assert.Equal(t, namespacedname.Namespace, "default")
-		assert.Equal(t, namespacedname.Name, str)
+		require.NoError(t, err)
+		require.Equal(t, namespacedname.Namespace, "default")
+		require.Equal(t, namespacedname.Name, name)
 	})
 
-	t.Run("should return empty name if slash provided", func(t *testing.T) {
+	t.Run("Should return error when only slash is provided", func(t *testing.T) {
 		// given
 		str := "/"
 
 		// when
-		namespacedname := Parse(str)
+		namespacedname, err := Parse(str)
 
 		// then
-		assert.Equal(t, namespacedname.Namespace, "default")
-		assert.Equal(t, namespacedname.Name, "")
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "resource name should not be empty")
+		require.Empty(t, namespacedname)
 	})
 
-	t.Run("should return empty name if empty string provided", func(t *testing.T) {
+	t.Run("If namespace is empty use the provided resource name with default namespace", func(t *testing.T) {
 		// given
-		str := ""
+		str := fmt.Sprintf("%s/%s", emptyStr, name)
 
 		// when
-		namespacedname := Parse(str)
+		namespacedname, err := Parse(str)
 
 		// then
-		assert.Equal(t, namespacedname.Namespace, "default")
-		assert.Equal(t, namespacedname.Name, "")
+		require.NoError(t, err)
+		require.Equal(t, namespacedname.Namespace, "default")
+		require.Equal(t, namespacedname.Name, name)
+	})
+
+	t.Run("Successful when both namespace and resource name are provided", func(t *testing.T) {
+		// given
+		str := fmt.Sprintf("%s/%s", namespace, name)
+
+		// when
+		namespacedname, err := Parse(str)
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, namespacedname.Namespace, namespace)
+		require.Equal(t, namespacedname.Name, name)
 	})
 }

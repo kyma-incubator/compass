@@ -363,7 +363,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
-			certCache := certloader.NewCertificateCache("")
+			certCache := certloader.NewCertificateCache()
 			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache)
 			if test.ExecutorProviderFunc != nil {
 				executorProviderMock = test.ExecutorProviderFunc()

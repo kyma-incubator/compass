@@ -335,7 +335,7 @@ func TestService_HandleSpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			certCache := certloader.NewCertificateCache("")
+			certCache := certloader.NewCertificateCache()
 			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache)
 			if testCase.ExecutorProviderFunc != nil {
 				executorProviderMock = testCase.ExecutorProviderFunc()
@@ -366,7 +366,7 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 	frRepo := &automock.FetchRequestRepository{}
 	frRepo.On("Update", ctx, mock.Anything).Return(errors.New("error")).Once()
 
-	certCache := certloader.NewCertificateCache("")
+	certCache := certloader.NewCertificateCache()
 	svc := fetchrequest.NewService(frRepo, NewTestClient(func(req *http.Request) *http.Response {
 		return &http.Response{
 			StatusCode: http.StatusOK,
