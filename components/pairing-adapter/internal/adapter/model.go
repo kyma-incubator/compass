@@ -40,7 +40,7 @@ type Auth struct {
 	ClientSecret             string     `envconfig:"optional"`
 	URL                      string     `envconfig:"optional"`
 	OAuthStyle               OAuthStyle `envconfig:"optional,default=AuthDetect"`
-	ExternalClientCertSecret string     `envconfig:"optional"`
+	ExternalClientCertSecret string     `envconfig:"optional,EXTERNAL_CLIENT_CERT_SECRET"`
 }
 
 // swagger:response externalToken
