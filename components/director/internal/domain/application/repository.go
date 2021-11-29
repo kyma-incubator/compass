@@ -63,7 +63,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
 		creator:               repo.NewCreator(resource.Application, applicationTable, applicationColumns),
 		updater:               repo.NewUpdater(resource.Application, applicationTable, updatableColumns, tenantColumn, []string{"id"}),
-		upserter:              repo.NewUpserter(resource.Application, applicationTable, applicationColumns, []string{tenantColumn, "system_number"}, updatableColumns),
+		upserter:              repo.NewUpserter(resource.Application, applicationTable, applicationColumns, []string{"system_number"}, updatableColumns),
 		conv:                  conv,
 	}
 }
