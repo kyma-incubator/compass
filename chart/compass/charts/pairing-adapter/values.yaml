@@ -10,14 +10,14 @@ deployment:
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
   adapters:
-    adapterLocalMTLS:
+    adapter-local-mtls:
       enabled: true
       auth:
         type: "mtls"
         secret: "" #TODO: Adapt prod configs
       envs:
-        mappingTemplateExternalURL: {{ quote (printf "%s.%s%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName "/cert/token") }}
-        mappingTemplateHeaders: ""
-        mappingTemplateJSONBody: ""
+        mappingTemplateExternalURL: "https://compass-external-services-mock-sap-mtls.kyma.local/cert/token"
+        mappingTemplateHeaders: '{"Content-Type":["application/json"]}'
+        mappingTemplateJSONBody: "{}"
         mappingTemplateTokenFromResponse: "{{.access_token}}"
         oauthStyle: ""
