@@ -133,8 +133,8 @@ func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id st
 		return apperrors.NewNotUniqueError(resourceType)
 	}
 
-	vals := make([]string, 0, len(m2mColumns))
-	for _, c := range m2mColumns {
+	vals := make([]string, 0, len(M2MColumns))
+	for _, c := range M2MColumns {
 		vals = append(vals, fmt.Sprintf(":%s", c))
 	}
 
@@ -143,7 +143,7 @@ func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id st
 		return errors.Errorf("entity %s does not have access table", resourceType)
 	}
 
-	insertTenantAccessStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", m2mTable, strings.Join(m2mColumns, ", "), strings.Join(vals, ", "))
+	insertTenantAccessStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", m2mTable, strings.Join(M2MColumns, ", "), strings.Join(vals, ", "))
 
 	log.C(ctx).Debugf("Executing DB query: %s", insertTenantAccessStmt)
 	_, err = persist.NamedExecContext(ctx, insertTenantAccessStmt, &TenantAccess{

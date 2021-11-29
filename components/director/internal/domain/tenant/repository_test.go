@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -395,51 +397,279 @@ func TestPgRepository_List(t *testing.T) {
 func TestPgRepository_Update(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName).WithStatus(tenantEntity.Inactive)
-		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName).WithStatus(tenantEntity.Inactive)
+		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
+		tenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
 
 		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", &tenantMappingModel).Return(&tenantMappingEntity).Once()
+		mockConverter.On("ToEntity", tenantMappingModel).Return(tenantMappingEntity).Once()
+		mockConverter.On("FromEntity", tenantMappingEntity).Return(tenantMappingModel).Once()
+
 		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRows([]sqlRow{
+			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+			WithArgs(testID, tenantEntity.Inactive).
+			WillReturnRows(rowsToReturn)
+
 		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
-			WithArgs(testName, testExternal, sql.NullString{}, "account", "Compass", tenantEntity.Inactive, testID).
+			WithArgs(testName, testExternal, testParentID, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		err := tenantMappingRepo.Update(ctx, &tenantMappingModel)
+		err := tenantMappingRepo.Update(ctx, tenantMappingModel)
 
 		// THEN
 		require.NoError(t, err)
+		mockConverter.AssertExpectations(t)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error when getting", func(t *testing.T) {
+		// GIVEN
+		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
+
+		db, dbMock := testdb.MockDatabase(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+			WithArgs(testID, tenantEntity.Inactive).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		err := tenantMappingRepo.Update(ctx, tenantMappingModel)
+
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+		dbMock.AssertExpectations(t)
 	})
 
 	t.Run("Error when updating", func(t *testing.T) {
 		// GIVEN
-		tenantMappingModel := newModelBusinessTenantMapping(testID, testName).WithStatus(tenantEntity.Inactive)
-		tenantMappingEntity := newEntityBusinessTenantMapping(testID, testName).WithStatus(tenantEntity.Inactive)
+		tenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
+		tenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
 
 		mockConverter := &automock.Converter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", &tenantMappingModel).Return(&tenantMappingEntity).Once()
+		mockConverter.On("ToEntity", tenantMappingModel).Return(tenantMappingEntity).Once()
+		mockConverter.On("FromEntity", tenantMappingEntity).Return(tenantMappingModel).Once()
+
 		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRows([]sqlRow{
+			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+			WithArgs(testID, tenantEntity.Inactive).
+			WillReturnRows(rowsToReturn)
+
 		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
-			WithArgs(testName, testExternal, sql.NullString{}, "account", "Compass", tenantEntity.Inactive, testID).
+			WithArgs(testName, testExternal, testParentID, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		err := tenantMappingRepo.Update(ctx, &tenantMappingModel)
+		err := tenantMappingRepo.Update(ctx, tenantMappingModel)
 
 		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+		mockConverter.AssertExpectations(t)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Success when parent is updated", func(t *testing.T) {
+		// GIVEN
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, tenantEntity.Account)
+		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
+		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("ToEntity", newTenantMappingModel).Return(newTenantMappingEntity).Once()
+		mockConverter.On("FromEntity", oldTenantMappingEntity).Return(oldTenantMappingModel).Once()
+
+		db, dbMock := testdb.MockDatabase(t)
+
+		rowsToReturn := fixSQLRows([]sqlRow{
+			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+			WithArgs(testID, tenantEntity.Inactive).
+			WillReturnRows(rowsToReturn)
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
+			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		appTenantAccesses := fixTenantAccessesForApplication()
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
+			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ( id, tenant_id ) DO NOTHING`)).
+			WithArgs(testParentID2, appTenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM tenant_applications WHERE id IN ($1) AND tenant_id = $2 AND owner = $3`)).
+			WithArgs(appTenantAccesses[0].ResourceID, testParentID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		runtimeTenantAccesses := fixTenantAccessesForRuntime()
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_runtimes WHERE tenant_id = $1 AND owner = $2`)).
+			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForRuntimeRow()...))
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_runtimes ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ( id, tenant_id ) DO NOTHING`)).
+			WithArgs(testParentID2, runtimeTenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM tenant_runtimes WHERE id IN ($1) AND tenant_id = $2 AND owner = $3`)).
+			WithArgs(runtimeTenantAccesses[0].ResourceID, testParentID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		err := tenantMappingRepo.Update(ctx, newTenantMappingModel)
+
+		// THEN
+		require.NoError(t, err)
+		mockConverter.AssertExpectations(t)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error when parent is updated and list tenant accesses fail", func(t *testing.T) {
+		// GIVEN
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, tenantEntity.Account)
+		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
+		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("ToEntity", newTenantMappingModel).Return(newTenantMappingEntity).Once()
+		mockConverter.On("FromEntity", oldTenantMappingEntity).Return(oldTenantMappingModel).Once()
+
+		db, dbMock := testdb.MockDatabase(t)
+
+		rowsToReturn := fixSQLRows([]sqlRow{
+			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+			WithArgs(testID, tenantEntity.Inactive).
+			WillReturnRows(rowsToReturn)
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
+			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
+			WithArgs(testID, true).WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		err := tenantMappingRepo.Update(ctx, newTenantMappingModel)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+		mockConverter.AssertExpectations(t)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error when parent is updated and create tenant access fail", func(t *testing.T) {
+		// GIVEN
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, tenantEntity.Account)
+		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
+		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("ToEntity", newTenantMappingModel).Return(newTenantMappingEntity).Once()
+		mockConverter.On("FromEntity", oldTenantMappingEntity).Return(oldTenantMappingModel).Once()
+
+		db, dbMock := testdb.MockDatabase(t)
+
+		rowsToReturn := fixSQLRows([]sqlRow{
+			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+			WithArgs(testID, tenantEntity.Inactive).
+			WillReturnRows(rowsToReturn)
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
+			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		appTenantAccesses := fixTenantAccessesForApplication()
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
+			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ( id, tenant_id ) DO NOTHING`)).
+			WithArgs(testParentID2, appTenantAccesses[0].ResourceID, true).WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		err := tenantMappingRepo.Update(ctx, newTenantMappingModel)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+		mockConverter.AssertExpectations(t)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error when parent is updated and tenant access delete fail", func(t *testing.T) {
+		// GIVEN
+		oldTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Account)
+		newTenantMappingModel := newModelBusinessTenantMappingWithType(testID, testName, testParentID2, tenantEntity.Account)
+		oldTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID)
+		newTenantMappingEntity := newEntityBusinessTenantMappingWithParent(testID, testName, testParentID2)
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("ToEntity", newTenantMappingModel).Return(newTenantMappingEntity).Once()
+		mockConverter.On("FromEntity", oldTenantMappingEntity).Return(oldTenantMappingModel).Once()
+
+		db, dbMock := testdb.MockDatabase(t)
+
+		rowsToReturn := fixSQLRows([]sqlRow{
+			{id: testID, name: testName, externalTenant: testExternal, parent: repo.NewValidNullableString(testParentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE id = $1 AND status != $2 `)).
+			WithArgs(testID, tenantEntity.Inactive).
+			WillReturnRows(rowsToReturn)
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.business_tenant_mappings SET external_name = ?, external_tenant = ?, parent = ?, type = ?, provider_name = ?, status = ? WHERE id = ? `)).
+			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		appTenantAccesses := fixTenantAccessesForApplication()
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
+			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ( id, tenant_id ) DO NOTHING`)).
+			WithArgs(testParentID2, appTenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM tenant_applications WHERE id IN ($1) AND tenant_id = $2 AND owner = $3`)).
+			WithArgs(appTenantAccesses[0].ResourceID, testParentID, true).WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		err := tenantMappingRepo.Update(ctx, newTenantMappingModel)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+		mockConverter.AssertExpectations(t)
+		dbMock.AssertExpectations(t)
 	})
 }
 

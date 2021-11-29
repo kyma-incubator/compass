@@ -161,9 +161,63 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
+	tntFromDB, err := r.Get(ctx, model.ID)
+	if err != nil {
+		return err
+	}
+
 	entity := r.conv.ToEntity(model)
 
-	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
+	if err := r.updaterGlobal.UpdateSingleGlobal(ctx, entity); err != nil {
+		return err
+	}
+
+	if tntFromDB.Parent != model.Parent {
+		for _, topLevelEntity := range resource.TopLevelEntities {
+			m2mTable, ok := topLevelEntity.TenantAccessTable()
+			if !ok {
+				return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
+			}
+
+			tenantAccesses := repo.TenantAccessCollection{}
+
+			tenantAccessLister := repo.NewListerGlobal(resource.TenantAccess, m2mTable, repo.M2MColumns)
+			if err := tenantAccessLister.ListGlobal(ctx, &tenantAccesses, repo.NewEqualCondition(repo.M2MTenantIDColumn, model.ID), repo.NewEqualCondition(repo.M2MOwnerColumn, true)); err != nil {
+				return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", model.ID)
+			}
+
+			tenantAccessCreator := repo.NewUnsafeCreator(resource.TenantAccess, m2mTable, repo.M2MColumns, []string{repo.M2MResourceIDColumn, repo.M2MTenantIDColumn})
+
+			for _, ta := range tenantAccesses {
+				tenantAccess := &repo.TenantAccess{
+					TenantID:   model.Parent,
+					ResourceID: ta.ResourceID,
+					Owner:      true,
+				}
+				if err := tenantAccessCreator.UnsafeCreate(ctx, &tenantAccess); err != nil {
+					return errors.Wrapf(err, "while creating tenant acccess record for resource %s for parent %s of tenant %s", ta.ResourceID, model.Parent, model.ID)
+				}
+			}
+
+			if len(tntFromDB.Parent) > 0 && len(tenantAccesses) > 0 {
+				tenantAccessDeleter := repo.NewDeleterGlobal(resource.TenantAccess, m2mTable)
+				tenantAccessIDsToDelete := make([]string, 0, len(tenantAccesses))
+				for _, ta := range tenantAccesses {
+					tenantAccessIDsToDelete = append(tenantAccessIDsToDelete, ta.ResourceID)
+				}
+
+				if err := tenantAccessDeleter.DeleteManyGlobal(ctx, repo.Conditions{
+					repo.NewInConditionForStringValues(repo.M2MResourceIDColumn, tenantAccessIDsToDelete),
+					repo.NewEqualCondition(repo.M2MTenantIDColumn, tntFromDB.Parent),
+					repo.NewEqualCondition(repo.M2MOwnerColumn, true),
+				}); err != nil {
+					return errors.Wrapf(err, "while deleting tenant accesses for the old parent %s of the tenant %s", tntFromDB.Parent, model.ID)
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 // DeleteByExternalTenant removes a tenant with matching external ID from the Compass storage.

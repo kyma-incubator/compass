@@ -22,33 +22,6 @@ CREATE TABLE tenant_runtimes
     PRIMARY KEY (tenant_id, id)
 );
 
-CREATE OR REPLACE FUNCTION on_insert_new_parent() RETURNS TRIGGER AS
-$$
-DECLARE
-    tenant_table TEXT;
-BEGIN
-    IF NEW.parent IS NOT NULL
-    THEN
-        FOREACH tenant_table IN ARRAY TG_ARGV -- for each top level resource
-            LOOP
-                -- mark him as owner to everything that is owned by its child
-                EXECUTE format('INSERT INTO %I (SELECT %L, id, owner FROM %I WHERE owner = true AND tenant_id = %L) ON CONFLICT DO NOTHING;', tenant_table, NEW.parent, tenant_table, NEW.id);
-            END LOOP;
-    END IF;
-    IF OLD.parent IS NOT NULL AND NEW.parent <> OLD.parent
-    THEN
-        FOREACH tenant_table IN ARRAY TG_ARGV -- for each top level resource
-            LOOP
-                -- delete all accesses from the old parent that are for resources of the moved tenant
-                EXECUTE format('DELETE FROM %I WHERE id IN (SELECT id FROM %I WHERE tenant_id = %L AND owner = true) AND tenant_id = %L AND owner = true', tenant_table, tenant_table, NEW.id, OLD.parent);
-            END LOOP;
-    END IF;
-    RETURN NULL;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER insert_parent AFTER INSERT OR UPDATE ON business_tenant_mappings FOR EACH ROW EXECUTE PROCEDURE on_insert_new_parent('tenant_applications', 'tenant_runtimes');
-
 -- this trigger replaces the cascade on tenant_id foreign key in order to execute it BEFORE the tenant is deleted.
 -- that is needed because in order for delete_parent_chain select parent to work (before the tenant is actually deleted)
 CREATE OR REPLACE FUNCTION on_delete_tenant() RETURNS TRIGGER AS

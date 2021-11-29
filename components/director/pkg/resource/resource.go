@@ -145,9 +145,17 @@ func (t Type) Parent() (Type, bool) {
 	return parent, ok
 }
 
+// TopLevelEntities is a set of entities that has a many-to-many relationship with the tenants.
+var TopLevelEntities = []Type{Application, Runtime}
+
 // IsTopLevel returns true only if the entity has a many-to-many relationship with the tenants.
 func (t Type) IsTopLevel() bool {
-	return t == Application || t == Runtime
+	for _, topLevelType := range TopLevelEntities {
+		if t == topLevelType {
+			return true
+		}
+	}
+	return false
 }
 
 // SQLOperation represents an SQL operation
