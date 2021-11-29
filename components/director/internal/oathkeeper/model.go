@@ -3,12 +3,15 @@ package oathkeeper
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -236,4 +239,12 @@ func (d *ReqData) ExtractCoordinates() (authenticator.Coordinates, bool, error) 
 	}
 
 	return coords, true, nil
+}
+
+func (d *ReqData) GetAccessLevelFromExtra() tenantEntity.Type {
+	return tenantEntity.Type(fmt.Sprint(d.Body.Extra[cert.AccessLevelExtraField]))
+}
+
+func (d *ReqData) GetConsumerTypeExtraFieldFromExtra() model.SystemAuthReferenceObjectType {
+	return model.SystemAuthReferenceObjectType(fmt.Sprint(d.Body.Extra[cert.ConsumerTypeExtraField]))
 }

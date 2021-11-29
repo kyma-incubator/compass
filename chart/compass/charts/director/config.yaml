@@ -116,6 +116,7 @@ graphql:
       auths: ["integration_system.auths:read"]
 
 # Scopes assigned for every new Client Credentials by given object type (Runtime / Application / Integration System)
+# and scopes mapped to a consumer with the given type, then that consumer is using a client certificate
 scopesPerConsumerType:
   runtime:
     - "runtime:read"
@@ -148,6 +149,10 @@ scopesPerConsumerType:
     - "integration_system.auths:read"
     - "application_template.webhooks:read"
     - "formation:write"
+  default:
+    - "runtime:read"
+    - "runtime:write"
+    - "tenant:read"
 
 clientCredentialsRegistrationGrantTypes:
   - "client_credentials"

@@ -6,6 +6,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	ConsumerTypeExtraField = "consumer_type"
+	AccessLevelExtraField  = "access_level"
+)
+
 // GetOrganization returns the O part of the subject
 func GetOrganization(subject string) string {
 	return getRegexMatch("O=([^(,|+)]+)", subject)
@@ -76,6 +81,22 @@ func GetLocality(subject string) string {
 // GetCommonName returns the CN part of the subject
 func GetCommonName(subject string) string {
 	return getRegexMatch("CN=([^,]+)", subject)
+}
+
+func GetExtra(consumerType, accessLevel string) (map[string]interface{}, error) {
+	//ct := model.SystemAuthReferenceObjectType(consumerType)
+	//if ct != .ApplicationReference && ct != model.RuntimeReference && ct != model.IntegrationSystemReference {
+	//	return nil, fmt.Errorf("invalid consumer type %q", consumerType)
+	//}
+	//te := tenantEntity.Type(accessLevel)
+	//if te != tenantEntity.Account && te != tenantEntity.Subaccount && te != tenantEntity.Customer {
+	//	return nil, fmt.Errorf("invalid access level %q", accessLevel)
+	//}
+
+	return map[string]interface{}{
+		ConsumerTypeExtraField: consumerType,
+		AccessLevelExtraField:  accessLevel,
+	}, nil
 }
 
 // GetPossibleRegexTopLevelMatches returns the number of possible top level matches of a regex pattern.

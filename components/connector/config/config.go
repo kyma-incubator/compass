@@ -55,6 +55,14 @@ type Config struct {
 	OneTimeTokenURL             string
 	HttpClientSkipSslValidation bool          `envconfig:"default=false"`
 	HTTPClientTimeout           time.Duration `envconfig:"default=30s"`
+
+	SubjectConsumerTypeMapping []subjectConsumerTypeMapping
+}
+
+type subjectConsumerTypeMapping struct {
+	SubjectPattern    string
+	ConsumerType      string
+	TenantAccessLevel string
 }
 
 func (c *Config) String() string {

@@ -1,11 +1,13 @@
 package config
 
 import (
+	"context"
 	"net/http"
+	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
-
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
@@ -44,8 +46,10 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 }
 
 func PrepareHydratorServer(cfg Config, CSRSubjectConsts certificates.CSRSubjectConsts, externalSubjectConsts certificates.ExternalIssuerSubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
-	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer, oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), cert.GetCommonName)
-	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer, oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), cert.GetRemainingOrganizationalUnit(externalSubjectConsts.OrganizationalUnitPattern))
+	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
+		oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), cert.GetCommonName, nil)
+	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer,
+		oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), cert.GetRemainingOrganizationalUnit(externalSubjectConsts.OrganizationalUnitPattern), authSessionExtraFromSubject(cfg.SubjectConsumerTypeMapping))
 
 	validationHydrator := oathkeeper.NewValidationHydrator(revokedCertsRepository, connectorCertHeaderParser, externalCertHeaderParser)
 
@@ -69,4 +73,28 @@ func PrepareHydratorServer(cfg Config, CSRSubjectConsts certificates.CSRSubjectC
 		Handler:           handlerWithTimeout,
 		ReadHeaderTimeout: cfg.ServerTimeout,
 	}, nil
+}
+
+func authSessionExtraFromSubject(mappings []subjectConsumerTypeMapping) func(ctx context.Context, subject string) map[string]interface{} {
+	return func(ctx context.Context, subject string) map[string]interface{} {
+		for _, m := range mappings {
+			r, err := regexp.Compile(m.SubjectPattern)
+			if err != nil {
+				log.C(ctx).Warnf("Failed to compile regex %s", m.SubjectPattern)
+				continue
+			}
+
+			if r.MatchString(subject) {
+				extra, err := cert.GetExtra(m.TenantAccessLevel, m.ConsumerType)
+				if err != nil {
+					log.C(ctx).Warnf("Failed to compile regex %s", m.SubjectPattern)
+					continue
+				}
+
+				return extra
+			}
+		}
+
+		return nil
+	}
 }

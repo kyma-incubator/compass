@@ -16,11 +16,11 @@ type ValidationHydrator interface {
 }
 
 type validationHydrator struct {
-	certHeaderParsers      []CertificateHeaderParser
+	certHeaderParsers      []certificateHeaderParser
 	revokedCertsRepository revocation.RevokedCertificatesRepository
 }
 
-func NewValidationHydrator(revokedCertsRepository revocation.RevokedCertificatesRepository, certHeaderParsers ...CertificateHeaderParser) ValidationHydrator {
+func NewValidationHydrator(revokedCertsRepository revocation.RevokedCertificatesRepository, certHeaderParsers ...certificateHeaderParser) ValidationHydrator {
 	return &validationHydrator{
 		certHeaderParsers:      certHeaderParsers,
 		revokedCertsRepository: revokedCertsRepository,
@@ -28,8 +28,8 @@ func NewValidationHydrator(revokedCertsRepository revocation.RevokedCertificates
 }
 
 // ResolveIstioCertHeader checks the certificate forwarded by the istio mtls gateway against all the configured CertificateHeaderParsers
-// First CertificateHeaderParser that matches (successfully parse the subject) is used to extract the clientID, certificate hash and issuer.
-// If there is no matching CertificateHeaderParser, an empty oathkeeper session is returned.
+// First certificateHeaderParser that matches (successfully parse the subject) is used to extract the clientID, certificate hash and issuer.
+// If there is no matching certificateHeaderParser, an empty oathkeeper session is returned.
 func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -44,12 +44,15 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 
 	log.C(ctx).Info("Trying to validate certificate header...")
 
-	var clientID, hash, issuer string
-	var found bool
+	var (
+		issuer   string
+		found    bool
+		certData *certificateData
+	)
 
 	for _, certHeaderParser := range tvh.certHeaderParsers {
-		clientID, hash, found = certHeaderParser.GetCertificateData(r)
-		if !found {
+		certData = certHeaderParser.GetCertificateData(r)
+		if certData == nil {
 			log.C(ctx).Infof("Certificate header is not valid for issuer %s", certHeaderParser.GetIssuer())
 			continue
 		}
@@ -65,7 +68,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 
 	log.C(ctx).Infof("Certificate header is valid for issuer %s", issuer)
 
-	if isCertificateRevoked := tvh.revokedCertsRepository.Contains(hash); isCertificateRevoked {
+	if isCertificateRevoked := tvh.revokedCertsRepository.Contains(certData.certificateHash); isCertificateRevoked {
 		log.C(ctx).Info("Certificate is revoked.")
 		respondWithAuthSession(ctx, w, authSession)
 		return
@@ -75,9 +78,11 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		authSession.Header = map[string][]string{}
 	}
 
-	authSession.Header.Add(ClientIdFromCertificateHeader, clientID)
-	authSession.Header.Add(ClientCertificateHashHeader, hash)
+	authSession.Header.Add(ClientIdFromCertificateHeader, certData.clientID)
+	authSession.Header.Add(ClientCertificateHashHeader, certData.certificateHash)
 	authSession.Header.Add(ClientCertificateIssuerHeader, issuer)
+
+	authSession.Extra = appendExtra(authSession.Extra, certData.authSessionExtra)
 
 	log.C(ctx).Info("Certificate header validated successfully")
 	respondWithAuthSession(ctx, w, authSession)
@@ -85,4 +90,11 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 
 func respondWithAuthSession(ctx context.Context, w http.ResponseWriter, authSession AuthenticationSession) {
 	httputils.RespondWithBody(ctx, w, http.StatusOK, authSession)
+}
+
+func appendExtra(extra, extraFromHeaderParser map[string]interface{}) map[string]interface{} {
+	for k, v := range extraFromHeaderParser {
+		extra[k] = v
+	}
+	return extra
 }

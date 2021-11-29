@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 
 	revocationMocks "github.com/kyma-incubator/compass/components/connector/internal/revocation/mocks"
-	mocks2 "github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper/mocks"
+	mocks2 "github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper/automock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
