@@ -111,9 +111,9 @@ spec:
             - name: APP_INFO_API_ENDPOINT
               value: {{ .Values.global.director.info.path }}
             - name: APP_INFO_CERT_SUBJECT
-              value: {{ quote (printf .Values.global.mtlsClient.subjectPattern .Values.global.mtlsClient.locality .Values.global.mtlsClient.commonName) }}
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName | trimPrefix "/" | replace "/" ", " | quote }}
             - name: APP_INFO_CERT_ISSUER
-              value: {{ .Values.global.mtlsClient.issuer }}
+              value: {{ .Values.global.externalCertConfiguration.issuer }}
             - name: APP_CA_SECRET_NAME
               value: "{{ .Values.global.connector.secrets.ca.name }}"
             - name: APP_CA_SECRET_NAMESPACE
