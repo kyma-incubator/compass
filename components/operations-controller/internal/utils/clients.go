@@ -12,21 +12,13 @@ import (
 // LabelUpsertService missing godoc
 //go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore
 type CertificateCache interface {
-	Get() (*tls.Certificate, error)
-}
-
-//TODO: Remove and replace with real cache
-type DummyCache struct {
-}
-
-func (d *DummyCache) Get() (*tls.Certificate, error) {
-	return &tls.Certificate{}, nil
+	Get() *tls.Certificate
 }
 
 func PrepareMTLSClient(cfg *http.Config, cache CertificateCache) *http2.Client {
 	basicTransport := http.NewHTTPTransport(cfg)
 	basicTransport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-		return cache.Get()
+		return cache.Get(), nil
 	}
 	httpTransport := http3.NewCorrelationIDTransport(basicTransport)
 

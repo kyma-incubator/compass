@@ -20,6 +20,10 @@ import (
 	"context"
 	"os"
 
+	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/utils"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -108,8 +112,10 @@ func main() {
 	httpClient, err := utils.PrepareHttpClient(cfg.HttpClient)
 	fatalOnError(err)
 
-	dc := &utils.DummyCache{}
-	httpMTLSClient := utils.PrepareMTLSClient(cfg.HttpClient, dc)
+	certCache, err := certloader.StartCertLoader(ctx, cfg.ExternalClientCertSecret)
+	fatalOnError(errors.Wrapf(err, "Failed to initialize certificate loader"))
+
+	httpMTLSClient := utils.PrepareMTLSClient(cfg.HttpClient, certCache)
 
 	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, httpClient)
 	fatalOnError(err)

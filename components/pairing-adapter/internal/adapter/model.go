@@ -9,14 +9,14 @@ import (
 )
 
 const (
-	AuthStyleAutoDetect AuthStyle = "AuthDetect"
-	AuthStyleInParams   AuthStyle = "InParams"
-	AuthStyleInHeader   AuthStyle = "InHeader"
-	AuthTypeOauth                 = "oauth"
-	AuthTypeMTLS                  = "mtls"
+	OAuthStyleAutoDetect OAuthStyle = "AuthDetect"
+	OAuthStyleInParams   OAuthStyle = "InParams"
+	OAuthStyleInHeader   OAuthStyle = "InHeader"
+	AuthTypeOauth                   = "oauth"
+	AuthTypeMTLS                    = "mtls"
 )
 
-type AuthStyle string
+type OAuthStyle string
 
 type Configuration struct {
 	Mapping       Mapping
@@ -35,11 +35,12 @@ type Mapping struct {
 }
 
 type Auth struct {
-	Type         string
-	ClientID     string    `envconfig:"optional"`
-	ClientSecret string    `envconfig:"optional"`
-	URL          string    `envconfig:"optional"`
-	AuthStyle    AuthStyle `envconfig:"optional,default=AuthDetect"`
+	Type                     string
+	ClientID                 string     `envconfig:"optional"`
+	ClientSecret             string     `envconfig:"optional"`
+	URL                      string     `envconfig:"optional"`
+	OAuthStyle               OAuthStyle `envconfig:"optional,default=AuthDetect"`
+	ExternalClientCertSecret string     `envconfig:"optional"`
 }
 
 // swagger:response externalToken

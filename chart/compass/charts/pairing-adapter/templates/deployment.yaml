@@ -44,23 +44,26 @@ spec:
               - name: AUTH_TYPE
                 value: {{ $config.auth.type }}
 {{if eq $config.auth.type "oauth" }}
-              - name: OAUTH_URL
+              - name: AUTH_URL
                 valueFrom:
                     secretKeyRef:
                         name: {{ $config.authSecret }}
                         key: url
-              - name: OAUTH_CLIENT_ID
+              - name: AUTH_CLIENT_ID
                 valueFrom:
                     secretKeyRef:
                         name: {{ $config.authSecret }}
                         key: clientID
-              - name: OAUTH_CLIENT_SECRET
+              - name: AUTH_CLIENT_SECRET
                 valueFrom:
                     secretKeyRef:
                         name: {{ $config.authSecret }}
                         key: clientSecret
-              - name: OAUTH_AUTH_STYLE
+              - name: AUTH_OAUTH_STYLE
                 value: {{ $config.envs.oauthStyle | quote }}
+{{ else if eq $config.auth.type "mtls" }}
+              - name: EXTERNAL_CLIENT_CERT_SECRET
+                value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
 {{ end }}
               - name: LOG_FORMAT
                 value: {{ $.Values.global.log.format | quote }}

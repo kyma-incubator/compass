@@ -14,7 +14,7 @@ type CertificateCache struct {
 }
 
 // Get provides a mock function with given fields:
-func (_m *CertificateCache) Get() (*tls.Certificate, error) {
+func (_m *CertificateCache) Get() *tls.Certificate {
 	ret := _m.Called()
 
 	var r0 *tls.Certificate
@@ -26,12 +26,5 @@ func (_m *CertificateCache) Get() (*tls.Certificate, error) {
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }

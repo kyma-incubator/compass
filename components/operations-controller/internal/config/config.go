@@ -38,11 +38,12 @@ type Validatable interface {
 // Config comprises of all the configurations that are necessary
 // for successful bootstrap and execution of the Operations Controller
 type Config struct {
-	Server        *server.Config   `mapstructure:"server"`
-	HttpClient    *http.Config     `mapstructure:"http_client"`
-	GraphQLClient *graphql.Config  `mapstructure:"graphql_client"`
-	Director      *director.Config `mapstructure:"director"`
-	Webhook       *webhook.Config  `mapstructure:"webhook"`
+	Server                   *server.Config   `mapstructure:"server"`
+	HttpClient               *http.Config     `mapstructure:"http_client"`
+	GraphQLClient            *graphql.Config  `mapstructure:"graphql_client"`
+	Director                 *director.Config `mapstructure:"director"`
+	Webhook                  *webhook.Config  `mapstructure:"webhook"`
+	ExternalClientCertSecret string           `mapstructure:"external_client_cert_secret"`
 }
 
 // AppPFlags adds pflags for the Config structure and adds them in the provided set

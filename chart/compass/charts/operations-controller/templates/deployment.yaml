@@ -52,6 +52,8 @@ spec:
             value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.operations.path }}"
           - name: HTTP_CLIENT_SKIP_SSL_VALIDATION
             value: "{{ .Values.http.client.skipSSLValidation }}"
+          - name: EXTERNAL_CLIENT_CERT_SECRET
+            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}
         name: {{ .Chart.Name }}
         ports:

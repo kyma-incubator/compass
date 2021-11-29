@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/gorilla/mux"
@@ -27,7 +29,7 @@ func main() {
 	ctx, err := log.Configure(context.Background(), conf.Log)
 	exitOnError(err, "while configuring logger")
 
-	authStyle, err := getAuthStyle(conf.Auth.AuthStyle)
+	authStyle, err := getAuthStyle(conf.Auth.OAuthStyle)
 	exitOnError(err, "while getting Auth Style")
 
 	transport := &http.Transport{}
@@ -46,11 +48,11 @@ func main() {
 		}
 		client = cc.Client(ctx)
 	} else if conf.Auth.Type == adapter.AuthTypeMTLS {
-		//TODO: Init cache
-		var cache CertificateCache
+		certCache, err := certloader.StartCertLoader(ctx, conf.Auth.ExternalClientCertSecret)
+		exitOnError(err, "Failed to initialize certificate loader")
 		transport.TLSClientConfig = &tls.Config{
 			GetClientCertificate: func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-				return cache.Get()
+				return certCache.Get(), nil
 			},
 		}
 	} else {
@@ -80,10 +82,6 @@ func main() {
 	exitOnError(server.ListenAndServe(), "on starting HTTP server")
 }
 
-type CertificateCache interface {
-	Get() (*tls.Certificate, error)
-}
-
 func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
@@ -91,13 +89,13 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func getAuthStyle(style adapter.AuthStyle) (oauth2.AuthStyle, error) {
+func getAuthStyle(style adapter.OAuthStyle) (oauth2.AuthStyle, error) {
 	switch style {
-	case adapter.AuthStyleInParams:
+	case adapter.OAuthStyleInParams:
 		return oauth2.AuthStyleInParams, nil
-	case adapter.AuthStyleInHeader:
+	case adapter.OAuthStyleInHeader:
 		return oauth2.AuthStyleInHeader, nil
-	case adapter.AuthStyleAutoDetect:
+	case adapter.OAuthStyleAutoDetect:
 		return oauth2.AuthStyleAutoDetect, nil
 	default:
 		return -1, errors.New("unknown Auth style")
