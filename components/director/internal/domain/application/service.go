@@ -636,15 +636,6 @@ func (s *service) genericUpsert(ctx context.Context, in model.ApplicationRegiste
 		return errors.Wrap(err, "while upserting application")
 	}
 
-	if in.IntegrationSystemID != nil {
-		intSysLabel := createLabel(intSysKey, *in.IntegrationSystemID, id)
-		err = s.SetLabel(ctx, intSysLabel)
-		if err != nil {
-			return errors.Wrapf(err, "while setting the integration system label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
-		}
-		log.C(ctx).Debugf("Successfully set Label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
-	}
-
 	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, appTenant, &in.Labels)
 
 	if in.Labels == nil {

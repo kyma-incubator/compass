@@ -467,6 +467,78 @@ func TestRepository_Update(t *testing.T) {
 	})
 }
 
+func TestRepository_Upsert(t *testing.T) {
+	upsertStatement := `INSERT INTO public.applications ( id, app_template_id, tenant_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ON CONFLICT ( system_number ) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, status_condition=EXCLUDED.status_condition, status_timestamp=EXCLUDED.status_timestamp, healthcheck_url=EXCLUDED.healthcheck_url, integration_system_id=EXCLUDED.integration_system_id, provider_name=EXCLUDED.provider_name, base_url=EXCLUDED.base_url, labels=EXCLUDED.labels, ready=EXCLUDED.ready, created_at=EXCLUDED.created_at, updated_at=EXCLUDED.updated_at, deleted_at=EXCLUDED.deleted_at, error=EXCLUDED.error, correlation_ids=EXCLUDED.correlation_ids`
+
+	t.Run("Success", func(t *testing.T) {
+		// given
+		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+
+		mockConverter := &automock.EntityConverter{}
+		mockConverter.On("ToEntity", appModel).Return(appEntity, nil).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec(regexp.QuoteMeta(upsertStatement)).
+			WithArgs(givenID(), nil, givenTenant(), nil, appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error, repo.NewNullableStringFromJSONRawMessage(appModel.CorrelationIDs)).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repo := application.NewRepository(mockConverter)
+
+		// when
+		err := repo.Upsert(ctx, appModel)
+
+		// then
+		assert.NoError(t, err)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		// given
+		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+
+		mockConverter := &automock.EntityConverter{}
+		mockConverter.On("ToEntity", appModel).Return(appEntity, nil).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec(regexp.QuoteMeta(upsertStatement)).
+			WithArgs(givenID(), nil, givenTenant(), nil, appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error, repo.NewNullableStringFromJSONRawMessage(appModel.CorrelationIDs)).
+			WillReturnError(givenError())
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		repository := application.NewRepository(mockConverter)
+
+		// when
+		err := repository.Upsert(ctx, appModel)
+
+		// then
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("Converter Error", func(t *testing.T) {
+		// given
+		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+		mockConverter := &automock.EntityConverter{}
+		mockConverter.On("ToEntity", appModel).Return(&application.Entity{}, givenError())
+		defer mockConverter.AssertExpectations(t)
+
+		repo := application.NewRepository(mockConverter)
+
+		// when
+		err := repo.Upsert(context.TODO(), appModel)
+
+		// then
+		require.EqualError(t, err, "while converting to Application entity: some error")
+	})
+}
+
 func TestRepository_GetByID(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// given
