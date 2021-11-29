@@ -186,7 +186,7 @@ func TestService_List(t *testing.T) {
 }
 
 func TestService_DeleteMany(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 	tenantInput := newModelBusinessTenantMappingInput(testName, "", "")
 	testErr := errors.New("test")
@@ -237,7 +237,7 @@ func TestService_DeleteMany(t *testing.T) {
 }
 
 func TestService_CreateAndUpsert(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 
 	tenantInputs := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", "", ""),

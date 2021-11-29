@@ -20,7 +20,7 @@ import (
 
 func TestRepository_Create(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		// given
+		// GIVEN
 		biaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 		biaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
@@ -38,27 +38,27 @@ func TestRepository_Create(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := bundleinstanceauth.NewRepository(mockConverter)
 
-		// when
+		// WHEN
 		err := repo.Create(ctx, biaModel)
 
-		// then
+		// THEN
 		assert.NoError(t, err)
 	})
 
 	t.Run("Error when item is nil", func(t *testing.T) {
-		// given
+		// GIVEN
 
 		repo := bundleinstanceauth.NewRepository(nil)
 
-		// when
+		// WHEN
 		err := repo.Create(context.TODO(), nil)
 
-		// then
+		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 
 	t.Run("DB Error", func(t *testing.T) {
-		// given
+		// GIVEN
 		biaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 		biaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
@@ -74,16 +74,16 @@ func TestRepository_Create(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := bundleinstanceauth.NewRepository(mockConverter)
 
-		// when
+		// WHEN
 		err := repo.Create(ctx, biaModel)
 
-		// then
+		// THEN
 		expectedError := fmt.Sprintf("while saving entity with id %s to db: Internal Server Error: Unexpected error while executing SQL query", testID)
 		require.EqualError(t, err, expectedError)
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
-		// given
+		// GIVEN
 		biaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", biaModel).Return(&bundleinstanceauth.Entity{}, testError)
@@ -91,10 +91,10 @@ func TestRepository_Create(t *testing.T) {
 
 		repo := bundleinstanceauth.NewRepository(mockConverter)
 
-		// when
+		// WHEN
 		err := repo.Create(context.TODO(), biaModel)
 
-		// then
+		// THEN
 		require.EqualError(t, err, "while converting BundleInstanceAuth model to entity: test")
 	})
 }

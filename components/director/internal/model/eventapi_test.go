@@ -8,7 +8,7 @@ import (
 )
 
 func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	bndlID := "bar"
 	appID := "baz"
@@ -48,7 +48,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToEventDefinitionWithinBundle(id, appID, bndlID, 0)
 
 			// then

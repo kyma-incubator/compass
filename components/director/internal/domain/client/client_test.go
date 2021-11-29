@@ -37,7 +37,7 @@ func TestLoadFromContext(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result, err := client.LoadFromContext(testCase.Context)
 
 			// then
@@ -52,11 +52,11 @@ func TestLoadFromContext(t *testing.T) {
 }
 
 func TestSaveToLoadFromContext(t *testing.T) {
-	// given
+	// GIVEN
 	value := "foo"
 	ctx := context.TODO()
 
-	// when
+	// WHEN
 	result := client.SaveToContext(ctx, value)
 
 	// then

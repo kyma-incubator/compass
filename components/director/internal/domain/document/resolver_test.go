@@ -32,7 +32,7 @@ var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
 })
 
 func TestResolver_AddDocumentToBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	bundleID := "bar"
@@ -195,7 +195,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			resolver := document.NewResolver(transact, svc, nil, bndlSvc, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.AddDocumentToBundle(context.TODO(), bundleID, *gqlInput)
 
 			// then
@@ -217,7 +217,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 }
 
 func TestResolver_DeleteDocument(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -308,7 +308,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			resolver := document.NewResolver(transact, svc, nil, nil, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteDocument(context.TODO(), id)
 
 			// then
@@ -324,7 +324,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 }
 
 func TestResolver_FetchRequest(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 
 	firstDocID := "docID"
@@ -460,7 +460,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			keys := []dataloader.ParamFetchRequestDocument{firstFRParams, secondFRParams}
 			resolver := document.NewResolver(transact, svc, nil, nil, converter)
 
-			// when
+			// WHEN
 			result, err := resolver.FetchRequestDocumentDataLoader(keys)
 
 			// then

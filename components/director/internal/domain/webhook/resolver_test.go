@@ -21,7 +21,7 @@ import (
 )
 
 func TestResolver_AddWebhook(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	givenAppID := "foo"
@@ -242,7 +242,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 
 			resolver := webhook.NewResolver(transactionerMock, svc, appSvc, appTemplateSvc, converter)
 
-			// when
+			// WHEN
 			var err error
 			var result *graphql.Webhook
 			if testCase.AppServiceFn != nil {
@@ -252,7 +252,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 				result, err = resolver.AddWebhook(context.TODO(), nil, stringPtr(givenAppTemplateID), *gqlWebhookInput)
 			}
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedWebhook, result)
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
@@ -275,7 +275,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 }
 
 func TestResolver_UpdateWebhook(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
@@ -397,10 +397,10 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 
 			resolver := webhook.NewResolver(transactionerMock, svc, nil, nil, converter)
 
-			// when
+			// WHEN
 			result, err := resolver.UpdateWebhook(context.TODO(), givenWebhookID, *gqlWebhookInput)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedWebhook, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
@@ -412,7 +412,7 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 }
 
 func TestResolver_DeleteWebhook(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
@@ -532,10 +532,10 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 
 			resolver := webhook.NewResolver(transactionerMock, svc, nil, nil, converter)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteWebhook(context.TODO(), givenWebhookID)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedWebhook, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 

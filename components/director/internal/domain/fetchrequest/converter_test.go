@@ -19,7 +19,7 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.FetchRequest
@@ -54,7 +54,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			}
 			converter := fetchrequest.NewConverter(authConv)
 
-			// when
+			// WHEN
 			res, err := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -66,7 +66,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *graphql.FetchRequestInput
@@ -97,7 +97,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			}
 			converter := fetchrequest.NewConverter(authConv)
 
-			// when
+			// WHEN
 			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
@@ -111,7 +111,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 func TestConverter_FromEntity(t *testing.T) {
 	timestamp := time.Now()
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
 		Input              *fetchrequest.Entity
@@ -150,7 +150,7 @@ func TestConverter_FromEntity(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			conv := fetchrequest.NewConverter(authConv)
 
-			// when
+			// WHEN
 			res, err := conv.FromEntity(testCase.Input, model.APISpecFetchRequestReference)
 
 			if testCase.ExpectedErrMessage != "" {
@@ -169,7 +169,7 @@ func TestConverter_FromEntity(t *testing.T) {
 func TestConverter_ToEntity(t *testing.T) {
 	timestamp := time.Now()
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
 		Input              *model.FetchRequest
@@ -218,7 +218,7 @@ func TestConverter_ToEntity(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			conv := fetchrequest.NewConverter(authConv)
 
-			// when
+			// WHEN
 			res, err := conv.ToEntity(testCase.Input)
 
 			if testCase.ExpectedErrMessage != "" {

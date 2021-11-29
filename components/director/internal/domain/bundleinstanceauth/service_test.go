@@ -608,7 +608,7 @@ func TestService_Create(t *testing.T) {
 }
 
 func TestService_ListByApplicationID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	tnt := testTenant
@@ -657,10 +657,10 @@ func TestService_ListByApplicationID(t *testing.T) {
 
 			svc := bundleinstanceauth.NewService(repo, nil)
 
-			// when
+			// WHEN
 			pia, err := svc.List(ctx, testBundleID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, pia)
@@ -684,7 +684,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 }
 
 func TestService_ListByRuntimeID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	tnt := testTenant
@@ -762,7 +762,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	tnt := testTenant

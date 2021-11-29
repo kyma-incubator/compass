@@ -18,7 +18,7 @@ var (
 )
 
 func TestConverter_ToGraphQLForRuntime(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	tokenModel := model.OneTimeToken{Token: token, ConnectorURL: validConnectorURL}
 	conv := onetimetoken.NewConverter(validLegacyConnectorURL)
 	// WHEN
@@ -29,7 +29,7 @@ func TestConverter_ToGraphQLForRuntime(t *testing.T) {
 }
 
 func TestConverter_ToGraphQLForApplication(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	tokenModel := model.OneTimeToken{Token: token, ConnectorURL: validConnectorURL}
 	conv := onetimetoken.NewConverter(validLegacyConnectorURL)
 	// WHEN
@@ -42,7 +42,7 @@ func TestConverter_ToGraphQLForApplication(t *testing.T) {
 }
 
 func TestConverter_ToGraphQLForApplication_WithLegacyURLWithQueryParam(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	tokenModel := model.OneTimeToken{Token: token, ConnectorURL: validConnectorURL}
 	conv := onetimetoken.NewConverter(validLegacyConnectorURLWithQuery)
 	// WHEN
@@ -55,7 +55,7 @@ func TestConverter_ToGraphQLForApplication_WithLegacyURLWithQueryParam(t *testin
 }
 
 func TestConverter_ToGraphQLForApplication_ErrorWithInvalidLegacyURL(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	tokenModel := model.OneTimeToken{Token: token, ConnectorURL: validConnectorURL}
 	conv := onetimetoken.NewConverter(invalidURL)
 	// WHEN

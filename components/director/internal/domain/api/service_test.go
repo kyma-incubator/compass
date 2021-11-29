@@ -21,7 +21,7 @@ import (
 )
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -70,10 +70,10 @@ func TestService_Get(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := api.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			document, err := svc.Get(ctx, testCase.InputID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedDocument, document)
@@ -96,7 +96,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_GetForBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -149,10 +149,10 @@ func TestService_GetForBundle(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := api.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			api, err := svc.GetForBundle(ctx, testCase.InputID, testCase.BundleID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedAPI, api)
@@ -175,7 +175,7 @@ func TestService_GetForBundle(t *testing.T) {
 }
 
 func TestService_ListByBundleIDs(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	firstAPIDefID := "foo"
@@ -317,10 +317,10 @@ func TestService_ListByBundleIDs(t *testing.T) {
 
 			svc := api.NewService(repo, nil, nil, bndlRefSvc)
 
-			// when
+			// WHEN
 			apiDefs, err := svc.ListByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, apiDefs)
@@ -343,7 +343,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 }
 
 func TestService_ListByApplicationID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -393,10 +393,10 @@ func TestService_ListByApplicationID(t *testing.T) {
 
 			svc := api.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			docs, err := svc.ListByApplicationID(ctx, appID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, docs)
@@ -419,7 +419,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 }
 
 func TestService_Create(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -651,7 +651,7 @@ func TestService_Create(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			uidService := testCase.UIDServiceFn()
 			specService := testCase.SpecServiceFn()
@@ -660,10 +660,10 @@ func TestService_Create(t *testing.T) {
 			svc := api.NewService(repo, uidService, specService, bundleReferenceService)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			result, err := svc.Create(ctx, appID, &bundleID, &packageID, testCase.Input, testCase.SpecsInput, testCase.DefaultTargetURLPerBundle, 0)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -688,7 +688,7 @@ func TestService_Create(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -907,7 +907,7 @@ func TestService_Update(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			specSvc := testCase.SpecServiceFn()
 			bundleReferenceSvc := testCase.BundleReferenceFn()
@@ -915,10 +915,10 @@ func TestService_Update(t *testing.T) {
 			svc := api.NewService(repo, nil, specSvc, bundleReferenceSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input, testCase.SpecInput)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 			} else {
@@ -942,7 +942,7 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_UpdateInManyBundles(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -1120,7 +1120,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			specSvc := testCase.SpecServiceFn()
 			bundleReferenceSvc := testCase.BundleReferenceFn()
@@ -1128,7 +1128,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 			svc := api.NewService(repo, nil, specSvc, bundleReferenceSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			err := svc.UpdateInManyBundles(ctx, testCase.InputID, testCase.Input, testCase.SpecInput, testCase.DefaultTargetURLPerBundleForUpdate, testCase.DefaultTargetURLPerBundleForCreation, testCase.BundleIDsForDeletion, 0)
 
 			// then
@@ -1155,7 +1155,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -1193,12 +1193,12 @@ func TestService_Delete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := api.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
 			// then
@@ -1223,7 +1223,7 @@ func TestService_Delete(t *testing.T) {
 }
 
 func TestService_DeleteAllByBundleID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	id := "foo"
 
@@ -1260,12 +1260,12 @@ func TestService_DeleteAllByBundleID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := api.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.DeleteAllByBundleID(ctx, testCase.InputID)
 
 			// then
@@ -1290,7 +1290,7 @@ func TestService_DeleteAllByBundleID(t *testing.T) {
 }
 
 func TestService_ListFetchRequests(t *testing.T) {
-	// given
+	// GIVEN
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
@@ -1350,7 +1350,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 
 			svc := api.NewService(nil, nil, specService, nil)
 
-			// when
+			// WHEN
 			frs, err := svc.ListFetchRequests(ctx, specIDs)
 
 			// then
@@ -1367,7 +1367,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.ListFetchRequests(context.TODO(), nil)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})

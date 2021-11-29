@@ -16,7 +16,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	allDetailsInput := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
 	allDetailsExpected := fixDetailedGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.Runtime
@@ -48,7 +48,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			converter := runtime.NewConverter()
 			res := converter.ToGraphQL(testCase.Input)
 
@@ -59,7 +59,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	input := []*model.Runtime{
 		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum"),
 		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Dolor sit amet"),
@@ -79,7 +79,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		},
 	}
 
-	// when
+	// WHEN
 	converter := runtime.NewConverter()
 	res := converter.MultipleToGraphQL(input)
 
@@ -88,7 +88,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    graphql.RuntimeInput
@@ -108,7 +108,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			converter := runtime.NewConverter()
 			res := converter.InputFromGraphQL(testCase.Input)
 

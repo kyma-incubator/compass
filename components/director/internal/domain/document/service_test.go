@@ -18,7 +18,7 @@ import (
 )
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -68,7 +68,7 @@ func TestService_Get(t *testing.T) {
 
 			svc := document.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			doc, err := svc.Get(ctx, testCase.InputID)
 
 			// then
@@ -86,7 +86,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_GetForBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	id := "foo"
 	bndlID := bndlID()
@@ -140,7 +140,7 @@ func TestService_GetForBundle(t *testing.T) {
 
 			svc := document.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			eventAPIDefinition, err := svc.GetForBundle(ctx, testCase.InputID, testCase.BundleID)
 
 			// then
@@ -165,7 +165,7 @@ func TestService_GetForBundle(t *testing.T) {
 }
 
 func TestService_CreateToBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	tnt := "tenant"
@@ -262,7 +262,7 @@ func TestService_CreateToBundle(t *testing.T) {
 			svc := document.NewService(repo, fetchRequestRepo, idSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			result, err := svc.CreateInBundle(ctx, appID, bundleID, testCase.Input)
 
 			// then
@@ -282,13 +282,13 @@ func TestService_CreateToBundle(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := document.NewService(nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.CreateInBundle(context.TODO(), "appID", "bndlID", model.DocumentInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -334,7 +334,7 @@ func TestService_Delete(t *testing.T) {
 
 			svc := document.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
 			// then
@@ -351,7 +351,7 @@ func TestService_Delete(t *testing.T) {
 }
 
 func TestService_ListByBundleIDs(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 
 	tnt := "tenant"
@@ -450,7 +450,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 
 			svc := document.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			docs, err := svc.ListByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
 
 			// then
@@ -476,7 +476,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 }
 
 func TestService_ListFetchRequests(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tenant"
 	testErr := errors.New("test error")
@@ -528,7 +528,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 
 			svc := document.NewService(nil, repo, nil)
 
-			// when
+			// WHEN
 			frs, err := svc.ListFetchRequests(ctx, docIDs)
 
 			// then

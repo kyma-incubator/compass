@@ -19,7 +19,7 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	placeholder := "test"
 	modelEventDefinition, modelSpec, modelBundleRef := fixFullEventDefinitionModel(placeholder)
 	gqlEventDefinition := fixFullGQLEventDefinition(placeholder)
@@ -105,7 +105,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			versionConverter := testCase.VersionConverter()
 			specConverter := testCase.SpecConverter()
 
-			// when
+			// WHEN
 			converter := event.NewConverter(versionConverter, specConverter)
 			res, err := converter.ToGraphQL(testCase.Input, testCase.SpecInput, testCase.BundleReferenceInput)
 			// then
@@ -125,7 +125,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	event1, spec1, bundleRef1 := fixFullEventDefinitionModel("test1")
 	event2, spec2, bundleRef2 := fixFullEventDefinitionModel("test2")
 
@@ -158,7 +158,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		specConverter.On("ToGraphQLEventSpec", inputSpecs[i]).Return(expected[i].Spec, nil).Once()
 	}
 
-	// when
+	// WHEN
 	converter := event.NewConverter(versionConverter, specConverter)
 	res, err := converter.MultipleToGraphQL(inputAPIs, inputSpecs, inputBundleRefs)
 	assert.NoError(t, err)
@@ -169,7 +169,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	gqlEventDefinitionInput := fixGQLEventDefinitionInput("foo", "Lorem ipsum", "group")
 	modelEventDefinitionInput, modelSpec := fixModelEventDefinitionInput("foo", "Lorem ipsum", "group")
 	emptyGQLEventDefinition := &graphql.EventDefinitionInput{}
@@ -247,7 +247,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			versionConverter := testCase.VersionConverter()
 			specConverter := testCase.SpecConverter()
 
-			// when
+			// WHEN
 			converter := event.NewConverter(versionConverter, specConverter)
 			res, spec, err := converter.InputFromGraphQL(testCase.Input)
 			// then
@@ -268,7 +268,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	gqlEvent1 := fixGQLEventDefinitionInput("foo", "lorem", "group")
 	gqlEvent2 := fixGQLEventDefinitionInput("bar", "ipsum", "group2")
 
@@ -333,11 +333,11 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//given
+			// GIVEN
 			versionConverter := testCase.VersionConverter()
 			specCovnerter := testCase.SpecConverter()
 
-			// when
+			// WHEN
 			converter := event.NewConverter(versionConverter, specCovnerter)
 			res, specs, err := converter.MultipleInputFromGraphQL(testCase.Input)
 
@@ -352,7 +352,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		eventModel, _, _ := fixFullEventDefinitionModel("foo")
 
 		versionConv := version.NewConverter()
@@ -363,7 +363,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		assert.Equal(t, fixFullEntityEventDefinition(eventID, "foo"), entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		eventModel := fixEventDefinitionModel("id", "name")
 		require.NotNil(t, eventModel)
 		versionConv := version.NewConverter()
@@ -377,7 +377,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		entity := fixFullEntityEventDefinition(eventID, "placeholder")
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
@@ -388,7 +388,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		assert.Equal(t, &expectedModel, eventModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		entity := fixEntityEventDefinition("id", "name")
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)

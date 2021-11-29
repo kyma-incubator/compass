@@ -105,7 +105,7 @@ func TestPgRepository_GetBundleIDsForObject(t *testing.T) {
 }
 
 func TestPgRepository_Create(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	bundleRefModel := fixAPIBundleReferenceModel()
 	bundleRefEntity := fixAPIBundleReferenceEntity()
 	insertQuery := `INSERT INTO public\.bundle_references (.+) VALUES (.+)`
@@ -457,7 +457,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 	})
 
 	t.Run("DB Error", func(t *testing.T) {
-		// given
+		// GIVEN
 		inputPageSize := 1
 		ExpectedLimit := 1
 		ExpectedOffset := 0
@@ -471,10 +471,10 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 			WillReturnError(testError)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-		// when
+		// WHEN
 		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, inputPageSize, inputCursor)
 
-		// then
+		// THEN
 		sqlMock.AssertExpectations(t)
 		assert.Nil(t, modelBndlRefs)
 		assert.Nil(t, totalCounts)

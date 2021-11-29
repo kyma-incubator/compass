@@ -8,7 +8,7 @@ import (
 
 func TestNewNullableBool(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		input := true
 		// WHEN
 		result := NewNullableBool(&input)
@@ -27,7 +27,7 @@ func TestNewNullableBool(t *testing.T) {
 
 func TestNewNullableString(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		text := "lorem ipsum"
 		// WHEN
 		result := NewNullableString(&text)
@@ -37,7 +37,7 @@ func TestNewNullableString(t *testing.T) {
 	})
 
 	t.Run("success when empty string", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		text := ""
 		// WHEN
 		result := NewNullableString(&text)

@@ -84,7 +84,7 @@ var (
 )
 
 func TestProvisioner_CreateTenant(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -156,7 +156,7 @@ func TestProvisioner_CreateTenant(t *testing.T) {
 }
 
 func TestProvisioner_CreateRegionalTenant(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	ctx := context.TODO()
 
 	testCases := []struct {

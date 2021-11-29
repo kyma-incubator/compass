@@ -19,7 +19,7 @@ import (
 )
 
 func TestService_Create(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	modelInput := fixModelWebhookInput("foo")
@@ -94,10 +94,10 @@ func TestService_Create(t *testing.T) {
 
 			svc := webhook.NewService(repo, nil, uidSvc)
 
-			// when
+			// WHEN
 			result, err := svc.Create(testCase.Context, givenApplicationID(), *modelInput, model.ApplicationWebhookReference)
 
-			// then
+			// THEN
 
 			if testCase.ExpectedErr == nil {
 				assert.NotEmpty(t, result)
@@ -113,14 +113,14 @@ func TestService_Create(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := webhook.NewService(nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.Create(context.TODO(), givenApplicationID(), *modelInput, model.ApplicationWebhookReference)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -164,10 +164,10 @@ func TestService_Get(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := webhook.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			actual, err := svc.Get(ctx, id, model.ApplicationWebhookReference)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedWebhook, actual)
@@ -181,7 +181,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_ListForApplication(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	modelWebhooks := []*model.Webhook{
@@ -226,10 +226,10 @@ func TestService_ListForApplication(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := webhook.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			webhooks, err := svc.ListForApplication(ctx, applicationID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, webhooks)
@@ -243,14 +243,14 @@ func TestService_ListForApplication(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := webhook.NewService(nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.ListForApplication(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
 func TestService_ListForApplicationTemplate(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	modelWebhooks := []*model.Webhook{
@@ -294,10 +294,10 @@ func TestService_ListForApplicationTemplate(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := webhook.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			webhooks, err := svc.ListForApplicationTemplate(ctx, applicationTemplateID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, webhooks)
@@ -311,7 +311,7 @@ func TestService_ListForApplicationTemplate(t *testing.T) {
 }
 
 func TestService_ListAllApplicationWebhooks(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	application := &model.Application{
@@ -467,10 +467,10 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 			applicationRepo := testCase.ApplicationRepositoryFn()
 			svc := webhook.NewService(webhookRepo, applicationRepo, nil)
 
-			// when
+			// WHEN
 			webhooks, err := svc.ListAllApplicationWebhooks(ctx, application.ID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				for _, expected := range testCase.ExpectedResult {
@@ -486,14 +486,14 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := webhook.NewService(nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.ListForApplication(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	url := "foo"
@@ -586,10 +586,10 @@ func TestService_Update(t *testing.T) {
 			repo := testCase.WebhookRepositoryFn()
 			svc := webhook.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Update(testCase.Context, id, *modelInput, testCase.WebhookType)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
@@ -602,7 +602,7 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -654,10 +654,10 @@ func TestService_Delete(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := webhook.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, id, model.ApplicationWebhookReference)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {

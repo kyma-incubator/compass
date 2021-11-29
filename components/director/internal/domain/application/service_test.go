@@ -31,7 +31,7 @@ import (
 )
 
 func TestService_Create(t *testing.T) {
-	// given
+	// GIVEN
 	timestamp := time.Now()
 	testErr := errors.New("Test error")
 	Documents := []*model.DocumentInput{
@@ -763,10 +763,10 @@ func TestService_Create(t *testing.T) {
 			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			result, err := svc.Create(ctx, testCase.Input)
 
-			// then
+			// THEN
 			assert.IsType(t, "string", result)
 			if testCase.ExpectedErr != nil {
 				require.NotNil(t, err)
@@ -786,14 +786,14 @@ func TestService_Create(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
 func TestService_CreateFromTemplate(t *testing.T) {
-	// given
+	// GIVEN
 	timestamp := time.Now()
 	testErr := errors.New("Test error")
 	Documents := []*model.DocumentInput{
@@ -1525,7 +1525,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			result, err := svc.CreateFromTemplate(ctx, testCase.Input, &appTemplteID)
 
 			// then
@@ -1548,7 +1548,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
@@ -1956,7 +1956,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			err := svc.CreateManyIfNotExistsWithEventualTemplate(ctx, testCase.Inputs)
 
 			// then
@@ -1979,7 +1979,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -2239,7 +2239,7 @@ func TestService_Update(t *testing.T) {
 			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil)
 			svc.SetTimestampGen(timestampGenFunc)
 
-			// when
+			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
 
 			// then
@@ -2258,7 +2258,7 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System foo is still used and cannot be deleted. Unassign the system from the following formations first: Easter. Then, unassign the system from the following runtimes, too: test-runtime]")
 	id := "foo"
@@ -2396,7 +2396,7 @@ func TestService_Delete(t *testing.T) {
 			runtimeRepo := testCase.RuntimeRepoFn()
 			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
 			// then
@@ -2413,7 +2413,7 @@ func TestService_Delete(t *testing.T) {
 }
 
 func TestService_Unpair(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System foo is still used and cannot be deleted. Unassign the system from the following formations first: Easter. Then, unassign the system from the following runtimes, too: test-runtime]")
 	id := "foo"
@@ -2670,7 +2670,7 @@ func TestService_Unpair(t *testing.T) {
 			ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
-			// when
+			// WHEN
 			err := svc.Unpair(ctx, testCase.InputID)
 
 			// then
@@ -2689,7 +2689,7 @@ func TestService_Unpair(t *testing.T) {
 }
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -2746,7 +2746,7 @@ func TestService_Get(t *testing.T) {
 
 			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			app, err := svc.Get(ctx, testCase.InputID)
 
 			// then
@@ -2764,7 +2764,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_List(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	modelApplications := []*model.Application{
@@ -2853,7 +2853,7 @@ func TestService_List(t *testing.T) {
 
 			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, after)
 
 			// then
@@ -2871,7 +2871,7 @@ func TestService_List(t *testing.T) {
 }
 
 func TestService_ListGlobal(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	modelApplications := []*model.Application{
@@ -2960,7 +2960,7 @@ func TestService_ListGlobal(t *testing.T) {
 
 			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			app, err := svc.ListGlobal(ctx, testCase.InputPageSize, after)
 
 			// then
@@ -3234,7 +3234,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
+			// GIVEN
 			runtimeRepository := testCase.RuntimeRepositoryFn()
 			labelRepository := testCase.LabelRepositoryFn()
 			appRepository := testCase.AppRepositoryFn()
@@ -3315,7 +3315,7 @@ func TestService_Exist(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
+			// GIVEN
 			appRepo := testCase.RepositoryFn()
 			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
 
@@ -3337,7 +3337,7 @@ func TestService_Exist(t *testing.T) {
 }
 
 func TestService_SetLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
@@ -3421,7 +3421,7 @@ func TestService_SetLabel(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, labelSvc, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.SetLabel(ctx, testCase.InputLabel)
 
 			// then
@@ -3438,7 +3438,7 @@ func TestService_SetLabel(t *testing.T) {
 }
 
 func TestService_GetLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
@@ -3535,7 +3535,7 @@ func TestService_GetLabel(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
 
 			// then
@@ -3553,7 +3553,7 @@ func TestService_GetLabel(t *testing.T) {
 }
 
 func TestService_ListLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
@@ -3651,7 +3651,7 @@ func TestService_ListLabel(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
 
 			// then
@@ -3669,7 +3669,7 @@ func TestService_ListLabel(t *testing.T) {
 }
 
 func TestService_DeleteLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
@@ -3745,7 +3745,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)
 
 			// then
@@ -3809,7 +3809,7 @@ func TestService_GetByNameAndSystemNumber(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
+			// GIVEN
 			appRepo := testCase.RepositoryFn()
 			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
 

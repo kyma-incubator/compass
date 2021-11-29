@@ -24,7 +24,7 @@ var (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.Webhook
@@ -55,10 +55,10 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			}
 			converter := webhook.NewConverter(authConv)
 
-			// when
+			// WHEN
 			res, err := converter.ToGraphQL(testCase.Input)
 
-			// then
+			// THEN
 			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			authConv.AssertExpectations(t)
@@ -67,7 +67,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	input := []*model.Webhook{
 		fixApplicationModelWebhook("1", "foo", "", "baz"),
 		fixApplicationModelWebhook("2", "bar", "", "bez"),
@@ -84,17 +84,17 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	authConv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil, nil)
 	converter := webhook.NewConverter(authConv)
 
-	// when
+	// WHEN
 	res, err := converter.MultipleToGraphQL(input)
 
-	// then
+	// THEN
 	assert.NoError(t, err)
 	assert.Equal(t, expected, res)
 	authConv.AssertExpectations(t)
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *graphql.WebhookInput
@@ -129,7 +129,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			}
 			converter := webhook.NewConverter(authConv)
 
-			// when
+			// WHEN
 			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
@@ -145,7 +145,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	input := []*graphql.WebhookInput{
 		fixGQLWebhookInput("https://test-domain.com"),
 		fixGQLWebhookInput("https://test-domain.com"),
@@ -159,7 +159,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	authConv.On("InputFromGraphQL", input[0].Auth).Return(expected[0].Auth, nil)
 	converter := webhook.NewConverter(authConv)
 
-	// when
+	// WHEN
 	res, err := converter.MultipleInputFromGraphQL(input)
 
 	// then

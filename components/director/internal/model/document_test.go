@@ -9,7 +9,7 @@ import (
 )
 
 func TestDocumentInput_ToDocument(t *testing.T) {
-	// given
+	// GIVEN
 	bundleID := "foo"
 	appID := "appID"
 	id := "bar"
@@ -98,10 +98,10 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToDocumentWithinBundle(id, bundleID, appID)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

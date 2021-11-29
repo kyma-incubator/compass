@@ -24,7 +24,7 @@ import (
 
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		name := "foo"
 		desc := "bar"
 		bndlModel := fixBundleModel(name, desc)
@@ -46,7 +46,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		assert.Equal(t, expectedBndl, entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		name := "foo"
 		bndlModel := &model.Bundle{
 			ApplicationID:                  appID,
@@ -79,7 +79,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		name := "foo"
 		desc := "bar"
 		testErrMsg := "test-err"
@@ -99,7 +99,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		assert.Equal(t, expectedBdnl, bndlModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		name := "foo"
 		entity := &bundle.Entity{
 			ApplicationID:                 appID,
@@ -129,7 +129,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 }
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	id := bundleID
 	name := "foo"
 	desc := "bar"
@@ -178,10 +178,10 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//given
+			// GIVEN
 			authConverter := testCase.AuthConverterFn()
 
-			// when
+			// WHEN
 			converter := bundle.NewConverter(authConverter, nil, nil, nil)
 			res, err := converter.ToGraphQL(testCase.Input)
 
@@ -200,7 +200,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	name1 := "foo"
 	name2 := "bar"
 	desc := "1"
@@ -226,7 +226,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		authConverter.On("ToGraphQL", api.DefaultInstanceAuth).Return(expected[i].DefaultInstanceAuth, nil).Once()
 	}
 
-	// when
+	// WHEN
 	converter := bundle.NewConverter(authConverter, nil, nil, nil)
 	res, err := converter.MultipleToGraphQL(input)
 
@@ -238,7 +238,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_CreateInputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	name := "foo"
 	desc := "Lorem ipsum"
 	gqlBundleCreateInput := fixGQLBundleCreateInput(name, desc)
@@ -308,13 +308,13 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//given
+			// GIVEN
 			apiConverter := testCase.APIConverterFn()
 			eventConverter := testCase.EventAPIConverterFn()
 			documentConverter := testCase.DocumentConverterFn()
 			authConverter := testCase.AuthConverterFn()
 
-			// when
+			// WHEN
 			converter := bundle.NewConverter(authConverter, apiConverter, eventConverter, documentConverter)
 			res, err := converter.CreateInputFromGraphQL(testCase.Input)
 
@@ -327,7 +327,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleCreateInputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	gqlBndl1 := fixGQLBundleCreateInput("foo", "bar")
 	gqlBndl2 := fixGQLBundleCreateInput("bar", "baz")
 	input := []*graphql.BundleCreateInput{
@@ -359,7 +359,7 @@ func TestConverter_MultipleCreateInputFromGraphQL(t *testing.T) {
 
 	converter := bundle.NewConverter(authConv, apiConv, eventConv, docConv)
 
-	// when
+	// WHEN
 	res, err := converter.MultipleCreateInputFromGraphQL(input)
 
 	// then
@@ -369,7 +369,7 @@ func TestConverter_MultipleCreateInputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	name := "foo"
 	desc := "Lorem ipsum"
 	gqlBundleCreateInput := fixGQLBundleUpdateInput(name, desc)
@@ -406,10 +406,10 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//given
+			// GIVEN
 			authConverter := testCase.AuthConverterFn()
 
-			// when
+			// WHEN
 			converter := bundle.NewConverter(authConverter, nil, nil, nil)
 			res, err := converter.UpdateInputFromGraphQL(*testCase.Input)
 

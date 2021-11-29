@@ -9,7 +9,7 @@ import (
 )
 
 func TestWebhookInput_ToApplicationWebhook(t *testing.T) {
-	// given
+	// GIVEN
 	applicationID := "foo"
 	id := "bar"
 	template := `{}`
@@ -69,17 +69,17 @@ func TestWebhookInput_ToApplicationWebhook(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToWebhook(id, applicationID, model.ApplicationWebhookReference)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}
 }
 
 func TestWebhookInput_ToApplicationTemplateWebhook(t *testing.T) {
-	// given
+	// GIVEN
 	applicationTemplateID := "foo"
 	id := "bar"
 	template := `{}`
@@ -139,10 +139,10 @@ func TestWebhookInput_ToApplicationTemplateWebhook(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToWebhook(id, applicationTemplateID, model.ApplicationTemplateWebhookReference)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

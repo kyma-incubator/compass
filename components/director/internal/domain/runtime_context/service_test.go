@@ -19,7 +19,7 @@ import (
 )
 
 func TestService_Create(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -149,10 +149,10 @@ func TestService_Create(t *testing.T) {
 			labelSvc := testCase.LabelUpsertServiceFn()
 			svc := runtimectx.NewService(repo, nil, labelSvc, idSvc)
 
-			// when
+			// WHEN
 			result, err := svc.Create(ctx, testCase.Input)
 
-			// then
+			// THEN
 			assert.IsType(t, "string", result)
 			if err == nil {
 				require.Nil(t, testCase.ExpectedErr)
@@ -168,18 +168,18 @@ func TestService_Create(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// given
+		// GIVEN
 		svc := runtimectx.NewService(nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.Create(context.TODO(), model.RuntimeContextInput{})
-		// then
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -360,10 +360,10 @@ func TestService_Update(t *testing.T) {
 			labelSvc := testCase.LabelUpsertServiceFn()
 			svc := runtimectx.NewService(repo, labelRepo, labelSvc, nil)
 
-			// when
+			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
@@ -377,18 +377,18 @@ func TestService_Update(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// given
+		// GIVEN
 		svc := runtimectx.NewService(nil, nil, nil, nil)
-		// when
+		// WHEN
 		err := svc.Update(context.TODO(), "id", model.RuntimeContextInput{})
-		// then
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	id := "foo"
 	key := "key"
@@ -441,10 +441,10 @@ func TestService_Delete(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := runtimectx.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
@@ -456,18 +456,18 @@ func TestService_Delete(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// given
+		// GIVEN
 		svc := runtimectx.NewService(nil, nil, nil, nil)
-		// when
+		// WHEN
 		err := svc.Delete(context.TODO(), "id")
-		// then
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -525,10 +525,10 @@ func TestService_Get(t *testing.T) {
 
 			svc := runtimectx.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			rtmCtx, err := svc.Get(ctx, testCase.InputID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedRuntimeContext, rtmCtx)
@@ -541,11 +541,11 @@ func TestService_Get(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// given
+		// GIVEN
 		svc := runtimectx.NewService(nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.Get(context.TODO(), "id")
-		// then
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
@@ -604,7 +604,7 @@ func TestService_Exist(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
+			// GIVEN
 			rtmCtxRepo := testCase.RepositoryFn()
 			svc := runtimectx.NewService(rtmCtxRepo, nil, nil, nil)
 
@@ -624,18 +624,18 @@ func TestService_Exist(t *testing.T) {
 		})
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// given
+		// GIVEN
 		svc := runtimectx.NewService(nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.Exist(context.TODO(), "id")
-		// then
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
 func TestService_List(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	runtimeID := "runtime_id"
@@ -749,10 +749,10 @@ func TestService_List(t *testing.T) {
 
 			svc := runtimectx.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			rtmCtx, err := svc.List(ctx, runtimeID, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, rtmCtx)
@@ -765,18 +765,18 @@ func TestService_List(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// given
+		// GIVEN
 		svc := runtimectx.NewService(nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.List(context.TODO(), "", nil, 1, "")
-		// then
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
 func TestService_ListLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
@@ -889,10 +889,10 @@ func TestService_ListLabel(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			svc := runtimectx.NewService(repo, labelRepo, nil, nil)
 
-			// when
+			// WHEN
 			l, err := svc.ListLabels(ctx, testCase.InputRuntimeContextID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, l, testCase.ExpectedOutput)
@@ -906,11 +906,11 @@ func TestService_ListLabel(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// given
+		// GIVEN
 		svc := runtimectx.NewService(nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.ListLabels(context.TODO(), "id")
-		// then
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})

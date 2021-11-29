@@ -15,7 +15,7 @@ import (
 )
 
 func TestService_Create(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	ctx := context.TODO()
@@ -65,16 +65,16 @@ func TestService_Create(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			upackageIDService := testCase.UIDServiceFn()
 
 			svc := ordpackage.NewService(repo, upackageIDService)
 
-			// when
+			// WHEN
 			result, err := svc.Create(ctx, appID, testCase.Input, uint64(123456))
 
-			// then
+			// THEN
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -96,7 +96,7 @@ func TestService_Create(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	modelPackage := fixPackageModel()
@@ -155,15 +155,15 @@ func TestService_Update(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := ordpackage.NewService(repo, nil)
 
-			// when
+			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input, 0)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 			} else {
@@ -185,7 +185,7 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	ctx := context.TODO()
@@ -222,15 +222,15 @@ func TestService_Delete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := ordpackage.NewService(repo, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 			} else {
@@ -316,7 +316,7 @@ func TestService_Exist(t *testing.T) {
 }
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	pkg := fixPackageModel()
@@ -361,7 +361,7 @@ func TestService_Get(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := ordpackage.NewService(repo, nil)
 
-			// when
+			// WHEN
 			pkg, err := svc.Get(ctx, testCase.InputID)
 
 			// then
@@ -387,7 +387,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_ListByApplicationID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	pkgs := []*model.Package{
@@ -436,7 +436,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 
 			svc := ordpackage.NewService(repo, nil)
 
-			// when
+			// WHEN
 			docs, err := svc.ListByApplicationID(ctx, appID)
 
 			// then

@@ -9,7 +9,7 @@ import (
 )
 
 func TestRuntimeContextInput_ToRuntimeContext(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	runtimeID := "bar"
 	key := "key"
@@ -45,10 +45,10 @@ func TestRuntimeContextInput_ToRuntimeContext(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToRuntimeContext(id)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

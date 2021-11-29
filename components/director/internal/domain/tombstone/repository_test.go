@@ -14,7 +14,7 @@ import (
 )
 
 func TestPgRepository_Create(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	var nilTSModel *model.Tombstone
 	tombstoneModel := fixTombstoneModel()
 	tombstoneEntity := fixEntityTombstone()

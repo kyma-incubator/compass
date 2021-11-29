@@ -8,7 +8,7 @@ import (
 )
 
 func TestBundleCreateInput_ToBundle(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	appID := "bar"
 	desc := "Sample"
@@ -45,7 +45,7 @@ func TestBundleCreateInput_ToBundle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToBundle(id, appID)
 
 			// then

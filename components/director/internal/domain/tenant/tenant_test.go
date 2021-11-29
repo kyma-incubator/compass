@@ -38,7 +38,7 @@ func TestLoadFromContext(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result, err := tenant.LoadFromContext(testCase.Context)
 
 			// then
@@ -79,7 +79,7 @@ func TestLoadTenantPairFromContext(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result, err := tenant.LoadTenantPairFromContext(testCase.Context)
 
 			// then
@@ -94,13 +94,13 @@ func TestLoadTenantPairFromContext(t *testing.T) {
 }
 
 func TestSaveToLoadFromContext(t *testing.T) {
-	// given
+	// GIVEN
 	value := "foo"
 	externalValue := "bar"
 	ctx := context.TODO()
 
 	tenants := tenant.TenantCtx{InternalID: value, ExternalID: externalValue}
-	// when
+	// WHEN
 	result := tenant.SaveToContext(ctx, value, externalValue)
 
 	// then

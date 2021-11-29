@@ -25,7 +25,7 @@ func TestResolver_Viewer(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		ctx := context.TODO()
 		ctx = consumer.SaveToContext(ctx, cons)
 		resolver := viewer.NewViewerResolver()
@@ -39,7 +39,7 @@ func TestResolver_Viewer(t *testing.T) {
 	})
 
 	t.Run("Error while converting", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		ctx := context.TODO()
 		invalidConsumer := consumer.Consumer{
 			ConsumerID:   uuid.New().String(),
@@ -55,7 +55,7 @@ func TestResolver_Viewer(t *testing.T) {
 	})
 
 	t.Run("No consumer in ctx", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		ctx := context.TODO()
 		resolver := viewer.NewViewerResolver()
 

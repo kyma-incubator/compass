@@ -88,7 +88,7 @@ func TestPgRepository_GetByFiltersAndID(t *testing.T) {
 }
 
 func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeModelForRuntimeEntity(t *testing.T) {
-	// given
+	// GIVEN
 	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
 	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
 
@@ -109,7 +109,7 @@ func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeModelForRuntimeEntit
 
 	pgRepository := runtime.NewRepository(mockConverter)
 
-	// when
+	// WHEN
 	filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
 	modelRuntime, err := pgRepository.GetByFiltersGlobal(ctx, filters)
 

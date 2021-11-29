@@ -14,7 +14,7 @@ import (
 )
 
 func TestMapTenants(t *testing.T) {
-	//given
+	// GIVEN
 	validTenantSrcPath := "./testdata/tenants/"
 	directoryWithInvalidTenantJSON := "./testdata/invalidtenants/"
 	directoryWithInvalidFiles := "./testdata/invalidfiletypes/"

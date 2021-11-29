@@ -12,7 +12,7 @@ import (
 )
 
 func TestPgRepository_Create(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create Product",
 		SQLQueryDetails: []testdb.SQLQueryDetails{

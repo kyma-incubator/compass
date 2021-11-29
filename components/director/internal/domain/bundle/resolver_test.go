@@ -23,7 +23,7 @@ import (
 
 func TestResolver_API(t *testing.T) {
 	{
-		// given
+		// GIVEN
 		id := "bar"
 		bndlID := "1"
 		var nilBundleID *string
@@ -272,7 +272,7 @@ func TestResolver_API(t *testing.T) {
 
 				resolver := bundle.NewResolver(transact, nil, nil, bndlRefSvc, svc, nil, nil, nil, nil, converter, nil, nil, specSvc)
 
-				// when
+				// WHEN
 				result, err := resolver.APIDefinition(context.TODO(), testCase.Bundle, testCase.InputID)
 
 				// then
@@ -296,7 +296,7 @@ func TestResolver_API(t *testing.T) {
 }
 
 func TestResolver_APIs(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 	group := "group"
 	desc := "desc"
@@ -560,7 +560,7 @@ func TestResolver_APIs(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -571,7 +571,7 @@ func TestResolver_APIs(t *testing.T) {
 			secondBundleParams := dataloader.ParamAPIDef{ID: secondBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			keys := []dataloader.ParamAPIDef{firstBundleParams, secondBundleParams}
 			resolver := bundle.NewResolver(transact, nil, nil, bundleRefService, svc, nil, nil, nil, nil, converter, nil, nil, specService)
-			// when
+			// WHEN
 			result, err := resolver.APIDefinitionsDataLoader(keys)
 
 			// then
@@ -616,7 +616,7 @@ func TestResolver_APIs(t *testing.T) {
 
 func TestResolver_Event(t *testing.T) {
 	{
-		// given
+		// GIVEN
 		id := "bar"
 		bndlID := "1"
 		var nilBundleID *string
@@ -864,7 +864,7 @@ func TestResolver_Event(t *testing.T) {
 
 				resolver := bundle.NewResolver(transact, nil, nil, bndlRefService, nil, svc, nil, nil, nil, nil, converter, nil, specSvc)
 
-				// when
+				// WHEN
 				result, err := resolver.EventDefinition(context.TODO(), testCase.Bundle, testCase.InputID)
 
 				// then
@@ -888,7 +888,7 @@ func TestResolver_Event(t *testing.T) {
 }
 
 func TestResolver_Events(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 	group := "group"
 	desc := "desc"
@@ -1126,7 +1126,7 @@ func TestResolver_Events(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -1137,7 +1137,7 @@ func TestResolver_Events(t *testing.T) {
 			secondBundleParams := dataloader.ParamEventDef{ID: secondBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			keys := []dataloader.ParamEventDef{firstBundleParams, secondBundleParams}
 			resolver := bundle.NewResolver(transact, nil, nil, bundleRefService, nil, svc, nil, nil, nil, nil, converter, nil, specService)
-			// when
+			// WHEN
 			result, err := resolver.EventDefinitionsDataLoader(keys)
 
 			// then
@@ -1181,7 +1181,7 @@ func TestResolver_Events(t *testing.T) {
 }
 
 func TestResolver_Document(t *testing.T) {
-	// given
+	// GIVEN
 	id := "bar"
 
 	modelDoc := fixModelDocument("foo", id)
@@ -1299,7 +1299,7 @@ func TestResolver_Document(t *testing.T) {
 
 			resolver := bundle.NewResolver(transact, nil, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.Document(context.TODO(), testCase.Bundle, testCase.InputID)
 
 			// then
@@ -1315,7 +1315,7 @@ func TestResolver_Document(t *testing.T) {
 }
 
 func TestResolver_Documents(t *testing.T) {
-	// given
+	// GIVEN
 	contextParam := txtest.CtxWithDBMatcher()
 
 	firstBundleID := "bundleID"
@@ -1408,7 +1408,7 @@ func TestResolver_Documents(t *testing.T) {
 			keys := []dataloader.ParamDocument{firstBundleParams, secondBundleParams}
 			resolver := bundle.NewResolver(transact, nil, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.DocumentsDataLoader(keys)
 
 			// then
@@ -1445,7 +1445,7 @@ func TestResolver_Documents(t *testing.T) {
 }
 
 func TestResolver_AddBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -1573,14 +1573,14 @@ func TestResolver_AddBundle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
 			resolver := bundle.NewResolver(transact, svc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.AddBundle(context.TODO(), appID, gqlBundleInput)
 
 			// then
@@ -1601,7 +1601,7 @@ func TestResolver_AddBundle(t *testing.T) {
 }
 
 func TestResolver_UpdateBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "id"
@@ -1748,14 +1748,14 @@ func TestResolver_UpdateBundle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
 			resolver := bundle.NewResolver(transact, svc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.UpdateBundle(context.TODO(), id, gqlBundleUpdateInput)
 
 			// then
@@ -1776,7 +1776,7 @@ func TestResolver_UpdateBundle(t *testing.T) {
 }
 
 func TestResolver_DeleteBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "id"
@@ -2002,7 +2002,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			apiSvc := testCase.APIDefFn()
@@ -2011,7 +2011,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 
 			resolver := bundle.NewResolver(transact, svc, nil, nil, apiSvc, eventSvc, nil, converter, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteBundle(context.TODO(), id)
 
 			// then
@@ -2032,7 +2032,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 }
 
 func TestResolver_InstanceAuth(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	modelBundleInstanceAuth := fixModelBundleInstanceAuth(id)
 	gqlBundleInstanceAuth := fixGQLBundleInstanceAuth(id)
@@ -2169,7 +2169,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 
 			resolver := bundle.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.InstanceAuth(context.TODO(), testCase.Bundle, testCase.InputID)
 
 			// then
@@ -2194,7 +2194,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 }
 
 func TestResolver_InstanceAuths(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 
 	bndl := fixGQLBundle(bundleID, "foo", "bar")
@@ -2299,13 +2299,13 @@ func TestResolver_InstanceAuths(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
 			resolver := bundle.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil)
-			// when
+			// WHEN
 			result, err := resolver.InstanceAuths(context.TODO(), bndl)
 
 			// then

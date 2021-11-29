@@ -9,7 +9,7 @@ import (
 )
 
 func TestProductInput_ToProduct(t *testing.T) {
-	// given
+	// GIVEN
 	id := "test"
 	ordID := "foo"
 	appID := "bar"
@@ -48,7 +48,7 @@ func TestProductInput_ToProduct(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToProduct(id, appID)
 
 			// then

@@ -21,7 +21,7 @@ import (
 )
 
 func TestLabelService_UpsertMultipleLabels(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
@@ -127,10 +127,10 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 
 			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
-			// when
+			// WHEN
 			err := svc.UpsertMultipleLabels(ctx, tnt, testCase.InputObjectType, testCase.InputObjectID, testCase.InputLabels)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
@@ -146,7 +146,7 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 }
 
 func TestLabelService_UpsertLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
@@ -412,10 +412,10 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 
 			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
-			// when
+			// WHEN
 			err := svc.UpsertLabel(ctx, tnt, testCase.LabelInput)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
@@ -431,7 +431,7 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 }
 
 func TestLabelService_CreateLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
@@ -695,7 +695,7 @@ func TestLabelService_CreateLabel(t *testing.T) {
 
 			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
-			// when
+			// WHEN
 			err := svc.CreateLabel(ctx, tnt, id, testCase.LabelInput)
 
 			// then
@@ -714,7 +714,7 @@ func TestLabelService_CreateLabel(t *testing.T) {
 }
 
 func TestLabelService_UpdateLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
@@ -978,7 +978,7 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 
 			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
-			// when
+			// WHEN
 			err := svc.UpdateLabel(ctx, tnt, id, testCase.LabelInput)
 
 			// then
@@ -997,7 +997,7 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 }
 
 func TestLabelService_GetLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := tenantID
 	externalTnt := "external-tenant"
 	id := "foo"
@@ -1094,7 +1094,7 @@ func TestLabelService_GetLabel(t *testing.T) {
 
 			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
-			// when
+			// WHEN
 			lbl, err := svc.GetLabel(ctx, tnt, testCase.LabelInput)
 
 			// then

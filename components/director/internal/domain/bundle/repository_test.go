@@ -17,7 +17,7 @@ import (
 )
 
 func TestPgRepository_Create(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	name := "foo"
 	desc := "bar"
 

@@ -17,7 +17,7 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	placeholder := "test"
 	modelAPIDefinition, modelSpec, modelBundleReference := fixFullAPIDefinitionModel(placeholder)
 	gqlAPIDefinition := fixFullGQLAPIDefinition(placeholder)
@@ -103,7 +103,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			versionConverter := testCase.VersionConverter()
 			specConverter := testCase.SpecConverter()
 
-			// when
+			// WHEN
 			converter := api.NewConverter(versionConverter, specConverter)
 			res, err := converter.ToGraphQL(testCase.Input, testCase.SpecInput, testCase.BundleReferenceInput)
 			// then
@@ -123,7 +123,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	api1, spec1, bundleRef1 := fixFullAPIDefinitionModel("test1")
 	api2, spec2, bundleRef2 := fixFullAPIDefinitionModel("test2")
 
@@ -156,7 +156,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		specConverter.On("ToGraphQLAPISpec", inputSpecs[i]).Return(expected[i].Spec, nil).Once()
 	}
 
-	// when
+	// WHEN
 	converter := api.NewConverter(versionConverter, specConverter)
 	res, err := converter.MultipleToGraphQL(inputAPIs, inputSpecs, inputBundleRefs)
 	assert.NoError(t, err)
@@ -167,7 +167,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	gqlAPIDefinitionInput := fixGQLAPIDefinitionInput("foo", "Lorem ipsum", "group")
 	modelAPIDefinitionInput, modelSpec := fixModelAPIDefinitionInput("foo", "Lorem ipsum", "group")
 	emptyGQLAPIDefinition := &graphql.APIDefinitionInput{}
@@ -245,7 +245,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			versionConverter := testCase.VersionConverter()
 			specConverter := testCase.SpecConverter()
 
-			// when
+			// WHEN
 			converter := api.NewConverter(versionConverter, specConverter)
 			res, spec, err := converter.InputFromGraphQL(testCase.Input)
 			// then
@@ -266,7 +266,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	gqlAPI1 := fixGQLAPIDefinitionInput("foo", "lorem", "group")
 	gqlAPI2 := fixGQLAPIDefinitionInput("bar", "ipsum", "group2")
 
@@ -331,11 +331,11 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//given
+			// GIVEN
 			versionConverter := testCase.VersionConverter()
 			specCovnerter := testCase.SpecConverter()
 
-			// when
+			// WHEN
 			converter := api.NewConverter(versionConverter, specCovnerter)
 			res, specs, err := converter.MultipleInputFromGraphQL(testCase.Input)
 
@@ -350,7 +350,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		apiModel, _, _ := fixFullAPIDefinitionModel("foo")
 
 		versionConv := version.NewConverter()
@@ -361,7 +361,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		assert.Equal(t, fixFullEntityAPIDefinition(apiDefID, "foo"), *entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		apiModel := fixAPIDefinitionModel("id", "name", "target_url")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
@@ -375,7 +375,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		entity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(versionConv, nil)
@@ -386,7 +386,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		assert.Equal(t, &expectedModel, apiModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		entity := fixEntityAPIDefinition("id", "name", "target_url")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(versionConv, nil)

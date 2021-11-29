@@ -10,7 +10,7 @@ import (
 )
 
 func TestIntegrationSystemInput_ToIntegrationSystem(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 
 	testCases := []struct {
@@ -44,10 +44,10 @@ func TestIntegrationSystemInput_ToIntegrationSystem(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToIntegrationSystem(id)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

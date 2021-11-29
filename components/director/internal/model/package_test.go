@@ -9,7 +9,7 @@ import (
 )
 
 func TestPackageInput_ToPackage(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	appID := "bar"
 	vendor := "Sample"
@@ -45,10 +45,10 @@ func TestPackageInput_ToPackage(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToPackage(id, appID, 0)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

@@ -29,7 +29,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	tokenModel := &model.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
 	expectedToken := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL"}}
 	t.Run("Success", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, nil)
 		conv := &automock.TokenConverter{}
@@ -48,7 +48,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	})
 
 	t.Run("Success with system auth id", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		svc := &automock.TokenService{}
 		svc.On("RegenerateOneTimeToken", txtest.CtxWithDBMatcher(), systemID).Return(tokenModel, nil)
 		conv := &automock.TokenConverter{}
@@ -67,7 +67,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	})
 
 	t.Run("Error - transaction commit failed", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatFailsOnCommit()
@@ -83,7 +83,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	})
 
 	t.Run("Error - service return error", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, testErr)
 		persist, transact := txGen.ThatDoesntExpectCommit()
@@ -99,7 +99,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	})
 
 	t.Run("Error - begin transaction failed", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		svc := &automock.TokenService{}
 		persist, transact := txGen.ThatFailsOnBegin()
 		conv := &automock.TokenConverter{}
@@ -114,7 +114,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	})
 
 	t.Run("Error - converter returns error", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, nil)
 		conv := &automock.TokenConverter{}
@@ -139,7 +139,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	tokenModel := &model.OneTimeToken{Token: "Token", ConnectorURL: "connectorURL"}
 	expectedToken := graphql.OneTimeTokenForRuntime{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL"}}
 	t.Run("Success", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, model.RuntimeReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatSucceeds()
@@ -161,7 +161,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	})
 
 	t.Run("Error - transaction commit failed", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, model.RuntimeReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatFailsOnCommit()
@@ -180,7 +180,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	})
 
 	t.Run("Error - service return error", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		svc := &automock.TokenService{}
 		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, model.RuntimeReference).Return(tokenModel, testErr)
 		persist, transact := txGen.ThatDoesntExpectCommit()
@@ -199,7 +199,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	})
 
 	t.Run("Error - begin transaction failed", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		svc := &automock.TokenService{}
 		persist, transact := txGen.ThatFailsOnBegin()
 		conv := &automock.TokenConverter{}
@@ -224,7 +224,7 @@ func TestResolver_RawEncoded(t *testing.T) {
 		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null}"
 	expectedBaseToken := base64.StdEncoding.EncodeToString([]byte(expectedRawToken))
 	t.Run("Success", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		r := onetimetoken.NewTokenResolver(nil, nil, nil, "")
 
 		// WHEN
@@ -236,7 +236,7 @@ func TestResolver_RawEncoded(t *testing.T) {
 	})
 
 	t.Run("Error - nil token", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		r := onetimetoken.NewTokenResolver(nil, nil, nil, suggestTokenHeaderKey)
 
 		// WHEN
@@ -254,7 +254,7 @@ func TestResolver_Raw(t *testing.T) {
 		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null}"
 
 	t.Run("Success", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		r := onetimetoken.NewTokenResolver(nil, nil, nil, suggestTokenHeaderKey)
 
 		// WHEN
@@ -266,7 +266,7 @@ func TestResolver_Raw(t *testing.T) {
 	})
 
 	t.Run("Error - nil token", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		r := onetimetoken.NewTokenResolver(nil, nil, nil, suggestTokenHeaderKey)
 
 		// WHEN

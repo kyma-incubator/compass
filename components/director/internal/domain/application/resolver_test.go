@@ -33,7 +33,7 @@ import (
 var contextParam = txtest.CtxWithDBMatcher()
 
 func TestResolver_RegisterApplication(t *testing.T) {
-	// given
+	// GIVEN
 	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Lorem ipsum")
 	gqlApplication := fixGQLApplication("foo", "Foo", "Lorem ipsum")
 	testErr := errors.New("Test error")
@@ -128,7 +128,7 @@ func TestResolver_RegisterApplication(t *testing.T) {
 			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.RegisterApplication(context.TODO(), testCase.Input)
 
 			// then
@@ -144,7 +144,7 @@ func TestResolver_RegisterApplication(t *testing.T) {
 }
 
 func TestResolver_UpdateApplication(t *testing.T) {
-	// given
+	// GIVEN
 	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Lorem ipsum")
 	gqlApplication := fixGQLApplication("foo", "Foo", "Lorem ipsum")
 	testErr := errors.New("Test error")
@@ -238,7 +238,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.UpdateApplication(context.TODO(), testCase.ApplicationID, testCase.Input)
 
 			// then
@@ -254,7 +254,7 @@ func TestResolver_UpdateApplication(t *testing.T) {
 }
 
 func TestResolver_UnregisterApplication(t *testing.T) {
-	// given
+	// GIVEN
 	appID := uuid.New()
 	modelApplication := fixModelApplication(appID.String(), "tenant-foo", "Foo", "Bar")
 	gqlApplication := fixGQLApplication(appID.String(), "Foo", "Bar")
@@ -470,7 +470,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			resolver := application.NewResolver(transact, svc, nil, oAuth20Svc, sysAuthSvc, nil, nil, nil, eventingSvc, nil, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.UnregisterApplication(context.TODO(), testCase.InputID)
 
 			// then
@@ -487,7 +487,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 }
 
 func TestResolver_UnpairApplication(t *testing.T) {
-	// given
+	// GIVEN
 	appID := uuid.New()
 	modelApplication := fixModelApplication(appID.String(), "tenant-foo", "Foo", "Bar")
 	gqlApplication := fixGQLApplication(appID.String(), "Foo", "Bar")
@@ -694,7 +694,7 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			resolver := application.NewResolver(transact, svc, nil, oAuth20Svc, sysAuthSvc, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.UnpairApplication(context.TODO(), testCase.InputID)
 
 			// then
@@ -711,7 +711,7 @@ func TestResolver_UnpairApplication(t *testing.T) {
 }
 
 func TestResolver_Application(t *testing.T) {
-	// given
+	// GIVEN
 	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Bar")
 	gqlApplication := fixGQLApplication("foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
@@ -793,7 +793,7 @@ func TestResolver_Application(t *testing.T) {
 			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.Application(context.TODO(), testCase.InputID)
 
 			// then
@@ -807,7 +807,7 @@ func TestResolver_Application(t *testing.T) {
 }
 
 func TestResolver_Applications(t *testing.T) {
-	// given
+	// GIVEN
 	modelApplications := []*model.Application{
 		fixModelApplication("foo", "tenant-foo", "Foo", "Lorem Ipsum"),
 		fixModelApplication("bar", "tenant-bar", "Bar", "Lorem Ipsum"),
@@ -887,7 +887,7 @@ func TestResolver_Applications(t *testing.T) {
 			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.Applications(context.TODO(), testCase.InputLabelFilters, &first, &gqlAfter)
 
 			// then
@@ -1013,7 +1013,7 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
+			// GIVEN
 			applicationSvc := testCase.AppServiceFn()
 			applicationConverter := testCase.AppConverterFn()
 			persistTx, transact := testCase.TransactionerFn()
@@ -1040,7 +1040,7 @@ func TestResolver_ApplicationsForRuntime(t *testing.T) {
 }
 
 func TestResolver_SetApplicationLabel(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
@@ -1117,7 +1117,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.SetApplicationLabel(context.TODO(), testCase.InputApplicationID, testCase.InputKey, testCase.InputValue)
 
 			// then
@@ -1133,7 +1133,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
-		// when
+		// WHEN
 		result, err := resolver.SetApplicationLabel(context.TODO(), "", "", "")
 
 		// then
@@ -1146,7 +1146,7 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 }
 
 func TestResolver_DeleteApplicationLabel(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	applicationID := "foo"
@@ -1246,7 +1246,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			resolver := application.NewResolver(transactioner, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteApplicationLabel(context.TODO(), testCase.InputApplicationID, testCase.InputKey)
 
 			// then
@@ -1262,7 +1262,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 }
 
 func TestResolver_Webhooks(t *testing.T) {
-	// given
+	// GIVEN
 	applicationID := "fooid"
 	modelWebhooks := []*model.Webhook{
 		fixModelWebhook(applicationID, "foo"),
@@ -1400,7 +1400,7 @@ func TestResolver_Webhooks(t *testing.T) {
 
 			resolver := application.NewResolver(mockTransactioner, nil, svc, nil, nil, nil, converter, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.Webhooks(context.TODO(), app)
 
 			// then
@@ -1416,7 +1416,7 @@ func TestResolver_Webhooks(t *testing.T) {
 }
 
 func TestResolver_Labels(t *testing.T) {
-	// given
+	// GIVEN
 
 	id := "foo"
 	tenant := "tenant"
@@ -1516,7 +1516,7 @@ func TestResolver_Labels(t *testing.T) {
 
 			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.Labels(context.TODO(), gqlApp, testCase.InputKey)
 
 			// then
@@ -1531,7 +1531,7 @@ func TestResolver_Labels(t *testing.T) {
 }
 
 func TestResolver_Auths(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	auth := model.Auth{
 		Credential: model.CredentialData{},
@@ -1686,7 +1686,7 @@ func TestResolver_Auths(t *testing.T) {
 
 			resolver := application.NewResolver(transact, nil, nil, nil, svc, nil, nil, conv, nil, nil, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.Auths(context.TODO(), testCase.InputApp)
 
 			// then
@@ -1814,7 +1814,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		resolver := application.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
@@ -1840,7 +1840,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 }
 
 func TestResolver_Bundles(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 
 	tenantID := "1"
@@ -1965,7 +1965,7 @@ func TestResolver_Bundles(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -1975,7 +1975,7 @@ func TestResolver_Bundles(t *testing.T) {
 			secondAppParams := dataloader.ParamBundle{ID: secondAppID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			keys := []dataloader.ParamBundle{firstAppParams, secondAppParams}
 
-			// when
+			// WHEN
 			result, err := resolver.BundlesDataLoader(keys)
 
 			// then
@@ -2012,7 +2012,7 @@ func TestResolver_Bundles(t *testing.T) {
 }
 
 func TestResolver_Bundle(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	appID := "bar"
 	tenantID := "baz"
@@ -2150,7 +2150,7 @@ func TestResolver_Bundle(t *testing.T) {
 
 			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter)
 
-			// when
+			// WHEN
 			result, err := resolver.Bundle(context.TODO(), testCase.Application, testCase.InputID)
 
 			// then

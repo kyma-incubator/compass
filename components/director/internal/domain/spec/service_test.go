@@ -18,7 +18,7 @@ import (
 )
 
 func TestService_ListByReferenceObjectID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	specs := []*model.Spec{
@@ -64,7 +64,7 @@ func TestService_ListByReferenceObjectID(t *testing.T) {
 
 			svc := spec.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			docs, err := svc.ListByReferenceObjectID(ctx, model.APISpecReference, apiID)
 
 			// then
@@ -90,7 +90,7 @@ func TestService_ListByReferenceObjectID(t *testing.T) {
 }
 
 func TestService_ListByReferenceObjectIDs(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	firstAPIID := "apiID"
 	secondAPIID := "apiID2"
@@ -136,7 +136,7 @@ func TestService_ListByReferenceObjectIDs(t *testing.T) {
 
 			svc := spec.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			specifications, err := svc.ListByReferenceObjectIDs(ctx, model.APISpecReference, apiIDs)
 
 			// then
@@ -162,7 +162,7 @@ func TestService_ListByReferenceObjectIDs(t *testing.T) {
 }
 
 func TestService_DeleteByReferenceObjectID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	specs := []*model.Spec{
@@ -208,7 +208,7 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 
 			svc := spec.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.DeleteByReferenceObjectID(ctx, model.APISpecReference, apiID)
 
 			// then
@@ -233,7 +233,7 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 }
 
 func TestService_GetByReferenceObjectID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	specs := []*model.Spec{
@@ -288,7 +288,7 @@ func TestService_GetByReferenceObjectID(t *testing.T) {
 
 			svc := spec.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			docs, err := svc.GetByReferenceObjectID(ctx, model.APISpecReference, apiID)
 
 			// then
@@ -314,7 +314,7 @@ func TestService_GetByReferenceObjectID(t *testing.T) {
 }
 
 func TestService_CreateByReferenceObjectID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	ctx := context.TODO()
@@ -481,7 +481,7 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			uidService := testCase.UIDServiceFn()
@@ -492,7 +492,7 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 				return timestamp
 			})
 
-			// when
+			// WHEN
 			result, err := svc.CreateByReferenceObjectID(ctx, testCase.Input, model.APISpecReference, apiID)
 
 			// then
@@ -519,7 +519,7 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 }
 
 func TestService_UpdateByReferenceObjectID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	ctx := context.TODO()
@@ -692,7 +692,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			uidSvc := testCase.UIDServiceFn()
@@ -701,7 +701,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 			svc := spec.NewService(repo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			err := svc.UpdateByReferenceObjectID(ctx, testCase.InputID, testCase.Input, model.APISpecReference, apiID)
 
 			// then
@@ -728,7 +728,7 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -765,12 +765,12 @@ func TestService_Delete(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := spec.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID, model.APISpecReference)
 
 			// then
@@ -796,7 +796,7 @@ func TestService_Delete(t *testing.T) {
 }
 
 func TestService_RefetchSpec(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	ctx := context.TODO()
@@ -921,14 +921,14 @@ func TestService_RefetchSpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			frRepo := testCase.FetchRequestRepoFn()
 			frSvc := testCase.FetchRequestSvcFn()
 
 			svc := spec.NewService(repo, frRepo, nil, frSvc)
 
-			// when
+			// WHEN
 			result, err := svc.RefetchSpec(ctx, specID, model.APISpecReference)
 
 			// then
@@ -954,7 +954,7 @@ func TestService_RefetchSpec(t *testing.T) {
 }
 
 func TestService_GetFetchRequest(t *testing.T) {
-	// given
+	// GIVEN
 	ctx := context.TODO()
 	ctx = tnt.SaveToContext(ctx, tenant, externalTenant)
 
@@ -1064,7 +1064,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			svc := spec.NewService(repo, fetchRequestRepo, nil, nil)
 
-			// when
+			// WHEN
 			l, err := svc.GetFetchRequest(ctx, testCase.InputAPIDefID, model.APISpecReference)
 
 			// then
@@ -1082,14 +1082,14 @@ func TestService_GetFetchRequest(t *testing.T) {
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := spec.NewService(nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.GetFetchRequest(context.TODO(), "dd", model.APISpecReference)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
 func TestService_ListFetchRequestsByReferenceObjectIDs(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	frURL := "foo.bar"
 	firstFRID := "frID"
@@ -1154,7 +1154,7 @@ func TestService_ListFetchRequestsByReferenceObjectIDs(t *testing.T) {
 
 			svc := spec.NewService(nil, repo, nil, nil)
 
-			// when
+			// WHEN
 			frs, err := svc.ListFetchRequestsByReferenceObjectIDs(ctx, tenant, specIDs, model.APISpecReference)
 
 			// then

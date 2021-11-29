@@ -14,7 +14,7 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.Version
@@ -41,7 +41,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			converter := version.NewConverter()
 
-			// when
+			// WHEN
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -51,7 +51,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *graphql.VersionInput
@@ -78,7 +78,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			converter := version.NewConverter()
 
-			// when
+			// WHEN
 			res := converter.InputFromGraphQL(testCase.Input)
 
 			// then
@@ -89,7 +89,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 func TestConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		versionEntity := *fixVersionEntity("v1.2", true, "v1.1", false)
 		versionConv := version.NewConverter()
 		// WHEN

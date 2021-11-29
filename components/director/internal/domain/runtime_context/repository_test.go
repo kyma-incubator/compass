@@ -86,7 +86,7 @@ func TestPgRepository_GetByFiltersAndID(t *testing.T) {
 }
 
 func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeContextModelForRuntimeContextEntity(t *testing.T) {
-	// given
+	// GIVEN
 	runtimeCtxModel := fixModelRuntimeCtx()
 	runtimeCtxEntity := fixEntityRuntimeCtx()
 
@@ -105,7 +105,7 @@ func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeContextModelForRunti
 	mockConverter.On("FromEntity", runtimeCtxEntity).Return(runtimeCtxModel, nil).Once()
 	pgRepository := runtimectx.NewRepository(mockConverter)
 
-	// when
+	// WHEN
 	filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
 	modelRuntimeCtx, err := pgRepository.GetByFiltersGlobal(ctx, filters)
 

@@ -19,7 +19,7 @@ import (
 )
 
 func TestRepository_Create(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	sysAuthID := "foo"
 	objID := "bar"
 
@@ -295,7 +295,7 @@ func TestRepository_GetByIDGlobal(t *testing.T) {
 }
 
 func TestRepository_ListForObject(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	objID := "bar"
 
 	modelAuth := fixModelAuth()

@@ -26,7 +26,7 @@ var (
 )
 
 func TestConverter(t *testing.T) {
-	// Given
+	// GIVEN
 	id := "foo"
 	name := "bar"
 

@@ -10,7 +10,7 @@ import (
 )
 
 func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	appID := "baz"
 	desc := "Sample"
@@ -52,10 +52,10 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToAPIDefinitionWithinBundle(id, appID, 0)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

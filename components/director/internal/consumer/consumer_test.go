@@ -14,7 +14,7 @@ import (
 )
 
 func TestMapSystemAuthToConsumerType(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	testCases := []struct {
 		name            string
 		sysAuthRefInput model.SystemAuthReferenceObjectType

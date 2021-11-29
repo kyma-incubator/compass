@@ -24,7 +24,7 @@ import (
 )
 
 func TestResolver_AddEventToBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -345,7 +345,7 @@ func TestResolver_AddEventToBundle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -355,7 +355,7 @@ func TestResolver_AddEventToBundle(t *testing.T) {
 
 			resolver := event.NewResolver(transact, svc, bndlSvc, bndlRefSvc, converter, nil, specSvc, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.AddEventDefinitionToBundle(context.TODO(), bundleID, *gqlEventInput)
 
 			// then
@@ -379,7 +379,7 @@ func TestResolver_AddEventToBundle(t *testing.T) {
 }
 
 func TestResolver_DeleteEvent(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -595,7 +595,7 @@ func TestResolver_DeleteEvent(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			specService := testCase.SpecServiceFn()
@@ -604,7 +604,7 @@ func TestResolver_DeleteEvent(t *testing.T) {
 
 			resolver := event.NewResolver(transact, svc, nil, bndlRefService, converter, nil, specService, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteEventDefinition(context.TODO(), id)
 
 			// then
@@ -627,7 +627,7 @@ func TestResolver_DeleteEvent(t *testing.T) {
 }
 
 func TestResolver_UpdateEvent(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -893,7 +893,7 @@ func TestResolver_UpdateEvent(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -902,7 +902,7 @@ func TestResolver_UpdateEvent(t *testing.T) {
 
 			resolver := event.NewResolver(transact, svc, nil, bndlRefService, converter, nil, specService, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.UpdateEventDefinition(context.TODO(), id, *gqlEventDefinitionInput)
 
 			// then
@@ -925,7 +925,7 @@ func TestResolver_UpdateEvent(t *testing.T) {
 }
 
 func TestResolver_RefetchEventSpec(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 
 	eventID := "eventID"
@@ -1062,13 +1062,13 @@ func TestResolver_RefetchEventSpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
 			persist, transact := testCase.TransactionerFn()
 			resolver := event.NewResolver(transact, nil, nil, nil, nil, nil, svc, conv)
 
-			// when
+			// WHEN
 			result, err := resolver.RefetchEventDefinitionSpec(context.TODO(), eventID)
 
 			// then
@@ -1089,7 +1089,7 @@ func TestResolver_RefetchEventSpec(t *testing.T) {
 }
 
 func TestResolver_FetchRequest(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	firstSpecID := "specID"
@@ -1225,7 +1225,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			keys := []dataloader.ParamFetchRequestEventDef{firstFRParams, secondFRParams}
 			resolver := event.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.FetchRequestEventDefDataLoader(keys)
 
 			// then

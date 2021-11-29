@@ -19,7 +19,7 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.Document
@@ -47,7 +47,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			frConv := &automock.FetchRequestConverter{}
 			converter := document.NewConverter(frConv)
 
-			// when
+			// WHEN
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -58,7 +58,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	input := []*model.Document{
 		fixModelDocument("1", "foo"),
 		fixModelDocument("2", "bar"),
@@ -73,7 +73,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	frConv := &automock.FetchRequestConverter{}
 	converter := document.NewConverter(frConv)
 
-	// when
+	// WHEN
 	res := converter.MultipleToGraphQL(input)
 
 	// then
@@ -82,7 +82,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *graphql.DocumentInput
@@ -113,7 +113,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			}
 			converter := document.NewConverter(frConv)
 
-			// when
+			// WHEN
 			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
@@ -125,7 +125,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	input := []*graphql.DocumentInput{
 		fixGQLDocumentInput("foo"),
 		fixGQLDocumentInput("bar"),
@@ -142,7 +142,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	frConv.On("InputFromGraphQL", (*graphql.FetchRequestInput)(nil)).Return(nil, nil)
 	converter := document.NewConverter(frConv)
 
-	// when
+	// WHEN
 	res, err := converter.MultipleInputFromGraphQL(input)
 
 	// then

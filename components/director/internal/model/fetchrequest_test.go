@@ -10,7 +10,7 @@ import (
 )
 
 func TestFetchRequestInput_ToFetchRequest(t *testing.T) {
-	// given
+	// GIVEN
 	mode := model.FetchModeSingle
 	filter := "foofilter"
 	timestamp := time.Now()
@@ -83,10 +83,10 @@ func TestFetchRequestInput_ToFetchRequest(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.InputFRInput.ToFetchRequest(timestamp, testCase.InputID, testCase.InputReferenceObjectType, testCase.InputReferenceObjectID)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

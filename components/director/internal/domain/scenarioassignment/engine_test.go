@@ -328,7 +328,7 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 	}}
 
 	t.Run("Success", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		expectedScenarios := map[string][]string{
 			rtmID: {"SCENARIO2"},
 		}
@@ -356,7 +356,7 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 	})
 
 	t.Run("Error, while removing scenario - ListAll fail", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		testErr := errors.New("test error")
 		ctx := context.TODO()
 		runtimeRepo := &automock.RuntimeRepository{}
@@ -374,7 +374,7 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 	})
 
 	t.Run("Error, while removing scenario - GetScenarioLabelsForRuntimes fail", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		testErr := errors.New("test error")
 		ctx := context.TODO()
 		runtimeRepo := &automock.RuntimeRepository{}
@@ -395,7 +395,7 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 }
 
 func TestEngine_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T) {
-	// given
+	// GIVEN
 	differentTargetTenant := "differentTargetTenant"
 	runtimeID := "runtimeID"
 	labelKey := "key"
@@ -429,10 +429,10 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T
 
 	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, runtimeRepo)
 
-	// when
+	// WHEN
 	actualScenarios, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels, runtimeID)
 
-	// then
+	// THEN
 
 	require.NoError(t, err)
 	require.ElementsMatch(t, expectedScenarios, actualScenarios)
@@ -441,7 +441,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T
 }
 
 func TestEngine_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosLabelIsInInput(t *testing.T) {
-	// given
+	// GIVEN
 	runtimeID := "runtimeID"
 	labelKey := "key"
 	labelValue := "val"
@@ -470,10 +470,10 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosLa
 
 	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, runtimeRepo)
 
-	// when
+	// WHEN
 	actualScenarios, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels, runtimeID)
 
-	// then
+	// THEN
 	require.NoError(t, err)
 	require.ElementsMatch(t, expectedScenarios, actualScenarios)
 
@@ -481,7 +481,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosLa
 }
 
 func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfListAllFailed(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("testErr")
 	labelKey := "key"
 	labelValue := "val"
@@ -494,17 +494,17 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfListAl
 	mockRepo.On("ListAll", fixCtxWithTenant(), tenantID).Return(nil, testErr)
 	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, nil)
 
-	// when
+	// WHEN
 	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels, "runtimeID")
 
-	// then
+	// THEN
 	require.Error(t, err)
 
 	mockRepo.AssertExpectations(t)
 }
 
 func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfExistsFailed(t *testing.T) {
-	// given
+	// GIVEN
 	runtimeID := "runtimeID"
 	testErr := errors.New("testErr")
 	labelKey := "key"
@@ -529,17 +529,17 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfExists
 	runtimeRepo.On("Exists", fixCtxWithTenant(), targetTenantID, runtimeID).Return(false, testErr).Once()
 
 	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, runtimeRepo)
-	// when
+	// WHEN
 	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels, runtimeID)
 
-	// then
+	// THEN
 	require.Error(t, err)
 
 	mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
 }
 
 func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfScenariosFromInputWereNotInterfaceSlice(t *testing.T) {
-	// given
+	// GIVEN
 	runtimeID := "runtimeID"
 	labelKey := "key"
 	labelValue := "val"
@@ -566,10 +566,10 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfScenar
 
 	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, runtimeRepo)
 
-	// when
+	// WHEN
 	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels, runtimeID)
 
-	// then
+	// THEN
 	require.Error(t, err)
 
 	mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)

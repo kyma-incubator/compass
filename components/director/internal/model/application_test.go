@@ -12,7 +12,7 @@ import (
 )
 
 func TestApplicationCreateInput_ToApplication(t *testing.T) {
-	// given
+	// GIVEN
 	url := "https://foo.bar"
 	desc := "Sample"
 	id := "foo"
@@ -65,10 +65,10 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToApplication(timestamp, id)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}
@@ -82,7 +82,7 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 		intSysID       = "int sys id"
 	)
 	t.Run("successfully overrides values with new input", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		timestamp := time.Now()
 		statusCondition := model.ApplicationStatusConditionConnected
 		filledAppUpdate := model.ApplicationUpdateInput{
@@ -106,7 +106,7 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 	})
 
 	t.Run("does not override values when input is missing", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		timestamp := time.Now()
 		statusCondition := model.ApplicationStatusConditionConnected
 		filledAppUpdate := model.ApplicationUpdateInput{

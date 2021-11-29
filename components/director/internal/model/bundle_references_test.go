@@ -10,7 +10,7 @@ import (
 )
 
 func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
-	// given
+	// GIVEN
 	bundleRefID := "foo"
 	bundleID := "bundle-id"
 	refID := "ref-id"
@@ -72,10 +72,10 @@ func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result, err := testCase.BundleReferenceInput.ToBundleReference(bundleRefID, testCase.InputReferenceObjectType, &bundleID, testCase.InputReferenceObjectID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr != nil {
 				assert.Error(t, err)
 				assert.EqualError(t, err, testCase.ExpectedErr.Error())

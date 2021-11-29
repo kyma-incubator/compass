@@ -8,7 +8,7 @@ import (
 )
 
 func TestTombstoneInput_ToTombstone(t *testing.T) {
-	// given
+	// GIVEN
 	id := "test"
 	ordID := "foo"
 	appID := "bar"
@@ -41,10 +41,10 @@ func TestTombstoneInput_ToTombstone(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToTombstone(id, appID)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

@@ -22,7 +22,7 @@ func TestConverter_ToEntity(t *testing.T) {
 
 	version := 0
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
 		Input              *model.Label
@@ -69,7 +69,7 @@ func TestConverter_ToEntity(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			conv := label.NewConverter()
 
-			// when
+			// WHEN
 			res, err := conv.ToEntity(testCase.Input)
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)
@@ -93,7 +93,7 @@ func TestConverter_FromEntity(t *testing.T) {
 
 	version := 0
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
 		Input              *label.Entity
@@ -138,7 +138,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			conv := label.NewConverter()
 
-			// when
+			// WHEN
 			res, err := conv.FromEntity(testCase.Input)
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)

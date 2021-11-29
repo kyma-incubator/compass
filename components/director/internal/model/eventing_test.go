@@ -54,7 +54,7 @@ func TestNewApplicationEventingConfiguration(t *testing.T) {
 	require.NotNil(t, validURL)
 
 	t.Run("Valid", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		expectedEventURL := "https://eventing.runtime/app.name-super/v1/events"
 
 		// WHEN
@@ -68,7 +68,7 @@ func TestNewApplicationEventingConfiguration(t *testing.T) {
 	})
 
 	t.Run("Valid - empty runtimeEventURL", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		emptyURL, err := url.Parse("")
 		require.NoError(t, err)
 		require.NotNil(t, emptyURL)

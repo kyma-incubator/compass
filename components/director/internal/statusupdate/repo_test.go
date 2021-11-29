@@ -24,7 +24,7 @@ func TestRepository_IsConnected(t *testing.T) {
 	testError := errors.New("test")
 
 	t.Run("Success for applications", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.applications WHERE id = $1 AND status_condition = 'CONNECTED'`)).
@@ -42,7 +42,7 @@ func TestRepository_IsConnected(t *testing.T) {
 	})
 
 	t.Run("Success for runtimes", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.runtimes WHERE id = $1 AND status_condition = 'CONNECTED'`)).
@@ -60,7 +60,7 @@ func TestRepository_IsConnected(t *testing.T) {
 	})
 
 	t.Run("Error for applications", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.applications WHERE id = $1 AND status_condition = 'CONNECTED'`)).
@@ -78,7 +78,7 @@ func TestRepository_IsConnected(t *testing.T) {
 	})
 
 	t.Run("Error for runtimes", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT 1 FROM public.runtimes WHERE id = $1 AND status_condition = 'CONNECTED'`)).
@@ -103,7 +103,7 @@ func TestRepository_UpdateStatus(t *testing.T) {
 	testError := errors.New("test")
 
 	t.Run("Success for applications", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.applications SET status_condition = 'CONNECTED', status_timestamp = $1 WHERE id = $2`)).
@@ -118,7 +118,7 @@ func TestRepository_UpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("Success for runtimes", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.runtimes SET status_condition = 'CONNECTED', status_timestamp = $1 WHERE id = $2`)).
@@ -133,7 +133,7 @@ func TestRepository_UpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("Error for applications", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.applications SET status_condition = 'CONNECTED', status_timestamp = $1 WHERE id = $2`)).
@@ -149,7 +149,7 @@ func TestRepository_UpdateStatus(t *testing.T) {
 	})
 
 	t.Run("Error for runtimes", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.runtimes SET status_condition = 'CONNECTED', status_timestamp = $1 WHERE id = $2`)).

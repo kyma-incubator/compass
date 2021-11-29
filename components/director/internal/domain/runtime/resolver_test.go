@@ -39,7 +39,7 @@ var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
 })
 
 func TestResolver_CreateRuntime(t *testing.T) {
-	// given
+	// GIVEN
 	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum")
 	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
 	testErr := errors.New("Test error")
@@ -167,7 +167,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 
 			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager)
 
-			// when
+			// WHEN
 			result, err := resolver.RegisterRuntime(context.TODO(), testCase.Input)
 
 			// then
@@ -184,7 +184,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 }
 
 func TestResolver_UpdateRuntime(t *testing.T) {
-	// given
+	// GIVEN
 	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum")
 	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
 	testErr := errors.New("Test error")
@@ -297,7 +297,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 
 			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegMng())
 
-			// when
+			// WHEN
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
 
 			// then
@@ -310,7 +310,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 }
 
 func TestResolver_DeleteRuntime(t *testing.T) {
-	// given
+	// GIVEN
 	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
 	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
@@ -1245,7 +1245,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 
 			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc, selfRegisterManager)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
 
 			// then
@@ -1262,7 +1262,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 }
 
 func TestResolver_Runtime(t *testing.T) {
-	// given
+	// GIVEN
 	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
 	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
@@ -1359,7 +1359,7 @@ func TestResolver_Runtime(t *testing.T) {
 
 			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager)
 
-			// when
+			// WHEN
 			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
 
 			// then
@@ -1372,7 +1372,7 @@ func TestResolver_Runtime(t *testing.T) {
 }
 
 func TestResolver_Runtimes(t *testing.T) {
-	// given
+	// GIVEN
 	modelRuntimes := []*model.Runtime{
 		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem Ipsum"),
 		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Lorem Ipsum"),
@@ -1463,7 +1463,7 @@ func TestResolver_Runtimes(t *testing.T) {
 
 			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager)
 
-			// when
+			// WHEN
 			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
 
 			// then
@@ -1476,7 +1476,7 @@ func TestResolver_Runtimes(t *testing.T) {
 }
 
 func TestResolver_SetRuntimeLabel(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	runtimeID := "foo"
@@ -1574,7 +1574,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 
 			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager)
 
-			// when
+			// WHEN
 			result, err := resolver.SetRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
 
 			// then
@@ -1588,7 +1588,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
 		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
-		// when
+		// WHEN
 		result, err := resolver.SetRuntimeLabel(context.TODO(), "", "", "")
 
 		// then
@@ -1600,7 +1600,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 }
 
 func TestResolver_DeleteRuntimeLabel(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	runtimeID := "foo"
@@ -1707,7 +1707,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 
 			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)
 
 			// then
@@ -1720,7 +1720,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 }
 
 func TestResolver_Labels(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	labelKey1 := "key1"
 	labelValue1 := "val1"
@@ -1850,7 +1850,7 @@ func TestResolver_Labels(t *testing.T) {
 
 			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager)
 
-			// when
+			// WHEN
 			result, err := resolver.Labels(context.TODO(), gqlRuntime, testCase.InputKey)
 
 			// then
@@ -1863,7 +1863,7 @@ func TestResolver_Labels(t *testing.T) {
 }
 
 func TestResolver_GetLabel(t *testing.T) {
-	// given
+	// GIVEN
 	runtimeID := "37e89317-9ace-441d-9dc0-badf09b035b4"
 	labelKey := runtime.IsNormalizedLabel
 	labelValue := "true"
@@ -1957,7 +1957,7 @@ func TestResolver_GetLabel(t *testing.T) {
 
 			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager)
 
-			// when
+			// WHEN
 			result, err := resolver.GetLabel(context.TODO(), runtimeID, labelKey)
 
 			// then

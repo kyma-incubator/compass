@@ -15,7 +15,7 @@ import (
 )
 
 func TestService_Create(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	ctx := context.TODO()
@@ -65,13 +65,13 @@ func TestService_Create(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			uidSvc := testCase.UIDServiceFn()
 
 			svc := product.NewService(repo, uidSvc)
 
-			// when
+			// WHEN
 			result, err := svc.Create(ctx, appID, testCase.Input)
 
 			// then
@@ -96,7 +96,7 @@ func TestService_Create(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	modelProduct := fixProductModel()
@@ -155,12 +155,12 @@ func TestService_Update(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := product.NewService(repo, nil)
 
-			// when
+			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
 
 			// then
@@ -185,7 +185,7 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	ctx := context.TODO()
@@ -222,12 +222,12 @@ func TestService_Delete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := product.NewService(repo, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
 			// then
@@ -315,7 +315,7 @@ func TestService_Exist(t *testing.T) {
 }
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	productModel := fixProductModel()
@@ -360,7 +360,7 @@ func TestService_Get(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := product.NewService(repo, nil)
 
-			// when
+			// WHEN
 			prod, err := svc.Get(ctx, testCase.InputID)
 
 			// then
@@ -386,7 +386,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_ListByApplicationID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	products := []*model.Product{
@@ -435,7 +435,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 
 			svc := product.NewService(repo, nil)
 
-			// when
+			// WHEN
 			docs, err := svc.ListByApplicationID(ctx, appID)
 
 			// then

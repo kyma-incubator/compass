@@ -31,7 +31,7 @@ var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
 })
 
 func TestResolver_CreateRuntimeContext(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	key := "key"
 	val := "value"
@@ -203,7 +203,7 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 			}
 			ctx := consumer.SaveToContext(context.TODO(), *c)
 
-			// when
+			// WHEN
 			result, err := resolver.RegisterRuntimeContext(ctx, testCase.Input)
 
 			// then
@@ -216,7 +216,7 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 }
 
 func TestResolver_UpdateRuntimeContext(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	key := "key"
 	val := "value"
@@ -418,7 +418,7 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 			}
 			ctx := consumer.SaveToContext(context.TODO(), *c)
 
-			// when
+			// WHEN
 			result, err := resolver.UpdateRuntimeContext(ctx, testCase.RuntimeContextID, testCase.Input)
 
 			// then
@@ -431,7 +431,7 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 }
 
 func TestResolver_DeleteRuntimeContext(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	key := "key"
 	val := "value"
@@ -623,7 +623,7 @@ func TestResolver_DeleteRuntimeContext(t *testing.T) {
 			}
 			ctx := consumer.SaveToContext(context.TODO(), *c)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteRuntimeContext(ctx, testCase.InputID)
 
 			// then
@@ -640,7 +640,7 @@ func TestResolver_DeleteRuntimeContext(t *testing.T) {
 }
 
 func TestResolver_RuntimeContext(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	key := "key"
 	val := "value"
@@ -823,7 +823,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			}
 			ctx := consumer.SaveToContext(context.TODO(), *c)
 
-			// when
+			// WHEN
 			result, err := resolver.RuntimeContext(ctx, testCase.InputID)
 
 			// then
@@ -843,7 +843,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 
 	testErr := errors.New("Test error")
 
-	// given
+	// GIVEN
 	modelRuntimeContexts := []*model.RuntimeContext{
 		{
 			ID:        id,
@@ -1021,7 +1021,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 			}
 			ctx := consumer.SaveToContext(context.TODO(), *c)
 
-			// when
+			// WHEN
 			result, err := resolver.RuntimeContexts(ctx, testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
 
 			// then
@@ -1034,7 +1034,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 }
 
 func TestResolver_Labels(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	labelKey1 := "key1"
 	labelValue1 := "val1"
@@ -1164,7 +1164,7 @@ func TestResolver_Labels(t *testing.T) {
 
 			resolver := runtimectx.NewResolver(transact, svc, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.Labels(context.TODO(), gqlRuntimeContext, testCase.InputKey)
 
 			// then

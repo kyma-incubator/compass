@@ -184,7 +184,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 }
 
 func TestPgRepository_Create(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	var nilEventDefModel *model.EventDefinition
 	eventDefModel, _, _ := fixFullEventDefinitionModel("placeholder")
 	eventDefEntity := fixFullEntityEventDefinition(eventID, "placeholder")

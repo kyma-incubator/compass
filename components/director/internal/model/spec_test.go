@@ -10,7 +10,7 @@ import (
 )
 
 func TestSpecInput_ToSpec(t *testing.T) {
-	// given
+	// GIVEN
 	id := "id"
 	refID := "ref-id"
 	data := "data"
@@ -96,7 +96,7 @@ func TestSpecInput_ToSpec(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result, err := testCase.SpecInput.ToSpec(testCase.InputID, testCase.InputReferenceObjectType, testCase.InputReferenceObjectID)
 
 			// then

@@ -24,7 +24,7 @@ import (
 )
 
 func TestResolver_AddAPIToBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -345,7 +345,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -355,10 +355,10 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 
 			resolver := api.NewResolver(transact, svc, nil, bndlSvc, bndlRefSvc, converter, nil, specSvc, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.AddAPIDefinitionToBundle(context.TODO(), bundleID, *gqlAPIInput)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedAPI, result)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
@@ -379,7 +379,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 }
 
 func TestResolver_DeleteAPI(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -595,7 +595,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			specService := testCase.SpecServiceFn()
@@ -604,10 +604,10 @@ func TestResolver_DeleteAPI(t *testing.T) {
 
 			resolver := api.NewResolver(transact, svc, nil, nil, bundleRefService, converter, nil, specService, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteAPIDefinition(context.TODO(), id)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedAPI, result)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
@@ -627,7 +627,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 }
 
 func TestResolver_UpdateAPI(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -892,7 +892,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -901,10 +901,10 @@ func TestResolver_UpdateAPI(t *testing.T) {
 
 			resolver := api.NewResolver(transact, svc, nil, nil, bundleRefService, converter, nil, specService, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.UpdateAPIDefinition(context.TODO(), id, *gqlAPIDefinitionInput)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedAPIDefinition, result)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
@@ -924,7 +924,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 }
 
 func TestResolver_RefetchAPISpec(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 
 	apiID := "apiID"
@@ -1061,13 +1061,13 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
 			persist, transact := testCase.TransactionerFn()
 			resolver := api.NewResolver(transact, nil, nil, nil, nil, nil, nil, svc, conv)
 
-			// when
+			// WHEN
 			result, err := resolver.RefetchAPISpec(context.TODO(), apiID)
 
 			// then
@@ -1088,7 +1088,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 }
 
 func TestResolver_FetchRequest(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	firstSpecID := "specID"
@@ -1224,7 +1224,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			keys := []dataloader.ParamFetchRequestAPIDef{firstFRParams, secondFRParams}
 			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.FetchRequestAPIDefDataLoader(keys)
 
 			// then

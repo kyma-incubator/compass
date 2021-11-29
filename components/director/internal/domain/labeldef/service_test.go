@@ -849,7 +849,7 @@ func TestServiceDelete(t *testing.T) {
 }
 
 func TestService_Upsert(t *testing.T) {
-	// given
+	// GIVEN
 	ctx := context.TODO()
 	id := "sample-id"
 	labelDefinition := model.LabelDefinition{
@@ -905,7 +905,7 @@ func TestService_Upsert(t *testing.T) {
 
 			svc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentLister, nil, uidService, defaultScenarioEnabled)
 
-			// when
+			// WHEN
 			err := svc.Upsert(ctx, labelDefinition)
 
 			// then
@@ -1012,7 +1012,7 @@ func TestService_EnsureScenariosLabelDefinitionExists(t *testing.T) {
 			uidSvc := testCase.UIDServiceFn()
 			svc := labeldef.NewService(ldRepo, nil, nil, nil, uidSvc, true)
 
-			// when
+			// WHEN
 			err := svc.EnsureScenariosLabelDefinitionExists(ctx, tnt)
 
 			// then

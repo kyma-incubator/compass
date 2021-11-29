@@ -58,14 +58,14 @@ func TestService_GetForBundle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo, nil)
 
-			// when
+			// WHEN
 			bndlRef, err := svc.GetForBundle(ctx, model.BundleAPIReference, &objectID, &bundleID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -116,14 +116,14 @@ func TestService_GetBundleIDsForObject(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo, nil)
 
-			// when
+			// WHEN
 			bndlIDs, err := svc.GetBundleIDsForObject(ctx, model.BundleAPIReference, &objectID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -197,15 +197,15 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			uidSvc := testCase.UIDServiceFn()
 			svc := bundlereferences.NewService(repo, uidSvc)
 
-			// when
+			// WHEN
 			err := svc.CreateByReferenceObjectID(ctx, testCase.Input, model.BundleAPIReference, &objectID, &bundleID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -285,14 +285,14 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo, nil)
 
-			// when
+			// WHEN
 			err := svc.UpdateByReferenceObjectID(ctx, testCase.Input, model.BundleAPIReference, &objectID, &bundleID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -337,14 +337,14 @@ func TestService_DeleteByReferenceObjectID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo, nil)
 
-			// when
+			// WHEN
 			err := svc.DeleteByReferenceObjectID(ctx, model.BundleAPIReference, &objectID, &bundleID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -434,14 +434,14 @@ func TestService_ListByBundleIDs(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			svc := bundlereferences.NewService(repo, nil)
 
-			// when
+			// WHEN
 			bndlRefs, counts, err := svc.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, testCase.PageSize, after)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedBundleRefs, bndlRefs)

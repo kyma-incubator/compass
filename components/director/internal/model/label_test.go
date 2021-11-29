@@ -10,7 +10,7 @@ import (
 )
 
 func TestToLabel(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	tenant := "sample"
 
@@ -66,7 +66,7 @@ func TestToLabel(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToLabel(id, tenant)
 
 			// then

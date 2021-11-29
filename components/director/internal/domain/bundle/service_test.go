@@ -16,7 +16,7 @@ import (
 )
 
 func TestService_Create(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -238,7 +238,7 @@ func TestService_Create(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			uidService := testCase.UIDServiceFn()
 
@@ -247,10 +247,10 @@ func TestService_Create(t *testing.T) {
 			documentSvc := testCase.DocumentServiceFn()
 			svc := bundle.NewService(repo, apiSvc, eventSvc, documentSvc, uidService)
 
-			// when
+			// WHEN
 			result, err := svc.Create(ctx, applicationID, testCase.Input)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -272,7 +272,7 @@ func TestService_Create(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -348,15 +348,15 @@ func TestService_Update(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 			} else {
@@ -378,7 +378,7 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -417,15 +417,15 @@ func TestService_Delete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 			} else {
@@ -511,7 +511,7 @@ func TestService_Exist(t *testing.T) {
 }
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -560,10 +560,10 @@ func TestService_Get(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			bndl, err := svc.Get(ctx, testCase.InputID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedBundle, bndl)
@@ -586,7 +586,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_GetForApplication(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -639,10 +639,10 @@ func TestService_GetForApplication(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			document, err := svc.GetForApplication(ctx, testCase.InputID, testCase.ApplicationID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedBundle, document)
@@ -665,7 +665,7 @@ func TestService_GetForApplication(t *testing.T) {
 }
 
 func TestService_ListByApplicationIDNoPaging(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	name := "foo"
@@ -714,10 +714,10 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			docs, err := svc.ListByApplicationIDNoPaging(ctx, appID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, docs)
@@ -740,7 +740,7 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 }
 
 func TestService_ListByApplicationIDs(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	firstAppID := "bar"
@@ -840,7 +840,7 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			bndls, err := svc.ListByApplicationIDs(ctx, appIDs, testCase.PageSize, after)
 
 			// then

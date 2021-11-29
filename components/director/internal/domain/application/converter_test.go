@@ -22,7 +22,7 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.Application
@@ -52,7 +52,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			converter := application.NewConverter(nil, nil)
 			res := converter.ToGraphQL(testCase.Input)
 
@@ -63,7 +63,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	input := []*model.Application{
 		fixModelApplication("foo", givenTenant(), "Foo", "Lorem ipsum"),
 		fixModelApplication("bar", givenTenant(), "Bar", "Dolor sit amet"),
@@ -81,7 +81,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		},
 	}
 
-	// when
+	// WHEN
 	converter := application.NewConverter(nil, nil)
 	res := converter.MultipleToGraphQL(input)
 
@@ -96,7 +96,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 	webhooksErr := errors.New("wh err")
 	bndlsErr := errors.New("bndl err")
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
 		Input              graphql.ApplicationRegisterInput
@@ -166,7 +166,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			converter := application.NewConverter(
 				testCase.WebhookConverterFn(),
 				testCase.BundleConverterFn(),
@@ -224,7 +224,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 	allPropsInput := fixGQLApplicationUpdateInput("foo", "Lorem ipsum", testURL, graphql.ApplicationStatusConditionConnected)
 	allPropsExpected := fixModelApplicationUpdateInput("foo", "Lorem ipsum", testURL, model.ApplicationStatusConditionConnected)
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    graphql.ApplicationUpdateInput
@@ -244,7 +244,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			converter := application.NewConverter(nil, nil)
 			res := converter.UpdateInputFromGraphQL(testCase.Input)
 
@@ -412,7 +412,7 @@ func TestConverter_ConvertToModel(t *testing.T) {
 	})
 
 	t.Run("Success empty model", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		appGraphql := &graphql.Application{BaseEntity: &graphql.BaseEntity{}}
 
 		// WHEN

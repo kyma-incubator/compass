@@ -22,7 +22,7 @@ import (
 )
 
 func TestPresenter_ErrorPresenter(t *testing.T) {
-	//given
+	// GIVEN
 	errMsg := "testErr"
 	uidSvc := uid.NewService()
 	logger, hook := test.NewNullLogger()
@@ -49,7 +49,7 @@ func TestPresenter_ErrorPresenter(t *testing.T) {
 	t.Run("Internal Error", func(t *testing.T) {
 		ctx := log.ContextWithLogger(context.TODO(), logrus.NewEntry(logger))
 
-		//given
+		// GIVEN
 		customErr := apperrors.NewInternalError(errMsg)
 
 		// WHEN
@@ -68,7 +68,7 @@ func TestPresenter_ErrorPresenter(t *testing.T) {
 	})
 
 	t.Run("Invalid Data error", func(t *testing.T) {
-		//given
+		// GIVEN
 		customErr := apperrors.NewInvalidDataError(errMsg)
 
 		// WHEN

@@ -15,7 +15,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	runtimeID := "test_runtime_id"
 	key := "key"
 	val := "val"
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.RuntimeContext
@@ -49,11 +49,11 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			converter := runtimectx.NewConverter()
 			res := converter.ToGraphQL(testCase.Input)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, res)
 		})
 	}
@@ -65,7 +65,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	key := "key"
 	val := "val"
 
-	// given
+	// GIVEN
 	input := []*model.RuntimeContext{
 		{
 			ID:        id,
@@ -94,11 +94,11 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		},
 	}
 
-	// when
+	// WHEN
 	converter := runtimectx.NewConverter()
 	res := converter.MultipleToGraphQL(input)
 
-	// then
+	// THEN
 	assert.Equal(t, expected, res)
 }
 
@@ -110,7 +110,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	})
 	runtimeID := "runtime_id"
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    graphql.RuntimeContextInput
@@ -141,18 +141,18 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			converter := runtimectx.NewConverter()
 			res := converter.InputFromGraphQL(testCase.Input, runtimeID)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, res)
 		})
 	}
 }
 
 func TestConverter_EntityFromRuntimeModel(t *testing.T) {
-	// given
+	// GIVEN
 	modelRuntimeCtx := model.RuntimeContext{
 		ID:        "id",
 		RuntimeID: "runtime_id",
@@ -161,10 +161,10 @@ func TestConverter_EntityFromRuntimeModel(t *testing.T) {
 	}
 
 	conv := runtimectx.NewConverter()
-	// when
+	// WHEN
 	entityRuntimeCtx := conv.ToEntity(&modelRuntimeCtx)
 
-	// then
+	// THEN
 	assert.Equal(t, modelRuntimeCtx.ID, entityRuntimeCtx.ID)
 	assert.Equal(t, modelRuntimeCtx.RuntimeID, entityRuntimeCtx.RuntimeID)
 	assert.Equal(t, modelRuntimeCtx.Key, entityRuntimeCtx.Key)
@@ -172,7 +172,7 @@ func TestConverter_EntityFromRuntimeModel(t *testing.T) {
 }
 
 func TestConverter_RuntimeContextToModel(t *testing.T) {
-	// given
+	// GIVEN
 	entityRuntimeCtx := &runtimectx.RuntimeContext{
 		ID:        "id",
 		RuntimeID: "runtime_id",
@@ -181,10 +181,10 @@ func TestConverter_RuntimeContextToModel(t *testing.T) {
 	}
 
 	conv := runtimectx.NewConverter()
-	// when
+	// WHEN
 	modelRuntimeCtx := conv.FromEntity(entityRuntimeCtx)
 
-	// then
+	// THEN
 	assert.Equal(t, entityRuntimeCtx.ID, modelRuntimeCtx.ID)
 	assert.Equal(t, entityRuntimeCtx.RuntimeID, modelRuntimeCtx.RuntimeID)
 	assert.Equal(t, entityRuntimeCtx.Key, modelRuntimeCtx.Key)
