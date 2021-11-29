@@ -57,13 +57,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SQLQueryDetails {
-				if sqlDetails.IsSelect {
-					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-				} else {
-					sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
-				}
-			}
+			configureValidSQLQueries(sqlMock, suite.SQLQueryDetails)
 
 			convMock := suite.ConverterMockProvider()
 			convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
@@ -83,12 +77,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SQLQueryDetails {
-					if sqlDetails.IsSelect {
-						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
-						break
-					}
-				}
+				configureInvalidSelect(sqlMock, suite.SQLQueryDetails)
 
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
@@ -110,23 +99,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SQLQueryDetails {
-					if sqlDetails.IsSelect {
-						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
-							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
-							break
-						} else {
-							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-						}
-					} else {
-						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
-							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
-							break
-						} else {
-							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
-						}
-					}
-				}
+				configureFailureForSQLQueryOnIndex(sqlMock, suite.SQLQueryDetails, i, testErr)
 
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
@@ -221,4 +194,43 @@ func createRepo(repoConstructorFunc interface{}, convMock interface{}) interface
 
 	mockVal := reflect.ValueOf(convMock)
 	return v.Call([]reflect.Value{mockVal})[0].Interface()
+}
+
+func configureValidSQLQueries(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
+	for _, sqlDetails := range sqlQueryDetails {
+		if sqlDetails.IsSelect {
+			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
+		} else {
+			sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
+		}
+	}
+}
+
+func configureInvalidSelect(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
+	for _, sqlDetails := range sqlQueryDetails {
+		if sqlDetails.IsSelect {
+			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
+			break
+		}
+	}
+}
+
+func configureFailureForSQLQueryOnIndex(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails, i int, expectedErr error) {
+	for _, sqlDetails := range sqlQueryDetails {
+		if sqlDetails.IsSelect {
+			if sqlDetails.Query == sqlQueryDetails[i].Query {
+				sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(expectedErr)
+				break
+			} else {
+				sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
+			}
+		} else {
+			if sqlDetails.Query == sqlQueryDetails[i].Query {
+				sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(expectedErr)
+				break
+			} else {
+				sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
+			}
+		}
+	}
 }

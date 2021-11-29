@@ -41,13 +41,7 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SQLQueryDetails {
-				if sqlDetails.IsSelect {
-					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-				} else {
-					sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
-				}
-			}
+			configureValidSQLQueries(sqlMock, suite.SQLQueryDetails)
 
 			convMock := suite.ConverterMockProvider()
 			convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
@@ -65,23 +59,7 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SQLQueryDetails {
-					if sqlDetails.IsSelect {
-						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
-							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
-							break
-						} else {
-							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-						}
-					} else {
-						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
-							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
-							break
-						} else {
-							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
-						}
-					}
-				}
+				configureFailureForSQLQueryOnIndex(sqlMock, suite.SQLQueryDetails, i, testErr)
 
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
@@ -103,12 +81,7 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SQLQueryDetails {
-					if sqlDetails.IsSelect {
-						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
-						break
-					}
-				}
+				configureInvalidSelect(sqlMock, suite.SQLQueryDetails)
 
 				convMock := suite.ConverterMockProvider()
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
@@ -148,13 +121,7 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SQLQueryDetails {
-				if sqlDetails.IsSelect {
-					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-				} else {
-					sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.InvalidResult)
-				}
-			}
+			configureInvalidUpdateSQLQuery(sqlMock, suite.SQLQueryDetails)
 
 			convMock := suite.ConverterMockProvider()
 			convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
@@ -203,4 +170,14 @@ func callUpdate(repo interface{}, ctx context.Context, tenant string, modelEntit
 		panic("Expected result to be an error")
 	}
 	return err
+}
+
+func configureInvalidUpdateSQLQuery(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
+	for _, sqlDetails := range sqlQueryDetails {
+		if sqlDetails.IsSelect {
+			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
+		} else {
+			sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.InvalidResult)
+		}
+	}
 }

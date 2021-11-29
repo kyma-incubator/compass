@@ -61,11 +61,7 @@ type EventingService interface {
 // WebhookService missing godoc
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
 type WebhookService interface {
-	Get(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	ListAllApplicationWebhooks(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
-	Create(ctx context.Context, resourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error)
-	Update(ctx context.Context, id string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) error
-	Delete(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) error
 }
 
 // SystemAuthService missing godoc

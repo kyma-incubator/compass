@@ -46,9 +46,7 @@ func (suite *RepoGetTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SQLQueryDetails {
-				sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-			}
+			configureValidSQLQueries(sqlMock, suite.SQLQueryDetails)
 
 			convMock := suite.ConverterMockProvider()
 			convMock.On("FromEntity", append([]interface{}{suite.ExpectedDBEntity}, suite.AdditionalConverterArgs...)...).Return(suite.ExpectedModelEntity, nil).Once()
@@ -66,9 +64,7 @@ func (suite *RepoGetTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SQLQueryDetails {
-				sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
-			}
+			configureInvalidSelect(sqlMock, suite.SQLQueryDetails)
 
 			convMock := suite.ConverterMockProvider()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
@@ -88,14 +84,7 @@ func (suite *RepoGetTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SQLQueryDetails {
-					if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
-						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
-						break
-					} else {
-						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-					}
-				}
+				configureFailureForSQLQueryOnIndex(sqlMock, suite.SQLQueryDetails, i, testErr)
 
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
@@ -120,9 +109,7 @@ func (suite *RepoGetTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SQLQueryDetails {
-					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-				}
+				configureValidSQLQueries(sqlMock, suite.SQLQueryDetails)
 
 				convMock := suite.ConverterMockProvider()
 				convMock.On("FromEntity", append([]interface{}{suite.ExpectedDBEntity}, suite.AdditionalConverterArgs...)...).Return(nil, testErr).Once()

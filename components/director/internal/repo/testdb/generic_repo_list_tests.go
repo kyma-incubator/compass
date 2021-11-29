@@ -51,9 +51,7 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SQLQueryDetails {
-				sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-			}
+			configureValidSQLQueries(sqlMock, suite.SQLQueryDetails)
 
 			convMock := suite.ConverterMockProvider()
 			for i := range suite.ExpectedDBEntities {
@@ -74,9 +72,7 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SQLQueryDetails {
-					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
-				}
+				configureInvalidAllSelectQueries(sqlMock, suite.SQLQueryDetails)
 
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
@@ -95,14 +91,7 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SQLQueryDetails {
-					if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
-						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
-						break
-					} else {
-						sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-					}
-				}
+				configureFailureForSQLQueryOnIndex(sqlMock, suite.SQLQueryDetails, i, testErr)
 
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
@@ -127,9 +116,7 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SQLQueryDetails {
-					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-				}
+				configureValidSQLQueries(sqlMock, suite.SQLQueryDetails)
 
 				convMock := suite.ConverterMockProvider()
 				convMock.On("FromEntity", append([]interface{}{suite.ExpectedDBEntities[0]}, suite.AdditionalConverterArgs...)...).Return(nil, testErr).Once()
@@ -184,5 +171,13 @@ func assertEqualElements(t *testing.T, arr1, arr2 interface{}) {
 			actual = array2.Index(i).Addr().Interface()
 		}
 		require.EqualValues(t, array1.Index(i).Interface(), actual)
+	}
+}
+
+func configureInvalidAllSelectQueries(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
+	for _, sqlDetails := range sqlQueryDetails {
+		if sqlDetails.IsSelect {
+			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
+		}
 	}
 }

@@ -37,12 +37,10 @@ type repository struct {
 	listerGlobal repo.ListerGlobal
 	deleter      repo.Deleter
 	getter       repo.SingleGetter
-	queryBuilder repo.QueryBuilder
 
-	embeddedTenantLister       repo.Lister
-	embeddedTenantDeleter      repo.Deleter
-	embeddedTenantGetter       repo.SingleGetter
-	embeddedTenantQueryBuilder repo.QueryBuilder
+	embeddedTenantLister  repo.Lister
+	embeddedTenantDeleter repo.Deleter
+	embeddedTenantGetter  repo.SingleGetter
 
 	creator                        repo.Creator
 	globalCreator                  repo.CreatorGlobal
@@ -60,12 +58,10 @@ func NewRepository(conv Converter) *repository {
 		listerGlobal: repo.NewListerGlobal(resource.Label, tableName, tableColumns),
 		deleter:      repo.NewDeleter(tableName),
 		getter:       repo.NewSingleGetter(tableName, tableColumns),
-		queryBuilder: repo.NewQueryBuilder(tableName, []string{"runtime_id"}),
 
-		embeddedTenantLister:       repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		embeddedTenantDeleter:      repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
-		embeddedTenantGetter:       repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		embeddedTenantQueryBuilder: repo.NewQueryBuilderWithEmbeddedTenant(tableName, tenantColumn, []string{"runtime_id"}),
+		embeddedTenantLister:  repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		embeddedTenantDeleter: repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
+		embeddedTenantGetter:  repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 
 		creator:                        repo.NewCreator(tableName, tableColumns),
 		globalCreator:                  repo.NewCreatorGlobal(resource.Label, tableName, tableColumns),
@@ -200,19 +196,7 @@ func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*mode
 	if err := r.lister.List(ctx, resource.Label, tenant, &entities, repo.NewEqualCondition("key", key)); err != nil {
 		return nil, err
 	}
-
-	labels := make([]*model.Label, 0, len(entities))
-
-	for _, entity := range entities {
-		m, err := r.conv.FromEntity(&entity)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting Label entity to model")
-		}
-
-		labels = append(labels, m)
-	}
-
-	return labels, nil
+	return r.multipleFromEntity(entities)
 }
 
 // ListGlobalByKeyAndObjects lists resources of objectType across tenants (global) which match the given objectIDs and labeled with the provided key
@@ -221,19 +205,7 @@ func (r *repository) ListGlobalByKeyAndObjects(ctx context.Context, objectType m
 	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.NewEqualCondition("key", key), repo.NewInConditionForStringValues(labelableObjectField(objectType), objectIDs)); err != nil {
 		return nil, err
 	}
-
-	labels := make([]*model.Label, 0, len(entities))
-
-	for _, entity := range entities {
-		m, err := r.conv.FromEntity(&entity)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting Label entity to model")
-		}
-
-		labels = append(labels, m)
-	}
-
-	return labels, nil
+	return r.multipleFromEntity(entities)
 }
 
 // Delete missing godoc
@@ -304,6 +276,21 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 		labelModels = append(labelModels, *labelModel)
 	}
 	return labelModels, nil
+}
+
+func (r *repository) multipleFromEntity(entities []Entity) ([]*model.Label, error) {
+	labels := make([]*model.Label, 0, len(entities))
+
+	for _, entity := range entities {
+		m, err := r.conv.FromEntity(&entity)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Label entity to model")
+		}
+
+		labels = append(labels, m)
+	}
+
+	return labels, nil
 }
 
 func labelableObjectField(objectType model.LabelableObject) string {

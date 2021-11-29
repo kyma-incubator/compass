@@ -40,13 +40,7 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 			sqlxDB, sqlMock := MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-			for _, sqlDetails := range suite.SQLQueryDetails {
-				if sqlDetails.IsSelect {
-					sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-				} else {
-					sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
-				}
-			}
+			configureValidSQLQueries(sqlMock, suite.SQLQueryDetails)
 
 			convMock := suite.ConverterMockProvider()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
@@ -59,114 +53,52 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 			convMock.AssertExpectations(t)
 		})
 
-		if !suite.IsDeleteMany {
-			if suite.IsTopLeveEntity {
-				t.Run("returns unauthorized if no entity matches criteria", func(t *testing.T) {
-					sqlxDB, sqlMock := MockDatabase(t)
-					ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		if !suite.IsDeleteMany { // Single delete requires exactly one row to be deleted
+			t.Run("returns unauthorized if no entity matches criteria", func(t *testing.T) {
+				sqlxDB, sqlMock := MockDatabase(t)
+				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-					for _, sqlDetails := range suite.SQLQueryDetails {
-						if sqlDetails.IsSelect {
-							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlmock.NewRows([]string{}))
-							break
-						} else {
-							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
-						}
-					}
+				if suite.IsTopLeveEntity {
+					configureNoEntityDeletedForTopLevelEntity(sqlMock, suite.SQLQueryDetails)
+				} else {
+					configureNoEntityDeletedForChildEntity(sqlMock, suite.SQLQueryDetails)
+				}
 
-					convMock := suite.ConverterMockProvider()
-					pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-					// WHEN
-					err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-					// THEN
-					require.Error(t, err)
-					require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
-					require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
+				convMock := suite.ConverterMockProvider()
+				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
+				// WHEN
+				err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
+				// THEN
+				require.Error(t, err)
+				require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
+				require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
 
-					sqlMock.AssertExpectations(t)
-					convMock.AssertExpectations(t)
-				})
-			} else {
-				t.Run("returns unauthorized if no entity matches criteria", func(t *testing.T) {
-					sqlxDB, sqlMock := MockDatabase(t)
-					ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+				sqlMock.AssertExpectations(t)
+				convMock.AssertExpectations(t)
+			})
 
-					for _, sqlDetails := range suite.SQLQueryDetails {
-						if sqlDetails.IsSelect {
-							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-						} else {
-							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlmock.NewResult(-1, 0))
-							break
-						}
-					}
+			t.Run("returns error if more than one entity matches criteria", func(t *testing.T) {
+				sqlxDB, sqlMock := MockDatabase(t)
+				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-					convMock := suite.ConverterMockProvider()
-					pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-					// WHEN
-					err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-					// THEN
-					require.Error(t, err)
-					require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
-					require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
+				if suite.IsTopLeveEntity {
+					configureMoreThanOneEntityDeletedForTopLevelEntity(sqlMock, suite.SQLQueryDetails)
+				} else {
+					configureMoreThanOneEntityDeletedForChildEntity(sqlMock, suite.SQLQueryDetails)
+				}
 
-					sqlMock.AssertExpectations(t)
-					convMock.AssertExpectations(t)
-				})
-			}
+				convMock := suite.ConverterMockProvider()
+				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
+				// WHEN
+				err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
+				// THEN
+				require.Error(t, err)
+				require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
+				require.Contains(t, err.Error(), "delete should remove single row, but removed")
 
-			if suite.IsTopLeveEntity {
-				t.Run("returns error if more than one entity matches criteria", func(t *testing.T) {
-					sqlxDB, sqlMock := MockDatabase(t)
-					ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-					for _, sqlDetails := range suite.SQLQueryDetails {
-						if sqlDetails.IsSelect {
-							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
-							break
-						} else {
-							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
-						}
-					}
-
-					convMock := suite.ConverterMockProvider()
-					pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-					// WHEN
-					err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-					// THEN
-					require.Error(t, err)
-					require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
-					require.Contains(t, err.Error(), "delete should remove single row, but removed")
-
-					sqlMock.AssertExpectations(t)
-					convMock.AssertExpectations(t)
-				})
-			} else {
-				t.Run("returns error if more than one entity matches criteria", func(t *testing.T) {
-					sqlxDB, sqlMock := MockDatabase(t)
-					ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-
-					for _, sqlDetails := range suite.SQLQueryDetails {
-						if sqlDetails.IsSelect {
-							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-						} else {
-							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.InvalidResult)
-							break
-						}
-					}
-
-					convMock := suite.ConverterMockProvider()
-					pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
-					// WHEN
-					err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
-					// THEN
-					require.Error(t, err)
-					require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
-					require.Contains(t, err.Error(), "delete should remove single row, but removed")
-
-					sqlMock.AssertExpectations(t)
-					convMock.AssertExpectations(t)
-				})
-			}
+				sqlMock.AssertExpectations(t)
+				convMock.AssertExpectations(t)
+			})
 		}
 
 		for i := range suite.SQLQueryDetails {
@@ -174,23 +106,7 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				for _, sqlDetails := range suite.SQLQueryDetails {
-					if sqlDetails.IsSelect {
-						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
-							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
-							break
-						} else {
-							sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
-						}
-					} else {
-						if sqlDetails.Query == suite.SQLQueryDetails[i].Query {
-							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnError(testErr)
-							break
-						} else {
-							sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
-						}
-					}
-				}
+				configureFailureForSQLQueryOnIndex(sqlMock, suite.SQLQueryDetails, i, testErr)
 
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
@@ -227,4 +143,48 @@ func callDelete(repo interface{}, ctx context.Context, methodName string, args [
 		panic("Expected result to be an error")
 	}
 	return err
+}
+
+func configureMoreThanOneEntityDeletedForTopLevelEntity(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
+	for _, sqlDetails := range sqlQueryDetails {
+		if sqlDetails.IsSelect {
+			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
+			break
+		} else {
+			sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
+		}
+	}
+}
+
+func configureMoreThanOneEntityDeletedForChildEntity(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
+	for _, sqlDetails := range sqlQueryDetails {
+		if sqlDetails.IsSelect {
+			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
+		} else {
+			sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.InvalidResult)
+			break
+		}
+	}
+}
+
+func configureNoEntityDeletedForTopLevelEntity(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
+	for _, sqlDetails := range sqlQueryDetails {
+		if sqlDetails.IsSelect {
+			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlmock.NewRows([]string{}))
+			break
+		} else {
+			sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
+		}
+	}
+}
+
+func configureNoEntityDeletedForChildEntity(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
+	for _, sqlDetails := range sqlQueryDetails {
+		if sqlDetails.IsSelect {
+			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
+		} else {
+			sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlmock.NewResult(-1, 0))
+			break
+		}
+	}
 }

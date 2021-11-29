@@ -59,29 +59,6 @@ func (_m *SpecService) GetByReferenceObjectID(ctx context.Context, objectType mo
 	return r0, r1
 }
 
-// GetFetchRequest provides a mock function with given fields: ctx, specID, objectType
-func (_m *SpecService) GetFetchRequest(ctx context.Context, specID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error) {
-	ret := _m.Called(ctx, specID, objectType)
-
-	var r0 *model.FetchRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType) *model.FetchRequest); ok {
-		r0 = rf(ctx, specID, objectType)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.FetchRequest)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.SpecReferenceObjectType) error); ok {
-		r1 = rf(ctx, specID, objectType)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ListFetchRequestsByReferenceObjectIDs provides a mock function with given fields: ctx, tenant, objectIDs, objectType
 func (_m *SpecService) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error) {
 	ret := _m.Called(ctx, tenant, objectIDs, objectType)

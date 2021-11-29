@@ -29,20 +29,6 @@ func (_m *EventAPIRepository) Create(ctx context.Context, tenant string, item *m
 	return r0
 }
 
-// CreateMany provides a mock function with given fields: ctx, tenant, items
-func (_m *EventAPIRepository) CreateMany(ctx context.Context, tenant string, items []*model.EventDefinition) error {
-	ret := _m.Called(ctx, tenant, items)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.EventDefinition) error); ok {
-		r0 = rf(ctx, tenant, items)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Delete provides a mock function with given fields: ctx, tenantID, id
 func (_m *EventAPIRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	ret := _m.Called(ctx, tenantID, id)
@@ -69,27 +55,6 @@ func (_m *EventAPIRepository) DeleteAllByBundleID(ctx context.Context, tenantID 
 	}
 
 	return r0
-}
-
-// Exists provides a mock function with given fields: ctx, tenantID, id
-func (_m *EventAPIRepository) Exists(ctx context.Context, tenantID string, id string) (bool, error) {
-	ret := _m.Called(ctx, tenantID, id)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
-		r0 = rf(ctx, tenantID, id)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenantID, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // GetByID provides a mock function with given fields: ctx, tenantID, id

@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -82,7 +81,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		require.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, runtimeRepo)
 	})
 
@@ -111,7 +110,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		require.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, runtimeRepo)
 	})
 
@@ -130,7 +129,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		require.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
 	})
 
@@ -148,7 +147,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		require.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
 	})
 
@@ -229,16 +228,14 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 
 		labelRepo.On("Delete", ctx, tenantID, model.RuntimeLabelableObject, rtmID, model.ScenariosKey).Return(nil)
 
-		upsertSvc := &automock.LabelUpsertService{}
-
-		eng := scenarioassignment.NewEngine(upsertSvc, labelRepo, nil, runtimeRepo)
+		eng := scenarioassignment.NewEngine(nil, labelRepo, nil, runtimeRepo)
 
 		// WHEN
 		err := eng.RemoveAssignedScenario(ctx, in)
 
 		// THEN
 		require.NoError(t, err)
-		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, runtimeRepo)
+		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
 	})
 
 	t.Run("Failed when Label Upsert failed ", func(t *testing.T) {
@@ -270,7 +267,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		require.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, upsertSvc, runtimeRepo)
 	})
 
@@ -289,7 +286,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		require.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
 	})
 
@@ -372,7 +369,7 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		require.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
 	})
 
@@ -392,7 +389,7 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		require.Contains(t, err.Error(), testErr.Error())
 		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
 	})
 }
@@ -438,7 +435,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T
 	// then
 
 	require.NoError(t, err)
-	assert.ElementsMatch(t, expectedScenarios, actualScenarios)
+	require.ElementsMatch(t, expectedScenarios, actualScenarios)
 
 	mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
 }
@@ -478,7 +475,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosLa
 
 	// then
 	require.NoError(t, err)
-	assert.ElementsMatch(t, expectedScenarios, actualScenarios)
+	require.ElementsMatch(t, expectedScenarios, actualScenarios)
 
 	mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
 }
