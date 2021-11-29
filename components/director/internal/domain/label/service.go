@@ -71,8 +71,7 @@ func (s *labelService) CreateLabel(ctx context.Context, tenant, id string, label
 	}
 	label := labelInput.ToLabel(id, tenant)
 
-	err := s.labelRepo.Create(ctx, tenant, label)
-	if err != nil {
+	if err := s.labelRepo.Create(ctx, tenant, label); err != nil {
 		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}
 	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
@@ -88,8 +87,7 @@ func (s *labelService) UpsertLabel(ctx context.Context, tenant string, labelInpu
 
 	label := labelInput.ToLabel(s.uidService.Generate(), tenant)
 
-	err := s.labelRepo.Upsert(ctx, tenant, label)
-	if err != nil {
+	if err := s.labelRepo.Upsert(ctx, tenant, label); err != nil {
 		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}
 	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
@@ -104,8 +102,7 @@ func (s *labelService) UpdateLabel(ctx context.Context, tenant, id string, label
 	}
 	label := labelInput.ToLabel(id, tenant)
 
-	err := s.labelRepo.UpdateWithVersion(ctx, tenant, label)
-	if err != nil {
+	if err := s.labelRepo.UpdateWithVersion(ctx, tenant, label); err != nil {
 		return errors.Wrapf(err, "while updating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}
 	log.C(ctx).Debugf("Successfully updated Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)

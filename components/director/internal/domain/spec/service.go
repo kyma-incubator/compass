@@ -120,8 +120,7 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 		return "", err
 	}
 
-	err = s.repo.Create(ctx, tnt, spec)
-	if err != nil {
+	if err = s.repo.Create(ctx, tnt, spec); err != nil {
 		return "", errors.Wrapf(err, "while creating spec for %q with id %q", objectType, objectID)
 	}
 
@@ -133,8 +132,7 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 
-		err = s.repo.Update(ctx, tnt, spec)
-		if err != nil {
+		if err = s.repo.Update(ctx, tnt, spec); err != nil {
 			return "", errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
 		}
 	}
@@ -149,13 +147,11 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		return err
 	}
 
-	_, err = s.repo.GetByID(ctx, tnt, id, objectType)
-	if err != nil {
+	if _, err = s.repo.GetByID(ctx, tnt, id, objectType); err != nil {
 		return err
 	}
 
-	err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, getFetchRequestObjectTypeBySpecObjectType(objectType), id)
-	if err != nil {
+	if err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, getFetchRequestObjectTypeBySpecObjectType(objectType), id); err != nil {
 		return errors.Wrapf(err, "while deleting FetchRequest for Specification with id %q", id)
 	}
 
@@ -173,8 +169,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 	}
 
-	err = s.repo.Update(ctx, tnt, spec)
-	if err != nil {
+	if err = s.repo.Update(ctx, tnt, spec); err != nil {
 		return errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
 	}
 
@@ -227,8 +222,7 @@ func (s *service) RefetchSpec(ctx context.Context, id string, objectType model.S
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fetchRequest)
 	}
 
-	err = s.repo.Update(ctx, tnt, spec)
-	if err != nil {
+	if err = s.repo.Update(ctx, tnt, spec); err != nil {
 		return nil, errors.Wrapf(err, "while updating Specification with id %q", id)
 	}
 
@@ -266,8 +260,7 @@ func (s *service) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, ten
 func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error) {
 	id := s.uidService.Generate()
 	fr := in.ToFetchRequest(s.timestampGen(), id, getFetchRequestObjectTypeBySpecObjectType(objectType), parentObjectID)
-	err := s.fetchRequestRepo.Create(ctx, tenant, fr)
-	if err != nil {
+	if err := s.fetchRequestRepo.Create(ctx, tenant, fr); err != nil {
 		return nil, errors.Wrapf(err, "while creating FetchRequest for %q with id %q", objectType, parentObjectID)
 	}
 

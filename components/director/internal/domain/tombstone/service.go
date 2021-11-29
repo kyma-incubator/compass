@@ -49,8 +49,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Tom
 	id := s.uidService.Generate()
 	tombstone := in.ToTombstone(id, applicationID)
 
-	err = s.tombstoneRepo.Create(ctx, tnt, tombstone)
-	if err != nil {
+	if err = s.tombstoneRepo.Create(ctx, tnt, tombstone); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Tombstone with id %s for Application with id %s", id, applicationID)
 	}
 	log.C(ctx).Debugf("Successfully created a Tombstone with id %s for Application with id %s", id, applicationID)
@@ -72,8 +71,7 @@ func (s *service) Update(ctx context.Context, id string, in model.TombstoneInput
 
 	tombstone.SetFromUpdateInput(in)
 
-	err = s.tombstoneRepo.Update(ctx, tnt, tombstone)
-	if err != nil {
+	if err = s.tombstoneRepo.Update(ctx, tnt, tombstone); err != nil {
 		return errors.Wrapf(err, "while updating Tombstone with id %s", id)
 	}
 	return nil

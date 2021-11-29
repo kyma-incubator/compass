@@ -225,8 +225,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	id := s.uidService.Generate()
 	rtm := in.ToRuntime(id, time.Now(), time.Now())
 
-	err = s.repo.Create(ctx, rtmTenant, rtm)
-	if err != nil {
+	if err = s.repo.Create(ctx, rtmTenant, rtm); err != nil {
 		return "", errors.Wrapf(err, "while creating Runtime")
 	}
 
@@ -275,8 +274,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		model.ScenariosKey: scenarios,
 	}
 
-	err = s.labelUpsertService.UpsertMultipleLabels(ctxWithParentTenant, tnt.Parent, model.RuntimeLabelableObject, id, scenariosLabels)
-	if err != nil {
+	if err = s.labelUpsertService.UpsertMultipleLabels(ctxWithParentTenant, tnt.Parent, model.RuntimeLabelableObject, id, scenariosLabels); err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}
 
@@ -297,8 +295,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 
 	rtm = in.ToRuntime(id, rtm.CreationTimestamp, time.Now())
 
-	err = s.repo.Update(ctx, rtmTenant, rtm)
-	if err != nil {
+	if err = s.repo.Update(ctx, rtmTenant, rtm); err != nil {
 		return errors.Wrap(err, "while updating Runtime")
 	}
 
@@ -384,8 +381,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 
 	newRuntimeLabels[labelInput.Key] = labelInput.Value
 
-	err = s.upsertScenariosLabelIfShould(ctx, labelInput.ObjectID, labelInput.Key, newRuntimeLabels)
-	if err != nil {
+	if err = s.upsertScenariosLabelIfShould(ctx, labelInput.ObjectID, labelInput.Key, newRuntimeLabels); err != nil {
 		return err
 	}
 
@@ -477,8 +473,7 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 
 	delete(newRuntimeLabels, key)
 
-	err = s.upsertScenariosLabelIfShould(ctx, runtimeID, key, newRuntimeLabels)
-	if err != nil {
+	if err = s.upsertScenariosLabelIfShould(ctx, runtimeID, key, newRuntimeLabels); err != nil {
 		return err
 	}
 

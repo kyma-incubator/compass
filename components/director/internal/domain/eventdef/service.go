@@ -147,8 +147,7 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	id := s.uidService.Generate()
 	eventAPI := in.ToEventDefinition(id, appID, packageID, eventHash)
 
-	err = s.eventAPIRepo.Create(ctx, tnt, eventAPI)
-	if err != nil {
+	if err = s.eventAPIRepo.Create(ctx, tnt, eventAPI); err != nil {
 		return "", err
 	}
 
@@ -156,21 +155,18 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 		if spec == nil {
 			continue
 		}
-		_, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.EventSpecReference, eventAPI.ID)
-		if err != nil {
+		if _, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.EventSpecReference, eventAPI.ID); err != nil {
 			return "", err
 		}
 	}
 
 	if bundleIDs == nil {
-		err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID)
-		if err != nil {
+		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID); err != nil {
 			return "", err
 		}
 	} else {
 		for _, bndlID := range bundleIDs {
-			err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, &bndlID)
-			if err != nil {
+			if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, &bndlID); err != nil {
 				return "", err
 			}
 		}
@@ -198,21 +194,18 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 
 	event = in.ToEventDefinition(id, event.ApplicationID, event.PackageID, eventHash)
 
-	err = s.eventAPIRepo.Update(ctx, tnt, event)
-	if err != nil {
+	if err = s.eventAPIRepo.Update(ctx, tnt, event); err != nil {
 		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
 	}
 
 	for _, bundleID := range bundleIDsForCreation {
-		err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &event.ID, &bundleID)
-		if err != nil {
+		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &event.ID, &bundleID); err != nil {
 			return err
 		}
 	}
 
 	for _, bundleID := range bundleIDsForDeletion {
-		err = s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleEventReference, &event.ID, &bundleID)
-		if err != nil {
+		if err = s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleEventReference, &event.ID, &bundleID); err != nil {
 			return err
 		}
 	}

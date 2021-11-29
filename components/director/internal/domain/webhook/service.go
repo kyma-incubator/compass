@@ -132,8 +132,7 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput, 
 
 	webhook = in.ToWebhook(id, webhook.ObjectID, webhook.ObjectType)
 
-	err = s.webhookRepo.Update(ctx, tnt, webhook)
-	if err != nil {
+	if err = s.webhookRepo.Update(ctx, tnt, webhook); err != nil {
 		return errors.Wrapf(err, "while updating Webhook")
 	}
 

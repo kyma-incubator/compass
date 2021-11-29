@@ -483,8 +483,7 @@ func getTenantParentType(tenantType string) string {
 
 func (s SubaccountService) moveSubaccounts(ctx context.Context, movedSubaccountMappings []model.MovedSubaccountMappingInput) error {
 	for _, mapping := range movedSubaccountMappings {
-		_, err := s.moveSubaccount(ctx, mapping)
-		if err != nil {
+		if _, err := s.moveSubaccount(ctx, mapping); err != nil {
 			return errors.Wrap(err, "while moving subaccount")
 		}
 	}

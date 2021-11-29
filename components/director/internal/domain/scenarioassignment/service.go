@@ -163,13 +163,11 @@ func (s *service) DeleteManyForSameTargetTenant(ctx context.Context, in []*model
 		return errors.Wrap(err, "while ensuring input is valid")
 	}
 
-	err = s.engineSvc.RemoveAssignedScenarios(ctx, in)
-	if err != nil {
+	if err = s.engineSvc.RemoveAssignedScenarios(ctx, in); err != nil {
 		return errors.Wrap(err, "while unassigning scenario from runtimes")
 	}
 
-	err = s.repo.DeleteForTargetTenant(ctx, tenantID, targetTenant)
-	if err != nil {
+	if err = s.repo.DeleteForTargetTenant(ctx, tenantID, targetTenant); err != nil {
 		return errors.Wrap(err, "while deleting the Assignments")
 	}
 
@@ -183,13 +181,11 @@ func (s *service) Delete(ctx context.Context, in model.AutomaticScenarioAssignme
 		return errors.Wrap(err, "while loading tenant from context")
 	}
 
-	err = s.engineSvc.RemoveAssignedScenario(ctx, in)
-	if err != nil {
+	if err = s.engineSvc.RemoveAssignedScenario(ctx, in); err != nil {
 		return errors.Wrap(err, "while unassigning scenario from runtimes")
 	}
 
-	err = s.repo.DeleteForScenarioName(ctx, tenantID, in.ScenarioName)
-	if err != nil {
+	if err = s.repo.DeleteForScenarioName(ctx, tenantID, in.ScenarioName); err != nil {
 		return errors.Wrap(err, "while deleting the Assignment")
 	}
 

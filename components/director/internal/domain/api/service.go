@@ -206,8 +206,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 
 	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, apiHash)
 
-	err = s.repo.Update(ctx, tnt, api)
-	if err != nil {
+	if err = s.repo.Update(ctx, tnt, api); err != nil {
 		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
 	}
 

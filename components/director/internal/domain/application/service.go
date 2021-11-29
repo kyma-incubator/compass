@@ -271,8 +271,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 // Create missing godoc
 func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
 	creator := func(ctx context.Context, tenant string, application *model.Application) (err error) {
-		err = s.appRepo.Create(ctx, tenant, application)
-		if err != nil {
+		if err = s.appRepo.Create(ctx, tenant, application); err != nil {
 			return errors.Wrapf(err, "while creating Application with name %s", application.Name)
 		}
 		return
@@ -285,8 +284,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error) {
 	creator := func(ctx context.Context, tenant string, application *model.Application) (err error) {
 		application.ApplicationTemplateID = appTemplateID
-		err = s.appRepo.Create(ctx, tenant, application)
-		if err != nil {
+		if err = s.appRepo.Create(ctx, tenant, application); err != nil {
 			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
 		}
 		return
@@ -342,8 +340,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 
 	app.SetFromUpdateInput(in, s.timestampGen())
 
-	err = s.appRepo.Update(ctx, appTenant, app)
-	if err != nil {
+	if err = s.appRepo.Update(ctx, appTenant, app); err != nil {
 		return errors.Wrapf(err, "while updating Application with id %s", id)
 	}
 
@@ -543,8 +540,7 @@ func (s *service) createRelatedResources(ctx context.Context, in model.Applicati
 	for _, item := range in.Webhooks {
 		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), applicationID, model.ApplicationWebhookReference))
 	}
-	err = s.webhookRepo.CreateMany(ctx, tenant, webhooks)
-	if err != nil {
+	if err = s.webhookRepo.CreateMany(ctx, tenant, webhooks); err != nil {
 		return errors.Wrapf(err, "while creating Webhooks for application")
 	}
 
@@ -584,8 +580,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 
 	app := in.ToApplication(s.timestampGen(), id)
 
-	err = repoCreatorFunc(ctx, appTenant, app)
-	if err != nil {
+	if err = repoCreatorFunc(ctx, appTenant, app); err != nil {
 		return "", err
 	}
 
@@ -611,8 +606,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	}
 
 	if in.Bundles != nil {
-		err = s.bndlService.CreateMultiple(ctx, id, in.Bundles)
-		if err != nil {
+		if err = s.bndlService.CreateMultiple(ctx, id, in.Bundles); err != nil {
 			return "", errors.Wrapf(err, "while creating related Bundle resources for Application with id %s", id)
 		}
 	}

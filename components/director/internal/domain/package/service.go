@@ -50,8 +50,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pac
 	id := s.uidService.Generate()
 	pkg := in.ToPackage(id, applicationID, pkgHash)
 
-	err = s.pkgRepo.Create(ctx, tnt, pkg)
-	if err != nil {
+	if err = s.pkgRepo.Create(ctx, tnt, pkg); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Package with id %s and title %s for Application with id %s", id, pkg.Title, applicationID)
 	}
 	log.C(ctx).Debugf("Successfully created a Package with id %s and title %s for Application with id %s", id, pkg.Title, applicationID)
@@ -73,8 +72,7 @@ func (s *service) Update(ctx context.Context, id string, in model.PackageInput, 
 
 	pkg.SetFromUpdateInput(in, pkgHash)
 
-	err = s.pkgRepo.Update(ctx, tnt, pkg)
-	if err != nil {
+	if err = s.pkgRepo.Update(ctx, tnt, pkg); err != nil {
 		return errors.Wrapf(err, "while updating Package with id %s", id)
 	}
 	return nil

@@ -155,8 +155,7 @@ func (s *service) Update(ctx context.Context, instanceAuth *model.BundleInstance
 		return err
 	}
 
-	err = s.repo.Update(ctx, tnt, instanceAuth)
-	if err != nil {
+	if err = s.repo.Update(ctx, tnt, instanceAuth); err != nil {
 		return errors.Wrap(err, "while updating Bundle Instance Auths")
 	}
 
@@ -187,8 +186,7 @@ func (s *service) SetAuth(ctx context.Context, id string, in model.BundleInstanc
 		return err
 	}
 
-	err = s.repo.Update(ctx, tnt, instanceAuth)
-	if err != nil {
+	if err = s.repo.Update(ctx, tnt, instanceAuth); err != nil {
 		return errors.Wrapf(err, "while updating BundleInstanceAuth with ID %s", id)
 	}
 	return nil
@@ -213,8 +211,7 @@ func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.Bundl
 		}
 		log.C(ctx).Infof("Status for BundleInstanceAuth with id %s set to '%s'. Credentials are ready for being deleted by Application or Integration System.", instanceAuth.ID, model.BundleInstanceAuthStatusConditionUnused)
 
-		err = s.repo.Update(ctx, tnt, instanceAuth)
-		if err != nil {
+		if err = s.repo.Update(ctx, tnt, instanceAuth); err != nil {
 			return false, errors.Wrapf(err, "while updating BundleInstanceAuth with id %s", instanceAuth.ID)
 		}
 
@@ -222,8 +219,7 @@ func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.Bundl
 	}
 
 	log.C(ctx).Debugf("Default credentials for BundleInstanceAuth with id %s are provided.", instanceAuth.ID)
-	err = s.Delete(ctx, instanceAuth.ID)
-	if err != nil {
+	if err = s.Delete(ctx, instanceAuth.ID); err != nil {
 		return false, err
 	}
 

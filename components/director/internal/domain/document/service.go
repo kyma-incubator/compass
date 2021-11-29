@@ -94,8 +94,7 @@ func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in
 	id := s.uidService.Generate()
 
 	document := in.ToDocumentWithinBundle(id, bundleID, appID)
-	err = s.repo.Create(ctx, tnt, document)
-	if err != nil {
+	if err = s.repo.Create(ctx, tnt, document); err != nil {
 		return "", errors.Wrap(err, "while creating Document")
 	}
 
@@ -103,8 +102,7 @@ func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in
 		generatedID := s.uidService.Generate()
 		fetchRequestID := &generatedID
 		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, model.DocumentFetchRequestReference, id)
-		err := s.fetchRequestRepo.Create(ctx, tnt, fetchRequestModel)
-		if err != nil {
+		if err := s.fetchRequestRepo.Create(ctx, tnt, fetchRequestModel); err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for Document %s", id)
 		}
 	}
