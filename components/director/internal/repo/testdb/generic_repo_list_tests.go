@@ -164,7 +164,7 @@ func assertEqualElements(t *testing.T, arr1, arr2 interface{}) {
 	array1 := reflect.ValueOf(arr1)
 	array2 := reflect.ValueOf(arr2)
 
-	require.Len(t, arr2, array1.Len())
+	require.Equal(t, array2.Len(), array1.Len())
 	for i := 0; i < array1.Len(); i++ {
 		actual := array2.Index(i).Interface()
 		if array2.Index(i).Kind() != reflect.Ptr {

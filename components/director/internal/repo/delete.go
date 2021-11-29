@@ -165,8 +165,7 @@ func (g *universalDeleter) unsafeDeleteTenantAccess(ctx context.Context, resourc
 
 	conditions = append(conditions, tenantIsolation)
 
-	err = writeEnumeratedConditions(&stmtBuilder, conditions)
-	if err != nil {
+	if err = writeEnumeratedConditions(&stmtBuilder, conditions); err != nil {
 		return errors.Wrap(err, "while writing enumerated conditions")
 	}
 	allArgs := getAllArgs(conditions)
@@ -227,8 +226,7 @@ func (g *universalDeleter) unsafeDeleteChildEntity(ctx context.Context, resource
 
 	conditions = append(conditions, tenantIsolation)
 
-	err = writeEnumeratedConditions(&stmtBuilder, conditions)
-	if err != nil {
+	if err = writeEnumeratedConditions(&stmtBuilder, conditions); err != nil {
 		return errors.Wrap(err, "while writing enumerated conditions")
 	}
 	allArgs := getAllArgs(conditions)

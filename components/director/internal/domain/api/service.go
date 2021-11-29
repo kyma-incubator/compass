@@ -147,8 +147,7 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	id := s.uidService.Generate()
 	api := in.ToAPIDefinition(id, appID, packageID, apiHash)
 
-	err = s.repo.Create(ctx, tnt, api)
-	if err != nil {
+	if err = s.repo.Create(ctx, tnt, api); err != nil {
 		return "", errors.Wrap(err, "while creating api")
 	}
 
