@@ -17,8 +17,6 @@ import (
 type UnionLister interface {
 	// List stores the result into dest and returns the total count of tuples for each id from ids
 	List(ctx context.Context, resourceType resource.Type, tenant string, ids []string, idsColumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error)
-	SetSelectedColumns(selectedColumns []string)
-	Clone() *unionLister
 }
 
 // UnionListerGlobal is an interface for listing global entities.

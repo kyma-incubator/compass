@@ -72,23 +72,6 @@ func (obj LabelableObject) GetResourceType() resource.Type {
 	return ""
 }
 
-// NewLabelForRuntimeContext creates a new label for a runtime context.
-func NewLabelForRuntimeContext(runtimeCtxID, tenant, key string, value interface{}) *Label {
-	var tenantID *string
-	if key == ScenariosKey {
-		tenantID = &tenant
-	}
-	return &Label{
-		ID:         uuid.New().String(),
-		Tenant:     tenantID,
-		ObjectType: RuntimeContextLabelableObject,
-		ObjectID:   runtimeCtxID,
-		Key:        key,
-		Value:      value,
-		Version:    0,
-	}
-}
-
 // NewLabelForRuntime creates a new label for a runtime.
 func NewLabelForRuntime(runtimeID, tenant, key string, value interface{}) *Label {
 	var tenantID *string
@@ -100,23 +83,6 @@ func NewLabelForRuntime(runtimeID, tenant, key string, value interface{}) *Label
 		Tenant:     tenantID,
 		ObjectType: RuntimeLabelableObject,
 		ObjectID:   runtimeID,
-		Key:        key,
-		Value:      value,
-		Version:    0,
-	}
-}
-
-// NewLabelForApplication creates a new label for an application.
-func NewLabelForApplication(appID, tenant, key string, value interface{}) *Label {
-	var tenantID *string
-	if key == ScenariosKey {
-		tenantID = &tenant
-	}
-	return &Label{
-		ID:         uuid.New().String(),
-		Tenant:     tenantID,
-		ObjectType: ApplicationLabelableObject,
-		ObjectID:   appID,
 		Key:        key,
 		Value:      value,
 		Version:    0,
