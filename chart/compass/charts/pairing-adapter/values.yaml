@@ -14,7 +14,7 @@ deployment:
       enabled: true
       auth:
         type: "mtls"
-        secret: "" #TODO: Adapt prod configs
+        secret: ""
       envs:
         mappingTemplateExternalURL: "https://compass-external-services-mock-sap-mtls.kyma.local/cert/token"
         mappingTemplateHeaders: '{"Content-Type":["application/json"]}'
