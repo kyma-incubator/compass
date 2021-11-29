@@ -24,7 +24,8 @@ spec:
             - ip: {{ .Values.global.minikubeIP }}
               hostnames:
                 - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
-            {{ end }}
+          {{ end }}
+          serviceAccountName: {{ $.Chart.Name }}-ord-aggregator
           containers:
             - name: aggregator
               image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
@@ -76,48 +77,9 @@ spec:
                 {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
                 - name: APP_METRICS_PUSH_ENDPOINT
                   value: {{ $.Values.global.metrics.pushEndpoint}}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_SUBJECT_PATTERN
-                  value: {{ $.Values.global.mtlsClient.subjectPattern }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_COMMON_NAME
-                  value: {{ $.Values.global.mtlsClient.commonName }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_LOCALITY
-                  value: {{ $.Values.global.mtlsClient.locality }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_POLICY
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.policyKey }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CSR_ENDPOINT
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.csrEndpointKey }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CLIENT_ID
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.clientIdKey }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CLIENT_SECRET
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.clientSecretKey }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_OAUTHURL
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.name }}
-                      key: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.secret.oauthUrlKey }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_TOKEN_PATH
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.tokenPath }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_CERT_SVC_API_PATH
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.certSvcApiPath }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_ISSUER_LOCALITY
-                  value: {{ $.Values.global.ordAggregator.accessStrategies.cmpMtls.issuerLocality }}
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_RETRY_ATTEMPTS
-                  value: "{{ .Values.global.ordAggregator.accessStrategies.cmpMtls.retryAttempts }}"
-                - name: ACCESS_STRATEGY_SAP_CMP_MTLS_V1_RETRY_DELAY
-                  value: "{{ .Values.global.ordAggregator.accessStrategies.cmpMtls.retryDelay }}"
-              {{ end }}
+                {{ end }}
+                - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
               command:
                 - "/bin/sh"
               args:
@@ -147,4 +109,38 @@ spec:
             - name: director-config
               configMap:
                 name: compass-director-config
-  {{ end }}
+{{ end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-ord-aggregator
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-ord-aggregator
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-ord-aggregator
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: director-external-client-certificate
+  apiGroup: rbac.authorization.k8s.io

@@ -1,11 +1,12 @@
 package accessstrategy_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
-	accessstrategy2 "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"github.com/stretchr/testify/require"
 )
@@ -19,11 +20,12 @@ func TestOpenAccessStrategy(t *testing.T) {
 		return expectedResp, nil
 	})
 
-	provider := accessstrategy2.NewDefaultExecutorProvider()
-	executor, err := provider.Provide(accessstrategy2.OpenAccessStrategy)
+	cerCache := certloader.NewCertificateCache()
+	provider := accessstrategy.NewDefaultExecutorProvider(cerCache)
+	executor, err := provider.Provide(accessstrategy.OpenAccessStrategy)
 	require.NoError(t, err)
 
-	resp, err := executor.Execute(context.Background(), client, testURL)
+	resp, err := executor.Execute(client, testURL)
 	require.NoError(t, err)
 	require.Equal(t, expectedResp, resp)
 }

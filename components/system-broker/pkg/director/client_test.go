@@ -19,6 +19,7 @@ package director_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -33,17 +34,45 @@ import (
 )
 
 func TestGraphQLClient_FetchApplication(t *testing.T) {
+	const appID = "0191fcfd-ae7e-4d1a-8027-520a96d5319f"
+	testErr := errors.New("some error")
+
 	type testCase struct {
 		name               string
 		GQLClient          *directorfakes.FakeClient
-		expectedErr        string
+		expectedErr        error
 		expectedProperties map[string]int
+		expectedApp        *director.ApplicationOutput
 	}
 
 	tests := []testCase{
 		{
 			name:      "success",
-			GQLClient: getGCLI(t, "", nil),
+			GQLClient: getGCLI(t, fmt.Sprintf(`{"result":{"id":"%s"}}`, appID), nil),
+			expectedApp: &director.ApplicationOutput{Result: &schema.ApplicationExt{Application: schema.Application{
+				BaseEntity: &schema.BaseEntity{ID: appID},
+			}}},
+			expectedProperties: map[string]int{
+				"webhooks":              1,
+				"providerName":          0,
+				"description":           0,
+				"integrationSystemID":   0,
+				"labels":                0,
+				"bundles":               0,
+				"auths":                 0,
+				"status":                0,
+				"instanceAuths":         0,
+				"documents":             0,
+				"fetchRequest":          0,
+				"healthCheckURL":        0,
+				"eventingConfiguration": 0,
+			},
+		},
+		{
+			name:        "returns error when app does not exist",
+			GQLClient:   getGCLI(t, "", nil),
+			expectedApp: nil,
+			expectedErr: &director.NotFoundError{},
 			expectedProperties: map[string]int{
 				"webhooks":              1,
 				"providerName":          0,
@@ -62,8 +91,8 @@ func TestGraphQLClient_FetchApplication(t *testing.T) {
 		},
 		{
 			name:        "when gql client returns an error",
-			GQLClient:   getGCLI(t, "", errors.New("some error")),
-			expectedErr: "while fetching application in gqlclient: some error",
+			GQLClient:   getGCLI(t, "", testErr),
+			expectedErr: testErr,
 		},
 	}
 	for _, tt := range tests {
@@ -74,11 +103,14 @@ func TestGraphQLClient_FetchApplication(t *testing.T) {
 				&graphqlizer.Graphqlizer{},
 				&graphqlizer.GqlFieldsProvider{},
 			)
-			_, err := c.FetchApplication(context.TODO(), "test-id")
-			if tt.expectedErr != "" {
+			app, err := c.FetchApplication(context.TODO(), "test-id")
+			if tt.expectedErr != nil {
 				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.expectedErr)
+				assert.Nil(t, app)
+				assert.ErrorIs(t, err, tt.expectedErr)
 			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedApp, app)
 				assert.Equal(t, 1, gcli.DoCallCount())
 
 				_, graphqlReq, _ := gcli.DoArgsForCall(0)

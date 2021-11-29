@@ -10,8 +10,10 @@ import (
 	"testing"
 	"time"
 
-	accessstrategy2 "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	automock2 "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	accessstrategyautomock "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
@@ -121,7 +123,7 @@ func TestService_HandleSpec(t *testing.T) {
 		Name                 string
 		Client               func(t *testing.T) *http.Client
 		InputFr              model.FetchRequest
-		ExecutorProviderFunc func() accessstrategy2.ExecutorProvider
+		ExecutorProviderFunc func() accessstrategy.ExecutorProvider
 		ExpectedResult       *string
 		ExpectedStatus       *model.FetchRequestStatus
 	}{
@@ -166,15 +168,15 @@ func TestService_HandleSpec(t *testing.T) {
 		},
 		{
 			Name: "Success with access strategy",
-			ExecutorProviderFunc: func() accessstrategy2.ExecutorProvider {
-				executor := &automock2.Executor{}
-				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL).Return(&http.Response{
+			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
+				executor := &accessstrategyautomock.Executor{}
+				executor.On("Execute", mock.Anything, modelInputAccessStrategy.URL).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
 				}, nil).Once()
 
-				executorProvider := &automock2.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy2.Type(testAccessStrategy)).Return(executor, nil).Once()
+				executorProvider := &accessstrategyautomock.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
 				return executorProvider
 			},
 			Client: func(t *testing.T) *http.Client {
@@ -186,9 +188,9 @@ func TestService_HandleSpec(t *testing.T) {
 		},
 		{
 			Name: "Fails when access strategy is unknown",
-			ExecutorProviderFunc: func() accessstrategy2.ExecutorProvider {
-				executorProvider := &automock2.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy2.Type(testAccessStrategy)).Return(nil, testErr).Once()
+			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
+				executorProvider := &accessstrategyautomock.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(nil, testErr).Once()
 				return executorProvider
 			},
 			Client: func(t *testing.T) *http.Client {
@@ -199,12 +201,12 @@ func TestService_HandleSpec(t *testing.T) {
 		},
 		{
 			Name: "Fails when access strategy execution fail",
-			ExecutorProviderFunc: func() accessstrategy2.ExecutorProvider {
-				executor := &automock2.Executor{}
-				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL).Return(nil, testErr).Once()
+			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
+				executor := &accessstrategyautomock.Executor{}
+				executor.On("Execute", mock.Anything, modelInputAccessStrategy.URL).Return(nil, testErr).Once()
 
-				executorProvider := &automock2.ExecutorProvider{}
-				executorProvider.On("Provide", accessstrategy2.Type(testAccessStrategy)).Return(executor, nil).Once()
+				executorProvider := &accessstrategyautomock.ExecutorProvider{}
+				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
 				return executorProvider
 			},
 			Client: func(t *testing.T) *http.Client {
@@ -333,7 +335,8 @@ func TestService_HandleSpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			var executorProviderMock accessstrategy2.ExecutorProvider = accessstrategy2.NewDefaultExecutorProvider()
+			certCache := certloader.NewCertificateCache()
+			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache)
 			if testCase.ExecutorProviderFunc != nil {
 				executorProviderMock = testCase.ExecutorProviderFunc()
 			}
@@ -363,12 +366,13 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 	frRepo := &automock.FetchRequestRepository{}
 	frRepo.On("Update", ctx, mock.Anything).Return(errors.New("error")).Once()
 
+	certCache := certloader.NewCertificateCache()
 	svc := fetchrequest.NewService(frRepo, NewTestClient(func(req *http.Request) *http.Response {
 		return &http.Response{
 			StatusCode: http.StatusOK,
 			Body:       ioutil.NopCloser(bytes.NewBufferString("spec")),
 		}
-	}), accessstrategy2.NewDefaultExecutorProvider())
+	}), accessstrategy.NewDefaultExecutorProvider(certCache))
 	svc.SetTimestampGen(func() time.Time { return timestamp })
 
 	modelInput := &model.FetchRequest{

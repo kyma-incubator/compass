@@ -101,6 +101,7 @@ func NewRootResolver(
 	selfRegConfig runtime.SelfRegConfig,
 	tokenLength int,
 	hydraURL *url.URL,
+	accessStrategyExecutorProvider *accessstrategy.Provider,
 ) *RootResolver {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
@@ -168,7 +169,7 @@ func NewRootResolver(
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider())
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessStrategyExecutorProvider)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
@@ -584,6 +585,11 @@ func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in grap
 	return r.runtime.UpdateRuntime(ctx, id, in)
 }
 
+// SetRuntimeTenant sets internal tenant id for runtime
+func (r *mutationResolver) SetRuntimeTenant(ctx context.Context, runtimeID string, tenantID string) (*graphql.Runtime, error) {
+	return r.runtime.SetRuntimeTenant(ctx, runtimeID, tenantID)
+}
+
 // UnregisterRuntime missing godoc
 func (r *mutationResolver) UnregisterRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.DeleteRuntime(ctx, id)
@@ -775,6 +781,21 @@ func (r *mutationResolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx con
 // CreateAutomaticScenarioAssignment missing godoc
 func (r *mutationResolver) CreateAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
 	return r.scenarioAssignment.CreateAutomaticScenarioAssignment(ctx, in)
+}
+
+// WriteTenants creates tenants of type customer, account, or subaccount
+func (r *mutationResolver) WriteTenants(ctx context.Context, in []*graphql.BusinessTenantMappingInput) (int, error) {
+	return r.tenant.Write(ctx, in)
+}
+
+// DeleteTenants deletes multiple tenants by external tenant id
+func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int, error) {
+	return r.tenant.Delete(ctx, in)
+}
+
+// UpdateTenant updates tenant by external id
+func (r *mutationResolver) UpdateTenant(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {
+	return r.tenant.Update(ctx, id, in)
 }
 
 type applicationResolver struct {

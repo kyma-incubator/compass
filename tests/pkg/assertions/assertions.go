@@ -7,16 +7,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tidwall/gjson"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 func AssertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actualApp graphql.ApplicationExt) {
@@ -516,6 +513,25 @@ func AssertMultipleEntitiesFromORDService(t *testing.T, respBody string, entitie
 		require.True(t, exists)
 
 		require.Equal(t, entityDescription, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
+	}
+}
+
+func AssertBundleCorrelationIds(t *testing.T, respBody string, entitiesMap map[string][]string, expectedNumber int) {
+	numberOfEntities := len(gjson.Get(respBody, "value").Array())
+	require.Equal(t, expectedNumber, numberOfEntities)
+
+	for i := 0; i < numberOfEntities; i++ {
+		entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
+		require.NotEmpty(t, entityTitle)
+
+		correlationIds := gjson.Get(respBody, fmt.Sprintf("value.%d.correlationIds", i)).Array()
+		bundleCorrelationIdsAsString := make([]string, 0)
+		for _, id := range correlationIds {
+			idAsString := gjson.Get(id.String(), "value").String()
+			bundleCorrelationIdsAsString = append(bundleCorrelationIdsAsString, idAsString)
+		}
+		expectedCorrelationIds := entitiesMap[entityTitle]
+		assert.ElementsMatch(t, expectedCorrelationIds, bundleCorrelationIdsAsString)
 	}
 }
 

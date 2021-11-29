@@ -126,6 +126,10 @@ const ordDocument = `{
                "url":"/testing/relative"
             }
          ],
+		 "correlationIds": [
+			"sap.s4:communicationScenario:SAP_COM_0001",
+			"sap.s4:communicationScenario:SAP_COM_0002"
+		 ],
          "labels":{
             "label-key-1":[
                "label-value-1",
@@ -159,6 +163,10 @@ const ordDocument = `{
             }
          ],
          "description":"foo bar",
+		 "correlationIds": [
+			"sap.s4:communicationScenario:SAP_COM_0001",
+			"sap.s4:communicationScenario:SAP_COM_0002"
+		 ],
          "labels":{
             "label-key-1":[
                "label-value-1",

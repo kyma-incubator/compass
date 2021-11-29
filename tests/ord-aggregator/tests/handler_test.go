@@ -77,6 +77,9 @@ const (
 	expectedNumberOfEventsInSecondBundle = 2
 
 	testTimeoutAdditionalBuffer = 5 * time.Minute
+
+	firstCorrelationID  = "sap.s4:communicationScenario:SAP_COM_0001"
+	secondCorrelationID = "sap.s4:communicationScenario:SAP_COM_0002"
 )
 
 func TestORDAggregator(t *testing.T) {
@@ -142,6 +145,10 @@ func TestORDAggregator(t *testing.T) {
 		bundlesEventsData[expectedBundleTitle] = []string{firstEventTitle, secondEventTitle}
 		bundlesEventsData[secondExpectedBundleTitle] = []string{firstEventTitle, secondEventTitle}
 
+		bundlesCorrelationIDs := make(map[string][]string)
+		bundlesCorrelationIDs[expectedBundleTitle] = []string{firstCorrelationID, secondCorrelationID}
+		bundlesCorrelationIDs[secondExpectedBundleTitle] = []string{firstCorrelationID, secondCorrelationID}
+
 		ctx := context.Background()
 
 		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
@@ -195,7 +202,7 @@ func TestORDAggregator(t *testing.T) {
 
 		ctx = context.WithValue(ctx, oauth2.HTTPClient, unsecuredHttpClient)
 		httpClient := conf.Client(ctx)
-		httpClient.Timeout = 10 * time.Second
+		httpClient.Timeout = 20 * time.Second
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
@@ -232,6 +239,7 @@ func TestORDAggregator(t *testing.T) {
 				return false
 			}
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles)
+			assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, expectedNumberOfBundles)
 			t.Log("Successfully verified bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
