@@ -102,7 +102,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2102"
+      version: "PR-2112"
     console:
       dir:
       version: "PR-47"
@@ -412,6 +412,31 @@ global:
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
 
+  externalCertConfiguration:
+    issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
+    issuerLocality: "" # It's empty because in local setup we use connector CA which didn't have Locality property
+    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=123e4567-e89b-12d3-a456-426614174001/L=%s/CN=%s"
+    commonName: "compass"
+    locality: "local"
+    certSvcApiPath: "/cert"
+    tokenPath: "/secured/oauth/token"
+    secrets:
+      externalCertSvcSecret:
+        manage: true
+        name: "cert-svc-secret"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
+        csrEndpointKey: csr-endpoint
+      externalClientCertSecret:
+        name: "external-client-certificate"
+        namespace: compass-system
+    rotationCronjob:
+      name: "external-certificate-rotation"
+      schedule: "*/1 * * * *" # Executes every minute
+      certValidity: "7"
+      clientCertRetryAttempts: "8"
+
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
     prefix: /open-resource-discovery-service/v0
@@ -419,12 +444,6 @@ global:
     staticPrefix: /open-resource-discovery-static/v0
     port: 3000
     defaultResponseType: "xml"
-
-  mtlsClient:
-    issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
-    subjectPattern: "C=DE, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=123e4567-e89b-12d3-a456-426614174001, L=%s, CN=%s"
-    commonName: "compass"
-    locality: "local"
 
   ordAggregator:
     name: ord-aggregator
@@ -436,21 +455,6 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    accessStrategies:
-      cmpMtls:
-        certSvcApiPath: "/cert"
-        tokenPath: "/secured/oauth/token"
-        issuerLocality: "local"
-        retryAttempts: "8"
-        retryDelay: "250ms"
-        secret:
-          name: cert-svc-secret
-          manage: true
-          oauthUrlKey: url
-          clientIdKey: client-id
-          clientSecretKey: client-secret
-          csrEndpointKey: csr-endpoint
-          policyKey: policy
 
   systemFetcher:
     enabled: false
