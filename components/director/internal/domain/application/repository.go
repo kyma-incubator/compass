@@ -300,7 +300,18 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Application) err
 
 // Upsert missing godoc
 func (r *pgRepository) Upsert(ctx context.Context, model *model.Application) error {
-	return r.upserter.Upsert(ctx, model)
+	if model == nil {
+		return apperrors.NewInternalError("model can not be empty")
+	}
+
+	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
+	appEnt, err := r.conv.ToEntity(model)
+	if err != nil {
+		return errors.Wrap(err, "while converting to Application entity")
+	}
+
+	log.C(ctx).Debugf("Upserting Application entity with id %s to db", model.ID)
+	return r.upserter.Upsert(ctx, appEnt)
 }
 
 // TechnicalUpdate missing godoc
