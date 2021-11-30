@@ -9,9 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -36,37 +33,6 @@ func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
 		Name:         appName,
 		ProviderName: ptr.String("compass"),
 		Webhooks:     []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
-	}
-
-	t.Log(fmt.Sprintf("Registering application: %s", appName))
-	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
-	require.NoError(t, err)
-
-	registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
-	require.NoError(t, err)
-
-	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
-	require.Len(t, app.Webhooks, 1)
-	nearCreationTime := time.Now().Add(-1 * time.Second)
-
-	triggerAsyncDeletion(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, dexGraphQLClient)
-}
-
-func TestAsyncAPIDeleteApplicationWithMTLSAppWebhook(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
-	mtlsWebhook := testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockMTLSSecuredURL, graphql.WebhookTypeUnregisterApplication)
-	mtlsWebhook.Auth = &graphql.AuthInput{
-		AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
-	}
-	appInput := graphql.ApplicationRegisterInput{
-		Name:         appName,
-		ProviderName: ptr.String("compass"),
-		Webhooks:     []*graphql.WebhookInput{mtlsWebhook},
 	}
 
 	t.Log(fmt.Sprintf("Registering application: %s", appName))
