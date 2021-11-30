@@ -1,0 +1,36 @@
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-pairing-adapter
+  labels:
+    app: {{ .Chart.Name }}-pairing-adapter-tests-app
+    release: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}-pairing-adapter-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: {{ .Chart.Name }}-pairing-adapter-tests-app
+    spec:
+      containers:
+        - name: pairing-adapter-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "./pairing-adapter.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          env:
+{{ $shouldAdd := true }}
+{{- range $adapterName, $config := (index .Values "pairing-adapter").deployment.adapters -}}
+{{if and (eq $config.enabled true) (eq $config.auth.type "mtls") $shouldAdd }}
+            - name: APP_MTLS_PAIRING_ADAPTER_URL
+              value: "compass-pairing-adapter.{{ $.Release.Namespace }}.svc.cluster.local/{{ $adapterName }}"
+{{ $shouldAdd = false }}
+{{ end }}
+{{- end -}}
+      restartPolicy: Never
