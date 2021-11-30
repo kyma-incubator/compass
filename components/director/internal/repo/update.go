@@ -251,10 +251,7 @@ func (u *updaterGlobal) unsafeUpdateSingleWithFields(ctx context.Context, dbEnti
 		return err
 	}
 
-	query, err := u.buildQuery(fieldsToSet)
-	if err != nil {
-		return err
-	}
+	query := u.buildQuery(fieldsToSet)
 
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 	res, err := persist.NamedExecContext(ctx, query, dbEntity)
@@ -272,7 +269,7 @@ func (u *updaterGlobal) unsafeUpdateSingleWithFields(ctx context.Context, dbEnti
 	return assertSingleRowAffected(u.resourceType, affected, isTenantScopedUpdate)
 }
 
-func (u *updaterGlobal) buildQuery(fieldsToSet []string) (string, error) {
+func (u *updaterGlobal) buildQuery(fieldsToSet []string) string {
 	var stmtBuilder strings.Builder
 	stmtBuilder.WriteString(fmt.Sprintf("UPDATE %s SET %s WHERE", u.tableName, strings.Join(fieldsToSet, ", ")))
 	if len(u.idColumns) > 0 {
@@ -290,7 +287,7 @@ func (u *updaterGlobal) buildQuery(fieldsToSet []string) (string, error) {
 		stmtBuilder.WriteString(fmt.Sprintf(" %s = :%s", *u.tenantColumn, *u.tenantColumn))
 	}
 
-	return stmtBuilder.String(), nil
+	return stmtBuilder.String()
 }
 
 func buildFieldsToSet(updatableColumns []string) []string {
