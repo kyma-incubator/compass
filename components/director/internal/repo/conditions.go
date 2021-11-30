@@ -269,29 +269,30 @@ func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tena
 		return nil, errors.Errorf("entity %s does not have access table", resourceType)
 	}
 
+	var stmtBuilder strings.Builder
+
 	var args []interface{}
-	var tenantIsolationSubquery string
 	if positionalArgs {
-		tenantIsolationSubquery = fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = ?", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn)
+		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = ?", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn))
 		args = append(args, tenant)
 	} else {
-		tenantIsolationSubquery = fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = :tenant_id", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn)
+		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = :tenant_id", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn))
 	}
 
 	if ownerCheck {
-		tenantIsolationSubquery += fmt.Sprintf(" AND %s = true", M2MOwnerColumn)
+		stmtBuilder.WriteString(fmt.Sprintf(" AND %s = true", M2MOwnerColumn))
 	}
-	tenantIsolationSubquery += ")"
+	stmtBuilder.WriteString(")")
 
 	if resourceType == resource.BundleInstanceAuth {
 		if positionalArgs {
-			tenantIsolationSubquery += " OR owner_id = ?"
+			stmtBuilder.WriteString(" OR owner_id = ?")
 			args = append(args, tenant)
 		} else {
-			tenantIsolationSubquery += " OR owner_id = :owner_id"
+			stmtBuilder.WriteString(" OR owner_id = :owner_id")
 		}
 	}
-	tenantIsolationSubquery += ")"
+	stmtBuilder.WriteString(")")
 
-	return &tenantIsolationCondition{sql: tenantIsolationSubquery, args: args}, nil
+	return &tenantIsolationCondition{sql: stmtBuilder.String(), args: args}, nil
 }
