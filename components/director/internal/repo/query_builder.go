@@ -215,7 +215,8 @@ func writeEnumeratedConditions(builder *strings.Builder, conditions Conditions) 
 		conditionsToJoin = append(conditionsToJoin, cond.GetQueryPart())
 	}
 
-	builder.WriteString(fmt.Sprintf(" %s", strings.Join(conditionsToJoin, " AND ")))
+	builder.WriteString(" ")
+	builder.WriteString(strings.Join(conditionsToJoin, " AND "))
 
 	return nil
 }
