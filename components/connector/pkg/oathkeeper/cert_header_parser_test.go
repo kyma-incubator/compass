@@ -30,11 +30,11 @@ func TestParseCertHeader(t *testing.T) {
 		OrganizationalUnitPattern: "(?i)[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|Region|SAP Cloud Platform Clients",
 	}
 
-	//expectedAuthSessionExtra := map[string]interface{}{
-	//	cert.ConsumerTypeExtraField:  "test_consumer_type",
-	//	cert.InternalConsumerIDField: "test_internal_consumer_id",
-	//	cert.AccessLevelExtraField:   "test_access_level",
-	//}
+	expectedAuthSessionExtra := map[string]interface{}{
+		cert.ConsumerTypeExtraField:  "test_consumer_type",
+		cert.InternalConsumerIDField: "test_internal_consumer_id",
+		cert.AccessLevelExtraField:   "test_access_level",
+	}
 
 	for _, testCase := range []struct {
 		name                            string
@@ -59,6 +59,21 @@ func TestParseCertHeader(t *testing.T) {
 			found:            true,
 			expectedHash:     "f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad",
 			expectedClientID: "test-application",
+		},
+		{
+			name: "connector header parser should append extra",
+			certHeader: "Hash=f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad;Subject=\"CN=test-application,OU=OrgUnit,O=organization,L=Waldorf,ST=Waldorf,C=DE\";URI=spiffe://cluster.local/ns/kyma-integration/sa/default;" +
+				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
+			issuer:         oathkeeper.ConnectorIssuer,
+			subjectMatcher: oathkeeper.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
+			clientIDFunc:   cert.GetCommonName,
+			authSessionExtraFromSubjectFunc: func(s string) map[string]interface{} {
+				return expectedAuthSessionExtra
+			},
+			found:                    true,
+			expectedHash:             "f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad",
+			expectedClientID:         "test-application",
+			expectedAuthSessionExtra: expectedAuthSessionExtra,
 		},
 		{
 			name: "external header parser should return common name and hash when subject use , for same values separation",
@@ -116,10 +131,10 @@ func TestParseCertHeader(t *testing.T) {
 
 			hp := oathkeeper.NewHeaderParser(certHeader, testCase.issuer, testCase.subjectMatcher, testCase.clientIDFunc, testCase.authSessionExtraFromSubjectFunc)
 
-			//when
+			// when
 			certificateData := hp.GetCertificateData(r)
 
-			//then
+			// then
 			if testCase.found {
 				require.Equal(t, testCase.expectedAuthSessionExtra, certificateData.AuthSessionExtra)
 				require.Equal(t, testCase.expectedHash, certificateData.CertificateHash)

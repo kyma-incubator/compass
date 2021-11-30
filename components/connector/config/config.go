@@ -56,7 +56,7 @@ type Config struct {
 	HttpClientSkipSslValidation bool          `envconfig:"default=false"`
 	HTTPClientTimeout           time.Duration `envconfig:"default=30s"`
 
-	SubjectConsumerMappingConfig string
+	SubjectConsumerMappingConfig string `envconfig:"default=[]"`
 }
 
 type subjectConsumerTypeMapping struct {

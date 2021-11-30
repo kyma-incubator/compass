@@ -58,7 +58,6 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		break
 	}
 
-	// ???
 	if certData == nil {
 		log.C(ctx).Info("No valid certificate header found")
 		respondWithAuthSession(ctx, w, authSession)
@@ -92,6 +91,9 @@ func respondWithAuthSession(ctx context.Context, w http.ResponseWriter, authSess
 }
 
 func appendExtra(extra, extraFromHeaderParser map[string]interface{}) map[string]interface{} {
+	if extra == nil {
+		extra = map[string]interface{}{}
+	}
 	for k, v := range extraFromHeaderParser {
 		extra[k] = v
 	}
