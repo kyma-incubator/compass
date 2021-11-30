@@ -15,27 +15,13 @@ type EventAPIRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, item
-func (_m *EventAPIRepository) Create(ctx context.Context, item *model.EventDefinition) error {
-	ret := _m.Called(ctx, item)
+// Create provides a mock function with given fields: ctx, tenant, item
+func (_m *EventAPIRepository) Create(ctx context.Context, tenant string, item *model.EventDefinition) error {
+	ret := _m.Called(ctx, tenant, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.EventDefinition) error); ok {
-		r0 = rf(ctx, item)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// CreateMany provides a mock function with given fields: ctx, items
-func (_m *EventAPIRepository) CreateMany(ctx context.Context, items []*model.EventDefinition) error {
-	ret := _m.Called(ctx, items)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*model.EventDefinition) error); ok {
-		r0 = rf(ctx, items)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.EventDefinition) error); ok {
+		r0 = rf(ctx, tenant, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -69,27 +55,6 @@ func (_m *EventAPIRepository) DeleteAllByBundleID(ctx context.Context, tenantID 
 	}
 
 	return r0
-}
-
-// Exists provides a mock function with given fields: ctx, tenantID, id
-func (_m *EventAPIRepository) Exists(ctx context.Context, tenantID string, id string) (bool, error) {
-	ret := _m.Called(ctx, tenantID, id)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
-		r0 = rf(ctx, tenantID, id)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenantID, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // GetByID provides a mock function with given fields: ctx, tenantID, id
@@ -184,13 +149,13 @@ func (_m *EventAPIRepository) ListByBundleIDs(ctx context.Context, tenantID stri
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, item
-func (_m *EventAPIRepository) Update(ctx context.Context, item *model.EventDefinition) error {
-	ret := _m.Called(ctx, item)
+// Update provides a mock function with given fields: ctx, tenant, item
+func (_m *EventAPIRepository) Update(ctx context.Context, tenant string, item *model.EventDefinition) error {
+	ret := _m.Called(ctx, tenant, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.EventDefinition) error); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.EventDefinition) error); ok {
+		r0 = rf(ctx, tenant, item)
 	} else {
 		r0 = ret.Error(0)
 	}

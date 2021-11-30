@@ -21,9 +21,9 @@ type APIRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error)
-	CreateMany(ctx context.Context, item []*model.APIDefinition) error
-	Create(ctx context.Context, item *model.APIDefinition) error
-	Update(ctx context.Context, item *model.APIDefinition) error
+	CreateMany(ctx context.Context, tenant string, item []*model.APIDefinition) error
+	Create(ctx context.Context, tenant string, item *model.APIDefinition) error
+	Update(ctx context.Context, tenant string, item *model.APIDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
@@ -40,10 +40,8 @@ type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
 	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
-	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
-	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
-	ListByReferenceObjectIDs(ctx context.Context, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
-	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error)
+	RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
+	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error)
 }
 
 // BundleReferenceService missing godoc
@@ -147,10 +145,9 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	}
 
 	id := s.uidService.Generate()
-	api := in.ToAPIDefinition(id, appID, packageID, tnt, apiHash)
+	api := in.ToAPIDefinition(id, appID, packageID, apiHash)
 
-	err = s.repo.Create(ctx, api)
-	if err != nil {
+	if err = s.repo.Create(ctx, tnt, api); err != nil {
 		return "", errors.Wrap(err, "while creating api")
 	}
 
@@ -204,10 +201,9 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 		return err
 	}
 
-	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, tnt, apiHash)
+	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, apiHash)
 
-	err = s.repo.Update(ctx, api)
-	if err != nil {
+	if err = s.repo.Update(ctx, tnt, api); err != nil {
 		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
 	}
 
@@ -290,7 +286,7 @@ func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*m
 		return nil, err
 	}
 
-	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDs)
+	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDs, model.APISpecReference)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil

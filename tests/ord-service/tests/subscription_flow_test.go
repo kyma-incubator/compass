@@ -30,8 +30,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
-	"github.com/google/uuid"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
@@ -105,7 +103,6 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		ctx := context.Background()
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
 		secondaryTenant := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
-		accountID := uuid.New().String()
 		subscriptionProviderID := "xs-app-name"
 		subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 		subscriptionConsumerSubaccountID := "1f538f34-30bf-4d3d-aeaa-02e69eef84ae"
@@ -144,18 +141,13 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios)
 		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[:1])
 
-		// Create automatic scenario assigment for consumer subaccount
-		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarios[1], selectorKey, subscriptionConsumerSubaccountID)
-		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
-		defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[1])
-
 		// Assign consumer application to scenario
 		appLabelRequest := fixtures.FixSetApplicationLabelRequest(consumerApp.ID, scenariosLabel, scenarios[1:])
 		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, appLabelRequest, nil))
 		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, secondaryTenant, consumerApp.ID, testConfig.DefaultScenarioEnabled)
 
 		providedTenantIDs := tenantfetcher.Tenant{
-			TenantID:               accountID,
+			TenantID:               secondaryTenant,
 			SubaccountID:           subscriptionConsumerSubaccountID,
 			Subdomain:              tenantfetcher.DefaultSubdomain,
 			SubscriptionProviderID: subscriptionProviderID,
@@ -183,6 +175,20 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscribeResp, err := httpClient.Do(subscribeReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, subscribeResp.StatusCode)
+
+		defer func() {
+			subscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret)
+
+			t.Log(fmt.Sprintf("Deleting a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenantIDs), runtime.Name, subscriptionProviderSubaccountID))
+			subscribeResp, err := httpClient.Do(subscribeReq)
+			require.NoError(t, err)
+			require.Equal(t, http.StatusOK, subscribeResp.StatusCode)
+		}()
+
+		// Create automatic scenario assigment for consumer subaccount
+		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarios[1], selectorKey, subscriptionConsumerSubaccountID)
+		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
+		defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[1])
 
 		// HTTP client configured with manually signed client certificate
 		extIssuerCertHttpClient := extIssuerCertClient(t, subscriptionProviderSubaccountID)

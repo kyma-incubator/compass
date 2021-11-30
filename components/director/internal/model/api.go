@@ -21,7 +21,6 @@ import (
 type APIDefinition struct {
 	ApplicationID                           string
 	PackageID                               *string
-	Tenant                                  string
 	Name                                    string
 	Description                             *string
 	TargetURLs                              json.RawMessage
@@ -160,12 +159,12 @@ type APIDefinitionPage struct {
 func (APIDefinitionPage) IsPageable() {}
 
 // ToAPIDefinitionWithinBundle missing godoc
-func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id, appID, tenant string, apiHash uint64) *APIDefinition {
-	return a.ToAPIDefinition(id, appID, nil, tenant, apiHash)
+func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id, appID string, apiHash uint64) *APIDefinition {
+	return a.ToAPIDefinition(id, appID, nil, apiHash)
 }
 
 // ToAPIDefinition missing godoc
-func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string, tenant string, apiHash uint64) *APIDefinition {
+func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string, apiHash uint64) *APIDefinition {
 	if a == nil {
 		return nil
 	}
@@ -178,7 +177,6 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 	return &APIDefinition{
 		ApplicationID:       appID,
 		PackageID:           packageID,
-		Tenant:              tenant,
 		Name:                a.Name,
 		Description:         a.Description,
 		TargetURLs:          a.TargetURLs,

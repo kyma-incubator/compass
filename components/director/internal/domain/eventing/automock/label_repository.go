@@ -66,13 +66,13 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 	return r0, r1
 }
 
-// Upsert provides a mock function with given fields: ctx, label
-func (_m *LabelRepository) Upsert(ctx context.Context, label *model.Label) error {
-	ret := _m.Called(ctx, label)
+// Upsert provides a mock function with given fields: ctx, tenant, label
+func (_m *LabelRepository) Upsert(ctx context.Context, tenant string, label *model.Label) error {
+	ret := _m.Called(ctx, tenant, label)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Label) error); ok {
-		r0 = rf(ctx, label)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Label) error); ok {
+		r0 = rf(ctx, tenant, label)
 	} else {
 		r0 = ret.Error(0)
 	}

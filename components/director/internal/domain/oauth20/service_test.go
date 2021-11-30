@@ -28,7 +28,7 @@ var (
 )
 
 func TestService_CreateClient(t *testing.T) {
-	// given
+	// GIVEN
 	successResult := &model.OAuthCredentialDataInput{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
@@ -135,10 +135,10 @@ func TestService_CreateClient(t *testing.T) {
 
 			svc := oauth20.NewService(clientDetailsCfgProvider, uidService, publicEndpoint, hydraService)
 
-			// when
+			// WHEN
 			oauthData, err := svc.CreateClientCredentials(ctx, testCase.ObjectType)
 
-			// then
+			// THEN
 			if testCase.ExpectedError == nil {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, oauthData)
@@ -151,7 +151,7 @@ func TestService_CreateClient(t *testing.T) {
 }
 
 func TestService_UpdateClient(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test err")
 	testCases := []struct {
 		Name                       string
@@ -233,10 +233,10 @@ func TestService_UpdateClient(t *testing.T) {
 
 			svc := oauth20.NewService(clientDetailsCfgProvider, uidService, publicEndpoint, hydraService)
 
-			// when
+			// WHEN
 			err := svc.UpdateClient(ctx, clientID, testCase.ObjectType)
 
-			// then
+			// THEN
 			if testCase.ExpectedError == nil {
 				require.NoError(t, err)
 			} else {
@@ -248,7 +248,7 @@ func TestService_UpdateClient(t *testing.T) {
 }
 
 func TestService_DeleteClientCredentials(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	testErr := errors.New("test err")
 	testCases := []struct {
@@ -284,10 +284,10 @@ func TestService_DeleteClientCredentials(t *testing.T) {
 
 			svc := oauth20.NewService(nil, nil, publicEndpoint, hydraService)
 
-			// when
+			// WHEN
 			err := svc.DeleteClientCredentials(ctx, id)
 
-			// then
+			// THEN
 			if testCase.ExpectedError == nil {
 				require.NoError(t, err)
 			} else {
@@ -299,7 +299,7 @@ func TestService_DeleteClientCredentials(t *testing.T) {
 }
 
 func TestService_DeleteMultipleClientCredentials(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test err")
 	testCases := []struct {
 		Name          string
@@ -385,10 +385,10 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 
 			svc := oauth20.NewService(nil, nil, publicEndpoint, hydraService)
 
-			// when
+			// WHEN
 			err := svc.DeleteMultipleClientCredentials(ctx, testCase.Auths)
 
-			// then
+			// THEN
 			if testCase.ExpectedError == nil {
 				require.NoError(t, err)
 			} else {
@@ -399,7 +399,7 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 	}
 }
 func TestService_ListClients(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test err")
 	testCases := []struct {
 		Name          string
@@ -437,10 +437,10 @@ func TestService_ListClients(t *testing.T) {
 
 			svc := oauth20.NewService(clientDetailsCfgProvider, uidService, publicEndpoint, hydraService)
 
-			// when
+			// WHEN
 			clients, err := svc.ListClients()
 
-			// then
+			// THEN
 			if testCase.ExpectedError == nil {
 				require.NoError(t, err)
 				require.Len(t, clients, 1)

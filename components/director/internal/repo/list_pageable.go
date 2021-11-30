@@ -14,12 +14,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// PageableQuerier missing godoc
+// PageableQuerier is an interface for listing with paging of tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type PageableQuerier interface {
-	List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error)
+	List(ctx context.Context, resourceType resource.Type, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error)
 }
 
-// PageableQuerierGlobal missing godoc
+// PageableQuerierGlobal is an interface for listing with paging of global entities.
 type PageableQuerierGlobal interface {
 	ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error)
 }
@@ -31,17 +31,24 @@ type universalPageableQuerier struct {
 	resourceType    resource.Type
 }
 
-// NewPageableQuerier missing godoc
-func NewPageableQuerier(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) PageableQuerier {
+// NewPageableQuerierWithEmbeddedTenant is a constructor for PageableQuerier about entities with tenant embedded in them.
+func NewPageableQuerierWithEmbeddedTenant(tableName string, tenantColumn string, selectedColumns []string) PageableQuerier {
 	return &universalPageableQuerier{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    &tenantColumn,
-		resourceType:    resourceType,
 	}
 }
 
-// NewPageableQuerierGlobal missing godoc
+// NewPageableQuerier is a constructor for PageableQuerier about entities with externally managed tenant accesses (m2m table or view)
+func NewPageableQuerier(tableName string, selectedColumns []string) PageableQuerier {
+	return &universalPageableQuerier{
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
+	}
+}
+
+// NewPageableQuerierGlobal is a constructor for PageableQuerierGlobal about global entities.
 func NewPageableQuerierGlobal(resourceType resource.Type, tableName string, selectedColumns []string) PageableQuerierGlobal {
 	return &universalPageableQuerier{
 		tableName:       tableName,
@@ -50,27 +57,40 @@ func NewPageableQuerierGlobal(resourceType resource.Type, tableName string, sele
 	}
 }
 
-// Collection missing godoc
+// Collection is an interface for a collection of entities.
 type Collection interface {
 	Len() int
 }
 
-// List returns Page, TotalCount or error
-func (g *universalPageableQuerier) List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
+// List lists a page of tenant scoped entities with tenant isolation subquery.
+// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
+// If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
+func (g *universalPageableQuerier) List(ctx context.Context, resourceType resource.Type, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
 	if tenant == "" {
 		return nil, -1, apperrors.NewTenantRequiredError()
 	}
 
-	additionalConditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, additionalConditions...)
-	return g.unsafeList(ctx, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+	if g.tenantColumn != nil {
+		additionalConditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, additionalConditions...)
+		return g.unsafeList(ctx, resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+	}
+
+	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	additionalConditions = append(additionalConditions, tenantIsolation)
+
+	return g.unsafeList(ctx, resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 
-// ListGlobal missing godoc
+// ListGlobal lists a page of global entities without tenant isolation.
 func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
-	return g.unsafeList(ctx, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+	return g.unsafeList(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 
-func (g *universalPageableQuerier) unsafeList(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, conditions ...Condition) (*pagination.Page, int, error) {
+func (g *universalPageableQuerier) unsafeList(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions ...Condition) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, -1, err
@@ -96,10 +116,10 @@ func (g *universalPageableQuerier) unsafeList(ctx context.Context, pageSize int,
 
 	err = persist.SelectContext(ctx, dest, stmtWithPagination, args...)
 	if err != nil {
-		return nil, -1, persistence.MapSQLError(ctx, err, g.resourceType, resource.List, "while fetching list page of objects from '%s' table", g.tableName)
+		return nil, -1, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list page of objects from '%s' table", g.tableName)
 	}
 
-	totalCount, err := g.getTotalCount(ctx, persist, query, args)
+	totalCount, err := g.getTotalCount(ctx, resourceType, persist, query, args)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -117,12 +137,12 @@ func (g *universalPageableQuerier) unsafeList(ctx context.Context, pageSize int,
 	}, totalCount, nil
 }
 
-func (g *universalPageableQuerier) getTotalCount(ctx context.Context, persist persistence.PersistenceOp, query string, args []interface{}) (int, error) {
+func (g *universalPageableQuerier) getTotalCount(ctx context.Context, resourceType resource.Type, persist persistence.PersistenceOp, query string, args []interface{}) (int, error) {
 	stmt := strings.Replace(query, g.selectedColumns, "COUNT(*)", 1)
 	var totalCount int
 	err := persist.GetContext(ctx, &totalCount, stmt, args...)
 	if err != nil {
-		return -1, errors.Wrap(err, "while counting objects")
+		return -1, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while counting objects from '%s' table", g.tableName)
 	}
 	return totalCount, nil
 }

@@ -37,9 +37,9 @@ func TestVersionInput_Validate_Value(t *testing.T) {
 			//GIVEN
 			obj := fixValidVersionInput()
 			obj.Value = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -80,9 +80,9 @@ func TestVersionInput_Validate_Deprecated(t *testing.T) {
 			//GIVEN
 			doc := fixValidVersionInput()
 			doc.Deprecated = testCase.Value
-			//WHEN
+			// WHEN
 			err := doc.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -125,9 +125,9 @@ func TestVersionInput_Validate_DeprecatedSince(t *testing.T) {
 			//GIVEN
 			obj := fixValidVersionInput()
 			obj.DeprecatedSince = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -168,9 +168,9 @@ func TestVersionInput_Validate_ForRemoval(t *testing.T) {
 			//GIVEN
 			doc := fixValidVersionInput()
 			doc.ForRemoval = testCase.Value
-			//WHEN
+			// WHEN
 			err := doc.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

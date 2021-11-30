@@ -38,11 +38,11 @@ func TestQueryParams_UnmarshalGQL(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			//when
+			// WHEN
 			params := QueryParams{}
 			err := params.UnmarshalGQL(tc.input)
 
-			//then
+			// THEN
 			if tc.err {
 				assert.Error(t, err)
 				assert.EqualError(t, err, tc.errmsg)
@@ -63,10 +63,10 @@ func TestQueryParams_MarshalGQL(t *testing.T) {
 	expectedParams := `{"param":["val1","val2"]}`
 	buf := bytes.Buffer{}
 
-	//when
+	// WHEN
 	fixParams.MarshalGQL(&buf)
 
-	//then
+	// THEN
 	assert.NotNil(t, buf)
 	assert.Equal(t, expectedParams, buf.String())
 }

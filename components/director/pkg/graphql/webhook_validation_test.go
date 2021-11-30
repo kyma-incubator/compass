@@ -38,9 +38,9 @@ func TestWebhookInput_Validate_Type(t *testing.T) {
 			//GIVEN
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.Type = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -83,9 +83,9 @@ func TestWebhookInput_Validate_URL(t *testing.T) {
 			//GIVEN
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.URL = &testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -124,9 +124,9 @@ func TestWebhookInput_Validate_Auth(t *testing.T) {
 			//GIVEN
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.Auth = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -164,9 +164,9 @@ func TestWebhookInput_Validate_CorrelationIDKey(t *testing.T) {
 			//GIVEN
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.CorrelationIDKey = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -209,9 +209,9 @@ func TestWebhookInput_Validate_Mode(t *testing.T) {
 			//GIVEN
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.Mode = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -254,9 +254,9 @@ func TestWebhookInput_Validate_RetryInterval(t *testing.T) {
 			//GIVEN
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.RetryInterval = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -299,9 +299,9 @@ func TestWebhookInput_Validate_Timeout(t *testing.T) {
 			//GIVEN
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.Timeout = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -378,9 +378,9 @@ func TestWebhookInput_Validate_URLTemplate(t *testing.T) {
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.URL = nil
 			sut.URLTemplate = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -429,9 +429,9 @@ func TestWebhookInput_Validate_InputTemplate(t *testing.T) {
 			//GIVEN
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.InputTemplate = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -474,9 +474,9 @@ func TestWebhookInput_Validate_HeaderTemplate(t *testing.T) {
 			//GIVEN
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.HeaderTemplate = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -543,9 +543,9 @@ func TestWebhookInput_Validate_OutputTemplate(t *testing.T) {
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.InputTemplate = nil
 			sut.OutputTemplate = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -657,9 +657,9 @@ func TestWebhookInput_Validate_StatusTemplate(t *testing.T) {
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.Mode = webhookModePtr(graphql.WebhookModeAsync)
 			sut.StatusTemplate = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -673,9 +673,9 @@ func TestWebhookInput_Validate_BothURLAndURLTemplate(t *testing.T) {
 	sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 	sut.URL = stringPtr("https://my-int-system/api/v1/123/pairing")
 	sut.URLTemplate = stringPtr("https://my-int-system/api/v1/{{.Application.ID}}/pairing")
-	//WHEN
+	// WHEN
 	err := sut.Validate()
-	//THEN
+	// THEN
 	require.Error(t, err)
 }
 
@@ -686,9 +686,9 @@ func TestWebhookInput_Validate_AsyncWebhook_MissingLocationInOutputTemplate_Shou
 	   "success_status_code": 202,
 	   "error": "{{.Body.error}}"
 	}`)
-	//WHEN
+	// WHEN
 	err := sut.Validate()
-	//THEN
+	// THEN
 	require.Error(t, err)
 }
 

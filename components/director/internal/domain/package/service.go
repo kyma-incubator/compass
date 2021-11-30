@@ -12,8 +12,8 @@ import (
 // PackageRepository missing godoc
 //go:generate mockery --name=PackageRepository --output=automock --outpkg=automock --case=underscore
 type PackageRepository interface {
-	Create(ctx context.Context, item *model.Package) error
-	Update(ctx context.Context, item *model.Package) error
+	Create(ctx context.Context, tenant string, item *model.Package) error
+	Update(ctx context.Context, tenant string, item *model.Package) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Package, error)
@@ -48,10 +48,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pac
 	}
 
 	id := s.uidService.Generate()
-	pkg := in.ToPackage(id, tnt, applicationID, pkgHash)
+	pkg := in.ToPackage(id, applicationID, pkgHash)
 
-	err = s.pkgRepo.Create(ctx, pkg)
-	if err != nil {
+	if err = s.pkgRepo.Create(ctx, tnt, pkg); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Package with id %s and title %s for Application with id %s", id, pkg.Title, applicationID)
 	}
 	log.C(ctx).Debugf("Successfully created a Package with id %s and title %s for Application with id %s", id, pkg.Title, applicationID)
@@ -73,8 +72,7 @@ func (s *service) Update(ctx context.Context, id string, in model.PackageInput, 
 
 	pkg.SetFromUpdateInput(in, pkgHash)
 
-	err = s.pkgRepo.Update(ctx, pkg)
-	if err != nil {
+	if err = s.pkgRepo.Update(ctx, tnt, pkg); err != nil {
 		return errors.Wrapf(err, "while updating Package with id %s", id)
 	}
 	return nil

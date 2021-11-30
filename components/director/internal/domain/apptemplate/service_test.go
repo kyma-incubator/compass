@@ -40,7 +40,7 @@ func TestService_Create(t *testing.T) {
 		},
 	}
 	appTemplateInputMatcher := func(webhooks []*model.Webhook) bool {
-		return len(webhooks) == 1 && *webhooks[0].ApplicationTemplateID == testID && webhooks[0].Type == model.WebhookTypeConfigurationChanged && *webhooks[0].URL == "foourl"
+		return len(webhooks) == 1 && webhooks[0].ObjectID == testID && webhooks[0].Type == model.WebhookTypeConfigurationChanged && *webhooks[0].URL == "foourl"
 	}
 
 	testCases := []struct {
@@ -61,7 +61,7 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, []*model.Webhook{}).Return(nil).Once()
+				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
 				return webhookRepo
 			},
 			ExpectedOutput: testID,
@@ -76,7 +76,7 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, mock.MatchedBy(appTemplateInputMatcher)).Return(nil).Once()
+				webhookRepo.On("CreateMany", ctx, "", mock.MatchedBy(appTemplateInputMatcher)).Return(nil).Once()
 				return webhookRepo
 			},
 			ExpectedOutput: testID,
@@ -105,7 +105,7 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, mock.AnythingOfType("[]*model.Webhook")).Return(testError).Once()
+				webhookRepo.On("CreateMany", ctx, "", mock.AnythingOfType("[]*model.Webhook")).Return(testError).Once()
 				return webhookRepo
 			},
 			ExpectedError: testError,

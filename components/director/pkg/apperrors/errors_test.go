@@ -16,9 +16,9 @@ func TestInternalErrorFrom(t *testing.T) {
 	//GIVEN
 	err := errors.New("Error")
 
-	//WHEN
+	// WHEN
 	err = apperrors.InternalErrorFrom(err, "Very bad error")
-	//THEN
+	// THEN
 	require.Error(t, err)
 	assert.EqualError(t, err, "Internal Server Error: Very bad error: Error")
 }
@@ -30,10 +30,10 @@ func TestErrorMessage(t *testing.T) {
 			"field1": errors.New("field1 is invalid"),
 		}
 
-		//WHEN
+		// WHEN
 		err := apperrors.NewInvalidDataErrorWithFields(validationErrors, "testObject")
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "Invalid data testObject [field1=field1 is invalid]")
 	})
@@ -45,10 +45,10 @@ func TestErrorMessage(t *testing.T) {
 			"field1": errors.New("field1 is invalid"),
 		}
 
-		//WHEN
+		// WHEN
 		err := apperrors.NewInvalidDataErrorWithFields(validationErrors, "testObject")
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "Invalid data testObject [field1=field1 is invalid; field2=field2 is invalid; field3=field3 is invalid]")
 	})
@@ -61,10 +61,10 @@ func TestError_Is(t *testing.T) {
 		require.True(t, ok)
 
 		err1 := apperrors.NewInternalError("test error1")
-		//WHEN
+		// WHEN
 		equal := err.Is(err1)
 
-		//THEN
+		// THEN
 		require.True(t, equal)
 	})
 
@@ -74,10 +74,10 @@ func TestError_Is(t *testing.T) {
 		require.True(t, ok)
 
 		err1 := apperrors.NewNotFoundError(resource.Application, "test error1")
-		//WHEN
+		// WHEN
 		equal := err.Is(err1)
 
-		//THEN
+		// THEN
 		require.False(t, equal)
 	})
 
@@ -87,10 +87,10 @@ func TestError_Is(t *testing.T) {
 		require.True(t, ok)
 
 		err1 := errors.New("very bad error")
-		//WHEN
+		// WHEN
 		equal := err.Is(err1)
 
-		//THEN
+		// THEN
 		require.False(t, equal)
 	})
 }
@@ -103,11 +103,11 @@ func TestErrors_As(t *testing.T) {
 	chainedErr = errors1.Wrap(chainedErr, "wrap no 2")
 	chainedErr = errors1.Wrap(chainedErr, "wrap no 3")
 
-	//WHEN
+	// WHEN
 	err := apperrors.Error{}
 	errors.As(chainedErr, &err)
 
-	//THEN
+	// THEN
 	assert.Equal(t, internalErr, err)
 }
 
@@ -184,10 +184,10 @@ func TestErrors_Is(t *testing.T) {
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				//WHEN
+				// WHEN
 				output := testCase.testFunc(testCase.input)
 
-				//THEN
+				// THEN
 				assert.Equal(t, testCase.expectedResult, output)
 			})
 		}
@@ -265,10 +265,10 @@ func TestErrors_Is(t *testing.T) {
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				//WHEN
+				// WHEN
 				output := testCase.testFunc(testCase.input)
 
-				//THEN
+				// THEN
 				assert.Equal(t, testCase.expectedResult, output)
 			})
 		}

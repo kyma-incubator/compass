@@ -270,64 +270,64 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 
 func TestConverter_ToEntity(t *testing.T) {
 	t.Run("Success all nullable properties filled", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID)
 		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID)
 
 		conv := bundleinstanceauth.NewConverter(nil)
 
-		//WHEN
-		entity, err := conv.ToEntity(*piaModel)
+		// WHEN
+		entity, err := conv.ToEntity(piaModel)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, piaEntity, &entity)
+		assert.Equal(t, piaEntity, entity)
 	})
 
 	t.Run("Success all nullable properties empty", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		piaModel := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil, nil)
 		piaEntity := fixEntityBundleInstanceAuthWithoutContextAndInputParams(t, testID, testBundleID, testTenant, nil, nil, nil)
 
 		conv := bundleinstanceauth.NewConverter(nil)
 
-		//WHEN
-		entity, err := conv.ToEntity(*piaModel)
+		// WHEN
+		entity, err := conv.ToEntity(piaModel)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, piaEntity, &entity)
+		assert.Equal(t, piaEntity, entity)
 	})
 }
 
 func TestConverter_FromEntity(t *testing.T) {
 	t.Run("Success all nullable properties filled", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID)
 		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID)
 
 		conv := bundleinstanceauth.NewConverter(nil)
 
-		//WHEN
-		result, err := conv.FromEntity(*piaEntity)
+		// WHEN
+		result, err := conv.FromEntity(piaEntity)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, piaModel, &result)
+		assert.Equal(t, piaModel, result)
 	})
 
 	t.Run("Success all nullable properties empty", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		piaModel := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil)
 		piaEntity := fixEntityBundleInstanceAuthWithoutContextAndInputParams(t, testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil)
 
 		conv := bundleinstanceauth.NewConverter(nil)
 
-		//WHEN
-		result, err := conv.FromEntity(*piaEntity)
+		// WHEN
+		result, err := conv.FromEntity(piaEntity)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, piaModel, &result)
+		assert.Equal(t, piaModel, result)
 	})
 }

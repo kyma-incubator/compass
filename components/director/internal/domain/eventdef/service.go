@@ -17,12 +17,10 @@ import (
 type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
-	Exists(ctx context.Context, tenantID, id string) (bool, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error)
 	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error)
-	Create(ctx context.Context, item *model.EventDefinition) error
-	CreateMany(ctx context.Context, items []*model.EventDefinition) error
-	Update(ctx context.Context, item *model.EventDefinition) error
+	Create(ctx context.Context, tenant string, item *model.EventDefinition) error
+	Update(ctx context.Context, tenant string, item *model.EventDefinition) error
 	Delete(ctx context.Context, tenantID string, id string) error
 	DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error
 }
@@ -39,9 +37,8 @@ type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
 	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
-	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
-	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
-	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error)
+	RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
+	ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error)
 }
 
 // BundleReferenceService missing godoc
@@ -145,10 +142,9 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	}
 
 	id := s.uidService.Generate()
-	eventAPI := in.ToEventDefinition(id, appID, packageID, tnt, eventHash)
+	eventAPI := in.ToEventDefinition(id, appID, packageID, eventHash)
 
-	err = s.eventAPIRepo.Create(ctx, eventAPI)
-	if err != nil {
+	if err = s.eventAPIRepo.Create(ctx, tnt, eventAPI); err != nil {
 		return "", err
 	}
 
@@ -156,21 +152,18 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 		if spec == nil {
 			continue
 		}
-		_, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.EventSpecReference, eventAPI.ID)
-		if err != nil {
+		if _, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.EventSpecReference, eventAPI.ID); err != nil {
 			return "", err
 		}
 	}
 
 	if bundleIDs == nil {
-		err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID)
-		if err != nil {
+		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID); err != nil {
 			return "", err
 		}
 	} else {
 		for _, bndlID := range bundleIDs {
-			err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, &bndlID)
-			if err != nil {
+			if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, &bndlID); err != nil {
 				return "", err
 			}
 		}
@@ -196,23 +189,20 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 		return err
 	}
 
-	event = in.ToEventDefinition(id, event.ApplicationID, event.PackageID, tnt, eventHash)
+	event = in.ToEventDefinition(id, event.ApplicationID, event.PackageID, eventHash)
 
-	err = s.eventAPIRepo.Update(ctx, event)
-	if err != nil {
+	if err = s.eventAPIRepo.Update(ctx, tnt, event); err != nil {
 		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
 	}
 
 	for _, bundleID := range bundleIDsForCreation {
-		err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &event.ID, &bundleID)
-		if err != nil {
+		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &event.ID, &bundleID); err != nil {
 			return err
 		}
 	}
 
 	for _, bundleID := range bundleIDsForDeletion {
-		err = s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleEventReference, &event.ID, &bundleID)
-		if err != nil {
+		if err = s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleEventReference, &event.ID, &bundleID); err != nil {
 			return err
 		}
 	}
@@ -271,7 +261,7 @@ func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*m
 		return nil, err
 	}
 
-	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDs)
+	fetchRequests, err := s.specService.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDs, model.EventSpecReference)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, nil

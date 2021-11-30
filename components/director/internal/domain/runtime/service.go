@@ -7,6 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -17,27 +21,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-// IsNormalizedLabel missing godoc
+// IsNormalizedLabel represents the label that is used to mark a runtime as normalized
 const IsNormalizedLabel = "isNormalized"
 
-// RuntimeRepository missing godoc
-//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
-type RuntimeRepository interface {
+//go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore
+type runtimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	Create(ctx context.Context, tenant string, item *model.Runtime) error
+	Update(ctx context.Context, tenant string, item *model.Runtime) error
 	ListAll(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
-	Create(ctx context.Context, item *model.Runtime) error
-	Update(ctx context.Context, item *model.Runtime) error
-	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
 	Delete(ctx context.Context, tenant, id string) error
 }
 
-// LabelRepository missing godoc
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
-type LabelRepository interface {
+//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore
+type labelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
@@ -45,54 +46,56 @@ type LabelRepository interface {
 	DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error
 }
 
-// LabelUpsertService missing godoc
-//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
-type LabelUpsertService interface {
+//go:generate mockery --exported --name=labelUpsertService --output=automock --outpkg=automock --case=underscore
+type labelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
-// ScenariosService missing godoc
-//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
-type ScenariosService interface {
+//go:generate mockery --exported --name=scenariosService --output=automock --outpkg=automock --case=underscore
+type scenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
 }
 
-// ScenarioAssignmentEngine missing godoc
-//go:generate mockery --name=ScenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore
-type ScenarioAssignmentEngine interface {
-	GetScenariosForSelectorLabels(ctx context.Context, inputLabels map[string]string) ([]string, error)
-	MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}) ([]interface{}, error)
-	MergeScenarios(baseScenarios, scenariosToDelete, scenariosToAdd []interface{}) []interface{}
+//go:generate mockery --exported --name=scenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore
+type scenarioAssignmentEngine interface {
+	MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error)
 }
 
-// UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
-type UIDService interface {
+//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore
+type tenantService interface {
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
+//go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore
+type uidService interface {
 	Generate() string
 }
 
 type service struct {
-	repo      RuntimeRepository
-	labelRepo LabelRepository
+	repo      runtimeRepository
+	labelRepo labelRepository
 
-	labelUpsertService       LabelUpsertService
-	uidService               UIDService
-	scenariosService         ScenariosService
-	scenarioAssignmentEngine ScenarioAssignmentEngine
+	labelUpsertService       labelUpsertService
+	uidService               uidService
+	scenariosService         scenariosService
+	scenarioAssignmentEngine scenarioAssignmentEngine
+	tenantSvc                tenantService
 
 	protectedLabelPattern string
 }
 
 // NewService missing godoc
-func NewService(repo RuntimeRepository,
-	labelRepo LabelRepository,
-	scenariosService ScenariosService,
-	labelUpsertService LabelUpsertService,
-	uidService UIDService,
-	scenarioAssignmentEngine ScenarioAssignmentEngine,
-	protectedLabelPattern string) *service {
+func NewService(repo runtimeRepository,
+	labelRepo labelRepository,
+	scenariosService scenariosService,
+	labelUpsertService labelUpsertService,
+	uidService uidService,
+	scenarioAssignmentEngine scenarioAssignmentEngine,
+	protectedLabelPattern string,
+	tenantService tenantService) *service {
 	return &service{
 		repo:                     repo,
 		labelRepo:                labelRepo,
@@ -100,6 +103,7 @@ func NewService(repo RuntimeRepository,
 		labelUpsertService:       labelUpsertService,
 		uidService:               uidService,
 		scenarioAssignmentEngine: scenarioAssignmentEngine,
+		tenantSvc:                tenantService,
 		protectedLabelPattern:    protectedLabelPattern,
 	}
 }
@@ -201,30 +205,31 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-// Create missing godoc
+// Create creates a runtime in a given tenant.
+// If the runtime has a global_subaccount_id label which value is a valid external subaccount from our DB and a child of the caller tenant. The subaccount is used to register the runtime.
+// After successful registration, the ASAs in the parent of the caller tenant are processed to add all matching scenarios for the runtime in the parent tenant.
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
+	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
+		tnt, err := s.extractTenantFromSubaccountLabel(ctx, saVal)
+		if err != nil {
+			return "", err
+		}
+		ctx = tenant.SaveToContext(ctx, tnt.ID, tnt.ExternalTenant)
+	}
+
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
-	id := s.uidService.Generate()
-	rtm := in.ToRuntime(id, rtmTenant, time.Now(), time.Now())
 
-	err = s.repo.Create(ctx, rtm)
-	if err != nil {
+	id := s.uidService.Generate()
+	rtm := in.ToRuntime(id, time.Now(), time.Now())
+
+	if err = s.repo.Create(ctx, rtmTenant, rtm); err != nil {
 		return "", errors.Wrapf(err, "while creating Runtime")
 	}
 
-	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, in.Labels)
-	if err != nil {
-		return "", errors.Wrap(err, "while merging scenarios from input and assignments")
-	}
-
-	if len(scenarios) > 0 {
-		in.Labels[model.ScenariosKey] = scenarios
-	} else {
-		s.scenariosService.AddDefaultScenarioIfEnabled(ctx, rtmTenant, &in.Labels)
-	}
+	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, rtmTenant, &in.Labels)
 
 	if in.Labels == nil || in.Labels[IsNormalizedLabel] == nil {
 		if in.Labels == nil {
@@ -245,6 +250,34 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		return id, errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}
 
+	// The runtime is created successfully, however there can be ASAs in the parent that should be processed.
+	tnt, err := s.tenantSvc.GetTenantByID(ctx, rtmTenant)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting tenant with id %s", rtmTenant)
+	}
+
+	if len(tnt.Parent) == 0 {
+		return id, nil
+	}
+
+	ctxWithParentTenant := tenant.SaveToContext(ctx, tnt.Parent, "")
+	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctxWithParentTenant, map[string]interface{}{}, id)
+	if err != nil {
+		return "", errors.Wrap(err, "while merging scenarios from input and assignments")
+	}
+
+	if len(scenarios) == 0 { // No ASAs in parent tenant
+		return id, nil
+	}
+
+	scenariosLabels := map[string]interface{}{
+		model.ScenariosKey: scenarios,
+	}
+
+	if err = s.labelUpsertService.UpsertMultipleLabels(ctxWithParentTenant, tnt.Parent, model.RuntimeLabelableObject, id, scenariosLabels); err != nil {
+		return id, errors.Wrapf(err, "while creating multiple labels for Runtime")
+	}
+
 	return id, nil
 }
 
@@ -260,10 +293,9 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		return errors.Wrapf(err, "while getting Runtime with id %s", id)
 	}
 
-	rtm = in.ToRuntime(id, rtm.Tenant, rtm.CreationTimestamp, time.Now())
+	rtm = in.ToRuntime(id, rtm.CreationTimestamp, time.Now())
 
-	err = s.repo.Update(ctx, rtm)
-	if err != nil {
+	if err = s.repo.Update(ctx, rtmTenant, rtm); err != nil {
 		return errors.Wrap(err, "while updating Runtime")
 	}
 
@@ -291,7 +323,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		return nil
 	}
 
-	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, in.Labels)
+	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, in.Labels, id)
 	if err != nil {
 		return errors.Wrap(err, "while merging scenarios from input and assignments")
 	}
@@ -349,8 +381,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 
 	newRuntimeLabels[labelInput.Key] = labelInput.Value
 
-	err = s.upsertScenariosLabelIfShould(ctx, labelInput.ObjectID, labelInput.Key, currentRuntimeLabels, newRuntimeLabels)
-	if err != nil {
+	if err = s.upsertScenariosLabelIfShould(ctx, labelInput.ObjectID, labelInput.Key, newRuntimeLabels); err != nil {
 		return err
 	}
 
@@ -418,14 +449,6 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 	return extractUnProtectedLabels(labels, s.protectedLabelPattern)
 }
 
-// UpdateTenantID missing godoc
-func (s *service) UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error {
-	if err := s.repo.UpdateTenantID(ctx, runtimeID, newTenantID); err != nil {
-		return errors.Wrapf(err, "while updating tenant_id for runtime with ID %s", runtimeID)
-	}
-	return nil
-}
-
 // DeleteLabel missing godoc
 func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
@@ -450,8 +473,7 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 
 	delete(newRuntimeLabels, key)
 
-	err = s.upsertScenariosLabelIfShould(ctx, runtimeID, key, currentRuntimeLabels, newRuntimeLabels)
-	if err != nil {
+	if err = s.upsertScenariosLabelIfShould(ctx, runtimeID, key, newRuntimeLabels); err != nil {
 		return err
 	}
 
@@ -484,42 +506,22 @@ func (s *service) ensureRuntimeExists(ctx context.Context, tnt string, runtimeID
 	return nil
 }
 
-func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID string, modifiedLabelKey string, currentRuntimeLabels, newRuntimeLabels map[string]interface{}) error {
+func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID string, modifiedLabelKey string, newRuntimeLabels map[string]interface{}) error {
+	if modifiedLabelKey != model.ScenariosKey {
+		return nil
+	}
+
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	finalScenarios := make([]interface{}, 0)
-
-	if modifiedLabelKey == model.ScenariosKey {
-		scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, newRuntimeLabels)
-		if err != nil {
-			return errors.Wrap(err, "while merging scenarios from input and assignments")
-		}
-
-		finalScenarios = append(finalScenarios, scenarios...)
-	} else {
-		oldScenariosLabel, err := getScenariosLabel(currentRuntimeLabels)
-		if err != nil {
-			return err
-		}
-
-		previousScenariosFromAssignments, err := s.getScenariosFromAssignments(ctx, currentRuntimeLabels)
-		if err != nil {
-			return errors.Wrap(err, "while getting old scenarios label and scenarios from assignments")
-		}
-
-		newScenariosFromAssignments, err := s.getScenariosFromAssignments(ctx, newRuntimeLabels)
-		if err != nil {
-			return errors.Wrap(err, "while getting new scenarios from assignments")
-		}
-
-		finalScenarios = s.scenarioAssignmentEngine.MergeScenarios(oldScenariosLabel, previousScenariosFromAssignments, newScenariosFromAssignments)
+	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, newRuntimeLabels, runtimeID)
+	if err != nil {
+		return errors.Wrap(err, "while merging scenarios from input and assignments")
 	}
 
-	// TODO compare finalScenarios and oldScenariosLabel to determine when to delete scenarios label
-	if len(finalScenarios) == 0 {
+	if len(scenarios) == 0 {
 		err := s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey)
 		if err != nil {
 			return errors.Wrapf(err, "while deleting scenarios label from runtime with id [%s]", runtimeID)
@@ -529,7 +531,7 @@ func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID st
 
 	scenariosLabelInput := &model.LabelInput{
 		Key:        model.ScenariosKey,
-		Value:      finalScenarios,
+		Value:      scenarios,
 		ObjectID:   runtimeID,
 		ObjectType: model.RuntimeLabelableObject,
 	}
@@ -553,6 +555,28 @@ func (s *service) getCurrentLabelsForRuntime(ctx context.Context, tenantID, runt
 		currentLabels[v.Key] = v.Value
 	}
 	return currentLabels, nil
+}
+
+func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value interface{}) (*model.BusinessTenantMapping, error) {
+	callingTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	sa, err := convertLabelValue(value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
+	}
+	log.C(ctx).Infof("Runtime registered by tenant %s with %s label with value %s. Will proceed with the subaccount as tenant...", callingTenant, scenarioassignment.SubaccountIDKey, sa)
+	tnt, err := s.tenantSvc.GetTenantByExternalID(ctx, sa)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting tenant %s", sa)
+	}
+	if callingTenant != tnt.ID && callingTenant != tnt.Parent {
+		log.C(ctx).Errorf("Caller tenant %s is not parent of the subaccount %s in the %s label", callingTenant, sa, scenarioassignment.SubaccountIDKey)
+		return nil, apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey))
+	}
+	return tnt, nil
 }
 
 func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {
@@ -591,50 +615,17 @@ func isProtected(labelKey string, labelKeyPattern string) (bool, error) {
 	return matched, nil
 }
 
-func getScenariosLabel(currentRuntimeLabels map[string]interface{}) ([]interface{}, error) {
-	oldScenariosLabel, ok := currentRuntimeLabels[model.ScenariosKey]
-
-	var oldScenariosLabelInterfaceSlice []interface{}
-	if ok {
-		oldScenariosLabelInterfaceSlice, ok = oldScenariosLabel.([]interface{})
-		if !ok {
-			return nil, apperrors.NewInternalError("value for scenarios label must be []interface{}")
-		}
-	}
-	return oldScenariosLabelInterfaceSlice, nil
-}
-
-func (s *service) getScenariosFromAssignments(ctx context.Context, currentRuntimeLabels map[string]interface{}) ([]interface{}, error) {
-	selectors := s.convertMapStringInterfaceToMapStringString(currentRuntimeLabels)
-
-	ScenariosFromAssignments, err := s.scenarioAssignmentEngine.GetScenariosForSelectorLabels(ctx, selectors)
+func convertLabelValue(value interface{}) (string, error) {
+	values, err := label.ValueToStringsSlice(value)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting scenarios for selector labels")
-	}
-
-	newScenariosInterfaceSlice := s.convertStringSliceToInterfaceSlice(ScenariosFromAssignments)
-
-	return newScenariosInterfaceSlice, nil
-}
-
-func (s *service) convertMapStringInterfaceToMapStringString(in map[string]interface{}) map[string]string {
-	out := make(map[string]string)
-
-	for k, v := range in {
-		val, ok := v.(string)
-		if ok {
-			out[k] = val
+		result := str.CastOrEmpty(value)
+		if len(result) == 0 {
+			return "", errors.New("cannot cast label value: expected []string or string")
 		}
+		return result, nil
 	}
-
-	return out
-}
-
-func (s *service) convertStringSliceToInterfaceSlice(in []string) []interface{} {
-	out := make([]interface{}, 0)
-	for _, v := range in {
-		out = append(out, v)
+	if len(values) != 1 {
+		return "", errors.New("expected single value for label")
 	}
-
-	return out
+	return values[0], nil
 }

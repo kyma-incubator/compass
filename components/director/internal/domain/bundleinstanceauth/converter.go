@@ -100,11 +100,11 @@ func (c *converter) SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) (
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.BundleInstanceAuth) (Entity, error) {
-	out := Entity{
+func (c *converter) ToEntity(in *model.BundleInstanceAuth) (*Entity, error) {
+	out := &Entity{
 		ID:               in.ID,
 		BundleID:         in.BundleID,
-		TenantID:         in.Tenant,
+		OwnerID:          in.Owner,
 		RuntimeID:        repo.NewNullableString(in.RuntimeID),
 		RuntimeContextID: repo.NewNullableString(in.RuntimeContextID),
 		Context:          repo.NewNullableString(in.Context),
@@ -112,7 +112,7 @@ func (c *converter) ToEntity(in model.BundleInstanceAuth) (Entity, error) {
 	}
 	authValue, err := c.nullStringFromAuthPtr(in.Auth)
 	if err != nil {
-		return Entity{}, err
+		return nil, err
 	}
 	out.AuthValue = authValue
 
@@ -127,16 +127,16 @@ func (c *converter) ToEntity(in model.BundleInstanceAuth) (Entity, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (model.BundleInstanceAuth, error) {
+func (c *converter) FromEntity(in *Entity) (*model.BundleInstanceAuth, error) {
 	auth, err := c.authPtrFromNullString(in.AuthValue)
 	if err != nil {
-		return model.BundleInstanceAuth{}, err
+		return nil, err
 	}
 
-	return model.BundleInstanceAuth{
+	return &model.BundleInstanceAuth{
 		ID:               in.ID,
 		BundleID:         in.BundleID,
-		Tenant:           in.TenantID,
+		Owner:            in.OwnerID,
 		RuntimeID:        repo.StringPtrFromNullableString(in.RuntimeID),
 		RuntimeContextID: repo.StringPtrFromNullableString(in.RuntimeContextID),
 		Context:          repo.StringPtrFromNullableString(in.Context),

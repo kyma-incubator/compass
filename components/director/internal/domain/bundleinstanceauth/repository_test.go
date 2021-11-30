@@ -2,69 +2,68 @@ package bundleinstanceauth_test
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"regexp"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRepository_Create(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+		// GIVEN
+		biaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+		biaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
 		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("ToEntity", *piaModel).Return(*piaEntity, nil).Once()
+		mockConverter.On("ToEntity", biaModel).Return(biaEntity, nil).Once()
 		defer mockConverter.AssertExpectations(t)
 
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.bundle_instance_auths ( id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
-			WithArgs(fixCreateArgs(*piaEntity)...).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.bundle_instance_auths ( id, owner_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
+			WithArgs(fixCreateArgs(*biaEntity)...).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := bundleinstanceauth.NewRepository(mockConverter)
 
-		// when
-		err := repo.Create(ctx, piaModel)
+		// WHEN
+		err := repo.Create(ctx, biaModel)
 
-		// then
+		// THEN
 		assert.NoError(t, err)
 	})
 
 	t.Run("Error when item is nil", func(t *testing.T) {
-		// given
+		// GIVEN
 
 		repo := bundleinstanceauth.NewRepository(nil)
 
-		// when
+		// WHEN
 		err := repo.Create(context.TODO(), nil)
 
-		// then
+		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 
 	t.Run("DB Error", func(t *testing.T) {
-		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+		// GIVEN
+		biaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+		biaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
 		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("ToEntity", *piaModel).Return(*piaEntity, nil).Once()
+		mockConverter.On("ToEntity", biaModel).Return(biaEntity, nil).Once()
 		defer mockConverter.AssertExpectations(t)
 
 		db, dbMock := testdb.MockDatabase(t)
@@ -75,497 +74,213 @@ func TestRepository_Create(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := bundleinstanceauth.NewRepository(mockConverter)
 
-		// when
-		err := repo.Create(ctx, piaModel)
+		// WHEN
+		err := repo.Create(ctx, biaModel)
 
-		// then
+		// THEN
 		expectedError := fmt.Sprintf("while saving entity with id %s to db: Internal Server Error: Unexpected error while executing SQL query", testID)
 		require.EqualError(t, err, expectedError)
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
-		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+		// GIVEN
+		biaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("ToEntity", *piaModel).Return(bundleinstanceauth.Entity{}, testError)
+		mockConverter.On("ToEntity", biaModel).Return(&bundleinstanceauth.Entity{}, testError)
 		defer mockConverter.AssertExpectations(t)
 
 		repo := bundleinstanceauth.NewRepository(mockConverter)
 
-		// when
-		err := repo.Create(context.TODO(), piaModel)
+		// WHEN
+		err := repo.Create(context.TODO(), biaModel)
 
-		// then
+		// THEN
 		require.EqualError(t, err, "while converting BundleInstanceAuth model to entity: test")
 	})
 }
 
 func TestRepository_GetByID(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+	biaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+	biaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("FromEntity", *piaEntity).Return(*piaModel, nil).Once()
-		defer mockConverter.AssertExpectations(t)
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get BIA",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, owner_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE id = $1 AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = $2) OR owner_id = $3)`),
+				Args:     []driver.Value{testID, testTenant, testTenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						fixSQLRows([]sqlRow{fixSQLRowFromEntity(*biaEntity)}),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						fixSQLRows([]sqlRow{}),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: bundleinstanceauth.NewRepository,
+		ExpectedModelEntity: biaModel,
+		ExpectedDBEntity:    biaEntity,
+		MethodArgs:          []interface{}{testTenant, testID},
+	}
 
-		repo := bundleinstanceauth.NewRepository(mockConverter)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*piaEntity)})
-
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())).
-			WithArgs(testTenant, testID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-
-		// when
-		actual, err := repo.GetByID(ctx, testTenant, testID)
-
-		// then
-		require.NoError(t, err)
-		require.NotNil(t, actual)
-		assert.Equal(t, piaModel, actual)
-	})
-
-	t.Run("Converter Error", func(t *testing.T) {
-		// given
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil)
-
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("FromEntity", *piaEntity).Return(model.BundleInstanceAuth{}, testError).Once()
-		defer mockConverter.AssertExpectations(t)
-
-		repo := bundleinstanceauth.NewRepository(mockConverter)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*piaEntity)})
-
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE %s AND id = \$2$`, fixTenantIsolationSubquery())).
-			WithArgs(testTenant, testID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-
-		// when
-		actual, err := repo.GetByID(ctx, testTenant, testID)
-
-		// then
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
-		require.Nil(t, actual)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// given
-		repo := bundleinstanceauth.NewRepository(nil)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectQuery("SELECT .*").
-			WithArgs(testTenant, testID).WillReturnError(testError)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-
-		// when
-		_, err := repo.GetByID(ctx, testTenant, testID)
-
-		// then
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
+	suite.Run(t)
 }
 
 func TestRepository_GetForBundle(t *testing.T) {
-	// given
-	piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
-	piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+	biaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+	biaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE %s AND id = \$2 AND bundle_id = \$3`, fixTenantIsolationSubquery())
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get BIA For Bundle",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, owner_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE id = $1 AND bundle_id = $2 AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = $3) OR owner_id = $4)`),
+				Args:     []driver.Value{testID, testBundleID, testTenant, testTenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						fixSQLRows([]sqlRow{fixSQLRowFromEntity(*biaEntity)}),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						fixSQLRows([]sqlRow{}),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: bundleinstanceauth.NewRepository,
+		ExpectedModelEntity: biaModel,
+		ExpectedDBEntity:    biaEntity,
+		MethodArgs:          []interface{}{testTenant, testID, testBundleID},
+		MethodName:          "GetForBundle",
+	}
 
-	t.Run("success", func(t *testing.T) {
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-
-		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*piaEntity)})
-
-		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(testTenant, testID, testBundleID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", *piaEntity).Return(*piaModel, nil).Once()
-		repo := bundleinstanceauth.NewRepository(convMock)
-
-		// WHEN
-		actual, err := repo.GetForBundle(ctx, testTenant, testID, testBundleID)
-
-		//THEN
-		require.NoError(t, err)
-		require.NotNil(t, actual)
-		assert.Equal(t, piaModel, actual)
-		convMock.AssertExpectations(t)
-		sqlMock.AssertExpectations(t)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// given
-		repo := bundleinstanceauth.NewRepository(nil)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectQuery("SELECT .*").
-			WithArgs(testTenant, testID, testBundleID).WillReturnError(testError)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-
-		// when
-		_, err := repo.GetForBundle(ctx, testTenant, testID, testBundleID)
-
-		// then
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-
-	t.Run("returns error when conversion failed", func(t *testing.T) {
-		// given
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil)
-
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("FromEntity", *piaEntity).Return(model.BundleInstanceAuth{}, testError).Once()
-		defer mockConverter.AssertExpectations(t)
-
-		repo := bundleinstanceauth.NewRepository(mockConverter)
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		rows := fixSQLRows([]sqlRow{fixSQLRowFromEntity(*piaEntity)})
-
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.bundle_instance_auths WHERE %s AND id = \$2 AND bundle_id = \$3`, fixTenantIsolationSubquery())).
-			WithArgs(testTenant, testID, testBundleID).
-			WillReturnRows(rows)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-
-		// when
-		actual, err := repo.GetForBundle(ctx, testTenant, testID, testBundleID)
-
-		// then
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
-		require.Nil(t, actual)
-	})
+	suite.Run(t)
 }
 
 func TestRepository_ListByBundleID(t *testing.T) {
-	//GIVEN
-	t.Run("Success", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
+	suite := testdb.RepoListTestSuite{
+		Name: "List BIA by BundleID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, owner_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE bundle_id = $1 AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = $2) OR owner_id = $3)`),
+				Args:     []driver.Value{testBundleID, testTenant, testTenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{fixSQLRows([]sqlRow{
+						fixSQLRowFromEntity(*fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)),
+						fixSQLRowFromEntity(*fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)),
+					})}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(testTableColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   bundleinstanceauth.NewRepository,
+		ExpectedModelEntities: []interface{}{fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil), fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)},
+		ExpectedDBEntities:    []interface{}{fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil), fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)},
+		MethodArgs:            []interface{}{testTenant, testBundleID},
+		MethodName:            "ListByBundleID",
+	}
 
-		piaModels := []*model.BundleInstanceAuth{
-			fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-			fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-		}
-		piaEntities := []*bundleinstanceauth.Entity{
-			fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-		}
-
-		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND bundle_id = $2`, fixUnescapedTenantIsolationSubquery())
-		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, testBundleID).
-			WillReturnRows(fixSQLRows([]sqlRow{
-				fixSQLRowFromEntity(*piaEntities[0]),
-				fixSQLRowFromEntity(*piaEntities[1]),
-			}))
-
-		convMock := automock.EntityConverter{}
-		convMock.On("FromEntity", *piaEntities[0]).Return(*piaModels[0], nil).Once()
-		convMock.On("FromEntity", *piaEntities[1]).Return(*piaModels[1], nil).Once()
-		pgRepository := bundleinstanceauth.NewRepository(&convMock)
-
-		//WHEN
-		result, err := pgRepository.ListByBundleID(ctx, testTenant, testBundleID)
-
-		//THEN
-		require.NoError(t, err)
-		require.NotNil(t, result)
-		dbMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("Converter Error", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-
-		piaModels := []*model.BundleInstanceAuth{
-			fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-			fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-		}
-		piaEntities := []*bundleinstanceauth.Entity{
-			fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-		}
-
-		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND bundle_id = $2`, fixUnescapedTenantIsolationSubquery())
-		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, testBundleID).
-			WillReturnRows(fixSQLRows([]sqlRow{
-				fixSQLRowFromEntity(*piaEntities[0]),
-				fixSQLRowFromEntity(*piaEntities[1]),
-			}))
-
-		convMock := automock.EntityConverter{}
-		convMock.On("FromEntity", *piaEntities[0]).Return(*piaModels[0], nil).Once()
-		convMock.On("FromEntity", *piaEntities[1]).Return(*piaModels[1], testError).Once()
-		pgRepository := bundleinstanceauth.NewRepository(&convMock)
-
-		//WHEN
-		result, err := pgRepository.ListByBundleID(ctx, testTenant, testBundleID)
-
-		//THEN
-		require.EqualError(t, err, "while creating BundleInstanceAuth model from entity: test")
-		require.Nil(t, result)
-		dbMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-
-		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND bundle_id = $2`, fixUnescapedTenantIsolationSubquery())
-		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, testBundleID).
-			WillReturnError(testError)
-
-		pgRepository := bundleinstanceauth.NewRepository(nil)
-
-		//WHEN
-		result, err := pgRepository.ListByBundleID(ctx, testTenant, testBundleID)
-
-		//THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-		require.Nil(t, result)
-		dbMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
 func TestRepository_ListByRuntimeID(t *testing.T) {
-	//GIVEN
-	t.Run("Success", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
+	suite := testdb.RepoListTestSuite{
+		Name: "List BIA by RuntimeID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, owner_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE runtime_id = $1 AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = $2) OR owner_id = $3)`),
+				Args:     []driver.Value{testRuntimeID, testTenant, testTenant},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{fixSQLRows([]sqlRow{
+						fixSQLRowFromEntity(*fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)),
+						fixSQLRowFromEntity(*fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)),
+					})}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(testTableColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   bundleinstanceauth.NewRepository,
+		ExpectedModelEntities: []interface{}{fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil), fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)},
+		ExpectedDBEntities:    []interface{}{fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil), fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)},
+		MethodArgs:            []interface{}{testTenant, testRuntimeID},
+		MethodName:            "ListByRuntimeID",
+	}
 
-		piaModels := []*model.BundleInstanceAuth{
-			fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-			fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID),
-		}
-		piaEntities := []*bundleinstanceauth.Entity{
-			fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID),
-		}
-
-		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND runtime_id = $2`, fixUnescapedTenantIsolationSubquery())
-		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, testRuntimeID).
-			WillReturnRows(fixSQLRows([]sqlRow{
-				fixSQLRowFromEntity(*piaEntities[0]),
-				fixSQLRowFromEntity(*piaEntities[1]),
-			}))
-
-		convMock := automock.EntityConverter{}
-		convMock.On("FromEntity", *piaEntities[0]).Return(*piaModels[0], nil).Once()
-		convMock.On("FromEntity", *piaEntities[1]).Return(*piaModels[1], nil).Once()
-		pgRepository := bundleinstanceauth.NewRepository(&convMock)
-
-		//WHEN
-		result, err := pgRepository.ListByRuntimeID(ctx, testTenant, testRuntimeID)
-
-		//THEN
-		require.NoError(t, err)
-		require.NotNil(t, result)
-		dbMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("Converter Error", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-
-		piaModels := []*model.BundleInstanceAuth{
-			fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-			fixModelBundleInstanceAuth("bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID),
-		}
-		piaEntities := []*bundleinstanceauth.Entity{
-			fixEntityBundleInstanceAuth(t, "foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil),
-			fixEntityBundleInstanceAuth(t, "bar", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), &testRuntimeID),
-		}
-
-		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND runtime_id = $2`, fixUnescapedTenantIsolationSubquery())
-		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, testRuntimeID).
-			WillReturnRows(fixSQLRows([]sqlRow{
-				fixSQLRowFromEntity(*piaEntities[0]),
-				fixSQLRowFromEntity(*piaEntities[1]),
-			}))
-
-		convMock := automock.EntityConverter{}
-		convMock.On("FromEntity", *piaEntities[0]).Return(*piaModels[0], nil).Once()
-		convMock.On("FromEntity", *piaEntities[1]).Return(*piaModels[1], testError).Once()
-		pgRepository := bundleinstanceauth.NewRepository(&convMock)
-
-		//WHEN
-		result, err := pgRepository.ListByRuntimeID(ctx, testTenant, testRuntimeID)
-
-		//THEN
-		require.EqualError(t, err, "while creating BundleInstanceAuth model from entity: test")
-		require.Nil(t, result)
-		dbMock.AssertExpectations(t)
-		convMock.AssertExpectations(t)
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
-
-		query := fmt.Sprintf(`SELECT id, tenant_id, bundle_id, context, input_params, auth_value, status_condition, status_timestamp, status_message, status_reason, runtime_id, runtime_context_id FROM public.bundle_instance_auths WHERE %s AND runtime_id = $2`, fixUnescapedTenantIsolationSubquery())
-		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
-			WithArgs(testTenant, testRuntimeID).
-			WillReturnError(testError)
-
-		pgRepository := bundleinstanceauth.NewRepository(nil)
-
-		//WHEN
-		result, err := pgRepository.ListByRuntimeID(ctx, testTenant, testRuntimeID)
-
-		//THEN
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-		require.Nil(t, result)
-		dbMock.AssertExpectations(t)
-	})
+	suite.Run(t)
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateStmt := fmt.Sprintf(`UPDATE public\.bundle_instance_auths SET auth_value = \?, status_condition = \?, status_timestamp = \?, status_message = \?, status_reason = \? WHERE %s AND id = \?`, fixUpdateTenantIsolationSubquery())
+	updateStmt := regexp.QuoteMeta(`UPDATE public.bundle_instance_auths SET auth_value = ?, status_condition = ?, status_timestamp = ?, status_message = ?, status_reason = ? WHERE id = ? AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = ? AND owner = true) OR owner_id = ?)`)
 
-	t.Run("Success", func(t *testing.T) {
-		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+	var nilBiaModel *model.BundleInstanceAuth
+	biaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
+	biaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
 
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("ToEntity", *piaModel).Return(*piaEntity, nil).Once()
-		defer mockConverter.AssertExpectations(t)
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update BIA",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         updateStmt,
+				Args:          []driver.Value{biaEntity.AuthValue, biaEntity.StatusCondition, biaEntity.StatusTimestamp, biaEntity.StatusMessage, biaEntity.StatusReason, testID, testTenant, testTenant},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: bundleinstanceauth.NewRepository,
+		ModelEntity:         biaModel,
+		DBEntity:            biaEntity,
+		NilModelEntity:      nilBiaModel,
+		TenantID:            testTenant,
+	}
 
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec(updateStmt).
-			WithArgs().
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := bundleinstanceauth.NewRepository(mockConverter)
-
-		// when
-		err := repo.Update(ctx, piaModel)
-
-		// then
-		assert.NoError(t, err)
-	})
-
-	t.Run("Error when item is nil", func(t *testing.T) {
-		// given
-
-		repo := bundleinstanceauth.NewRepository(nil)
-
-		// when
-		err := repo.Update(context.TODO(), nil)
-
-		// then
-		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
-	})
-
-	t.Run("DB Error", func(t *testing.T) {
-		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
-		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
-
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("ToEntity", *piaModel).Return(*piaEntity, nil).Once()
-		defer mockConverter.AssertExpectations(t)
-
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec(updateStmt).
-			WillReturnError(testError)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := bundleinstanceauth.NewRepository(mockConverter)
-
-		// when
-		err := repo.Update(ctx, piaModel)
-
-		// then
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
-
-	t.Run("Converter Error", func(t *testing.T) {
-		// given
-		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded(), nil)
-		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("ToEntity", *piaModel).Return(bundleinstanceauth.Entity{}, testError)
-		defer mockConverter.AssertExpectations(t)
-
-		repo := bundleinstanceauth.NewRepository(mockConverter)
-
-		// when
-		err := repo.Update(context.TODO(), piaModel)
-
-		// then
-		require.EqualError(t, err, "while converting model to entity: test")
-	})
+	suite.Run(t)
 }
 
 func TestRepository_Delete(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-		// given
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
+	suite := testdb.RepoDeleteTestSuite{
+		Name: "Delete BIA",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.bundle_instance_auths WHERE id = $1 AND (id IN (SELECT id FROM bundle_instance_auths_tenants WHERE tenant_id = $2 AND owner = true) OR owner_id = $3)`),
+				Args:          []driver.Value{testID, testTenant, testTenant},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: bundleinstanceauth.NewRepository,
+		MethodArgs:          []interface{}{testTenant, testID},
+	}
 
-		dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.bundle_instance_auths WHERE %s AND id = $2", fixUnescapedTenantIsolationSubquery()))).WithArgs(
-			testTenant, testID).WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := bundleinstanceauth.NewRepository(nil)
-
-		// when
-		err := repo.Delete(ctx, testTenant, testID)
-
-		// then
-		require.NoError(t, err)
-	})
-
-	t.Run("Error", func(t *testing.T) {
-		// given
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectExec("DELETE FROM .*").WithArgs(
-			testTenant, testID).WillReturnError(testError)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := bundleinstanceauth.NewRepository(nil)
-
-		// when
-		err := repo.Delete(ctx, testTenant, testID)
-
-		// then
-		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
-	})
+	suite.Run(t)
 }

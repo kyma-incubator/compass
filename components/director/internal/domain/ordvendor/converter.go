@@ -24,7 +24,6 @@ func (c *converter) ToEntity(in *model.Vendor) *Entity {
 	output := &Entity{
 		ID:            in.ID,
 		OrdID:         in.OrdID,
-		TenantID:      in.TenantID,
 		ApplicationID: in.ApplicationID,
 		Title:         in.Title,
 		Partners:      repo.NewNullableStringFromJSONRawMessage(in.Partners),
@@ -43,7 +42,6 @@ func (c *converter) FromEntity(entity *Entity) (*model.Vendor, error) {
 	output := &model.Vendor{
 		ID:            entity.ID,
 		OrdID:         entity.OrdID,
-		TenantID:      entity.TenantID,
 		ApplicationID: entity.ApplicationID,
 		Title:         entity.Title,
 		Partners:      repo.JSONRawMessageFromNullableString(entity.Partners),

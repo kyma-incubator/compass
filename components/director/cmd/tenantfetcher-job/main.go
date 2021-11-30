@@ -30,13 +30,13 @@ import (
 )
 
 type config struct {
-	Database                        persistence.DatabaseConfig
-	KubernetesConfig                tenantfetcher.KubeConfig
-	OAuthConfig                     tenantfetcher.OAuth2Config
-	APIConfig                       tenantfetcher.APIConfig
-	QueryConfig                     tenantfetcher.QueryConfig
-	TenantFieldMapping              tenantfetcher.TenantFieldMapping
-	MovedRuntimeByLabelFieldMapping tenantfetcher.MovedRuntimeByLabelFieldMapping
+	Database                    persistence.DatabaseConfig
+	KubernetesConfig            tenantfetcher.KubeConfig
+	OAuthConfig                 tenantfetcher.OAuth2Config
+	APIConfig                   tenantfetcher.APIConfig
+	QueryConfig                 tenantfetcher.QueryConfig
+	TenantFieldMapping          tenantfetcher.TenantFieldMapping
+	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
 
 	Log      log.Config
 	Features features.Config
@@ -45,7 +45,6 @@ type config struct {
 	AccountsRegion              string        `envconfig:"default=central,APP_ACCOUNT_REGION"`
 	SubaccountRegions           []string      `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
 	MetricsPushEndpoint         string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
-	MovedRuntimeLabelKey        string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
 	TenantInsertChunkSize       int           `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
 	FullResyncInterval          time.Duration `envconfig:"default=12h"`
@@ -112,16 +111,17 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
 
+	runtimeConverter := runtime.NewConverter()
+	runtimeRepository := runtime.NewRepository(runtimeConverter)
+
 	scenarioAssignConv := scenarioassignment.NewConverter()
 	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)
-	scenarioAssignEngine := scenarioassignment.NewEngine(labelService, labelRepository, scenarioAssignRepo)
+	scenarioAssignEngine := scenarioassignment.NewEngine(labelService, labelRepository, scenarioAssignRepo, runtimeRepository)
 
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
 	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 
-	runtimeConverter := runtime.NewConverter()
-	runtimeRepository := runtime.NewRepository(runtimeConverter)
-	runtimeService := runtime.NewService(runtimeRepository, labelRepository, labelDefService, labelService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern)
+	runtimeService := runtime.NewService(runtimeRepository, labelRepository, labelDefService, labelService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern, tenantStorageSvc)
 
 	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, cfg.ClientTimeout)
 	if metricsPusher != nil {
@@ -135,7 +135,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
 	if cfg.ShouldSyncSubaccounts {
-		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, labelDefConverter, tenantStorageConv)
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedSubaccountFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelRepository, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv)
 	}
 	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv)
 }

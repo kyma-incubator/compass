@@ -18,14 +18,14 @@ import (
 const runtimeTable string = `public.runtimes`
 
 var (
-	runtimeColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}
-	tenantColumn   = "tenant_id"
+	runtimeColumns = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}
 )
 
 // EntityConverter missing godoc
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
 type EntityConverter interface {
-	MultipleFromEntities(entities RuntimeCollection) []*model.Runtime
+	ToEntity(in *model.Runtime) (*Runtime, error)
+	FromEntity(entity *Runtime) *model.Runtime
 }
 
 type pgRepository struct {
@@ -44,37 +44,37 @@ type pgRepository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:       repo.NewExistQuerier(resource.Runtime, runtimeTable, tenantColumn),
-		singleGetter:       repo.NewSingleGetter(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
+		existQuerier:       repo.NewExistQuerier(runtimeTable),
+		singleGetter:       repo.NewSingleGetter(runtimeTable, runtimeColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Runtime, runtimeTable, runtimeColumns),
-		deleter:            repo.NewDeleter(resource.Runtime, runtimeTable, tenantColumn),
-		pageableQuerier:    repo.NewPageableQuerier(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
-		lister:             repo.NewLister(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
+		deleter:            repo.NewDeleter(runtimeTable),
+		pageableQuerier:    repo.NewPageableQuerier(runtimeTable, runtimeColumns),
+		lister:             repo.NewLister(runtimeTable, runtimeColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.Runtime, runtimeTable, runtimeColumns),
-		creator:            repo.NewCreator(resource.Runtime, runtimeTable, runtimeColumns),
-		updater:            repo.NewUpdater(resource.Runtime, runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
+		creator:            repo.NewCreator(runtimeTable, runtimeColumns),
+		updater:            repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, []string{"id"}),
 		conv:               conv,
 	}
 }
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.Runtime, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.Runtime, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error) {
 	var runtimeEnt Runtime
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &runtimeEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Runtime, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &runtimeEnt); err != nil {
 		return nil, err
 	}
 
-	runtimeModel := runtimeEnt.ToModel()
+	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
 }
@@ -97,11 +97,11 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 	}
 
 	var runtimeEnt Runtime
-	if err := r.singleGetter.Get(ctx, tenant, additionalConditions, repo.NoOrderBy, &runtimeEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Runtime, tenant, additionalConditions, repo.NoOrderBy, &runtimeEnt); err != nil {
 		return nil, err
 	}
 
-	runtimeModel := runtimeEnt.ToModel()
+	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
 }
@@ -123,7 +123,7 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 		return nil, err
 	}
 
-	runtimeModel := runtimeEnt.ToModel()
+	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
 }
@@ -145,7 +145,7 @@ func (r *pgRepository) ListByFiltersGlobal(ctx context.Context, filters []*label
 		return nil, err
 	}
 
-	return r.conv.MultipleFromEntities(entities), nil
+	return r.multipleFromEntities(entities), nil
 }
 
 // ListAll missing godoc
@@ -167,12 +167,12 @@ func (r *pgRepository) ListAll(ctx context.Context, tenant string, filter []*lab
 		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
 	}
 
-	err = r.lister.List(ctx, tenant, &entities, conditions...)
+	err = r.lister.List(ctx, resource.Runtime, tenant, &entities, conditions...)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.conv.MultipleFromEntities(entities), nil
+	return r.multipleFromEntities(entities), nil
 }
 
 // RuntimeCollection missing godoc
@@ -200,13 +200,13 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
 	}
 
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "name", &runtimesCollection, conditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Runtime, tenant, pageSize, cursor, "name", &runtimesCollection, conditions...)
 
 	if err != nil {
 		return nil, err
 	}
 
-	items := r.conv.MultipleFromEntities(runtimesCollection)
+	items := r.multipleFromEntities(runtimesCollection)
 
 	return &model.RuntimePage{
 		Data:       items,
@@ -215,37 +215,29 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Runtime) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
 
-	runtimeEnt, err := EntityFromRuntimeModel(item)
+	runtimeEnt, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
 
-	return r.creator.Create(ctx, runtimeEnt)
+	return r.creator.Create(ctx, resource.Runtime, tenant, runtimeEnt)
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, item *model.Runtime) error {
-	runtimeEnt, err := EntityFromRuntimeModel(item)
+func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Runtime) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+	runtimeEnt, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while creating runtime entity from model")
 	}
-	return r.updater.UpdateSingle(ctx, runtimeEnt)
-}
-
-// UpdateTenantID missing godoc
-func (r *pgRepository) UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error {
-	updaterGlobal := repo.NewUpdaterGlobal(resource.Runtime, runtimeTable, []string{tenantColumn}, []string{"id"})
-
-	runtimeEnt := &Runtime{
-		ID:       runtimeID,
-		TenantID: newTenantID,
-	}
-	return updaterGlobal.UpdateSingleGlobal(ctx, runtimeEnt)
+	return r.updater.UpdateSingle(ctx, resource.Runtime, tenant, runtimeEnt)
 }
 
 // GetOldestForFilters missing godoc
@@ -267,11 +259,21 @@ func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, f
 	orderByParams := repo.OrderByParams{repo.NewAscOrderBy("creation_timestamp")}
 
 	var runtimeEnt Runtime
-	if err := r.singleGetter.Get(ctx, tenant, additionalConditions, orderByParams, &runtimeEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Runtime, tenant, additionalConditions, orderByParams, &runtimeEnt); err != nil {
 		return nil, err
 	}
 
-	runtimeModel := runtimeEnt.ToModel()
+	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
+}
+
+func (r *pgRepository) multipleFromEntities(entities RuntimeCollection) []*model.Runtime {
+	items := make([]*model.Runtime, 0, len(entities))
+	for _, ent := range entities {
+		model := r.conv.FromEntity(&ent)
+
+		items = append(items, model)
+	}
+	return items
 }

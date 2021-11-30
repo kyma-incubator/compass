@@ -38,9 +38,9 @@ func TestAuthInput_Validate_Credential(t *testing.T) {
 			//GIVEN
 			sut := fixValidAuthInput()
 			sut.Credential = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -97,9 +97,9 @@ func TestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
 			//GIVEN
 			sut := fixValidAuthInput()
 			sut.AdditionalHeaders = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -156,9 +156,9 @@ func TestAuthInput_Validate_AdditionalQueryParams(t *testing.T) {
 			//GIVEN
 			sut := fixValidAuthInput()
 			sut.AdditionalQueryParams = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -206,9 +206,9 @@ func TestAuthInput_Validate_RequestAuth(t *testing.T) {
 			//GIVEN
 			sut := fixValidAuthInput()
 			sut.RequestAuth = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -270,9 +270,9 @@ func TestCredentialDataInput_Validate(t *testing.T) {
 			//GIVEN
 			sut := fixValidAuthInput()
 			sut.Credential = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -305,9 +305,9 @@ func TestBasicCredentialDataInput_Validate_Username(t *testing.T) {
 			//GIVEN
 			sut := fixValidBasicCredentialDataInput()
 			sut.Username = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -340,9 +340,9 @@ func TestBasicCredentialDataInput_Validate_Password(t *testing.T) {
 			//GIVEN
 			sut := fixValidBasicCredentialDataInput()
 			sut.Password = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -375,9 +375,9 @@ func TestOAuthCredentialDataInput_Validate_ClientID(t *testing.T) {
 			//GIVEN
 			sut := fixValidOAuthCredentialDataInput()
 			sut.ClientID = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -410,9 +410,9 @@ func TestOAuthCredentialDataInput_Validate_ClientSecret(t *testing.T) {
 			//GIVEN
 			sut := fixValidOAuthCredentialDataInput()
 			sut.ClientSecret = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -450,9 +450,9 @@ func TestOAuthCredentialDataInput_Validate_URL(t *testing.T) {
 			//GIVEN
 			sut := fixValidOAuthCredentialDataInput()
 			sut.URL = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -496,9 +496,9 @@ func TestCredentialRequestAuthInput_Validate(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			sut := testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -541,9 +541,9 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_Credential(t *testing.T) {
 			//GIVEN
 			sut := fixValidCSRFTokenCredentialRequestAuthInput()
 			sut.Credential = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -600,9 +600,9 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testi
 			//GIVEN
 			sut := fixValidCSRFTokenCredentialRequestAuthInput()
 			sut.AdditionalHeaders = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -659,9 +659,9 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalQueryParams(t *t
 			//GIVEN
 			sut := fixValidCSRFTokenCredentialRequestAuthInput()
 			sut.AdditionalQueryParams = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -699,9 +699,9 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_TokenEndpointURL(t *testin
 			//GIVEN
 			sut := fixValidCSRFTokenCredentialRequestAuthInput()
 			sut.TokenEndpointURL = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

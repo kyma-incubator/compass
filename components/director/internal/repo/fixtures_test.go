@@ -1,15 +1,179 @@
 package repo_test
 
-import "fmt"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/pkg/errors"
+)
 
-func fixTenantIsolationSubquery() string {
-	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
+const (
+	userTableName    = "users"
+	appTableName     = "apps"
+	bundlesTableName = "bundles"
+	biaTableName     = "bia"
+
+	appID           = "appID"
+	appID2          = "appID2"
+	appName         = "appName"
+	appName2        = "appName"
+	appDescription  = "appDesc"
+	appDescription2 = "appDesc"
+
+	bundleID          = "bundleID"
+	bundleName        = "bundleName"
+	bundleDescription = "bundleDesc"
+
+	biaID          = "biaID"
+	biaName        = "biaName"
+	biaDescription = "biaDesc"
+
+	userID    = "given_id"
+	tenantID  = "75093633-1578-497f-890a-d438a74a4127"
+	firstName = "given_first_name"
+	lastName  = "given_last_name"
+	age       = 55
+
+	tenantIsolationConditionWithoutOwnerCheckFmt = "(id IN (SELECT id FROM %s WHERE tenant_id = %s))"
+	tenantIsolationConditionWithOwnerCheckFmt    = "(id IN (SELECT id FROM %s WHERE tenant_id = %s AND owner = true))"
+	tenantIsolationConditionForBIA               = "(id IN (SELECT id FROM %s WHERE tenant_id = %s AND owner = true) OR owner_id = %s)"
+)
+
+var fixUser = User{
+	ID:        userID,
+	Tenant:    tenantID,
+	FirstName: firstName,
+	LastName:  lastName,
+	Age:       age,
 }
 
-func fixTenantIsolationSubqueryWithArgPosition(position int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, position)
+var fixApp = &App{
+	ID:          appID,
+	Name:        appName,
+	Description: appDescription,
 }
 
-func fixTenantIsolationSubqueryNoRebind() string {
-	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
+var fixApp2 = &App{
+	ID:          appID2,
+	Name:        appName,
+	Description: appDescription,
+}
+
+var fixBundle = &Bundle{
+	ID:          bundleID,
+	Name:        bundleName,
+	Description: bundleDescription,
+	AppID:       appID,
+}
+
+var fixBIA = &BundleInstanceAuth{
+	ID:          biaID,
+	Name:        biaName,
+	Description: biaDescription,
+	OwnerID:     tenantID,
+	BundleID:    bundleID,
+}
+
+// User is a exemplary type to test generic Repositories
+type User struct {
+	ID        string `db:"id"`
+	Tenant    string `db:"tenant_id"`
+	FirstName string `db:"first_name"`
+	LastName  string `db:"last_name"`
+	Age       int
+}
+
+func (a User) GetID() string {
+	return a.ID
+}
+
+const UserType = resource.Type("UserType")
+
+type UserCollection []User
+
+func (u UserCollection) Len() int {
+	return len(u)
+}
+
+type App struct {
+	ID          string `db:"id"`
+	Name        string `db:"name"`
+	Description string `db:"description"`
+}
+
+func (a *App) GetID() string {
+	return a.ID
+}
+
+var appColumns = []string{"id", "name", "description"}
+
+type AppCollection []App
+
+func (a AppCollection) Len() int {
+	return len(a)
+}
+
+func (a *App) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*App
+		TenantID string `db:"tenant_id"`
+	}{
+		App:      a,
+		TenantID: tenant,
+	}
+}
+
+type Bundle struct {
+	ID          string `db:"id"`
+	Name        string `db:"name"`
+	Description string `db:"description"`
+	AppID       string `db:"app_id"`
+}
+
+func (a *Bundle) GetID() string {
+	return a.ID
+}
+
+func (a *Bundle) GetParentID() string {
+	return a.AppID
+}
+
+func (a *Bundle) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*Bundle
+		TenantID string `db:"tenant_id"`
+	}{
+		Bundle:   a,
+		TenantID: tenant,
+	}
+}
+
+var bundleColumns = []string{"id", "name", "description", "app_id"}
+
+type BundleInstanceAuth struct {
+	ID          string `db:"id"`
+	Name        string `db:"name"`
+	Description string `db:"description"`
+	OwnerID     string `db:"owner_id"`
+	BundleID    string `db:"bundle_id"`
+}
+
+func (a *BundleInstanceAuth) GetID() string {
+	return a.ID
+}
+
+func (a *BundleInstanceAuth) GetParentID() string {
+	return a.BundleID
+}
+
+func (a *BundleInstanceAuth) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*BundleInstanceAuth
+		TenantID string `db:"tenant_id"`
+	}{
+		BundleInstanceAuth: a,
+		TenantID:           tenant,
+	}
+}
+
+func someError() error {
+	return errors.New("some error")
 }

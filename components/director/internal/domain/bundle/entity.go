@@ -6,9 +6,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
-// Entity missing godoc
+// Entity is a bundle entity
 type Entity struct {
-	TenantID                      string         `db:"tenant_id"`
 	ApplicationID                 string         `db:"app_id"`
 	Name                          string         `db:"name"`
 	Description                   sql.NullString `db:"description"`
@@ -21,4 +20,20 @@ type Entity struct {
 	CredentialExchangeStrategies  sql.NullString `db:"credential_exchange_strategies"`
 	CorrelationIDs                sql.NullString `db:"correlation_ids"`
 	*repo.BaseEntity
+}
+
+// GetParentID returns the parent ID of the entity
+func (e *Entity) GetParentID() string {
+	return e.ApplicationID
+}
+
+// DecorateWithTenantID decorates the entity with the given tenant ID.
+func (e *Entity) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*Entity
+		TenantID string `db:"tenant_id"`
+	}{
+		Entity:   e,
+		TenantID: tenant,
+	}
 }

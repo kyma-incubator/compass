@@ -1,11 +1,14 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+)
 
-// Label missing godoc
+// Label represents a label with additional metadata for a given entity.
 type Label struct {
 	ID         string
-	Tenant     string
+	Tenant     *string
 	Key        string
 	Value      interface{}
 	ObjectID   string
@@ -13,7 +16,7 @@ type Label struct {
 	Version    int
 }
 
-// LabelInput missing godoc
+// LabelInput is an input for creating a new label.
 type LabelInput struct {
 	Key        string
 	Value      interface{}
@@ -22,11 +25,16 @@ type LabelInput struct {
 	Version    int
 }
 
-// ToLabel missing godoc
+// ToLabel converts a LabelInput to a Label.
 func (i *LabelInput) ToLabel(id, tenant string) *Label {
+	var tenantID *string
+	if i.Key == ScenariosKey || i.ObjectType == TenantLabelableObject {
+		tenantID = &tenant
+	}
+
 	return &Label{
 		ID:         id,
-		Tenant:     tenant,
+		Tenant:     tenantID,
 		ObjectType: i.ObjectType,
 		ObjectID:   i.ObjectID,
 		Key:        i.Key,
@@ -35,53 +43,46 @@ func (i *LabelInput) ToLabel(id, tenant string) *Label {
 	}
 }
 
-// LabelableObject missing godoc
+// LabelableObject represents the type of entity that can have labels.
 type LabelableObject string
 
 const (
-	// RuntimeLabelableObject missing godoc
+	// RuntimeLabelableObject represents a runtime entity.
 	RuntimeLabelableObject LabelableObject = "Runtime"
-	// RuntimeContextLabelableObject missing godoc
+	// RuntimeContextLabelableObject represents a runtime context entity.
 	RuntimeContextLabelableObject LabelableObject = "Runtime Context"
-	// ApplicationLabelableObject missing godoc
+	// ApplicationLabelableObject represents an application entity.
 	ApplicationLabelableObject LabelableObject = "Application"
-	// TenantLabelableObject missing godoc
+	// TenantLabelableObject represents a tenant entity.
 	TenantLabelableObject LabelableObject = "Tenant"
 )
 
-// NewLabelForRuntimeContext missing godoc
-func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value interface{}) *Label {
-	return &Label{
-		ID:         uuid.New().String(),
-		Tenant:     runtimeCtx.Tenant,
-		ObjectType: RuntimeContextLabelableObject,
-		ObjectID:   runtimeCtx.ID,
-		Key:        key,
-		Value:      value,
-		Version:    0,
+// GetResourceType returns the resource type of the label based on the referenced entity.
+func (obj LabelableObject) GetResourceType() resource.Type {
+	switch obj {
+	case RuntimeLabelableObject:
+		return resource.RuntimeLabel
+	case RuntimeContextLabelableObject:
+		return resource.RuntimeContextLabel
+	case ApplicationLabelableObject:
+		return resource.ApplicationLabel
+	case TenantLabelableObject:
+		return resource.TenantLabel
 	}
+	return ""
 }
 
-// NewLabelForRuntime missing godoc
-func NewLabelForRuntime(runtime Runtime, key string, value interface{}) *Label {
+// NewLabelForRuntime creates a new label for a runtime.
+func NewLabelForRuntime(runtimeID, tenant, key string, value interface{}) *Label {
+	var tenantID *string
+	if key == ScenariosKey {
+		tenantID = &tenant
+	}
 	return &Label{
 		ID:         uuid.New().String(),
-		Tenant:     runtime.Tenant,
+		Tenant:     tenantID,
 		ObjectType: RuntimeLabelableObject,
-		ObjectID:   runtime.ID,
-		Key:        key,
-		Value:      value,
-		Version:    0,
-	}
-}
-
-// NewLabelForApplication missing godoc
-func NewLabelForApplication(app Application, key string, value interface{}) *Label {
-	return &Label{
-		ID:         uuid.New().String(),
-		Tenant:     app.Tenant,
-		ObjectType: ApplicationLabelableObject,
-		ObjectID:   app.ID,
+		ObjectID:   runtimeID,
 		Key:        key,
 		Value:      value,
 		Version:    0,

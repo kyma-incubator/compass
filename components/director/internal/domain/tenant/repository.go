@@ -1,9 +1,15 @@
 package tenant
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
+	"text/template"
+
+	"github.com/jmoiron/sqlx"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -49,8 +55,7 @@ type Converter interface {
 }
 
 type pgRepository struct {
-	creator            repo.Creator
-	upserter           repo.Upserter
+	upserter           repo.UpserterGlobal
 	unsafeCreator      repo.UnsafeCreator
 	existQuerierGlobal repo.ExistQuerierGlobal
 	singleGetterGlobal repo.SingleGetterGlobal
@@ -64,8 +69,7 @@ type pgRepository struct {
 // NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		creator:            repo.NewCreator(resource.Tenant, tableName, insertColumns),
-		upserter:           repo.NewUpserter(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
+		upserter:           repo.NewUpserterGlobal(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
 		unsafeCreator:      repo.NewUnsafeCreator(resource.Tenant, tableName, insertColumns, conflictingColumns),
 		existQuerierGlobal: repo.NewExistQuerierGlobal(resource.Tenant, tableName),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
@@ -84,7 +88,7 @@ func (r *pgRepository) UnsafeCreate(ctx context.Context, item model.BusinessTena
 
 // Upsert adds the provided tenant into the Compass storage if it does not exist, or updates it if it does.
 func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) error {
-	return r.upserter.Upsert(ctx, r.conv.ToEntity(&item))
+	return r.upserter.UpsertGlobal(ctx, r.conv.ToEntity(&item))
 }
 
 // Get retrieves the active tenant with matching internal ID from the Compass storage.
@@ -157,9 +161,63 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
+	tntFromDB, err := r.Get(ctx, model.ID)
+	if err != nil {
+		return err
+	}
+
 	entity := r.conv.ToEntity(model)
 
-	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
+	if err := r.updaterGlobal.UpdateSingleGlobal(ctx, entity); err != nil {
+		return err
+	}
+
+	if tntFromDB.Parent != model.Parent {
+		for _, topLevelEntity := range resource.TopLevelEntities {
+			m2mTable, ok := topLevelEntity.TenantAccessTable()
+			if !ok {
+				return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
+			}
+
+			tenantAccesses := repo.TenantAccessCollection{}
+
+			tenantAccessLister := repo.NewListerGlobal(resource.TenantAccess, m2mTable, repo.M2MColumns)
+			if err := tenantAccessLister.ListGlobal(ctx, &tenantAccesses, repo.NewEqualCondition(repo.M2MTenantIDColumn, model.ID), repo.NewEqualCondition(repo.M2MOwnerColumn, true)); err != nil {
+				return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", model.ID)
+			}
+
+			tenantAccessCreator := repo.NewUnsafeCreator(resource.TenantAccess, m2mTable, repo.M2MColumns, []string{repo.M2MResourceIDColumn, repo.M2MTenantIDColumn})
+
+			for _, ta := range tenantAccesses {
+				tenantAccess := &repo.TenantAccess{
+					TenantID:   model.Parent,
+					ResourceID: ta.ResourceID,
+					Owner:      true,
+				}
+				if err := tenantAccessCreator.UnsafeCreate(ctx, &tenantAccess); err != nil {
+					return errors.Wrapf(err, "while creating tenant acccess record for resource %s for parent %s of tenant %s", ta.ResourceID, model.Parent, model.ID)
+				}
+			}
+
+			if len(tntFromDB.Parent) > 0 && len(tenantAccesses) > 0 {
+				tenantAccessDeleter := repo.NewDeleterGlobal(resource.TenantAccess, m2mTable)
+				tenantAccessIDsToDelete := make([]string, 0, len(tenantAccesses))
+				for _, ta := range tenantAccesses {
+					tenantAccessIDsToDelete = append(tenantAccessIDsToDelete, ta.ResourceID)
+				}
+
+				if err := tenantAccessDeleter.DeleteManyGlobal(ctx, repo.Conditions{
+					repo.NewInConditionForStringValues(repo.M2MResourceIDColumn, tenantAccessIDsToDelete),
+					repo.NewEqualCondition(repo.M2MTenantIDColumn, tntFromDB.Parent),
+					repo.NewEqualCondition(repo.M2MOwnerColumn, true),
+				}); err != nil {
+					return errors.Wrapf(err, "while deleting tenant accesses for the old parent %s of the tenant %s", tntFromDB.Parent, model.ID)
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 // DeleteByExternalTenant removes a tenant with matching external ID from the Compass storage.
@@ -169,4 +227,58 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 	}
 
 	return r.deleterGlobal.DeleteManyGlobal(ctx, conditions)
+}
+
+// GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
+func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
+	rawStmt := `(SELECT {{ .m2mTenantID }} FROM {{ .m2mTable }} ta WHERE ta.{{ .m2mID }} = ? AND ta.{{ .owner }} = true` +
+		` AND (NOT EXISTS(SELECT 1 FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})` + // the tenant has no children
+		` OR (NOT EXISTS(SELECT 1 FROM {{ .m2mTable }} ta2` +
+		` WHERE ta2.{{ .m2mID }} = ? AND ta2.{{ .owner }} = true AND` +
+		` ta2.{{ .m2mTenantID }} IN (SELECT {{ .id }} FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})))))` // there is no child that has owner access
+
+	t, err := template.New("").Parse(rawStmt)
+	if err != nil {
+		return "", err
+	}
+
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return "", errors.Errorf("No tenant access table for %s", resourceType)
+	}
+
+	data := map[string]string{
+		"m2mTenantID":  repo.M2MTenantIDColumn,
+		"m2mTable":     m2mTable,
+		"m2mID":        repo.M2MResourceIDColumn,
+		"owner":        repo.M2MOwnerColumn,
+		"tenantsTable": tableName,
+		"parent":       parentColumn,
+		"id":           idColumn,
+	}
+
+	res := new(bytes.Buffer)
+	if err = t.Execute(res, data); err != nil {
+		return "", errors.Wrapf(err, "while executing template")
+	}
+
+	stmt := res.String()
+	stmt = sqlx.Rebind(sqlx.DOLLAR, stmt)
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	log.C(ctx).Debugf("Executing DB query: %s", stmt)
+
+	dest := struct {
+		TenantID string `db:"tenant_id"`
+	}{}
+
+	if err := persist.GetContext(ctx, &dest, stmt, objectID, objectID); err != nil {
+		return "", persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Get, "while getting lowest tenant from %s table for resource %s with id %s", m2mTable, resourceType, objectID)
+	}
+
+	return dest.TenantID, nil
 }

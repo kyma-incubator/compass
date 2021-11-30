@@ -88,7 +88,7 @@ global:
       version: "PR-2084"
     ord_service:
       dir:
-      version: "PR-47"
+      version: "PR-48"
     schema_migrator:
       dir:
       version: "PR-2117"
@@ -108,7 +108,7 @@ global:
       version: "PR-47"
     e2e_tests:
       dir:
-      version: "PR-2102"
+      version: "PR-2115"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -326,7 +326,7 @@ global:
     timeout_ms: 120000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:write label_definition:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -551,9 +551,8 @@ global:
         entityTypeField: "entityType"
         parentIDField: "parentGuid"
         regionField: "region"
-        movedRuntimeLabelKey: "global_subaccount_id"
-        movedRuntimeByLabelTargetField: "targetGlobalAccountGUID"
-        movedRuntimeByLabelSourceField: "sourceGlobalAccountGUID"
+        movedSubaccountTargetField: "targetGlobalAccountGUID"
+        movedSubaccountSourceField: "sourceGlobalAccountGUID"
       queryMapping:
         pageNumField: "pageNum"
         pageSizeField: "pageSize"

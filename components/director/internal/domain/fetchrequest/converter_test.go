@@ -19,7 +19,7 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.FetchRequest
@@ -54,7 +54,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			}
 			converter := fetchrequest.NewConverter(authConv)
 
-			// when
+			// WHEN
 			res, err := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -66,7 +66,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *graphql.FetchRequestInput
@@ -97,7 +97,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			}
 			converter := fetchrequest.NewConverter(authConv)
 
-			// when
+			// WHEN
 			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
@@ -111,24 +111,23 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 func TestConverter_FromEntity(t *testing.T) {
 	timestamp := time.Now()
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
-		Input              fetchrequest.Entity
-		Expected           model.FetchRequest
+		Input              *fetchrequest.Entity
+		Expected           *model.FetchRequest
 		ExpectedErrMessage string
 	}{
 		{
 			Name:               "All properties given",
-			Input:              fixFullFetchRequestEntity(t, "1", timestamp),
-			Expected:           fixFullFetchRequestModel("1", timestamp),
+			Input:              fixFullFetchRequestEntity(t, "1", timestamp, model.APISpecFetchRequestReference),
+			Expected:           fixFullFetchRequestModel("1", timestamp, model.APISpecFetchRequestReference),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Empty value",
-			Input: fetchrequest.Entity{
+			Input: &fetchrequest.Entity{
 				ID:              "2",
-				TenantID:        "tenant",
 				Auth:            sql.NullString{},
 				StatusTimestamp: timestamp,
 				StatusCondition: string(model.FetchRequestStatusConditionFailed),
@@ -137,11 +136,11 @@ func TestConverter_FromEntity(t *testing.T) {
 		},
 		{
 			Name: "Error",
-			Input: fetchrequest.Entity{
+			Input: &fetchrequest.Entity{
 				Auth:   repo.NewValidNullableString(`{Dd`),
 				SpecID: repo.NewValidNullableString("dd"),
 			},
-			Expected:           model.FetchRequest{},
+			Expected:           &model.FetchRequest{},
 			ExpectedErrMessage: "while converting Auth: while unmarshalling Auth: invalid character 'D' looking for beginning of object key string",
 		},
 	}
@@ -151,8 +150,8 @@ func TestConverter_FromEntity(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			conv := fetchrequest.NewConverter(authConv)
 
-			// when
-			res, err := conv.FromEntity(testCase.Input)
+			// WHEN
+			res, err := conv.FromEntity(testCase.Input, model.APISpecFetchRequestReference)
 
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)
@@ -170,49 +169,45 @@ func TestConverter_FromEntity(t *testing.T) {
 func TestConverter_ToEntity(t *testing.T) {
 	timestamp := time.Now()
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
-		Input              model.FetchRequest
-		Expected           fetchrequest.Entity
+		Input              *model.FetchRequest
+		Expected           *fetchrequest.Entity
 		ExpectedErrMessage string
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixFullFetchRequestModel("1", timestamp),
-			Expected: fixFullFetchRequestEntity(t, "1", timestamp),
+			Input:    fixFullFetchRequestModel("1", timestamp, model.APISpecFetchRequestReference),
+			Expected: fixFullFetchRequestEntity(t, "1", timestamp, model.APISpecFetchRequestReference),
 		},
 		{
 			Name:     "String value",
-			Input:    fixFullFetchRequestModel("1", timestamp),
-			Expected: fixFullFetchRequestEntity(t, "1", timestamp),
+			Input:    fixFullFetchRequestModel("1", timestamp, model.APISpecFetchRequestReference),
+			Expected: fixFullFetchRequestEntity(t, "1", timestamp, model.APISpecFetchRequestReference),
 		},
 		{
 			Name: "Empty Auth",
-			Input: model.FetchRequest{
-				ID:     "2",
-				Tenant: "tenant",
+			Input: &model.FetchRequest{
+				ID: "2",
 				Status: &model.FetchRequestStatus{
 					Timestamp: timestamp,
 					Condition: model.FetchRequestStatusConditionFailed,
 				},
 			},
-			Expected: fetchrequest.Entity{
+			Expected: &fetchrequest.Entity{
 				ID:              "2",
-				TenantID:        "tenant",
 				StatusTimestamp: timestamp,
 				StatusCondition: string(model.FetchRequestStatusConditionFailed),
 			},
 		},
 		{
 			Name: "Error",
-			Input: model.FetchRequest{
-				ID:     "2",
-				Tenant: "tenant",
+			Input: &model.FetchRequest{
+				ID: "2",
 			},
-			Expected: fetchrequest.Entity{
-				ID:       "2",
-				TenantID: "tenant",
+			Expected: &fetchrequest.Entity{
+				ID: "2",
 			},
 			ExpectedErrMessage: apperrors.NewInvalidDataError("Invalid input model").Error(),
 		},
@@ -223,7 +218,7 @@ func TestConverter_ToEntity(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			conv := fetchrequest.NewConverter(authConv)
 
-			// when
+			// WHEN
 			res, err := conv.ToEntity(testCase.Input)
 
 			if testCase.ExpectedErrMessage != "" {

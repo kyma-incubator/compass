@@ -51,30 +51,30 @@ const (
 
 func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		//given
+		// GIVEN
 		auth := authenticator.New(PublicJWKSURL, true, ClientIDHeaderKey, claimsValidatorMock())
-		//when
+		// WHEN
 		err := auth.SynchronizeJWKS(context.TODO())
 
-		//then
+		// THEN
 		require.NoError(t, err)
 	})
 
 	t.Run("Error when can't fetch JWKS", func(t *testing.T) {
-		//given
+		// GIVEN
 		authFake := authenticator.New(fakeJWKSURL, true, ClientIDHeaderKey, nil)
 
-		//when
+		// WHEN
 		err := authFake.SynchronizeJWKS(context.TODO())
 
-		//then
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, fmt.Sprintf("while fetching JWKS from endpoint %s: failed to unmarshal JWK set: invalid character '<' looking for beginning of value", fakeJWKSURL))
 	})
 }
 
 func TestAuthenticator_Handler(t *testing.T) {
-	//given
+	// GIVEN
 	scopes := "scope-a scope-b"
 
 	privateJWKS, err := auths.FetchJWK(context.TODO(), PrivateJWKSURL)
@@ -87,7 +87,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Success - token with signing method", func(t *testing.T) {
-		//given
+		// GIVEN
 		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
@@ -99,16 +99,16 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
 	t.Run("Success - token with no signing method when it's allowed", func(t *testing.T) {
-		//given
+		// GIVEN
 		middleware := createMiddleware(t, true, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
@@ -118,17 +118,17 @@ func TestAuthenticator_Handler(t *testing.T) {
 		require.NoError(t, err)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
 	t.Run("Success - with client user provided", func(t *testing.T) {
 		clientUser := "foo"
-		//given
+		// GIVEN
 		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandlerWithClientUser(t, defaultTenant, clientUser, scopes)
 		rr := httptest.NewRecorder()
@@ -141,16 +141,16 @@ func TestAuthenticator_Handler(t *testing.T) {
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 		req.Header.Add(ClientIDHeaderKey, clientUser)
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
 	t.Run("Success - when tenant is empty", func(t *testing.T) {
-		//given
+		// GIVEN
 		tnt := ""
 		middleware := createMiddleware(t, true, claimsValidatorMock())
 		handler := testHandler(t, tnt, scopes)
@@ -161,16 +161,16 @@ func TestAuthenticator_Handler(t *testing.T) {
 		require.NoError(t, err)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
-		//given
+		// GIVEN
 		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
@@ -190,16 +190,16 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
 	t.Run("Success - when we have more than one JWKS and use the first key", func(t *testing.T) {
-		//given
+		// GIVEN
 		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
@@ -217,16 +217,16 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
 	t.Run("Success - when we have more than one JWKS and use the second key", func(t *testing.T) {
-		//given
+		// GIVEN
 		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
@@ -244,16 +244,16 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, "OK", rr.Body.String())
 		assert.Equal(t, http.StatusOK, rr.Code)
 	})
 
 	t.Run("Error - retry parsing token with failing synchronizing JWKS", func(t *testing.T) {
-		//given
+		// GIVEN
 		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
@@ -273,10 +273,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		var response graphql.Response
 		err = json.Unmarshal(rr.Body.Bytes(), &response)
 		require.NoError(t, err)
@@ -287,7 +287,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	})
 
 	t.Run("Error - token with no signing method when it's not allowed", func(t *testing.T) {
-		//given
+		// GIVEN
 		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 
@@ -297,10 +297,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createNotSingedToken(t, defaultTenant, scopes)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 
 		var response graphql.Response
@@ -312,7 +312,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	})
 
 	t.Run("Error - can't parse token", func(t *testing.T) {
-		//given
+		// GIVEN
 		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
@@ -320,10 +320,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		req.Header.Add(AuthorizationHeaderKey, "Bearer fake-token")
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 
 		var response graphql.Response
@@ -335,7 +335,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	})
 
 	t.Run("Error - invalid header and bearer token", func(t *testing.T) {
-		//given
+		// GIVEN
 		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 		rr := httptest.NewRecorder()
@@ -343,10 +343,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		req.Header.Add("invalidHeader", "Bearer fake-token")
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 
 		var response graphql.Response
@@ -358,7 +358,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	})
 
 	t.Run("Error - token without signing key", func(t *testing.T) {
-		//given
+		// GIVEN
 		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 
@@ -371,10 +371,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, nil, false)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 
 		var response graphql.Response
@@ -386,7 +386,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	})
 
 	t.Run("Error - after successful parsing claims are not valid", func(t *testing.T) {
-		//given
+		// GIVEN
 		v := &automock.ClaimsValidator{}
 		v.On("Validate", mock.Anything, mock.Anything).Return(apperrors.NewTenantNotFoundError("externalTenantName"))
 		middleware := createMiddleware(t, false, v)
@@ -402,10 +402,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createTokenWithSigningMethod(t, "", scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 
 		var response graphql.Response
@@ -417,7 +417,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	})
 
 	t.Run("Error - after successful parsing claims there are no scopes", func(t *testing.T) {
-		//given
+		// GIVEN
 		requiredScopes := []string{"wanted-scope"}
 		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claims.NewScopesValidator(requiredScopes))
 		err := auth.SynchronizeJWKS(context.TODO())
@@ -435,10 +435,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createTokenWithSigningMethod(t, "", scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 
 		var response graphql.Response
@@ -450,7 +450,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	})
 
 	t.Run("Error - Token signed with different key", func(t *testing.T) {
-		//given
+		// GIVEN
 		middleware := createMiddleware(t, false, claimsValidatorMock())
 		handler := testHandler(t, defaultTenant, scopes)
 
@@ -467,10 +467,10 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, newKey, &oldKeyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 
-		//when
+		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
 
-		//then
+		// THEN
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 		var response graphql.Response
 		err = json.Unmarshal(rr.Body.Bytes(), &response)

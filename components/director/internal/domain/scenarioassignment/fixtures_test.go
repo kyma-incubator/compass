@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/DATA-DOG/go-sqlmock"
 
@@ -18,10 +21,13 @@ import (
 )
 
 const (
-	tenantID         = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	externalTenantID = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	scenarioName     = "scenario-A"
-	errMsg           = "some error"
+	tenantID               = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	externalTargetTenantID = "extTargetTenantID"
+	targetTenantID         = "targetTenantID"
+	externalTenantID       = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	scenarioName           = "scenario-A"
+	scenarioName2          = "scenario-B"
+	errMsg                 = "some error"
 )
 
 func fixModel() model.AutomaticScenarioAssignment {
@@ -32,24 +38,13 @@ func fixGQL() graphql.AutomaticScenarioAssignment {
 	return fixGQLWithScenarioName(scenarioName)
 }
 
-var testTableColumns = []string{"scenario", "tenant_id", "selector_key", "selector_value"}
+var testTableColumns = []string{"scenario", "tenant_id", "target_tenant_id"}
 
 func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment {
 	return model.AutomaticScenarioAssignment{
-		ScenarioName: scenario,
-		Tenant:       tenantID,
-		Selector: model.LabelSelector{
-			Key:   "key",
-			Value: "value",
-		},
-	}
-}
-
-func fixModelWithScenarioNameAndSelector(scenario string, selector model.LabelSelector) model.AutomaticScenarioAssignment {
-	return model.AutomaticScenarioAssignment{
-		ScenarioName: scenario,
-		Tenant:       tenantID,
-		Selector:     selector,
+		ScenarioName:   scenario,
+		Tenant:         tenantID,
+		TargetTenantID: targetTenantID,
 	}
 }
 
@@ -74,8 +69,8 @@ func fixGQLWithScenarioName(scenario string) graphql.AutomaticScenarioAssignment
 	return graphql.AutomaticScenarioAssignment{
 		ScenarioName: scenario,
 		Selector: &graphql.Label{
-			Key:   "key",
-			Value: "value",
+			Key:   scenarioassignment.SubaccountIDKey,
+			Value: externalTargetTenantID,
 		},
 	}
 }
@@ -99,19 +94,17 @@ func fixGQLPageWithItems(in []*graphql.AutomaticScenarioAssignment) graphql.Auto
 
 func fixEntity() scenarioassignment.Entity {
 	return scenarioassignment.Entity{
-		Scenario:      scenarioName,
-		TenantID:      tenantID,
-		SelectorKey:   "key",
-		SelectorValue: "value",
+		Scenario:       scenarioName,
+		TenantID:       tenantID,
+		TargetTenantID: targetTenantID,
 	}
 }
 
 func fixEntityWithScenarioName(scenario string) scenarioassignment.Entity {
 	return scenarioassignment.Entity{
-		Scenario:      scenario,
-		TenantID:      tenantID,
-		SelectorKey:   "key",
-		SelectorValue: "value",
+		Scenario:       scenario,
+		TenantID:       tenantID,
+		TargetTenantID: targetTenantID,
 	}
 }
 
@@ -123,34 +116,34 @@ func fixCtxWithTenant() context.Context {
 	return tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
 }
 
-func fixLabelSelector() model.LabelSelector {
-	return model.LabelSelector{
-		Key:   "key",
-		Value: "value",
-	}
-}
-
 type sqlRow struct {
-	scenario      string
-	tenantID      string
-	selectorKey   string
-	selectorValue string
+	scenario       string
+	tenantID       string
+	targetTenantID string
 }
 
 func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 	out := sqlmock.NewRows(testTableColumns)
 	for _, row := range rows {
-		out.AddRow(row.scenario, row.tenantID, row.selectorKey, row.selectorValue)
+		out.AddRow(row.scenario, row.tenantID, row.targetTenantID)
 	}
 	return out
 }
 
-func fixAutomaticScenarioAssignmentRow(scenarioName, tenantID string) []driver.Value {
-	return []driver.Value{scenarioName, tenantID, "key", "value"}
+func fixAutomaticScenarioAssigment(selectorScenario string) model.AutomaticScenarioAssignment {
+	return model.AutomaticScenarioAssignment{
+		ScenarioName:   selectorScenario,
+		Tenant:         tenantID,
+		TargetTenantID: targetTenantID,
+	}
+}
+
+func fixAutomaticScenarioAssignmentRow(scenarioName, tenantID, targetTenantID string) []driver.Value {
+	return []driver.Value{scenarioName, tenantID, targetTenantID}
 }
 
 func fixAutomaticScenarioAssignmentColumns() []string {
-	return []string{"scenario", "tenant_id", "selector_key", "selector_value"}
+	return []string{"scenario", "tenant_id", "target_tenant_id"}
 }
 
 func fixUpdateTenantIsolationSubquery() string {
@@ -171,4 +164,16 @@ func fixTenantIsolationSubqueryWithArg(i int) string {
 
 func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
 	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
+}
+
+func matchExpectedScenarios(t *testing.T, expected map[string][]string) func(label *model.LabelInput) bool {
+	return func(actual *model.LabelInput) bool {
+		actualArray, ok := actual.Value.([]string)
+		require.True(t, ok)
+
+		expectedArray, ok := expected[actual.ObjectID]
+		require.True(t, ok)
+		require.ElementsMatch(t, expectedArray, actualArray)
+		return true
+	}
 }
