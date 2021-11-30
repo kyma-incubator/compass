@@ -29,7 +29,7 @@ spec:
 {{- range $adapterName, $config := (index .Values "pairing-adapter").deployment.adapters -}}
 {{if and (eq $config.enabled true) (eq $config.auth.type "mtls") $shouldAdd }}
             - name: APP_MTLS_PAIRING_ADAPTER_URL
-              value: "compass-pairing-adapter.{{ $.Release.Namespace }}.svc.cluster.local/{{ $adapterName }}"
+              value: "http://compass-pairing-adapter.{{ $.Release.Namespace }}.svc.cluster.local/{{ $adapterName }}"
 {{ $shouldAdd = false }}
 {{ end }}
 {{- end -}}

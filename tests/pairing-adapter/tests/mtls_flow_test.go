@@ -2,20 +2,31 @@ package tests
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+
+	director_http "github.com/kyma-incubator/compass/components/director/pkg/http"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestGettingTokenWithMTLSWorks(t *testing.T) {
+	//TODO: Change templates to be real
 	req, err := http.NewRequest(http.MethodPost, conf.MTLSPairingAdapterURL, strings.NewReader(`{}`))
 	require.NoError(t, err)
 
-	resp, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
+	client := http.Client{
+		Transport: director_http.NewServiceAccountTokenTransport(http.DefaultTransport),
+	}
 
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	fmt.Println(ioutil.ReadAll(resp.Body))
 	respParsed := struct {
 		Token string
 	}{}
