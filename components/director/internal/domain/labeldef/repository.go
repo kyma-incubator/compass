@@ -54,7 +54,7 @@ func NewRepository(conv EntityConverter) *repository {
 		deleter:          repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		updater:          repo.NewUpdaterWithEmbeddedTenant(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
 		versionedUpdater: repo.NewUpdaterWithEmbeddedTenant(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, versionedIDColumns),
-		upserter:         repo.NewUpserter(tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}), // TODO new upserter with embedded tenant
+		upserter:         repo.NewUpserterWithEmbeddedTenant(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}, tenantColumn),
 	}
 }
 
