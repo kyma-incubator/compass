@@ -1,0 +1,232 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: "{{ $.Chart.Name }}-external-certificate-rotation-job"
+  namespace: {{ $.Release.Namespace }}
+spec:
+  schedule: "{{ .Values.global.externalCertConfiguration.rotationCronjob.schedule }}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    metadata:
+      labels:
+        cronjob: {{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+    spec:
+      template:
+        metadata:
+          labels:
+            cronjob: {{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+        spec:
+          {{ if .Values.global.isLocalEnv }}
+          hostAliases:
+            - ip: {{ .Values.global.minikubeIP }}
+              hostnames:
+                - "{{ .Values.global.externalServicesMock.host }}.{{ .Values.global.ingress.domainName }}"
+          {{ end }}
+          serviceAccountName: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+          restartPolicy: Never
+          containers:
+            - name: certificate-rotation
+              image: bitnami/kubectl:1.22.4
+              imagePullPolicy: IfNotPresent
+              command:
+                - bash
+                - -c
+                - |
+                  RED='\033[0;31m'
+                  GREEN='\033[0;32m'
+                  YELLOW='\033[0;33m'
+                  NC='\033[0m' # No Color
+
+                  set -e
+
+                  IS_CERT_ISSUER_LOCALITY_VALID=false
+
+                  trap "echo '# KILLING PILOT-AGENT #'; curl -X POST http://127.0.0.1:15020/quitquitquit; sleep 3;" RETURN EXIT INT TERM
+
+                  function getClientCert() {
+                    echo -e "${YELLOW}Getting the certificate chain... ${NC}"
+                    CERT_CHAIN_PKCS7_RESP=$(curl -s -m 30 -X POST \
+                      "$CERT_SVC_CSR_ENDPOINT$CERT_SVC_API_PATH" \
+                      -H "Authorization: Bearer $TOKEN" \
+                      -H 'Content-Type: application/json' \
+                      -H 'Accept: application/json' \
+                      -d "{
+                            \"certificate-signing-request\": {
+                                \"value\": $JSON_CSR,
+                                \"type\": \"pkcs10-pem\",
+                                \"validity\": {
+                                  \"value\": $CERT_VALIDITY,
+                                  \"type\": \"DAYS\"
+                              }
+                            }
+                          }")
+
+                    echo -e "${YELLOW}JSON-decoding client certificate chain... ${NC}"
+                    CERT_CHAIN_PKCS7=$(jq -r '.["certificate-response"]["value"]' <<< "$CERT_CHAIN_PKCS7_RESP")
+
+                    if [ "$CERT_CHAIN_PKCS7" == "null" ]
+                    then
+                      echo -e "${RED}Could not get certificate response. Reason: ${NC}"
+                      echo "$CERT_CHAIN_PKCS7_RESP"
+                      exit 1
+                    fi
+
+                    echo -e "${YELLOW}Extracting client certificate... ${NC}"
+                    openssl pkcs7 -print_certs -out /tmp/client-certificate_pkcs7.pem <<< "$CERT_CHAIN_PKCS7"
+                    openssl x509 -in /tmp/client-certificate_pkcs7.pem -out /tmp/client-certificate.pem
+                  }
+
+                  function confirmValidIssuerLocalityOrRetry() {
+                    for (( i = 0; i < "$CLIENT_CERT_RETRY_ATTEMPTS"; i++ )); do
+                      echo -e "${YELLOW}Checking issuer locality... ${NC}"
+                      ISSUER_LOCALITY=$(openssl x509 -in /tmp/client-certificate.pem -noout -text | grep "Issuer:" | awk '{print $7}' | cut -d '=' -f2 | sed 's/,$//g')
+                      if [[ "$ISSUER_LOCALITY" != "$EXPECTED_ISSUER_LOCALITY" ]]; then
+                        echo -e "${RED}The issuer locality of the client certificate didn't match the expected one. We expect \"$EXPECTED_ISSUER_LOCALITY\" but have: \"$ISSUER_LOCALITY\" ${NC}"
+                        echo -e "${YELLOW}[Retry $(($i+1))] Getting new client certificate... ${NC}"
+                        getClientCert # This will override the client certificate file content with the newly issued certificate
+                        sleep 0.2 # Sleep for 200ms before next retry
+                      else
+                        echo -e "${GREEN}Issuer locality of the client certificate is valid. Proceeding with the next steps... ${NC}"
+                        IS_CERT_ISSUER_LOCALITY_VALID=true
+                        break
+                      fi
+                    done
+
+                    if [[ $IS_CERT_ISSUER_LOCALITY_VALID == false ]]; then
+                      echo -e "${RED}Couldn't get the client certificate with valid issuer locality after $CLIENT_CERT_RETRY_ATTEMPTS attempts. Exiting... ${NC}"
+                      exit 1
+                    fi
+                  }
+
+                  echo -e "${YELLOW}Issuing token... ${NC}"
+                  TOKEN=$(curl -s -m 30 -X POST \
+                    "$CERT_SVC_OAUTH_URL$CERT_SVC_TOKEN_PATH" \
+                    -H "Content-Type: application/x-www-form-urlencoded" \
+                    -H "Accept: application/json" \
+                    -d "grant_type=client_credentials&token_format=bearer&client_id=$CERT_SVC_CLIENT_ID&client_secret=$CERT_SVC_CLIENT_SECRET" \
+                    | jq -r .access_token)
+
+                  echo -e "${YELLOW}Generating an encrypted private key... ${NC}"
+                  PASS_PHRASE=$(openssl rand -base64 32)
+                  openssl genpkey -pass pass:"$PASS_PHRASE" -aes-256-cbc -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/encrypted-private-key.pem
+
+                  echo -e "${YELLOW}Saving an unencrypted copy of the private key... ${NC}" # Later we use it to create a k8s secret, currently k8s does not support loading encrypted private keys
+                  openssl rsa -in /tmp/encrypted-private-key.pem -out /tmp/unencrypted-private-key.pem -passin pass:"$PASS_PHRASE"
+
+                  echo -e "${YELLOW}Creating a CSR in json... ${NC}"
+                  openssl req -new -sha256 -key /tmp/encrypted-private-key.pem -passin pass:"$PASS_PHRASE" -out /tmp/my-csr.pem -subj "$CERT_SUBJECT_PATTERN"
+                  JSON_CSR=$(jq -sR '.' /tmp/my-csr.pem)
+
+                  getClientCert
+
+                  confirmValidIssuerLocalityOrRetry
+
+                  echo -e "${YELLOW}Creating/Updating client certificate secret... ${NC}"
+                  kubectl create secret tls external-client-certificate --namespace=compass-system --cert=/tmp/client-certificate.pem --key=/tmp/unencrypted-private-key.pem --save-config --dry-run=client -o yaml | kubectl apply -f -
+
+                  set +e
+              env:
+                - name: CERT_SVC_CSR_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.csrEndpointKey }}
+                - name: CERT_SVC_API_PATH
+                  value: {{ .Values.global.externalCertConfiguration.certSvcApiPath }}
+                - name: CERT_SUBJECT_PATTERN
+                  value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+                - name: EXPECTED_ISSUER_LOCALITY
+                  value: {{ .Values.global.externalCertConfiguration.issuerLocality }}
+                - name: CERT_VALIDITY
+                  value: {{ .Values.global.externalCertConfiguration.rotationCronjob.certValidity | quote }}
+                - name: CLIENT_CERT_RETRY_ATTEMPTS
+                  value: {{ .Values.global.externalCertConfiguration.rotationCronjob.clientCertRetryAttempts | quote }}
+                - name: CERT_SVC_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientIdKey }}
+                - name: CERT_SVC_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientSecretKey }}
+                - name: CERT_SVC_OAUTH_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.oauthUrlKey }}
+                - name: CERT_SVC_TOKEN_PATH
+                  value: {{ .Values.global.externalCertConfiguration.tokenPath }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "patch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: director-external-client-certificate
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    resourceNames: ["{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"]
+    verbs: ["watch"]

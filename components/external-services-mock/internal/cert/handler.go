@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
@@ -23,16 +22,11 @@ import (
 )
 
 type CsrResponse struct {
-	CrtResponse CrtResponse `json:"certificateChain"`
+	CrtResponse CrtResponse `json:"certificate-response"`
 }
 
 type CrtResponse struct {
 	Crt string `json:"value"`
-}
-
-type subjectElement struct {
-	Name  string `json:"shortName"`
-	Value string `json:"value"`
 }
 
 type handler struct {
@@ -88,9 +82,9 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	csr := gjson.GetBytes(body, "csr.value")
+	csr := gjson.GetBytes(body, "certificate-signing-request.value")
 	if !csr.Exists() {
-		httphelpers.WriteError(writer, errors.Wrap(err, "missing csr.value in request body"), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.Wrap(err, "missing certificate-signing-request.value in request body"), http.StatusBadRequest)
 		return
 	}
 
@@ -114,19 +108,9 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 
 	tenant := r.Header.Get("Tenant")
 	if len(tenant) == 0 { // If tenant is not provided in header, search it in the OU in the body (imitating the cert svc interface)
-		subjectElements := gjson.GetBytes(body, "csr.replace.subject")
-		if subjectElements.Exists() {
-			var subjectElementsSlice []subjectElement
-			err = json.Unmarshal([]byte(subjectElements.String()), &subjectElementsSlice)
-			if err != nil {
-				log.C(r.Context()).WithError(err).Infof("Cannot json unmarshalling the request body. Error: %s", err)
-			}
-			for _, se := range subjectElementsSlice {
-				if se.Name == "OU" {
-					if _, err := uuid.Parse(se.Value); err == nil {
-						tenant = se.Value
-					}
-				}
+		for _, ou := range clientCSR.Subject.OrganizationalUnit {
+			if _, err := uuid.Parse(ou); err == nil {
+				tenant = ou
 			}
 		}
 	}
