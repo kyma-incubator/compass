@@ -100,14 +100,17 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 
 	req.Header = headers
 
-	if webhook.Auth != nil {
-		ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
-		req = req.WithContext(ctx)
-	}
 	var resp *http.Response
-
-	if webhook.Auth != nil && str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
-		resp, err = c.mtlsClient.Do(req)
+	if webhook.Auth != nil {
+		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
+			resp, err = c.mtlsClient.Do(req)
+		} else if webhook.Auth.Credential != nil {
+			ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
+			req = req.WithContext(ctx)
+			resp, err = c.httpClient.Do(req)
+		} else {
+			return nil, errors.New("could not determine auth flow for webhook")
+		}
 	} else {
 		resp, err = c.httpClient.Do(req)
 	}
@@ -173,14 +176,17 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 
 	req.Header = headers
 
-	if webhook.Auth != nil {
-		ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
-		req = req.WithContext(ctx)
-	}
-
 	var resp *http.Response
-	if webhook.Auth != nil && str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
-		resp, err = c.mtlsClient.Do(req)
+	if webhook.Auth != nil {
+		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
+			resp, err = c.mtlsClient.Do(req)
+		} else if webhook.Auth.Credential != nil {
+			ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
+			req = req.WithContext(ctx)
+			resp, err = c.httpClient.Do(req)
+		} else {
+			return nil, errors.New("could not determine auth flow for webhook during poll")
+		}
 	} else {
 		resp, err = c.httpClient.Do(req)
 	}
