@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	ConsumerTypeExtraField = "consumer_type"
-	AccessLevelExtraField  = "access_level"
+	ConsumerTypeExtraField  = "consumer_type"
+	AccessLevelExtraField   = "access_level"
+	InternalConsumerIDField = "internal_consumer_id"
 )
 
 // GetOrganization returns the O part of the subject
@@ -83,20 +84,12 @@ func GetCommonName(subject string) string {
 	return getRegexMatch("CN=([^,]+)", subject)
 }
 
-func GetExtra(consumerType, accessLevel string) (map[string]interface{}, error) {
-	//ct := model.SystemAuthReferenceObjectType(consumerType)
-	//if ct != .ApplicationReference && ct != model.RuntimeReference && ct != model.IntegrationSystemReference {
-	//	return nil, fmt.Errorf("invalid consumer type %q", consumerType)
-	//}
-	//te := tenantEntity.Type(accessLevel)
-	//if te != tenantEntity.Account && te != tenantEntity.Subaccount && te != tenantEntity.Customer {
-	//	return nil, fmt.Errorf("invalid access level %q", accessLevel)
-	//}
-
+func GetExtra(consumerType, accessLevel, internalConsumerID string) map[string]interface{} {
 	return map[string]interface{}{
-		ConsumerTypeExtraField: consumerType,
-		AccessLevelExtraField:  accessLevel,
-	}, nil
+		ConsumerTypeExtraField:  consumerType,
+		AccessLevelExtraField:   accessLevel,
+		InternalConsumerIDField: internalConsumerID,
+	}
 }
 
 // GetPossibleRegexTopLevelMatches returns the number of possible top level matches of a regex pattern.

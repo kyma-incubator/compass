@@ -107,6 +107,8 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
               value: "{{ .Values.http.client.skipSSLValidation }}"
+            - name: APP_SUBJECT_CONSUMER_MAPPING
+              value: {{ .Values.global.connector.subjectConsumerMappingConfig }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}

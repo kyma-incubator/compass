@@ -1,7 +1,6 @@
 package oathkeeper
 
 import (
-	"context"
 	"net/http"
 	"regexp"
 	"strings"
@@ -9,18 +8,17 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-
 // TODO regenerate with correct mockery version
 //go:generate mockery --name=certificateHeaderParser --output=automock --outpkg=automock --case=underscore --exported=true
 type certificateHeaderParser interface {
-	GetCertificateData(*http.Request) *certificateData
+	GetCertificateData(*http.Request) *CertificateData
 	GetIssuer() string
 }
 
-type certificateData struct {
-	clientID         string
-	certificateHash  string
-	authSessionExtra map[string]interface{}
+type CertificateData struct {
+	ClientID         string
+	CertificateHash  string
+	AuthSessionExtra map[string]interface{}
 }
 
 type certificateInfo struct {
@@ -33,10 +31,10 @@ type headerParser struct {
 	issuer                         string
 	isSubjectMatching              func(subject string) bool
 	getClientIDFromSubject         func(subject string) string
-	getAuthSessionExtraFromSubject func(ctx context.Context, subject string) map[string]interface{}
+	getAuthSessionExtraFromSubject func(subject string) map[string]interface{}
 }
 
-func NewHeaderParser(certHeaderName, issuer string, isSubjectMatching func(subject string) bool, getClientIDFromSubject func(subject string) string, getAuthSessionExtraFromSubject func(ctx context.Context, subject string) map[string]interface{}) *headerParser {
+func NewHeaderParser(certHeaderName, issuer string, isSubjectMatching func(subject string) bool, getClientIDFromSubject func(subject string) string, getAuthSessionExtraFromSubject func(subject string) map[string]interface{}) *headerParser {
 	return &headerParser{
 		certHeaderName:                 certHeaderName,
 		issuer:                         issuer,
@@ -46,7 +44,7 @@ func NewHeaderParser(certHeaderName, issuer string, isSubjectMatching func(subje
 	}
 }
 
-func (hp *headerParser) GetCertificateData(r *http.Request) *certificateData {
+func (hp *headerParser) GetCertificateData(r *http.Request) *CertificateData {
 	certHeader := r.Header.Get(hp.certHeaderName)
 	if certHeader == "" {
 		return nil
@@ -67,13 +65,13 @@ func (hp *headerParser) GetCertificateData(r *http.Request) *certificateData {
 		return nil
 	}
 
-	certData := &certificateData{
-		clientID:        hp.getClientIDFromSubject(certificateInfo.Subject),
-		certificateHash: certificateInfo.Hash,
+	certData := &CertificateData{
+		ClientID:        hp.getClientIDFromSubject(certificateInfo.Subject),
+		CertificateHash: certificateInfo.Hash,
 	}
 
 	if hp.getAuthSessionExtraFromSubject != nil {
-		certData.authSessionExtra = hp.getAuthSessionExtraFromSubject(r.Context(), certificateInfo.Subject)
+		certData.AuthSessionExtra = hp.getAuthSessionExtraFromSubject(certificateInfo.Subject)
 	}
 	return certData
 }

@@ -16,12 +16,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	clientId = "abcd-client-id"
-	hash     = "qwertyuiop"
-)
-
 func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
+	var certificateData = &oathkeeper.CertificateData{
+		ClientID:         "abcd-client-id",
+		CertificateHash:  "qwertyuiop",
+		AuthSessionExtra: nil,
+	}
+
 	marshalledSession, err := json.Marshal(emptyAuthSession())
 	require.NoError(t, err)
 
@@ -34,10 +35,10 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		certHeaderParser := &mocks2.CertificateHeaderParser{}
-		certHeaderParser.On("GetCertificateData", req).Return(clientId, hash, true)
+		certHeaderParser.On("GetCertificateData", req).Return(certificateData)
 		certHeaderParser.On("GetIssuer").Return(issuer)
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
-		revokedCertsRepository.On("Contains", hash).Return(false)
+		revokedCertsRepository.On("Contains", certificateData.CertificateHash).Return(false)
 
 		validator := oathkeeper.NewValidationHydrator(revokedCertsRepository, certHeaderParser)
 
@@ -51,7 +52,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		err = json.NewDecoder(rr.Body).Decode(&authSession)
 		require.NoError(t, err)
 
-		assert.Equal(t, []string{clientId}, authSession.Header[oathkeeper.ClientIdFromCertificateHeader])
+		assert.Equal(t, []string{certificateData.ClientID}, authSession.Header[oathkeeper.ClientIdFromCertificateHeader])
 		assert.Equal(t, []string{issuer}, authSession.Header[oathkeeper.ClientCertificateIssuerHeader])
 		mock.AssertExpectationsForObjects(t, certHeaderParser)
 	})
@@ -63,7 +64,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		certHeaderParser := &mocks2.CertificateHeaderParser{}
-		certHeaderParser.On("GetCertificateData", req).Return("", "", false)
+		certHeaderParser.On("GetCertificateData", req).Return(nil)
 		certHeaderParser.On("GetIssuer").Return(issuer)
 
 		validator := oathkeeper.NewValidationHydrator(nil, certHeaderParser)
@@ -89,10 +90,10 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		certHeaderParser := &mocks2.CertificateHeaderParser{}
-		certHeaderParser.On("GetCertificateData", req).Return(clientId, hash, true)
+		certHeaderParser.On("GetCertificateData", req).Return(certificateData)
 		certHeaderParser.On("GetIssuer").Return(issuer)
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
-		revokedCertsRepository.On("Contains", hash).Return(true)
+		revokedCertsRepository.On("Contains", certificateData.CertificateHash).Return(true)
 
 		validator := oathkeeper.NewValidationHydrator(revokedCertsRepository, certHeaderParser)
 

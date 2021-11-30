@@ -17,23 +17,25 @@ import (
 )
 
 // NewCertServiceContextProvider implements the ObjectContextProvider interface by looking for tenant information directly populated in the certificate.
-func NewCertServiceContextProvider(tenantRepo TenantRepository, scopesGetter ScopesGetter) *certServiceContextProvider {
+func NewCertServiceContextProvider(tenantRepo TenantRepository, scopesGetter ScopesGetter, consumerExistsFuncs map[model.SystemAuthReferenceObjectType]func(context.Context, string) (bool, error)) *certServiceContextProvider {
 	return &certServiceContextProvider{
 		tenantRepo: tenantRepo,
 		tenantKeys: KeysExtra{
 			TenantKey:         ProviderTenantKey,
 			ExternalTenantKey: ProviderExternalTenantKey,
 		},
-		scopesGetter: scopesGetter,
+		scopesGetter:        scopesGetter,
+		consumerExistsFuncs: consumerExistsFuncs,
 	}
 }
 
-// TODO include integrationsyssvc
 type certServiceContextProvider struct {
 	tenantRepo TenantRepository
 	tenantKeys KeysExtra
 
 	scopesGetter ScopesGetter
+
+	consumerExistsFuncs map[model.SystemAuthReferenceObjectType]func(context.Context, string) (bool, error)
 }
 
 // GetObjectContext is the certServiceContextProvider implementation of the ObjectContextProvider interface
@@ -92,6 +94,17 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to tenant with ID %s", authDetails.AuthID, tenantMapping.ExternalTenant))
 	}
 
+	internalConsumerID := reqData.GetInternalConsumerIDFromExtra()
+	if internalConsumerID != "" {
+		found, err := p.consumerExistsFuncs[consumerType](ctx, internalConsumerID)
+		if err != nil {
+			return ObjectContext{}, errors.Wrapf(err, "while getting %s with ID %s", consumerType, internalConsumerID)
+		}
+		if !found {
+			return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("%s with ID %s does not exist", consumerType, internalConsumerID))
+		}
+	}
+
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), p.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 	return objCtx, nil
@@ -112,7 +125,7 @@ func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper.Re
 
 func (p *certServiceContextProvider) directorScopes(consumerType model.SystemAuthReferenceObjectType) (string, error) {
 	if consumerType == "" { // TODO improve
-		consumerType = model.SystemAuthReferenceObjectType("default")
+		consumerType = "default"
 	}
 
 	declaredScopes, err := p.scopesGetter.GetRequiredScopes(buildPath(consumerType))

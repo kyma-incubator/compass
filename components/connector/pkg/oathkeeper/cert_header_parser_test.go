@@ -4,11 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/cert"
-
-	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
+	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	"github.com/stretchr/testify/require"
 )
@@ -32,16 +30,24 @@ func TestParseCertHeader(t *testing.T) {
 		OrganizationalUnitPattern: "(?i)[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|Region|SAP Cloud Platform Clients",
 	}
 
+	//expectedAuthSessionExtra := map[string]interface{}{
+	//	cert.ConsumerTypeExtraField:  "test_consumer_type",
+	//	cert.InternalConsumerIDField: "test_internal_consumer_id",
+	//	cert.AccessLevelExtraField:   "test_access_level",
+	//}
+
 	for _, testCase := range []struct {
-		name             string
-		certHeader       string
-		subjectConsts    certificates.CSRSubjectConsts
-		issuer           string
-		subjectMatcher   func(string) bool
-		clientIDFunc     func(string) string
-		found            bool
-		expectedHash     string
-		expectedClientID string
+		name                            string
+		certHeader                      string
+		subjectConsts                   certificates.CSRSubjectConsts
+		issuer                          string
+		subjectMatcher                  func(string) bool
+		clientIDFunc                    func(string) string
+		authSessionExtraFromSubjectFunc func(string) map[string]interface{}
+		found                           bool
+		expectedHash                    string
+		expectedClientID                string
+		expectedAuthSessionExtra        map[string]interface{}
 	}{
 		{
 			name: "connector header parser should return common name and hash",
@@ -108,16 +114,20 @@ func TestParseCertHeader(t *testing.T) {
 
 			r.Header.Set(certHeader, testCase.certHeader)
 
-			hp := oathkeeper.NewHeaderParser(certHeader, testCase.issuer, testCase.subjectMatcher, testCase.clientIDFunc)
+			hp := oathkeeper.NewHeaderParser(certHeader, testCase.issuer, testCase.subjectMatcher, testCase.clientIDFunc, testCase.authSessionExtraFromSubjectFunc)
 
 			//when
-			clientID, hash, found := hp.GetCertificateData(r)
+			certificateData := hp.GetCertificateData(r)
 
 			//then
-			require.Equal(t, testCase.found, found)
-			require.Equal(t, testCase.expectedHash, hash)
-			require.Equal(t, testCase.expectedClientID, clientID)
-			require.Equal(t, testCase.issuer, hp.GetIssuer())
+			if testCase.found {
+				require.Equal(t, testCase.expectedAuthSessionExtra, certificateData.AuthSessionExtra)
+				require.Equal(t, testCase.expectedHash, certificateData.CertificateHash)
+				require.Equal(t, testCase.expectedClientID, certificateData.ClientID)
+				require.Equal(t, testCase.issuer, hp.GetIssuer())
+			} else {
+				require.Nil(t, certificateData)
+			}
 		})
 	}
 }

@@ -34,8 +34,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 	ctx := r.Context()
 
 	var authSession AuthenticationSession
-	err := json.NewDecoder(r.Body).Decode(&authSession)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&authSession); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to decode request body: %v", err)
 		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.Wrap(err, "failed to decode Authentication Session from body"))
 		return
@@ -46,8 +45,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 
 	var (
 		issuer   string
-		found    bool
-		certData *certificateData
+		certData *CertificateData
 	)
 
 	for _, certHeaderParser := range tvh.certHeaderParsers {
@@ -60,7 +58,8 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		break
 	}
 
-	if !found {
+	// ???
+	if certData == nil {
 		log.C(ctx).Info("No valid certificate header found")
 		respondWithAuthSession(ctx, w, authSession)
 		return
@@ -68,7 +67,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 
 	log.C(ctx).Infof("Certificate header is valid for issuer %s", issuer)
 
-	if isCertificateRevoked := tvh.revokedCertsRepository.Contains(certData.certificateHash); isCertificateRevoked {
+	if isCertificateRevoked := tvh.revokedCertsRepository.Contains(certData.CertificateHash); isCertificateRevoked {
 		log.C(ctx).Info("Certificate is revoked.")
 		respondWithAuthSession(ctx, w, authSession)
 		return
@@ -78,11 +77,11 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		authSession.Header = map[string][]string{}
 	}
 
-	authSession.Header.Add(ClientIdFromCertificateHeader, certData.clientID)
-	authSession.Header.Add(ClientCertificateHashHeader, certData.certificateHash)
+	authSession.Header.Add(ClientIdFromCertificateHeader, certData.ClientID)
+	authSession.Header.Add(ClientCertificateHashHeader, certData.CertificateHash)
 	authSession.Header.Add(ClientCertificateIssuerHeader, issuer)
 
-	authSession.Extra = appendExtra(authSession.Extra, certData.authSessionExtra)
+	authSession.Extra = appendExtra(authSession.Extra, certData.AuthSessionExtra)
 
 	log.C(ctx).Info("Certificate header validated successfully")
 	respondWithAuthSession(ctx, w, authSession)

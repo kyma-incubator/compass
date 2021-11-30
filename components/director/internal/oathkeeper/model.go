@@ -246,5 +246,12 @@ func (d *ReqData) GetAccessLevelFromExtra() tenantEntity.Type {
 }
 
 func (d *ReqData) GetConsumerTypeExtraFieldFromExtra() model.SystemAuthReferenceObjectType {
+	if _, found := d.Body.Extra[cert.ConsumerTypeExtraField]; !found {
+		d.Body.Extra[cert.ConsumerTypeExtraField] = "runtime"
+	}
 	return model.SystemAuthReferenceObjectType(fmt.Sprint(d.Body.Extra[cert.ConsumerTypeExtraField]))
+}
+
+func (d *ReqData) GetInternalConsumerIDFromExtra() string {
+	return fmt.Sprint(d.Body.Extra[cert.InternalConsumerIDField])
 }
