@@ -33,6 +33,8 @@ const (
 	BasicCredentialType CredentialType = "BasicCredentials"
 	// OAuthCredentialType missing godoc
 	OAuthCredentialType CredentialType = "OAuthCredentials"
+	// OAuthMTLSCredentialType missing godoc
+	OAuthMTLSCredentialType CredentialType = "OAuthMTLSCredentials"
 )
 
 // CredentialType specifies a dedicated string type to differentiate every Credentials type
@@ -57,6 +59,12 @@ type OAuthCredentials struct {
 	TokenURL     string
 }
 
+// OAuthMTLSCredential implements the Credentials interface for the OAuth with MTLS flow
+type OAuthMTLSCredential struct {
+	ClientID string
+	TokenURL string
+}
+
 // Get returns the specified Credentials implementation
 func (bc *BasicCredentials) Get() interface{} {
 	return bc
@@ -75,6 +83,16 @@ func (oc *OAuthCredentials) Get() interface{} {
 // Type returns the specified Credentials implementation type
 func (oc *OAuthCredentials) Type() CredentialType {
 	return OAuthCredentialType
+}
+
+// Get returns the specified Credentials implementation
+func (omc *OAuthMTLSCredential) Get() interface{} {
+	return omc
+}
+
+// Type returns the specified Credentials implementation type
+func (omc *OAuthMTLSCredential) Type() CredentialType {
+	return OAuthMTLSCredentialType
 }
 
 // LoadFromContext retrieves the credentials from the provided context
