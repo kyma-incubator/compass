@@ -216,11 +216,11 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 
 			if appInput.TemplateID == "" {
 				if err = s.systemsService.Upsert(ctx, appInput.ApplicationRegisterInput); err != nil {
-					return errors.Wrap(err, "while creating application")
+					return errors.Wrap(err, "while upserting application")
 				}
 			} else {
 				if err = s.systemsService.UpsertFromTemplate(ctx, appInput.ApplicationRegisterInput, &appInput.TemplateID); err != nil {
-					return errors.Wrap(err, "while creating application")
+					return errors.Wrap(err, "while upserting application")
 				}
 			}
 

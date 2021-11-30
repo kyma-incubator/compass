@@ -99,15 +99,17 @@ func (u *universalUpserter) addTenantIsolation(query string, resourceType resour
 
 	stmtBuilder.WriteString(query)
 	if u.tenantColumn != nil { // if embedded tenant
-		stmtBuilder.WriteString(fmt.Sprintf(" %s = :%s", *u.tenantColumn, *u.tenantColumn))
+		stmtBuilder.WriteString(" WHERE ")
+		stmtBuilder.WriteString(fmt.Sprintf(" %s.%s = :%s", u.tableName, *u.tenantColumn, *u.tenantColumn))
 	} else if len(tenant) > 0 { // if not global
 		tenantIsolationCondition, err := NewTenantIsolationConditionForNamedArgs(resourceType, tenant, true)
 		if err != nil {
 			return "", err
 		}
 
-		stmtBuilder.WriteString(" ")
-		stmtBuilder.WriteString(tenantIsolationCondition.GetQueryPart())
+		tenantIsolationStatement := strings.Replace(tenantIsolationCondition.GetQueryPart(), "(", fmt.Sprintf("(%s.", u.tableName), 1)
+		stmtBuilder.WriteString(" WHERE ")
+		stmtBuilder.WriteString(tenantIsolationStatement)
 	}
 
 	return stmtBuilder.String(), nil
@@ -133,7 +135,7 @@ func (u *universalUpserter) unsafeUpsert(ctx context.Context, resourceType resou
 		dbEntity = entityWithExternalTenant.DecorateWithTenantID(tenant)
 	}
 
-	log.C(ctx).Debugf("Executing DB query: %s", queryWithTenantIsolation)
+	log.C(ctx).Warnf("Executing DB query: %s", queryWithTenantIsolation)
 	_, err = persist.NamedExecContext(ctx, queryWithTenantIsolation, dbEntity)
 	return persistence.MapSQLError(ctx, err, u.resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName)
 }
