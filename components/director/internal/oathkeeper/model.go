@@ -242,16 +242,31 @@ func (d *ReqData) ExtractCoordinates() (authenticator.Coordinates, bool, error) 
 }
 
 func (d *ReqData) GetAccessLevelFromExtra() tenantEntity.Type {
+	if d.Body.Extra == nil {
+		return ""
+	}
+	if _, found := d.Body.Extra[cert.AccessLevelExtraField]; !found {
+		return ""
+	}
 	return tenantEntity.Type(fmt.Sprint(d.Body.Extra[cert.AccessLevelExtraField]))
 }
 
 func (d *ReqData) GetConsumerTypeExtraFieldFromExtra() model.SystemAuthReferenceObjectType {
+	if d.Body.Extra == nil {
+		return ""
+	}
 	if _, found := d.Body.Extra[cert.ConsumerTypeExtraField]; !found {
-		d.Body.Extra[cert.ConsumerTypeExtraField] = "runtime"
+		d.Body.Extra[cert.ConsumerTypeExtraField] = model.RuntimeReference
 	}
 	return model.SystemAuthReferenceObjectType(fmt.Sprint(d.Body.Extra[cert.ConsumerTypeExtraField]))
 }
 
 func (d *ReqData) GetInternalConsumerIDFromExtra() string {
+	if d.Body.Extra == nil {
+		return ""
+	}
+	if _, found := d.Body.Extra[cert.InternalConsumerIDField]; !found {
+		return ""
+	}
 	return fmt.Sprint(d.Body.Extra[cert.InternalConsumerIDField])
 }

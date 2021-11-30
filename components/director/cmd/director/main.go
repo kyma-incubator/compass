@@ -430,7 +430,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
-	consumerExistsFuncs := map[model.SystemAuthReferenceObjectType]func(ctx context.Context, id string) (bool, error){
+	consumerExistsCheckers := map[model.SystemAuthReferenceObjectType]func(ctx context.Context, id string) (bool, error){
 		model.IntegrationSystemReference: func(ctx context.Context, id string) (bool, error) {
 			_, err := systemAuthSvc.GetGlobal(ctx, id)
 			if err != nil {
@@ -447,7 +447,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 		tenantmapping.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(staticUsersRepo, staticGroupsRepo, tenantRepo),
 		tenantmapping.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(systemAuthSvc, cfgProvider, tenantRepo),
 		tenantmapping.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(tenantRepo, authenticators),
-		tenantmapping.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(tenantRepo, cfgProvider, consumerExistsFuncs),
+		tenantmapping.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(tenantRepo, cfgProvider, consumerExistsCheckers),
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
