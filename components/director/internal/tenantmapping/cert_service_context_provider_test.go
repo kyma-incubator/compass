@@ -45,17 +45,6 @@ func TestCertServiceContextProvider(t *testing.T) {
 			Header: directorComponentHeader,
 		},
 	}
-	//reqDataWithExtra := oathkeeper.ReqData{
-	//	Body: oathkeeper.ReqBody{
-	//		Header: directorComponentHeader,
-	//		Extra: map[string]interface{}{
-	//			"tenant":                     subaccount,
-	//			cert.ConsumerTypeExtraField:  consumer.Runtime,
-	//			cert.InternalConsumerIDField: "test_internal_consumer_id",
-	//			cert.AccessLevelExtraField:   "test_access_level",
-	//		},
-	//	},
-	//}
 	internalAccount := "internalAccountID"
 	internalSubaccount := "internalSubaccountID"
 
