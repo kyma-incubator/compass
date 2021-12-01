@@ -747,7 +747,6 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 }
 
 func TestPgRepository_GetByNameAndSystemNumber(t *testing.T) {
-	appName := "Test App"
 	entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), appName, "Test app description")
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Application By Name and System Number",

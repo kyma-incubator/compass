@@ -27,7 +27,7 @@ var (
 	fixedTimestamp     = time.Now()
 	legacyConnectorURL = "url.com"
 	systemNumber       = "123"
-	// appName            = "appName"
+	appName            = "appName"
 )
 
 func stringPtr(s string) *string {
