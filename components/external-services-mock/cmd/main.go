@@ -123,7 +123,6 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	// CA server handlers
 	certHandler := cert.NewHandler(cfg.CACert, cfg.CAKey)
 	router.HandleFunc("/cert", certHandler.Generate).Methods(http.MethodPost)
-	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
 
 	// AL handlers
 	configChangeSvc := configurationchange.NewService()
@@ -203,14 +202,14 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 
 func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers := make([]*http.Server, 0, 0)
-	servers = append(servers, initCertSecuredORDServer(cfg))
+	servers = append(servers, initCertSecuredORDServer(cfg, key))
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
 	return servers
 }
 
-func initCertSecuredORDServer(cfg config) *http.Server {
+func initCertSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
@@ -219,6 +218,9 @@ func initCertSecuredORDServer(cfg config) *http.Server {
 
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
+
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, key)
+	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.CertPort),

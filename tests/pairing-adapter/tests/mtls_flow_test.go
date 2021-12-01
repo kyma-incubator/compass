@@ -2,8 +2,6 @@ package tests
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -26,7 +24,6 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	fmt.Println(ioutil.ReadAll(resp.Body))
 	respParsed := struct {
 		Token string
 	}{}
