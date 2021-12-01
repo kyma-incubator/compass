@@ -99,7 +99,8 @@ func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error
 func (lcl *localCertificateLoader) Run(ctx context.Context) {
 	ctx = initializeLoggerContext(ctx)
 	certSecretData := map[string][]byte{lcl.config.CertKey: []byte(lcl.config.Cert), lcl.config.KeyKey: []byte(lcl.config.Key)}
-	tlsCert, _ := parseCertificate(ctx, certSecretData, lcl.config)
+	tlsCert, err := parseCertificate(ctx, certSecretData, lcl.config)
+	log.C(ctx).Error(err)
 	lcl.certCache.put(tlsCert)
 }
 
