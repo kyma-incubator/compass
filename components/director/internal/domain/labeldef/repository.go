@@ -41,7 +41,7 @@ type repository struct {
 	deleter          repo.Deleter
 	updater          repo.UpdaterGlobal
 	versionedUpdater repo.UpdaterGlobal
-	upserter         repo.Upserter
+	upserter         repo.UpserterGlobal
 }
 
 // NewRepository missing godoc
@@ -79,7 +79,7 @@ func (r *repository) Upsert(ctx context.Context, tenant string, label model.Labe
 		return errors.Wrap(err, "while creating label definition entity from model")
 	}
 
-	return r.upserter.Upsert(ctx, resource.LabelDefinition, tenant, labelEntity)
+	return r.upserter.UpsertGlobal(ctx, labelEntity)
 }
 
 // GetByKey missing godoc
