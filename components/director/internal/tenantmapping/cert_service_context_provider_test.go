@@ -8,19 +8,16 @@ import (
 	"net/textproto"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/cert"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
-	"github.com/stretchr/testify/mock"
-
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
