@@ -1,3 +1,4 @@
+{{ $global := . }}
 {{- range $adapterName, $config := .Values.deployment.adapters -}}
 {{if eq $config.enabled true}}
 ---
@@ -31,7 +32,7 @@ spec:
             hostAliases:
               - ip: {{ $.Values.global.minikubeIP }}
                 hostnames:
-                  - "{{ $.Values.global.externalServicesMock.certSecuredHost }}.{{ $.Values.global.ingress.domainName}}"
+                  - "{{ $.Values.global.externalServicesMock.certSecuredHost }}.{{ $.Values.global.ingress.domainName }}"
 {{ end }}
             serviceAccountName: {{ $.Release.Name }}-pairing-adapter
             nodeSelector:
@@ -42,7 +43,7 @@ spec:
               imagePullPolicy: {{ $.Values.deployment.image.pullPolicy }}
               env:
               - name: MAPPING_TEMPLATE_EXTERNAL_URL
-                value: {{ $config.envs.mappingTemplateExternalURL  }}
+                value: {{ tpl $config.envs.mappingTemplateExternalURL $global }}
               - name: MAPPING_TEMPLATE_HEADERS
                 value: {{ $config.envs.mappingTemplateHeaders | quote }}
               - name: MAPPING_TEMPLATE_JSON_BODY
