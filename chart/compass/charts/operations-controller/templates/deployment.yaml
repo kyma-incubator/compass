@@ -19,15 +19,19 @@ spec:
         release: {{ .Release.Name }}
         control-plane: controller-manager
     spec:
-      {{ if .Values.global.isLocalEnv }}
+{{ if or .Values.global.isLocalEnv .Values.global.externalServicesMock.enabled }}
       # HostAliases are used by Pod to resolve kyma.local domain
       hostAliases:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
+{{ end }}
+{{ if  .Values.global.isLocalEnv }}
             # Used for calls to Director
             - "{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
+{{ end }}
+{{ if  .Values.global.externalServicesMock.enabled }}
             - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}"
-      {{ end }}
+{{ end }}
       serviceAccountName: {{ template "fullname" . }}
       containers:
       - args:
