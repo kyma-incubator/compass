@@ -88,14 +88,12 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	accessLvl := reqData.GetAccessLevelFromExtra()
-	if accessLvl != "" && tenantMapping.Type != accessLvl {
+	if accessLvl := reqData.GetAccessLevelFromExtra(); accessLvl != "" && tenantMapping.Type != accessLvl {
 		// TODO improve message
 		return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to tenant with ID %s", authDetails.AuthID, tenantMapping.ExternalTenant))
 	}
 
-	internalConsumerID := reqData.GetInternalConsumerIDFromExtra()
-	if internalConsumerID != "" {
+	if internalConsumerID := reqData.GetInternalConsumerIDFromExtra(); internalConsumerID != "" {
 		found, err := p.consumerExistsFuncs[consumerType](ctx, internalConsumerID)
 		if err != nil {
 			return ObjectContext{}, errors.Wrapf(err, "while getting %s with ID %s", consumerType, internalConsumerID)

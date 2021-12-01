@@ -8,6 +8,11 @@ import (
 	"net/textproto"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/google/uuid"
@@ -16,12 +21,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/require"
 )
-
-var internalTenant = "internalTenantID"
 
 func TestCertServiceContextProvider(t *testing.T) {
 	testError := errors.New("test error")
@@ -29,20 +30,24 @@ func TestCertServiceContextProvider(t *testing.T) {
 	emptyCtx := context.TODO()
 	subaccount := uuid.New().String()
 	authDetails := oathkeeper.AuthDetails{AuthID: subaccount, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
-	tenantRepo := &automock.TenantRepository{}
-	scopesGetter := &automock.ScopesGetter{}
 	consumerExistsCheckers := map[model.SystemAuthReferenceObjectType]func(ctx context.Context, id string) (bool, error){
 		model.IntegrationSystemReference: func(ctx context.Context, id string) (bool, error) {
 			return true, nil
 		},
 	}
-	provider := tenantmapping.NewCertServiceContextProvider(tenantRepo, scopesGetter, consumerExistsCheckers)
 	scopes := []string{"runtime:read", "runtime:write", "tenant:read"}
 	scopesString := "runtime:read runtime:write tenant:read"
 	componentHeaderKey := "X-Component-Name"
 	ordComponentHeader := map[string][]string{componentHeaderKey: {"ord"}}
 	directorComponentHeader := map[string][]string{componentHeaderKey: {"director"}}
-	reqData := oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: directorComponentHeader}}
+	reqData := oathkeeper.ReqData{
+		Body: oathkeeper.ReqBody{
+			Extra: map[string]interface{}{
+				oathkeeper.ExternalTenantKey: subaccount,
+			},
+			Header: directorComponentHeader,
+		},
+	}
 	//reqDataWithExtra := oathkeeper.ReqData{
 	//	Body: oathkeeper.ReqBody{
 	//		Header: directorComponentHeader,
@@ -54,159 +59,255 @@ func TestCertServiceContextProvider(t *testing.T) {
 	//		},
 	//	},
 	//}
+	internalAccount := "internalAccountID"
+	internalSubaccount := "internalSubaccountID"
 
-	testTenant := &model.BusinessTenantMapping{
-		ID:             internalTenant,
-		Name:           "testTenant",
-		ExternalTenant: "externalTestTenant",
+	testSubaccount := &model.BusinessTenantMapping{
+		ID:             internalSubaccount,
+		Name:           "testSubaccount",
+		ExternalTenant: "externalTestSubaccount",
 		Type:           "subaccount",
 	}
 
-	t.Run("Error when there is no matching component name", func(t *testing.T) {
-		headers := map[string][]string{"invalidKey": {""}}
-		reqData = oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: headers}}
+	testAccount := &model.BusinessTenantMapping{
+		ID:             internalAccount,
+		Name:           "testAccount",
+		ExternalTenant: "externalTestAccount",
+		Type:           "account",
+	}
 
-		objectCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "empty matched component header")
-		require.Empty(t, objectCtx)
-
-		tenantRepo.AssertExpectations(t)
-	})
-
-	t.Run("Success when component is director and cannot find internal tenant", func(t *testing.T) {
-		reqData = oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
-				Extra: map[string]interface{}{
-					oathkeeper.ExternalTenantKey: subaccount,
+	testCases := []struct {
+		Name                   string
+		TenantRepoFn           func() *automock.TenantRepository
+		ScopesGetterFn         func() *automock.ScopesGetter
+		ConsumerExistsCheckers map[model.SystemAuthReferenceObjectType]func(ctx context.Context, id string) (bool, error)
+		ReqDataInput           oathkeeper.ReqData
+		AuthDetailsInput       oathkeeper.AuthDetails
+		ExpectedScopes         string
+		ExpectedInternalID     string
+		ExpectedErr            error
+	}{
+		{
+			Name: "Success when component is director and cannot find internal tenant",
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", mock.Anything, subaccount).Return(nil, notFoundErr).Once()
+				return tenantRepo
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
+				return scopesGetter
+			},
+			ConsumerExistsCheckers: consumerExistsCheckers,
+			ReqDataInput:           reqData,
+			AuthDetailsInput:       authDetails,
+			ExpectedScopes:         scopesString,
+			ExpectedInternalID:     "",
+			ExpectedErr:            nil,
+		},
+		{
+			Name: "Error when component is director and the error is different from not found",
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", mock.Anything, subaccount).Return(nil, testError).Once()
+				return tenantRepo
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
+				return scopesGetter
+			},
+			ConsumerExistsCheckers: consumerExistsCheckers,
+			ReqDataInput:           reqData,
+			AuthDetailsInput:       authDetails,
+			ExpectedScopes:         "",
+			ExpectedInternalID:     "",
+			ExpectedErr:            testError,
+		},
+		{
+			Name: "Success when component is director and internal tenant exists",
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", mock.Anything, subaccount).Return(testSubaccount, nil).Once()
+				return tenantRepo
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
+				return scopesGetter
+			},
+			ConsumerExistsCheckers: consumerExistsCheckers,
+			ReqDataInput:           reqData,
+			AuthDetailsInput:       authDetails,
+			ExpectedScopes:         scopesString,
+			ExpectedInternalID:     internalSubaccount,
+			ExpectedErr:            nil,
+		},
+		{
+			Name:                   "Error when there is no matching component name",
+			TenantRepoFn:           unusedTenantRepo,
+			ScopesGetterFn:         unusedScopesGetter,
+			ConsumerExistsCheckers: consumerExistsCheckers,
+			ReqDataInput:           oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: map[string][]string{"invalidKey": {""}}}},
+			AuthDetailsInput:       authDetails,
+			ExpectedScopes:         "",
+			ExpectedInternalID:     subaccount,
+			ExpectedErr:            errors.New("empty matched component header"),
+		},
+		{
+			Name:         "Error when can't get required scopes",
+			TenantRepoFn: unusedTenantRepo,
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(nil, testError)
+				return scopesGetter
+			},
+			ConsumerExistsCheckers: consumerExistsCheckers,
+			ReqDataInput:           reqData,
+			AuthDetailsInput:       authDetails,
+			ExpectedErr:            errors.New("failed to extract scopes"),
+		},
+		{
+			Name:         "Error when can't extract external tenant id",
+			TenantRepoFn: unusedTenantRepo,
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.default").Return(scopes, nil)
+				return scopesGetter
+			},
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Header: map[string][]string{
+						componentHeaderKey: {"director"},
+					},
+				}},
+			ConsumerExistsCheckers: consumerExistsCheckers,
+			AuthDetailsInput:       authDetails,
+			ExpectedErr:            errors.New("failed to extract external tenant"),
+		},
+		{
+			Name: "Error when consumer don't have access",
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", mock.Anything, subaccount).Return(testAccount, nil).Once()
+				return tenantRepo
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
+				return scopesGetter
+			},
+			ConsumerExistsCheckers: consumerExistsCheckers,
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Extra: map[string]interface{}{
+						oathkeeper.ExternalTenantKey: subaccount,
+						cert.AccessLevelExtraField:   "subaccount",
+					},
+					Header: directorComponentHeader,
 				},
-				Header: map[string][]string{
-					componentHeaderKey: {"director"},
+			},
+			AuthDetailsInput: authDetails,
+			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to tenant with ID %s", authDetails.AuthID, testAccount.ExternalTenant)),
+		},
+		{
+			Name: "Error when consumer exists check function fails",
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", mock.Anything, subaccount).Return(testAccount, nil).Once()
+				return tenantRepo
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
+			ConsumerExistsCheckers: map[model.SystemAuthReferenceObjectType]func(ctx context.Context, id string) (bool, error){
+				model.IntegrationSystemReference: func(ctx context.Context, id string) (bool, error) {
+					return false, testError
 				},
-			}}
-
-		tenantRepo.On("GetByExternalTenant", mock.Anything, subaccount).Return(nil, notFoundErr).Once()
-		scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
-		provider := tenantmapping.NewCertServiceContextProvider(tenantRepo, scopesGetter, consumerExistsCheckers)
-
-		objectCtx, err := provider.GetObjectContext(emptyCtx, reqData, authDetails)
-		require.NoError(t, err)
-		require.Empty(t, objectCtx.TenantContext.TenantID)
-		require.Equal(t, subaccount, objectCtx.TenantContext.ExternalTenantID)
-		require.Equal(t, subaccount, objectCtx.ConsumerID)
-		require.Equal(t, scopesString, objectCtx.Scopes)
-
-		tenantRepo.AssertExpectations(t)
-	})
-
-	t.Run("Error when component is director and the error is different from not found", func(t *testing.T) {
-		reqData = oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
-				Extra: map[string]interface{}{
-					oathkeeper.ExternalTenantKey: subaccount,
+			},
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Extra: map[string]interface{}{
+						oathkeeper.ExternalTenantKey: subaccount,
+						cert.InternalConsumerIDField: subaccount,
+						cert.ConsumerTypeExtraField:  model.IntegrationSystemReference,
+					},
+					Header: directorComponentHeader,
 				},
-				Header: map[string][]string{
-					componentHeaderKey: {"director"},
+			},
+			AuthDetailsInput: authDetails,
+			ExpectedErr:      testError,
+		},
+		{
+			Name: "Error when consumer exists check function can't find the consumer",
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", mock.Anything, subaccount).Return(testAccount, nil).Once()
+				return tenantRepo
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.integration_system").Return(scopes, nil)
+				return scopesGetter
+			},
+			ConsumerExistsCheckers: map[model.SystemAuthReferenceObjectType]func(ctx context.Context, id string) (bool, error){
+				model.IntegrationSystemReference: func(ctx context.Context, id string) (bool, error) {
+					return false, nil
 				},
-			}}
-
-		tenantRepo.On("GetByExternalTenant", mock.Anything, subaccount).Return(nil, testError).Once()
-		scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
-		provider := tenantmapping.NewCertServiceContextProvider(tenantRepo, scopesGetter, consumerExistsCheckers)
-
-		objectCtx, err := provider.GetObjectContext(emptyCtx, reqData, authDetails)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("while getting external tenant mapping [ExternalTenantID=%s]", subaccount))
-		require.Empty(t, objectCtx)
-
-		tenantRepo.AssertExpectations(t)
-	})
-
-	t.Run("Success when component is director and internal tenant exists", func(t *testing.T) {
-		reqData = oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
-				Extra: map[string]interface{}{
-					oathkeeper.ExternalTenantKey: subaccount,
+			},
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Extra: map[string]interface{}{
+						oathkeeper.ExternalTenantKey: subaccount,
+						cert.InternalConsumerIDField: subaccount,
+						cert.ConsumerTypeExtraField:  model.IntegrationSystemReference,
+					},
+					Header: directorComponentHeader,
 				},
-				Header: map[string][]string{
-					componentHeaderKey: {"director"},
-				},
-			}}
+			},
+			AuthDetailsInput: authDetails,
+			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("%s with ID %s does not exist", model.IntegrationSystemReference, subaccount)),
+		},
+		{
+			Name:               "Success when component is ord",
+			TenantRepoFn:       unusedTenantRepo,
+			ScopesGetterFn:     unusedScopesGetter,
+			ReqDataInput:       oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: ordComponentHeader}},
+			AuthDetailsInput:   authDetails,
+			ExpectedScopes:     "",
+			ExpectedInternalID: subaccount,
+			ExpectedErr:        nil,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			tenantRepo := testCase.TenantRepoFn()
+			scopesGetter := testCase.ScopesGetterFn()
+			provider := tenantmapping.NewCertServiceContextProvider(tenantRepo, scopesGetter, testCase.ConsumerExistsCheckers)
 
-		tenantRepo.On("GetByExternalTenant", mock.Anything, subaccount).Return(testTenant, nil).Once()
-		scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
-		provider := tenantmapping.NewCertServiceContextProvider(tenantRepo, scopesGetter, consumerExistsCheckers)
+			// WHEN
+			objectCtx, err := provider.GetObjectContext(emptyCtx, testCase.ReqDataInput, testCase.AuthDetailsInput)
 
-		objectCtx, err := provider.GetObjectContext(emptyCtx, reqData, authDetails)
-
-		require.NoError(t, err)
-		require.Equal(t, consumer.Runtime, objectCtx.ConsumerType)
-		require.Equal(t, subaccount, objectCtx.ConsumerID)
-		require.Equal(t, internalTenant, objectCtx.TenantContext.TenantID)
-		require.Equal(t, subaccount, objectCtx.TenantContext.ExternalTenantID)
-		require.Equal(t, scopesString, objectCtx.Scopes)
-
-		tenantRepo.AssertExpectations(t)
-	})
-
-	t.Run("Error when can't get required scopes", func(t *testing.T) {
-		reqData = oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
-				Extra: map[string]interface{}{
-					oathkeeper.ExternalTenantKey: subaccount,
-				},
-				Header: map[string][]string{
-					componentHeaderKey: {"director"},
-				},
-			}}
-		tenantRepo := &automock.TenantRepository{}
-		scopesGetter := &automock.ScopesGetter{}
-
-		scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(nil, testError)
-		provider := tenantmapping.NewCertServiceContextProvider(tenantRepo, scopesGetter, consumerExistsCheckers)
-
-		objectCtx, err := provider.GetObjectContext(emptyCtx, reqData, authDetails)
-
-		require.Error(t, err)
-		require.Equal(t, tenantmapping.ObjectContext{}, objectCtx)
-
-		tenantRepo.AssertExpectations(t)
-	})
-
-	t.Run("Error when can't extract external tenant id", func(t *testing.T) {
-		reqData = oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
-				Header: map[string][]string{
-					componentHeaderKey: {"director"},
-				},
-			}}
-
-		scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.default").Return(nil, testError)
-		provider := tenantmapping.NewCertServiceContextProvider(tenantRepo, scopesGetter, consumerExistsCheckers)
-
-		objectCtx, err := provider.GetObjectContext(emptyCtx, reqData, authDetails)
-
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to extract scopes")
-		require.Equal(t, tenantmapping.ObjectContext{}, objectCtx)
-
-		tenantRepo.AssertExpectations(t)
-	})
-
-	t.Run("Success when component is ord", func(t *testing.T) {
-		reqData = oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: ordComponentHeader}}
-
-		objectCtx, err := provider.GetObjectContext(emptyCtx, reqData, authDetails)
-
-		require.NoError(t, err)
-		require.Equal(t, consumer.Runtime, objectCtx.ConsumerType)
-		require.Equal(t, subaccount, objectCtx.ConsumerID)
-		require.Equal(t, subaccount, objectCtx.TenantContext.TenantID)
-		require.Equal(t, subaccount, objectCtx.TenantContext.ExternalTenantID)
-		require.Empty(t, objectCtx.Scopes)
-
-		tenantRepo.AssertExpectations(t)
-	})
+			// THEN
+			if testCase.ExpectedErr == nil {
+				require.NoError(t, err)
+				require.Equal(t, consumer.Runtime, objectCtx.ConsumerType)
+				require.Equal(t, subaccount, objectCtx.ConsumerID)
+				require.Equal(t, testCase.ExpectedInternalID, objectCtx.TenantContext.TenantID)
+				require.Equal(t, subaccount, objectCtx.TenantContext.ExternalTenantID)
+				require.Equal(t, testCase.ExpectedScopes, objectCtx.Scopes)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+				require.Empty(t, objectCtx)
+			}
+			mock.AssertExpectationsForObjects(t, scopesGetter, tenantRepo)
+		})
+	}
 }
 
 func TestCertServiceContextProviderMatch(t *testing.T) {
@@ -246,4 +347,12 @@ func TestCertServiceContextProviderMatch(t *testing.T) {
 		require.Nil(t, authDetails)
 		require.NoError(t, err)
 	})
+}
+
+func unusedTenantRepo() *automock.TenantRepository {
+	return &automock.TenantRepository{}
+}
+
+func unusedScopesGetter() *automock.ScopesGetter {
+	return &automock.ScopesGetter{}
 }
