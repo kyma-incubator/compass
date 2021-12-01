@@ -98,7 +98,7 @@ func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type,
 		dbEntity = entityWithExternalTenant.DecorateWithTenantID(tenant)
 	}
 
-	log.C(ctx).Debug("Executing DB query: %s", queryWithTenantIsolation)
+	log.C(ctx).Debugf("Executing DB query: %s", queryWithTenantIsolation)
 	res, err := persist.NamedExecContext(ctx, queryWithTenantIsolation, dbEntity)
 	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName); err != nil {
 		return err
@@ -186,10 +186,7 @@ func (u *upserterGlobal) unsafeUpsert(ctx context.Context, resourceType resource
 
 	query := buildQuery(u.tableName, u.insertColumns, u.conflictingColumns, u.updateColumns)
 	if u.tenantColumn != nil {
-		query, err = u.addTenantIsolation(query)
-		if err != nil {
-			return err
-		}
+		query = u.addTenantIsolation(query)
 	}
 
 	log.C(ctx).Warnf("Executing DB query: %s", query)
@@ -203,10 +200,11 @@ func (u *upserterGlobal) unsafeUpsert(ctx context.Context, resourceType resource
 		return errors.Wrap(err, "while checking affected rows")
 	}
 
-	return assertSingleRowAffectedWhenUpserting(affected, true)
+	isTenantScopedUpsert := u.tenantColumn != nil
+	return assertSingleRowAffectedWhenUpserting(affected, isTenantScopedUpsert)
 }
 
-func (u *upserterGlobal) addTenantIsolation(query string) (string, error) {
+func (u *upserterGlobal) addTenantIsolation(query string) string {
 	var stmtBuilder strings.Builder
 
 	stmtBuilder.WriteString(query)
@@ -214,7 +212,7 @@ func (u *upserterGlobal) addTenantIsolation(query string) (string, error) {
 	stmtBuilder.WriteString(" WHERE ")
 	stmtBuilder.WriteString(fmt.Sprintf(" %s.%s = :%s", u.tableName, *u.tenantColumn, *u.tenantColumn))
 
-	return stmtBuilder.String(), nil
+	return stmtBuilder.String()
 }
 
 func buildQuery(tableName string, insertColumns []string, conflictingColumns []string, updateColumns []string) string {
