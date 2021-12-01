@@ -21,3 +21,4 @@ deployment:
         mappingTemplateJSONBody: "{}"
         mappingTemplateTokenFromResponse: "{{.access_token}}"
         oauthStyle: ""
+        skipSSLVerify: true

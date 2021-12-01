@@ -51,6 +51,7 @@ func main() {
 		certCache, err := certloader.StartCertLoader(ctx, conf.Auth.ExternalClientCertSecret)
 		exitOnError(err, "Failed to initialize certificate loader")
 		transport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: conf.Auth.SkipSSLVerify,
 			GetClientCertificate: func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
 				return certCache.Get(), nil
 			},
