@@ -202,14 +202,14 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 
 func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers := make([]*http.Server, 0, 0)
-	servers = append(servers, initCertSecuredORDServer(cfg, key))
+	servers = append(servers, initCertSecuredServer(cfg, key))
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
 	return servers
 }
 
-func initCertSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
+func initCertSecuredServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
@@ -221,6 +221,10 @@ func initCertSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 
 	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, key)
 	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
+
+	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
+	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
+	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.CertPort),
