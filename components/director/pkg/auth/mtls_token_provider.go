@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -10,9 +11,11 @@ import (
 	"sync"
 	"time"
 
+	oauth "github.com/kyma-incubator/compass/components/director/pkg/oauth"
+
+	httpdirector "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	httputils "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-
 	"github.com/pkg/errors"
 )
 
@@ -32,24 +35,50 @@ import (
  * limitations under the License.
  */
 
-type mtlsClientCreator func(ctx context.Context) *http.Client
+// CertificateCache missing godoc
+//go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore
+type CertificateCache interface {
+	Get() *tls.Certificate
+}
 
-func DefaultCreator(ctx context.Context) *http.Client {
-	return nil
+type mtlsClientCreator func(cache CertificateCache, timeout time.Duration) *http.Client
+
+func DefaultCreator(cc CertificateCache, timeout time.Duration) *http.Client {
+	httpTransport := httpdirector.NewCorrelationIDTransport(&http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: false,
+			GetClientCertificate: func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+				return cc.Get(), nil
+			},
+		},
+	})
+
+	return &http.Client{
+		Transport: httpTransport,
+		Timeout:   timeout,
+	}
 }
 
 // mtlsTokenAuthorizationProvider presents a AuthorizationProvider implementation which crafts OAuth Bearer token values for the Authorization header using mtls http client
 type mtlsTokenAuthorizationProvider struct {
-	httpClient *http.Client
-	token      httputils.Token
-	lock       sync.RWMutex
+	clientID     string
+	tokenURL     string
+	scopesClaim  string
+	token        httputils.Token
+	tokenTimeout time.Duration
+	httpClient   *http.Client
+	lock         sync.RWMutex
 }
 
 // NewTokenAuthorizationProvider constructs an TokenAuthorizationProvider
-func NewMtlsTokenAuthorizationProvider(ctx context.Context, creator mtlsClientCreator) *mtlsTokenAuthorizationProvider {
+func NewMtlsTokenAuthorizationProvider(oauthCfg oauth.Config, cache CertificateCache, creator mtlsClientCreator) *mtlsTokenAuthorizationProvider {
 	return &mtlsTokenAuthorizationProvider{
-		httpClient: creator(ctx),
-		lock:       sync.RWMutex{},
+		clientID:     oauthCfg.ClientID,
+		tokenURL:     oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
+		scopesClaim:  strings.Join(oauthCfg.ScopesClaim, " "),
+		tokenTimeout: oauthCfg.TokenExpirationTimeout,
+		httpClient:   creator(cache, oauthCfg.TokenRequestTimeout),
+		lock:         sync.RWMutex{},
 	}
 }
 
@@ -59,13 +88,8 @@ func (p *mtlsTokenAuthorizationProvider) Name() string {
 }
 
 // Matches contains the logic for matching the AuthorizationProvider
-func (p *mtlsTokenAuthorizationProvider) Matches(ctx context.Context) bool {
-	credentials, err := LoadFromContext(ctx)
-	if err != nil {
-		return false
-	}
-
-	return credentials.Type() == OAuthMTLSCredentialType
+func (p *mtlsTokenAuthorizationProvider) Matches(_ context.Context) bool {
+	return true
 }
 
 // GetAuthorization crafts an OAuth Bearer token to inject as part of the executing request
@@ -85,24 +109,25 @@ func (p *mtlsTokenAuthorizationProvider) GetAuthorization(ctx context.Context) (
 	}
 
 	log.C(ctx).Debug("Token is invalid, getting a new one...")
-
 	token, err := p.getToken(ctx)
 	if err != nil {
 		return "", err
 	}
 
+	p.token = token
 	return "Bearer " + token.AccessToken, nil
 }
 
 func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context) (httputils.Token, error) {
-	log.C(ctx).Infof("Getting authorization token from endpoint: %s", credentials.TokenURL)
+	log.C(ctx).Info("Getting authorization token")
 
 	form := url.Values{}
 	form.Add("grant_type", "client_credentials")
-	form.Add("client_id", p.ClientID)
+	form.Add("client_id", p.clientID)
+	form.Add("scopes", p.scopesClaim)
 
 	body := strings.NewReader(form.Encode())
-	request, err := http.NewRequest(http.MethodPost, p.TokenURL, body)
+	request, err := http.NewRequest(http.MethodPost, p.tokenURL, body)
 	if err != nil {
 		return httputils.Token{}, errors.Wrap(err, "Failed to create authorisation token request")
 	}
@@ -121,7 +146,7 @@ func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context) (httputil
 
 	respBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return httputils.Token{}, errors.Wrapf(err, "while reading token response body from %q", p.TokenURL)
+		return httputils.Token{}, errors.Wrapf(err, "while reading token response body from %q", p.tokenURL)
 	}
 
 	tokenResponse := httputils.Token{}
@@ -134,7 +159,7 @@ func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context) (httputil
 		return httputils.Token{}, errors.New("while fetching token: access token from oauth client is empty")
 	}
 
-	log.C(ctx).Info("Successfully unmarshal response oauth token for accessing Director")
+	log.C(ctx).Debug("Successfully unmarshal response oauth token")
 	tokenResponse.Expiration += time.Now().Unix()
 
 	return tokenResponse, nil

@@ -8,26 +8,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/paging"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/paging"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 )
-
-// OAuth2Config missing godoc
-type OAuth2Config struct {
-	ClientID              string   `envconfig:"APP_OAUTH_CLIENT_ID"`
-	TokenBaseURL          string   `envconfig:"APP_OAUTH_TOKEN_BASE_URL"`
-	TokenPath             string   `envconfig:"APP_OAUTH_TOKEN_PATH"`
-	TokenEndpointProtocol string   `envconfig:"APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL"`
-	ClientSecret          string   `envconfig:"APP_OAUTH_CLIENT_SECRET"`
-	TenantHeaderName      string   `envconfig:"APP_OAUTH_TENANT_HEADER_NAME"`
-	ScopesClaim           []string `envconfig:"APP_OAUTH_SCOPES_CLAIM"`
-
-	TokenEndpointPattern string `envconfig:"-"`
-}
 
 // APIConfig missing godoc
 type APIConfig struct {
@@ -42,43 +26,24 @@ type APIConfig struct {
 
 // Client missing godoc
 type Client struct {
-	apiConfig     APIConfig
-	oAuth2Config  OAuth2Config
-	clientCreator clientCreatorFunc
-}
-
-type clientCreatorFunc func(ctx context.Context, oauth2Config OAuth2Config) *http.Client
-
-// DefaultClientCreator missing godoc
-func DefaultClientCreator(ctx context.Context, oAuth2Config OAuth2Config) *http.Client {
-	cfg := clientcredentials.Config{
-		ClientID:     oAuth2Config.ClientID,
-		ClientSecret: oAuth2Config.ClientSecret,
-		TokenURL:     oAuth2Config.TokenEndpointProtocol + "://" + oAuth2Config.TokenBaseURL + oAuth2Config.TokenPath,
-		Scopes:       oAuth2Config.ScopesClaim,
-	}
-
-	httpClient := cfg.Client(ctx)
-	return httpClient
+	apiConfig  APIConfig
+	httpClient http.Client
 }
 
 // NewClient missing godoc
-func NewClient(apiConfig APIConfig, oAuth2Config OAuth2Config, clientCreator clientCreatorFunc) *Client {
+func NewClient(apiConfig APIConfig, client http.Client) *Client {
 	return &Client{
-		apiConfig:     apiConfig,
-		oAuth2Config:  oAuth2Config,
-		clientCreator: clientCreator,
+		apiConfig:  apiConfig,
+		httpClient: client,
 	}
 }
 
 // FetchSystemsForTenant fetches systems from the service by making 2 HTTP calls with different filter criteria
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
-	ctx, httpClient := c.clientForTenant(ctx, tenant)
-
 	qp1 := map[string]string{"$filter": c.apiConfig.FilterCriteria}
 	var systems []System
 
-	systemsFunc := getSystemsPagingFunc(ctx, httpClient, &systems)
+	systemsFunc := c.getSystemsPagingFunc(ctx, &systems)
 	pi1 := paging.NewPageIterator(c.apiConfig.Endpoint, c.apiConfig.PagingSkipParam, c.apiConfig.PagingSizeParam, qp1, c.apiConfig.PageSize, systemsFunc)
 	if err := pi1.FetchAll(); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems for tenant %s", tenant)
@@ -88,7 +53,7 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Sy
 	qp2 := map[string]string{"$filter": tenantFilter}
 	var systemsByTenantFilter []System
 
-	systemsByTenantFilterFunc := getSystemsPagingFunc(ctx, httpClient, &systemsByTenantFilter)
+	systemsByTenantFilterFunc := c.getSystemsPagingFunc(ctx, &systemsByTenantFilter)
 	pi2 := paging.NewPageIterator(c.apiConfig.Endpoint, c.apiConfig.PagingSkipParam, c.apiConfig.PagingSizeParam, qp2, c.apiConfig.PageSize, systemsByTenantFilterFunc)
 	if err := pi2.FetchAll(); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems with tenant filter for tenant %s", tenant)
@@ -98,32 +63,13 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Sy
 	return append(systems, systemsByTenantFilter...), nil
 }
 
-func (c *Client) clientForTenant(ctx context.Context, tenant string) (context.Context, *http.Client) {
-	httpTokenClient := &http.Client{
-		Timeout: c.apiConfig.Timeout,
-		Transport: &HeaderTransport{
-			tenantHeaderName: c.oAuth2Config.TenantHeaderName,
-			tenant:           tenant,
-			base:             http.DefaultTransport,
-		},
-	}
-	// The client provided here is used only to get token, not for
-	// the actual request to the system service
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpTokenClient)
-
-	httpClient := c.clientCreator(ctx, c.oAuth2Config)
-	httpClient.Timeout = c.apiConfig.Timeout
-
-	return ctx, httpClient
-}
-
-func fetchSystemsForTenant(ctx context.Context, httpClient *http.Client, url string) ([]System, error) {
+func (c *Client) fetchSystemsForTenant(ctx context.Context, url string) ([]System, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new HTTP request")
 	}
 
-	resp, err := httpClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute HTTP request")
 	}
@@ -150,9 +96,9 @@ func fetchSystemsForTenant(ctx context.Context, httpClient *http.Client, url str
 	return systems, nil
 }
 
-func getSystemsPagingFunc(ctx context.Context, httpClient *http.Client, systems *[]System) func(string) (uint64, error) {
+func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System) func(string) (uint64, error) {
 	return func(url string) (uint64, error) {
-		currentSystems, err := fetchSystemsForTenant(ctx, httpClient, url)
+		currentSystems, err := c.fetchSystemsForTenant(ctx, url)
 		if err != nil {
 			return 0, err
 		}
