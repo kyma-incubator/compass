@@ -16,11 +16,11 @@ import (
 )
 
 const (
-	testExternal = "external"
-	testID       = "foo"
-	testName     = "bar"
-	testParentID = "parent"
-	// testParentID2                 = "parent2"
+	testExternal                  = "external"
+	testID                        = "foo"
+	testName                      = "bar"
+	testParentID                  = "parent"
+	testParentID2                 = "parent2"
 	testInternalParentID          = "internal-parent"
 	testTemporaryInternalParentID = "internal-parent-temp"
 	testSubdomain                 = "subdomain"
