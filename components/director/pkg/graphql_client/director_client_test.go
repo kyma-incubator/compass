@@ -335,6 +335,7 @@ func TestDirector_SetRuntimeTenant(t *testing.T) {
 				expiresAt
 			}
 			certCommonName
+			accessStrategy
 			additionalHeaders
 			additionalQueryParams
 			requestAuth { 
