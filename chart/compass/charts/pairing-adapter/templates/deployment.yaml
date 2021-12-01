@@ -26,7 +26,8 @@ spec:
                 release: {{ $.Release.Name }}
                 system: {{ $adapterName }}
         spec:
-{{- if eq $.Values.global.externalServicesMock.enabled true }}
+{{ if $.Values.global.isLocalEnv }}
+      # HostAliases are used by Pod to resolve kyma.local domain
             hostAliases:
               - ip: {{ $.Values.global.minikubeIP }}
                 hostnames:
