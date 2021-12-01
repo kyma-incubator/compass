@@ -41,7 +41,7 @@ type Auth struct {
 	URL                      string     `envconfig:"optional"`
 	OAuthStyle               OAuthStyle `envconfig:"optional,default=AuthDetect"`
 	ExternalClientCertSecret string     `envconfig:"optional,EXTERNAL_CLIENT_CERT_SECRET"`
-	SkipSSLVerify            bool       `envconfig:"default=false"`
+	SkipSSLVerify            bool       `envconfig:"default=false,SKIP_SSL_VERIFY"`
 }
 
 // swagger:response externalToken
