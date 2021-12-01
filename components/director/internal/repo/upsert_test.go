@@ -2,10 +2,11 @@ package repo_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/stretchr/testify/assert"
 
@@ -223,7 +224,7 @@ func TestUpsert(t *testing.T) {
 		DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description 
 		WHERE (apps.id IN (SELECT id FROM tenant_applications WHERE tenant_id = ? AND owner = true))`)
 
-	expectedTenantAccessQuery := regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? )`)
+	expectedTenantAccessQuery := regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ( tenant_id, id ) DO NOTHING`)
 
 	sut := repo.NewUpserter(appTableName, []string{"id", "name", "description"}, []string{"id"}, []string{"name", "description"})
 

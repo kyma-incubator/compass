@@ -23,8 +23,10 @@ import (
 const applicationTable string = `public.applications`
 
 var (
-	applicationColumns = []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
-	updatableColumns   = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
+	applicationColumns    = []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
+	updatableColumns      = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
+	upsertableColumns     = []string{"name", "description", "status_condition", "provider_name", "base_url", "labels"}
+	matchingSystemColumns = []string{"system_number"}
 )
 
 // EntityConverter missing godoc
@@ -64,7 +66,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		creator:               repo.NewCreator(applicationTable, applicationColumns),
 		updater:               repo.NewUpdater(applicationTable, updatableColumns, []string{"id"}),
 		globalUpdater:         repo.NewUpdaterGlobal(resource.Application, applicationTable, updatableColumns, []string{"id"}),
-		upserter:              repo.NewUpserter(applicationTable, applicationColumns, []string{"system_number"}, updatableColumns),
+		upserter:              repo.NewUpserter(applicationTable, applicationColumns, matchingSystemColumns, upsertableColumns),
 		conv:                  conv,
 	}
 }

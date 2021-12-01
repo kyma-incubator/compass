@@ -3,8 +3,9 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -138,7 +139,7 @@ func (u *upserter) insertTenantAccess(ctx context.Context, resourceType resource
 		return errors.Errorf("entity %s does not have access table", resourceType)
 	}
 
-	insertTenantAccessStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", m2mTable, strings.Join(M2MColumns, ", "), strings.Join(vals, ", "))
+	insertTenantAccessStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s ) ON CONFLICT ( tenant_id, id ) DO NOTHING", m2mTable, strings.Join(M2MColumns, ", "), strings.Join(vals, ", "))
 
 	log.C(ctx).Debugf("Executing DB query: %s", insertTenantAccessStmt)
 	_, err = persist.NamedExecContext(ctx, insertTenantAccessStmt, &TenantAccess{
