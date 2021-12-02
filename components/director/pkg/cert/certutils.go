@@ -7,8 +7,11 @@ import (
 )
 
 const (
-	ConsumerTypeExtraField  = "consumer_type"
-	AccessLevelExtraField   = "tenant_access_level"
+	// ConsumerTypeExtraField is the consumer type json field in the auth session body extra.
+	ConsumerTypeExtraField = "consumer_type"
+	// AccessLevelExtraField is the access level json field in the auth session body extra.
+	AccessLevelExtraField = "tenant_access_level"
+	// InternalConsumerIDField is the internal consumer id json field in the auth session body extra.
 	InternalConsumerIDField = "internal_consumer_id"
 )
 

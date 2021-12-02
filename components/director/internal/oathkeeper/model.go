@@ -248,6 +248,7 @@ func (d *ReqData) ExtractCoordinates() (authenticator.Coordinates, bool, error) 
 	return coords, true, nil
 }
 
+// GetAccessLevelFromExtra gets access level from body extra if it exists.
 func (d *ReqData) GetAccessLevelFromExtra() tenantEntity.Type {
 	if d.Body.Extra == nil {
 		return ""
@@ -258,6 +259,7 @@ func (d *ReqData) GetAccessLevelFromExtra() tenantEntity.Type {
 	return tenantEntity.Type(fmt.Sprint(d.Body.Extra[cert.AccessLevelExtraField]))
 }
 
+// GetConsumerTypeFromExtra gets consumer type from body extra if it exists.
 func (d *ReqData) GetConsumerTypeFromExtra() model.SystemAuthReferenceObjectType {
 	if d.Body.Extra == nil {
 		return ""
@@ -269,6 +271,7 @@ func (d *ReqData) GetConsumerTypeFromExtra() model.SystemAuthReferenceObjectType
 	return model.SystemAuthReferenceObjectType(fmt.Sprint(consumerType))
 }
 
+// GetInternalConsumerIDFromExtra gets internal consumer id from body extra if it exists.
 func (d *ReqData) GetInternalConsumerIDFromExtra() string {
 	if d.Body.Extra == nil {
 		return ""
@@ -279,6 +282,7 @@ func (d *ReqData) GetInternalConsumerIDFromExtra() string {
 	return fmt.Sprint(d.Body.Extra[cert.InternalConsumerIDField])
 }
 
+// GetExtraDataWithDefaults gets body extra.
 func (d *ReqData) GetExtraDataWithDefaults() ExtraData {
 	consumerType := d.GetConsumerTypeFromExtra()
 	if consumerType == "" {
