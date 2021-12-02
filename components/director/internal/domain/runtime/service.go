@@ -85,6 +85,7 @@ type service struct {
 	tenantSvc                tenantService
 
 	protectedLabelPattern string
+	immutableLabelPattern string
 }
 
 // NewService missing godoc
@@ -94,8 +95,9 @@ func NewService(repo runtimeRepository,
 	labelUpsertService labelUpsertService,
 	uidService uidService,
 	scenarioAssignmentEngine scenarioAssignmentEngine,
+	tenantService tenantService,
 	protectedLabelPattern string,
-	tenantService tenantService) *service {
+	immutableLabelPattern string) *service {
 	return &service{
 		repo:                     repo,
 		labelRepo:                labelRepo,
@@ -105,6 +107,7 @@ func NewService(repo runtimeRepository,
 		scenarioAssignmentEngine: scenarioAssignmentEngine,
 		tenantSvc:                tenantService,
 		protectedLabelPattern:    protectedLabelPattern,
+		immutableLabelPattern:    immutableLabelPattern,
 	}
 }
 
@@ -209,6 +212,11 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 // If the runtime has a global_subaccount_id label which value is a valid external subaccount from our DB and a child of the caller tenant. The subaccount is used to register the runtime.
 // After successful registration, the ASAs in the parent of the caller tenant are processed to add all matching scenarios for the runtime in the parent tenant.
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
+	labels := make(map[string]interface{}, 0)
+	return s.CreateWithMandatoryLabels(ctx, in, labels)
+}
+
+func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, mandatoryLabels map[string]interface{}) (string, error) {
 	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
 		tnt, err := s.extractTenantFromSubaccountLabel(ctx, saVal)
 		if err != nil {
@@ -239,12 +247,15 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern)
+	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern)
 	if err != nil {
 		return "", err
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
 
+	for key, value := range mandatoryLabels {
+		in.Labels[key] = value
+	}
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Runtime")
@@ -307,7 +318,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern)
+	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern)
 	if err != nil {
 		return err
 	}
@@ -385,12 +396,16 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return err
 	}
 
-	protected, err := isProtected(labelInput.Key, s.protectedLabelPattern)
+	protected, err := isMatchingRegex(labelInput.Key, s.protectedLabelPattern)
 	if err != nil {
 		return err
 	}
-	if protected {
-		return apperrors.NewInvalidDataError("could not set protected label key %s", labelInput.Key)
+	immutable, err := isMatchingRegex(labelInput.Key, s.immutableLabelPattern)
+	if err != nil {
+		return err
+	}
+	if protected || immutable {
+		return apperrors.NewInvalidDataError("could not set unmodifiable label with key %s", labelInput.Key)
 	}
 	if labelInput.Key != model.ScenariosKey {
 		err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, labelInput)
@@ -446,7 +461,7 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 		return nil, errors.Wrap(err, "while getting label for Runtime")
 	}
 
-	return extractUnProtectedLabels(labels, s.protectedLabelPattern)
+	return extractUnProtectedLabels(labels, s.protectedLabelPattern, s.immutableLabelPattern)
 }
 
 // DeleteLabel missing godoc
@@ -477,12 +492,16 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 		return err
 	}
 
-	protected, err := isProtected(key, s.protectedLabelPattern)
+	protected, err := isMatchingRegex(key, s.protectedLabelPattern)
 	if err != nil {
 		return err
 	}
-	if protected {
-		return apperrors.NewInvalidDataError("could not delete protected label key %s", key)
+	immutable, err := isMatchingRegex(key, s.immutableLabelPattern)
+	if err != nil {
+		return err
+	}
+	if protected || immutable {
+		return apperrors.NewInvalidDataError("could not delete unmodifiable label with key %s", key)
 	}
 	if key != model.ScenariosKey {
 		err = s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, key)
@@ -579,35 +598,43 @@ func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value in
 	return tnt, nil
 }
 
-func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {
+func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string, immutableLabelsKeyPattern string) (map[string]*model.Label, error) {
 	result := make(map[string]*model.Label)
 	for labelKey, label := range labels {
-		protected, err := isProtected(labelKey, protectedLabelsKeyPattern)
+		protected, err := isMatchingRegex(labelKey, protectedLabelsKeyPattern)
 		if err != nil {
 			return nil, err
 		}
-		if !protected {
+		immutable, err := isMatchingRegex(labelKey, immutableLabelsKeyPattern)
+		if err != nil {
+			return nil, err
+		}
+		if !protected && !immutable {
 			result[labelKey] = label
 		}
 	}
 	return result, nil
 }
 
-func unsafeExtractUnProtectedLabels(labels map[string]interface{}, protectedLabelsKeyPattern string) (map[string]interface{}, error) {
+func unsafeExtractUnProtectedLabels(labels map[string]interface{}, protectedLabelsKeyPattern string, immutableLabelsKeyPattern string) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	for labelKey, label := range labels {
-		protected, err := isProtected(labelKey, protectedLabelsKeyPattern)
+		protected, err := isMatchingRegex(labelKey, protectedLabelsKeyPattern)
 		if err != nil {
 			return nil, err
 		}
-		if !protected {
+		immutable, err := isMatchingRegex(labelKey, immutableLabelsKeyPattern)
+		if err != nil {
+			return nil, err
+		}
+		if !protected && !immutable {
 			result[labelKey] = label
 		}
 	}
 	return result, nil
 }
 
-func isProtected(labelKey string, labelKeyPattern string) (bool, error) {
+func isMatchingRegex(labelKey string, labelKeyPattern string) (bool, error) {
 	matched, err := regexp.MatchString(labelKeyPattern, labelKey)
 	if err != nil {
 		return false, err
