@@ -68,7 +68,7 @@ func (p *processor) AuthIDFromSubjectFunc() func(subject string) string {
 	}
 }
 
-// AuthSessionExtraFromSubjectFunc returns a function which returns consumer - specific auth session extra body
+// AuthSessionExtraFromSubjectFunc returns a function which returns consumer-specific auth session extra body
 // in case the subject matches any of the configured consumers from the mapping.
 func (p *processor) AuthSessionExtraFromSubjectFunc() func(subject string) map[string]interface{} {
 	return func(subject string) map[string]interface{} {
