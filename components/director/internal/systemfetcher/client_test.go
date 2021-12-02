@@ -55,7 +55,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		PageSize:                    4,
 		PagingSkipParam:             "$skip",
 		PagingSizeParam:             "$top",
-	}, systemfetcher.OAuth2Config{}, mockClientCreator(mock.httpClient))
+	}, *mock.httpClient)
 
 	t.Run("Success", func(t *testing.T) {
 		mock.callNumber = 0
@@ -235,12 +235,6 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 	mock.httpClient = ts.Client()
 
 	return &mock, ts.URL
-}
-
-func mockClientCreator(client *http.Client) func(ctx context.Context, oauth2Config systemfetcher.OAuth2Config) *http.Client {
-	return func(ctx context.Context, oauth2Config systemfetcher.OAuth2Config) *http.Client {
-		return client
-	}
 }
 
 func fixSystems() []systemfetcher.System {

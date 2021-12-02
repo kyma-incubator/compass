@@ -124,7 +124,7 @@ func (cl *certificatesLoader) processEvents(ctx context.Context, events <-chan w
 					log.C(ctx).Error("Unexpected error: object is not secret. Try again")
 					continue
 				}
-				tlsCert, err := cl.parseCertificate(ctx, secret.Data)
+				tlsCert, err := parseCertificate(ctx, secret.Data)
 				if err != nil {
 					log.C(ctx).WithError(err).Error("Fail during certificate parsing")
 				}
@@ -140,7 +140,7 @@ func (cl *certificatesLoader) processEvents(ctx context.Context, events <-chan w
 	}
 }
 
-func (cl *certificatesLoader) parseCertificate(ctx context.Context, secretData map[string][]byte) (*tls.Certificate, error) {
+func parseCertificate(ctx context.Context, secretData map[string][]byte) (*tls.Certificate, error) {
 	log.C(ctx).Info("Parsing certificate data from secret...")
 	certBytes := secretData["tls.crt"]
 	privateKeyBytes := secretData["tls.key"]

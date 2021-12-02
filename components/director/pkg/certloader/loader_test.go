@@ -244,7 +244,6 @@ func Test_CertificatesLoader(t *testing.T) {
 
 func Test_CertificateParsing(t *testing.T) {
 	ctx := context.Background()
-	cl := certificatesLoader{}
 	certBytes, keyBytes := generateTestCertAndKey(t, testCN)
 	invalidCert := "-----BEGIN CERTIFICATE-----\naZOCUHlJ1wKwnYiLnOofB1xyIUZhVLaJy7Ob\n-----END CERTIFICATE-----\n"
 	invalidKey := "-----BEGIN RSA PRIVATE KEY-----\n7qFmWkbkOAM9CUPx5RwSRt45oxlQjvDniZALWqbYxgO5f8cYZsEAyOU1n2DXgiei\n-----END RSA PRIVATE KEY-----\n"
@@ -287,7 +286,7 @@ func Test_CertificateParsing(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			tlsCert, err := cl.parseCertificate(ctx, testCase.SecretData)
+			tlsCert, err := parseCertificate(ctx, testCase.SecretData)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
