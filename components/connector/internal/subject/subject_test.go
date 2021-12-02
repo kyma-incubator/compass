@@ -100,11 +100,21 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 }
 
 func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
-	p, err := subject.NewProcessor(validConfig, "")
-	require.NoError(t, err)
+	t.Run("Success getting auth session extra", func(t *testing.T) {
+		p, err := subject.NewProcessor(validConfig, "")
+		require.NoError(t, err)
 
-	extra := p.AuthSessionExtraFromSubjectFunc()(validSubject)
-	require.Equal(t, validConsumer, extra["consumer_type"])
-	require.Equal(t, validAccessLvl, extra["tenant_access_level"])
-	require.Equal(t, validInternalConsumerID, extra["internal_consumer_id"])
+		extra := p.AuthSessionExtraFromSubjectFunc()(validSubject)
+		require.Equal(t, validConsumer, extra["consumer_type"])
+		require.Equal(t, validAccessLvl, extra["tenant_access_level"])
+		require.Equal(t, validInternalConsumerID, extra["internal_consumer_id"])
+	})
+	t.Run("Returns nil when can't match subjects", func(t *testing.T) {
+		invalidSubject := "C=DE, OU=Compass Clients, L=validate, CN=test-compass-integration"
+		p, err := subject.NewProcessor(validConfig, "")
+		require.NoError(t, err)
+
+		extra := p.AuthSessionExtraFromSubjectFunc()(invalidSubject)
+		require.Nil(t, extra)
+	})
 }
