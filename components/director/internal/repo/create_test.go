@@ -32,7 +32,7 @@ func TestCreate(t *testing.T) {
 
 			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, name, description ) VALUES ( ?, ?, ? )", appTableName))).
 				WithArgs(appID, appName, appDescription).WillReturnResult(sqlmock.NewResult(1, 1))
-			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( %s, %s, %s ) VALUES ( ?, ?, ? )", m2mTable, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
+			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO %s ( %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)", m2mTable, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
 				WithArgs(tenantID, appID, true).WillReturnResult(sqlmock.NewResult(1, 1))
 
 			err := creator.Create(ctx, resourceType, tenantID, fixApp)
@@ -119,9 +119,7 @@ func TestCreate(t *testing.T) {
 	t.Run("Child Entity", func(t *testing.T) {
 		creator := repo.NewCreator(bundlesTableName, bundleColumns)
 		resourceType := resource.Bundle
-		parent, ok := resourceType.Parent()
-		require.True(t, ok)
-		m2mTable, ok := parent.TenantAccessTable()
+		m2mTable, ok := resource.Application.TenantAccessTable()
 		require.True(t, ok)
 
 		t.Run("success", func(t *testing.T) {
@@ -182,7 +180,7 @@ func TestCreate(t *testing.T) {
 			err := creator.Create(context.TODO(), UserType, tenantID, fixUser)
 			require.Error(t, err)
 			// THEN
-			require.Contains(t, err.Error(), fmt.Sprintf("entity %s does not have parent", UserType))
+			require.Contains(t, err.Error(), fmt.Sprintf("unknown parent for entity type %s", UserType))
 		})
 
 		t.Run("returns error if missing parent ID", func(t *testing.T) {
@@ -190,7 +188,7 @@ func TestCreate(t *testing.T) {
 			err := creator.Create(context.TODO(), resource.API, tenantID, fixUser)
 			require.Error(t, err)
 			// THEN
-			require.Contains(t, err.Error(), fmt.Sprintf("unknown parentID for entity type %s and parentType %s", resource.API, resource.Application))
+			require.Contains(t, err.Error(), fmt.Sprintf("unknown parent for entity type %s", resource.API))
 		})
 
 		t.Run("returns error if missing persistence context", func(t *testing.T) {

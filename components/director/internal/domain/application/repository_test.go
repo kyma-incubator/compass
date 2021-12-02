@@ -60,20 +60,10 @@ func TestRepository_Delete(t *testing.T) {
 		Name: "Application Delete",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2 AND owner = true))`),
-				Args:     []driver.Value{givenID(), givenTenant()},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id"}).AddRow(givenID())}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id"}).AddRow(givenID()).AddRow("secondID")}
-				},
-			},
-			{
-				Query:       regexp.QuoteMeta(`DELETE FROM tenant_applications WHERE id IN ($1)`),
-				Args:        []driver.Value{givenID()},
-				ValidResult: sqlmock.NewResult(-1, 1),
+				Query:         regexp.QuoteMeta(`DELETE FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{givenID(), givenTenant()},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
 			},
 		},
 		ConverterMockProvider: func() testdb.Mock {
@@ -81,7 +71,6 @@ func TestRepository_Delete(t *testing.T) {
 		},
 		RepoConstructorFunc: application.NewRepository,
 		MethodArgs:          []interface{}{givenTenant(), givenID()},
-		IsTopLeveEntity:     true,
 	}
 
 	suite.Run(t)
@@ -288,7 +277,7 @@ func TestRepository_Create(t *testing.T) {
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 			{
-				Query:       regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? )`),
+				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`),
 				Args:        []driver.Value{givenTenant(), givenID(), true},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
@@ -335,7 +324,7 @@ func TestRepository_Create(t *testing.T) {
 			WithArgs(givenID(), nil, appModel.SystemNumber, appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error, repo.NewNullableStringFromJSONRawMessage(appModel.CorrelationIDs)).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? )`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
 			WithArgs(givenTenant(), givenID(), true).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 

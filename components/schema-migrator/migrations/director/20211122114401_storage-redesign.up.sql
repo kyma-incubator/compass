@@ -31,15 +31,23 @@ WHERE EXISTS((SELECT id
               FROM business_tenant_mappings
               WHERE external_tenant = (SELECT value ->> 0 FROM labels l WHERE l.runtime_id = runtimes.id AND key = 'global_subaccount_id')));
 
-INSERT INTO tenant_applications
-SELECT tenant_id, id, true
-FROM applications
-WHERE tenant_id IS NOT NULL AND id IS NOT NULL;
+WITH RECURSIVE parents AS
+                   (SELECT a.id AS resource_id, a.tenant_id AS tenant_id, btm.parent AS parent
+                    FROM applications a JOIN business_tenant_mappings btm ON a.tenant_id = btm.id
+                    UNION ALL
+                    SELECT p.resource_id AS resource_id, t2.id AS tenant_id, t2.parent AS parent
+                    FROM business_tenant_mappings t2
+                             INNER JOIN parents p on t2.id = p.parent)
+INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.tenant_id, parents.resource_id, true FROM parents);
 
-INSERT INTO tenant_runtimes
-SELECT tenant_id, id, true
-FROM runtimes
-WHERE tenant_id IS NOT NULL AND id IS NOT NULL;
+WITH RECURSIVE parents AS
+                   (SELECT r.id AS resource_id, r.tenant_id AS tenant_id, btm.parent AS parent
+                    FROM runtimes r JOIN business_tenant_mappings btm ON r.tenant_id = btm.id
+                    UNION ALL
+                    SELECT p.resource_id AS resource_id, t2.id AS tenant_id, t2.parent AS parent
+                    FROM business_tenant_mappings t2
+                             INNER JOIN parents p on t2.id = p.parent)
+INSERT INTO tenant_runtimes ( tenant_id, id, owner ) (SELECT parents.tenant_id, parents.resource_id, true FROM parents);
 
 UPDATE documents d SET app_id = (SELECT app_id FROM bundles WHERE id = d.bundle_id);
 

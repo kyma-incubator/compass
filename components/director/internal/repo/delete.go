@@ -135,7 +135,7 @@ func (g *universalDeleter) delete(ctx context.Context, resourceType resource.Typ
 		if err != nil {
 			return errors.Wrap(err, "while checking affected rows")
 		}
-		if affected == 0 {
+		if affected == 0 && hasTenantIsolationCondition(conditions) {
 			return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
 		}
 		if affected != 1 {
@@ -144,6 +144,15 @@ func (g *universalDeleter) delete(ctx context.Context, resourceType resource.Typ
 	}
 
 	return nil
+}
+
+func hasTenantIsolationCondition(conditions Conditions) bool {
+	for _, cond := range conditions {
+		if _, ok := cond.(*tenantIsolationCondition); ok {
+			return true
+		}
+	}
+	return false
 }
 
 // IDs keeps IDs retrieved from the Compass storage.

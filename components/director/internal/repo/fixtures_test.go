@@ -132,8 +132,8 @@ func (a *Bundle) GetID() string {
 	return a.ID
 }
 
-func (a *Bundle) GetParentID() string {
-	return a.AppID
+func (a *Bundle) GetParent(_ resource.Type) (resource.Type, string) {
+	return resource.Application, a.AppID
 }
 
 func (a *Bundle) DecorateWithTenantID(tenant string) interface{} {
@@ -160,8 +160,8 @@ func (a *BundleInstanceAuth) GetID() string {
 	return a.ID
 }
 
-func (a *BundleInstanceAuth) GetParentID() string {
-	return a.BundleID
+func (a *BundleInstanceAuth) GetParent(_ resource.Type) (resource.Type, string) {
+	return resource.Bundle, a.BundleID
 }
 
 func (a *BundleInstanceAuth) DecorateWithTenantID(tenant string) interface{} {

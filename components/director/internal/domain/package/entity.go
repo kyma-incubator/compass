@@ -2,6 +2,7 @@ package ordpackage
 
 import (
 	"database/sql"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 

@@ -2,8 +2,9 @@ package fetchrequest
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity represents a fetch request.

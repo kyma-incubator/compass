@@ -326,7 +326,7 @@ func TestPgRepository_Create(t *testing.T) {
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 			{
-				Query:       regexp.QuoteMeta(`INSERT INTO tenant_runtimes ( tenant_id, id, owner ) VALUES ( ?, ?, ? )`),
+				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_runtimes ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`),
 				Args:        []driver.Value{tenantID, rtModel.ID, true},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
@@ -378,20 +378,10 @@ func TestPgRepository_Delete(t *testing.T) {
 		Name: "Runtime Delete",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id FROM public.runtimes WHERE id = $1 AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2 AND owner = true))`),
-				Args:     []driver.Value{runtimeID, tenantID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id"}).AddRow(runtimeID)}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id"}).AddRow(runtimeID).AddRow("secondID")}
-				},
-			},
-			{
-				Query:       regexp.QuoteMeta(`DELETE FROM tenant_runtimes WHERE id IN ($1)`),
-				Args:        []driver.Value{runtimeID},
-				ValidResult: sqlmock.NewResult(-1, 1),
+				Query:         regexp.QuoteMeta(`DELETE FROM public.runtimes WHERE id = $1 AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{runtimeID, tenantID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
 			},
 		},
 		ConverterMockProvider: func() testdb.Mock {
@@ -399,7 +389,6 @@ func TestPgRepository_Delete(t *testing.T) {
 		},
 		RepoConstructorFunc: runtime.NewRepository,
 		MethodArgs:          []interface{}{tenantID, runtimeID},
-		IsTopLeveEntity:     true,
 	}
 
 	suite.Run(t)

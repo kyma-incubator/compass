@@ -23,7 +23,6 @@ type RepoDeleteTestSuite struct {
 	RepoConstructorFunc   interface{}
 	MethodName            string
 	MethodArgs            []interface{}
-	IsTopLeveEntity       bool
 	IsDeleteMany          bool
 }
 
@@ -58,11 +57,7 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				if suite.IsTopLeveEntity {
-					configureNoEntityDeletedForTopLevelEntity(sqlMock, suite.SQLQueryDetails)
-				} else {
-					configureNoEntityDeletedForChildEntity(sqlMock, suite.SQLQueryDetails)
-				}
+				configureNoEntityDeleted(sqlMock, suite.SQLQueryDetails)
 
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
@@ -81,11 +76,7 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
-				if suite.IsTopLeveEntity {
-					configureMoreThanOneEntityDeletedForTopLevelEntity(sqlMock, suite.SQLQueryDetails)
-				} else {
-					configureMoreThanOneEntityDeletedForChildEntity(sqlMock, suite.SQLQueryDetails)
-				}
+				configureMoreThanOneEntityDeleted(sqlMock, suite.SQLQueryDetails)
 
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
@@ -145,18 +136,7 @@ func callDelete(repo interface{}, ctx context.Context, methodName string, args [
 	return err
 }
 
-func configureMoreThanOneEntityDeletedForTopLevelEntity(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
-	for _, sqlDetails := range sqlQueryDetails {
-		if sqlDetails.IsSelect {
-			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.InvalidRowsProvider()...)
-			break
-		} else {
-			sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
-		}
-	}
-}
-
-func configureMoreThanOneEntityDeletedForChildEntity(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
+func configureMoreThanOneEntityDeleted(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
 	for _, sqlDetails := range sqlQueryDetails {
 		if sqlDetails.IsSelect {
 			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)
@@ -167,18 +147,7 @@ func configureMoreThanOneEntityDeletedForChildEntity(sqlMock DBMock, sqlQueryDet
 	}
 }
 
-func configureNoEntityDeletedForTopLevelEntity(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
-	for _, sqlDetails := range sqlQueryDetails {
-		if sqlDetails.IsSelect {
-			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlmock.NewRows([]string{}))
-			break
-		} else {
-			sqlMock.ExpectExec(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnResult(sqlDetails.ValidResult)
-		}
-	}
-}
-
-func configureNoEntityDeletedForChildEntity(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
+func configureNoEntityDeleted(sqlMock DBMock, sqlQueryDetails []SQLQueryDetails) {
 	for _, sqlDetails := range sqlQueryDetails {
 		if sqlDetails.IsSelect {
 			sqlMock.ExpectQuery(sqlDetails.Query).WithArgs(sqlDetails.Args...).WillReturnRows(sqlDetails.ValidRowsProvider()...)

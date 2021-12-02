@@ -3,11 +3,12 @@ package repo
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"strings"
 )
 
 const (
@@ -18,6 +19,7 @@ const (
 	// M2MOwnerColumn is the column name of the owner in each tenant access table / view.
 	M2MOwnerColumn = "owner"
 
+	// RecursiveCreateTenantAccessCTEQuery is a recursive SQL query that creates a tenant access record for a tenant and all its parents.
 	RecursiveCreateTenantAccessCTEQuery = `WITH RECURSIVE parents AS
                    (SELECT t1.id, t1.parent
                     FROM business_tenant_mappings t1
@@ -28,6 +30,7 @@ const (
                              INNER JOIN parents t on t2.id = t.parent)
 			INSERT INTO %s ( %s ) (SELECT parents.id AS tenant_id, :id as id, :owner AS owner FROM parents)`
 
+	// RecursiveDeleteTenantAccessCTEQuery is a recursive SQL query that deletes tenant accesses based on given conditions for a tenant and all its parents.
 	RecursiveDeleteTenantAccessCTEQuery = `WITH RECURSIVE parents AS
                    (SELECT t1.id, t1.parent
                     FROM business_tenant_mappings t1

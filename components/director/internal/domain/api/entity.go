@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"

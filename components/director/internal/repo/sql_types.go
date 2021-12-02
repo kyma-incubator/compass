@@ -3,8 +3,9 @@ package repo
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // ChildEntity is an interface for a child entity that can be used to obtain its parent ID.
