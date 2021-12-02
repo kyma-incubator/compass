@@ -9,7 +9,8 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 )
 
-// LabelUpsertService missing godoc
+//CertificateCache is an interface which provides a certificate which is
+//dynamically reloaded when its Get method is called
 //go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore
 type CertificateCache interface {
 	Get() *tls.Certificate

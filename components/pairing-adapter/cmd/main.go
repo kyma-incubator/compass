@@ -39,7 +39,8 @@ func main() {
 	}
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
 
-	if conf.Auth.Type == adapter.AuthTypeOauth {
+	switch conf.Auth.Type {
+	case adapter.AuthTypeOauth:
 		cc := clientcredentials.Config{
 			TokenURL:     conf.Auth.URL,
 			ClientID:     conf.Auth.ClientID,
@@ -47,7 +48,7 @@ func main() {
 			AuthStyle:    authStyle,
 		}
 		client = cc.Client(ctx)
-	} else if conf.Auth.Type == adapter.AuthTypeMTLS {
+	case adapter.AuthTypeMTLS:
 		certCache, err := certloader.StartCertLoader(ctx, conf.Auth.ExternalClientCertSecret)
 		exitOnError(err, "Failed to initialize certificate loader")
 		transport.TLSClientConfig = &tls.Config{
@@ -56,7 +57,7 @@ func main() {
 				return certCache.Get(), nil
 			},
 		}
-	} else {
+	default:
 		exitOnError(errors.Errorf("auth type %s is not supported", conf.Auth.Type), "while configuring auth")
 	}
 

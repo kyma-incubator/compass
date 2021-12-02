@@ -149,6 +149,30 @@ func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 	require.Contains(t, err.Error(), "nil Context")
 }
 
+func TestClient_Do_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T) {
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			URLTemplate:    &URLTemplate,
+			InputTemplate:  &inputTemplate,
+			HeaderTemplate: &headersTemplate,
+			OutputTemplate: &emptyTemplate,
+			Auth:           &graphql.Auth{AccessStrategy: str.Ptr("wrong")},
+		},
+		Object: web_hook.RequestObject{Application: app},
+	}
+
+	client := webhook.NewClient(http.DefaultClient, nil)
+
+	_, err := client.Do(context.Background(), webhookReq)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "could not determine auth flow")
+}
+
 func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
@@ -566,6 +590,30 @@ func TestClient_Poll_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "nil Context")
+}
+
+func TestClient_Poll_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T) {
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.PollRequest{
+
+		Request: &webhook.Request{
+			Webhook: graphql.Webhook{
+				HeaderTemplate: &headersTemplate,
+				StatusTemplate: &emptyTemplate,
+				Auth:           &graphql.Auth{AccessStrategy: str.Ptr("wrong")},
+			},
+			Object: web_hook.RequestObject{Application: app},
+		},
+		PollURL: mockedLocationURL,
+	}
+
+	client := webhook.NewClient(http.DefaultClient, nil)
+
+	_, err := client.Poll(context.Background(), webhookReq)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "could not determine auth flow")
 }
 
 func TestClient_Poll_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
