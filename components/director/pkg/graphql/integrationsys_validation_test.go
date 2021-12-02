@@ -42,9 +42,9 @@ func TestIntegrationSystemInput_Validate_Name(t *testing.T) {
 			//GIVEN
 			is := fixValidIntegrationSystem()
 			is.Name = testCase.Value
-			//WHEN
+			// WHEN
 			err := is.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -87,9 +87,9 @@ func TestIntegrationSystemInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			is := fixValidIntegrationSystem()
 			is.Description = testCase.Value
-			//WHEN
+			// WHEN
 			err := is.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

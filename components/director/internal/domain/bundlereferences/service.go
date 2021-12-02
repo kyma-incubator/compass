@@ -3,7 +3,6 @@ package bundlereferences
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
@@ -14,10 +13,10 @@ import (
 type BundleReferenceRepository interface {
 	Create(ctx context.Context, item *model.BundleReference) error
 	Update(ctx context.Context, item *model.BundleReference) error
-	DeleteByReferenceObjectID(ctx context.Context, tenant, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error
-	GetByID(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, objectID, bundleID *string) (*model.BundleReference, error)
-	GetBundleIDsForObject(ctx context.Context, tenantID string, objectType model.BundleReferenceObjectType, objectID *string) (ids []string, err error)
-	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
+	DeleteByReferenceObjectID(ctx context.Context, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error
+	GetByID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
+	GetBundleIDsForObject(ctx context.Context, objectType model.BundleReferenceObjectType, objectID *string) (ids []string, err error)
+	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal bundleReference IDs when they are created.
@@ -41,12 +40,7 @@ func NewService(repo BundleReferenceRepository, uidService UIDService) *service 
 
 // GetForBundle returns the BundleReference that is related to a specific Bundle.
 func (s *service) GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	bundleRef, err := s.repo.GetByID(ctx, objectType, tnt, objectID, bundleID)
+	bundleRef, err := s.repo.GetByID(ctx, objectType, objectID, bundleID)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +50,7 @@ func (s *service) GetForBundle(ctx context.Context, objectType model.BundleRefer
 
 // GetBundleIDsForObject returns all bundle IDs that are related for a specific object(APIDefinition/EventDefinition).
 func (s *service) GetBundleIDsForObject(ctx context.Context, objectType model.BundleReferenceObjectType, objectID *string) ([]string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	ids, err := s.repo.GetBundleIDsForObject(ctx, tnt, objectType, objectID)
+	ids, err := s.repo.GetBundleIDsForObject(ctx, objectType, objectID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +60,8 @@ func (s *service) GetBundleIDsForObject(ctx context.Context, objectType model.Bu
 
 // CreateByReferenceObjectID creates a BundleReference between a Bundle and object(APIDefinition/EventDefinition).
 func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
 	id := s.uidService.Generate()
-	bundleReference, err := in.ToBundleReference(id, tnt, objectType, bundleID, objectID)
+	bundleReference, err := in.ToBundleReference(id, objectType, bundleID, objectID)
 	if err != nil {
 		return err
 	}
@@ -92,17 +76,12 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.Bundle
 
 // UpdateByReferenceObjectID updates a BundleReference for a specific object(APIDefinition/EventDefinition).
 func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
+	bundleReference, err := s.repo.GetByID(ctx, objectType, objectID, bundleID)
 	if err != nil {
 		return err
 	}
 
-	bundleReference, err := s.repo.GetByID(ctx, objectType, tnt, objectID, bundleID)
-	if err != nil {
-		return err
-	}
-
-	bundleReference, err = in.ToBundleReference(bundleReference.ID, tnt, objectType, bundleID, objectID)
+	bundleReference, err = in.ToBundleReference(bundleReference.ID, objectType, bundleID, objectID)
 	if err != nil {
 		return err
 	}
@@ -117,24 +96,14 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.Bundle
 
 // DeleteByReferenceObjectID deletes a BundleReference for a specific object(APIDefinition/EventDefinition).
 func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	return s.repo.DeleteByReferenceObjectID(ctx, tnt, *bundleID, objectType, *objectID)
+	return s.repo.DeleteByReferenceObjectID(ctx, *bundleID, objectType, *objectID)
 }
 
 // ListByBundleIDs lists all BundleReferences for given array of bundle IDs. In addition, the number of records for each BundleReference is returned.
 func (s *service) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	if pageSize < 1 || pageSize > 200 {
 		return nil, nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.repo.ListByBundleIDs(ctx, objectType, tnt, bundleIDs, pageSize, cursor)
+	return s.repo.ListByBundleIDs(ctx, objectType, bundleIDs, pageSize, cursor)
 }

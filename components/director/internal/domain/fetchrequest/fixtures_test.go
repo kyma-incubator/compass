@@ -3,8 +3,6 @@ package fetchrequest_test
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"regexp"
 	"testing"
 	"time"
 
@@ -13,6 +11,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	tenantID = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	refID    = "refID"
 )
 
 func fixModelFetchRequest(t *testing.T, url, filter string) *model.FetchRequest {
@@ -69,11 +72,14 @@ func fixGQLFetchRequestInput(url, filter string) *graphql.FetchRequestInput {
 	}
 }
 
-func fixFullFetchRequestModel(id string, timestamp time.Time) model.FetchRequest {
+func fixFullFetchRequestModel(id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType) *model.FetchRequest {
+	return fixFullFetchRequestModelWithRefID(id, timestamp, objectType, refID)
+}
+
+func fixFullFetchRequestModelWithRefID(id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType, objectID string) *model.FetchRequest {
 	filter := "filter"
-	return model.FetchRequest{
+	return &model.FetchRequest{
 		ID:     id,
-		Tenant: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
 		URL:    "foo.bar",
 		Mode:   model.FetchModeIndex,
 		Filter: &filter,
@@ -89,12 +95,16 @@ func fixFullFetchRequestModel(id string, timestamp time.Time) model.FetchRequest
 				},
 			},
 		},
-		ObjectType: model.DocumentFetchRequestReference,
-		ObjectID:   "documentID",
+		ObjectType: objectType,
+		ObjectID:   objectID,
 	}
 }
 
-func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time) fetchrequest.Entity {
+func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType) *fetchrequest.Entity {
+	return fixFullFetchRequestEntityWithRefID(t, id, timestamp, objectType, refID)
+}
+
+func fixFullFetchRequestEntityWithRefID(t *testing.T, id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType, objectID string) *fetchrequest.Entity {
 	auth := &model.Auth{
 		Credential: model.CredentialData{
 			Basic: &model.BasicCredentialData{
@@ -107,12 +117,22 @@ func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time) fet
 	bytes, err := json.Marshal(auth)
 	require.NoError(t, err)
 
+	var documentID sql.NullString
+	var specID sql.NullString
+	switch objectType {
+	case model.DocumentFetchRequestReference:
+		documentID = sql.NullString{Valid: true, String: objectID}
+	case model.APISpecFetchRequestReference:
+		specID = sql.NullString{Valid: true, String: objectID}
+	case model.EventSpecFetchRequestReference:
+		specID = sql.NullString{Valid: true, String: objectID}
+	}
+
 	filter := "filter"
-	return fetchrequest.Entity{
-		ID:       id,
-		TenantID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-		URL:      "foo.bar",
-		Mode:     string(model.FetchModeIndex),
+	return &fetchrequest.Entity{
+		ID:   id,
+		URL:  "foo.bar",
+		Mode: string(model.FetchModeIndex),
 		Filter: sql.NullString{
 			String: filter,
 			Valid:  true,
@@ -123,11 +143,8 @@ func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time) fet
 			Valid:  true,
 			String: string(bytes),
 		},
-		SpecID: sql.NullString{},
-		DocumentID: sql.NullString{
-			Valid:  true,
-			String: "documentID",
-		},
+		SpecID:     specID,
+		DocumentID: documentID,
 	}
 }
 
@@ -135,7 +152,6 @@ func fixFetchRequestModelWithReference(id string, timestamp time.Time, objectTyp
 	filter := "filter"
 	return model.FetchRequest{
 		ID:     id,
-		Tenant: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
 		URL:    "foo.bar",
 		Mode:   model.FetchModeIndex,
 		Filter: &filter,
@@ -151,10 +167,9 @@ func fixFetchRequestModelWithReference(id string, timestamp time.Time, objectTyp
 
 func fixFetchRequestEntityWithReferences(id string, timestamp time.Time, specID, documentID sql.NullString) fetchrequest.Entity {
 	return fetchrequest.Entity{
-		ID:       id,
-		TenantID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-		URL:      "foo.bar",
-		Mode:     string(model.FetchModeIndex),
+		ID:   id,
+		URL:  "foo.bar",
+		Mode: string(model.FetchModeIndex),
 		Filter: sql.NullString{
 			String: "filter",
 			Valid:  true,
@@ -167,22 +182,6 @@ func fixFetchRequestEntityWithReferences(id string, timestamp time.Time, specID,
 	}
 }
 
-func fixUpdateTenantIsolationSubquery() string {
-	return regexp.QuoteMeta(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`)
-}
-
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
-
-func fixUnescapedTenantIsolationSubquery() string {
-	return fixUnescapedTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
-}
-
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
+func fixColumns() []string {
+	return []string{"id", "document_id", "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", "spec_id"}
 }

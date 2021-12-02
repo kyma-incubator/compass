@@ -38,11 +38,11 @@ func TestHTTPHeaders_UnmarshalGQL(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			//when
+			// WHEN
 			h := HTTPHeaders{}
 			err := h.UnmarshalGQL(tc.input)
 
-			//then
+			// THEN
 			if tc.err {
 				assert.Error(t, err)
 				assert.EqualError(t, err, tc.errmsg)
@@ -63,10 +63,10 @@ func TestHTTPHeaders_MarshalGQL(t *testing.T) {
 	expectedHeaders := `{"header":["val1","val2"]}`
 	buf := bytes.Buffer{}
 
-	//when
+	// WHEN
 	fixHeaders.MarshalGQL(&buf)
 
-	//then
+	// THEN
 	assert.NotNil(t, buf)
 	assert.Equal(t, expectedHeaders, buf.String())
 }

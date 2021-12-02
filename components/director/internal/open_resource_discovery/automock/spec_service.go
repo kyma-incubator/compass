@@ -49,13 +49,13 @@ func (_m *SpecService) DeleteByReferenceObjectID(ctx context.Context, objectType
 	return r0
 }
 
-// GetFetchRequest provides a mock function with given fields: ctx, specID
-func (_m *SpecService) GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error) {
-	ret := _m.Called(ctx, specID)
+// GetFetchRequest provides a mock function with given fields: ctx, specID, objectType
+func (_m *SpecService) GetFetchRequest(ctx context.Context, specID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error) {
+	ret := _m.Called(ctx, specID, objectType)
 
 	var r0 *model.FetchRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FetchRequest); ok {
-		r0 = rf(ctx, specID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType) *model.FetchRequest); ok {
+		r0 = rf(ctx, specID, objectType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.FetchRequest)
@@ -63,8 +63,8 @@ func (_m *SpecService) GetFetchRequest(ctx context.Context, specID string) (*mod
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, specID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.SpecReferenceObjectType) error); ok {
+		r1 = rf(ctx, specID, objectType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -95,13 +95,13 @@ func (_m *SpecService) ListByReferenceObjectID(ctx context.Context, objectType m
 	return r0, r1
 }
 
-// RefetchSpec provides a mock function with given fields: ctx, id
-func (_m *SpecService) RefetchSpec(ctx context.Context, id string) (*model.Spec, error) {
-	ret := _m.Called(ctx, id)
+// RefetchSpec provides a mock function with given fields: ctx, id, objectType
+func (_m *SpecService) RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error) {
+	ret := _m.Called(ctx, id, objectType)
 
 	var r0 *model.Spec
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Spec); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType) *model.Spec); ok {
+		r0 = rf(ctx, id, objectType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Spec)
@@ -109,8 +109,8 @@ func (_m *SpecService) RefetchSpec(ctx context.Context, id string) (*model.Spec,
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.SpecReferenceObjectType) error); ok {
+		r1 = rf(ctx, id, objectType)
 	} else {
 		r1 = ret.Error(1)
 	}

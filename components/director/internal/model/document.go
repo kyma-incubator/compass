@@ -8,7 +8,7 @@ import (
 // Document missing godoc
 type Document struct {
 	BundleID    string
-	Tenant      string
+	AppID       string
 	Title       string
 	DisplayName string
 	Description string
@@ -51,14 +51,14 @@ type DocumentPage struct {
 }
 
 // ToDocumentWithinBundle missing godoc
-func (d *DocumentInput) ToDocumentWithinBundle(id, tenant string, bundleID string) *Document {
+func (d *DocumentInput) ToDocumentWithinBundle(id, bundleID, appID string) *Document {
 	if d == nil {
 		return nil
 	}
 
 	return &Document{
 		BundleID:    bundleID,
-		Tenant:      tenant,
+		AppID:       appID,
 		Title:       d.Title,
 		DisplayName: d.DisplayName,
 		Description: d.Description,

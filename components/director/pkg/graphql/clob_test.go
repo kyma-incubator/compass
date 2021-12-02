@@ -32,11 +32,11 @@ func TestCLOB_UnmarshalGQL(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			//when
+			// WHEN
 			var c CLOB
 			err := c.UnmarshalGQL(tc.input)
 
-			//then
+			// THEN
 			if tc.err {
 				assert.Error(t, err)
 				assert.EqualError(t, err, tc.errmsg)
@@ -55,10 +55,10 @@ func TestCLOB_MarshalGQL(t *testing.T) {
 	expectedClob := `"very_big_clob"`
 	buf := bytes.Buffer{}
 
-	//when
+	// WHEN
 	fixClob.MarshalGQL(&buf)
 
-	//then
+	// THEN
 	assert.NotNil(t, buf)
 	assert.Equal(t, expectedClob, buf.String())
 }

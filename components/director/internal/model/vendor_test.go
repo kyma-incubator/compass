@@ -8,13 +8,12 @@ import (
 )
 
 func TestVendorInput_ToVendor(t *testing.T) {
-	// given
+	// GIVEN
 	id := "test"
 	ordID := "foo"
 	appID := "bar"
 	partners := json.RawMessage(`["microsoft:vendor:Microsoft:"]`)
 	name := "sample"
-	tenant := "tenant"
 	labels := json.RawMessage("{}")
 
 	testCases := []struct {
@@ -33,7 +32,6 @@ func TestVendorInput_ToVendor(t *testing.T) {
 			Expected: &model.Vendor{
 				ID:            id,
 				OrdID:         ordID,
-				TenantID:      tenant,
 				ApplicationID: appID,
 				Title:         name,
 				Partners:      partners,
@@ -49,10 +47,10 @@ func TestVendorInput_ToVendor(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
-			result := testCase.Input.ToVendor(id, tenant, appID)
+			// WHEN
+			result := testCase.Input.ToVendor(id, appID)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

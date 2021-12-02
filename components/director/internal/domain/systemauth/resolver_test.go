@@ -19,7 +19,7 @@ import (
 var contextParam = txtest.CtxWithDBMatcher()
 
 func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -206,7 +206,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 
 			resolver := systemauth.NewResolver(transact, svc, oauthSvc, converter)
 
-			// when
+			// WHEN
 			fn := resolver.GenericDeleteSystemAuth(objectType)
 			result, err := fn(context.TODO(), id)
 

@@ -24,7 +24,7 @@ func NewAscOrderBy(field string) OrderBy {
 	}
 }
 
-// NewDescOrderBy returns wrapping type for descending orderd for a given column (field)
+// NewDescOrderBy returns wrapping type for descending ordered for a given column (field)
 func NewDescOrderBy(field string) OrderBy {
 	return OrderBy{
 		Field: field,

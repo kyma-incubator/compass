@@ -13,18 +13,41 @@ type EntityConverter struct {
 	mock.Mock
 }
 
-// MultipleFromEntities provides a mock function with given fields: entities
-func (_m *EntityConverter) MultipleFromEntities(entities runtime.RuntimeCollection) []*model.Runtime {
-	ret := _m.Called(entities)
+// FromEntity provides a mock function with given fields: entity
+func (_m *EntityConverter) FromEntity(entity *runtime.Runtime) *model.Runtime {
+	ret := _m.Called(entity)
 
-	var r0 []*model.Runtime
-	if rf, ok := ret.Get(0).(func(runtime.RuntimeCollection) []*model.Runtime); ok {
-		r0 = rf(entities)
+	var r0 *model.Runtime
+	if rf, ok := ret.Get(0).(func(*runtime.Runtime) *model.Runtime); ok {
+		r0 = rf(entity)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Runtime)
+			r0 = ret.Get(0).(*model.Runtime)
 		}
 	}
 
 	return r0
+}
+
+// ToEntity provides a mock function with given fields: in
+func (_m *EntityConverter) ToEntity(in *model.Runtime) (*runtime.Runtime, error) {
+	ret := _m.Called(in)
+
+	var r0 *runtime.Runtime
+	if rf, ok := ret.Get(0).(func(*model.Runtime) *runtime.Runtime); ok {
+		r0 = rf(in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*runtime.Runtime)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.Runtime) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

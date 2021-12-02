@@ -16,7 +16,7 @@ import (
 )
 
 func TestService_Create(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -64,7 +64,6 @@ func TestService_Create(t *testing.T) {
 	}
 
 	modelBundle := &model.Bundle{
-		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
 		Name:                           name,
 		Description:                    &desc,
@@ -92,7 +91,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -114,8 +113,8 @@ func TestService_Create(t *testing.T) {
 			},
 			DocumentServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", ctx, id, *modelInput.Documents[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, id, *modelInput.Documents[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.Documents[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.Documents[1]).Return("", nil).Once()
 				return svc
 			},
 			Input:       modelInput,
@@ -125,7 +124,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Bundle creation",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(testErr).Once()
+				repo.On("Create", ctx, tenantID, modelBundle).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -149,7 +148,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - API creation",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -177,7 +176,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Event creation",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -207,7 +206,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Document creation",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -229,7 +228,7 @@ func TestService_Create(t *testing.T) {
 			},
 			DocumentServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", ctx, id, *modelInput.Documents[0]).Return("", testErr).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.Documents[0]).Return("", testErr).Once()
 				return svc
 			},
 			Input:       modelInput,
@@ -239,7 +238,7 @@ func TestService_Create(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			uidService := testCase.UIDServiceFn()
 
@@ -248,10 +247,10 @@ func TestService_Create(t *testing.T) {
 			documentSvc := testCase.DocumentServiceFn()
 			svc := bundle.NewService(repo, apiSvc, eventSvc, documentSvc, uidService)
 
-			// when
+			// WHEN
 			result, err := svc.Create(ctx, applicationID, testCase.Input)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -273,7 +272,7 @@ func TestService_Create(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -292,7 +291,6 @@ func TestService_Update(t *testing.T) {
 	})
 
 	bundleModel := &model.Bundle{
-		TenantID:                       tenantID,
 		ApplicationID:                  "id",
 		Name:                           name,
 		Description:                    &desc,
@@ -316,7 +314,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(bundleModel, nil).Once()
-				repo.On("Update", ctx, inputBundleModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputBundleModel).Return(nil).Once()
 				return repo
 			},
 			InputID:     "foo",
@@ -328,7 +326,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(bundleModel, nil).Once()
-				repo.On("Update", ctx, inputBundleModel).Return(testErr).Once()
+				repo.On("Update", ctx, tenantID, inputBundleModel).Return(testErr).Once()
 				return repo
 			},
 			InputID:     "foo",
@@ -350,15 +348,15 @@ func TestService_Update(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 			} else {
@@ -380,7 +378,7 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -419,15 +417,15 @@ func TestService_Delete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 			} else {
@@ -513,7 +511,7 @@ func TestService_Exist(t *testing.T) {
 }
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -562,10 +560,10 @@ func TestService_Get(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			bndl, err := svc.Get(ctx, testCase.InputID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedBundle, bndl)
@@ -588,7 +586,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_GetForApplication(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -641,10 +639,10 @@ func TestService_GetForApplication(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			document, err := svc.GetForApplication(ctx, testCase.InputID, testCase.ApplicationID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedBundle, document)
@@ -667,7 +665,7 @@ func TestService_GetForApplication(t *testing.T) {
 }
 
 func TestService_ListByApplicationIDNoPaging(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	name := "foo"
@@ -716,10 +714,10 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			docs, err := svc.ListByApplicationIDNoPaging(ctx, appID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, docs)
@@ -742,7 +740,7 @@ func TestService_ListByApplicationIDNoPaging(t *testing.T) {
 }
 
 func TestService_ListByApplicationIDs(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	firstAppID := "bar"
@@ -842,7 +840,7 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 
 			svc := bundle.NewService(repo, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			bndls, err := svc.ListByApplicationIDs(ctx, appIDs, testCase.PageSize, after)
 
 			// then

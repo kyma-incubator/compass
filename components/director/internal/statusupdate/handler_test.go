@@ -34,7 +34,7 @@ import (
 )
 
 func TestUpdate_Handler(t *testing.T) {
-	//given
+	// GIVEN
 	testErr := errors.New("test")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 

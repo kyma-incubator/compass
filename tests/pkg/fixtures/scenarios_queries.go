@@ -18,6 +18,7 @@ package fixtures
 
 import (
 	"context"
+	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -52,6 +53,15 @@ func DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t require.TestingT
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &assignment)
 	require.NoError(t, err)
 	return assignment
+}
+
+func CleanUpAutomaticScenarioAssignmentForScenarioWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, scenarioName string) {
+	assignment := graphql.AutomaticScenarioAssignment{}
+	req := FixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenarioName)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &assignment)
+	if err != nil {
+		t.Logf("Error while cleaning up ASA: %s", err.Error())
+	}
 }
 
 func DeleteAutomaticScenarioAssigmentForSelector(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, selector graphql.LabelSelectorInput) []graphql.AutomaticScenarioAssignment {

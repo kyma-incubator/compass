@@ -19,7 +19,7 @@ import (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.Document
@@ -47,7 +47,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			frConv := &automock.FetchRequestConverter{}
 			converter := document.NewConverter(frConv)
 
-			// when
+			// WHEN
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -58,7 +58,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	input := []*model.Document{
 		fixModelDocument("1", "foo"),
 		fixModelDocument("2", "bar"),
@@ -73,7 +73,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	frConv := &automock.FetchRequestConverter{}
 	converter := document.NewConverter(frConv)
 
-	// when
+	// WHEN
 	res := converter.MultipleToGraphQL(input)
 
 	// then
@@ -82,7 +82,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *graphql.DocumentInput
@@ -113,7 +113,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			}
 			converter := document.NewConverter(frConv)
 
-			// when
+			// WHEN
 			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
@@ -125,7 +125,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	input := []*graphql.DocumentInput{
 		fixGQLDocumentInput("foo"),
 		fixGQLDocumentInput("bar"),
@@ -142,7 +142,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	frConv.On("InputFromGraphQL", (*graphql.FetchRequestInput)(nil)).Return(nil, nil)
 	converter := document.NewConverter(frConv)
 
-	// when
+	// WHEN
 	res, err := converter.MultipleInputFromGraphQL(input)
 
 	// then
@@ -156,8 +156,8 @@ func TestToEntity(t *testing.T) {
 	sut := document.NewConverter(nil)
 
 	modelWithRequiredFields := model.Document{
-		Tenant:      "givenTenant",
 		BundleID:    "givenBundleID",
+		AppID:       "givenAppID",
 		Title:       "givenTitle",
 		Description: "givenDescription",
 		DisplayName: "givenDisplayName",
@@ -175,12 +175,12 @@ func TestToEntity(t *testing.T) {
 	t.Run("only required fields", func(t *testing.T) {
 		givenModel := modelWithRequiredFields
 		// WHEN
-		actual, err := sut.ToEntity(givenModel)
+		actual, err := sut.ToEntity(&givenModel)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, &document.Entity{
-			TenantID:    givenModel.Tenant,
 			BndlID:      givenModel.BundleID,
+			AppID:       givenModel.AppID,
 			Title:       givenModel.Title,
 			Description: givenModel.Description,
 			DisplayName: givenModel.DisplayName,
@@ -201,7 +201,7 @@ func TestToEntity(t *testing.T) {
 		givenModel.Data = str.Ptr("givenData")
 		givenModel.Kind = str.Ptr("givenKind")
 		// WHEN
-		actual, err := sut.ToEntity(givenModel)
+		actual, err := sut.ToEntity(&givenModel)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, sql.NullString{Valid: true, String: "givenData"}, actual.Data)
@@ -213,8 +213,8 @@ func TestFromEntity(t *testing.T) {
 	// GIVEN
 	sut := document.NewConverter(nil)
 	entityWithRequiredFields := document.Entity{
-		TenantID:    "givenTenant",
 		BndlID:      "givenBundleID",
+		AppID:       "givenAppID",
 		Title:       "givenTitle",
 		DisplayName: "givenDisplayName",
 		Description: "givenDescription",
@@ -227,12 +227,12 @@ func TestFromEntity(t *testing.T) {
 	t.Run("only required fields", func(t *testing.T) {
 		givenEntity := entityWithRequiredFields
 		// WHEN
-		actualModel, err := sut.FromEntity(givenEntity)
+		actualModel, err := sut.FromEntity(&givenEntity)
 		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, model.Document{
-			Tenant:      "givenTenant",
+		assert.Equal(t, &model.Document{
 			BundleID:    "givenBundleID",
+			AppID:       "givenAppID",
 			Title:       "givenTitle",
 			DisplayName: "givenDisplayName",
 			Description: "givenDescription",
@@ -255,7 +255,7 @@ func TestFromEntity(t *testing.T) {
 		}
 
 		// WHEN
-		actualModel, err := sut.FromEntity(givenEntity)
+		actualModel, err := sut.FromEntity(&givenEntity)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, str.Ptr("givenData"), actualModel.Data)

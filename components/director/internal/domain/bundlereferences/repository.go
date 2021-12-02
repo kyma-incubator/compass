@@ -23,8 +23,7 @@ const (
 )
 
 var (
-	tenantColumn                    = "tenant_id"
-	bundleReferencesColumns         = []string{"tenant_id", "api_def_id", "event_def_id", "bundle_id", "api_def_url", "id"}
+	bundleReferencesColumns         = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url", "id"}
 	updatableColumns                = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url"}
 	updatableColumnsWithoutBundleID = []string{"api_def_id", "event_def_id", "api_def_url"}
 )
@@ -37,24 +36,24 @@ type BundleReferenceConverter interface {
 }
 
 type repository struct {
-	creator     repo.Creator
-	unionLister repo.UnionLister
-	lister      repo.Lister
-	getter      repo.SingleGetter
-	deleter     repo.Deleter
-	updater     repo.Updater
+	creator     repo.CreatorGlobal
+	unionLister repo.UnionListerGlobal
+	lister      repo.ListerGlobal
+	getter      repo.SingleGetterGlobal
+	deleter     repo.DeleterGlobal
+	updater     repo.UpdaterGlobal
 	conv        BundleReferenceConverter
 }
 
 // NewRepository returns a new entity responsible for repo-layer BundleReference operations.
 func NewRepository(conv BundleReferenceConverter) *repository {
 	return &repository{
-		creator:     repo.NewCreator(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
-		unionLister: repo.NewUnionLister(resource.BundleReference, BundleReferenceTable, tenantColumn, []string{}),
-		lister:      repo.NewLister(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
-		getter:      repo.NewSingleGetter(resource.BundleReference, BundleReferenceTable, tenantColumn, bundleReferencesColumns),
-		deleter:     repo.NewDeleter(resource.BundleReference, BundleReferenceTable, tenantColumn),
-		updater:     repo.NewUpdater(resource.BundleReference, BundleReferenceTable, updatableColumns, tenantColumn, []string{}),
+		creator:     repo.NewCreatorGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
+		unionLister: repo.NewUnionListerGlobal(resource.BundleReference, BundleReferenceTable, []string{}),
+		lister:      repo.NewListerGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
+		getter:      repo.NewSingleGetterGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
+		deleter:     repo.NewDeleterGlobal(resource.BundleReference, BundleReferenceTable),
+		updater:     repo.NewUpdaterGlobal(resource.BundleReference, BundleReferenceTable, updatableColumns, []string{}),
 		conv:        conv,
 	}
 }
@@ -68,7 +67,7 @@ func (r BundleReferencesCollection) Len() int {
 }
 
 // GetByID retrieves the BundleReference with matching objectID/objectID and bundleID from the Compass storage.
-func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, objectID, bundleID *string) (*model.BundleReference, error) {
+func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
 		return nil, err
@@ -85,7 +84,7 @@ func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferen
 			repo.NewEqualCondition(bundleIDColumn, bundleID),
 		}
 	}
-	err = r.getter.Get(ctx, tenantID, conditions, repo.NoOrderBy, &bundleReferenceEntity)
+	err = r.getter.GetGlobal(ctx, conditions, repo.NoOrderBy, &bundleReferenceEntity)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +98,7 @@ func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferen
 }
 
 // GetBundleIDsForObject retrieves all BundleReference IDs for matching objectID from the Compass storage.
-func (r *repository) GetBundleIDsForObject(ctx context.Context, tenantID string, objectType model.BundleReferenceObjectType, objectID *string) (ids []string, err error) {
+func (r *repository) GetBundleIDsForObject(ctx context.Context, objectType model.BundleReferenceObjectType, objectID *string) (ids []string, err error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
 		return nil, err
@@ -114,7 +113,7 @@ func (r *repository) GetBundleIDsForObject(ctx context.Context, tenantID string,
 		repo.NewEqualCondition(fieldName, objectID),
 	}
 
-	err = lister.List(ctx, tenantID, &objectBundleIDs, conditions...)
+	err = lister.ListGlobal(ctx, &objectBundleIDs, conditions...)
 	if err != nil {
 		return nil, err
 	}
@@ -158,11 +157,11 @@ func (r *repository) Update(ctx context.Context, item *model.BundleReference) er
 
 	entity := r.conv.ToEntity(*item)
 
-	return updater.UpdateSingle(ctx, entity)
+	return updater.UpdateSingleGlobal(ctx, entity)
 }
 
 // DeleteByReferenceObjectID removes a BundleReference with matching objectID and bundleID from the Compass storage.
-func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error {
+func (r *repository) DeleteByReferenceObjectID(ctx context.Context, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {
 		return err
@@ -173,11 +172,11 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant, bund
 		repo.NewEqualCondition(bundleIDColumn, bundleID),
 	}
 
-	return r.deleter.DeleteOne(ctx, tenant, conditions)
+	return r.deleter.DeleteOneGlobal(ctx, conditions)
 }
 
 // ListByBundleIDs retrieves all BundleReferences matching an array of bundleIDs from the Compass storage.
-func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
+func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
 	columns, err := getSelectedColumnsByObjectType(objectType)
 	if err != nil {
 		return nil, nil, err
@@ -201,7 +200,7 @@ func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.Bundl
 	}
 
 	var objectBundleIDs BundleReferencesCollection
-	counts, err := unionLister.List(ctx, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &objectBundleIDs, conditions...)
+	counts, err := unionLister.ListGlobal(ctx, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &objectBundleIDs, conditions...)
 	if err != nil {
 		return nil, nil, err
 	}

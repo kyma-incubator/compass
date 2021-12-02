@@ -23,7 +23,6 @@ func (c *converter) ToEntity(in *model.Package) *Entity {
 
 	output := &Entity{
 		ID:                in.ID,
-		TenantID:          in.TenantID,
 		ApplicationID:     in.ApplicationID,
 		OrdID:             in.OrdID,
 		Vendor:            repo.NewNullableString(in.Vendor),
@@ -56,7 +55,6 @@ func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 
 	output := &model.Package{
 		ID:                entity.ID,
-		TenantID:          entity.TenantID,
 		ApplicationID:     entity.ApplicationID,
 		OrdID:             entity.OrdID,
 		Vendor:            repo.StringPtrFromNullableString(entity.Vendor),

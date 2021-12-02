@@ -48,9 +48,9 @@ func TestAPIDefinitionInput_Validate_Name(t *testing.T) {
 			//GIVEN
 			obj := fixValidAPIDefinitionInput()
 			obj.Name = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -93,9 +93,9 @@ func TestAPIDefinitionInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			obj := fixValidAPIDefinitionInput()
 			obj.Description = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -138,9 +138,9 @@ func TestAPIDefinitionInput_Validate_TargetURL(t *testing.T) {
 			//GIVEN
 			app := fixValidAPIDefinitionInput()
 			app.TargetURL = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -183,9 +183,9 @@ func TestAPIDefinitionInput_Validate_Group(t *testing.T) {
 			//GIVEN
 			obj := fixValidAPIDefinitionInput()
 			obj.Group = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -226,9 +226,9 @@ func TestAPIDefinitionInput_Validate_APISpecInput(t *testing.T) {
 			//GIVEN
 			obj := fixValidAPIDefinitionInput()
 			obj.Spec = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -269,9 +269,9 @@ func TestAPIDefinitionInput_Validate_Version(t *testing.T) {
 			//GIVEN
 			obj := fixValidAPIDefinitionInput()
 			obj.Version = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -308,9 +308,9 @@ func TestAPISpecInput_Validate_Type(t *testing.T) {
 			//GIVEN
 			obj := fixValidAPISpecInput()
 			obj.Type = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -347,9 +347,9 @@ func TestAPISpecInput_Validate_Format(t *testing.T) {
 			//GIVEN
 			obj := fixValidAPISpecInput()
 			obj.Format = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -392,9 +392,9 @@ func TestAPISpecInput_Validate_TypeODataWithFormat(t *testing.T) {
 			obj := fixValidAPISpecInput()
 			obj.Type = testCase.InputType
 			obj.Format = testCase.InputFormat
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -437,9 +437,9 @@ func TestAPISpecInput_Validate_TypeOpenAPIWithFormat(t *testing.T) {
 			obj := fixValidAPISpecInput()
 			obj.Type = testCase.InputType
 			obj.Format = testCase.InputFormat
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -483,9 +483,9 @@ func TestAPISpecInput_Validate_FetchRequest(t *testing.T) {
 			obj := fixValidAPISpecInput()
 			obj.FetchRequest = testCase.Value
 			obj.Data = testCase.DataClob
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

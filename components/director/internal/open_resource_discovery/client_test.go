@@ -64,7 +64,7 @@ var successfulRoundTripFunc = func(t *testing.T, bothBaseURLsProvided, noBaseURL
 			require.NoError(t, err)
 		} else if strings.Contains(req.URL.String(), customWebhookConfigURL) {
 			config := fixWellKnownConfig()
-			// when webhookURL is not /well-known, a valid baseURL in the config must be provided
+			// WHEN webhookURL is not /well-known, a valid baseURL in the config must be provided
 			config.BaseURL = baseURL2
 			data, err = json.Marshal(config)
 			require.NoError(t, err)

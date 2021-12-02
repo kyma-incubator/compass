@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
-	"regexp"
 	"time"
 
 	event "github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
@@ -21,7 +19,7 @@ import (
 const (
 	eventID          = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
 	specID           = "sssssssss-ssss-ssss-ssss-ssssssssssss"
-	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
@@ -42,6 +40,10 @@ func fixEventDefinitionModel(id string, name string) *model.EventDefinition {
 }
 
 func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, model.Spec, model.BundleReference) {
+	return fixFullEventDefinitionModelWithID(eventID, placeholder)
+}
+
+func fixFullEventDefinitionModelWithID(id, placeholder string) (model.EventDefinition, model.Spec, model.BundleReference) {
 	eventType := model.EventSpecTypeAsyncAPI
 	spec := model.Spec{
 		ID:         specID,
@@ -63,7 +65,6 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 	}
 
 	eventBundleReference := model.BundleReference{
-		Tenant:     tenantID,
 		BundleID:   str.Ptr(bundleID),
 		ObjectType: model.BundleEventReference,
 		ObjectID:   str.Ptr(eventID),
@@ -73,7 +74,6 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 	return model.EventDefinition{
 		ApplicationID:       appID,
 		PackageID:           str.Ptr(packageID),
-		Tenant:              tenantID,
 		Name:                placeholder,
 		Description:         str.Ptr("desc_" + placeholder),
 		Group:               str.Ptr("group_" + placeholder),
@@ -96,7 +96,7 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 		Extensible:          json.RawMessage(extensible),
 		Version:             v,
 		BaseEntity: &model.BaseEntity{
-			ID:        eventID,
+			ID:        id,
 			Ready:     true,
 			CreatedAt: &fixedTimestamp,
 			UpdatedAt: &time.Time{},
@@ -205,16 +205,15 @@ func fixGQLEventDefinitionInput(name, description string, group string) *graphql
 	}
 }
 
-func fixEntityEventDefinition(id string, name string) event.Entity {
-	return event.Entity{
+func fixEntityEventDefinition(id string, name string) *event.Entity {
+	return &event.Entity{
 		Name:       name,
 		BaseEntity: &repo.BaseEntity{ID: id},
 	}
 }
 
-func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
-	return event.Entity{
-		TenantID:            tenantID,
+func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
+	return &event.Entity{
 		ApplicationID:       appID,
 		PackageID:           repo.NewValidNullableString(packageID),
 		Name:                placeholder,
@@ -256,7 +255,7 @@ func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
 }
 
 func fixEventDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
+	return []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash"}
@@ -264,13 +263,13 @@ func fixEventDefinitionColumns() []string {
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
-	return []driver.Value{id, tenantID, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, "shortDescription", &boolVar,
+	return []driver.Value{id, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, "shortDescription", &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), "visibility", &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash)}
 }
 
 func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, appID, packageID, event.Name, event.Description, event.Group, event.OrdID, event.ShortDescription,
+	return []driver.Value{id, appID, packageID, event.Name, event.Description, event.Group, event.OrdID, event.ShortDescription,
 		event.SystemInstanceAware, repo.NewNullableStringFromJSONRawMessage(event.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(event.Links),
 		repo.NewNullableStringFromJSONRawMessage(event.Tags), repo.NewNullableStringFromJSONRawMessage(event.Countries), event.ReleaseStatus, event.SunsetDate,
 		repo.NewNullableStringFromJSONRawMessage(event.Labels), event.Visibility,
@@ -281,7 +280,6 @@ func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
 	return &model.FetchRequest{
 		ID:     id,
-		Tenant: tenantID,
 		URL:    url,
 		Auth:   nil,
 		Mode:   "SINGLE",
@@ -290,14 +288,13 @@ func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchReque
 			Condition: model.FetchRequestStatusConditionInitial,
 			Timestamp: timestamp,
 		},
-		ObjectType: model.SpecFetchRequestReference,
+		ObjectType: model.EventSpecFetchRequestReference,
 		ObjectID:   specID,
 	}
 }
 
 func fixModelBundleReference(bundleID, eventID string) *model.BundleReference {
 	return &model.BundleReference{
-		Tenant:     tenantID,
 		BundleID:   str.Ptr(bundleID),
 		ObjectType: model.BundleEventReference,
 		ObjectID:   str.Ptr(eventID),
@@ -320,24 +317,4 @@ func fixGQLFetchRequest(url string, timestamp time.Time) *graphql.FetchRequest {
 func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 	t := graphql.Timestamp(time)
 	return &t
-}
-
-func fixUpdateTenantIsolationSubquery() string {
-	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
-}
-
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
-
-func fixUnescapedTenantIsolationSubquery() string {
-	return fixUnescapedTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
-}
-
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
 }

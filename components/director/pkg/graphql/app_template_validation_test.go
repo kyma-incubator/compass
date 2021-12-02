@@ -57,9 +57,9 @@ func TestApplicationTemplateInput_Validate_Rule_ValidPlaceholders(t *testing.T) 
 			sut := fixValidApplicationTemplateInput()
 			sut.ApplicationInput.Description = str.Ptr(fmt.Sprintf("{{%s}}", testPlaceholderName))
 			sut.Placeholders = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -107,9 +107,9 @@ func TestApplicationTemplateInput_Validate_Name(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationTemplateInput()
 			sut.Name = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -152,9 +152,9 @@ func TestApplicationTemplateInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationTemplateInput()
 			sut.Description = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -210,9 +210,9 @@ func TestApplicationTemplateInput_Validate_Placeholders(t *testing.T) {
 			sut := fixValidApplicationTemplateInput()
 			sut.ApplicationInput.Description = str.Ptr(fmt.Sprintf("{{%s}}", testPlaceholderName))
 			sut.Placeholders = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -250,9 +250,9 @@ func TestApplicationTemplateInput_Validate_AccessLevel(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationTemplateInput()
 			sut.AccessLevel = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -305,9 +305,9 @@ func TestApplicationTemplateInput_Validate_Webhooks(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationTemplateInput()
 			sut.Webhooks = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -362,9 +362,9 @@ func TestApplicationTemplateUpdateInput_Validate_Rule_ValidPlaceholders(t *testi
 			sut := fixValidApplicationTemplateUpdateInput()
 			sut.ApplicationInput.Description = str.Ptr(fmt.Sprintf("{{%s}}", testPlaceholderName))
 			sut.Placeholders = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -412,9 +412,9 @@ func TestApplicationTemplateUpdateInput_Validate_Name(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationTemplateUpdateInput()
 			sut.Name = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -457,9 +457,9 @@ func TestApplicationTemplateUpdateInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationTemplateUpdateInput()
 			sut.Description = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -515,9 +515,9 @@ func TestApplicationTemplateUpdateInput_Validate_Placeholders(t *testing.T) {
 			sut := fixValidApplicationTemplateUpdateInput()
 			sut.ApplicationInput.Description = str.Ptr(fmt.Sprintf("{{%s}}", testPlaceholderName))
 			sut.Placeholders = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -555,9 +555,9 @@ func TestApplicationTemplateUpdateInput_Validate_AccessLevel(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationTemplateUpdateInput()
 			sut.AccessLevel = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -610,9 +610,9 @@ func TestApplicationTemplateUpdateInput_Validate_Webhooks(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationTemplateUpdateInput()
 			sut.ApplicationInput.Webhooks = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -652,9 +652,9 @@ func TestPlaceholderDefinitionInput_Validate_Name(t *testing.T) {
 			//GIVEN
 			sut := fixValidPlaceholderDefintionInput()
 			sut.Name = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -697,9 +697,9 @@ func TestPlaceholderDefinitionInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			sut := fixValidPlaceholderDefintionInput()
 			sut.Description = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -746,9 +746,9 @@ func TestApplicationFromTemplateInput_Validate_Rule_UniquePlaceholders(t *testin
 			//GIVEN
 			sut := fixValidApplicationFromTemplateInput()
 			sut.Values = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -796,9 +796,9 @@ func TestApplicationFromTemplateInput_Validate_TemplateName(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationFromTemplateInput()
 			sut.TemplateName = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -853,9 +853,9 @@ func TestApplicationTemplateInput_Validate_Values(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationFromTemplateInput()
 			sut.Values = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -895,9 +895,9 @@ func TestTemplateValueInput_Validate_Name(t *testing.T) {
 			//GIVEN
 			sut := fixValidTemplateValueInput()
 			sut.Placeholder = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {
@@ -935,9 +935,9 @@ func TestTemplateValueInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			sut := fixValidTemplateValueInput()
 			sut.Value = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
 			} else {

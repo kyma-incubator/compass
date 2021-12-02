@@ -44,11 +44,11 @@ func TestLabels_UnmarshalGQL(t *testing.T) {
 			errMsg: "unexpected Labels type: map[int]interface {}, should be map[string]interface{}"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			//when
+			// WHEN
 			a := graphql.Labels{}
 			err := a.UnmarshalGQL(tc.input)
 
-			//then
+			// THEN
 			if tc.err {
 				assert.Error(t, err)
 				assert.EqualError(t, err, tc.errMsg)
@@ -74,11 +74,11 @@ func TestLabels_MarshalGQL(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		//when
+		// WHEN
 		buf := bytes.Buffer{}
 		test.input.MarshalGQL(&buf)
 
-		//then
+		// THEN
 		as.NotNil(buf)
 		as.Equal(test.expected, buf.String())
 	}

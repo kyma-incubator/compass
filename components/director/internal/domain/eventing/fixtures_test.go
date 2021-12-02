@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -40,7 +42,7 @@ func fixRuntimeEventingURLLabel() *model.Label {
 		Key:        RuntimeEventingURLLabel,
 		ObjectID:   runtimeID.String(),
 		ObjectType: model.RuntimeLabelableObject,
-		Tenant:     tenantID.String(),
+		Tenant:     str.Ptr(tenantID.String()),
 		Value:      runtimeEventURL,
 	}
 }
@@ -62,14 +64,12 @@ func fixRuntimeEventngCfgWithEmptyURL(t *testing.T) *model.RuntimeEventingConfig
 func fixRuntimes() []*model.Runtime {
 	return []*model.Runtime{
 		&model.Runtime{
-			ID:     runtimeID.String(),
-			Name:   "runtime-1",
-			Tenant: tenantID.String(),
+			ID:   runtimeID.String(),
+			Name: "runtime-1",
 		},
 		&model.Runtime{
-			ID:     uuid.New().String(),
-			Name:   "runtime-2",
-			Tenant: tenantID.String(),
+			ID:   uuid.New().String(),
+			Name: "runtime-2",
 		},
 	}
 }
@@ -132,7 +132,7 @@ func fixApplicationScenariosLabel() *model.Label {
 		Key:        model.ScenariosKey,
 		ObjectID:   applicationID.String(),
 		ObjectType: model.ApplicationLabelableObject,
-		Tenant:     tenantID.String(),
+		Tenant:     str.Ptr(tenantID.String()),
 		Value:      []interface{}{"DEFAULT", "CUSTOM"},
 	}
 }
@@ -167,7 +167,6 @@ func fixValidURL(t *testing.T, rawURL string) url.URL {
 
 func fixApplicationModel(name string) model.Application {
 	return model.Application{
-		Tenant:     tenantID.String(),
 		Name:       name,
 		BaseEntity: &model.BaseEntity{ID: applicationID.String()},
 	}

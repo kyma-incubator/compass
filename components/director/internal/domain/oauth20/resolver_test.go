@@ -18,7 +18,7 @@ import (
 )
 
 func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
-	// Given
+	// GIVEN
 	id := "foo"
 	clientID := "clientid"
 	txGen := txtest.NewTransactionContextGenerator(nil)
@@ -149,7 +149,7 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 }
 
 func TestResolver_CommonRequestClientCredentialsError(t *testing.T) {
-	// Given
+	// GIVEN
 	id := "foo"
 	objType := model.RuntimeReference
 	clientID := "clientid"
