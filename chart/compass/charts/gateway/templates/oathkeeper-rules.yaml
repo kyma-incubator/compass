@@ -293,10 +293,6 @@ spec:
   authorizer:
     handler: allow
   mutators:
-  - handler: header
-    config:
-      headers:
-        x-component-name: "ord"
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
@@ -323,10 +319,6 @@ spec:
   authorizer:
     handler: allow
   mutators:
-  - handler: header
-    config:
-      headers:
-        x-component-name: "director"
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator

@@ -2,8 +2,6 @@ package tombstone_test
 
 import (
 	"database/sql/driver"
-	"fmt"
-	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,27 +9,32 @@ import (
 
 const (
 	tombstoneID      = "tombstoneID"
-	tenantID         = "tenantID"
+	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	appID            = "appID"
 	ordID            = "com.compass.v1"
 	externalTenantID = "externalTenantID"
 )
 
 func fixEntityTombstone() *tombstone.Entity {
+	return fixEntityTombstoneWithID(tombstoneID)
+}
+func fixEntityTombstoneWithID(id string) *tombstone.Entity {
 	return &tombstone.Entity{
-		ID:            tombstoneID,
+		ID:            id,
 		OrdID:         ordID,
-		TenantID:      tenantID,
 		ApplicationID: appID,
 		RemovalDate:   "removalDate",
 	}
 }
 
 func fixTombstoneModel() *model.Tombstone {
+	return fixTombstoneModelWithID(tombstoneID)
+}
+
+func fixTombstoneModelWithID(id string) *model.Tombstone {
 	return &model.Tombstone{
-		ID:            tombstoneID,
+		ID:            id,
 		OrdID:         ordID,
-		TenantID:      tenantID,
 		ApplicationID: appID,
 		RemovalDate:   "removalDate",
 	}
@@ -45,33 +48,17 @@ func fixTombstoneModelInput() *model.TombstoneInput {
 }
 
 func fixTombstoneColumns() []string {
-	return []string{"ord_id", "tenant_id", "app_id", "removal_date", "id"}
+	return []string{"ord_id", "app_id", "removal_date", "id"}
 }
 
 func fixTombstoneRow() []driver.Value {
-	return []driver.Value{ordID, tenantID, appID, "removalDate", tombstoneID}
+	return fixTombstoneRowWithID(tombstoneID)
+}
+
+func fixTombstoneRowWithID(id string) []driver.Value {
+	return []driver.Value{ordID, appID, "removalDate", id}
 }
 
 func fixTombstoneUpdateArgs() []driver.Value {
 	return []driver.Value{"removalDate"}
-}
-
-func fixUpdateTenantIsolationSubquery() string {
-	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
-}
-
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
-
-func fixUnescapedTenantIsolationSubquery() string {
-	return fixUnescapedTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
-}
-
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
 }

@@ -249,7 +249,7 @@ func TestResolver_Labels(t *testing.T) {
 	testLabels := map[string]*model.Label{
 		testLabelKey: {
 			ID:         "5d0ec128-47da-418a-99f5-8409105ce82d",
-			Tenant:     tenantID,
+			Tenant:     str.Ptr(tenantID),
 			Key:        testLabelKey,
 			Value:      "value",
 			ObjectID:   tenantID,

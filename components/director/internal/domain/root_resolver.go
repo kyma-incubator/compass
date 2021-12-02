@@ -145,7 +145,7 @@ func NewRootResolver(
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
-	runtimeContextRepo := runtimectx.NewRepository()
+	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
 	applicationRepo := application.NewRepository(appConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -176,13 +176,13 @@ func NewRootResolver(
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc, scenarioAssignmentEngine)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, featuresConfig.ProtectedLabelPattern)
 	runtimeCtxSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, featuresConfig.ProtectedLabelPattern, tenantSvc)
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.Admin)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
@@ -191,7 +191,7 @@ func NewRootResolver(
 	timeService := time.NewService()
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentSvc, tenantSvc)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
@@ -215,7 +215,7 @@ func NewRootResolver(
 		tenant:             tenant.NewResolver(transact, tenantSvc, tenantConverter),
 		mpBundle:           bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc),
 		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
-		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv),
+		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc),
 	}
 }
 
@@ -583,11 +583,6 @@ func (r *mutationResolver) RegisterRuntime(ctx context.Context, in graphql.Runti
 // UpdateRuntime missing godoc
 func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	return r.runtime.UpdateRuntime(ctx, id, in)
-}
-
-// SetRuntimeTenant sets internal tenant id for runtime
-func (r *mutationResolver) SetRuntimeTenant(ctx context.Context, runtimeID string, tenantID string) (*graphql.Runtime, error) {
-	return r.runtime.SetRuntimeTenant(ctx, runtimeID, tenantID)
 }
 
 // UnregisterRuntime missing godoc

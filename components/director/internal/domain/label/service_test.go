@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -19,8 +21,8 @@ import (
 )
 
 func TestLabelService_UpsertMultipleLabels(t *testing.T) {
-	// given
-	tnt := "tenant"
+	// GIVEN
+	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
@@ -61,14 +63,14 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 			InputObjectType: runtimeType,
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Upsert", ctx, &model.Label{
-					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "object", Value: objectValue,
+				repo.On("Upsert", ctx, tenantID, &model.Label{
+					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "object", Value: objectValue,
 				}).Return(nil).Once()
-				repo.On("Upsert", ctx, &model.Label{
-					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
+				repo.On("Upsert", ctx, tenantID, &model.Label{
+					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
 				}).Return(nil).Once()
-				repo.On("Upsert", ctx, &model.Label{
-					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "array", Value: arrayValue,
+				repo.On("Upsert", ctx, tenantID, &model.Label{
+					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "array", Value: arrayValue,
 				}).Return(nil).Once()
 				return repo
 			},
@@ -96,11 +98,11 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, runtimeType, runtimeID, "object").Return(nil, notFoundErr).Maybe()
 				repo.On("GetByKey", ctx, tnt, runtimeType, runtimeID, "string").Return(nil, notFoundErr).Maybe()
 
-				repo.On("Upsert", ctx, &model.Label{
-					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "object", Value: objectValue,
+				repo.On("Upsert", ctx, tenantID, &model.Label{
+					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "object", Value: objectValue,
 				}).Return(testErr).Maybe()
-				repo.On("Upsert", ctx, &model.Label{
-					ID: id, Tenant: tnt, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
+				repo.On("Upsert", ctx, tenantID, &model.Label{
+					ID: id, ObjectType: runtimeType, ObjectID: runtimeID, Key: "string", Value: stringValue,
 				}).Return(nil).Maybe()
 				return repo
 			},
@@ -125,10 +127,10 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 
 			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
-			// when
+			// WHEN
 			err := svc.UpsertMultipleLabels(ctx, tnt, testCase.InputObjectType, testCase.InputObjectID, testCase.InputLabels)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
@@ -144,8 +146,8 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 }
 
 func TestLabelService_UpsertLabel(t *testing.T) {
-	// given
-	tnt := "tenant"
+	// GIVEN
+	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
@@ -184,12 +186,11 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					Key:        "test",
 					Value:      "string",
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -216,12 +217,12 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -258,12 +259,12 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -371,12 +372,12 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Upsert", ctx, &model.Label{
+				repo.On("Upsert", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(testErr).Once()
@@ -411,10 +412,10 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 
 			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
-			// when
+			// WHEN
 			err := svc.UpsertLabel(ctx, tnt, testCase.LabelInput)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 			} else {
@@ -430,8 +431,8 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 }
 
 func TestLabelService_CreateLabel(t *testing.T) {
-	// given
-	tnt := "tenant"
+	// GIVEN
+	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
@@ -470,12 +471,11 @@ func TestLabelService_CreateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Create", ctx, &model.Label{
+				repo.On("Create", ctx, tenantID, &model.Label{
 					Key:        "test",
 					Value:      "string",
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -500,12 +500,12 @@ func TestLabelService_CreateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Create", ctx, &model.Label{
+				repo.On("Create", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -542,12 +542,12 @@ func TestLabelService_CreateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Create", ctx, &model.Label{
+				repo.On("Create", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -631,12 +631,12 @@ func TestLabelService_CreateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Create", ctx, &model.Label{
+				repo.On("Create", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(testErr)
@@ -695,7 +695,7 @@ func TestLabelService_CreateLabel(t *testing.T) {
 
 			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
-			// when
+			// WHEN
 			err := svc.CreateLabel(ctx, tnt, id, testCase.LabelInput)
 
 			// then
@@ -714,8 +714,8 @@ func TestLabelService_CreateLabel(t *testing.T) {
 }
 
 func TestLabelService_UpdateLabel(t *testing.T) {
-	// given
-	tnt := "tenant"
+	// GIVEN
+	tnt := tenantID
 	externalTnt := "external-tenant"
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
@@ -754,12 +754,11 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("UpdateWithVersion", ctx, &model.Label{
+				repo.On("UpdateWithVersion", ctx, tenantID, &model.Label{
 					Key:        "test",
 					Value:      "string",
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -784,12 +783,12 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("UpdateWithVersion", ctx, &model.Label{
+				repo.On("UpdateWithVersion", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -826,12 +825,12 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("UpdateWithVersion", ctx, &model.Label{
+				repo.On("UpdateWithVersion", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(nil).Once()
@@ -915,12 +914,12 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("UpdateWithVersion", ctx, &model.Label{
+				repo.On("UpdateWithVersion", ctx, tenantID, &model.Label{
 					Key:        model.ScenariosKey,
+					Tenant:     str.Ptr(tenantID),
 					Value:      []string{"DEFAULT"},
 					ObjectType: model.ApplicationLabelableObject,
 					ObjectID:   "appID",
-					Tenant:     tnt,
 					ID:         id,
 					Version:    version,
 				}).Return(testErr)
@@ -979,7 +978,7 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 
 			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
-			// when
+			// WHEN
 			err := svc.UpdateLabel(ctx, tnt, id, testCase.LabelInput)
 
 			// then
@@ -998,8 +997,8 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 }
 
 func TestLabelService_GetLabel(t *testing.T) {
-	// given
-	tnt := "tenant"
+	// GIVEN
+	tnt := tenantID
 	externalTnt := "external-tenant"
 	id := "foo"
 	ctx := context.TODO()
@@ -1032,7 +1031,6 @@ func TestLabelService_GetLabel(t *testing.T) {
 				repo := &automock.LabelRepository{}
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, "appID", "test").Return(&model.Label{
 					ID:         id,
-					Tenant:     tnt,
 					Key:        "test",
 					Value:      []interface{}{"test"},
 					ObjectID:   "appID",
@@ -1052,7 +1050,6 @@ func TestLabelService_GetLabel(t *testing.T) {
 
 			ExpectedLabel: &model.Label{
 				ID:         id,
-				Tenant:     tnt,
 				Key:        "test",
 				Value:      []interface{}{"test"},
 				ObjectID:   "appID",
@@ -1097,7 +1094,7 @@ func TestLabelService_GetLabel(t *testing.T) {
 
 			svc := label.NewLabelService(labelRepo, labelDefRepo, uidService)
 
-			// when
+			// WHEN
 			lbl, err := svc.GetLabel(ctx, tnt, testCase.LabelInput)
 
 			// then

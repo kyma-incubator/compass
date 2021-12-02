@@ -22,11 +22,11 @@ func TestConverter_ToEntity(t *testing.T) {
 
 	version := 0
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
-		Input              model.Label
-		Expected           label.Entity
+		Input              *model.Label
+		Expected           *label.Entity
 		ExpectedErrMessage string
 	}{
 		{
@@ -43,26 +43,24 @@ func TestConverter_ToEntity(t *testing.T) {
 		},
 		{
 			Name: "Empty value",
-			Input: model.Label{
+			Input: &model.Label{
 				ID:      "2",
 				Key:     "foo",
-				Tenant:  "tenant",
 				Version: version,
 			},
-			Expected: label.Entity{
-				ID:       "2",
-				Key:      "foo",
-				TenantID: "tenant",
-				Version:  version,
+			Expected: &label.Entity{
+				ID:      "2",
+				Key:     "foo",
+				Version: version,
 			},
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Error",
-			Input: model.Label{
+			Input: &model.Label{
 				Value: make(chan int),
 			},
-			Expected:           label.Entity{},
+			Expected:           nil,
 			ExpectedErrMessage: "while marshalling Value: json: unsupported type: chan int",
 		},
 	}
@@ -71,7 +69,7 @@ func TestConverter_ToEntity(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			conv := label.NewConverter()
 
-			// when
+			// WHEN
 			res, err := conv.ToEntity(testCase.Input)
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)
@@ -95,11 +93,11 @@ func TestConverter_FromEntity(t *testing.T) {
 
 	version := 0
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
-		Input              label.Entity
-		Expected           model.Label
+		Input              *label.Entity
+		Expected           *model.Label
 		ExpectedErrMessage string
 	}{
 		{
@@ -116,16 +114,14 @@ func TestConverter_FromEntity(t *testing.T) {
 		},
 		{
 			Name: "Empty value",
-			Input: label.Entity{
-				ID:       "2",
-				Key:      "foo",
-				TenantID: "tenant",
-				Version:  version,
-			},
-			Expected: model.Label{
+			Input: &label.Entity{
 				ID:      "2",
 				Key:     "foo",
-				Tenant:  "tenant",
+				Version: version,
+			},
+			Expected: &model.Label{
+				ID:      "2",
+				Key:     "foo",
 				Version: version,
 			},
 			ExpectedErrMessage: "",
@@ -133,7 +129,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		{
 			Name:               "Error",
 			Input:              fixLabelEntity("1", []byte("{json"), version),
-			Expected:           model.Label{},
+			Expected:           nil,
 			ExpectedErrMessage: "while unmarshalling Value: invalid character 'j' looking for beginning of object key string",
 		},
 	}
@@ -142,7 +138,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			conv := label.NewConverter()
 
-			// when
+			// WHEN
 			res, err := conv.FromEntity(testCase.Input)
 			if testCase.ExpectedErrMessage != "" {
 				require.Error(t, err)
@@ -155,11 +151,10 @@ func TestConverter_FromEntity(t *testing.T) {
 	}
 }
 
-func fixLabelEntity(id string, value []byte, version int) label.Entity {
-	return label.Entity{
-		ID:       id,
-		TenantID: "tenant",
-		AppID:    sql.NullString{},
+func fixLabelEntity(id string, value []byte, version int) *label.Entity {
+	return &label.Entity{
+		ID:    id,
+		AppID: sql.NullString{},
 		RuntimeID: sql.NullString{
 			String: "321",
 			Valid:  true,
@@ -169,10 +164,9 @@ func fixLabelEntity(id string, value []byte, version int) label.Entity {
 		Version: version,
 	}
 }
-func fixLabelModel(id string, value interface{}, version int) model.Label {
-	return model.Label{
+func fixLabelModel(id string, value interface{}, version int) *model.Label {
+	return &model.Label{
 		ID:         id,
-		Tenant:     "tenant",
 		Key:        "test",
 		ObjectType: model.RuntimeLabelableObject,
 		ObjectID:   "321",

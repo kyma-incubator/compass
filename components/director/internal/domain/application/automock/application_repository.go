@@ -18,13 +18,13 @@ type ApplicationRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, item
-func (_m *ApplicationRepository) Create(ctx context.Context, item *model.Application) error {
-	ret := _m.Called(ctx, item)
+// Create provides a mock function with given fields: ctx, tenant, item
+func (_m *ApplicationRepository) Create(ctx context.Context, tenant string, item *model.Application) error {
+	ret := _m.Called(ctx, tenant, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Application) error); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) error); ok {
+		r0 = rf(ctx, tenant, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -256,13 +256,13 @@ func (_m *ApplicationRepository) TechnicalUpdate(ctx context.Context, item *mode
 	return r0
 }
 
-// Update provides a mock function with given fields: ctx, item
-func (_m *ApplicationRepository) Update(ctx context.Context, item *model.Application) error {
-	ret := _m.Called(ctx, item)
+// Update provides a mock function with given fields: ctx, tenant, item
+func (_m *ApplicationRepository) Update(ctx context.Context, tenant string, item *model.Application) error {
+	ret := _m.Called(ctx, tenant, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Application) error); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) error); ok {
+		r0 = rf(ctx, tenant, item)
 	} else {
 		r0 = ret.Error(0)
 	}

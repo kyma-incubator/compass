@@ -19,8 +19,7 @@ import (
 const bundleTable string = `public.bundles`
 
 var (
-	bundleColumns    = []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
-	tenantColumn     = "tenant_id"
+	bundleColumns    = []string{"id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
 	updatableColumns = []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
 	orderByColumns   = repo.OrderByParams{repo.NewAscOrderBy("app_id"), repo.NewAscOrderBy("id")}
 )
@@ -46,13 +45,13 @@ type pgRepository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier: repo.NewExistQuerier(resource.Bundle, bundleTable, tenantColumn),
-		singleGetter: repo.NewSingleGetter(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		deleter:      repo.NewDeleter(resource.Bundle, bundleTable, tenantColumn),
-		lister:       repo.NewLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		unionLister:  repo.NewUnionLister(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		creator:      repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
-		updater:      repo.NewUpdater(resource.Bundle, bundleTable, updatableColumns, tenantColumn, []string{"id"}),
+		existQuerier: repo.NewExistQuerier(bundleTable),
+		singleGetter: repo.NewSingleGetter(bundleTable, bundleColumns),
+		deleter:      repo.NewDeleter(bundleTable),
+		lister:       repo.NewLister(bundleTable, bundleColumns),
+		unionLister:  repo.NewUnionLister(bundleTable, bundleColumns),
+		creator:      repo.NewCreator(bundleTable, bundleColumns),
+		updater:      repo.NewUpdater(bundleTable, updatableColumns, []string{"id"}),
 		conv:         conv,
 	}
 }
@@ -66,7 +65,7 @@ func (r BundleCollection) Len() int {
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, model *model.Bundle) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.Bundle) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
@@ -77,11 +76,11 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Bundle) error {
 	}
 
 	log.C(ctx).Debugf("Persisting Bundle entity with id %s to db", model.ID)
-	return r.creator.Create(ctx, bndlEnt)
+	return r.creator.Create(ctx, resource.Bundle, tenant, bndlEnt)
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, model *model.Bundle) error {
+func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.Bundle) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
@@ -92,23 +91,23 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Bundle) error {
 		return errors.Wrap(err, "while converting to Bundle entity")
 	}
 
-	return r.updater.UpdateSingle(ctx, bndlEnt)
+	return r.updater.UpdateSingle(ctx, resource.Bundle, tenant, bndlEnt)
 }
 
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.Bundle, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.Bundle, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error) {
 	var bndlEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bndlEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Bundle, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bndlEnt); err != nil {
 		return nil, err
 	}
 
@@ -128,7 +127,7 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 		repo.NewEqualCondition("id", id),
 		repo.NewEqualCondition("app_id", applicationID),
 	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Bundle, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
 	}
 
@@ -143,7 +142,7 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 // ListByApplicationIDs missing godoc
 func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
 	var bundleCollection BundleCollection
-	counts, err := r.unionLister.List(ctx, tenantID, applicationIDs, "app_id", pageSize, cursor, orderByColumns, &bundleCollection)
+	counts, err := r.unionLister.List(ctx, resource.Bundle, tenantID, applicationIDs, "app_id", pageSize, cursor, orderByColumns, &bundleCollection)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +186,7 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 // ListByApplicationIDNoPaging missing godoc
 func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error) {
 	bundleCollection := BundleCollection{}
-	if err := r.lister.List(ctx, tenantID, &bundleCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.List(ctx, resource.Bundle, tenantID, &bundleCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	bundles := make([]*model.Bundle, 0, bundleCollection.Len())

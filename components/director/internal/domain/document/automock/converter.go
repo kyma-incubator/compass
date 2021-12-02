@@ -15,18 +15,20 @@ type Converter struct {
 }
 
 // FromEntity provides a mock function with given fields: in
-func (_m *Converter) FromEntity(in document.Entity) (model.Document, error) {
+func (_m *Converter) FromEntity(in *document.Entity) (*model.Document, error) {
 	ret := _m.Called(in)
 
-	var r0 model.Document
-	if rf, ok := ret.Get(0).(func(document.Entity) model.Document); ok {
+	var r0 *model.Document
+	if rf, ok := ret.Get(0).(func(*document.Entity) *model.Document); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.Document)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Document)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(document.Entity) error); ok {
+	if rf, ok := ret.Get(1).(func(*document.Entity) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)
@@ -36,11 +38,11 @@ func (_m *Converter) FromEntity(in document.Entity) (model.Document, error) {
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *Converter) ToEntity(in model.Document) (*document.Entity, error) {
+func (_m *Converter) ToEntity(in *model.Document) (*document.Entity, error) {
 	ret := _m.Called(in)
 
 	var r0 *document.Entity
-	if rf, ok := ret.Get(0).(func(model.Document) *document.Entity); ok {
+	if rf, ok := ret.Get(0).(func(*model.Document) *document.Entity); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
@@ -49,7 +51,7 @@ func (_m *Converter) ToEntity(in model.Document) (*document.Entity, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.Document) error); ok {
+	if rf, ok := ret.Get(1).(func(*model.Document) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

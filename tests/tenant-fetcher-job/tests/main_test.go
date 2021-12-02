@@ -20,7 +20,6 @@ import (
 type Config struct {
 	ExternalSvcMockURL     string `envconfig:"EXTERNAL_SERVICES_MOCK_BASE_URL"`
 	InternalDirectorGQLURL string `envconfig:"INTERNAL_DIRECTOR_URL"`
-	MovedRuntimeLabelKey   string `envconfig:"APP_MOVED_RUNTIME_LABEL_KEY"`
 }
 
 var (

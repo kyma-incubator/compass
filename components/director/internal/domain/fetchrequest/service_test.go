@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
@@ -342,8 +343,10 @@ func TestService_HandleSpec(t *testing.T) {
 			}
 
 			ctx := context.TODO()
+			ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+
 			frRepo := &automock.FetchRequestRepository{}
-			frRepo.On("Update", ctx, mock.Anything).Return(nil).Once()
+			frRepo.On("Update", ctx, tenantID, mock.Anything).Return(nil).Once()
 
 			svc := fetchrequest.NewService(frRepo, testCase.Client(t), executorProviderMock)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
@@ -362,9 +365,11 @@ func TestService_HandleSpec(t *testing.T) {
 
 func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+
 	timestamp := time.Now()
 	frRepo := &automock.FetchRequestRepository{}
-	frRepo.On("Update", ctx, mock.Anything).Return(errors.New("error")).Once()
+	frRepo.On("Update", ctx, tenantID, mock.Anything).Return(errors.New("error")).Once()
 
 	certCache := certloader.NewCertificateCache()
 	svc := fetchrequest.NewService(frRepo, NewTestClient(func(req *http.Request) *http.Response {

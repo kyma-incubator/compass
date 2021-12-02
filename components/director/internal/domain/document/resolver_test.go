@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -30,11 +32,12 @@ var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
 })
 
 func TestResolver_AddDocumentToBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	bundleID := "bar"
 	id := "bar"
+	modelBundle := fixModelBundle(bundleID)
 	modelDocument := fixModelDocument(id, bundleID)
 	gqlDocument := fixGQLDocument(id, bundleID)
 	gqlInput := fixGQLDocumentInput(id)
@@ -60,13 +63,13 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", contextParam, bundleID, *modelInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", contextParam, appID, bundleID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(modelDocument, nil).Once()
 				return svc
 			},
 			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
-				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
+				appSvc.On("Get", contextParam, bundleID).Return(modelBundle, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -79,7 +82,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			ExpectedErr:      nil,
 		},
 		{
-			Name: "Returns error when application not exits",
+			Name: "Returns error when bundle does not exits",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
@@ -91,7 +94,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			},
 			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
-				appSvc.On("Exist", contextParam, bundleID).Return(false, nil)
+				appSvc.On("Get", contextParam, bundleID).Return(nil, apperrors.NewNotFoundError(resource.Bundle, bundleID))
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -116,7 +119,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			},
 			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
-				appSvc.On("Exist", contextParam, bundleID).Return(false, testErr)
+				appSvc.On("Get", contextParam, bundleID).Return(modelBundle, testErr)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -137,12 +140,12 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", contextParam, bundleID, *modelInput).Return("", testErr).Once()
+				svc.On("CreateInBundle", contextParam, appID, bundleID, *modelInput).Return("", testErr).Once()
 				return svc
 			},
 			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
-				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
+				appSvc.On("Get", contextParam, bundleID).Return(modelBundle, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -162,13 +165,13 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInBundle", contextParam, bundleID, *modelInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", contextParam, appID, bundleID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
 			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
-				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
+				appSvc.On("Get", contextParam, bundleID).Return(modelBundle, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -192,7 +195,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			resolver := document.NewResolver(transact, svc, nil, bndlSvc, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.AddDocumentToBundle(context.TODO(), bundleID, *gqlInput)
 
 			// then
@@ -214,7 +217,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 }
 
 func TestResolver_DeleteDocument(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -305,7 +308,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			resolver := document.NewResolver(transact, svc, nil, nil, nil)
 			resolver.SetConverter(converter)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteDocument(context.TODO(), id)
 
 			// then
@@ -321,7 +324,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 }
 
 func TestResolver_FetchRequest(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 
 	firstDocID := "docID"
@@ -457,7 +460,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			keys := []dataloader.ParamFetchRequestDocument{firstFRParams, secondFRParams}
 			resolver := document.NewResolver(transact, svc, nil, nil, converter)
 
-			// when
+			// WHEN
 			result, err := resolver.FetchRequestDocumentDataLoader(keys)
 
 			// then
@@ -472,9 +475,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 	}
 	t.Run("Returns error when there are no Docs", func(t *testing.T) {
 		resolver := document.NewResolver(nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestDocumentDataLoader([]dataloader.ParamFetchRequestDocument{})
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No Documents found").Error())
 	})
@@ -484,9 +487,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 		keys := []dataloader.ParamFetchRequestDocument{params}
 
 		resolver := document.NewResolver(nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestDocumentDataLoader(keys)
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("Cannot fetch FetchRequest. Document ID is empty").Error())
 	})

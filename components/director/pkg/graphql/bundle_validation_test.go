@@ -47,9 +47,9 @@ func TestBundleCreateInput_Validate_Name(t *testing.T) {
 			//GIVEN
 			obj := fixValidBundleCreateInput()
 			obj.Name = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -92,9 +92,9 @@ func TestBundleCreateInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			obj := fixValidBundleCreateInput()
 			obj.Description = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -134,9 +134,9 @@ func TestBundleCreateInput_Validate_DefaultInstanceAuth(t *testing.T) {
 			//GIVEN
 			obj := fixValidBundleCreateInput()
 			obj.DefaultInstanceAuth = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -176,9 +176,9 @@ func TestBundleCreateInput_Validate_InstanceAuthRequestInputSchema(t *testing.T)
 			//GIVEN
 			obj := fixValidBundleCreateInput()
 			obj.InstanceAuthRequestInputSchema = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -218,9 +218,9 @@ func TestBundleCreateInput_Validate_APIs(t *testing.T) {
 			//GIVEN
 			app := fixValidBundleCreateInput()
 			app.APIDefinitions = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -260,9 +260,9 @@ func TestBundleCreateInput_Validate_EventAPIs(t *testing.T) {
 			//GIVEN
 			app := fixValidBundleCreateInput()
 			app.EventDefinitions = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -302,9 +302,9 @@ func TestBundleCreateInput_Validate_Documents(t *testing.T) {
 			//GIVEN
 			app := fixValidBundleCreateInput()
 			app.Documents = testCase.Value
-			//WHEN
+			// WHEN
 			err := app.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -352,9 +352,9 @@ func TestBundleUpdateInput_Validate_Name(t *testing.T) {
 			//GIVEN
 			obj := fixValidBundleUpdateInput()
 			obj.Name = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -397,9 +397,9 @@ func TestBundleUpdateInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			obj := fixValidBundleUpdateInput()
 			obj.Description = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -439,9 +439,9 @@ func TestBundleUpdateInput_Validate_DefaultInstanceAuth(t *testing.T) {
 			//GIVEN
 			obj := fixValidBundleUpdateInput()
 			obj.DefaultInstanceAuth = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -481,9 +481,9 @@ func TestBundleUpdateInput_Validate_InstanceAuthRequestInputSchema(t *testing.T)
 			//GIVEN
 			obj := fixValidBundleUpdateInput()
 			obj.InstanceAuthRequestInputSchema = testCase.Value
-			//WHEN
+			// WHEN
 			err := obj.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -518,9 +518,9 @@ func TestBundleInstanceAuthRequestInput_Validate(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//WHEN
+			// WHEN
 			err := testCase.Value.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -605,9 +605,9 @@ func TestBundleInstanceAuthSetInput_Validate(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//WHEN
+			// WHEN
 			err := testCase.Value.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -662,9 +662,9 @@ func TestBundleInstanceAuthStatusInput_Validate(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//WHEN
+			// WHEN
 			err := testCase.Value.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

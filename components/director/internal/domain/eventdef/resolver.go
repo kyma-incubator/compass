@@ -251,7 +251,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 		return nil, errors.Errorf("spec for Event with id %q not found", eventID)
 	}
 
-	spec, err := r.specService.RefetchSpec(ctx, dbSpec.ID)
+	spec, err := r.specService.RefetchSpec(ctx, dbSpec.ID, model.EventSpecReference)
 	if err != nil {
 		return nil, err
 	}

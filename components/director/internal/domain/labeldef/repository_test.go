@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"reflect"
 	"regexp"
 	"testing"
@@ -117,8 +116,8 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs("any", tenantID, labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE id = ? AND tenant_id = ?`)
+		dbMock.ExpectExec(escapedQuery).WithArgs("any", labelDefID, tenantID).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
@@ -139,8 +138,8 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, Version: version}, nil)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(nil, tenantID, labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE id = ? AND tenant_id = ?`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(nil, labelDefID, tenantID).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
@@ -162,7 +161,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE id = ? AND tenant_id = ?`)
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
 		defer dbMock.AssertExpectations(t)
 
@@ -183,7 +182,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE id = ? AND tenant_id = ?`)
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
 		defer dbMock.AssertExpectations(t)
 
@@ -203,8 +202,8 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ?`, fixUpdateTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs("any", tenantID, labelDefID).WillReturnResult(sqlmock.NewResult(1, 0))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE id = ? AND tenant_id = ?`)
+		dbMock.ExpectExec(escapedQuery).WithArgs("any", labelDefID, tenantID).WillReturnResult(sqlmock.NewResult(1, 0))
 		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
@@ -241,8 +240,8 @@ func TestRepositoryUpdateLabelDefinitionWithVersion(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ? AND version = ?`, fixUpdateTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs("any", tenantID, labelDefID, version).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE id = ? AND version = ? AND tenant_id = ?`)
+		dbMock.ExpectExec(escapedQuery).WithArgs("any", labelDefID, version, tenantID).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
@@ -263,8 +262,8 @@ func TestRepositoryUpdateLabelDefinitionWithVersion(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, Version: version}, nil)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ? AND version = ?`, fixUpdateTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs(nil, tenantID, labelDefID, version).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE id = ? AND version = ? AND tenant_id = ?`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(nil, labelDefID, version, tenantID).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
@@ -286,7 +285,7 @@ func TestRepositoryUpdateLabelDefinitionWithVersion(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ? AND version = ?`, fixUpdateTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE id = ? AND version = ? AND tenant_id = ?`)
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
 		defer dbMock.AssertExpectations(t)
 
@@ -306,8 +305,8 @@ func TestRepositoryUpdateLabelDefinitionWithVersion(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}, Version: version}, nil)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE %s AND id = ? AND version = ?`, fixUpdateTenantIsolationSubquery()))
-		dbMock.ExpectExec(escapedQuery).WithArgs("any", tenantID, labelDefID, version).WillReturnResult(sqlmock.NewResult(1, 0))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ?, version = version+1 WHERE id = ? AND version = ? AND tenant_id = ?`)
+		dbMock.ExpectExec(escapedQuery).WithArgs("any", labelDefID, version, tenantID).WillReturnResult(sqlmock.NewResult(1, 0))
 		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
@@ -340,7 +339,7 @@ func TestRepositoryGetByKey(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).AddRow("id", "tenant", "key", `{"title":"title"}`)
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.label_definitions WHERE %s AND key = \$2$`, fixTenantIsolationSubquery())).
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1 AND key = \$2$`).
 			WithArgs("tenant", "key").WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
@@ -359,7 +358,7 @@ func TestRepositoryGetByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.label_definitions WHERE %s AND key = \$2$`, fixTenantIsolationSubquery())).
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1 AND key = \$2$`).
 			WithArgs("anything", "anything").WillReturnRows(sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}))
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -383,7 +382,7 @@ func TestRepositoryGetByKey(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).AddRow("id", "tenant", "key", `{"title":"title"}`)
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.label_definitions WHERE %s AND key = \$2$`, fixTenantIsolationSubquery())).
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1 AND key = \$2$`).
 			WithArgs("tenant", "key").WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
@@ -399,7 +398,7 @@ func TestRepositoryGetByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.label_definitions WHERE %s AND key = \$2$`, fixTenantIsolationSubquery())).
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1 AND key = \$2$`).
 			WithArgs("tenant", "key").WillReturnError(errors.New("persistence error"))
 
 		ctx := context.TODO()
@@ -444,7 +443,7 @@ func TestRepositoryList(t *testing.T) {
 			AddRow("id1", "tenant", "key1", nil, 0).
 			AddRow("id2", "tenant", "key2", `{"title":"title"}`, 0)
 
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.label_definitions WHERE %s$`, fixTenantIsolationSubquery())).WithArgs("tenant").WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1$`).WithArgs("tenant").WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -469,7 +468,7 @@ func TestRepositoryList(t *testing.T) {
 
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema", "version"})
 
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.label_definitions WHERE %s$`, fixTenantIsolationSubquery())).WithArgs("tenant").WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1$`).WithArgs("tenant").WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -499,7 +498,7 @@ func TestRepositoryList(t *testing.T) {
 			AddRow("id1", "tenant", "key1", nil, 0).
 			AddRow("id2", "tenant", "key2", `{"title":"title"}`, 0)
 
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.label_definitions WHERE %s$`, fixTenantIsolationSubquery())).WithArgs("tenant").WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1$`).WithArgs("tenant").WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -515,7 +514,7 @@ func TestRepositoryList(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectQuery(fmt.Sprintf(`^SELECT (.+) FROM public.label_definitions WHERE %s$`, fixTenantIsolationSubquery())).
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1$`).
 			WithArgs("tenant").WillReturnError(errors.New("db error"))
 
 		ctx := context.TODO()
@@ -534,7 +533,7 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT 1 FROM public.label_definitions WHERE %s AND key = $2", fixUnescapedTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta("SELECT 1 FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant", "key").WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow("1"))
 
 		ctx := context.TODO()
@@ -551,7 +550,7 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT 1 FROM public.label_definitions WHERE %s AND key = $2", fixUnescapedTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta("SELECT 1 FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectQuery(escapedQuery).WithArgs("anything", "anything").WillReturnRows(sqlmock.NewRows([]string{"exists"}))
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -569,7 +568,7 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT 1 FROM public.label_definitions WHERE %s AND key = $2", fixUnescapedTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta("SELECT 1 FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant", "key").WillReturnError(errors.New("persistence error"))
 
 		ctx := context.TODO()
@@ -595,7 +594,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.label_definitions WHERE %s AND key = $2", fixUnescapedTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta("DELETE FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
@@ -620,7 +619,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.label_definitions WHERE %s AND key = $2", fixUnescapedTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta("DELETE FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key).WillReturnError(testErr)
 
 		ctx := context.TODO()
@@ -645,7 +644,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM public.label_definitions WHERE %s AND key = $2", fixUnescapedTenantIsolationSubquery()))
+		escapedQuery := regexp.QuoteMeta("DELETE FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key).WillReturnResult(sqlmock.NewResult(1, 0))
 
 		ctx := context.TODO()

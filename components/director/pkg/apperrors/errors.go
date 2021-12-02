@@ -366,7 +366,7 @@ func IsCannotReadTenant(err error) bool {
 // IsConcurrentUpdate indicates if the provided error is thrown in case of concurrent update
 func IsConcurrentUpdate(err error) bool {
 	if customErr, ok := err.(Error); ok {
-		return customErr.errorCode == InternalError && strings.Contains(customErr.Message, ShouldUpdateSingleRowButUpdatedMsg)
+		return customErr.errorCode == Unauthorized && strings.Contains(customErr.Message, UnauthorizedMsg)
 	}
 	return false
 }

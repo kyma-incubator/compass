@@ -11,7 +11,6 @@ type Runtime struct {
 	ID                string
 	Name              string
 	Description       *string
-	Tenant            string
 	Status            *RuntimeStatus
 	CreationTimestamp time.Time
 }
@@ -45,7 +44,7 @@ type RuntimeInput struct {
 }
 
 // ToRuntime missing godoc
-func (i *RuntimeInput) ToRuntime(id string, tenant string, creationTimestamp, conditionTimestamp time.Time) *Runtime {
+func (i *RuntimeInput) ToRuntime(id string, creationTimestamp, conditionTimestamp time.Time) *Runtime {
 	if i == nil {
 		return nil
 	}
@@ -54,7 +53,6 @@ func (i *RuntimeInput) ToRuntime(id string, tenant string, creationTimestamp, co
 		ID:          id,
 		Name:        i.Name,
 		Description: i.Description,
-		Tenant:      tenant,
 		Status: &RuntimeStatus{
 			Condition: getRuntimeStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: conditionTimestamp,

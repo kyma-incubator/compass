@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 )
@@ -16,14 +18,14 @@ func NewConverter() *converter {
 type converter struct{}
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.Label) (Entity, error) {
+func (c *converter) ToEntity(in *model.Label) (*Entity, error) {
 	var valueMarshalled []byte
 	var err error
 
 	if in.Value != nil {
 		valueMarshalled, err = json.Marshal(in.Value)
 		if err != nil {
-			return Entity{}, errors.Wrap(err, "while marshalling Value")
+			return nil, errors.Wrap(err, "while marshalling Value")
 		}
 	}
 
@@ -48,9 +50,9 @@ func (c *converter) ToEntity(in model.Label) (Entity, error) {
 		}
 	}
 
-	return Entity{
+	return &Entity{
 		ID:               in.ID,
-		TenantID:         in.Tenant,
+		TenantID:         repo.NewNullableString(in.Tenant),
 		AppID:            appID,
 		RuntimeID:        rtmID,
 		RuntimeContextID: rtmCtxID,
@@ -61,12 +63,12 @@ func (c *converter) ToEntity(in model.Label) (Entity, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (model.Label, error) {
+func (c *converter) FromEntity(in *Entity) (*model.Label, error) {
 	var valueUnmarshalled interface{}
 	if in.Value != "" {
 		err := json.Unmarshal([]byte(in.Value), &valueUnmarshalled)
 		if err != nil {
-			return model.Label{}, errors.Wrap(err, "while unmarshalling Value")
+			return nil, errors.Wrap(err, "while unmarshalling Value")
 		}
 	}
 
@@ -84,9 +86,9 @@ func (c *converter) FromEntity(in Entity) (model.Label, error) {
 		objectType = model.RuntimeContextLabelableObject
 	}
 
-	return model.Label{
+	return &model.Label{
 		ID:         in.ID,
-		Tenant:     in.TenantID,
+		Tenant:     repo.StringPtrFromNullableString(in.TenantID),
 		ObjectID:   objectID,
 		ObjectType: objectType,
 		Key:        in.Key,

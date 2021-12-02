@@ -15,13 +15,13 @@ type DocumentRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, item
-func (_m *DocumentRepository) Create(ctx context.Context, item *model.Document) error {
-	ret := _m.Called(ctx, item)
+// Create provides a mock function with given fields: ctx, tenant, item
+func (_m *DocumentRepository) Create(ctx context.Context, tenant string, item *model.Document) error {
+	ret := _m.Called(ctx, tenant, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Document) error); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Document) error); ok {
+		r0 = rf(ctx, tenant, item)
 	} else {
 		r0 = ret.Error(0)
 	}

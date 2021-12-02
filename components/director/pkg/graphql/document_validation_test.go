@@ -37,9 +37,9 @@ func TestDocumentInput_Validate_Title(t *testing.T) {
 			//GIVEN
 			doc := fixValidDocument()
 			doc.Title = testCase.Value
-			//WHEN
+			// WHEN
 			err := doc.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -77,9 +77,9 @@ func TestDocumentInput_Validate_DisplayName(t *testing.T) {
 			//GIVEN
 			doc := fixValidDocument()
 			doc.DisplayName = testCase.Value
-			//WHEN
+			// WHEN
 			err := doc.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -117,9 +117,9 @@ func TestDocumentInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			doc := fixValidDocument()
 			doc.Description = testCase.Value
-			//WHEN
+			// WHEN
 			err := doc.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -157,9 +157,9 @@ func TestDocumentInput_Validate_Format(t *testing.T) {
 			//GIVEN
 			doc := fixValidDocument()
 			doc.Format = testCase.Value
-			//WHEN
+			// WHEN
 			err := doc.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -202,9 +202,9 @@ func TestDocumentInput_Validate_Kind(t *testing.T) {
 			//GIVEN
 			doc := fixValidDocument()
 			doc.Kind = testCase.Value
-			//WHEN
+			// WHEN
 			err := doc.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -248,9 +248,9 @@ func TestDocumentInput_Validate_Data(t *testing.T) {
 			//GIVEN
 			doc := fixValidDocument()
 			doc.Data = testCase.Value
-			//WHEN
+			// WHEN
 			err := doc.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -289,9 +289,9 @@ func TestDocumentInput_Validate_FetchRequest(t *testing.T) {
 			//GIVEN
 			doc := fixValidDocument()
 			doc.FetchRequest = testCase.Value
-			//WHEN
+			// WHEN
 			err := doc.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

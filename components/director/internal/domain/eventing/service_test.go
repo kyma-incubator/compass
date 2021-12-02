@@ -94,7 +94,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
-		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
+		labelRepo.On("Upsert", ctx, tenantID.String(), mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
@@ -123,7 +123,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
-		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
+		labelRepo.On("Upsert", ctx, tenantID.String(), mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
@@ -155,7 +155,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
-		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
+		labelRepo.On("Upsert", ctx, tenantID.String(), mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
@@ -185,7 +185,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
-		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
+		labelRepo.On("Upsert", ctx, tenantID.String(), mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
@@ -365,7 +365,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
-		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(errors.New("some-error"))
+		labelRepo.On("Upsert", ctx, tenantID.String(), mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(errors.New("some-error"))
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 
@@ -392,7 +392,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
-		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
+		labelRepo.On("Upsert", ctx, tenantID.String(), mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(nil, errors.New("some-error"))
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
@@ -422,7 +422,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
-		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
+		labelRepo.On("Upsert", ctx, tenantID.String(), mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
@@ -707,7 +707,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
-		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
+		labelRepo.On("Upsert", ctx, tenantID.String(), mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
@@ -899,7 +899,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			newRuntime.ID, isNormalizedLabel).Return(&model.Label{Value: "false"}, nil).Once()
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimePage.Data[0].ID, getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
-		labelRepo.On("Upsert", ctx, mock.Anything).Return(nil)
+		labelRepo.On("Upsert", ctx, tenantID.String(), mock.Anything).Return(nil)
 		labelFilter := []*labelfilter.LabelFilter{
 			labelfilter.NewForKeyWithQuery(model.ScenariosKey, `$[*] ? ( @ == "scenario" )`),
 		}
@@ -940,7 +940,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
-		labelRepo.On("Upsert", ctx,
+		labelRepo.On("Upsert", ctx, tenantID.String(),
 			mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).
 			Return(errors.New("some error"))
 		svc := NewService(nil, runtimeRepo, labelRepo)
