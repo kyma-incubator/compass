@@ -42,6 +42,7 @@ type CertificateCache interface {
 
 type mtlsClientCreator func(cache CertificateCache, timeout time.Duration) *http.Client
 
+// DefaultCreator is the default http client creator
 func DefaultCreator(cc CertificateCache, timeout time.Duration) *http.Client {
 	httpTransport := httpdirector.NewCorrelationIDTransport(&http.Transport{
 		TLSClientConfig: &tls.Config{
@@ -68,7 +69,7 @@ type mtlsTokenAuthorizationProvider struct {
 	httpClient *http.Client
 }
 
-// NewTokenAuthorizationProvider constructs an TokenAuthorizationProvider
+// NewMtlsTokenAuthorizationProvider constructs an TokenAuthorizationProvider
 func NewMtlsTokenAuthorizationProvider(oauthCfg oauth.Config, cache CertificateCache, creator mtlsClientCreator) *mtlsTokenAuthorizationProvider {
 	return &mtlsTokenAuthorizationProvider{
 		clientID:     oauthCfg.ClientID,

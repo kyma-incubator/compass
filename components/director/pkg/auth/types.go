@@ -58,7 +58,7 @@ type OAuthCredentials struct {
 	TokenURL     string
 }
 
-// OAuthCredentials implements the Credentials interface for the OAuth flow
+// MtlsOAuthCredentials implements the Credentials interface for the mTLS OAuth flow
 type MtlsOAuthCredentials struct {
 	Tenant string
 }
