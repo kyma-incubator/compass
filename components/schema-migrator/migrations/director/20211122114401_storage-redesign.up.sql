@@ -7,7 +7,7 @@ CREATE TABLE tenant_applications
     owner       bool,
 
     FOREIGN KEY (id) REFERENCES applications (id) ON DELETE CASCADE,
-    FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id),
+    FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE,
     PRIMARY KEY (tenant_id, id)
 );
 
@@ -18,27 +18,9 @@ CREATE TABLE tenant_runtimes
     owner       bool,
 
     FOREIGN KEY (id) REFERENCES runtimes (id) ON DELETE CASCADE,
-    FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id),
+    FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE,
     PRIMARY KEY (tenant_id, id)
 );
-
--- this trigger replaces the cascade on tenant_id foreign key in order to execute it BEFORE the tenant is deleted.
--- that is needed because in order for delete_parent_chain select parent to work (before the tenant is actually deleted)
-CREATE OR REPLACE FUNCTION on_delete_tenant() RETURNS TRIGGER AS
-$$
-DECLARE
-    tenant_table TEXT;
-BEGIN
-    FOREACH tenant_table IN ARRAY TG_ARGV -- for each top level resource
-        LOOP
-            -- delete the tenant accesses for this tenant
-            EXECUTE format('DELETE FROM %I WHERE tenant_id = %L;', tenant_table, OLD.id);
-        END LOOP;
-    RETURN OLD;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER delete_tenant BEFORE DELETE ON business_tenant_mappings FOR EACH ROW EXECUTE PROCEDURE on_delete_tenant('tenant_applications', 'tenant_runtimes');
 
 CREATE OR REPLACE FUNCTION delete_resource() RETURNS TRIGGER AS
 $$
@@ -57,38 +39,6 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER delete_application_resource AFTER DELETE ON tenant_applications FOR EACH ROW EXECUTE PROCEDURE delete_resource('applications');
 CREATE TRIGGER delete_runtime_resource AFTER DELETE ON tenant_runtimes FOR EACH ROW EXECUTE PROCEDURE delete_resource('runtimes');
-
-CREATE OR REPLACE FUNCTION insert_parent_chain() RETURNS TRIGGER AS
-$$
-DECLARE
-    parent_id uuid;
-BEGIN
-    SELECT parent INTO parent_id FROM business_tenant_mappings WHERE id = NEW.tenant_id;
-    IF (parent_id IS NOT NULL) THEN
-        EXECUTE format('INSERT INTO %I VALUES (%L, %L, true) ON CONFLICT DO NOTHING', TG_TABLE_NAME, parent_id, NEW.id);
-    END IF;
-    RETURN NULL;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER add_app_to_parent_tenants AFTER INSERT ON tenant_applications FOR EACH ROW EXECUTE PROCEDURE insert_parent_chain();
-CREATE TRIGGER add_runtime_to_parent_tenants AFTER INSERT ON tenant_runtimes FOR EACH ROW EXECUTE PROCEDURE insert_parent_chain();
-
-CREATE OR REPLACE FUNCTION delete_parent_chain() RETURNS TRIGGER AS
-$$
-DECLARE
-    parent_id uuid;
-BEGIN
-    SELECT parent INTO parent_id FROM business_tenant_mappings WHERE id = OLD.tenant_id;
-    IF (parent_id IS NOT NULL) THEN
-        EXECUTE format('DELETE FROM %I WHERE tenant_id = %L AND id = %L AND owner = true', TG_TABLE_NAME, parent_id, OLD.id);
-    END IF;
-    RETURN NULL;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER delete_app_from_parent_tenants AFTER DELETE ON tenant_applications FOR EACH ROW EXECUTE PROCEDURE delete_parent_chain();
-CREATE TRIGGER delete_runtime_from_parent_tenants AFTER DELETE ON tenant_runtimes FOR EACH ROW EXECUTE PROCEDURE delete_parent_chain();
 
 UPDATE runtimes
 SET tenant_id =

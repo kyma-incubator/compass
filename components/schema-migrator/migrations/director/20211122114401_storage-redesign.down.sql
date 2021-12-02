@@ -574,24 +574,10 @@ SELECT id, tenant_id FROM get_id_tenant_id_index();
 
 CREATE UNIQUE INDEX id_tenant_id_index_unique ON id_tenant_id_index(id);
 
-DROP TRIGGER add_runtime_to_parent_tenants ON tenant_runtimes;
-DROP TRIGGER add_app_to_parent_tenants ON tenant_applications;
-
-DROP FUNCTION IF EXISTS insert_parent_chain();
-
 DROP TRIGGER delete_runtime_resource ON tenant_runtimes;
 DROP TRIGGER delete_application_resource ON tenant_applications;
 
 DROP FUNCTION IF EXISTS delete_resource();
-
-DROP TRIGGER delete_runtime_from_parent_tenants ON tenant_runtimes;
-DROP TRIGGER delete_app_from_parent_tenants ON tenant_applications;
-
-DROP FUNCTION IF EXISTS delete_parent_chain();
-
-DROP TRIGGER delete_tenant ON business_tenant_mappings;
-
-DROP FUNCTION IF EXISTS on_delete_tenant();
 
 DROP TABLE tenant_runtimes;
 DROP TABLE tenant_applications;

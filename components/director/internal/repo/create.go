@@ -133,26 +133,16 @@ func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id st
 		return apperrors.NewNotUniqueError(resourceType)
 	}
 
-	vals := make([]string, 0, len(M2MColumns))
-	for _, c := range M2MColumns {
-		vals = append(vals, fmt.Sprintf(":%s", c))
-	}
-
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return errors.Errorf("entity %s does not have access table", resourceType)
 	}
 
-	insertTenantAccessStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", m2mTable, strings.Join(M2MColumns, ", "), strings.Join(vals, ", "))
-
-	log.C(ctx).Debugf("Executing DB query: %s", insertTenantAccessStmt)
-	_, err = persist.NamedExecContext(ctx, insertTenantAccessStmt, &TenantAccess{
+	return UnsafeCreateTenantAccessRecursively(ctx, m2mTable, &TenantAccess{
 		TenantID:   tenant,
 		ResourceID: id,
 		Owner:      true,
 	})
-
-	return persistence.MapSQLError(ctx, err, resourceType, resource.Create, "while inserting tenant access record to '%s' table", m2mTable)
 }
 
 func (c *universalCreator) unsafeCreateChildEntity(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
