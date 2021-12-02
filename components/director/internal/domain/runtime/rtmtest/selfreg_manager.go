@@ -41,7 +41,7 @@ func SelfRegManagerThatReturnsErrorOnPrep() *automock.SelfRegisterManager {
 func SelfRegManagerThatDoesCleanupWithNoErrors() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
-	srm.On("CleanupSelfRegisteredRuntime", mock.Anything, mock.AnythingOfType("string")).Return(nil).Once()
+	srm.On("CleanupSelfRegisteredRuntimeAfterFailedRegistration", mock.Anything, mock.AnythingOfType("string")).Return(nil).Once()
 	return srm
 }
 
@@ -49,7 +49,7 @@ func SelfRegManagerThatDoesCleanupWithNoErrors() *automock.SelfRegisterManager {
 func SelfRegManagerThatReturnsErrorOnCleanup() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
-	srm.On("CleanupSelfRegisteredRuntime", mock.Anything, mock.AnythingOfType("string")).Return(errors.New(SelfRegErrorMsg)).Once()
+	srm.On("CleanupSelfRegisteredRuntimeAfterFailedRegistration", mock.Anything, mock.AnythingOfType("string")).Return(errors.New(SelfRegErrorMsg)).Once()
 	return srm
 }
 
@@ -65,7 +65,7 @@ func SelfRegManagerThatReturnsNoErrors(res model.RuntimeInput) func() *automock.
 	return func() *automock.SelfRegisterManager {
 		srm := SelfRegManagerThatDoesPrepWithNoErrors(res)()
 		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
-		srm.On("CleanupSelfRegisteredRuntime", mock.Anything, mock.AnythingOfType("string")).Return(nil).Once()
+		srm.On("CleanupSelfRegisteredRuntimeAfterFailedRegistration", mock.Anything, mock.AnythingOfType("string")).Return(nil).Once()
 		return srm
 	}
 }

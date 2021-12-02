@@ -8,6 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
+
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
@@ -147,6 +150,12 @@ type config struct {
 	ExternalClientCertSecret string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET"`
 }
 
+type runtimeService interface {
+	GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error)
+	GetLabel(context.Context, string, string) (*model.Label, error)
+	ListByFilters(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+}
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -234,7 +243,8 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(runtimeSvc(cfg), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountIDsLabelKey)
+	runtimeSvc := runtimeSvc(cfg)
+	claimsValidator := claims.NewValidator(runtimeSvc, cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountIDsLabelKey)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -288,7 +298,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, transact, cfg.JWKSSyncPeriod, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern)
+	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, runtimeSvc, transact, cfg.JWKSSyncPeriod)
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
 
@@ -444,26 +454,11 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	return tenantmapping.NewHandler(reqDataParser, transact, objectContextProviders, metricsCollector).ServeHTTP, nil
 }
 
-func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string) func(writer http.ResponseWriter, request *http.Request) {
+func getRuntimeMappingHandlerFunc(ctx context.Context, runtimeSvc runtimeService, transact persistence.Transactioner, cachePeriod time.Duration) func(writer http.ResponseWriter, request *http.Request) {
 	uidSvc := uid.NewService()
 
-	assignmentConv := scenarioassignment.NewConverter()
-	labelConv := label.NewConverter()
-	labelRepo := label.NewRepository(labelConv)
-	labelDefConverter := labeldef.NewConverter()
-	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	tenantRepo := tenant.NewRepository(tenant.NewConverter())
-	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, defaultScenarioEnabled)
-	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	runtimeConv := runtime.NewConverter()
-	runtimeRepo := runtime.NewRepository(runtimeConv)
-
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
-
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
-
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern, tenantSvc)
 
 	reqDataParser := oathkeeper.NewReqDataParser()
 
@@ -686,7 +681,7 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 	}
 }
 
-func runtimeSvc(cfg config) claims.RuntimeService {
+func runtimeSvc(cfg config) runtimeService {
 	uidSvc := uid.NewService()
 
 	rtConverter := runtime.NewConverter()
@@ -708,5 +703,12 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
-	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, cfg.Features.ProtectedLabelPattern, tenantSvc)
+	caller := securehttp.NewCaller(&graphql.OAuthCredentialData{
+		ClientID:     cfg.SelfRegConfig.ClientID,
+		ClientSecret: cfg.SelfRegConfig.ClientSecret,
+		URL:          cfg.SelfRegConfig.URL + cfg.SelfRegConfig.OauthTokenPath,
+	}, cfg.SelfRegConfig.ClientTimeout)
+	selfRegisterManager := runtime.NewSelfRegisterManager(cfg.SelfRegConfig, caller)
+
+	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, selfRegisterManager, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
 }

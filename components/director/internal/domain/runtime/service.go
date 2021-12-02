@@ -74,6 +74,13 @@ type uidService interface {
 	Generate() string
 }
 
+//go:generate mockery --name=runtimeSelfRegisterManager --output=automock --outpkg=automock --case=underscore
+type runtimeSelfRegisterManager interface {
+	PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput) (model.RuntimeInput, error)
+	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string) error
+	GetSelfRegDistinguishingLabelKey() string
+}
+
 type service struct {
 	repo      runtimeRepository
 	labelRepo labelRepository
@@ -83,8 +90,10 @@ type service struct {
 	scenariosService         scenariosService
 	scenarioAssignmentEngine scenarioAssignmentEngine
 	tenantSvc                tenantService
+	selfRegManager           runtimeSelfRegisterManager
 
 	protectedLabelPattern string
+	immutableLabelPattern string
 }
 
 // NewService missing godoc
@@ -94,8 +103,10 @@ func NewService(repo runtimeRepository,
 	labelUpsertService labelUpsertService,
 	uidService uidService,
 	scenarioAssignmentEngine scenarioAssignmentEngine,
+	tenantService tenantService,
+	selfRegManager runtimeSelfRegisterManager,
 	protectedLabelPattern string,
-	tenantService tenantService) *service {
+	immutableLabelPattern string) *service {
 	return &service{
 		repo:                     repo,
 		labelRepo:                labelRepo,
@@ -105,6 +116,8 @@ func NewService(repo runtimeRepository,
 		scenarioAssignmentEngine: scenarioAssignmentEngine,
 		tenantSvc:                tenantService,
 		protectedLabelPattern:    protectedLabelPattern,
+		immutableLabelPattern:    immutableLabelPattern,
+		selfRegManager:           selfRegManager,
 	}
 }
 
@@ -239,11 +252,15 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern)
+	in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern)
 	if err != nil {
 		return "", err
 	}
-	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
+	log.C(ctx).Debugf("Successfully stripped unmodifiable labels. Resulting labels after operation are: %+v", in.Labels)
+
+	if in, err = s.selfRegManager.PrepareRuntimeForSelfRegistration(ctx, in); err != nil {
+		return "", err
+	}
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
 	if err != nil {
@@ -307,7 +324,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern)
+	in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern)
 	if err != nil {
 		return err
 	}
@@ -385,12 +402,16 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return err
 	}
 
-	protected, err := isProtected(labelInput.Key, s.protectedLabelPattern)
+	protected, err := isMatchingRegex(labelInput.Key, s.protectedLabelPattern)
 	if err != nil {
 		return err
 	}
-	if protected {
-		return apperrors.NewInvalidDataError("could not set protected label key %s", labelInput.Key)
+	immutable, err := isMatchingRegex(labelInput.Key, s.immutableLabelPattern)
+	if err != nil {
+		return err
+	}
+	if protected || immutable {
+		return apperrors.NewInvalidDataError("could not set label with key %s", labelInput.Key)
 	}
 	if labelInput.Key != model.ScenariosKey {
 		err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, labelInput)
@@ -477,12 +498,16 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 		return err
 	}
 
-	protected, err := isProtected(key, s.protectedLabelPattern)
+	protected, err := isMatchingRegex(key, s.protectedLabelPattern)
 	if err != nil {
 		return err
 	}
-	if protected {
-		return apperrors.NewInvalidDataError("could not delete protected label key %s", key)
+	immutable, err := isMatchingRegex(key, s.immutableLabelPattern)
+	if err != nil {
+		return err
+	}
+	if protected || immutable {
+		return apperrors.NewInvalidDataError("could not delete label with key %s", key)
 	}
 	if key != model.ScenariosKey {
 		err = s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, key)
@@ -582,7 +607,7 @@ func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value in
 func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {
 	result := make(map[string]*model.Label)
 	for labelKey, label := range labels {
-		protected, err := isProtected(labelKey, protectedLabelsKeyPattern)
+		protected, err := isMatchingRegex(labelKey, protectedLabelsKeyPattern)
 		if err != nil {
 			return nil, err
 		}
@@ -593,21 +618,25 @@ func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKey
 	return result, nil
 }
 
-func unsafeExtractUnProtectedLabels(labels map[string]interface{}, protectedLabelsKeyPattern string) (map[string]interface{}, error) {
+func unsafeExtractModifiableLabels(labels map[string]interface{}, protectedLabelsKeyPattern string, immutableLabelsKeyPattern string) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	for labelKey, label := range labels {
-		protected, err := isProtected(labelKey, protectedLabelsKeyPattern)
+		protected, err := isMatchingRegex(labelKey, protectedLabelsKeyPattern)
 		if err != nil {
 			return nil, err
 		}
-		if !protected {
+		immutable, err := isMatchingRegex(labelKey, immutableLabelsKeyPattern)
+		if err != nil {
+			return nil, err
+		}
+		if !protected && !immutable {
 			result[labelKey] = label
 		}
 	}
 	return result, nil
 }
 
-func isProtected(labelKey string, labelKeyPattern string) (bool, error) {
+func isMatchingRegex(labelKey string, labelKeyPattern string) (bool, error) {
 	matched, err := regexp.MatchString(labelKeyPattern, labelKey)
 	if err != nil {
 		return false, err
@@ -628,4 +657,27 @@ func convertLabelValue(value interface{}) (string, error) {
 		return "", errors.New("expected single value for label")
 	}
 	return values[0], nil
+}
+
+func (s *service) CleanupSelfRegisteredRuntimeAfterFailedRegistration(ctx context.Context, in model.RuntimeInput) {
+	labelVal := str.CastOrEmpty(in.Labels[s.selfRegManager.GetSelfRegDistinguishingLabelKey()])
+	if err := s.selfRegManager.CleanupSelfRegisteredRuntime(ctx, labelVal); err != nil {
+		log.C(ctx).Errorf("An error occurred during cleanup of self-registered runtime: %v", err)
+	}
+}
+
+func (s *service) CleanupSelfRegistrationAfterRuntimeDeletion(ctx context.Context, runtimeID string) {
+	var selfRegLabelVal string
+	selfRegLabel, err := s.GetLabel(ctx, runtimeID, s.selfRegManager.GetSelfRegDistinguishingLabelKey())
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			log.C(ctx).Errorf("while getting self register info label: %v", err)
+		}
+		selfRegLabelVal = "" // the deferred cleanup will do nothing
+	} else {
+		selfRegLabelVal = str.CastOrEmpty(selfRegLabel.Value)
+	}
+	if err := s.selfRegManager.CleanupSelfRegisteredRuntime(ctx, selfRegLabelVal); err != nil {
+		log.C(ctx).Errorf("An error occurred during cleanup of self-registered runtime: %v", err)
+	}
 }
