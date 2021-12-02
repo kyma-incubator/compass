@@ -622,5 +622,9 @@ global:
     client:
       skipSSLValidation: false
 
-pairing-adapter:
-  enabled: true
+  pairingAdapter:
+    e2e:
+      appName: "test-app"
+      appID: "123-test-456"
+      clientUser: "test-user"
+      tenant: "test-tenant"

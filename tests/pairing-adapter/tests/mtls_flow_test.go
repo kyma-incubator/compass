@@ -6,14 +6,30 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
+
 	director_http "github.com/kyma-incubator/compass/components/director/pkg/http"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestGettingTokenWithMTLSWorks(t *testing.T) {
-	//TODO: Change templates to be real
-	req, err := http.NewRequest(http.MethodPost, conf.MTLSPairingAdapterURL, strings.NewReader(`{}`))
+	reqData := pairing.RequestData{
+		Application: graphql.Application{
+			Name: conf.TestApplicationName,
+			BaseEntity: &graphql.BaseEntity{
+				ID: conf.TestApplicationID,
+			},
+		},
+		Tenant:     conf.TestTenant,
+		ClientUser: conf.TestClientUser,
+	}
+	jsonReqData, err := json.Marshal(reqData)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest(http.MethodPost, conf.MTLSPairingAdapterURL, strings.NewReader(string(jsonReqData)))
 	require.NoError(t, err)
 
 	client := http.Client{

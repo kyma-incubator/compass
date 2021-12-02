@@ -30,6 +30,14 @@ spec:
 {{if and (eq $config.enabled true) (eq $config.auth.type "mtls") $shouldAdd }}
             - name: APP_MTLS_PAIRING_ADAPTER_URL
               value: "http://compass-pairing-adapter.{{ $.Release.Namespace }}.svc.cluster.local/{{ $adapterName }}"
+            - name: APP_TEST_TENANT
+              value: "{{ $.Values.global.pairingAdapter.e2e.tenant }}"
+            - name: APP_TEST_CLIENT_USER
+              value: "{{ $.Values.global.pairingAdapter.e2e.clientUser }}"
+            - name: APP_TEST_APPLICATION_ID
+              value: "{{ $.Values.global.pairingAdapter.e2e.appID }}"
+            - name: APP_TEST_APPLICATION_NAME
+              value: "{{ $.Values.global.pairingAdapter.e2e.appName }}"
 {{ $shouldAdd = false }}
 {{ end }}
 {{- end -}}
