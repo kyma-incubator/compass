@@ -108,7 +108,7 @@ spec:
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
               value: "{{ .Values.http.client.skipSSLValidation }}"
             - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
-              value: {{ .Values.global.connector.subjectConsumerMappingConfig }}
+              value: {{ .Values.global.connector.subjectConsumerMappingConfig | quote }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}

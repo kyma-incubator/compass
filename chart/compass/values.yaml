@@ -212,7 +212,7 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"internal_consumer_id": "ed1d7217-aa39-4a83-8879-b83d3a07d640", "consumer_type": "integration_system", "tenant_access_level": "account", "subject_pattern": ".*OU=Compass Client.*"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_level": "account", "subject": "C=DE, OU=Compass Clients, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=validate, CN=test-compass-integration"}]'
 
   system_broker:
     enabled: true

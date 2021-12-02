@@ -94,11 +94,18 @@ type ReqBody struct {
 	Header  http.Header            `json:"header"`
 }
 
-// ReqData represents incomming request with parsed body and its header
+// ReqData represents incoming request with parsed body and its header
 type ReqData struct {
 	Body   ReqBody
 	Header http.Header
 	ctx    context.Context
+}
+
+// ExtraData represents the extra fields that might be provided in the incoming request
+type ExtraData struct {
+	InternalConsumerID string
+	ConsumerType       model.SystemAuthReferenceObjectType
+	AccessLevel        tenantEntity.Type
 }
 
 // NewReqData missing godoc
@@ -251,14 +258,15 @@ func (d *ReqData) GetAccessLevelFromExtra() tenantEntity.Type {
 	return tenantEntity.Type(fmt.Sprint(d.Body.Extra[cert.AccessLevelExtraField]))
 }
 
-func (d *ReqData) GetConsumerTypeExtraFieldFromExtra() model.SystemAuthReferenceObjectType {
+func (d *ReqData) GetConsumerTypeFromExtra() model.SystemAuthReferenceObjectType {
 	if d.Body.Extra == nil {
 		return ""
 	}
-	if _, found := d.Body.Extra[cert.ConsumerTypeExtraField]; !found {
-		d.Body.Extra[cert.ConsumerTypeExtraField] = model.RuntimeReference
+	consumerType, found := d.Body.Extra[cert.ConsumerTypeExtraField]
+	if !found {
+		return ""
 	}
-	return model.SystemAuthReferenceObjectType(fmt.Sprint(d.Body.Extra[cert.ConsumerTypeExtraField]))
+	return model.SystemAuthReferenceObjectType(fmt.Sprint(consumerType))
 }
 
 func (d *ReqData) GetInternalConsumerIDFromExtra() string {
@@ -269,4 +277,16 @@ func (d *ReqData) GetInternalConsumerIDFromExtra() string {
 		return ""
 	}
 	return fmt.Sprint(d.Body.Extra[cert.InternalConsumerIDField])
+}
+
+func (d *ReqData) GetExtraDataWithDefaults() ExtraData {
+	consumerType := d.GetConsumerTypeFromExtra()
+	if consumerType == "" {
+		consumerType = model.RuntimeReference
+	}
+	return ExtraData{
+		InternalConsumerID: d.GetInternalConsumerIDFromExtra(),
+		ConsumerType:       consumerType,
+		AccessLevel:        d.GetAccessLevelFromExtra(),
+	}
 }

@@ -51,29 +51,35 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 	// whereas in the ord flow we expect external IDs in order ord views to work properly(using Automatic Scenario Assignments)
 	log.C(ctx).Infof("Matched component name is %s", matchedComponentName[0])
 
+	// the authID in this flow is an OU selected by the Connector
+	externalTenantID := authDetails.AuthID
+
 	if matchedComponentName[0] != "director" { // ORD Flow, set the external tenant ID both for internal and external tenants
-		externalTenantID := authDetails.AuthID
 		objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), p.tenantKeys, "", authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
 		log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 		return objCtx, nil
 	}
 
-	consumerType := reqData.GetConsumerTypeExtraFieldFromExtra()
-	logger := log.C(ctx).WithFields(logrus.Fields{
-		"consumer_type": consumerType,
-	})
+	extraData := reqData.GetExtraDataWithDefaults()
 
+	logger := log.C(ctx).WithFields(logrus.Fields{
+		"consumer_type": extraData.ConsumerType,
+	})
 	ctx = log.ContextWithLogger(ctx, logger)
-	scopes, err := p.directorScopes(consumerType)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to get scopes for consumer type %s: %v", consumerType, err)
-		return ObjectContext{}, apperrors.NewInternalError("failed to extract scopes") // TODO improve msg
+
+	if extraData.AccessLevel != "" {
+		var err error
+		externalTenantID, err = reqData.GetExternalTenantID() // will return tenant ID from header if it exists
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("Failed to get external tenant ID: %v", err)
+			return ObjectContext{}, err
+		}
 	}
 
-	externalTenantID, err := reqData.GetExternalTenantID()
+	scopes, err := p.directorScopes(reqData.GetConsumerTypeFromExtra())
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to get external tenant ID: %v", err)
-		return ObjectContext{}, apperrors.NewInternalError("failed to extract external tenant") // TODO improve msg
+		log.C(ctx).WithError(err).Errorf("Failed to get scopes for consumer type %s: %v", extraData.ConsumerType, err)
+		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Failed to extract scopes for consumer with type %s", extraData.ConsumerType))
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
@@ -88,22 +94,23 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	if accessLvl := reqData.GetAccessLevelFromExtra(); accessLvl != "" && tenantMapping.Type != accessLvl {
+	if extraData.AccessLevel != "" && tenantMapping.Type != extraData.AccessLevel {
 		// TODO improve message
 		return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to tenant with ID %s", authDetails.AuthID, tenantMapping.ExternalTenant))
 	}
 
-	if internalConsumerID := reqData.GetInternalConsumerIDFromExtra(); internalConsumerID != "" {
-		found, err := p.consumerExistsFuncs[consumerType](ctx, internalConsumerID)
+	if extraData.InternalConsumerID != "" {
+		found, err := p.consumerExistsFuncs[extraData.ConsumerType](ctx, extraData.InternalConsumerID)
 		if err != nil {
-			return ObjectContext{}, errors.Wrapf(err, "while getting %s with ID %s", consumerType, internalConsumerID)
+			return ObjectContext{}, errors.Wrapf(err, "while getting %s with ID %s", extraData.ConsumerType, extraData.InternalConsumerID)
 		}
 		if !found {
-			return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("%s with ID %s does not exist", consumerType, internalConsumerID))
+			return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("%s with ID %s does not exist", extraData.ConsumerType, extraData.InternalConsumerID))
 		}
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), p.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), p.tenantKeys, scopes,
+		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(extraData.ConsumerType), CertServiceObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 	return objCtx, nil
 }

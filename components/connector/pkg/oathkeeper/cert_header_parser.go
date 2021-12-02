@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-// TODO regenerate with correct mockery version
 //go:generate mockery --name=certificateHeaderParser --output=automock --outpkg=automock --case=underscore --exported=true
 type certificateHeaderParser interface {
 	GetCertificateData(*http.Request) *CertificateData

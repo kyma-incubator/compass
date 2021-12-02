@@ -59,13 +59,6 @@ type Config struct {
 	SubjectConsumerMappingConfig string `envconfig:"default=[]"`
 }
 
-type subjectConsumerTypeMapping struct {
-	SubjectPattern     string `json:"subject_pattern"`
-	ConsumerType       string `json:"consumer_type"`
-	InternalConsumerID string `json:"internal_consumer_id"`
-	TenantAccessLevel  string `json:"tenant_access_level"`
-}
-
 func (c *Config) String() string {
 	return fmt.Sprintf("ExternalAddress: %s, APIEndpoint: %s, HydratorAddress: %s, "+
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+

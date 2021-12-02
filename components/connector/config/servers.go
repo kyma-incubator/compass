@@ -1,11 +1,7 @@
 package config
 
 import (
-	"encoding/json"
 	"net/http"
-	"regexp"
-
-	"github.com/pkg/errors"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
@@ -13,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	"github.com/kyma-incubator/compass/components/connector/internal/healthz"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
+	"github.com/kyma-incubator/compass/components/connector/internal/subject"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -49,23 +46,12 @@ func PrepareHydratorServer(cfg Config, CSRSubjectConsts certificates.CSRSubjectC
 	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
 		oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), cert.GetCommonName, nil)
 
-	mappings, err := unmarshalMappings(cfg.SubjectConsumerMappingConfig)
+	subjectProcessor, err := subject.NewProcessor(cfg.SubjectConsumerMappingConfig, externalSubjectConsts.OrganizationalUnitPattern)
 	if err != nil {
 		return nil, err
 	}
-
-	authSessionFunc := authSessionExtraFromSubject(mappings)
-	authIDFromMappingFunc := authIDFromSubjectToConsumerMapping(mappings)
-	authIDFromOUsFunc := cert.GetRemainingOrganizationalUnit(externalSubjectConsts.OrganizationalUnitPattern)
-	authIDFromSubjectFunc := func(subject string) string {
-		if authIDFromMapping := authIDFromMappingFunc(subject); authIDFromMapping != "" {
-			return authIDFromMapping
-		}
-		return authIDFromOUsFunc(subject)
-	}
-
 	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer,
-		oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), authIDFromSubjectFunc, authSessionFunc)
+		oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), subjectProcessor.AuthIDFromSubjectFunc(), subjectProcessor.AuthSessionExtraFromSubjectFunc())
 
 	validationHydrator := oathkeeper.NewValidationHydrator(revokedCertsRepository, connectorCertHeaderParser, externalCertHeaderParser)
 
@@ -89,48 +75,4 @@ func PrepareHydratorServer(cfg Config, CSRSubjectConsts certificates.CSRSubjectC
 		Handler:           handlerWithTimeout,
 		ReadHeaderTimeout: cfg.ServerTimeout,
 	}, nil
-}
-
-func authSessionExtraFromSubject(mappings []subjectConsumerTypeMapping) func(subject string) map[string]interface{} {
-	return func(subject string) map[string]interface{} {
-		for _, m := range mappings {
-			r, err := regexp.Compile(m.SubjectPattern)
-			if err != nil { // already validated during bootstrap
-				continue
-			}
-			if r.MatchString(subject) {
-				return cert.GetExtra(m.TenantAccessLevel, m.ConsumerType, m.InternalConsumerID)
-			}
-		}
-		return nil
-	}
-}
-
-func authIDFromSubjectToConsumerMapping(mappings []subjectConsumerTypeMapping) func(subject string) string {
-	return func(subject string) string {
-		for _, m := range mappings {
-			r, err := regexp.Compile(m.SubjectPattern)
-			if err != nil { // already validated during bootstrap
-				continue
-			}
-			if r.MatchString(subject) {
-				return m.InternalConsumerID
-			}
-		}
-		return ""
-	}
-}
-
-// TODO add configuration validation
-func unmarshalMappings(mappingsConfig string) ([]subjectConsumerTypeMapping, error) {
-	var mappings []subjectConsumerTypeMapping
-	if err := json.Unmarshal([]byte(mappingsConfig), &mappings); err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling mappings")
-	}
-	for _, m := range mappings {
-		if _, err := regexp.Compile(m.SubjectPattern); err != nil {
-			return nil, errors.Wrapf(err, "Failed to compile regex %s", m.SubjectPattern)
-		}
-	}
-	return mappings, nil
 }
