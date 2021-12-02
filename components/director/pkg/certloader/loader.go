@@ -6,6 +6,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
+	"github.com/kyma-incubator/compass/components/director/pkg/namespacedname"
 	"time"
 
 	"github.com/pkg/errors"
@@ -49,7 +51,20 @@ func NewCertificatesLoader(certCache *certificatesCache, secretManager Manager, 
 
 // StartCertLoader prepares and run certificate loader goroutine
 func StartCertLoader(ctx context.Context, externalClientCertSecret string) (Cache, error) {
-	return NewCertificateCache(), nil
+	parsedCertSecret, err := namespacedname.Parse(externalClientCertSecret)
+	if err != nil {
+		return nil, err
+	}
+	kubeConfig := kubernetes.Config{}
+	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
+	if err != nil {
+		return nil, err
+	}
+	certCache := NewCertificateCache()
+	certLoader := NewCertificatesLoader(certCache, k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace), parsedCertSecret.Name, time.Second)
+	go certLoader.Run(ctx)
+
+	return certCache, nil
 }
 
 // Run uses kubernetes watch mechanism to listen for resource changes and update certificate cache

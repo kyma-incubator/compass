@@ -198,7 +198,6 @@ export APP_ALLOW_JWT_SIGNING_NONE=true
 export APP_INFO_CERT_ISSUER="C=BG, L=Local, O=CMP, OU=Local, CN=CMP"
 export APP_INFO_CERT_SUBJECT="C=BG, O=CMP, OU=Local, L=Local, CN=local-clients"
 export APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY="non-existent-label-key"
-export APP_EXTERNAL_CLIENT_CERT_SECRET="asdkajsldkn"
 
 # Tenant Fetcher properties
 export APP_SUBSCRIPTION_CALLBACK_SCOPE=Callback
