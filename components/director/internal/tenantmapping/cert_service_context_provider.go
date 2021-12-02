@@ -95,7 +95,6 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 	}
 
 	if extraData.AccessLevel != "" && tenantMapping.Type != extraData.AccessLevel {
-		// TODO improve message
 		return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to tenant with ID %s", authDetails.AuthID, tenantMapping.ExternalTenant))
 	}
 
@@ -129,7 +128,7 @@ func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper.Re
 }
 
 func (p *certServiceContextProvider) directorScopes(consumerType model.SystemAuthReferenceObjectType) (string, error) {
-	if consumerType == "" { // TODO improve
+	if consumerType == "" {
 		consumerType = "default"
 	}
 

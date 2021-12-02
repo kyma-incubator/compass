@@ -11,6 +11,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	RuntimeType           = "Runtime"
+	IntegrationSystemType = "Integration System"
+	ApplicationType       = "Application"
+)
+
 type subjectConsumerTypeMapping struct {
 	Subject            string `json:"subject"`
 	ConsumerType       string `json:"consumer_type"`
@@ -22,13 +28,13 @@ func (s *subjectConsumerTypeMapping) validate() error {
 	if len(s.Subject) < 1 {
 		return errors.New("subject is not provided")
 	}
-	if s.ConsumerType != "Runtime" && s.ConsumerType != "Integration System" && s.ConsumerType != "Application" {
+	if s.ConsumerType != RuntimeType && s.ConsumerType != IntegrationSystemType && s.ConsumerType != ApplicationType {
 		return fmt.Errorf("consumer type %s is not valid", s.ConsumerType)
 	}
 	if s.TenantAccessLevel != string(tenantEntity.Account) &&
 		s.TenantAccessLevel != string(tenantEntity.Subaccount) &&
 		s.TenantAccessLevel != string(tenantEntity.Customer) {
-		return errors.New("tenant access level is not valid")
+		return fmt.Errorf("tenant access level %s is not valid", s.TenantAccessLevel)
 	}
 	return nil
 }

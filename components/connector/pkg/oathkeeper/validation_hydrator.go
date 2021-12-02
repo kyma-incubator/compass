@@ -31,9 +31,11 @@ func NewValidationHydrator(revokedCertsRepository revocation.RevokedCertificates
 // First certificateHeaderParser that matches (successfully parse the subject) is used to extract the clientID, certificate hash and issuer.
 // If there is no matching certificateHeaderParser, an empty oathkeeper session is returned.
 func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	var (
+		ctx         = r.Context()
+		authSession AuthenticationSession
+	)
 
-	var authSession AuthenticationSession
 	if err := json.NewDecoder(r.Body).Decode(&authSession); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to decode request body: %v", err)
 		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.Wrap(err, "failed to decode Authentication Session from body"))

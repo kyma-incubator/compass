@@ -43,15 +43,15 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 }
 
 func PrepareHydratorServer(cfg Config, CSRSubjectConsts certificates.CSRSubjectConsts, externalSubjectConsts certificates.ExternalIssuerSubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
-	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
-		oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), cert.GetCommonName, nil)
-
 	subjectProcessor, err := subject.NewProcessor(cfg.SubjectConsumerMappingConfig, externalSubjectConsts.OrganizationalUnitPattern)
 	if err != nil {
 		return nil, err
 	}
+
 	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer,
 		oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), subjectProcessor.AuthIDFromSubjectFunc(), subjectProcessor.AuthSessionExtraFromSubjectFunc())
+	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
+		oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), cert.GetCommonName, nil)
 
 	validationHydrator := oathkeeper.NewValidationHydrator(revokedCertsRepository, connectorCertHeaderParser, externalCertHeaderParser)
 

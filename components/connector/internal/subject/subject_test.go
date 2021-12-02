@@ -45,7 +45,7 @@ func TestNewProcessor(t *testing.T) {
 		{
 			name:             "Returns error when configuration contains invalid access level",
 			config:           fmt.Sprintf(configTpl, validConsumer, invalidValue, validSubject, validInternalConsumerID),
-			expectedErrorMsg: "tenant access level is not valid",
+			expectedErrorMsg: fmt.Sprintf("tenant access level %s is not valid", invalidValue),
 		},
 		{
 			name:             "Returns error when subject is not provided in configuration",
@@ -68,7 +68,7 @@ func TestNewProcessor(t *testing.T) {
 }
 
 func TestAuthIDFromSubjectFunc(t *testing.T) {
-	t.Run("Success when internal consumer id is provided in subject", func(t *testing.T) {
+	t.Run("Success when internal consumer id is provided", func(t *testing.T) {
 		p, err := subject.NewProcessor(validConfig, "")
 		require.NoError(t, err)
 
@@ -83,14 +83,14 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		res := p.AuthIDFromSubjectFunc()(validSubject)
 		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
 	})
-	t.Run("Success when internal consumer id is not provided", func(t *testing.T) {
+	t.Run("Success getting authID from mapping", func(t *testing.T) {
 		p, err := subject.NewProcessor("[]", "Compass Clients")
 		require.NoError(t, err)
 
 		res := p.AuthIDFromSubjectFunc()(validSubject)
 		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
 	})
-	t.Run("Success when internal consumer id is not provided", func(t *testing.T) {
+	t.Run("Success getting authID from OUs", func(t *testing.T) {
 		p, err := subject.NewProcessor(fmt.Sprintf(configTpl, validConsumer, validAccessLvl, "OU=Random OU", validInternalConsumerID), "Compass Clients")
 		require.NoError(t, err)
 
@@ -109,7 +109,15 @@ func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
 		require.Equal(t, validAccessLvl, extra["tenant_access_level"])
 		require.Equal(t, validInternalConsumerID, extra["internal_consumer_id"])
 	})
-	t.Run("Returns nil when can't match subjects", func(t *testing.T) {
+	t.Run("Returns nil when can't match subjects components", func(t *testing.T) {
+		invalidSubject := "C=DE, OU=Compass Clients, OU=Random OU, L=validate, CN=test-compass-integration"
+		p, err := subject.NewProcessor(validConfig, "")
+		require.NoError(t, err)
+
+		extra := p.AuthSessionExtraFromSubjectFunc()(invalidSubject)
+		require.Nil(t, extra)
+	})
+	t.Run("Returns nil when can't match number of subjects components", func(t *testing.T) {
 		invalidSubject := "C=DE, OU=Compass Clients, L=validate, CN=test-compass-integration"
 		p, err := subject.NewProcessor(validConfig, "")
 		require.NoError(t, err)
