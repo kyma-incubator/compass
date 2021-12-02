@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -78,6 +80,10 @@ func CreateTenantAccessRecursively(ctx context.Context, m2mTable string, tenantA
 
 // DeleteTenantAccessRecursively deletes all the accesses to the provided resource IDs for the given tenant and all its parents.
 func DeleteTenantAccessRecursively(ctx context.Context, m2mTable string, tenant string, resourceIDs []string) error {
+	if len(resourceIDs) == 0 {
+		return errors.New("resourceIDs cannot be empty")
+	}
+
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
