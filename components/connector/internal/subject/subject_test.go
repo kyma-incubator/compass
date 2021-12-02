@@ -9,42 +9,19 @@ import (
 )
 
 const (
-	configTpl = `[{"consumer_type": "%s", "tenant_access_level": "%s", "subject": "%s"}]`
+	configTpl = `[{"consumer_type": "%s", "tenant_access_level": "%s", "subject": "%s", "internal_consumer_id": "%s"}]`
 
-	validConsumer  = "Integration System"
-	validAccessLvl = "account"
-	validSubject   = "C=DE, OU=Compass Clients, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=validate, CN=test-compass-integration"
-	invalidValue   = "test"
+	validConsumer           = "Integration System"
+	validAccessLvl          = "account"
+	validSubject            = "C=DE, OU=Compass Clients, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=validate, CN=test-compass-integration"
+	validInternalConsumerID = "3bfbb60f-d67d-4657-8f9e-2d73a6b24a10"
+
+	invalidValue = "test"
 )
 
-var validConfig = fmt.Sprintf(configTpl, validConsumer, validAccessLvl, validSubject)
+var validConfig = fmt.Sprintf(configTpl, validConsumer, validAccessLvl, validSubject, validInternalConsumerID)
 
 func TestNewProcessor(t *testing.T) {
-
-	t.Run("returns error when configuration with invalid format is provided", func(t *testing.T) {
-		_, err := subject.NewProcessor("invalid-config", "")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "while unmarshalling mappings")
-	})
-	t.Run("returns error when configuration contains invalid consumer type", func(t *testing.T) {
-		config := `[{"consumer_type": "Test", "tenant_access_level": "account", "subject": "C=DE, OU=Compass Clients, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=validate, CN=test-compass-integration"}]`
-		_, err := subject.NewProcessor(config, "")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "consumer type Test is not valid")
-	})
-	t.Run("returns error when configuration contains invalid consumer type", func(t *testing.T) {
-		config := `[{"consumer_type": "Integration System", "tenant_access_level": "test", "subject": "C=DE, OU=Compass Clients, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=validate, CN=test-compass-integration"}]`
-		_, err := subject.NewProcessor(config, "")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "tenant access level is not valid")
-	})
-	t.Run("returns error when configuration contains invalid consumer type", func(t *testing.T) {
-		config := `[{"consumer_type": "Integration System", "tenant_access_level": "account", "subject": ""}]`
-		_, err := subject.NewProcessor(config, "")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "subject is not provided")
-	})
-
 	testCases := []struct {
 		name             string
 		config           string
@@ -61,14 +38,19 @@ func TestNewProcessor(t *testing.T) {
 			expectedErrorMsg: "while unmarshalling mappings",
 		},
 		{
-			name:            "Returns error when configuration contains invalid consumer type",
-			config:           fmt.Sprintf(configTpl, invalidValue, validAccessLvl, validSubject),
+			name:             "Returns error when configuration contains invalid consumer type",
+			config:           fmt.Sprintf(configTpl, invalidValue, validAccessLvl, validSubject, validInternalConsumerID),
 			expectedErrorMsg: "consumer type test is not valid",
 		},
 		{
-			name:            "Returns error when configuration contains invalid consumer type",
-			config:           fmt.Sprintf(configTpl, invalidValue, validAccessLvl, validSubject),
-			expectedErrorMsg: "while unmarshalling mappings",
+			name:             "Returns error when configuration contains invalid access level",
+			config:           fmt.Sprintf(configTpl, validConsumer, invalidValue, validSubject, validInternalConsumerID),
+			expectedErrorMsg: "tenant access level is not valid",
+		},
+		{
+			name:             "Returns error when subject is not provided in configuration",
+			config:           fmt.Sprintf(configTpl, validConsumer, validAccessLvl, "", validInternalConsumerID),
+			expectedErrorMsg: "subject is not provided",
 		},
 	}
 
@@ -86,9 +68,43 @@ func TestNewProcessor(t *testing.T) {
 }
 
 func TestAuthIDFromSubjectFunc(t *testing.T) {
+	t.Run("Success when internal consumer id is provided in subject", func(t *testing.T) {
+		p, err := subject.NewProcessor(validConfig, "")
+		require.NoError(t, err)
 
+		res := p.AuthIDFromSubjectFunc()(validSubject)
+		require.Equal(t, validInternalConsumerID, res)
+	})
+	t.Run("Success when internal consumer id is not provided", func(t *testing.T) {
+		config := fmt.Sprintf(configTpl, validConsumer, validAccessLvl, validSubject, "")
+		p, err := subject.NewProcessor(config, "Compass Clients")
+		require.NoError(t, err)
+
+		res := p.AuthIDFromSubjectFunc()(validSubject)
+		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
+	})
+	t.Run("Success when internal consumer id is not provided", func(t *testing.T) {
+		p, err := subject.NewProcessor("[]", "Compass Clients")
+		require.NoError(t, err)
+
+		res := p.AuthIDFromSubjectFunc()(validSubject)
+		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
+	})
+	t.Run("Success when internal consumer id is not provided", func(t *testing.T) {
+		p, err := subject.NewProcessor(fmt.Sprintf(configTpl, validConsumer, validAccessLvl, "OU=Random OU", validInternalConsumerID), "Compass Clients")
+		require.NoError(t, err)
+
+		res := p.AuthIDFromSubjectFunc()(validSubject)
+		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
+	})
 }
 
 func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
+	p, err := subject.NewProcessor(validConfig, "")
+	require.NoError(t, err)
 
+	extra := p.AuthSessionExtraFromSubjectFunc()(validSubject)
+	require.Equal(t, validConsumer, extra["consumer_type"])
+	require.Equal(t, validAccessLvl, extra["tenant_access_level"])
+	require.Equal(t, validInternalConsumerID, extra["internal_consumer_id"])
 }

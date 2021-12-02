@@ -8,7 +8,7 @@ import (
 
 const (
 	ConsumerTypeExtraField  = "consumer_type"
-	AccessLevelExtraField   = "access_level"
+	AccessLevelExtraField   = "tenant_access_level"
 	InternalConsumerIDField = "internal_consumer_id"
 )
 
@@ -84,6 +84,7 @@ func GetCommonName(subject string) string {
 	return getRegexMatch("CN=([^,]+)", subject)
 }
 
+// GetExtra returns an appropriate auth session extra for the given consumerType, accessLevel and internalConsumerID
 func GetExtra(consumerType, accessLevel, internalConsumerID string) map[string]interface{} {
 	return map[string]interface{}{
 		ConsumerTypeExtraField:  consumerType,

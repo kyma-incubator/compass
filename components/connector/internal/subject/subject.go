@@ -3,7 +3,6 @@ package subject
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -69,6 +68,8 @@ func (p *processor) AuthIDFromSubjectFunc() func(subject string) string {
 	}
 }
 
+// AuthSessionExtraFromSubjectFunc returns a function which returns consumer - specific auth session extra body
+// in case the subject matches any of the configured consumers from the mapping.
 func (p *processor) AuthSessionExtraFromSubjectFunc() func(subject string) map[string]interface{} {
 	return func(subject string) map[string]interface{} {
 		log.D().Infof("trying to extract auth session extra from subject %s", subject)
@@ -87,11 +88,7 @@ func (p *processor) AuthSessionExtraFromSubjectFunc() func(subject string) map[s
 func (p *processor) authIDFromMappings() func(subject string) string {
 	return func(subject string) string {
 		for _, m := range p.mappings {
-			r, err := regexp.Compile(m.Subject)
-			if err != nil { // already validated during bootstrap
-				continue
-			}
-			if r.MatchString(subject) {
+			if subjectsMatch(subject, m.Subject) {
 				return m.InternalConsumerID
 			}
 		}
