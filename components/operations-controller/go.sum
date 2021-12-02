@@ -653,6 +653,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210831121533-7e42
 github.com/kyma-incubator/compass/components/director v0.0.0-20210922113925-7ff5909fa72b/go.mod h1:V1sc1tdrDM6+pOxYLoUwatFeJXNfVTj1puB8iHrno3c=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a5435ac7a h1:tJ+IsHS1+VCgDHk1Q7OWpoAgWIscZB/zYZiur0MQeOY=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a5435ac7a/go.mod h1:C+Vzw+Mc5IiFw2xL5xr7JkRz29HGVeqUa1cRNVoD1XQ=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211202133433-0b7c27f4a154 h1:YvLRdvKSMEsCek/6qHx1tJGQoGqG65D0vDQRp1d2P1Y=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211202133433-0b7c27f4a154/go.mod h1:fBnQU42L9G/GTrvUo1evQYaJ1Hqg0oCH4oMwbOwofOg=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b/go.mod h1:201wjhJxyaSA4pVp33VKOp91oNC+PQR591haj1t7KhA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892/go.mod h1:oBe0oA/3Z7UvkFaZi2YJpgljC2MIbsCljIQbonWEMl4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210526113340-87c6e3c6f049/go.mod h1:RZyHP04D4gDIJtPhbQK4PT2loFvYKtXOmT7RMraNNik=
@@ -1245,6 +1247,8 @@ golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1/go.mod h1:9tjilg8BloeKEkVJvy
 golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.0.0-20210510120150-4163338589ed h1:p9UgmWI9wKpfYmgaV/IZKGdXc5qEK45tDwwwDyjS26I=
 golang.org/x/net v0.0.0-20210510120150-4163338589ed/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
+golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d h1:20cMwl2fHAzkJMEA+8J4JgqBQcQGzbisXo31MIeenXI=
+golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
 golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
