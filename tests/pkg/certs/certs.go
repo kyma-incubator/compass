@@ -109,6 +109,31 @@ func DecodeAndParseCerts(t *testing.T, crtResponse *model.CrtResponse) model.Dec
 	}
 }
 
+// ClientCertPair returns a decoded client certificate and key pair.
+func ClientCertPair(t *testing.T, certBytes, keyBytes []byte) (*rsa.PrivateKey, [][]byte) {
+	crtBytes := DecodeBase64Cert(t, string(certBytes))
+
+	clientCertificateDecoded, _ := pem.Decode(crtBytes)
+	require.NotNil(t, clientCertificateDecoded)
+
+	clientCertificate, err := x509.ParseCertificate(clientCertificateDecoded.Bytes)
+	require.NoError(t, err)
+
+	keyDecoded, _ := pem.Decode(keyBytes)
+	require.NotNil(t, keyDecoded)
+
+	caPrivateKey, err := x509.ParsePKCS1PrivateKey(keyDecoded.Bytes)
+	if err != nil {
+		caPrivateKeyPKCS8, err := x509.ParsePKCS8PrivateKey(keyDecoded.Bytes)
+		require.NoError(t, err)
+		var ok bool
+		caPrivateKey, ok = caPrivateKeyPKCS8.(*rsa.PrivateKey)
+		require.True(t, ok)
+	}
+
+	return caPrivateKey, [][]byte{clientCertificate.Raw}
+}
+
 // CheckIfSubjectEquals verifies that specified subject is equal to this in certificate
 func CheckIfSubjectEquals(t *testing.T, expectedSubject string, certificate *x509.Certificate) {
 	subjectInfo := extractSubject(expectedSubject)

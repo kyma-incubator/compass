@@ -45,8 +45,16 @@ func TestMain(m *testing.M) {
 		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
 	}
 
-	conf.CA.Certificate = secret.Data[conf.CA.SecretCertificateKey]
 	conf.CA.Key = secret.Data[conf.CA.SecretKeyKey]
+	conf.CA.Certificate = secret.Data[conf.CA.SecretCertificateKey]
+
+	extCrtSecret, err := k8sClientSet.CoreV1().Secrets(conf.ExternalCA.SecretNamespace).Get(ctx, conf.ExternalCA.SecretName, metav1.GetOptions{})
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
+	}
+
+	conf.ExternalCA.Key = extCrtSecret.Data[conf.ExternalCA.SecretKeyKey]
+	conf.ExternalCA.Certificate = extCrtSecret.Data[conf.ExternalCA.SecretCertificateKey]
 
 	exitVal := m.Run()
 
