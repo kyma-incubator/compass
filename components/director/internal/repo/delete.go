@@ -50,9 +50,6 @@ func NewDeleterGlobal(resourceType resource.Type, tableName string) DeleterGloba
 }
 
 // DeleteOne deletes exactly one entity from the database if the calling tenant has owner access to it. It returns an error if more than one entity matches the provided conditions.
-// In case of top-level entity it only deletes the tenant access records from the m2m table, then a trigger is responsible for deleting the entity.
-// In case of child entity it deletes the entity directly.
-//
 // If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
 func (g *universalDeleter) DeleteOne(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions) error {
 	if tenant == "" {
@@ -64,17 +61,17 @@ func (g *universalDeleter) DeleteOne(ctx context.Context, resourceType resource.
 		return g.delete(ctx, resourceType, conditions, true)
 	}
 
-	if resourceType.IsTopLevel() {
-		return g.deleteTenantAccess(ctx, resourceType, tenant, conditions, true)
+	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, true)
+	if err != nil {
+		return err
 	}
 
-	return g.deleteChildEntity(ctx, resourceType, tenant, conditions, true)
+	conditions = append(conditions, tenantIsolation)
+
+	return g.delete(ctx, resourceType, conditions, true)
 }
 
 // DeleteMany deletes all the entities that match the provided conditions from the database if the calling tenant has owner access to them.
-// In case of top-level entity it only deletes the tenant access records from the m2m table, then a trigger is responsible for deleting the entity.
-// In case of child entity it deletes the entity directly.
-//
 // If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
 func (g *universalDeleter) DeleteMany(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions) error {
 	if tenant == "" {
@@ -86,11 +83,14 @@ func (g *universalDeleter) DeleteMany(ctx context.Context, resourceType resource
 		return g.delete(ctx, resourceType, conditions, false)
 	}
 
-	if resourceType.IsTopLevel() {
-		return g.deleteTenantAccess(ctx, resourceType, tenant, conditions, false)
+	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, true)
+	if err != nil {
+		return err
 	}
 
-	return g.deleteChildEntity(ctx, resourceType, tenant, conditions, false)
+	conditions = append(conditions, tenantIsolation)
+
+	return g.delete(ctx, resourceType, conditions, false)
 }
 
 // DeleteOneGlobal deletes exactly one entity from the database. It returns an error if more than one entity matches the provided conditions.
@@ -135,121 +135,12 @@ func (g *universalDeleter) delete(ctx context.Context, resourceType resource.Typ
 		if err != nil {
 			return errors.Wrap(err, "while checking affected rows")
 		}
+		if affected == 0 {
+			return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+		}
 		if affected != 1 {
 			return apperrors.NewInternalError("delete should remove single row, but removed %d rows", affected)
 		}
-	}
-
-	return nil
-}
-
-func (g *universalDeleter) deleteTenantAccess(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, requireSingleRemoval bool) error {
-	m2mTable, ok := resourceType.TenantAccessTable()
-	if !ok {
-		return errors.Errorf("entity %s does not have access table", resourceType)
-	}
-
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return err
-	}
-
-	var stmtBuilder strings.Builder
-
-	stmtBuilder.WriteString(fmt.Sprintf("SELECT id FROM %s WHERE", g.tableName))
-
-	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, true)
-	if err != nil {
-		return err
-	}
-
-	conditions = append(conditions, tenantIsolation)
-
-	if err = writeEnumeratedConditions(&stmtBuilder, conditions); err != nil {
-		return errors.Wrap(err, "while writing enumerated conditions")
-	}
-	allArgs := getAllArgs(conditions)
-
-	query := getQueryFromBuilder(stmtBuilder)
-	log.C(ctx).Debugf("Executing DB query: %s", query)
-
-	var ids IDs
-	err = persist.SelectContext(ctx, &ids, query, allArgs...)
-	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Delete, "while selecting objects from '%s' table by conditions", g.tableName); err != nil {
-		return err
-	}
-
-	if len(ids) == 0 {
-		if requireSingleRemoval {
-			return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
-		} else {
-			return nil
-		}
-	}
-
-	if requireSingleRemoval && len(ids) != 1 {
-		return apperrors.NewInternalError("delete should remove single row, but removed %d rows", len(ids))
-	}
-
-	stmtBuilder.Reset()
-
-	stmtBuilder.WriteString(fmt.Sprintf("DELETE FROM %s WHERE", m2mTable))
-
-	deleteConditions := Conditions{NewInConditionForStringValues(M2MResourceIDColumn, ids)}
-	err = writeEnumeratedConditions(&stmtBuilder, deleteConditions)
-	if err != nil {
-		return errors.Wrap(err, "while writing enumerated conditions")
-	}
-
-	allArgs = getAllArgs(deleteConditions)
-
-	query = getQueryFromBuilder(stmtBuilder)
-	log.C(ctx).Debugf("Executing DB query: %s", query)
-
-	_, err = persist.ExecContext(ctx, query, allArgs...)
-	return persistence.MapSQLError(ctx, err, resourceType, resource.Delete, "while deleting objects from '%s' table", m2mTable)
-}
-
-func (g *universalDeleter) deleteChildEntity(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, requireSingleRemoval bool) error {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return err
-	}
-
-	var stmtBuilder strings.Builder
-	stmtBuilder.WriteString(fmt.Sprintf("DELETE FROM %s WHERE", g.tableName))
-
-	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, true)
-	if err != nil {
-		return err
-	}
-
-	conditions = append(conditions, tenantIsolation)
-
-	if err = writeEnumeratedConditions(&stmtBuilder, conditions); err != nil {
-		return errors.Wrap(err, "while writing enumerated conditions")
-	}
-	allArgs := getAllArgs(conditions)
-
-	query := getQueryFromBuilder(stmtBuilder)
-	log.C(ctx).Debugf("Executing DB query: %s", query)
-
-	res, err := persist.ExecContext(ctx, query, allArgs...)
-	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Delete, "while deleting object from '%s' table", g.tableName); err != nil {
-		return err
-	}
-
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return errors.Wrap(err, "while checking affected rows")
-	}
-
-	if requireSingleRemoval && affected == 0 {
-		return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
-	}
-
-	if requireSingleRemoval && affected != 1 {
-		return apperrors.NewInternalError("delete should remove single row, but removed %d rows", affected)
 	}
 
 	return nil

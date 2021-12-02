@@ -21,7 +21,7 @@ func (e *Entity) GetID() string {
 }
 
 // GetParent returns the parent type and the parent ID of the entity.
-func (e *Entity) GetParent() (resource.Type, string) {
+func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
 	return resource.Application, e.ApplicationID
 }
 

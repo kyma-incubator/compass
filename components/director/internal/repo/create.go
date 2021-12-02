@@ -172,7 +172,7 @@ func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string,
 	var parentID string
 	var parentResourceType resource.Type
 	if childEntity, ok := dbEntity.(ChildEntity); ok {
-		parentResourceType, parentID = childEntity.GetParent()
+		parentResourceType, parentID = childEntity.GetParent(resourceType)
 	}
 
 	if len(parentID) == 0 || len(parentResourceType) == 0 {

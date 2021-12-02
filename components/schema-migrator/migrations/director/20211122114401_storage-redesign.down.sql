@@ -574,11 +574,6 @@ SELECT id, tenant_id FROM get_id_tenant_id_index();
 
 CREATE UNIQUE INDEX id_tenant_id_index_unique ON id_tenant_id_index(id);
 
-DROP TRIGGER delete_runtime_resource ON tenant_runtimes;
-DROP TRIGGER delete_application_resource ON tenant_applications;
-
-DROP FUNCTION IF EXISTS delete_resource();
-
 DROP TABLE tenant_runtimes;
 DROP TABLE tenant_applications;
 

@@ -16,7 +16,7 @@ func (e *RuntimeContext) GetID() string {
 }
 
 // GetParent returns the parent type and the parent ID of the entity.
-func (e *RuntimeContext) GetParent() (resource.Type, string) {
+func (e *RuntimeContext) GetParent(_ resource.Type) (resource.Type, string) {
 	return resource.Runtime, e.RuntimeID
 }
 

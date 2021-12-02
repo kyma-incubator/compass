@@ -9,7 +9,7 @@ import (
 
 // ChildEntity is an interface for a child entity that can be used to obtain its parent ID.
 type ChildEntity interface {
-	GetParent() (resource.Type, string)
+	GetParent(resource.Type) (resource.Type, string)
 }
 
 // Identifiable is an interface that can be used to identify an object.

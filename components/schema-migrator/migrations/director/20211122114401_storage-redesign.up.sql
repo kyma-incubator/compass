@@ -22,24 +22,6 @@ CREATE TABLE tenant_runtimes
     PRIMARY KEY (tenant_id, id)
 );
 
-CREATE OR REPLACE FUNCTION delete_resource() RETURNS TRIGGER AS
-$$
-DECLARE
-    resource_table TEXT;
-    count INTEGER;
-BEGIN
-    resource_table := TG_ARGV[0];
-    EXECUTE format('SELECT COUNT(1) FROM %I WHERE id = %L AND owner = true', TG_TABLE_NAME, OLD.id) INTO count;
-    IF count = 0 THEN
-        EXECUTE format('DELETE FROM %I WHERE id = %L;', resource_table, OLD.id);
-    END IF;
-    RETURN NULL;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER delete_application_resource AFTER DELETE ON tenant_applications FOR EACH ROW EXECUTE PROCEDURE delete_resource('applications');
-CREATE TRIGGER delete_runtime_resource AFTER DELETE ON tenant_runtimes FOR EACH ROW EXECUTE PROCEDURE delete_resource('runtimes');
-
 UPDATE runtimes
 SET tenant_id =
         (SELECT id
