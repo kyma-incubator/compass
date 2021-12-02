@@ -95,7 +95,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 	req.Header = headers
 
 	if webhook.Auth != nil {
-		ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
+		ctx = saveToContext(ctx, webhook.Auth.Credential)
 		req = req.WithContext(ctx)
 	}
 
@@ -162,7 +162,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 	req.Header = headers
 
 	if webhook.Auth != nil {
-		ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
+		ctx = saveToContext(ctx, webhook.Auth.Credential)
 		req = req.WithContext(ctx)
 	}
 
@@ -246,4 +246,26 @@ func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
 		return recerr.NewWebhookStatusGoneErr(*goneStatusCode)
 	}
 	return nil
+}
+
+func saveToContext(ctx context.Context, credentialData graphql.CredentialData) context.Context {
+	var credentials auth.Credentials
+
+	switch v := credentialData.(type) {
+	case *graphql.BasicCredentialData:
+		credentials = &auth.BasicCredentials{
+			Username: v.Username,
+			Password: v.Password,
+		}
+	case *graphql.OAuthCredentialData:
+		credentials = &auth.OAuthCredentials{
+			ClientID:     v.ClientID,
+			ClientSecret: v.ClientSecret,
+			TokenURL:     v.URL,
+		}
+	default:
+		return ctx
+	}
+
+	return auth.SaveToContext(ctx, credentials)
 }

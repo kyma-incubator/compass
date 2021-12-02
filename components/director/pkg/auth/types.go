@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 type contextKey string
@@ -33,6 +32,8 @@ const (
 	BasicCredentialType CredentialType = "BasicCredentials"
 	// OAuthCredentialType missing godoc
 	OAuthCredentialType CredentialType = "OAuthCredentials"
+	// MtlsOAuthCredentialType missing godoc
+	MtlsOAuthCredentialType CredentialType = "MtlsOAuthCredentialType"
 )
 
 // CredentialType specifies a dedicated string type to differentiate every Credentials type
@@ -57,6 +58,11 @@ type OAuthCredentials struct {
 	TokenURL     string
 }
 
+// OAuthCredentials implements the Credentials interface for the OAuth flow
+type MtlsOAuthCredentials struct {
+	Tenant string
+}
+
 // Get returns the specified Credentials implementation
 func (bc *BasicCredentials) Get() interface{} {
 	return bc
@@ -77,6 +83,16 @@ func (oc *OAuthCredentials) Type() CredentialType {
 	return OAuthCredentialType
 }
 
+// Get returns the specified Credentials implementation
+func (moc *MtlsOAuthCredentials) Get() interface{} {
+	return moc
+}
+
+// Type returns the specified Credentials implementation type
+func (moc *MtlsOAuthCredentials) Type() CredentialType {
+	return MtlsOAuthCredentialType
+}
+
 // LoadFromContext retrieves the credentials from the provided context
 func LoadFromContext(ctx context.Context) (Credentials, error) {
 	credentials, ok := ctx.Value(CredentialsCtxKey).(Credentials)
@@ -89,24 +105,6 @@ func LoadFromContext(ctx context.Context) (Credentials, error) {
 }
 
 // SaveToContext saves the given credentials in the specified context
-func SaveToContext(ctx context.Context, credentialData graphql.CredentialData) context.Context {
-	var credentials Credentials
-
-	switch v := credentialData.(type) {
-	case *graphql.BasicCredentialData:
-		credentials = &BasicCredentials{
-			Username: v.Username,
-			Password: v.Password,
-		}
-	case *graphql.OAuthCredentialData:
-		credentials = &OAuthCredentials{
-			ClientID:     v.ClientID,
-			ClientSecret: v.ClientSecret,
-			TokenURL:     v.URL,
-		}
-	default:
-		return ctx
-	}
-
+func SaveToContext(ctx context.Context, credentials Credentials) context.Context {
 	return context.WithValue(ctx, CredentialsCtxKey, credentials)
 }

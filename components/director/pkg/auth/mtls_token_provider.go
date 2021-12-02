@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	oauth "github.com/kyma-incubator/compass/components/director/pkg/oauth"
@@ -64,10 +63,9 @@ type mtlsTokenAuthorizationProvider struct {
 	clientID     string
 	tokenURL     string
 	scopesClaim  string
-	token        httputils.Token
-	tokenTimeout time.Duration
-	httpClient   *http.Client
-	lock         sync.RWMutex
+	tenantHeader string
+
+	httpClient *http.Client
 }
 
 // NewTokenAuthorizationProvider constructs an TokenAuthorizationProvider
@@ -76,9 +74,8 @@ func NewMtlsTokenAuthorizationProvider(oauthCfg oauth.Config, cache CertificateC
 		clientID:     oauthCfg.ClientID,
 		tokenURL:     oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
 		scopesClaim:  strings.Join(oauthCfg.ScopesClaim, " "),
-		tokenTimeout: oauthCfg.TokenExpirationTimeout,
+		tenantHeader: oauthCfg.TenantHeaderName,
 		httpClient:   creator(cache, oauthCfg.TokenRequestTimeout),
-		lock:         sync.RWMutex{},
 	}
 }
 
@@ -88,37 +85,38 @@ func (p *mtlsTokenAuthorizationProvider) Name() string {
 }
 
 // Matches contains the logic for matching the AuthorizationProvider
-func (p *mtlsTokenAuthorizationProvider) Matches(_ context.Context) bool {
-	return true
+func (p *mtlsTokenAuthorizationProvider) Matches(ctx context.Context) bool {
+	credentials, err := LoadFromContext(ctx)
+	if err != nil {
+		return false
+	}
+
+	return credentials.Type() == MtlsOAuthCredentialType
 }
 
 // GetAuthorization crafts an OAuth Bearer token to inject as part of the executing request
 func (p *mtlsTokenAuthorizationProvider) GetAuthorization(ctx context.Context) (string, error) {
-	p.lock.RLock()
-	isValidToken := !p.token.EmptyOrExpired(p.tokenTimeout)
-	p.lock.RUnlock()
-	if isValidToken {
-		return "Bearer " + p.token.AccessToken, nil
-	}
+	log.C(ctx).Debug("Getting new token...")
 
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	if !p.token.EmptyOrExpired(p.tokenTimeout) {
-		return "Bearer " + p.token.AccessToken, nil
-	}
-
-	log.C(ctx).Debug("Token is invalid, getting a new one...")
-	token, err := p.getToken(ctx)
+	credentials, err := LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	p.token = token
+	mtlsCredentials, ok := credentials.Get().(*MtlsOAuthCredentials)
+	if !ok {
+		return "", errors.New("failed to cast credentials to mtls oauth credentials type")
+	}
+
+	token, err := p.getToken(ctx, mtlsCredentials)
+	if err != nil {
+		return "", err
+	}
+
 	return "Bearer " + token.AccessToken, nil
 }
 
-func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context) (httputils.Token, error) {
+func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentials *MtlsOAuthCredentials) (httputils.Token, error) {
 	log.C(ctx).Info("Getting authorization token")
 
 	form := url.Values{}
@@ -133,6 +131,7 @@ func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context) (httputil
 	}
 
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set(p.tenantHeader, credentials.Tenant)
 
 	response, err := p.httpClient.Do(request)
 	if err != nil {

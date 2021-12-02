@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/paging"
 	"github.com/pkg/errors"
@@ -43,7 +45,7 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Sy
 	qp1 := map[string]string{"$filter": c.apiConfig.FilterCriteria}
 	var systems []System
 
-	systemsFunc := c.getSystemsPagingFunc(ctx, &systems)
+	systemsFunc := c.getSystemsPagingFunc(ctx, &systems, tenant)
 	pi1 := paging.NewPageIterator(c.apiConfig.Endpoint, c.apiConfig.PagingSkipParam, c.apiConfig.PagingSizeParam, qp1, c.apiConfig.PageSize, systemsFunc)
 	if err := pi1.FetchAll(); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems for tenant %s", tenant)
@@ -53,7 +55,7 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Sy
 	qp2 := map[string]string{"$filter": tenantFilter}
 	var systemsByTenantFilter []System
 
-	systemsByTenantFilterFunc := c.getSystemsPagingFunc(ctx, &systemsByTenantFilter)
+	systemsByTenantFilterFunc := c.getSystemsPagingFunc(ctx, &systemsByTenantFilter, tenant)
 	pi2 := paging.NewPageIterator(c.apiConfig.Endpoint, c.apiConfig.PagingSkipParam, c.apiConfig.PagingSizeParam, qp2, c.apiConfig.PageSize, systemsByTenantFilterFunc)
 	if err := pi2.FetchAll(); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems with tenant filter for tenant %s", tenant)
@@ -63,11 +65,13 @@ func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]Sy
 	return append(systems, systemsByTenantFilter...), nil
 }
 
-func (c *Client) fetchSystemsForTenant(ctx context.Context, url string) ([]System, error) {
+func (c *Client) fetchSystemsForTenant(ctx context.Context, url, tenant string) ([]System, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new HTTP request")
 	}
+
+	req = req.WithContext(addCredentialsToContext(req.Context(), tenant))
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -96,9 +100,9 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url string) ([]Syste
 	return systems, nil
 }
 
-func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System) func(string) (uint64, error) {
+func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, tenant string) func(string) (uint64, error) {
 	return func(url string) (uint64, error) {
-		currentSystems, err := c.fetchSystemsForTenant(ctx, url)
+		currentSystems, err := c.fetchSystemsForTenant(ctx, url, tenant)
 		if err != nil {
 			return 0, err
 		}
@@ -106,4 +110,8 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System) fu
 		*systems = append(*systems, currentSystems...)
 		return uint64(len(currentSystems)), nil
 	}
+}
+
+func addCredentialsToContext(ctx context.Context, tenant string) context.Context {
+	return auth.SaveToContext(ctx, &auth.MtlsOAuthCredentials{Tenant: tenant})
 }
