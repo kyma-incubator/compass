@@ -1,5 +1,7 @@
 package runtimectx
 
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 // RuntimeContext struct represents database entity for RuntimeContext
 type RuntimeContext struct {
 	ID        string `db:"id"`
@@ -13,9 +15,9 @@ func (e *RuntimeContext) GetID() string {
 	return e.ID
 }
 
-// GetParentID returns ID of parent entity
-func (e *RuntimeContext) GetParentID() string {
-	return e.RuntimeID
+// GetParent returns the parent type and the parent ID of the entity.
+func (e *RuntimeContext) GetParent() (resource.Type, string) {
+	return resource.Runtime, e.RuntimeID
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

@@ -1,5 +1,7 @@
 package tombstone
 
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 // Entity represents a tombstone entity.
 type Entity struct {
 	ID            string `db:"id"`
@@ -13,9 +15,9 @@ func (e *Entity) GetID() string {
 	return e.ID
 }
 
-// GetParentID returns the entity's parent ID.
-func (e *Entity) GetParentID() string {
-	return e.ApplicationID
+// GetParent returns the parent type and the parent ID of the entity.
+func (e *Entity) GetParent() (resource.Type, string) {
+	return resource.Application, e.ApplicationID
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

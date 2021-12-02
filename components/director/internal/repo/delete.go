@@ -61,14 +61,14 @@ func (g *universalDeleter) DeleteOne(ctx context.Context, resourceType resource.
 
 	if g.tenantColumn != nil {
 		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
-		return g.unsafeDelete(ctx, resourceType, conditions, true)
+		return g.delete(ctx, resourceType, conditions, true)
 	}
 
 	if resourceType.IsTopLevel() {
-		return g.unsafeDeleteTenantAccess(ctx, resourceType, tenant, conditions, true)
+		return g.deleteTenantAccess(ctx, resourceType, tenant, conditions, true)
 	}
 
-	return g.unsafeDeleteChildEntity(ctx, resourceType, tenant, conditions, true)
+	return g.deleteChildEntity(ctx, resourceType, tenant, conditions, true)
 }
 
 // DeleteMany deletes all the entities that match the provided conditions from the database if the calling tenant has owner access to them.
@@ -83,27 +83,27 @@ func (g *universalDeleter) DeleteMany(ctx context.Context, resourceType resource
 
 	if g.tenantColumn != nil {
 		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
-		return g.unsafeDelete(ctx, resourceType, conditions, false)
+		return g.delete(ctx, resourceType, conditions, false)
 	}
 
 	if resourceType.IsTopLevel() {
-		return g.unsafeDeleteTenantAccess(ctx, resourceType, tenant, conditions, false)
+		return g.deleteTenantAccess(ctx, resourceType, tenant, conditions, false)
 	}
 
-	return g.unsafeDeleteChildEntity(ctx, resourceType, tenant, conditions, false)
+	return g.deleteChildEntity(ctx, resourceType, tenant, conditions, false)
 }
 
 // DeleteOneGlobal deletes exactly one entity from the database. It returns an error if more than one entity matches the provided conditions.
 func (g *universalDeleter) DeleteOneGlobal(ctx context.Context, conditions Conditions) error {
-	return g.unsafeDelete(ctx, g.resourceType, conditions, true)
+	return g.delete(ctx, g.resourceType, conditions, true)
 }
 
 // DeleteManyGlobal deletes all the entities that match the provided conditions from the database.
 func (g *universalDeleter) DeleteManyGlobal(ctx context.Context, conditions Conditions) error {
-	return g.unsafeDelete(ctx, g.resourceType, conditions, false)
+	return g.delete(ctx, g.resourceType, conditions, false)
 }
 
-func (g *universalDeleter) unsafeDelete(ctx context.Context, resourceType resource.Type, conditions Conditions, requireSingleRemoval bool) error {
+func (g *universalDeleter) delete(ctx context.Context, resourceType resource.Type, conditions Conditions, requireSingleRemoval bool) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -143,7 +143,7 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, resourceType resour
 	return nil
 }
 
-func (g *universalDeleter) unsafeDeleteTenantAccess(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, requireSingleRemoval bool) error {
+func (g *universalDeleter) deleteTenantAccess(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, requireSingleRemoval bool) error {
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return errors.Errorf("entity %s does not have access table", resourceType)
@@ -210,7 +210,7 @@ func (g *universalDeleter) unsafeDeleteTenantAccess(ctx context.Context, resourc
 	return persistence.MapSQLError(ctx, err, resourceType, resource.Delete, "while deleting objects from '%s' table", m2mTable)
 }
 
-func (g *universalDeleter) unsafeDeleteChildEntity(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, requireSingleRemoval bool) error {
+func (g *universalDeleter) deleteChildEntity(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, requireSingleRemoval bool) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err

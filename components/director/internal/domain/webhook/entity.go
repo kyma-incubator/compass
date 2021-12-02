@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"database/sql"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity is a webhook entity.
@@ -30,14 +31,14 @@ func (e *Entity) GetID() string {
 	return e.ID
 }
 
-// GetParentID returns the parent ID of the entity.
-func (e *Entity) GetParentID() string {
+// GetParent returns the parent type and the parent ID of the entity.
+func (e *Entity) GetParent() (resource.Type, string) {
 	if e.RuntimeID.Valid {
-		return e.RuntimeID.String
+		return resource.Runtime, e.RuntimeID.String
 	} else if e.ApplicationID.Valid {
-		return e.ApplicationID.String
+		return resource.Application, e.ApplicationID.String
 	}
-	return ""
+	return "", ""
 }
 
 // Collection is a collection of webhook entities.

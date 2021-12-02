@@ -2,6 +2,7 @@ package label
 
 import (
 	"database/sql"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity is a label entity.
@@ -21,16 +22,16 @@ func (e *Entity) GetID() string {
 	return e.ID
 }
 
-// GetParentID returns the parent ID of the label.
-func (e *Entity) GetParentID() string {
+// GetParent returns the parent type and the parent ID of the entity.
+func (e *Entity) GetParent() (resource.Type, string) {
 	if e.AppID.Valid {
-		return e.AppID.String
+		return resource.Application, e.AppID.String
 	} else if e.RuntimeID.Valid {
-		return e.RuntimeID.String
+		return resource.Runtime, e.RuntimeID.String
 	} else if e.RuntimeContextID.Valid {
-		return e.RuntimeContextID.String
+		return resource.RuntimeContext, e.RuntimeContextID.String
 	}
-	return e.TenantID.String
+	return resource.Tenant, e.TenantID.String
 }
 
 // Collection is a collection of label entities.

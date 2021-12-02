@@ -67,7 +67,7 @@ func (g *universalSingleGetter) Get(ctx context.Context, resourceType resource.T
 
 	if g.tenantColumn != nil {
 		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
-		return g.unsafeGet(ctx, resourceType, conditions, orderByParams, dest)
+		return g.get(ctx, resourceType, conditions, orderByParams, dest)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -77,15 +77,15 @@ func (g *universalSingleGetter) Get(ctx context.Context, resourceType resource.T
 
 	conditions = append(conditions, tenantIsolation)
 
-	return g.unsafeGet(ctx, resourceType, conditions, orderByParams, dest)
+	return g.get(ctx, resourceType, conditions, orderByParams, dest)
 }
 
 // GetGlobal gets global entities without tenant isolation.
 func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	return g.unsafeGet(ctx, g.resourceType, conditions, orderByParams, dest)
+	return g.get(ctx, g.resourceType, conditions, orderByParams, dest)
 }
 
-func (g *universalSingleGetter) unsafeGet(ctx context.Context, resourceType resource.Type, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+func (g *universalSingleGetter) get(ctx context.Context, resourceType resource.Type, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if dest == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}

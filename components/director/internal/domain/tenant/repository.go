@@ -192,7 +192,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 					ResourceID: ta.ResourceID,
 					Owner:      true,
 				}
-				if err := repo.UnsafeCreateTenantAccessRecursively(ctx, m2mTable, tenantAccess); err != nil {
+				if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, tenantAccess); err != nil {
 					return errors.Wrapf(err, "while creating tenant acccess record for resource %s for parent %s of tenant %s", ta.ResourceID, model.Parent, model.ID)
 				}
 			}
@@ -203,7 +203,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 					resourceIDs = append(resourceIDs, ta.ResourceID)
 				}
 
-				if err := repo.UnsafeDeleteTenantAccessRecursively(ctx, m2mTable, tntFromDB.Parent, resourceIDs); err != nil {
+				if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, tntFromDB.Parent, resourceIDs); err != nil {
 					return errors.Wrapf(err, "while deleting tenant accesses for the old parent %s of the tenant %s", tntFromDB.Parent, model.ID)
 				}
 			}
@@ -237,13 +237,15 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 			return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", tnt.ID)
 		}
 
-		resourceIDs := make([]string, 0, len(tenantAccesses))
-		for _, ta := range tenantAccesses {
-			resourceIDs = append(resourceIDs, ta.ResourceID)
-		}
+		if len(tenantAccesses) > 0 {
+			resourceIDs := make([]string, 0, len(tenantAccesses))
+			for _, ta := range tenantAccesses {
+				resourceIDs = append(resourceIDs, ta.ResourceID)
+			}
 
-		if err := repo.UnsafeDeleteTenantAccessRecursively(ctx, m2mTable, tnt.ID, resourceIDs); err != nil {
-			return errors.Wrapf(err, "while deleting tenant accesses for the tenant %s", tnt.ID)
+			if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, tnt.ID, resourceIDs); err != nil {
+				return errors.Wrapf(err, "while deleting tenant accesses for the tenant %s", tnt.ID)
+			}
 		}
 	}
 

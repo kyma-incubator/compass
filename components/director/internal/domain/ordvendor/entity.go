@@ -2,6 +2,7 @@ package ordvendor
 
 import (
 	"database/sql"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity is the vendor entity
@@ -19,9 +20,9 @@ func (e *Entity) GetID() string {
 	return e.ID
 }
 
-// GetParentID returns the parent ID
-func (e *Entity) GetParentID() string {
-	return e.ApplicationID
+// GetParent returns the parent type and the parent ID of the entity.
+func (e *Entity) GetParent() (resource.Type, string) {
+	return resource.Application, e.ApplicationID
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

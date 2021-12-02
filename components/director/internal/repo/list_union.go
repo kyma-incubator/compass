@@ -87,7 +87,7 @@ func (l *unionLister) List(ctx context.Context, resourceType resource.Type, tena
 
 	if l.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
-		return l.unsafeList(ctx, resourceType, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
+		return l.list(ctx, resourceType, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -97,12 +97,12 @@ func (l *unionLister) List(ctx context.Context, resourceType resource.Type, tena
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return l.unsafeList(ctx, resourceType, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
+	return l.list(ctx, resourceType, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
 }
 
 // ListGlobal lists global entities without tenant isolation.
 func (l *unionLister) ListGlobal(ctx context.Context, ids []string, idscolumn string, pageSize int, cursor string, orderBy OrderByParams, dest Collection, additionalConditions ...Condition) (map[string]int, error) {
-	return l.unsafeList(ctx, l.resourceType, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
+	return l.list(ctx, l.resourceType, pageSize, cursor, orderBy, ids, idscolumn, dest, additionalConditions...)
 }
 
 type queryStruct struct {
@@ -110,7 +110,7 @@ type queryStruct struct {
 	statement string
 }
 
-func (l *unionLister) unsafeList(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderBy OrderByParams, ids []string, idsColumn string, dest Collection, conditions ...Condition) (map[string]int, error) {
+func (l *unionLister) list(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderBy OrderByParams, ids []string, idsColumn string, dest Collection, conditions ...Condition) (map[string]int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, err
