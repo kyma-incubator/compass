@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/internal/info"
