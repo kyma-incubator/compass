@@ -88,6 +88,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 		setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
 		label := graphql.Label{}
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, defaultTenantId, setLabelRequest, &label)
+		require.Error(t, err)
 		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
 
 		labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId)
