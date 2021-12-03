@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,18 +55,9 @@ type TenantConfig struct {
 	TenantFetcherFullRegionalURL   string `envconfig:"-"`
 }
 
-type ConnectorCAConfig struct {
-	Certificate          []byte `envconfig:"-"`
-	Key                  []byte `envconfig:"-"`
-	SecretName           string
-	SecretNamespace      string
-	SecretCertificateKey string
-	SecretKeyKey         string
-}
-
 type config struct {
 	TenantConfig
-	CA ConnectorCAConfig
+	CA certs.CAConfig
 
 	DirectorURL                      string
 	DirectorExternalCertSecuredURL   string

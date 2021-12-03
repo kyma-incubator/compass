@@ -16,11 +16,11 @@ type ValidationHydrator interface {
 }
 
 type validationHydrator struct {
-	certHeaderParsers      []CertificateHeaderParser
+	certHeaderParsers      []certificateHeaderParser
 	revokedCertsRepository revocation.RevokedCertificatesRepository
 }
 
-func NewValidationHydrator(revokedCertsRepository revocation.RevokedCertificatesRepository, certHeaderParsers ...CertificateHeaderParser) ValidationHydrator {
+func NewValidationHydrator(revokedCertsRepository revocation.RevokedCertificatesRepository, certHeaderParsers ...certificateHeaderParser) ValidationHydrator {
 	return &validationHydrator{
 		certHeaderParsers:      certHeaderParsers,
 		revokedCertsRepository: revokedCertsRepository,
@@ -28,14 +28,15 @@ func NewValidationHydrator(revokedCertsRepository revocation.RevokedCertificates
 }
 
 // ResolveIstioCertHeader checks the certificate forwarded by the istio mtls gateway against all the configured CertificateHeaderParsers
-// First CertificateHeaderParser that matches (successfully parse the subject) is used to extract the clientID, certificate hash and issuer.
-// If there is no matching CertificateHeaderParser, an empty oathkeeper session is returned.
+// First certificateHeaderParser that matches (successfully parse the subject) is used to extract the clientID, certificate hash and issuer.
+// If there is no matching certificateHeaderParser, an empty oathkeeper session is returned.
 func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	var (
+		ctx         = r.Context()
+		authSession AuthenticationSession
+	)
 
-	var authSession AuthenticationSession
-	err := json.NewDecoder(r.Body).Decode(&authSession)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&authSession); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to decode request body: %v", err)
 		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.Wrap(err, "failed to decode Authentication Session from body"))
 		return
@@ -44,12 +45,14 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 
 	log.C(ctx).Info("Trying to validate certificate header...")
 
-	var clientID, hash, issuer string
-	var found bool
+	var (
+		issuer   string
+		certData *CertificateData
+	)
 
 	for _, certHeaderParser := range tvh.certHeaderParsers {
-		clientID, hash, found = certHeaderParser.GetCertificateData(r)
-		if !found {
+		certData = certHeaderParser.GetCertificateData(r)
+		if certData == nil {
 			log.C(ctx).Infof("Certificate header is not valid for issuer %s", certHeaderParser.GetIssuer())
 			continue
 		}
@@ -57,7 +60,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		break
 	}
 
-	if !found {
+	if certData == nil {
 		log.C(ctx).Info("No valid certificate header found")
 		respondWithAuthSession(ctx, w, authSession)
 		return
@@ -65,7 +68,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 
 	log.C(ctx).Infof("Certificate header is valid for issuer %s", issuer)
 
-	if isCertificateRevoked := tvh.revokedCertsRepository.Contains(hash); isCertificateRevoked {
+	if isCertificateRevoked := tvh.revokedCertsRepository.Contains(certData.CertificateHash); isCertificateRevoked {
 		log.C(ctx).Info("Certificate is revoked.")
 		respondWithAuthSession(ctx, w, authSession)
 		return
@@ -75,9 +78,11 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		authSession.Header = map[string][]string{}
 	}
 
-	authSession.Header.Add(ClientIdFromCertificateHeader, clientID)
-	authSession.Header.Add(ClientCertificateHashHeader, hash)
+	authSession.Header.Add(ClientIdFromCertificateHeader, certData.ClientID)
+	authSession.Header.Add(ClientCertificateHashHeader, certData.CertificateHash)
 	authSession.Header.Add(ClientCertificateIssuerHeader, issuer)
+
+	authSession.Extra = appendExtra(authSession.Extra, certData.AuthSessionExtra)
 
 	log.C(ctx).Info("Certificate header validated successfully")
 	respondWithAuthSession(ctx, w, authSession)
@@ -85,4 +90,14 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 
 func respondWithAuthSession(ctx context.Context, w http.ResponseWriter, authSession AuthenticationSession) {
 	httputils.RespondWithBody(ctx, w, http.StatusOK, authSession)
+}
+
+func appendExtra(extra, extraFromHeaderParser map[string]interface{}) map[string]interface{} {
+	if extra == nil {
+		extra = map[string]interface{}{}
+	}
+	for k, v := range extraFromHeaderParser {
+		extra[k] = v
+	}
+	return extra
 }
