@@ -199,7 +199,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 				},
 			},
 			AuthDetailsInput: authDetails,
-			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to tenant with ID %s", authDetails.AuthID, testAccount.ExternalTenant)),
+			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s with ID %s", authDetails.AuthID, testSubaccount.Type, testAccount.ExternalTenant)),
 		},
 		{
 			Name: "Error when consumer exists check function fails",

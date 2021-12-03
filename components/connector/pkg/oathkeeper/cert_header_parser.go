@@ -1,6 +1,7 @@
 package oathkeeper
 
 import (
+	"context"
 	"net/http"
 	"regexp"
 	"strings"
@@ -30,10 +31,10 @@ type headerParser struct {
 	issuer                         string
 	isSubjectMatching              func(subject string) bool
 	getClientIDFromSubject         func(subject string) string
-	getAuthSessionExtraFromSubject func(subject string) map[string]interface{}
+	getAuthSessionExtraFromSubject func(ctx context.Context, subject string) map[string]interface{}
 }
 
-func NewHeaderParser(certHeaderName, issuer string, isSubjectMatching func(subject string) bool, getClientIDFromSubject func(subject string) string, getAuthSessionExtraFromSubject func(subject string) map[string]interface{}) *headerParser {
+func NewHeaderParser(certHeaderName, issuer string, isSubjectMatching func(subject string) bool, getClientIDFromSubject func(subject string) string, getAuthSessionExtraFromSubject func(ctx context.Context, subject string) map[string]interface{}) *headerParser {
 	return &headerParser{
 		certHeaderName:                 certHeaderName,
 		issuer:                         issuer,
@@ -70,7 +71,7 @@ func (hp *headerParser) GetCertificateData(r *http.Request) *CertificateData {
 	}
 
 	if hp.getAuthSessionExtraFromSubject != nil {
-		certData.AuthSessionExtra = hp.getAuthSessionExtraFromSubject(certificateInfo.Subject)
+		certData.AuthSessionExtra = hp.getAuthSessionExtraFromSubject(r.Context(), certificateInfo.Subject)
 	}
 	return certData
 }

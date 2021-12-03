@@ -1,6 +1,7 @@
 package subject_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -100,11 +101,13 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 }
 
 func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("Success getting auth session extra", func(t *testing.T) {
 		p, err := subject.NewProcessor(validConfig, "")
 		require.NoError(t, err)
 
-		extra := p.AuthSessionExtraFromSubjectFunc()(validSubject)
+		extra := p.AuthSessionExtraFromSubjectFunc()(ctx, validSubject)
 		require.Equal(t, validConsumer, extra["consumer_type"])
 		require.Equal(t, validAccessLvl, extra["tenant_access_level"])
 		require.Equal(t, validInternalConsumerID, extra["internal_consumer_id"])
@@ -114,7 +117,7 @@ func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
 		p, err := subject.NewProcessor(validConfig, "")
 		require.NoError(t, err)
 
-		extra := p.AuthSessionExtraFromSubjectFunc()(invalidSubject)
+		extra := p.AuthSessionExtraFromSubjectFunc()(ctx, invalidSubject)
 		require.Nil(t, extra)
 	})
 	t.Run("Returns nil when can't match number of subjects components", func(t *testing.T) {
@@ -122,7 +125,7 @@ func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
 		p, err := subject.NewProcessor(validConfig, "")
 		require.NoError(t, err)
 
-		extra := p.AuthSessionExtraFromSubjectFunc()(invalidSubject)
+		extra := p.AuthSessionExtraFromSubjectFunc()(ctx, invalidSubject)
 		require.Nil(t, extra)
 	})
 }

@@ -1,6 +1,7 @@
 package oathkeeper_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -43,7 +44,7 @@ func TestParseCertHeader(t *testing.T) {
 		issuer                          string
 		subjectMatcher                  func(string) bool
 		clientIDFunc                    func(string) string
-		authSessionExtraFromSubjectFunc func(string) map[string]interface{}
+		authSessionExtraFromSubjectFunc func(context.Context, string) map[string]interface{}
 		found                           bool
 		expectedHash                    string
 		expectedClientID                string
@@ -67,7 +68,7 @@ func TestParseCertHeader(t *testing.T) {
 			issuer:         oathkeeper.ConnectorIssuer,
 			subjectMatcher: oathkeeper.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
 			clientIDFunc:   cert.GetCommonName,
-			authSessionExtraFromSubjectFunc: func(s string) map[string]interface{} {
+			authSessionExtraFromSubjectFunc: func(ctx context.Context, s string) map[string]interface{} {
 				return expectedAuthSessionExtra
 			},
 			found:                    true,

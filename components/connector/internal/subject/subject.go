@@ -1,6 +1,7 @@
 package subject
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -76,13 +77,13 @@ func (p *processor) AuthIDFromSubjectFunc() func(subject string) string {
 
 // AuthSessionExtraFromSubjectFunc returns a function which returns consumer-specific auth session extra body
 // in case the subject matches any of the configured consumers from the mapping.
-func (p *processor) AuthSessionExtraFromSubjectFunc() func(subject string) map[string]interface{} {
-	return func(subject string) map[string]interface{} {
-		log.D().Infof("trying to extract auth session extra from subject %s", subject)
+func (p *processor) AuthSessionExtraFromSubjectFunc() func(context.Context, string) map[string]interface{} {
+	return func(ctx context.Context, subject string) map[string]interface{} {
+		log.C(ctx).Infof("trying to extract auth session extra from subject %s", subject)
 		for _, m := range p.mappings {
-			log.D().Infof("trying to match subject pattern %s", m.Subject)
+			log.C(ctx).Infof("trying to match subject pattern %s", m.Subject)
 			if subjectsMatch(subject, m.Subject) {
-				log.D().Infof("pattern matched subject!")
+				log.C(ctx).Infof("pattern matched subject!")
 				return cert.GetExtra(m.ConsumerType, m.TenantAccessLevel, m.InternalConsumerID)
 			}
 		}

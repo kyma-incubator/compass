@@ -47,13 +47,13 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, errors.New("empty matched component header")
 	}
 
-	// This if is needed to separate the director from ord flow because for the director flow we need to use the internal ID of the subaccount
-	// whereas in the ord flow we expect external IDs in order ord views to work properly(using Automatic Scenario Assignments)
 	log.C(ctx).Infof("Matched component name is %s", matchedComponentName[0])
 
 	// the authID in this flow is an OU selected by the Connector
 	externalTenantID := authDetails.AuthID
 
+	// This if is needed to separate the director from ord flow because for the director flow we need to use the internal ID of the subaccount
+	// whereas in the ord flow we expect external IDs in order ord views to work properly(using Automatic Scenario Assignments)
 	if matchedComponentName[0] != "director" { // ORD Flow, set the external tenant ID both for internal and external tenants
 		objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), p.tenantKeys, "", authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
 		log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
@@ -95,7 +95,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 	}
 
 	if extraData.AccessLevel != "" && tenantMapping.Type != extraData.AccessLevel {
-		return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to tenant with ID %s", authDetails.AuthID, tenantMapping.ExternalTenant))
+		return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s with ID %s", authDetails.AuthID, extraData.AccessLevel, tenantMapping.ExternalTenant))
 	}
 
 	if extraData.InternalConsumerID != "" {
