@@ -33,7 +33,6 @@ func TestDelete(t *testing.T) {
 	for tn, testedMethod := range tc {
 		t.Run(fmt.Sprintf("[%s] success", tn), func(t *testing.T) {
 			// GIVEN
-			expectedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s WHERE id = $1", userTableName))
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
@@ -99,7 +98,6 @@ func TestDelete(t *testing.T) {
 
 		t.Run(fmt.Sprintf("[%s] returns error when delete operation returns error", tn), func(t *testing.T) {
 			// GIVEN
-			expectedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s WHERE id = $1", userTableName))
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
@@ -217,9 +215,9 @@ func TestDeleteGlobal(t *testing.T) {
 	givenID := "id"
 	sut := repo.NewDeleterGlobal(UserType, userTableName)
 
-	tc := map[string]methodToTest{
-		"DeleteMany": sut.DeleteMany,
-		"DeleteOne":  sut.DeleteOne,
+	tc := map[string]methodToTestWithoutTenant{
+		"DeleteMany": sut.DeleteManyGlobal,
+		"DeleteOne":  sut.DeleteOneGlobal,
 	}
 	for tn, testedMethod := range tc {
 		t.Run(fmt.Sprintf("[%s] success", tn), func(t *testing.T) {
@@ -228,7 +226,7 @@ func TestDeleteGlobal(t *testing.T) {
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
-			mock.ExpectExec(expectedQuery).WithArgs(tenantID, givenID).WillReturnResult(sqlmock.NewResult(-1, 1))
+			mock.ExpectExec(expectedQuery).WithArgs(givenID).WillReturnResult(sqlmock.NewResult(-1, 1))
 			// WHEN
 			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("id", givenID)})
 			// THEN
@@ -241,9 +239,9 @@ func TestDeleteGlobal(t *testing.T) {
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
-			mock.ExpectExec(expectedQuery).WithArgs(tenantID).WillReturnResult(sqlmock.NewResult(-1, 1))
+			mock.ExpectExec(expectedQuery).WillReturnResult(sqlmock.NewResult(-1, 1))
 			// WHEN
-			err := testedMethod(ctx, resource.AutomaticScenarioAssigment, tenantID, repo.Conditions{})
+			err := testedMethod(ctx, repo.Conditions{})
 			// THEN
 			require.NoError(t, err)
 		})
@@ -254,9 +252,9 @@ func TestDeleteGlobal(t *testing.T) {
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
-			mock.ExpectExec(expectedQuery).WithArgs(tenantID, "john", "doe").WillReturnResult(sqlmock.NewResult(-1, 1))
+			mock.ExpectExec(expectedQuery).WithArgs("john", "doe").WillReturnResult(sqlmock.NewResult(-1, 1))
 			// WHEN
-			err := testedMethod(ctx, resource.AutomaticScenarioAssigment, tenantID, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")})
+			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("first_name", "john"), repo.NewEqualCondition("last_name", "doe")})
 			// THEN
 			require.NoError(t, err)
 		})
@@ -267,7 +265,7 @@ func TestDeleteGlobal(t *testing.T) {
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
-			mock.ExpectExec(expectedQuery).WithArgs(tenantID, givenID).WillReturnError(someError())
+			mock.ExpectExec(expectedQuery).WithArgs(givenID).WillReturnError(someError())
 			// WHEN
 			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("id", givenID)})
 			// THEN

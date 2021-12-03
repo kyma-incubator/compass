@@ -513,21 +513,21 @@ func TestPgRepository_Update(t *testing.T) {
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
 			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ( id, tenant_id ) DO NOTHING`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
 			WithArgs(testParentID2, appTenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM tenant_applications WHERE id IN ($1) AND tenant_id = $2 AND owner = $3`)).
-			WithArgs(appTenantAccesses[0].ResourceID, testParentID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_applications WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
+			WithArgs(testParentID, appTenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		runtimeTenantAccesses := fixTenantAccessesForRuntime()
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_runtimes WHERE tenant_id = $1 AND owner = $2`)).
 			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForRuntimeRow()...))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_runtimes ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ( id, tenant_id ) DO NOTHING`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_runtimes ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
 			WithArgs(testParentID2, runtimeTenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM tenant_runtimes WHERE id IN ($1) AND tenant_id = $2 AND owner = $3`)).
-			WithArgs(runtimeTenantAccesses[0].ResourceID, testParentID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_runtimes WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
+			WithArgs(testParentID, runtimeTenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
@@ -609,7 +609,7 @@ func TestPgRepository_Update(t *testing.T) {
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
 			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ( id, tenant_id ) DO NOTHING`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
 			WithArgs(testParentID2, appTenantAccesses[0].ResourceID, true).WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -653,11 +653,11 @@ func TestPgRepository_Update(t *testing.T) {
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
 			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ( id, tenant_id ) DO NOTHING`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
 			WithArgs(testParentID2, appTenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM tenant_applications WHERE id IN ($1) AND tenant_id = $2 AND owner = $3`)).
-			WithArgs(appTenantAccesses[0].ResourceID, testParentID, true).WillReturnError(testError)
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_applications WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
+			WithArgs(testParentID, appTenantAccesses[0].ResourceID).WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
@@ -871,46 +871,6 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 		require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
 		dbMock.AssertExpectations(t)
 		mockConverter.AssertExpectations(t)
-	})
-}
-
-func TestPgRepository_GetLowestOwnerForResource(t *testing.T) {
-	runtimeID := "runtimeID"
-
-	t.Run("Success", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-		rowsToReturn := sqlmock.NewRows([]string{"tenant_id"}).AddRow(testID)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
-			WithArgs(runtimeID, runtimeID).
-			WillReturnRows(rowsToReturn)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		tenantMappingRepo := tenant.NewRepository(nil)
-
-		// WHEN
-		result, err := tenantMappingRepo.GetLowestOwnerForResource(ctx, resource.Runtime, runtimeID)
-
-		// THEN
-		require.NoError(t, err)
-		require.Equal(t, testID, result)
-	})
-
-	t.Run("Error when getting", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
-			WithArgs(runtimeID, runtimeID).WillReturnError(testError)
-
-		ctx := persistence.SaveToContext(context.TODO(), db)
-		tenantMappingRepo := tenant.NewRepository(nil)
-
-		// WHEN
-		result, err := tenantMappingRepo.GetLowestOwnerForResource(ctx, resource.Runtime, runtimeID)
-		// THEN
-		require.Error(t, err)
-		require.Empty(t, result)
 	})
 }
 
