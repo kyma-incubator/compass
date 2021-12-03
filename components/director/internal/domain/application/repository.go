@@ -23,9 +23,8 @@ import (
 const applicationTable string = `public.applications`
 
 var (
-	applicationColumns = []string{"id", "app_template_id", "tenant_id", "system_number", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
+	applicationColumns = []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
 	updatableColumns   = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
-	tenantColumn       = "tenant_id"
 )
 
 // EntityConverter missing godoc
@@ -46,29 +45,31 @@ type pgRepository struct {
 	globalPageableQuerier repo.PageableQuerierGlobal
 	creator               repo.Creator
 	updater               repo.Updater
+	globalUpdater         repo.UpdaterGlobal
 	conv                  EntityConverter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:          repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
-		singleGetter:          repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		existQuerier:          repo.NewExistQuerier(applicationTable),
+		singleGetter:          repo.NewSingleGetter(applicationTable, applicationColumns),
 		globalGetter:          repo.NewSingleGetterGlobal(resource.Application, applicationTable, applicationColumns),
 		globalDeleter:         repo.NewDeleterGlobal(resource.Application, applicationTable),
-		deleter:               repo.NewDeleter(resource.Application, applicationTable, tenantColumn),
-		lister:                repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
-		pageableQuerier:       repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		deleter:               repo.NewDeleter(applicationTable),
+		lister:                repo.NewLister(applicationTable, applicationColumns),
+		pageableQuerier:       repo.NewPageableQuerier(applicationTable, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
-		creator:               repo.NewCreator(resource.Application, applicationTable, applicationColumns),
-		updater:               repo.NewUpdater(resource.Application, applicationTable, updatableColumns, tenantColumn, []string{"id"}),
+		creator:               repo.NewCreator(applicationTable, applicationColumns),
+		updater:               repo.NewUpdater(applicationTable, updatableColumns, []string{"id"}),
+		globalUpdater:         repo.NewUpdaterGlobal(resource.Application, applicationTable, updatableColumns, []string{"id"}),
 		conv:                  conv,
 	}
 }
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Delete missing godoc
@@ -86,10 +87,10 @@ func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 			app.SetDeletedAt(time.Now())
 		}
 
-		return r.Update(ctx, app)
+		return r.Update(ctx, tenant, app)
 	}
 
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // DeleteGlobal missing godoc
@@ -107,7 +108,7 @@ func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 			app.SetDeletedAt(time.Now())
 		}
 
-		return r.Update(ctx, app)
+		return r.globalUpdater.UpdateSingleGlobal(ctx, app)
 	}
 
 	return r.globalDeleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
@@ -116,7 +117,7 @@ func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Application, error) {
 	var appEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
 		return nil, err
 	}
 
@@ -128,7 +129,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.A
 // GetByNameAndSystemNumber missing godoc
 func (r *pgRepository) GetByNameAndSystemNumber(ctx context.Context, tenant, name, systemNumber string) (*model.Application, error) {
 	var appEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("name", name), repo.NewEqualCondition("system_number", systemNumber)}, repo.NoOrderBy, &appEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("name", name), repo.NewEqualCondition("system_number", systemNumber)}, repo.NoOrderBy, &appEnt); err != nil {
 		return nil, err
 	}
 
@@ -153,7 +154,7 @@ func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.App
 func (r *pgRepository) ListAll(ctx context.Context, tenantID string) ([]*model.Application, error) {
 	var entities EntityCollection
 
-	err := r.lister.List(ctx, tenantID, &entities)
+	err := r.lister.List(ctx, resource.Application, tenantID, &entities)
 
 	if err != nil {
 		return nil, err
@@ -179,7 +180,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
 	}
 
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -257,7 +258,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 		conditions = append(conditions, repo.NewInConditionForSubQuery("id", combinedQuery, combinedArgs))
 	}
 
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, conditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant.String(), pageSize, cursor, "id", &appsCollection, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -276,7 +277,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, model *model.Application) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.Application) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
@@ -288,20 +289,20 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 	}
 
 	log.C(ctx).Debugf("Persisting Application entity with id %s to db", model.ID)
-	return r.creator.Create(ctx, appEnt)
+	return r.creator.Create(ctx, resource.Application, tenant, appEnt)
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, model *model.Application) error {
-	return r.updateSingle(ctx, model, false)
+func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.Application) error {
+	return r.updateSingle(ctx, tenant, model, false)
 }
 
 // TechnicalUpdate missing godoc
 func (r *pgRepository) TechnicalUpdate(ctx context.Context, model *model.Application) error {
-	return r.updateSingle(ctx, model, true)
+	return r.updateSingle(ctx, "", model, true)
 }
 
-func (r *pgRepository) updateSingle(ctx context.Context, model *model.Application, isTechnical bool) error {
+func (r *pgRepository) updateSingle(ctx context.Context, tenant string, model *model.Application, isTechnical bool) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
@@ -314,9 +315,9 @@ func (r *pgRepository) updateSingle(ctx context.Context, model *model.Applicatio
 
 	log.C(ctx).Debugf("Persisting updated Application entity with id %s to db", model.ID)
 	if isTechnical {
-		return r.updater.TechnicalUpdate(ctx, appEnt)
+		return r.globalUpdater.TechnicalUpdate(ctx, appEnt)
 	}
-	return r.updater.UpdateSingle(ctx, appEnt)
+	return r.updater.UpdateSingle(ctx, resource.Application, tenant, appEnt)
 }
 
 func (r *pgRepository) multipleFromEntities(entities EntityCollection) ([]*model.Application, error) {

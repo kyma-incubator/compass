@@ -385,7 +385,7 @@ func TestConverter_ApplicationFromTemplateInputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_ToEntity(t *testing.T) {
-	// given
+	// GIVEN
 	appTemplateModel := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks("webhook-id-1", testID))
 	appTemplateEntity := fixEntityApplicationTemplate(t, testID, testName)
 
@@ -415,7 +415,7 @@ func TestConverter_ToEntity(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			conv := apptemplate.NewConverter(nil, nil)
 
-			// when
+			// WHEN
 			res, err := conv.ToEntity(testCase.Input)
 
 			// then
@@ -426,7 +426,7 @@ func TestConverter_ToEntity(t *testing.T) {
 }
 
 func TestConverter_FromEntity(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	name := "bar"
 
@@ -473,7 +473,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			conv := apptemplate.NewConverter(nil, nil)
 
-			// when
+			// WHEN
 			res, err := conv.FromEntity(testCase.Input)
 
 			if testCase.ExpectedErrMessage != "" {

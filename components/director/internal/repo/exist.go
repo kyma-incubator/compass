@@ -15,12 +15,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ExistQuerier missing godoc
+// ExistQuerier is an interface for checking existence of tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type ExistQuerier interface {
-	Exists(ctx context.Context, tenant string, conditions Conditions) (bool, error)
+	Exists(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions) (bool, error)
 }
 
-// ExistQuerierGlobal missing godoc
+// ExistQuerierGlobal is an interface for checking existence of global entities.
 type ExistQuerierGlobal interface {
 	ExistsGlobal(ctx context.Context, conditions Conditions) (bool, error)
 }
@@ -29,33 +29,58 @@ type universalExistQuerier struct {
 	tableName    string
 	tenantColumn *string
 	resourceType resource.Type
+	ownerCheck   bool
 }
 
-// NewExistQuerier missing godoc
-func NewExistQuerier(resourceType resource.Type, tableName string, tenantColumn string) ExistQuerier {
-	return &universalExistQuerier{resourceType: resourceType, tableName: tableName, tenantColumn: &tenantColumn}
+// NewExistQuerier is a constructor for ExistQuerier about entities with externally managed tenant accesses (m2m table or view)
+func NewExistQuerier(tableName string) ExistQuerier {
+	return &universalExistQuerier{tableName: tableName}
 }
 
-// NewExistQuerierGlobal missing godoc
+// NewExistQuerierWithOwnerCheck is a constructor for ExistQuerier about entities with externally managed tenant accesses (m2m table or view) with additional owner check.
+func NewExistQuerierWithOwnerCheck(tableName string) ExistQuerier {
+	return &universalExistQuerier{tableName: tableName, ownerCheck: true}
+}
+
+// NewExistQuerierWithEmbeddedTenant is a constructor for ExistQuerier about entities with tenant embedded in them.
+func NewExistQuerierWithEmbeddedTenant(tableName string, tenantColumn string) ExistQuerier {
+	return &universalExistQuerier{tableName: tableName, tenantColumn: &tenantColumn}
+}
+
+// NewExistQuerierGlobal is a constructor for ExistQuerierGlobal about global entities.
 func NewExistQuerierGlobal(resourceType resource.Type, tableName string) ExistQuerierGlobal {
 	return &universalExistQuerier{tableName: tableName, resourceType: resourceType}
 }
 
-// Exists missing godoc
-func (g *universalExistQuerier) Exists(ctx context.Context, tenant string, conditions Conditions) (bool, error) {
+// Exists checks for existence of tenant scoped entities with tenant isolation subquery.
+// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
+// If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
+func (g *universalExistQuerier) Exists(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions) (bool, error) {
 	if tenant == "" {
 		return false, apperrors.NewTenantRequiredError()
 	}
-	conditions = append(Conditions{NewTenantIsolationCondition(*g.tenantColumn, tenant)}, conditions...)
-	return g.unsafeExists(ctx, conditions)
+
+	if g.tenantColumn != nil {
+		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
+		return g.exists(ctx, resourceType, conditions)
+	}
+
+	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, g.ownerCheck)
+	if err != nil {
+		return false, err
+	}
+
+	conditions = append(conditions, tenantIsolation)
+
+	return g.exists(ctx, resourceType, conditions)
 }
 
-// ExistsGlobal missing godoc
+// ExistsGlobal checks for existence of global entities without tenant isolation.
 func (g *universalExistQuerier) ExistsGlobal(ctx context.Context, conditions Conditions) (bool, error) {
-	return g.unsafeExists(ctx, conditions)
+	return g.exists(ctx, g.resourceType, conditions)
 }
 
-func (g *universalExistQuerier) unsafeExists(ctx context.Context, conditions Conditions) (bool, error) {
+func (g *universalExistQuerier) exists(ctx context.Context, resourceType resource.Type, conditions Conditions) (bool, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, err
@@ -79,7 +104,7 @@ func (g *universalExistQuerier) unsafeExists(ctx context.Context, conditions Con
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 	var count int
 	err = persist.GetContext(ctx, &count, query, allArgs...)
-	err = persistence.MapSQLError(ctx, err, g.resourceType, resource.Exists, "while getting object from '%s' table", g.tableName)
+	err = persistence.MapSQLError(ctx, err, resourceType, resource.Exists, "while getting object from '%s' table", g.tableName)
 
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {

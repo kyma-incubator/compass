@@ -2,12 +2,13 @@ package ordpackage
 
 import (
 	"database/sql"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
-// Entity missing godoc
+// Entity represents the ORD package entity.
 type Entity struct {
 	ID                string         `db:"id"`
-	TenantID          string         `db:"tenant_id"`
 	ApplicationID     string         `db:"app_id"`
 	OrdID             string         `db:"ord_id"`
 	Vendor            sql.NullString `db:"vendor"`
@@ -27,4 +28,25 @@ type Entity struct {
 	LineOfBusiness    sql.NullString `db:"line_of_business"`
 	Industry          sql.NullString `db:"industry"`
 	ResourceHash      sql.NullString `db:"resource_hash"`
+}
+
+// GetID returns the ID of the entity.
+func (e *Entity) GetID() string {
+	return e.ID
+}
+
+// GetParent returns the parent type and the parent ID of the entity.
+func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
+	return resource.Application, e.ApplicationID
+}
+
+// DecorateWithTenantID decorates the entity with the given tenant ID.
+func (e *Entity) DecorateWithTenantID(tenant string) interface{} {
+	return struct {
+		*Entity
+		TenantID string `db:"tenant_id"`
+	}{
+		Entity:   e,
+		TenantID: tenant,
+	}
 }

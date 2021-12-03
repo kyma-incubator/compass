@@ -50,10 +50,10 @@ type BusinessTenantMappingInput struct {
 	Provider       string
 }
 
-// MovedRuntimeByLabelMappingInput missing godoc
-type MovedRuntimeByLabelMappingInput struct {
+// MovedSubaccountMappingInput missing godoc
+type MovedSubaccountMappingInput struct {
 	TenantMappingInput BusinessTenantMappingInput
-	LabelValue         string
+	SubaccountID       string
 	SourceTenant       string
 	TargetTenant       string
 }

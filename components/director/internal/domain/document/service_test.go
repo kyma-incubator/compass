@@ -18,17 +18,17 @@ import (
 )
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
 
 	documentModel := fixModelDocument("1", id)
-	tnt := documentModel.Tenant
+	tnt := givenTenant()
 	externalTnt := "external-tnt"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, documentModel.Tenant, externalTnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
 		Name               string
@@ -68,7 +68,7 @@ func TestService_Get(t *testing.T) {
 
 			svc := document.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			doc, err := svc.Get(ctx, testCase.InputID)
 
 			// then
@@ -86,7 +86,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_GetForBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	id := "foo"
 	bndlID := bndlID()
@@ -140,7 +140,7 @@ func TestService_GetForBundle(t *testing.T) {
 
 			svc := document.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			eventAPIDefinition, err := svc.GetForBundle(ctx, testCase.InputID, testCase.BundleID)
 
 			// then
@@ -165,7 +165,7 @@ func TestService_GetForBundle(t *testing.T) {
 }
 
 func TestService_CreateToBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	tnt := "tenant"
@@ -175,12 +175,13 @@ func TestService_CreateToBundle(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	id := "foo"
+	appID := "appID"
 	bundleID := "foo"
 	frURL := "foo.bar"
 	frID := "fr-id"
 	timestamp := time.Now()
 	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
-	modelDoc := modelInput.ToDocumentWithinBundle(id, tnt, bundleID)
+	modelDoc := modelInput.ToDocumentWithinBundle(id, bundleID, appID)
 
 	testCases := []struct {
 		Name               string
@@ -194,12 +195,12 @@ func TestService_CreateToBundle(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, modelDoc).Return(nil).Once()
+				repo.On("Create", ctx, tnt, modelDoc).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -215,7 +216,7 @@ func TestService_CreateToBundle(t *testing.T) {
 			Name: "Returns error when document creation failed",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, modelDoc).Return(testErr).Once()
+				repo.On("Create", ctx, tnt, modelDoc).Return(testErr).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
@@ -234,12 +235,12 @@ func TestService_CreateToBundle(t *testing.T) {
 			Name: "Error - Fetch Request Creation",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, modelDoc).Return(nil).Once()
+				repo.On("Create", ctx, tnt, modelDoc).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
+				repo.On("Create", ctx, tnt, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -261,8 +262,8 @@ func TestService_CreateToBundle(t *testing.T) {
 			svc := document.NewService(repo, fetchRequestRepo, idSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
-			result, err := svc.CreateInBundle(ctx, bundleID, testCase.Input)
+			// WHEN
+			result, err := svc.CreateInBundle(ctx, appID, bundleID, testCase.Input)
 
 			// then
 			assert.IsType(t, "string", result)
@@ -281,24 +282,22 @@ func TestService_CreateToBundle(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := document.NewService(nil, nil, nil)
-		// when
-		_, err := svc.CreateInBundle(context.TODO(), "Dd", model.DocumentInput{})
+		// WHEN
+		_, err := svc.CreateInBundle(context.TODO(), "appID", "bndlID", model.DocumentInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	bundleID := "foobar"
-	documentModel := fixModelDocument(id, bundleID)
 
-	tnt := documentModel.Tenant
+	tnt := givenTenant()
 	externalTnt := "external-tnt"
 
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, documentModel.Tenant, externalTnt)
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	testCases := []struct {
 		Name               string
@@ -335,7 +334,7 @@ func TestService_Delete(t *testing.T) {
 
 			svc := document.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
 			// then
@@ -352,7 +351,7 @@ func TestService_Delete(t *testing.T) {
 }
 
 func TestService_ListByBundleIDs(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 
 	tnt := "tenant"
@@ -451,7 +450,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 
 			svc := document.NewService(repo, nil, nil)
 
-			// when
+			// WHEN
 			docs, err := svc.ListByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
 
 			// then
@@ -477,7 +476,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 }
 
 func TestService_ListFetchRequests(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tenant"
 	testErr := errors.New("test error")
@@ -529,7 +528,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 
 			svc := document.NewService(nil, repo, nil)
 
-			// when
+			// WHEN
 			frs, err := svc.ListFetchRequests(ctx, docIDs)
 
 			// then

@@ -41,9 +41,9 @@ func TestLabelInput_Validate_Key(t *testing.T) {
 			//GIVEN
 			sut := fixValidLabelInput()
 			sut.Key = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -91,9 +91,9 @@ func TestLabelInput_Validate_Value(t *testing.T) {
 			//GIVEN
 			sut := fixValidLabelInput()
 			sut.Value = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

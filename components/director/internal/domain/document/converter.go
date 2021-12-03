@@ -112,13 +112,13 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*mo
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.Document) (*Entity, error) {
+func (c *converter) ToEntity(in *model.Document) (*Entity, error) {
 	kind := repo.NewNullableString(in.Kind)
 	data := repo.NewNullableString(in.Data)
 
 	out := &Entity{
 		BndlID:      in.BundleID,
-		TenantID:    in.Tenant,
+		AppID:       in.AppID,
 		Title:       in.Title,
 		DisplayName: in.DisplayName,
 		Description: in.Description,
@@ -139,13 +139,13 @@ func (c *converter) ToEntity(in model.Document) (*Entity, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (model.Document, error) {
+func (c *converter) FromEntity(in *Entity) (*model.Document, error) {
 	kind := repo.StringPtrFromNullableString(in.Kind)
 	data := repo.StringPtrFromNullableString(in.Data)
 
-	out := model.Document{
+	out := &model.Document{
 		BundleID:    in.BndlID,
-		Tenant:      in.TenantID,
+		AppID:       in.AppID,
 		Title:       in.Title,
 		DisplayName: in.DisplayName,
 		Description: in.Description,

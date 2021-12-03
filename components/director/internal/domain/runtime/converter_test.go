@@ -3,6 +3,8 @@ package runtime_test
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -14,7 +16,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	allDetailsInput := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
 	allDetailsExpected := fixDetailedGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.Runtime
@@ -46,7 +48,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			converter := runtime.NewConverter()
 			res := converter.ToGraphQL(testCase.Input)
 
@@ -57,7 +59,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	input := []*model.Runtime{
 		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum"),
 		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Dolor sit amet"),
@@ -77,7 +79,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		},
 	}
 
-	// when
+	// WHEN
 	converter := runtime.NewConverter()
 	res := converter.MultipleToGraphQL(input)
 
@@ -86,7 +88,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    graphql.RuntimeInput
@@ -106,7 +108,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			converter := runtime.NewConverter()
 			res := converter.InputFromGraphQL(testCase.Input)
 
@@ -154,4 +156,92 @@ func TestConverter_InputFromGraphQL_StatusCondition(t *testing.T) {
 			require.Equal(t, &testCase.ConditionModel, modelApp.StatusCondition)
 		})
 	}
+}
+
+func TestConverter_ToEntity(t *testing.T) {
+	conv := runtime.NewConverter()
+
+	t.Run("All properties given", func(t *testing.T) {
+		// GIVEN
+		rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
+
+		// WHEN
+		rtEntity, err := conv.ToEntity(rtModel)
+
+		// THEN
+		assert.NoError(t, err)
+		assertRuntimeDefinition(t, rtModel, rtEntity)
+	})
+
+	t.Run("Nil", func(t *testing.T) {
+		// WHEN
+		rtEntity, err := conv.ToEntity(nil)
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Nil(t, rtEntity)
+	})
+
+	t.Run("Empty", func(t *testing.T) {
+		// GIVEN
+		rtModel := &model.Runtime{}
+
+		// WHEN
+		rtEntity, err := conv.ToEntity(rtModel)
+
+		// THEN
+		if err != nil {
+			assert.Contains(t, err.Error(), "invalid input model")
+		} else {
+			assertRuntimeDefinition(t, rtModel, rtEntity)
+		}
+	})
+}
+
+func TestConverter_FromEntity(t *testing.T) {
+	conv := runtime.NewConverter()
+
+	t.Run("All properties given", func(t *testing.T) {
+		// GIVEN
+		rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
+
+		// WHEN
+		rtModel := conv.FromEntity(rtEntity)
+
+		// THEN
+		assertRuntimeDefinition(t, rtModel, rtEntity)
+	})
+
+	t.Run("Nil", func(t *testing.T) {
+		// WHEN
+		rtModel := conv.FromEntity(nil)
+
+		// THEN
+		assert.Nil(t, rtModel)
+	})
+
+	t.Run("Empty", func(t *testing.T) {
+		// GIVEN
+		rtEntity := &runtime.Runtime{}
+
+		// WHEN
+		rtModel := conv.FromEntity(rtEntity)
+
+		// THEN
+		assertRuntimeDefinition(t, rtModel, rtEntity)
+	})
+}
+
+func assertRuntimeDefinition(t *testing.T, runtimeModel *model.Runtime, entity *runtime.Runtime) {
+	assert.Equal(t, runtimeModel.ID, entity.ID)
+	assert.Equal(t, runtimeModel.Name, entity.Name)
+
+	if runtimeModel.Status != nil {
+		assert.Equal(t, runtimeModel.Status.Condition, model.RuntimeStatusCondition(entity.StatusCondition))
+		assert.Equal(t, runtimeModel.Status.Timestamp, entity.StatusTimestamp)
+	} else {
+		assert.Equal(t, string(model.RuntimeStatusConditionInitial), entity.StatusCondition)
+	}
+
+	testdb.AssertSQLNullStringEqualTo(t, entity.Description, runtimeModel.Description)
 }

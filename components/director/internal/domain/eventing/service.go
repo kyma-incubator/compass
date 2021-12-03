@@ -43,7 +43,7 @@ type LabelRepository interface {
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	DeleteByKey(ctx context.Context, tenant string, key string) error
-	Upsert(ctx context.Context, label *model.Label) error
+	Upsert(ctx context.Context, tenant string, label *model.Label) error
 }
 
 type service struct {
@@ -103,7 +103,7 @@ func (s *service) SetForApplication(ctx context.Context, runtimeID uuid.UUID, ap
 		return nil, fmt.Errorf("does not find the given runtime [ID=%s] assigned to the application scenarios", runtimeID)
 	}
 
-	if err := s.setRuntimeForAppEventing(ctx, *runtime, appID); err != nil {
+	if err := s.setRuntimeForAppEventing(ctx, tenantID, *runtime, appID); err != nil {
 		return nil, errors.Wrap(err, "while setting the runtime as default for eventing for application")
 	}
 
@@ -112,7 +112,7 @@ func (s *service) SetForApplication(ctx context.Context, runtimeID uuid.UUID, ap
 		return nil, errors.Wrap(err, "while fetching eventing configuration for runtime")
 	}
 
-	shouldNormalize, err := s.shouldNormalizeApplicationName(ctx, runtime)
+	shouldNormalize, err := s.shouldNormalizeApplicationName(ctx, tenantID, runtime)
 	if err != nil {
 		return nil, errors.Wrap(err, "while determining whether application name should be normalized in runtime eventing URL")
 	}
@@ -156,7 +156,7 @@ func (s *service) UnsetForApplication(ctx context.Context, app model.Application
 		return nil, errors.Wrap(err, "while fetching eventing configuration for runtime")
 	}
 
-	shouldNormalize, err := s.shouldNormalizeApplicationName(ctx, runtime)
+	shouldNormalize, err := s.shouldNormalizeApplicationName(ctx, tenantID, runtime)
 	if err != nil {
 		return nil, errors.Wrap(err, "while determining whether application name should be normalized in runtime eventing URL")
 	}
@@ -200,7 +200,7 @@ func (s *service) GetForApplication(ctx context.Context, app model.Application) 
 		}
 
 		if foundOldest {
-			if err := s.setRuntimeForAppEventing(ctx, *runtime, appID); err != nil {
+			if err := s.setRuntimeForAppEventing(ctx, tenantID, *runtime, appID); err != nil {
 				return nil, errors.Wrap(err, "while setting the runtime as default for eventing for application")
 			}
 		}
@@ -220,7 +220,7 @@ func (s *service) GetForApplication(ctx context.Context, app model.Application) 
 		return nil, errors.Wrap(err, "while fetching eventing configuration for runtime")
 	}
 
-	shouldNormalize, err := s.shouldNormalizeApplicationName(ctx, runtime)
+	shouldNormalize, err := s.shouldNormalizeApplicationName(ctx, tenantID, runtime)
 	if err != nil {
 		return nil, errors.Wrap(err, "while determining whether application name should be normalized in runtime eventing URL")
 	}
@@ -264,8 +264,8 @@ func (s *service) GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*mode
 	return model.NewRuntimeEventingConfiguration(eventingURL)
 }
 
-func (s *service) shouldNormalizeApplicationName(ctx context.Context, runtime *model.Runtime) (bool, error) {
-	label, err := s.labelRepo.GetByKey(ctx, runtime.Tenant, model.RuntimeLabelableObject, runtime.ID, isNormalizedLabel)
+func (s *service) shouldNormalizeApplicationName(ctx context.Context, tenant string, runtime *model.Runtime) (bool, error) {
+	label, err := s.labelRepo.GetByKey(ctx, tenant, model.RuntimeLabelableObject, runtime.ID, isNormalizedLabel)
 	notFoundErr := apperrors.IsNotFoundError(err)
 	if !notFoundErr && err != nil {
 		return false, errors.Wrap(err, fmt.Sprintf("while getting the label [key=%s] for runtime [ID=%s]", isNormalizedLabel, runtime.ID))
@@ -415,9 +415,9 @@ func (s *service) getScenariosFilter(ctx context.Context, tenantID string, appID
 	return runtimeScenariosFilter, true, nil
 }
 
-func (s *service) setRuntimeForAppEventing(ctx context.Context, runtime model.Runtime, appID uuid.UUID) error {
-	defaultEventingForAppLabel := model.NewLabelForRuntime(runtime, getDefaultEventingForAppLabelKey(appID), "true")
-	if err := s.labelRepo.Upsert(ctx, defaultEventingForAppLabel); err != nil {
+func (s *service) setRuntimeForAppEventing(ctx context.Context, tenant string, runtime model.Runtime, appID uuid.UUID) error {
+	defaultEventingForAppLabel := model.NewLabelForRuntime(runtime.ID, tenant, getDefaultEventingForAppLabelKey(appID), "true")
+	if err := s.labelRepo.Upsert(ctx, tenant, defaultEventingForAppLabel); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("while labeling the runtime [ID=%s] as default for eventing for application [ID=%s]", runtime.ID, appID))
 	}
 

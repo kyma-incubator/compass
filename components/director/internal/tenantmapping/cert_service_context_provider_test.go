@@ -40,7 +40,6 @@ func TestCertServiceContextProvider(t *testing.T) {
 	scopes := []string{"runtime:read", "runtime:write", "tenant:read"}
 	scopesString := "runtime:read runtime:write tenant:read"
 	componentHeaderKey := "X-Component-Name"
-	ordComponentHeader := map[string][]string{componentHeaderKey: {"ord"}}
 	directorComponentHeader := map[string][]string{componentHeaderKey: {"director"}}
 	directorHeadersWithTenant := map[string][]string{componentHeaderKey: {"director"}, textproto.CanonicalMIMEHeaderKey(oathkeeper.ExternalTenantKey): {tenantID}}
 
@@ -131,17 +130,6 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ExpectedScopes:         scopesString,
 			ExpectedInternalID:     internalSubaccount,
 			ExpectedErr:            nil,
-		},
-		{
-			Name:                   "Error when there is no matching component name",
-			TenantRepoFn:           unusedTenantRepo,
-			ScopesGetterFn:         unusedScopesGetter,
-			ConsumerExistsCheckers: consumerExistsCheckers,
-			ReqDataInput:           oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: map[string][]string{"invalidKey": {""}}}},
-			AuthDetailsInput:       authDetails,
-			ExpectedScopes:         "",
-			ExpectedInternalID:     tenantID,
-			ExpectedErr:            errors.New("empty matched component header"),
 		},
 		{
 			Name:         "Error when can't get required scopes",
@@ -260,16 +248,6 @@ func TestCertServiceContextProvider(t *testing.T) {
 			},
 			AuthDetailsInput: authDetails,
 			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("%s with ID %s does not exist", model.IntegrationSystemReference, internalConsumerID)),
-		},
-		{
-			Name:               "Success when component is ord",
-			TenantRepoFn:       unusedTenantRepo,
-			ScopesGetterFn:     unusedScopesGetter,
-			ReqDataInput:       oathkeeper.ReqData{Body: oathkeeper.ReqBody{Header: ordComponentHeader}},
-			AuthDetailsInput:   authDetails,
-			ExpectedScopes:     "",
-			ExpectedInternalID: tenantID,
-			ExpectedErr:        nil,
 		},
 	}
 	for _, testCase := range testCases {

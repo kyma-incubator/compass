@@ -19,8 +19,7 @@ import (
 const runtimeContextsTable string = `public.runtime_contexts`
 
 var (
-	runtimeContextColumns = []string{"id", "runtime_id", "tenant_id", "key", "value"}
-	tenantColumn          = "tenant_id"
+	runtimeContextColumns = []string{"id", "runtime_id", "key", "value"}
 )
 
 type pgRepository struct {
@@ -31,39 +30,47 @@ type pgRepository struct {
 	pageableQuerier    repo.PageableQuerier
 	creator            repo.Creator
 	updater            repo.Updater
+	conv               entityConverter
+}
+
+//go:generate mockery --exported --name=entityConverter --output=automock --outpkg=automock --case=underscore
+type entityConverter interface {
+	ToEntity(in *model.RuntimeContext) *RuntimeContext
+	FromEntity(entity *RuntimeContext) *model.RuntimeContext
 }
 
 // NewRepository missing godoc
-func NewRepository() *pgRepository {
+func NewRepository(conv entityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:       repo.NewExistQuerier(resource.RuntimeContext, runtimeContextsTable, tenantColumn),
-		singleGetter:       repo.NewSingleGetter(resource.RuntimeContext, runtimeContextsTable, tenantColumn, runtimeContextColumns),
+		existQuerier:       repo.NewExistQuerier(runtimeContextsTable),
+		singleGetter:       repo.NewSingleGetter(runtimeContextsTable, runtimeContextColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.RuntimeContext, runtimeContextsTable, runtimeContextColumns),
-		deleter:            repo.NewDeleter(resource.RuntimeContext, runtimeContextsTable, tenantColumn),
-		pageableQuerier:    repo.NewPageableQuerier(resource.RuntimeContext, runtimeContextsTable, tenantColumn, runtimeContextColumns),
-		creator:            repo.NewCreator(resource.RuntimeContext, runtimeContextsTable, runtimeContextColumns),
-		updater:            repo.NewUpdater(resource.RuntimeContext, runtimeContextsTable, []string{"key", "value"}, tenantColumn, []string{"id"}),
+		deleter:            repo.NewDeleter(runtimeContextsTable),
+		pageableQuerier:    repo.NewPageableQuerier(runtimeContextsTable, runtimeContextColumns),
+		creator:            repo.NewCreator(runtimeContextsTable, runtimeContextColumns),
+		updater:            repo.NewUpdater(runtimeContextsTable, []string{"key", "value"}, []string{"id"}),
+		conv:               conv,
 	}
 }
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error) {
 	var runtimeCtxEnt RuntimeContext
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
 		return nil, err
 	}
 
-	return runtimeCtxEnt.ToModel(), nil
+	return r.conv.FromEntity(&runtimeCtxEnt), nil
 }
 
 // GetByFiltersAndID missing godoc
@@ -84,11 +91,11 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 	}
 
 	var runtimeCtxEnt RuntimeContext
-	if err := r.singleGetter.Get(ctx, tenant, additionalConditions, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.RuntimeContext, tenant, additionalConditions, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
 		return nil, err
 	}
 
-	return runtimeCtxEnt.ToModel(), nil
+	return r.conv.FromEntity(&runtimeCtxEnt), nil
 }
 
 // GetByFiltersGlobal missing godoc
@@ -108,7 +115,7 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 		return nil, err
 	}
 
-	return runtimeCtxEnt.ToModel(), nil
+	return r.conv.FromEntity(&runtimeCtxEnt), nil
 }
 
 // RuntimeContextCollection missing godoc
@@ -138,7 +145,7 @@ func (r *pgRepository) List(ctx context.Context, runtimeID string, tenant string
 		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
 	}
 
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimeCtxsCollection, conditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.RuntimeContext, tenant, pageSize, cursor, "id", &runtimeCtxsCollection, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -147,7 +154,7 @@ func (r *pgRepository) List(ctx context.Context, runtimeID string, tenant string
 	items := make([]*model.RuntimeContext, 0, len(runtimeCtxsCollection))
 
 	for _, runtimeCtxEnt := range runtimeCtxsCollection {
-		items = append(items, runtimeCtxEnt.ToModel())
+		items = append(items, r.conv.FromEntity(&runtimeCtxEnt))
 	}
 	return &model.RuntimeContextPage{
 		Data:       items,
@@ -157,17 +164,17 @@ func (r *pgRepository) List(ctx context.Context, runtimeID string, tenant string
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, item *model.RuntimeContext) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.RuntimeContext) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
-	return r.creator.Create(ctx, EntityFromRuntimeContextModel(item))
+	return r.creator.Create(ctx, resource.RuntimeContext, tenant, r.conv.ToEntity(item))
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, item *model.RuntimeContext) error {
+func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.RuntimeContext) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
-	return r.updater.UpdateSingle(ctx, EntityFromRuntimeContextModel(item))
+	return r.updater.UpdateSingle(ctx, resource.RuntimeContext, tenant, r.conv.ToEntity(item))
 }

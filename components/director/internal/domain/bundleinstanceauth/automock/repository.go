@@ -134,13 +134,13 @@ func (_m *Repository) ListByRuntimeID(ctx context.Context, tenantID string, runt
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, item
-func (_m *Repository) Update(ctx context.Context, item *model.BundleInstanceAuth) error {
-	ret := _m.Called(ctx, item)
+// Update provides a mock function with given fields: ctx, tenant, item
+func (_m *Repository) Update(ctx context.Context, tenant string, item *model.BundleInstanceAuth) error {
+	ret := _m.Called(ctx, tenant, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.BundleInstanceAuth) error); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.BundleInstanceAuth) error); ok {
+		r0 = rf(ctx, tenant, item)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -19,9 +19,9 @@ func BuildMockedWebhook(externalSystemURL string, webhookType graphql.WebhookTyp
 
 	return &graphql.WebhookInput{
 		Type:           webhookType,
-		Mode:           webhookModePtr(graphql.WebhookModeAsync),
+		Mode:           WebhookModePtr(graphql.WebhookModeAsync),
 		URLTemplate:    str.Ptr(fmt.Sprintf("{ \\\"method\\\": \\\"DELETE\\\", \\\"path\\\": \\\"%s\\\" }", deleteFullPath)),
-		RetryInterval:  intPtr(5),
+		RetryInterval:  IntPtr(5),
 		OutputTemplate: str.Ptr(fmt.Sprintf("{ \\\"location\\\": \\\"%s\\\", \\\"success_status_code\\\": 200, \\\"error\\\": \\\"{{.Body.error}}\\\" }", operationFullPath)),
 		StatusTemplate: str.Ptr("{ \\\"status\\\": \\\"{{.Body.status}}\\\", \\\"success_status_code\\\": 200, \\\"success_status_identifier\\\": \\\"SUCCEEDED\\\", \\\"in_progress_status_identifier\\\": \\\"IN_PROGRESS\\\", \\\"failed_status_identifier\\\": \\\"FAILED\\\", \\\"error\\\": \\\"{{.Body.error}}\\\" }"),
 	}
@@ -49,10 +49,10 @@ func UnlockWebhook(t *testing.T, operationFullPath string) {
 	require.Equal(t, http.StatusOK, respPost.StatusCode)
 }
 
-func webhookModePtr(mode graphql.WebhookMode) *graphql.WebhookMode {
+func WebhookModePtr(mode graphql.WebhookMode) *graphql.WebhookMode {
 	return &mode
 }
 
-func intPtr(n int) *int {
+func IntPtr(n int) *int {
 	return &n
 }

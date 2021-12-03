@@ -15,8 +15,8 @@ import (
 // BundleRepository missing godoc
 //go:generate mockery --name=BundleRepository --output=automock --outpkg=automock --case=underscore
 type BundleRepository interface {
-	Create(ctx context.Context, item *model.Bundle) error
-	Update(ctx context.Context, item *model.Bundle) error
+	Create(ctx context.Context, tenant string, item *model.Bundle) error
+	Update(ctx context.Context, tenant string, item *model.Bundle) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error)
@@ -59,10 +59,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Bun
 	}
 
 	id := s.uidService.Generate()
-	bndl := in.ToBundle(id, applicationID, tnt)
+	bndl := in.ToBundle(id, applicationID)
 
-	err = s.bndlRepo.Create(ctx, bndl)
-	if err != nil {
+	if err = s.bndlRepo.Create(ctx, tnt, bndl); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Bundle with id %s and name %s for Application with id %s", id, bndl.Name, applicationID)
 	}
 	log.C(ctx).Infof("Successfully created a Bundle with id %s and name %s for Application with id %s", id, bndl.Name, applicationID)
@@ -110,8 +109,7 @@ func (s *service) Update(ctx context.Context, id string, in model.BundleUpdateIn
 
 	bndl.SetFromUpdateInput(in)
 
-	err = s.bndlRepo.Update(ctx, bndl)
-	if err != nil {
+	if err = s.bndlRepo.Update(ctx, tnt, bndl); err != nil {
 		return errors.Wrapf(err, "while updating Bundle with id %s", id)
 	}
 	return nil
@@ -203,22 +201,19 @@ func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []str
 
 func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, bundleID, appID string) error {
 	for i := range in.APIDefinitions {
-		_, err := s.apiSvc.CreateInBundle(ctx, appID, bundleID, *in.APIDefinitions[i], in.APISpecs[i])
-		if err != nil {
+		if _, err := s.apiSvc.CreateInBundle(ctx, appID, bundleID, *in.APIDefinitions[i], in.APISpecs[i]); err != nil {
 			return errors.Wrapf(err, "while creating APIs for bundle with id %q", bundleID)
 		}
 	}
 
 	for i := range in.EventDefinitions {
-		_, err := s.eventSvc.CreateInBundle(ctx, appID, bundleID, *in.EventDefinitions[i], in.EventSpecs[i])
-		if err != nil {
+		if _, err := s.eventSvc.CreateInBundle(ctx, appID, bundleID, *in.EventDefinitions[i], in.EventSpecs[i]); err != nil {
 			return errors.Wrapf(err, "while creating Event for bundle with id %q", bundleID)
 		}
 	}
 
 	for _, document := range in.Documents {
-		_, err := s.documentSvc.CreateInBundle(ctx, bundleID, *document)
-		if err != nil {
+		if _, err := s.documentSvc.CreateInBundle(ctx, appID, bundleID, *document); err != nil {
 			return errors.Wrapf(err, "while creating Document for bundle with id %q", bundleID)
 		}
 	}

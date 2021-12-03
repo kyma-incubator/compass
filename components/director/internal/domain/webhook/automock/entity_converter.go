@@ -14,18 +14,20 @@ type EntityConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: in
-func (_m *EntityConverter) FromEntity(in webhook.Entity) (model.Webhook, error) {
+func (_m *EntityConverter) FromEntity(in *webhook.Entity) (*model.Webhook, error) {
 	ret := _m.Called(in)
 
-	var r0 model.Webhook
-	if rf, ok := ret.Get(0).(func(webhook.Entity) model.Webhook); ok {
+	var r0 *model.Webhook
+	if rf, ok := ret.Get(0).(func(*webhook.Entity) *model.Webhook); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.Webhook)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Webhook)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(webhook.Entity) error); ok {
+	if rf, ok := ret.Get(1).(func(*webhook.Entity) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)
@@ -35,18 +37,20 @@ func (_m *EntityConverter) FromEntity(in webhook.Entity) (model.Webhook, error) 
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *EntityConverter) ToEntity(in model.Webhook) (webhook.Entity, error) {
+func (_m *EntityConverter) ToEntity(in *model.Webhook) (*webhook.Entity, error) {
 	ret := _m.Called(in)
 
-	var r0 webhook.Entity
-	if rf, ok := ret.Get(0).(func(model.Webhook) webhook.Entity); ok {
+	var r0 *webhook.Entity
+	if rf, ok := ret.Get(0).(func(*model.Webhook) *webhook.Entity); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(webhook.Entity)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*webhook.Entity)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.Webhook) error); ok {
+	if rf, ok := ret.Get(1).(func(*model.Webhook) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

@@ -45,7 +45,7 @@ func TestJSON_UnmarshalGQL(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			//when
+			// WHEN
 			var j JSON
 			err := j.UnmarshalGQL(tc.input)
 

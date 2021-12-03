@@ -34,26 +34,26 @@ var (
 
 type repository struct {
 	conv             EntityConverter
-	creator          repo.Creator
+	creator          repo.CreatorGlobal
 	getter           repo.SingleGetter
 	lister           repo.Lister
 	existQuerier     repo.ExistQuerier
 	deleter          repo.Deleter
-	updater          repo.Updater
-	versionedUpdater repo.Updater
+	updater          repo.UpdaterGlobal
+	versionedUpdater repo.UpdaterGlobal
 	upserter         repo.Upserter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{conv: conv,
-		creator:          repo.NewCreator(resource.LabelDefinition, tableName, labeldefColumns),
-		getter:           repo.NewSingleGetter(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
-		existQuerier:     repo.NewExistQuerier(resource.LabelDefinition, tableName, tenantColumn),
-		lister:           repo.NewLister(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
-		deleter:          repo.NewDeleter(resource.LabelDefinition, tableName, tenantColumn),
-		updater:          repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
-		versionedUpdater: repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, versionedIDColumns),
+		creator:          repo.NewCreatorGlobal(resource.LabelDefinition, tableName, labeldefColumns),
+		getter:           repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, labeldefColumns),
+		existQuerier:     repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
+		lister:           repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, labeldefColumns),
+		deleter:          repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
+		updater:          repo.NewUpdaterWithEmbeddedTenant(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
+		versionedUpdater: repo.NewUpdaterWithEmbeddedTenant(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, versionedIDColumns),
 		upserter:         repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}),
 	}
 }
@@ -87,7 +87,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, key string) (*
 	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
 	dest := Entity{}
 
-	err := r.getter.Get(ctx, tenant, conds, repo.NoOrderBy, &dest)
+	err := r.getter.Get(ctx, resource.LabelDefinition, tenant, conds, repo.NoOrderBy, &dest)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Label Definition by key=%s", key)
 	}
@@ -102,14 +102,14 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, key string) (*
 // Exists missing godoc
 func (r *repository) Exists(ctx context.Context, tenant string, key string) (bool, error) {
 	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
-	return r.existQuerier.Exists(ctx, tenant, conds)
+	return r.existQuerier.Exists(ctx, resource.LabelDefinition, tenant, conds)
 }
 
 // List missing godoc
 func (r *repository) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
 	var dest EntityCollection
 
-	err := r.lister.List(ctx, tenant, &dest)
+	err := r.lister.List(ctx, resource.LabelDefinition, tenant, &dest)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing Label Definitions")
 	}
@@ -130,7 +130,7 @@ func (r *repository) Update(ctx context.Context, def model.LabelDefinition) erro
 	if err != nil {
 		return errors.Wrap(err, "while creating Label Definition entity from model")
 	}
-	return r.updater.UpdateSingleWithVersion(ctx, entity)
+	return r.updater.UpdateSingleWithVersionGlobal(ctx, entity)
 }
 
 // UpdateWithVersion missing godoc
@@ -139,11 +139,11 @@ func (r *repository) UpdateWithVersion(ctx context.Context, def model.LabelDefin
 	if err != nil {
 		return errors.Wrap(err, "while creating Label Definition entity from model")
 	}
-	return r.versionedUpdater.UpdateSingleWithVersion(ctx, entity)
+	return r.versionedUpdater.UpdateSingleWithVersionGlobal(ctx, entity)
 }
 
 // DeleteByKey missing godoc
 func (r *repository) DeleteByKey(ctx context.Context, tenant, key string) error {
 	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
-	return r.deleter.DeleteOne(ctx, tenant, conds)
+	return r.deleter.DeleteOne(ctx, resource.LabelDefinition, tenant, conds)
 }

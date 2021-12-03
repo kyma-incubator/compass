@@ -7,7 +7,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -40,25 +39,10 @@ type certServiceContextProvider struct {
 
 // GetObjectContext is the certServiceContextProvider implementation of the ObjectContextProvider interface
 // By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
-// There we should only convert the tenant identifier from external to internal. Additionally, we mark the consumer in this flow as Runtime.
+// There we should only convert the tenant identifier from external to internal.
 func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
-	matchedComponentName, ok := reqData.Body.Header[authenticator.ComponentName]
-	if !ok || len(matchedComponentName) == 0 {
-		return ObjectContext{}, errors.New("empty matched component header")
-	}
-
-	log.C(ctx).Infof("Matched component name is %s", matchedComponentName[0])
-
 	// the authID in this flow is an OU selected by the Connector
 	externalTenantID := authDetails.AuthID
-
-	// This if is needed to separate the director from ord flow because for the director flow we need to use the internal ID of the subaccount
-	// whereas in the ord flow we expect external IDs in order ord views to work properly(using Automatic Scenario Assignments)
-	if matchedComponentName[0] != "director" { // ORD Flow, set the external tenant ID both for internal and external tenants
-		objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), p.tenantKeys, "", authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
-		log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
-		return objCtx, nil
-	}
 
 	extraData := reqData.GetExtraDataWithDefaults()
 

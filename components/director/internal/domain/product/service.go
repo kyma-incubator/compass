@@ -12,8 +12,8 @@ import (
 // ProductRepository missing godoc
 //go:generate mockery --name=ProductRepository --output=automock --outpkg=automock --case=underscore
 type ProductRepository interface {
-	Create(ctx context.Context, item *model.Product) error
-	Update(ctx context.Context, item *model.Product) error
+	Create(ctx context.Context, tenant string, item *model.Product) error
+	Update(ctx context.Context, tenant string, item *model.Product) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Product, error)
@@ -47,10 +47,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pro
 	}
 
 	id := s.uidService.Generate()
-	product := in.ToProduct(id, tnt, applicationID)
+	product := in.ToProduct(id, applicationID)
 
-	err = s.productRepo.Create(ctx, product)
-	if err != nil {
+	if err = s.productRepo.Create(ctx, tnt, product); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Product with id %s and title %s for Application with id %s", id, product.Title, applicationID)
 	}
 	log.C(ctx).Debugf("Successfully created a Product with id %s and title %s for Application with id %s", id, product.Title, applicationID)
@@ -72,8 +71,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ProductInput) 
 
 	product.SetFromUpdateInput(in)
 
-	err = s.productRepo.Update(ctx, product)
-	if err != nil {
+	if err = s.productRepo.Update(ctx, tnt, product); err != nil {
 		return errors.Wrapf(err, "while updating Product with id %s", id)
 	}
 	return nil
