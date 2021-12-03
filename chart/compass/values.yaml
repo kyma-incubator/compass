@@ -79,7 +79,7 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2115"
+      version: "PR-2119"
     gateway:
       dir:
       version: "PR-2077"
@@ -431,11 +431,14 @@ global:
       externalClientCertSecret:
         name: "external-client-certificate"
         namespace: compass-system
+        certKey: "tls.crt"
+        keyKey: "tls.key"
     rotationCronjob:
       name: "external-certificate-rotation"
       schedule: "*/1 * * * *" # Executes every minute
       certValidity: "7"
       clientCertRetryAttempts: "8"
+    isLocalSetup: false
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local

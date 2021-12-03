@@ -32,27 +32,55 @@ type Manager interface {
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
 
-type certificatesLoader struct {
-	certCache         *certificatesCache
+type localCertificateLoader struct {
+	config    Config
+	certCache *certificateCache
+}
+
+type certificateLoader struct {
+	localCertificateLoader
 	secretManager     Manager
 	secretName        string
 	reconnectInterval time.Duration
 }
 
-// NewCertificatesLoader creates new certificate loader which is responsible to watch a secret containing client certificate
+// NewCertificateLoader creates new certificate loader which is responsible to watch a secret containing client certificate
 // and update in-memory cache with that certificate if there is any change
-func NewCertificatesLoader(certCache *certificatesCache, secretManager Manager, secretName string, reconnectInterval time.Duration) Loader {
-	return &certificatesLoader{
-		certCache:         certCache,
+func NewCertificateLoader(config Config, certCache *certificateCache, secretManager Manager, secretName string, reconnectInterval time.Duration) Loader {
+	return &certificateLoader{
+		localCertificateLoader: localCertificateLoader{
+			config:    config,
+			certCache: certCache,
+		},
 		secretManager:     secretManager,
 		secretName:        secretName,
 		reconnectInterval: reconnectInterval,
 	}
 }
 
+func newLocalCertificateLoader(certCache *certificateCache, config Config) Loader {
+	return &localCertificateLoader{
+		certCache: certCache,
+		config:    config,
+	}
+}
+
 // StartCertLoader prepares and run certificate loader goroutine
-func StartCertLoader(ctx context.Context, externalClientCertSecret string) (Cache, error) {
-	parsedCertSecret, err := namespacedname.Parse(externalClientCertSecret)
+func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error) {
+	certCache := NewCertificateCache()
+
+	// If is local setup(only director) and there are certificate and key provided in the environment, populate cert cache with them.
+	// If certificate and key are not provided return empty cache.
+	if certLoaderConfig.IsLocalSetup {
+		if certLoaderConfig.Cert != "" && certLoaderConfig.Key != "" {
+			localCertLoader := newLocalCertificateLoader(certCache, certLoaderConfig)
+			localCertLoader.Run(ctx)
+			return certCache, nil
+		}
+		return certCache, nil
+	}
+
+	parsedCertSecret, err := namespacedname.Parse(certLoaderConfig.ExternalClientCert.Secret)
 	if err != nil {
 		return nil, err
 	}
@@ -61,23 +89,34 @@ func StartCertLoader(ctx context.Context, externalClientCertSecret string) (Cach
 	if err != nil {
 		return nil, err
 	}
-	certCache := NewCertificateCache()
-	certLoader := NewCertificatesLoader(certCache, k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace), parsedCertSecret.Name, time.Second)
+	certLoader := NewCertificateLoader(certLoaderConfig, certCache, k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace), parsedCertSecret.Name, time.Second)
 	go certLoader.Run(ctx)
 
 	return certCache, nil
 }
 
-// Run uses kubernetes watch mechanism to listen for resource changes and update certificate cache
-func (cl *certificatesLoader) Run(ctx context.Context) {
-	entry := log.C(ctx)
-	entry = entry.WithField(log.FieldRequestID, certsListLoaderCorrelationID)
-	ctx = log.ContextWithLogger(ctx, entry)
+// Run populates the certificate cache on local setup with provided certificate and key
+func (lcl *localCertificateLoader) Run(ctx context.Context) {
+	ctx = initializeLoggerContext(ctx)
+	certSecretData := map[string][]byte{lcl.config.CertKey: []byte(lcl.config.Cert), lcl.config.KeyKey: []byte(lcl.config.Key)}
+	tlsCert, err := parseCertificate(ctx, certSecretData, lcl.config)
+	log.C(ctx).Error(err)
+	lcl.certCache.put(tlsCert)
+}
 
+// Run uses kubernetes watch mechanism to listen for resource changes and update certificate cache
+func (cl *certificateLoader) Run(ctx context.Context) {
+	ctx = initializeLoggerContext(ctx)
 	cl.startKubeWatch(ctx)
 }
 
-func (cl *certificatesLoader) startKubeWatch(ctx context.Context) {
+func initializeLoggerContext(ctx context.Context) context.Context {
+	entry := log.C(ctx)
+	entry = entry.WithField(log.FieldRequestID, certsListLoaderCorrelationID)
+	return log.ContextWithLogger(ctx, entry)
+}
+
+func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -105,7 +144,7 @@ func (cl *certificatesLoader) startKubeWatch(ctx context.Context) {
 	}
 }
 
-func (cl *certificatesLoader) processEvents(ctx context.Context, events <-chan watch.Event) {
+func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan watch.Event) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -124,7 +163,7 @@ func (cl *certificatesLoader) processEvents(ctx context.Context, events <-chan w
 					log.C(ctx).Error("Unexpected error: object is not secret. Try again")
 					continue
 				}
-				tlsCert, err := cl.parseCertificate(ctx, secret.Data)
+				tlsCert, err := parseCertificate(ctx, secret.Data, cl.config)
 				if err != nil {
 					log.C(ctx).WithError(err).Error("Fail during certificate parsing")
 				}
@@ -140,13 +179,13 @@ func (cl *certificatesLoader) processEvents(ctx context.Context, events <-chan w
 	}
 }
 
-func (cl *certificatesLoader) parseCertificate(ctx context.Context, secretData map[string][]byte) (*tls.Certificate, error) {
-	log.C(ctx).Info("Parsing certificate data from secret...")
-	certBytes := secretData["tls.crt"]
-	privateKeyBytes := secretData["tls.key"]
+func parseCertificate(ctx context.Context, secretData map[string][]byte, config Config) (*tls.Certificate, error) {
+	log.C(ctx).Info("Parsing provided certificate data...")
+	certBytes := secretData[config.CertKey]
+	privateKeyBytes := secretData[config.KeyKey]
 
 	if certBytes == nil || privateKeyBytes == nil {
-		return nil, errors.New("There is no certificate data in the secret")
+		return nil, errors.New("There is no certificate data provided")
 	}
 
 	clientCrtPem, _ := pem.Decode(certBytes)
@@ -177,7 +216,7 @@ func (cl *certificatesLoader) parseCertificate(ctx context.Context, secretData m
 		}
 	}
 
-	log.C(ctx).Info("Successfully parse certificate from secret data")
+	log.C(ctx).Info("Successfully parse certificate")
 	return &tls.Certificate{
 		Certificate: [][]byte{clientCert.Raw},
 		PrivateKey:  privateKey,
