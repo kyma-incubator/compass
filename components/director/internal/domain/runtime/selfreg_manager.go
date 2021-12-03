@@ -61,7 +61,7 @@ func NewSelfRegisterManager(cfg SelfRegConfig, caller ExternalSvcCaller) *selfRe
 // is being self-registered
 func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput) (map[string]interface{}, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
-	labels := make(map[string]interface{}, 0)
+	labels := make(map[string]interface{})
 	if err != nil {
 		return labels, errors.Wrapf(err, "while loading consumer")
 	}

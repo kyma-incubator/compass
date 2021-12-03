@@ -212,10 +212,11 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 // If the runtime has a global_subaccount_id label which value is a valid external subaccount from our DB and a child of the caller tenant. The subaccount is used to register the runtime.
 // After successful registration, the ASAs in the parent of the caller tenant are processed to add all matching scenarios for the runtime in the parent tenant.
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
-	labels := make(map[string]interface{}, 0)
+	labels := make(map[string]interface{})
 	return s.CreateWithMandatoryLabels(ctx, in, labels)
 }
 
+// CreateWithMandatoryLabels creates a runtime in a given tenant and also adds mandatory labels to it.
 func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, mandatoryLabels map[string]interface{}) (string, error) {
 	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
 		tnt, err := s.extractTenantFromSubaccountLabel(ctx, saVal)
@@ -247,7 +248,7 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern)
+	in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern)
 	if err != nil {
 		return "", err
 	}
@@ -318,7 +319,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern)
+	in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern)
 	if err != nil {
 		return err
 	}
@@ -461,7 +462,7 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 		return nil, errors.Wrap(err, "while getting label for Runtime")
 	}
 
-	return extractUnProtectedLabels(labels, s.protectedLabelPattern, s.immutableLabelPattern)
+	return extractUnProtectedLabels(labels, s.protectedLabelPattern)
 }
 
 // DeleteLabel missing godoc
@@ -598,25 +599,21 @@ func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value in
 	return tnt, nil
 }
 
-func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string, immutableLabelsKeyPattern string) (map[string]*model.Label, error) {
+func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {
 	result := make(map[string]*model.Label)
 	for labelKey, label := range labels {
 		protected, err := isMatchingRegex(labelKey, protectedLabelsKeyPattern)
 		if err != nil {
 			return nil, err
 		}
-		immutable, err := isMatchingRegex(labelKey, immutableLabelsKeyPattern)
-		if err != nil {
-			return nil, err
-		}
-		if !protected && !immutable {
+		if !protected {
 			result[labelKey] = label
 		}
 	}
 	return result, nil
 }
 
-func unsafeExtractUnProtectedLabels(labels map[string]interface{}, protectedLabelsKeyPattern string, immutableLabelsKeyPattern string) (map[string]interface{}, error) {
+func unsafeExtractModifiableLabels(labels map[string]interface{}, protectedLabelsKeyPattern string, immutableLabelsKeyPattern string) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	for labelKey, label := range labels {
 		protected, err := isMatchingRegex(labelKey, protectedLabelsKeyPattern)
