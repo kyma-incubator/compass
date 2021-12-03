@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"errors"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -18,6 +20,7 @@ const (
 	testID                        = "foo"
 	testName                      = "bar"
 	testParentID                  = "parent"
+	testParentID2                 = "parent2"
 	testInternalParentID          = "internal-parent"
 	testTemporaryInternalParentID = "internal-parent-temp"
 	testSubdomain                 = "subdomain"
@@ -54,11 +57,15 @@ func newModelBusinessTenantMappingWithComputedValues(id, name string, initialize
 }
 
 func newEntityBusinessTenantMapping(id, name string) *tenant.Entity {
+	return newEntityBusinessTenantMappingWithParent(id, name, "")
+}
+
+func newEntityBusinessTenantMappingWithParent(id, name, parent string) *tenant.Entity {
 	return &tenant.Entity{
 		ID:             id,
 		Name:           name,
 		ExternalTenant: testExternal,
-		Parent:         sql.NullString{},
+		Parent:         repo.NewValidNullableString(parent),
 		Type:           tenant.Account,
 		ProviderName:   testProvider,
 		Status:         tenant.Active,
@@ -129,4 +136,32 @@ func newGraphQLTenant(id, internalID, name string) *graphql.Tenant {
 		InternalID: internalID,
 		Name:       str.Ptr(name),
 	}
+}
+
+func fixTenantAccessesForApplication() []repo.TenantAccess {
+	return []repo.TenantAccess{
+		{
+			TenantID:   testID,
+			ResourceID: "app1",
+			Owner:      true,
+		},
+	}
+}
+
+func fixTenantAccessesForRuntime() []repo.TenantAccess {
+	return []repo.TenantAccess{
+		{
+			TenantID:   testID,
+			ResourceID: "runtime1",
+			Owner:      true,
+		},
+	}
+}
+
+func fixTenantAccessesForRuntimeRow() []driver.Value {
+	return []driver.Value{testID, "runtime1", true}
+}
+
+func fixTenantAccessesForApplicationRow() []driver.Value {
+	return []driver.Value{testID, "app1", true}
 }

@@ -15,20 +15,20 @@ import (
 // SpecRepository missing godoc
 //go:generate mockery --name=SpecRepository --output=automock --outpkg=automock --case=underscore
 type SpecRepository interface {
-	Create(ctx context.Context, item *model.Spec) error
-	GetByID(ctx context.Context, tenantID string, id string) (*model.Spec, error)
+	Create(ctx context.Context, tenant string, item *model.Spec) error
+	GetByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
-	Delete(ctx context.Context, tenant, id string) error
+	Delete(ctx context.Context, tenant, id string, objectType model.SpecReferenceObjectType) error
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) error
-	Update(ctx context.Context, item *model.Spec) error
-	Exists(ctx context.Context, tenantID, id string) (bool, error)
+	Update(ctx context.Context, tenant string, item *model.Spec) error
+	Exists(ctx context.Context, tenantID, id string, objectType model.SpecReferenceObjectType) (bool, error)
 }
 
 // FetchRequestRepository missing godoc
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
-	Create(ctx context.Context, item *model.FetchRequest) error
+	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
@@ -115,26 +115,24 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 	}
 
 	id := s.uidService.Generate()
-	spec, err := in.ToSpec(id, tnt, objectType, objectID)
+	spec, err := in.ToSpec(id, objectType, objectID)
 	if err != nil {
 		return "", err
 	}
 
-	err = s.repo.Create(ctx, spec)
-	if err != nil {
+	if err = s.repo.Create(ctx, tnt, spec); err != nil {
 		return "", errors.Wrapf(err, "while creating spec for %q with id %q", objectType, objectID)
 	}
 
 	if in.Data == nil && in.FetchRequest != nil {
-		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, id)
+		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for %s Specification with id %q", objectType, id)
 		}
 
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 
-		err = s.repo.Update(ctx, spec)
-		if err != nil {
+		if err = s.repo.Update(ctx, tnt, spec); err != nil {
 			return "", errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
 		}
 	}
@@ -149,23 +147,21 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		return err
 	}
 
-	_, err = s.repo.GetByID(ctx, tnt, id)
-	if err != nil {
+	if _, err = s.repo.GetByID(ctx, tnt, id, objectType); err != nil {
 		return err
 	}
 
-	err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, id)
-	if err != nil {
+	if err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, getFetchRequestObjectTypeBySpecObjectType(objectType), id); err != nil {
 		return errors.Wrapf(err, "while deleting FetchRequest for Specification with id %q", id)
 	}
 
-	spec, err := in.ToSpec(id, tnt, objectType, objectID)
+	spec, err := in.ToSpec(id, objectType, objectID)
 	if err != nil {
 		return err
 	}
 
 	if in.Data == nil && in.FetchRequest != nil {
-		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, id)
+		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType)
 		if err != nil {
 			return errors.Wrapf(err, "while creating FetchRequest for %s Specification with id %q", objectType, id)
 		}
@@ -173,8 +169,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 	}
 
-	err = s.repo.Update(ctx, spec)
-	if err != nil {
+	if err = s.repo.Update(ctx, tnt, spec); err != nil {
 		return errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
 	}
 
@@ -192,13 +187,13 @@ func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType mode
 }
 
 // Delete missing godoc
-func (s *service) Delete(ctx context.Context, id string) error {
+func (s *service) Delete(ctx context.Context, id string, objectType model.SpecReferenceObjectType) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = s.repo.Delete(ctx, tnt, id)
+	err = s.repo.Delete(ctx, tnt, id, objectType)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Specification with id %q", id)
 	}
@@ -207,18 +202,18 @@ func (s *service) Delete(ctx context.Context, id string) error {
 }
 
 // RefetchSpec missing godoc
-func (s *service) RefetchSpec(ctx context.Context, id string) (*model.Spec, error) {
+func (s *service) RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	spec, err := s.repo.GetByID(ctx, tnt, id)
+	spec, err := s.repo.GetByID(ctx, tnt, id, objectType)
 	if err != nil {
 		return nil, err
 	}
 
-	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, id)
+	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, getFetchRequestObjectTypeBySpecObjectType(objectType), id)
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "while getting FetchRequest for Specification with id %q", id)
 	}
@@ -227,8 +222,7 @@ func (s *service) RefetchSpec(ctx context.Context, id string) (*model.Spec, erro
 		spec.Data = s.fetchRequestService.HandleSpec(ctx, fetchRequest)
 	}
 
-	err = s.repo.Update(ctx, spec)
-	if err != nil {
+	if err = s.repo.Update(ctx, tnt, spec); err != nil {
 		return nil, errors.Wrapf(err, "while updating Specification with id %q", id)
 	}
 
@@ -236,13 +230,13 @@ func (s *service) RefetchSpec(ctx context.Context, id string) (*model.Spec, erro
 }
 
 // GetFetchRequest missing godoc
-func (s *service) GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error) {
+func (s *service) GetFetchRequest(ctx context.Context, specID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	exists, err := s.repo.Exists(ctx, tnt, specID)
+	exists, err := s.repo.Exists(ctx, tnt, specID, objectType)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking if Specification with id %q exists", specID)
 	}
@@ -250,7 +244,7 @@ func (s *service) GetFetchRequest(ctx context.Context, specID string) (*model.Fe
 		return nil, fmt.Errorf("specification with id %q doesn't exist", specID)
 	}
 
-	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, specID)
+	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, getFetchRequestObjectTypeBySpecObjectType(objectType), specID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting FetchRequest by Specification with id %q", specID)
 	}
@@ -259,17 +253,26 @@ func (s *service) GetFetchRequest(ctx context.Context, specID string) (*model.Fe
 }
 
 // ListFetchRequestsByReferenceObjectIDs missing godoc
-func (s *service) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string) ([]*model.FetchRequest, error) {
-	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tenant, model.SpecFetchRequestReference, objectIDs)
+func (s *service) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error) {
+	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tenant, getFetchRequestObjectTypeBySpecObjectType(objectType), objectIDs)
 }
 
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*model.FetchRequest, error) {
+func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error) {
 	id := s.uidService.Generate()
-	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, model.SpecFetchRequestReference, parentObjectID)
-	err := s.fetchRequestRepo.Create(ctx, fr)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while creating FetchRequest for %q with id %q", model.SpecFetchRequestReference, parentObjectID)
+	fr := in.ToFetchRequest(s.timestampGen(), id, getFetchRequestObjectTypeBySpecObjectType(objectType), parentObjectID)
+	if err := s.fetchRequestRepo.Create(ctx, tenant, fr); err != nil {
+		return nil, errors.Wrapf(err, "while creating FetchRequest for %q with id %q", objectType, parentObjectID)
 	}
 
 	return fr, nil
+}
+
+func getFetchRequestObjectTypeBySpecObjectType(specObjectType model.SpecReferenceObjectType) model.FetchRequestReferenceObjectType {
+	switch specObjectType {
+	case model.APISpecReference:
+		return model.APISpecFetchRequestReference
+	case model.EventSpecReference:
+		return model.EventSpecFetchRequestReference
+	}
+	return ""
 }

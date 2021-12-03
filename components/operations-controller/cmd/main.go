@@ -18,11 +18,14 @@ package main
 
 import (
 	"context"
-	"net/http"
 	"os"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-	directorhttputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/utils"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
@@ -34,7 +37,6 @@ import (
 	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
-	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -107,8 +109,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	httpClient, err := prepareHttpClient(cfg.HttpClient)
+	httpClient, err := utils.PrepareHttpClient(cfg.HttpClient)
 	fatalOnError(err)
+
+	certCache, err := certloader.StartCertLoader(ctx, cfg.ExternalClientCertSecret)
+	fatalOnError(errors.Wrapf(err, "Failed to initialize certificate loader"))
+
+	httpMTLSClient := utils.PrepareMTLSClient(cfg.HttpClient, certCache)
 
 	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, httpClient)
 	fatalOnError(err)
@@ -119,7 +126,7 @@ func main() {
 		status.NewManager(mgr.GetClient()),
 		k8s.NewClient(mgr.GetClient()),
 		directorClient,
-		webhook.NewClient(httpClient),
+		webhook.NewClient(httpClient, httpMTLSClient),
 		collector)
 
 	if err = controller.SetupWithManager(mgr); err != nil {
@@ -148,25 +155,4 @@ func fatalOnError(err error) {
 	if err != nil {
 		log.D().Fatal(err.Error())
 	}
-}
-
-func prepareHttpClient(cfg *httputil.Config) (*http.Client, error) {
-	httpTransport := directorhttputil.NewCorrelationIDTransport(httputil.NewHTTPTransport(cfg))
-
-	unsecuredClient := &http.Client{
-		Transport: httpTransport,
-		Timeout:   cfg.Timeout,
-	}
-
-	basicProvider := auth.NewBasicAuthorizationProvider()
-	tokenProvider := auth.NewTokenAuthorizationProvider(unsecuredClient)
-	saTokenProvider := auth.NewServiceAccountTokenAuthorizationProvider()
-
-	securedTransport := directorhttputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, saTokenProvider)
-	securedClient := &http.Client{
-		Transport: securedTransport,
-		Timeout:   cfg.Timeout,
-	}
-
-	return securedClient, nil
 }

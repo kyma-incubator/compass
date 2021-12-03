@@ -3,6 +3,7 @@ package webhook
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -46,12 +47,27 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 		webhookMode = &mode
 	}
 
+	var appID *string
+	var runtimeID *string
+	var appTemplateID *string
+	var intSystemID *string
+	switch in.ObjectType {
+	case model.ApplicationWebhookReference:
+		appID = &in.ObjectID
+	case model.RuntimeWebhookReference:
+		runtimeID = &in.ObjectID
+	case model.ApplicationTemplateWebhookReference:
+		appTemplateID = &in.ObjectID
+	case model.IntegrationSystemWebhookReference:
+		intSystemID = &in.ObjectID
+	}
+
 	return &graphql.Webhook{
 		ID:                    in.ID,
-		ApplicationID:         in.ApplicationID,
-		ApplicationTemplateID: in.ApplicationTemplateID,
-		RuntimeID:             in.RuntimeID,
-		IntegrationSystemID:   in.IntegrationSystemID,
+		ApplicationID:         appID,
+		ApplicationTemplateID: appTemplateID,
+		RuntimeID:             runtimeID,
+		IntegrationSystemID:   intSystemID,
 		Type:                  graphql.WebhookType(in.Type),
 		Mode:                  webhookMode,
 		URL:                   in.URL,
@@ -138,10 +154,10 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*mod
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
-	optionalAuth, err := c.toAuthEntity(in)
+func (c *converter) ToEntity(in *model.Webhook) (*Entity, error) {
+	optionalAuth, err := c.toAuthEntity(*in)
 	if err != nil {
-		return Entity{}, err
+		return nil, err
 	}
 
 	var webhookMode sql.NullString
@@ -150,13 +166,27 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 		webhookMode.Valid = true
 	}
 
-	return Entity{
+	var appID sql.NullString
+	var runtimeID sql.NullString
+	var appTemplateID sql.NullString
+	var intSystemID sql.NullString
+	switch in.ObjectType {
+	case model.ApplicationWebhookReference:
+		appID = repo.NewValidNullableString(in.ObjectID)
+	case model.RuntimeWebhookReference:
+		runtimeID = repo.NewValidNullableString(in.ObjectID)
+	case model.ApplicationTemplateWebhookReference:
+		appTemplateID = repo.NewValidNullableString(in.ObjectID)
+	case model.IntegrationSystemWebhookReference:
+		intSystemID = repo.NewValidNullableString(in.ObjectID)
+	}
+
+	return &Entity{
 		ID:                    in.ID,
-		TenantID:              repo.NewNullableString(in.TenantID),
-		ApplicationID:         repo.NewNullableString(in.ApplicationID),
-		ApplicationTemplateID: repo.NewNullableString(in.ApplicationTemplateID),
-		RuntimeID:             repo.NewNullableString(in.RuntimeID),
-		IntegrationSystemID:   repo.NewNullableString(in.IntegrationSystemID),
+		ApplicationID:         appID,
+		ApplicationTemplateID: appTemplateID,
+		RuntimeID:             runtimeID,
+		IntegrationSystemID:   intSystemID,
 		CollectionIDKey:       repo.NewNullableString(in.CorrelationIDKey),
 		Type:                  string(in.Type),
 		URL:                   repo.NewNullableString(in.URL),
@@ -190,10 +220,10 @@ func (c *converter) toAuthEntity(in model.Webhook) (sql.NullString, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
-	auth, err := c.fromEntityAuth(in)
+func (c *converter) FromEntity(in *Entity) (*model.Webhook, error) {
+	auth, err := c.fromEntityAuth(*in)
 	if err != nil {
-		return model.Webhook{}, err
+		return nil, err
 	}
 
 	var webhookMode *model.WebhookMode
@@ -202,25 +232,27 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 		webhookMode = &webhookModeStr
 	}
 
-	return model.Webhook{
-		ID:                    in.ID,
-		TenantID:              repo.StringPtrFromNullableString(in.TenantID),
-		ApplicationID:         repo.StringPtrFromNullableString(in.ApplicationID),
-		ApplicationTemplateID: repo.StringPtrFromNullableString(in.ApplicationTemplateID),
-		RuntimeID:             repo.StringPtrFromNullableString(in.RuntimeID),
-		IntegrationSystemID:   repo.StringPtrFromNullableString(in.IntegrationSystemID),
-		CorrelationIDKey:      repo.StringPtrFromNullableString(in.CollectionIDKey),
-		Type:                  model.WebhookType(in.Type),
-		URL:                   repo.StringPtrFromNullableString(in.URL),
-		Auth:                  auth,
-		Mode:                  webhookMode,
-		RetryInterval:         repo.IntPtrFromNullableInt(in.RetryInterval),
-		Timeout:               repo.IntPtrFromNullableInt(in.Timeout),
-		URLTemplate:           repo.StringPtrFromNullableString(in.URLTemplate),
-		InputTemplate:         repo.StringPtrFromNullableString(in.InputTemplate),
-		HeaderTemplate:        repo.StringPtrFromNullableString(in.HeaderTemplate),
-		OutputTemplate:        repo.StringPtrFromNullableString(in.OutputTemplate),
-		StatusTemplate:        repo.StringPtrFromNullableString(in.StatusTemplate),
+	objID, objType, err := c.objectReferenceFromEntity(*in)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Webhook{
+		ID:               in.ID,
+		ObjectID:         objID,
+		ObjectType:       objType,
+		CorrelationIDKey: repo.StringPtrFromNullableString(in.CollectionIDKey),
+		Type:             model.WebhookType(in.Type),
+		URL:              repo.StringPtrFromNullableString(in.URL),
+		Auth:             auth,
+		Mode:             webhookMode,
+		RetryInterval:    repo.IntPtrFromNullableInt(in.RetryInterval),
+		Timeout:          repo.IntPtrFromNullableInt(in.Timeout),
+		URLTemplate:      repo.StringPtrFromNullableString(in.URLTemplate),
+		InputTemplate:    repo.StringPtrFromNullableString(in.InputTemplate),
+		HeaderTemplate:   repo.StringPtrFromNullableString(in.HeaderTemplate),
+		OutputTemplate:   repo.StringPtrFromNullableString(in.OutputTemplate),
+		StatusTemplate:   repo.StringPtrFromNullableString(in.StatusTemplate),
 	}, nil
 }
 
@@ -244,4 +276,24 @@ func (c *converter) fromEntityAuth(in Entity) (*model.Auth, error) {
 	}
 
 	return auth, nil
+}
+
+func (c *converter) objectReferenceFromEntity(in Entity) (string, model.WebhookReferenceObjectType, error) {
+	if in.ApplicationID.Valid {
+		return in.ApplicationID.String, model.ApplicationWebhookReference, nil
+	}
+
+	if in.RuntimeID.Valid {
+		return in.RuntimeID.String, model.RuntimeWebhookReference, nil
+	}
+
+	if in.ApplicationTemplateID.Valid {
+		return in.ApplicationTemplateID.String, model.ApplicationTemplateWebhookReference, nil
+	}
+
+	if in.IntegrationSystemID.Valid {
+		return in.IntegrationSystemID.String, model.IntegrationSystemWebhookReference, nil
+	}
+
+	return "", "", fmt.Errorf("incorrect Object Reference ID and its type for Entity with ID '%s'", in.ID)
 }

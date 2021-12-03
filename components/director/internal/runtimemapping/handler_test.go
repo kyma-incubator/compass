@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -32,6 +34,7 @@ func TestHandler(t *testing.T) {
 	issuer := "https://dex.domain.local"
 	claimsMock := &jwt.MapClaims{"iss": issuer, "email": "me@domain.local", "groups": "admin-group", "name": "John Doe"}
 	tenantID := uuid.New().String()
+	runtimeID := uuid.New().String()
 
 	t.Run("success for the request with valid token", func(t *testing.T) {
 		// GIVEN
@@ -41,13 +44,14 @@ func TestHandler(t *testing.T) {
 		persistenceMock, transactMock := txCtxGenerator.ThatSucceeds()
 
 		runtimeSvcMock := &automock.RuntimeService{}
-		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(&model.Runtime{Tenant: tenantID}, nil)
-
-		tokenVerifierMock := &automock.TokenVerifier{}
-		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil)
+		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(&model.Runtime{ID: runtimeID}, nil).Once()
 
 		tenantSvcMock := &automock.TenantService{}
-		tenantSvcMock.On("GetExternalTenant", mock.Anything, tenantID).Return(extTenantID, nil)
+		tenantSvcMock.On("GetLowestOwnerForResource", mock.Anything, resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+		tenantSvcMock.On("GetExternalTenant", mock.Anything, tenantID).Return(extTenantID, nil).Once()
+
+		tokenVerifierMock := &automock.TokenVerifier{}
+		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil).Once()
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
@@ -125,7 +129,7 @@ func TestHandler(t *testing.T) {
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
-		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(nil, errors.New("some-error"))
+		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(nil, errors.New("some-error")).Once()
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
@@ -161,7 +165,7 @@ func TestHandler(t *testing.T) {
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
-		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil)
+		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil).Once()
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
@@ -197,10 +201,10 @@ func TestHandler(t *testing.T) {
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		runtimeSvcMock := &automock.RuntimeService{}
-		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(nil, errors.New("some-error"))
+		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(nil, errors.New("some-error")).Once()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
-		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil)
+		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil).Once()
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
@@ -228,6 +232,48 @@ func TestHandler(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock, runtimeSvcMock)
 	})
 
+	t.Run("when GetLowestOwnerForResource returns error", func(t *testing.T) {
+		// GIVEN
+		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
+		reqDataParser := oathkeeper.NewReqDataParser()
+		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
+
+		runtimeSvcMock := &automock.RuntimeService{}
+		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(&model.Runtime{ID: runtimeID}, nil).Once()
+
+		tokenVerifierMock := &automock.TokenVerifier{}
+		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil).Once()
+
+		tenantSvcMock := &automock.TenantService{}
+		tenantSvcMock.On("GetLowestOwnerForResource", mock.Anything, resource.Runtime, runtimeID).Return("", errors.New("some-error")).Once()
+
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
+		req.Header.Add("Authorization", authorizationHeader)
+
+		logger, hook := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(req.Context(), logrus.NewEntry(logger))
+		req = req.WithContext(ctx)
+
+		// WHEN
+		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+
+		// THEN
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, expectedBody, strings.TrimSpace(string(body)))
+		require.Equal(t, 1, len(hook.Entries))
+		require.Equal(t, "An error has occurred while processing the request.", hook.LastEntry().Message)
+		errMsg, ok := hook.LastEntry().Data["error"].(error)
+		assert.True(t, ok)
+		require.Contains(t, errMsg.Error(), "while getting lowest tenant for runtime")
+		require.Contains(t, errMsg.Error(), "some-error")
+		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
+	})
+
 	t.Run("when mapping to external tenant returns error", func(t *testing.T) {
 		// GIVEN
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
@@ -235,13 +281,14 @@ func TestHandler(t *testing.T) {
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		runtimeSvcMock := &automock.RuntimeService{}
-		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(&model.Runtime{Tenant: tenantID}, nil)
+		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(&model.Runtime{ID: runtimeID}, nil).Once()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
-		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil)
+		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil).Once()
 
 		tenantSvcMock := &automock.TenantService{}
-		tenantSvcMock.On("GetExternalTenant", mock.Anything, tenantID).Return("", errors.New("some-error"))
+		tenantSvcMock.On("GetLowestOwnerForResource", mock.Anything, resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+		tenantSvcMock.On("GetExternalTenant", mock.Anything, tenantID).Return("", errors.New("some-error")).Once()
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))

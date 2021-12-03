@@ -138,11 +138,10 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(entity Entity) model.APIDefinition {
-	return model.APIDefinition{
+func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
+	return &model.APIDefinition{
 		ApplicationID:                           entity.ApplicationID,
 		PackageID:                               repo.StringPtrFromNullableString(entity.PackageID),
-		Tenant:                                  entity.TenantID,
 		Name:                                    entity.Name,
 		Description:                             repo.StringPtrFromNullableString(entity.Description),
 		TargetURLs:                              repo.JSONRawMessageFromNullableString(entity.TargetURLs),
@@ -183,9 +182,8 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
+func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 	return &Entity{
-		TenantID:                                apiModel.Tenant,
 		ApplicationID:                           apiModel.ApplicationID,
 		PackageID:                               repo.NewNullableString(apiModel.PackageID),
 		Name:                                    apiModel.Name,

@@ -10,10 +10,9 @@ import (
 )
 
 func TestRuntimeInput_ToRuntime(t *testing.T) {
-	// given
+	// GIVEN
 	desc := "Sample"
 	id := "foo"
-	tenant := "sample"
 	creationTimestamp := time.Now()
 	conditionTimestamp := time.Now()
 	conditionStatus := model.RuntimeStatusConditionConnected
@@ -35,7 +34,6 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 			Expected: &model.Runtime{
 				Name:        "Foo",
 				ID:          id,
-				Tenant:      tenant,
 				Description: &desc,
 				Status: &model.RuntimeStatus{
 					Condition: conditionStatus,
@@ -53,10 +51,10 @@ func TestRuntimeInput_ToRuntime(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
-			result := testCase.Input.ToRuntime(id, tenant, creationTimestamp, conditionTimestamp)
+			// WHEN
+			result := testCase.Input.ToRuntime(id, creationTimestamp, conditionTimestamp)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

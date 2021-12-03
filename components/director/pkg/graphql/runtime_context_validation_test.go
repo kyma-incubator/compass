@@ -36,9 +36,9 @@ func TestRuntimeContextInput_Validate_Key(t *testing.T) {
 			//GIVEN
 			sut := fixValidRuntimeContextInput()
 			sut.Key = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -94,9 +94,9 @@ func TestRuntimeContextInput_Validate_Labels(t *testing.T) {
 			//GIVEN
 			sut := fixValidRuntimeContextInput()
 			sut.Labels = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

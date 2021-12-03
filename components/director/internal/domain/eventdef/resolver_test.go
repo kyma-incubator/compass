@@ -24,14 +24,13 @@ import (
 )
 
 func TestResolver_AddEventToBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
 
 	modelEvent, spec, bundleRef := fixFullEventDefinitionModel("test")
 	modelBndl := &model.Bundle{
-		TenantID:      tenantID,
 		ApplicationID: appID,
 		BaseEntity: &model.BaseEntity{
 			ID: bundleID,
@@ -346,7 +345,7 @@ func TestResolver_AddEventToBundle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -356,7 +355,7 @@ func TestResolver_AddEventToBundle(t *testing.T) {
 
 			resolver := event.NewResolver(transact, svc, bndlSvc, bndlRefSvc, converter, nil, specSvc, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.AddEventDefinitionToBundle(context.TODO(), bundleID, *gqlEventInput)
 
 			// then
@@ -380,7 +379,7 @@ func TestResolver_AddEventToBundle(t *testing.T) {
 }
 
 func TestResolver_DeleteEvent(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -596,7 +595,7 @@ func TestResolver_DeleteEvent(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			specService := testCase.SpecServiceFn()
@@ -605,7 +604,7 @@ func TestResolver_DeleteEvent(t *testing.T) {
 
 			resolver := event.NewResolver(transact, svc, nil, bndlRefService, converter, nil, specService, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteEventDefinition(context.TODO(), id)
 
 			// then
@@ -628,7 +627,7 @@ func TestResolver_DeleteEvent(t *testing.T) {
 }
 
 func TestResolver_UpdateEvent(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -894,7 +893,7 @@ func TestResolver_UpdateEvent(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -903,7 +902,7 @@ func TestResolver_UpdateEvent(t *testing.T) {
 
 			resolver := event.NewResolver(transact, svc, nil, bndlRefService, converter, nil, specService, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.UpdateEventDefinition(context.TODO(), id, *gqlEventDefinitionInput)
 
 			// then
@@ -926,7 +925,7 @@ func TestResolver_UpdateEvent(t *testing.T) {
 }
 
 func TestResolver_RefetchEventSpec(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 
 	eventID := "eventID"
@@ -959,7 +958,7 @@ func TestResolver_RefetchEventSpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(modelSpec, nil).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.EventSpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1016,7 +1015,7 @@ func TestResolver_RefetchEventSpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(nil, testErr).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.EventSpecReference).Return(nil, testErr).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1031,7 +1030,7 @@ func TestResolver_RefetchEventSpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(modelSpec, nil).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.EventSpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1048,7 +1047,7 @@ func TestResolver_RefetchEventSpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(modelSpec, nil).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.EventSpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1063,13 +1062,13 @@ func TestResolver_RefetchEventSpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
 			persist, transact := testCase.TransactionerFn()
 			resolver := event.NewResolver(transact, nil, nil, nil, nil, nil, svc, conv)
 
-			// when
+			// WHEN
 			result, err := resolver.RefetchEventDefinitionSpec(context.TODO(), eventID)
 
 			// then
@@ -1090,7 +1089,7 @@ func TestResolver_RefetchEventSpec(t *testing.T) {
 }
 
 func TestResolver_FetchRequest(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	firstSpecID := "specID"
@@ -1226,7 +1225,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			keys := []dataloader.ParamFetchRequestEventDef{firstFRParams, secondFRParams}
 			resolver := event.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.FetchRequestEventDefDataLoader(keys)
 
 			// then
@@ -1241,9 +1240,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 	}
 	t.Run("Returns error when there are no Specs", func(t *testing.T) {
 		resolver := event.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestEventDefDataLoader([]dataloader.ParamFetchRequestEventDef{})
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No EventDef specs found").Error())
 	})
@@ -1253,9 +1252,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 		keys := []dataloader.ParamFetchRequestEventDef{params}
 
 		resolver := event.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestEventDefDataLoader(keys)
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("Cannot fetch FetchRequest. EventDefinition Spec ID is empty").Error())
 	})

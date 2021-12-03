@@ -53,3 +53,21 @@ func (c *converter) InputFromGraphQL(in graphql.RuntimeContextInput, runtimeID s
 		Labels:    labels,
 	}
 }
+
+func (c *converter) ToEntity(model *model.RuntimeContext) *RuntimeContext {
+	return &RuntimeContext{
+		ID:        model.ID,
+		RuntimeID: model.RuntimeID,
+		Key:       model.Key,
+		Value:     model.Value,
+	}
+}
+
+func (c *converter) FromEntity(e *RuntimeContext) *model.RuntimeContext {
+	return &model.RuntimeContext{
+		ID:        e.ID,
+		RuntimeID: e.RuntimeID,
+		Key:       e.Key,
+		Value:     e.Value,
+	}
+}

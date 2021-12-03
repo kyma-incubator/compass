@@ -360,7 +360,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 }
 
 func TestResolver_Webhooks(t *testing.T) {
-	// given
+	// GIVEN
 	applicationTemplateID := "fooid"
 	modelWebhooks := fixModelApplicationTemplateWebhooks("test-webhook-1", applicationTemplateID)
 	gqlWebhooks := fixGQLApplicationTemplateWebhooks("test-webhook-1", applicationTemplateID)
@@ -455,7 +455,7 @@ func TestResolver_Webhooks(t *testing.T) {
 
 			resolver := apptemplate.NewResolver(mockTransactioner, nil, nil, nil, nil, webhookSvc, converter)
 
-			// when
+			// WHEN
 			result, err := resolver.Webhooks(context.TODO(), appTemplate)
 
 			// then

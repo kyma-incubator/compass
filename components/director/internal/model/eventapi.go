@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -17,7 +17,6 @@ import (
 
 // EventDefinition missing godoc
 type EventDefinition struct {
-	Tenant              string
 	ApplicationID       string
 	PackageID           *string
 	Name                string
@@ -133,12 +132,12 @@ func (rd *EventResourceDefinition) ToSpec() *SpecInput {
 }
 
 // ToEventDefinitionWithinBundle missing godoc
-func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id, appID, bndlID, tenant string, eventHash uint64) *EventDefinition {
-	return e.ToEventDefinition(id, appID, nil, tenant, eventHash)
+func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id, appID, bndlID string, eventHash uint64) *EventDefinition {
+	return e.ToEventDefinition(id, appID, nil, eventHash)
 }
 
 // ToEventDefinition missing godoc
-func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *string, tenant string, eventHash uint64) *EventDefinition {
+func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *string, eventHash uint64) *EventDefinition {
 	if e == nil {
 		return nil
 	}
@@ -151,7 +150,6 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 	return &EventDefinition{
 		ApplicationID:       appID,
 		PackageID:           packageID,
-		Tenant:              tenant,
 		Name:                e.Name,
 		Description:         e.Description,
 		Group:               e.Group,

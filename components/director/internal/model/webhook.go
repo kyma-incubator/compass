@@ -1,28 +1,27 @@
 package model
 
-// Webhook missing godoc
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
+// Webhook represents a webhook that is called by Compass.
 type Webhook struct {
-	ID                    string
-	TenantID              *string
-	ApplicationID         *string
-	ApplicationTemplateID *string
-	RuntimeID             *string
-	IntegrationSystemID   *string
-	CorrelationIDKey      *string
-	Type                  WebhookType
-	URL                   *string
-	Auth                  *Auth
-	Mode                  *WebhookMode
-	RetryInterval         *int
-	Timeout               *int
-	URLTemplate           *string
-	InputTemplate         *string
-	HeaderTemplate        *string
-	OutputTemplate        *string
-	StatusTemplate        *string
+	ID               string
+	ObjectID         string
+	ObjectType       WebhookReferenceObjectType
+	CorrelationIDKey *string
+	Type             WebhookType
+	URL              *string
+	Auth             *Auth
+	Mode             *WebhookMode
+	RetryInterval    *int
+	Timeout          *int
+	URLTemplate      *string
+	InputTemplate    *string
+	HeaderTemplate   *string
+	OutputTemplate   *string
+	StatusTemplate   *string
 }
 
-// WebhookInput missing godoc
+// WebhookInput represents a webhook input for creating/updating webhooks.
 type WebhookInput struct {
 	CorrelationIDKey *string
 	Type             WebhookType
@@ -38,61 +37,73 @@ type WebhookInput struct {
 	StatusTemplate   *string
 }
 
-// WebhookType missing godoc
+// WebhookType represents the type of the webhook.
 type WebhookType string
 
 const (
-	// WebhookTypeConfigurationChanged missing godoc
+	// WebhookTypeConfigurationChanged represents a webhook that is called when a configuration is changed.
 	WebhookTypeConfigurationChanged WebhookType = "CONFIGURATION_CHANGED"
-	// WebhookTypeRegisterApplication missing godoc
+	// WebhookTypeRegisterApplication represents a webhook that is called when an application is registered.
 	WebhookTypeRegisterApplication WebhookType = "REGISTER_APPLICATION"
-	// WebhookTypeDeleteApplication missing godoc
+	// WebhookTypeDeleteApplication represents a webhook that is called when an application is deleted.
 	WebhookTypeDeleteApplication WebhookType = "UNREGISTER_APPLICATION"
-	// WebhookTypeOpenResourceDiscovery missing godoc
+	// WebhookTypeOpenResourceDiscovery represents a webhook that is called to aggregate ORD information of a system.
 	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
-	// WebhookTypeUnpairApplication WebhookType to describe unpairing application webhook
+	// WebhookTypeUnpairApplication represents a webhook that is called when an application is unpaired.
 	WebhookTypeUnpairApplication WebhookType = "UNPAIR_APPLICATION"
 )
 
-// WebhookMode missing godoc
+// WebhookMode represents the mode of the webhook.
 type WebhookMode string
 
 const (
-	// WebhookModeSync missing godoc
+	// WebhookModeSync represents a webhook that is called synchronously.
 	WebhookModeSync WebhookMode = "SYNC"
-	// WebhookModeAsync missing godoc
+	// WebhookModeAsync represents a webhook that is called asynchronously.
 	WebhookModeAsync WebhookMode = "ASYNC"
 )
 
-// WebhookConverterFunc missing godoc
-type WebhookConverterFunc func(i *WebhookInput, id string, tenant *string, resourceID string) *Webhook
+// WebhookReferenceObjectType represents the type of the object that is referenced by the webhook.
+type WebhookReferenceObjectType string
 
-// ToApplicationWebhook missing godoc
-func (i *WebhookInput) ToApplicationWebhook(id string, tenant *string, applicationID string) *Webhook {
-	if i == nil {
-		return nil
+const (
+	// UnknownWebhookReference is used when the webhook's reference entity cannot be determined.
+	// For example in case of update we have only the target's webhook ID and the input, we cannot determine the reference entity.
+	// In those cases an aggregated view with all the webhook ref entity tenant access views unioned together is used for tenant isolation.
+	UnknownWebhookReference WebhookReferenceObjectType = "Unknown"
+	// ApplicationWebhookReference is used when the webhook's reference entity is an application.
+	ApplicationWebhookReference WebhookReferenceObjectType = "ApplicationWebhook"
+	// RuntimeWebhookReference is used when the webhook's reference entity is a runtime.
+	RuntimeWebhookReference WebhookReferenceObjectType = "RuntimeWebhook"
+	// ApplicationTemplateWebhookReference is used when the webhook's reference entity is an application template.
+	ApplicationTemplateWebhookReference WebhookReferenceObjectType = "ApplicationTemplateWebhook"
+	// IntegrationSystemWebhookReference is used when the webhook's reference entity is an integration system.
+	IntegrationSystemWebhookReference WebhookReferenceObjectType = "IntegrationSystemWebhook"
+)
+
+// GetResourceType returns the resource type of the webhook based on the referenced entity.
+func (obj WebhookReferenceObjectType) GetResourceType() resource.Type {
+	switch obj {
+	case UnknownWebhookReference:
+		return resource.Webhook
+	case ApplicationWebhookReference:
+		return resource.AppWebhook
+	case RuntimeWebhookReference:
+		return resource.RuntimeWebhook
+	case ApplicationTemplateWebhookReference:
+		return resource.Webhook
+	case IntegrationSystemWebhookReference:
+		return resource.Webhook
 	}
-
-	webhook := i.toGenericWebhook(id)
-	webhook.ApplicationID = &applicationID
-	webhook.TenantID = tenant
-	return webhook
+	return ""
 }
 
-// ToApplicationTemplateWebhook missing godoc
-func (i *WebhookInput) ToApplicationTemplateWebhook(id string, tenant *string, appTemplateID string) *Webhook {
-	if i == nil {
-		return nil
-	}
-
-	webhook := i.toGenericWebhook(id)
-	webhook.ApplicationTemplateID = &appTemplateID
-	return webhook
-}
-
-func (i *WebhookInput) toGenericWebhook(id string) *Webhook {
+// ToWebhook converts the given input to a webhook.
+func (i *WebhookInput) ToWebhook(id, objID string, objectType WebhookReferenceObjectType) *Webhook {
 	return &Webhook{
 		ID:               id,
+		ObjectID:         objID,
+		ObjectType:       objectType,
 		CorrelationIDKey: i.CorrelationIDKey,
 		Type:             i.Type,
 		URL:              i.URL,

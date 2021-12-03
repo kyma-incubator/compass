@@ -66,29 +66,29 @@ func TestMapSQLError(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//WHEN
+			// WHEN
 			err := persistence.MapSQLError(context.TODO(), testCase.Error, resource.Application, resource.Create, "testErr")
 
-			//THEN
+			// THEN
 			require.Error(t, err)
 			assert.True(t, testCase.AssertFunc(err))
 		})
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			//WHEN
+			// WHEN
 			err := persistence.MapSQLError(context.TODO(), testCase.Error, resource.Application, resource.Delete, "testErr")
 
-			//THEN
+			// THEN
 			require.Error(t, err)
 			assert.True(t, testCase.AssertFunc(err))
 		})
 	}
 
 	t.Run("Error is nil", func(t *testing.T) {
-		//WHEN
+		// WHEN
 		err := persistence.MapSQLError(context.TODO(), nil, resource.Application, resource.Create, "test: %s", "test")
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 	})
 }

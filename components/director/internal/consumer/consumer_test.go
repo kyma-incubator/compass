@@ -14,7 +14,7 @@ import (
 )
 
 func TestMapSystemAuthToConsumerType(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	testCases := []struct {
 		name            string
 		sysAuthRefInput model.SystemAuthReferenceObjectType
@@ -46,9 +46,9 @@ func TestMapSystemAuthToConsumerType(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			//WHEN
+			// WHEN
 			consumerType, err := consumer.MapSystemAuthToConsumerType(testCase.sysAuthRefInput)
-			//THEN
+			// THEN
 			if err == nil {
 				require.NoError(t, testCase.expectedErr)
 				assert.Equal(t, consumerType, testCase.expected)

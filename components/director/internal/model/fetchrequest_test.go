@@ -10,10 +10,9 @@ import (
 )
 
 func TestFetchRequestInput_ToFetchRequest(t *testing.T) {
-	// given
+	// GIVEN
 	mode := model.FetchModeSingle
 	filter := "foofilter"
-	tenant := "tnt"
 	timestamp := time.Now()
 	testCases := []struct {
 		Name                     string
@@ -27,7 +26,7 @@ func TestFetchRequestInput_ToFetchRequest(t *testing.T) {
 			Name:                     "All properties given",
 			InputID:                  "input-id",
 			InputReferenceObjectID:   "ref-id",
-			InputReferenceObjectType: model.SpecFetchRequestReference,
+			InputReferenceObjectType: model.APISpecFetchRequestReference,
 			InputFRInput: &model.FetchRequestInput{
 				URL: "foourl",
 				Auth: &model.AuthInput{
@@ -42,8 +41,7 @@ func TestFetchRequestInput_ToFetchRequest(t *testing.T) {
 			Expected: &model.FetchRequest{
 				ID:         "input-id",
 				ObjectID:   "ref-id",
-				ObjectType: model.SpecFetchRequestReference,
-				Tenant:     tenant,
+				ObjectType: model.APISpecFetchRequestReference,
 				URL:        "foourl",
 				Auth: &model.Auth{
 					AdditionalHeaders: map[string][]string{
@@ -62,14 +60,13 @@ func TestFetchRequestInput_ToFetchRequest(t *testing.T) {
 		{
 			Name:                     "Empty",
 			InputID:                  "input-id",
-			InputReferenceObjectType: model.SpecFetchRequestReference,
+			InputReferenceObjectType: model.APISpecFetchRequestReference,
 			InputReferenceObjectID:   "ref-id-2",
 			InputFRInput:             &model.FetchRequestInput{},
 			Expected: &model.FetchRequest{
 				ID:         "input-id",
-				Tenant:     tenant,
 				ObjectID:   "ref-id-2",
-				ObjectType: model.SpecFetchRequestReference,
+				ObjectType: model.APISpecFetchRequestReference,
 				Mode:       model.FetchModeSingle,
 				Status: &model.FetchRequestStatus{
 					Condition: model.FetchRequestStatusConditionInitial,
@@ -86,10 +83,10 @@ func TestFetchRequestInput_ToFetchRequest(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
-			result := testCase.InputFRInput.ToFetchRequest(timestamp, testCase.InputID, tenant, testCase.InputReferenceObjectType, testCase.InputReferenceObjectID)
+			// WHEN
+			result := testCase.InputFRInput.ToFetchRequest(timestamp, testCase.InputID, testCase.InputReferenceObjectType, testCase.InputReferenceObjectID)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

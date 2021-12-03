@@ -17,10 +17,10 @@ func TestTimestamp_UnmarshalGQL(t *testing.T) {
 	assert.NoError(t, err)
 	expectedTimestamp := Timestamp(parsedTime)
 
-	//when
+	// WHEN
 	err = timestamp.UnmarshalGQL(fixTime)
 
-	//then
+	// THEN
 	require.NoError(t, err)
 	assert.Equal(t, expectedTimestamp, timestamp)
 }
@@ -31,10 +31,10 @@ func TestTimestamp_UnmarshalGQL_Error(t *testing.T) {
 		var timestamp Timestamp
 		invalidInput := 123
 
-		//when
+		// WHEN
 		err := timestamp.UnmarshalGQL(invalidInput)
 
-		//then
+		// THEN
 		require.Error(t, err)
 		assert.Empty(t, timestamp)
 	})
@@ -44,10 +44,10 @@ func TestTimestamp_UnmarshalGQL_Error(t *testing.T) {
 		var timestamp Timestamp
 		invalidTime := "invalid time"
 
-		//when
+		// WHEN
 		err := timestamp.UnmarshalGQL(invalidTime)
 
-		//then
+		// THEN
 		require.Error(t, err)
 		assert.Empty(t, timestamp)
 	})
@@ -61,10 +61,10 @@ func TestTimestamp_MarshalGQL(t *testing.T) {
 	expectedTimestamp := `"2002-10-02T10:00:00-05:00"`
 	buf := bytes.Buffer{}
 
-	//when
+	// WHEN
 	fixTimestamp.MarshalGQL(&buf)
 
-	//then
+	// THEN
 	assert.Equal(t, expectedTimestamp, buf.String())
 }
 

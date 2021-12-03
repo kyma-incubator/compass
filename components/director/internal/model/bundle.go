@@ -9,7 +9,6 @@ import (
 
 // Bundle missing godoc
 type Bundle struct {
-	TenantID                       string
 	ApplicationID                  string
 	Name                           string
 	Description                    *string
@@ -87,13 +86,12 @@ type BundlePage struct {
 func (BundlePage) IsPageable() {}
 
 // ToBundle missing godoc
-func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle {
+func (i *BundleCreateInput) ToBundle(id, applicationID string) *Bundle {
 	if i == nil {
 		return nil
 	}
 
 	return &Bundle{
-		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
 		Name:                           i.Name,
 		Description:                    i.Description,

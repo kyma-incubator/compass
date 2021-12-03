@@ -5,8 +5,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"regexp"
 	"testing"
 	"time"
 
@@ -24,13 +22,13 @@ var (
 	testID             = "foo"
 	testBundleID       = "bar"
 	testRuntimeID      = "d05fb90c-3084-4349-9deb-af23a4ce76be"
-	testTenant         = "baz"
+	testTenant         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	testExternalTenant = "foobaz"
 	testContext        = `{"foo": "bar"}`
 	testInputParams    = `{"bar": "baz"}`
 	testError          = errors.New("test")
 	testTime           = time.Now()
-	testTableColumns   = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
+	testTableColumns   = []string{"id", "owner_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
 )
 
 func fixModelBundleInstanceAuth(id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *model.BundleInstanceAuth {
@@ -46,7 +44,7 @@ func fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant
 		ID:        id,
 		BundleID:  bundleID,
 		RuntimeID: runtimeID,
-		Tenant:    tenant,
+		Owner:     tenant,
 		Auth:      auth,
 		Status:    status,
 	}
@@ -173,7 +171,7 @@ func fixEntityBundleInstanceAuthWithoutContextAndInputParams(t *testing.T, id, b
 		ID:        id,
 		BundleID:  bundleID,
 		RuntimeID: sqlNullString,
-		TenantID:  tenant,
+		OwnerID:   tenant,
 	}
 
 	if auth != nil {
@@ -239,7 +237,7 @@ func fixGQLAuthInput() *graphql.AuthInput {
 
 type sqlRow struct {
 	id               string
-	tenantID         string
+	ownerID          string
 	bundleID         string
 	runtimeID        sql.NullString
 	runtimeContextID sql.NullString
@@ -255,7 +253,7 @@ type sqlRow struct {
 func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 	out := sqlmock.NewRows(testTableColumns)
 	for _, row := range rows {
-		out.AddRow(row.id, row.tenantID, row.bundleID, row.context, row.inputParams, row.authValue, row.statusCondition, row.statusTimestamp, row.statusMessage, row.statusReason, row.runtimeID, row.runtimeContextID)
+		out.AddRow(row.id, row.ownerID, row.bundleID, row.context, row.inputParams, row.authValue, row.statusCondition, row.statusTimestamp, row.statusMessage, row.statusReason, row.runtimeID, row.runtimeContextID)
 	}
 	return out
 }
@@ -263,7 +261,7 @@ func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 func fixSQLRowFromEntity(entity bundleinstanceauth.Entity) sqlRow {
 	return sqlRow{
 		id:               entity.ID,
-		tenantID:         entity.TenantID,
+		ownerID:          entity.OwnerID,
 		bundleID:         entity.BundleID,
 		runtimeID:        entity.RuntimeID,
 		runtimeContextID: entity.RuntimeContextID,
@@ -278,7 +276,7 @@ func fixSQLRowFromEntity(entity bundleinstanceauth.Entity) sqlRow {
 }
 
 func fixCreateArgs(ent bundleinstanceauth.Entity) []driver.Value {
-	return []driver.Value{ent.ID, ent.TenantID, ent.BundleID, ent.Context, ent.InputParams, ent.AuthValue, ent.StatusCondition, ent.StatusTimestamp, ent.StatusMessage, ent.StatusReason, ent.RuntimeID, ent.RuntimeContextID}
+	return []driver.Value{ent.ID, ent.OwnerID, ent.BundleID, ent.Context, ent.InputParams, ent.AuthValue, ent.StatusCondition, ent.StatusTimestamp, ent.StatusMessage, ent.StatusReason, ent.RuntimeID, ent.RuntimeContextID}
 }
 
 func fixSimpleModelBundleInstanceAuth(id string) *model.BundleInstanceAuth {
@@ -296,31 +294,10 @@ func fixSimpleGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 
 func fixModelBundle(id string, requestInputSchema *string, defaultAuth *model.Auth) *model.Bundle {
 	return &model.Bundle{
-		TenantID:                       testTenant,
 		ApplicationID:                  "foo",
 		Name:                           "test-bundle",
 		InstanceAuthRequestInputSchema: requestInputSchema,
 		DefaultInstanceAuth:            defaultAuth,
 		BaseEntity:                     &model.BaseEntity{ID: id},
 	}
-}
-
-func fixUpdateTenantIsolationSubquery() string {
-	return regexp.QuoteMeta(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`)
-}
-
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
-
-func fixUnescapedTenantIsolationSubquery() string {
-	return fixUnescapedTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
-}
-
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
 }

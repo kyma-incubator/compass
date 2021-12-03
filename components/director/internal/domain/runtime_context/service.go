@@ -20,8 +20,8 @@ type RuntimeContextRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.RuntimeContext, error)
 	List(ctx context.Context, runtimeID string, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error)
-	Create(ctx context.Context, item *model.RuntimeContext) error
-	Update(ctx context.Context, item *model.RuntimeContext) error
+	Create(ctx context.Context, tenant string, item *model.RuntimeContext) error
+	Update(ctx context.Context, tenant string, item *model.RuntimeContext) error
 	Delete(ctx context.Context, tenant, id string) error
 }
 
@@ -119,10 +119,9 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 	id := s.uidService.Generate()
-	rtmCtx := in.ToRuntimeContext(id, rtmCtxTenant)
+	rtmCtx := in.ToRuntimeContext(id)
 
-	err = s.repo.Create(ctx, rtmCtx)
-	if err != nil {
+	if err = s.repo.Create(ctx, rtmCtxTenant, rtmCtx); err != nil {
 		return "", errors.Wrapf(err, "while creating Runtime Context")
 	}
 
@@ -157,20 +156,17 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeContext
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	rtmCtx, err := s.repo.GetByID(ctx, rtmCtxTenant, id)
-	if err != nil {
+	if _, err = s.repo.GetByID(ctx, rtmCtxTenant, id); err != nil {
 		return errors.Wrapf(err, "while getting Runtime Context with id %s", id)
 	}
 
-	rtmCtx = in.ToRuntimeContext(id, rtmCtx.Tenant)
+	rtmCtx := in.ToRuntimeContext(id)
 
-	err = s.repo.Update(ctx, rtmCtx)
-	if err != nil {
+	if err = s.repo.Update(ctx, rtmCtxTenant, rtmCtx); err != nil {
 		return errors.Wrapf(err, "while updating Runtime Context with id %s", id)
 	}
 
-	err = s.labelRepo.DeleteAll(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, id)
-	if err != nil {
+	if err = s.labelRepo.DeleteAll(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, id); err != nil {
 		return errors.Wrapf(err, "while deleting all labels for Runtime Context with id %s", id)
 	}
 

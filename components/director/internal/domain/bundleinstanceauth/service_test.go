@@ -279,7 +279,7 @@ func TestService_SetAuth(t *testing.T) {
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(modelInstanceAuthFn(), nil).Once()
-				instanceAuthRepo.On("Update", contextThatHasTenant(testTenant), modelUpdatedInstanceAuth).Return(nil).Once()
+				instanceAuthRepo.On("Update", contextThatHasTenant(testTenant), testTenant, modelUpdatedInstanceAuth).Return(nil).Once()
 				return instanceAuthRepo
 			},
 			Input:         *modelSetInput,
@@ -290,7 +290,7 @@ func TestService_SetAuth(t *testing.T) {
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(modelInstanceAuthFn(), nil).Once()
-				instanceAuthRepo.On("Update", contextThatHasTenant(testTenant), modelUpdatedInstanceAuthWithDefaultStatus).Return(nil).Once()
+				instanceAuthRepo.On("Update", contextThatHasTenant(testTenant), testTenant, modelUpdatedInstanceAuthWithDefaultStatus).Return(nil).Once()
 				return instanceAuthRepo
 			},
 			Input:         modelSetInputWithoutStatus,
@@ -311,7 +311,7 @@ func TestService_SetAuth(t *testing.T) {
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(modelInstanceAuthFn(), nil).Once()
-				instanceAuthRepo.On("Update", contextThatHasTenant(testTenant), modelUpdatedInstanceAuth).Return(testError).Once()
+				instanceAuthRepo.On("Update", contextThatHasTenant(testTenant), testTenant, modelUpdatedInstanceAuth).Return(testError).Once()
 				return instanceAuthRepo
 			},
 			Input:         *modelSetInput,
@@ -608,7 +608,7 @@ func TestService_Create(t *testing.T) {
 }
 
 func TestService_ListByApplicationID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	tnt := testTenant
@@ -657,10 +657,10 @@ func TestService_ListByApplicationID(t *testing.T) {
 
 			svc := bundleinstanceauth.NewService(repo, nil)
 
-			// when
+			// WHEN
 			pia, err := svc.List(ctx, testBundleID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, pia)
@@ -684,7 +684,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 }
 
 func TestService_ListByRuntimeID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	tnt := testTenant
@@ -762,7 +762,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	tnt := testTenant
@@ -782,7 +782,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("Update", ctx, bundleInstanceAuth).Return(nil).Once()
+				repo.On("Update", ctx, testTenant, bundleInstanceAuth).Return(nil).Once()
 				return repo
 			},
 			ExpectedErrMessage: "",
@@ -791,7 +791,7 @@ func TestService_Update(t *testing.T) {
 			Name: "Returns error when bundle instance auth update failed",
 			RepositoryFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("Update", ctx, bundleInstanceAuth).Return(testErr).Once()
+				repo.On("Update", ctx, testTenant, bundleInstanceAuth).Return(testErr).Once()
 				return repo
 			},
 			ExpectedErrMessage: testErr.Error(),
@@ -845,7 +845,7 @@ func TestService_RequestDeletion(t *testing.T) {
 			Name: "Success - No Bundle Default Instance Auth",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
-				instanceAuthRepo.On("Update", contextThatHasTenant(tnt), mock.MatchedBy(func(in *model.BundleInstanceAuth) bool {
+				instanceAuthRepo.On("Update", contextThatHasTenant(tnt), tnt, mock.MatchedBy(func(in *model.BundleInstanceAuth) bool {
 					return in.ID == id && in.Status.Condition == model.BundleInstanceAuthStatusConditionUnused
 				})).Return(nil).Once()
 				return instanceAuthRepo
@@ -868,7 +868,7 @@ func TestService_RequestDeletion(t *testing.T) {
 			Name: "Error - Update",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
-				instanceAuthRepo.On("Update", contextThatHasTenant(tnt), mock.MatchedBy(func(in *model.BundleInstanceAuth) bool {
+				instanceAuthRepo.On("Update", contextThatHasTenant(tnt), tnt, mock.MatchedBy(func(in *model.BundleInstanceAuth) bool {
 					return in.ID == id && in.Status.Condition == model.BundleInstanceAuthStatusConditionUnused
 				})).Return(testError).Once()
 				return instanceAuthRepo

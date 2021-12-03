@@ -24,14 +24,13 @@ import (
 )
 
 func TestResolver_AddAPIToBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
 
 	modelAPI, spec, bundleRef := fixFullAPIDefinitionModel("test")
 	modelBndl := &model.Bundle{
-		TenantID:      tenantID,
 		ApplicationID: appID,
 		BaseEntity: &model.BaseEntity{
 			ID: bundleID,
@@ -346,7 +345,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -356,10 +355,10 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 
 			resolver := api.NewResolver(transact, svc, nil, bndlSvc, bndlRefSvc, converter, nil, specSvc, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.AddAPIDefinitionToBundle(context.TODO(), bundleID, *gqlAPIInput)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedAPI, result)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
@@ -380,7 +379,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 }
 
 func TestResolver_DeleteAPI(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -596,7 +595,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			specService := testCase.SpecServiceFn()
@@ -605,10 +604,10 @@ func TestResolver_DeleteAPI(t *testing.T) {
 
 			resolver := api.NewResolver(transact, svc, nil, nil, bundleRefService, converter, nil, specService, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteAPIDefinition(context.TODO(), id)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedAPI, result)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
@@ -628,7 +627,7 @@ func TestResolver_DeleteAPI(t *testing.T) {
 }
 
 func TestResolver_UpdateAPI(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -893,7 +892,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -902,10 +901,10 @@ func TestResolver_UpdateAPI(t *testing.T) {
 
 			resolver := api.NewResolver(transact, svc, nil, nil, bundleRefService, converter, nil, specService, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.UpdateAPIDefinition(context.TODO(), id, *gqlAPIDefinitionInput)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedAPIDefinition, result)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
@@ -925,7 +924,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 }
 
 func TestResolver_RefetchAPISpec(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("test error")
 
 	apiID := "apiID"
@@ -958,7 +957,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(modelSpec, nil).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1015,7 +1014,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(nil, testErr).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(nil, testErr).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1030,7 +1029,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(modelSpec, nil).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1047,7 +1046,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			ServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, apiID).Return(modelSpec, nil).Once()
-				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID).Return(modelSpec, nil).Once()
+				svc.On("RefetchSpec", txtest.CtxWithDBMatcher(), specID, model.APISpecReference).Return(modelSpec, nil).Once()
 				return svc
 			},
 			ConvFn: func() *automock.SpecConverter {
@@ -1062,13 +1061,13 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			svc := testCase.ServiceFn()
 			conv := testCase.ConvFn()
 			persist, transact := testCase.TransactionerFn()
 			resolver := api.NewResolver(transact, nil, nil, nil, nil, nil, nil, svc, conv)
 
-			// when
+			// WHEN
 			result, err := resolver.RefetchAPISpec(context.TODO(), apiID)
 
 			// then
@@ -1089,7 +1088,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 }
 
 func TestResolver_FetchRequest(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	firstSpecID := "specID"
@@ -1225,7 +1224,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			keys := []dataloader.ParamFetchRequestAPIDef{firstFRParams, secondFRParams}
 			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter, nil, nil)
 
-			// when
+			// WHEN
 			result, err := resolver.FetchRequestAPIDefDataLoader(keys)
 
 			// then
@@ -1241,9 +1240,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 
 	t.Run("Returns error when there are no Specs", func(t *testing.T) {
 		resolver := api.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestAPIDefDataLoader([]dataloader.ParamFetchRequestAPIDef{})
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("No APIDef specs found").Error())
 	})
@@ -1253,9 +1252,9 @@ func TestResolver_FetchRequest(t *testing.T) {
 		keys := []dataloader.ParamFetchRequestAPIDef{params}
 
 		resolver := api.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		//when
+		// WHEN
 		_, err := resolver.FetchRequestAPIDefDataLoader(keys)
-		//then
+		// THEN
 		require.Error(t, err[0])
 		assert.EqualError(t, err[0], apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition Spec ID is empty").Error())
 	})

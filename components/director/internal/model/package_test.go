@@ -9,12 +9,11 @@ import (
 )
 
 func TestPackageInput_ToPackage(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	appID := "bar"
 	vendor := "Sample"
 	name := "sample"
-	tenant := "tenant"
 	labels := json.RawMessage("{}")
 
 	testCases := []struct {
@@ -31,7 +30,6 @@ func TestPackageInput_ToPackage(t *testing.T) {
 			},
 			Expected: &model.Package{
 				ID:            id,
-				TenantID:      tenant,
 				ApplicationID: appID,
 				Title:         name,
 				Vendor:        &vendor,
@@ -47,10 +45,10 @@ func TestPackageInput_ToPackage(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
-			result := testCase.Input.ToPackage(id, tenant, appID, 0)
+			// WHEN
+			result := testCase.Input.ToPackage(id, appID, 0)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -32,7 +31,7 @@ type certServiceContextProvider struct {
 // GetObjectContext is the certServiceContextProvider implementation of the ObjectContextProvider interface
 // By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
 // There we should only convert the tenant identifier from external to internal. Additionally, we mark the consumer in this flow as Runtime.
-func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, _ oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumer.Runtime,
 	})
@@ -40,39 +39,21 @@ func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	externalTenantID := authDetails.AuthID
+	scopes := "runtime:read runtime:write tenant:read"
 
-	matchedComponentName, ok := reqData.Body.Header[authenticator.ComponentName]
-	if !ok || len(matchedComponentName) == 0 {
-		return ObjectContext{}, errors.New("empty matched component header")
-	}
+	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
+	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
-	// This if is needed to separate the director from ord flow because for the director flow we need to use the internal ID of the subaccount
-	// whereas in the ord flow we expect external IDs in order ord views to work properly(using Automatic Scenario Assignments)
-	log.C(ctx).Infof("Matched component name is %s", matchedComponentName[0])
-	if matchedComponentName[0] == "director" { // Director Flow, do the tenant conversion
-		scopes := "runtime:read runtime:write tenant:read"
-
-		log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
-		tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
-		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
-
-				log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-				return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider), nil
-			}
-			return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
+			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider), nil
 		}
-
-		objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
-
-		log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
-
-		return objCtx, nil
+		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	// ORD Flow, set the external tenant ID both for internal and external tenants
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, "", authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
 
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 

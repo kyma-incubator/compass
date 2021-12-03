@@ -28,123 +28,163 @@ var (
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in model.Label) (Entity, error)
-	FromEntity(in Entity) (model.Label, error)
+	ToEntity(in *model.Label) (*Entity, error)
+	FromEntity(in *Entity) (*model.Label, error)
 }
 
 type repository struct {
-	lister           repo.Lister
-	listerGlobal     repo.ListerGlobal
-	deleter          repo.Deleter
-	getter           repo.SingleGetter
-	queryBuilder     repo.QueryBuilder
-	creator          repo.Creator
-	updater          repo.Updater
-	versionedUpdater repo.Updater
-	conv             Converter
+	lister       repo.Lister
+	listerGlobal repo.ListerGlobal
+	deleter      repo.Deleter
+	getter       repo.SingleGetter
+
+	embeddedTenantLister  repo.Lister
+	embeddedTenantDeleter repo.Deleter
+	embeddedTenantGetter  repo.SingleGetter
+
+	creator                        repo.Creator
+	globalCreator                  repo.CreatorGlobal
+	updater                        repo.Updater
+	versionedUpdater               repo.Updater
+	embeddedTenantUpdater          repo.UpdaterGlobal
+	versionedEmbeddedTenantUpdater repo.UpdaterGlobal
+	conv                           Converter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		lister:           repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
-		listerGlobal:     repo.NewListerGlobal(resource.Label, tableName, tableColumns),
-		deleter:          repo.NewDeleter(resource.Label, tableName, tenantColumn),
-		getter:           repo.NewSingleGetter(resource.Label, tableName, tenantColumn, tableColumns),
-		queryBuilder:     repo.NewQueryBuilder(resource.Label, tableName, tenantColumn, []string{"runtime_id"}),
-		creator:          repo.NewCreator(resource.Label, tableName, tableColumns),
-		updater:          repo.NewUpdater(resource.Label, tableName, updatableColumns, tenantColumn, idColumns),
-		versionedUpdater: repo.NewUpdater(resource.Label, tableName, updatableColumns, tenantColumn, versionedIDColumns),
-		conv:             conv,
+		lister:       repo.NewLister(tableName, tableColumns),
+		listerGlobal: repo.NewListerGlobal(resource.Label, tableName, tableColumns),
+		deleter:      repo.NewDeleter(tableName),
+		getter:       repo.NewSingleGetter(tableName, tableColumns),
+
+		embeddedTenantLister:  repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		embeddedTenantDeleter: repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
+		embeddedTenantGetter:  repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+
+		creator:                        repo.NewCreator(tableName, tableColumns),
+		globalCreator:                  repo.NewCreatorGlobal(resource.Label, tableName, tableColumns),
+		updater:                        repo.NewUpdater(tableName, updatableColumns, idColumns),
+		versionedUpdater:               repo.NewUpdater(tableName, updatableColumns, versionedIDColumns),
+		embeddedTenantUpdater:          repo.NewUpdaterWithEmbeddedTenant(resource.Label, tableName, updatableColumns, tenantColumn, idColumns),
+		versionedEmbeddedTenantUpdater: repo.NewUpdaterWithEmbeddedTenant(resource.Label, tableName, updatableColumns, tenantColumn, versionedIDColumns),
+		conv:                           conv,
 	}
 }
 
 // Upsert missing godoc
-func (r *repository) Upsert(ctx context.Context, label *model.Label) error {
+func (r *repository) Upsert(ctx context.Context, tenant string, label *model.Label) error {
 	if label == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
 
-	l, err := r.GetByKey(ctx, label.Tenant, label.ObjectType, label.ObjectID, label.Key)
+	l, err := r.GetByKey(ctx, tenant, label.ObjectType, label.ObjectID, label.Key)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return r.Create(ctx, label)
+			return r.Create(ctx, tenant, label)
 		}
 		return err
 	}
 
 	l.Value = label.Value
-	labelEntity, err := r.conv.ToEntity(*l)
+	labelEntity, err := r.conv.ToEntity(l)
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
-	return r.updater.UpdateSingleWithVersion(ctx, labelEntity)
+	if label.ObjectType == model.TenantLabelableObject {
+		return r.embeddedTenantUpdater.UpdateSingleWithVersionGlobal(ctx, labelEntity)
+	}
+	return r.updater.UpdateSingleWithVersion(ctx, label.ObjectType.GetResourceType(), tenant, labelEntity)
 }
 
-// UpsertWithVersion missing godoc
-func (r *repository) UpdateWithVersion(ctx context.Context, label *model.Label) error {
+// UpdateWithVersion missing godoc
+func (r *repository) UpdateWithVersion(ctx context.Context, tenant string, label *model.Label) error {
 	if label == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
-	labelEntity, err := r.conv.ToEntity(*label)
+	labelEntity, err := r.conv.ToEntity(label)
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
-	return r.versionedUpdater.UpdateSingleWithVersion(ctx, labelEntity)
+	if label.ObjectType == model.TenantLabelableObject {
+		return r.versionedEmbeddedTenantUpdater.UpdateSingleWithVersionGlobal(ctx, labelEntity)
+	}
+	return r.versionedUpdater.UpdateSingleWithVersion(ctx, label.ObjectType.GetResourceType(), tenant, labelEntity)
 }
 
 // Create missing godoc
-func (r *repository) Create(ctx context.Context, label *model.Label) error {
+func (r *repository) Create(ctx context.Context, tenant string, label *model.Label) error {
 	if label == nil {
 		return apperrors.NewInternalError("item can not be empty")
 	}
 
-	labelEntity, err := r.conv.ToEntity(*label)
+	labelEntity, err := r.conv.ToEntity(label)
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
-	return r.creator.Create(ctx, labelEntity)
+
+	if label.ObjectType == model.TenantLabelableObject {
+		return r.globalCreator.Create(ctx, labelEntity)
+	}
+
+	return r.creator.Create(ctx, label.ObjectType.GetResourceType(), tenant, labelEntity)
 }
 
 // GetByKey missing godoc
 func (r *repository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
+	getter := r.getter
+	if objectType == model.TenantLabelableObject {
+		getter = r.embeddedTenantGetter
+	}
+
+	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
+	if objectType != model.TenantLabelableObject {
+		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
+	}
+
 	var entity Entity
-	if err := r.getter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("key", key), repo.NewEqualCondition(labelableObjectField(objectType), objectID)}, repo.NoOrderBy, &entity); err != nil {
+	if err := getter.Get(ctx, objectType.GetResourceType(), tenant, conds, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
-	labelModel, err := r.conv.FromEntity(entity)
+	labelModel, err := r.conv.FromEntity(&entity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Label entity to model")
 	}
 
-	return &labelModel, nil
+	return labelModel, nil
 }
 
 // ListForObject missing godoc
 func (r *repository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	var entities Collection
-	typeCondition := repo.NewEqualCondition(labelableObjectField(objectType), objectID)
-	conditions := []repo.Condition{typeCondition}
+
+	var conditions []repo.Condition
+
+	lister := r.lister
 	if objectType == model.TenantLabelableObject {
+		lister = r.embeddedTenantLister
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.ApplicationLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeContextLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeLabelableObject)))
+	} else {
+		conditions = append(conditions, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
 
-	if err := r.lister.List(ctx, tenant, &entities, conditions...); err != nil {
+	if err := lister.List(ctx, objectType.GetResourceType(), tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
 	labelsMap := make(map[string]*model.Label)
 
 	for _, entity := range entities {
-		m, err := r.conv.FromEntity(entity)
+		m, err := r.conv.FromEntity(&entity)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting Label entity to model")
 		}
 
-		labelsMap[m.Key] = &m
+		labelsMap[m.Key] = m
 	}
 
 	return labelsMap, nil
@@ -153,22 +193,10 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 // ListByKey missing godoc
 func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error) {
 	var entities Collection
-	if err := r.lister.List(ctx, tenant, &entities, repo.NewEqualCondition("key", key)); err != nil {
+	if err := r.lister.List(ctx, resource.Label, tenant, &entities, repo.NewEqualCondition("key", key)); err != nil {
 		return nil, err
 	}
-
-	labels := make([]*model.Label, 0, len(entities))
-
-	for _, entity := range entities {
-		m, err := r.conv.FromEntity(entity)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting Label entity to model")
-		}
-
-		labels = append(labels, &m)
-	}
-
-	return labels, nil
+	return r.multipleFromEntity(entities)
 }
 
 // ListGlobalByKeyAndObjects lists resources of objectType across tenants (global) which match the given objectIDs and labeled with the provided key
@@ -177,60 +205,49 @@ func (r *repository) ListGlobalByKeyAndObjects(ctx context.Context, objectType m
 	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.NewEqualCondition("key", key), repo.NewInConditionForStringValues(labelableObjectField(objectType), objectIDs)); err != nil {
 		return nil, err
 	}
-
-	labels := make([]*model.Label, 0, len(entities))
-
-	for _, entity := range entities {
-		m, err := r.conv.FromEntity(entity)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting Label entity to model")
-		}
-
-		labels = append(labels, &m)
-	}
-
-	return labels, nil
+	return r.multipleFromEntity(entities)
 }
 
 // Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("key", key), repo.NewEqualCondition(labelableObjectField(objectType), objectID)})
+	deleter := r.deleter
+	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
+	if objectType == model.TenantLabelableObject {
+		deleter = r.embeddedTenantDeleter
+	} else {
+		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
+	}
+	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
 }
 
 // DeleteAll missing godoc
 func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error {
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(labelableObjectField(objectType), objectID)})
+	deleter := r.deleter
+	conds := repo.Conditions{}
+	if objectType == model.TenantLabelableObject {
+		deleter = r.embeddedTenantDeleter
+	} else {
+		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
+	}
+	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
 }
 
 // DeleteByKeyNegationPattern missing godoc
 func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{
-		repo.NewEqualCondition(labelableObjectField(objectType), objectID),
-		repo.NewEqualCondition(tenantColumn, tenant),
-		repo.NewNotRegexConditionString("key", labelKeyPattern),
-	})
+	deleter := r.deleter
+	conds := repo.Conditions{repo.NewNotRegexConditionString("key", labelKeyPattern)}
+	if objectType == model.TenantLabelableObject {
+		deleter = r.embeddedTenantDeleter
+	} else {
+		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
+	}
+
+	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
 }
 
 // DeleteByKey missing godoc
 func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string) error {
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition("key", key)})
-}
-
-// GetRuntimesIDsByStringLabel missing godoc
-func (r *repository) GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, key, value string) ([]string, error) {
-	var entities Collection
-	if err := r.lister.List(ctx, tenantID, &entities,
-		repo.NewEqualCondition("key", key),
-		repo.NewJSONArrMatchAnyStringCondition("value", value),
-		repo.NewNotNullCondition("runtime_id")); err != nil {
-		return nil, err
-	}
-
-	matchedRtmsIDs := make([]string, 0, len(entities))
-	for _, entity := range entities {
-		matchedRtmsIDs = append(matchedRtmsIDs, entity.RuntimeID.String)
-	}
-	return matchedRtmsIDs, nil
+	return r.deleter.DeleteMany(ctx, resource.Label, tenant, repo.Conditions{repo.NewEqualCondition("key", key)})
 }
 
 // GetScenarioLabelsForRuntimes missing godoc
@@ -245,47 +262,35 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	}
 
 	var labels Collection
-	err := r.lister.List(ctx, tenantID, &labels, conditions...)
+	err := r.lister.List(ctx, resource.RuntimeLabel, tenantID, &labels, conditions...)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching runtimes scenarios")
 	}
 
 	labelModels := make([]model.Label, 0, len(labels))
 	for _, label := range labels {
-		labelModel, err := r.conv.FromEntity(label)
+		labelModel, err := r.conv.FromEntity(&label)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting label entity to model")
 		}
-		labelModels = append(labelModels, labelModel)
+		labelModels = append(labelModels, *labelModel)
 	}
 	return labelModels, nil
 }
 
-// GetRuntimeScenariosWhereLabelsMatchSelector missing godoc
-func (r *repository) GetRuntimeScenariosWhereLabelsMatchSelector(ctx context.Context, tenantID, selectorKey, selectorValue string) ([]model.Label, error) {
-	subquery, args, err := r.queryBuilder.BuildQuery(tenantID, false,
-		repo.NewEqualCondition("key", selectorKey),
-		repo.NewJSONArrMatchAnyStringCondition("value", selectorValue),
-		repo.NewNotNullCondition("runtime_id"))
+func (r *repository) multipleFromEntity(entities []Entity) ([]*model.Label, error) {
+	labels := make([]*model.Label, 0, len(entities))
 
-	if err != nil {
-		return nil, errors.Wrap(err, "while building subquery")
-	}
-
-	var labels Collection
-	if err := r.lister.List(ctx, tenantID, &labels, repo.NewEqualCondition("key", "scenarios"), repo.NewInConditionForSubQuery("runtime_id", subquery, args)); err != nil {
-		return nil, err
-	}
-
-	labelModels := make([]model.Label, 0, len(labels))
-	for _, label := range labels {
-		labelModel, err := r.conv.FromEntity(label)
+	for _, entity := range entities {
+		m, err := r.conv.FromEntity(&entity)
 		if err != nil {
-			return nil, errors.Wrap(err, "while converting label entity to model")
+			return nil, errors.Wrap(err, "while converting Label entity to model")
 		}
-		labelModels = append(labelModels, labelModel)
+
+		labels = append(labels, m)
 	}
-	return labelModels, nil
+
+	return labels, nil
 }
 
 func labelableObjectField(objectType model.LabelableObject) string {

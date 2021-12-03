@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -19,11 +17,11 @@ import (
 // WebhookService missing godoc
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
 type WebhookService interface {
-	Get(ctx context.Context, id string) (*model.Webhook, error)
+	Get(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	ListAllApplicationWebhooks(ctx context.Context, applicationID string) ([]*model.Webhook, error)
-	Create(ctx context.Context, resourceID string, in model.WebhookInput, converterFunc model.WebhookConverterFunc) (string, error)
-	Update(ctx context.Context, id string, in model.WebhookInput) error
-	Delete(ctx context.Context, id string) error
+	Create(ctx context.Context, resourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error)
+	Update(ctx context.Context, id string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) error
+	Delete(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) error
 }
 
 // ApplicationService missing godoc
@@ -45,11 +43,6 @@ type WebhookConverter interface {
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
 	InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error)
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
-}
-
-type webhookOwner struct {
-	resource.Type
-	id string
 }
 
 type existsFunc func(ctx context.Context, id string) (bool, error)
@@ -95,19 +88,22 @@ func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applic
 		return nil, errors.Wrap(err, "while converting the WebhookInput")
 	}
 
-	var owner webhookOwner
+	var objectID string
+	var objectType model.WebhookReferenceObjectType
 	if appSpecified {
-		owner = webhookOwner{Type: resource.Application, id: *applicationID}
+		objectID = *applicationID
+		objectType = model.ApplicationWebhookReference
 	} else if appTemplateSpecified {
-		owner = webhookOwner{Type: resource.ApplicationTemplate, id: *applicationTemplateID}
+		objectID = *applicationTemplateID
+		objectType = model.ApplicationTemplateWebhookReference
 	}
 
-	id, err := r.checkForExistenceAndCreate(ctx, owner, *convertedIn)
+	id, err := r.checkForExistenceAndCreate(ctx, *convertedIn, objectID, objectType)
 	if err != nil {
 		return nil, err
 	}
 
-	webhook, err := r.webhookSvc.Get(ctx, id)
+	webhook, err := r.webhookSvc.Get(ctx, id, objectType)
 	if err != nil {
 		return nil, err
 	}
@@ -133,12 +129,12 @@ func (r *Resolver) UpdateWebhook(ctx context.Context, webhookID string, in graph
 		return nil, errors.Wrap(err, "while converting the WebhookInput")
 	}
 
-	err = r.webhookSvc.Update(ctx, webhookID, *convertedIn)
+	err = r.webhookSvc.Update(ctx, webhookID, *convertedIn, model.UnknownWebhookReference)
 	if err != nil {
 		return nil, err
 	}
 
-	webhook, err := r.webhookSvc.Get(ctx, webhookID)
+	webhook, err := r.webhookSvc.Get(ctx, webhookID, model.UnknownWebhookReference)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +155,7 @@ func (r *Resolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphq
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	webhook, err := r.webhookSvc.Get(ctx, webhookID)
+	webhook, err := r.webhookSvc.Get(ctx, webhookID, model.UnknownWebhookReference)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +165,7 @@ func (r *Resolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphq
 		return nil, errors.Wrap(err, "while converting the Webhook model to GraphQL")
 	}
 
-	err = r.webhookSvc.Delete(ctx, webhookID)
+	err = r.webhookSvc.Delete(ctx, webhookID, model.UnknownWebhookReference)
 	if err != nil {
 		return nil, err
 	}
@@ -181,35 +177,33 @@ func (r *Resolver) DeleteWebhook(ctx context.Context, webhookID string) (*graphq
 	return deletedWebhook, nil
 }
 
-func (r *Resolver) checkForExistenceAndCreate(ctx context.Context, owningResource webhookOwner, input model.WebhookInput) (string, error) {
+func (r *Resolver) checkForExistenceAndCreate(ctx context.Context, input model.WebhookInput, objectID string, objectType model.WebhookReferenceObjectType) (string, error) {
 	var (
-		converterFunc model.WebhookConverterFunc
-		existsFunc    existsFunc
+		existsFunc existsFunc
 	)
 
-	switch owningResource.Type {
-	case resource.Application:
-		converterFunc = (*model.WebhookInput).ToApplicationWebhook
+	switch objectType {
+	case model.ApplicationWebhookReference:
 		existsFunc = r.appSvc.Exist
-	case resource.ApplicationTemplate:
-		converterFunc = (*model.WebhookInput).ToApplicationTemplateWebhook
+	case model.ApplicationTemplateWebhookReference:
 		existsFunc = r.appTemplateSvc.Exists
 	}
-	err := r.genericCheckExistence(ctx, owningResource.id, string(owningResource.Type), existsFunc)
+
+	err := r.genericCheckExistence(ctx, objectID, objectType, existsFunc)
 	if err != nil {
 		return "", err
 	}
-	return r.webhookSvc.Create(ctx, owningResource.id, input, converterFunc)
+	return r.webhookSvc.Create(ctx, objectID, input, objectType)
 }
 
-func (r *Resolver) genericCheckExistence(ctx context.Context, resourceID, resourceName string, existsFunc existsFunc) error {
+func (r *Resolver) genericCheckExistence(ctx context.Context, resourceID string, objectType model.WebhookReferenceObjectType, existsFunc existsFunc) error {
 	found, err := existsFunc(ctx, resourceID)
 	if err != nil {
-		return errors.Wrapf(err, "while checking existence of %s", resourceName)
+		return errors.Wrapf(err, "while checking existence of %s", objectType)
 	}
 
 	if !found {
-		return apperrors.NewInvalidDataError(fmt.Sprintf("cannot add Webhook to not existing %s", resourceName))
+		return apperrors.NewInvalidDataError(fmt.Sprintf("cannot add %s due to not existing reference entity", objectType))
 	}
 	return nil
 }

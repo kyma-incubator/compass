@@ -15,13 +15,14 @@ import (
 )
 
 type config struct {
-	DefaultTestTenant           string
-	DirectorURL                 string
-	ExternalServicesMockBaseURL string
-	BasicCredentialsUsername    string
-	BasicCredentialsPassword    string
-	AppClientID                 string
-	AppClientSecret             string
+	DefaultTestTenant                  string
+	DirectorURL                        string
+	ExternalServicesMockBaseURL        string
+	ExternalServicesMockMTLSSecuredURL string `envconfig:"EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL"`
+	BasicCredentialsUsername           string
+	BasicCredentialsPassword           string
+	AppClientID                        string
+	AppClientSecret                    string
 }
 
 var (

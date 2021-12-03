@@ -47,9 +47,9 @@ func TestRuntimeInput_Validate_Name(t *testing.T) {
 			//GIVEN
 			sut := fixValidRuntimeInput()
 			sut.Name = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -92,9 +92,9 @@ func TestRuntimeInput_Validate_Description(t *testing.T) {
 			//GIVEN
 			sut := fixValidRuntimeInput()
 			sut.Description = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -149,9 +149,9 @@ func TestRuntimeInput_Validate_Labels(t *testing.T) {
 			//GIVEN
 			sut := fixValidRuntimeInput()
 			sut.Labels = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

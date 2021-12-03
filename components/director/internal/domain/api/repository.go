@@ -16,10 +16,9 @@ import (
 const apiDefTable string = `"public"."api_definitions"`
 
 var (
-	tenantColumn  = "tenant_id"
 	bundleColumn  = "bundle_id"
 	idColumn      = "id"
-	apiDefColumns = []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
+	apiDefColumns = []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash"}
@@ -33,34 +32,34 @@ var (
 // APIDefinitionConverter missing godoc
 //go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type APIDefinitionConverter interface {
-	FromEntity(entity Entity) model.APIDefinition
-	ToEntity(apiModel model.APIDefinition) *Entity
+	FromEntity(entity *Entity) *model.APIDefinition
+	ToEntity(apiModel *model.APIDefinition) *Entity
 }
 
 type pgRepository struct {
-	creator         repo.Creator
-	singleGetter    repo.SingleGetter
-	pageableQuerier repo.PageableQuerier
-	queryBuilder    repo.QueryBuilder
-	lister          repo.Lister
-	updater         repo.Updater
-	deleter         repo.Deleter
-	existQuerier    repo.ExistQuerier
-	conv            APIDefinitionConverter
+	creator               repo.Creator
+	singleGetter          repo.SingleGetter
+	pageableQuerier       repo.PageableQuerier
+	bundleRefQueryBuilder repo.QueryBuilderGlobal
+	lister                repo.Lister
+	updater               repo.Updater
+	deleter               repo.Deleter
+	existQuerier          repo.ExistQuerier
+	conv                  APIDefinitionConverter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	return &pgRepository{
-		singleGetter:    repo.NewSingleGetter(resource.API, apiDefTable, tenantColumn, apiDefColumns),
-		pageableQuerier: repo.NewPageableQuerier(resource.API, apiDefTable, tenantColumn, apiDefColumns),
-		queryBuilder:    repo.NewQueryBuilder(resource.BundleReference, bundlereferences.BundleReferenceTable, tenantColumn, []string{bundlereferences.APIDefIDColumn}),
-		lister:          repo.NewLister(resource.API, apiDefTable, tenantColumn, apiDefColumns),
-		creator:         repo.NewCreator(resource.API, apiDefTable, apiDefColumns),
-		updater:         repo.NewUpdater(resource.API, apiDefTable, updatableColumns, tenantColumn, idColumns),
-		deleter:         repo.NewDeleter(resource.API, apiDefTable, tenantColumn),
-		existQuerier:    repo.NewExistQuerier(resource.API, apiDefTable, tenantColumn),
-		conv:            conv,
+		singleGetter:          repo.NewSingleGetter(apiDefTable, apiDefColumns),
+		pageableQuerier:       repo.NewPageableQuerier(apiDefTable, apiDefColumns),
+		bundleRefQueryBuilder: repo.NewQueryBuilderGlobal(resource.BundleReference, bundlereferences.BundleReferenceTable, []string{bundlereferences.APIDefIDColumn}),
+		lister:                repo.NewLister(apiDefTable, apiDefColumns),
+		creator:               repo.NewCreator(apiDefTable, apiDefColumns),
+		updater:               repo.NewUpdater(apiDefTable, updatableColumns, idColumns),
+		deleter:               repo.NewDeleter(apiDefTable),
+		existQuerier:          repo.NewExistQuerier(apiDefTable),
+		conv:                  conv,
 	}
 }
 
@@ -87,7 +86,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	}
 
 	var apiDefCollection APIDefCollection
-	err := r.lister.List(ctx, tenantID, &apiDefCollection, conditions...)
+	err := r.lister.List(ctx, resource.API, tenantID, &apiDefCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}
@@ -126,13 +125,13 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 // ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error) {
 	apiCollection := APIDefCollection{}
-	if err := r.lister.List(ctx, tenantID, &apiCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.List(ctx, resource.API, tenantID, &apiCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	apis := make([]*model.APIDefinition, 0, apiCollection.Len())
 	for _, api := range apiCollection {
-		apiModel := r.conv.FromEntity(api)
-		apis = append(apis, &apiModel)
+		apiModel := r.conv.FromEntity(&api)
+		apis = append(apis, apiModel)
 	}
 	return apis, nil
 }
@@ -140,14 +139,14 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 // GetByID missing godoc
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
 	var apiDefEntity Entity
-	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
+	err := r.singleGetter.Get(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting APIDefinition")
 	}
 
-	apiDefModel := r.conv.FromEntity(apiDefEntity)
+	apiDefModel := r.conv.FromEntity(&apiDefEntity)
 
-	return &apiDefModel, nil
+	return apiDefModel, nil
 }
 
 // GetForBundle missing godoc
@@ -157,13 +156,13 @@ func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id strin
 }
 
 // Create missing godoc
-func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.APIDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
-	entity := r.conv.ToEntity(*item)
-	err := r.creator.Create(ctx, entity)
+	entity := r.conv.ToEntity(item)
+	err := r.creator.Create(ctx, resource.API, tenant, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")
 	}
@@ -172,11 +171,11 @@ func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) er
 }
 
 // CreateMany missing godoc
-func (r *pgRepository) CreateMany(ctx context.Context, items []*model.APIDefinition) error {
+func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*model.APIDefinition) error {
 	for index, item := range items {
-		entity := r.conv.ToEntity(*item)
+		entity := r.conv.ToEntity(item)
 
-		err := r.creator.Create(ctx, entity)
+		err := r.creator.Create(ctx, resource.API, tenant, entity)
 		if err != nil {
 			return errors.Wrapf(err, "while persisting %d item", index)
 		}
@@ -186,24 +185,24 @@ func (r *pgRepository) CreateMany(ctx context.Context, items []*model.APIDefinit
 }
 
 // Update missing godoc
-func (r *pgRepository) Update(ctx context.Context, item *model.APIDefinition) error {
+func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.APIDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
-	entity := r.conv.ToEntity(*item)
+	entity := r.conv.ToEntity(item)
 
-	return r.updater.UpdateSingle(ctx, entity)
+	return r.updater.UpdateSingle(ctx, resource.API, tenant, entity)
 }
 
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Delete missing godoc
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
-	return r.deleter.DeleteOne(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // DeleteAllByBundleID missing godoc
@@ -212,7 +211,7 @@ func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundle
 		repo.NewEqualCondition(bundleColumn, bundleID),
 		repo.NewNotNullCondition(bundlereferences.APIDefIDColumn),
 	}
-	subquery, args, err := r.queryBuilder.BuildQuery(tenantID, false, subqueryConditions...)
+	subquery, args, err := r.bundleRefQueryBuilder.BuildQueryGlobal(false, subqueryConditions...)
 	if err != nil {
 		return err
 	}
@@ -221,7 +220,7 @@ func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundle
 		repo.NewInConditionForSubQuery(idColumn, subquery, args),
 	}
 
-	return r.deleter.DeleteMany(ctx, tenantID, inOperatorConditions)
+	return r.deleter.DeleteMany(ctx, resource.API, tenantID, inOperatorConditions)
 }
 
 func getAPIDefIDsForBundle(refs []*model.BundleReference) []string {
@@ -250,8 +249,8 @@ func (r *pgRepository) groupEntitiesByID(bundleRefs []*model.BundleReference, ap
 
 	apiDefsByAPIDefID := map[string]*model.APIDefinition{}
 	for _, apiDefEnt := range apiDefCollection {
-		m := r.conv.FromEntity(apiDefEnt)
-		apiDefsByAPIDefID[apiDefEnt.ID] = &m
+		m := r.conv.FromEntity(&apiDefEnt)
+		apiDefsByAPIDefID[apiDefEnt.ID] = m
 	}
 
 	return refsByBundleID, apiDefsByAPIDefID
