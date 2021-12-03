@@ -43,7 +43,11 @@ spec:
               imagePullPolicy: {{ $.Values.deployment.image.pullPolicy }}
               env:
               - name: MAPPING_TEMPLATE_EXTERNAL_URL
+{{ if contains "local" $adapterName }}
                 value: {{ tpl $config.envs.mappingTemplateExternalURL $global }}
+{{ else }}
+                value: {{ $config.envs.mappingTemplateExternalURL  }}
+{{ end }}
               - name: MAPPING_TEMPLATE_HEADERS
                 value: {{ $config.envs.mappingTemplateHeaders | quote }}
               - name: MAPPING_TEMPLATE_JSON_BODY
@@ -56,17 +60,17 @@ spec:
               - name: AUTH_URL
                 valueFrom:
                     secretKeyRef:
-                        name: {{ $config.authSecret }}
+                        name: {{ $config.auth.secret }}
                         key: url
               - name: AUTH_CLIENT_ID
                 valueFrom:
                     secretKeyRef:
-                        name: {{ $config.authSecret }}
+                        name: {{ $config.auth.secret }}
                         key: clientID
               - name: AUTH_CLIENT_SECRET
                 valueFrom:
                     secretKeyRef:
-                        name: {{ $config.authSecret }}
+                        name: {{ $config.auth.secret }}
                         key: clientSecret
               - name: AUTH_OAUTH_STYLE
                 value: {{ $config.envs.oauthStyle | quote }}
