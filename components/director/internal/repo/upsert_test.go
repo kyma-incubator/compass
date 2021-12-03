@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -224,7 +225,7 @@ func TestUpsert(t *testing.T) {
 		DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description 
 		WHERE (apps.id IN (SELECT id FROM tenant_applications WHERE tenant_id = ? AND owner = true))`)
 
-	expectedTenantAccessQuery := regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ( tenant_id, id ) DO NOTHING`)
+	expectedTenantAccessQuery := regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO %s ( %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)", "tenant_applications", repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))
 
 	sut := repo.NewUpserter(appTableName, []string{"id", "name", "description"}, []string{"id"}, []string{"name", "description"})
 

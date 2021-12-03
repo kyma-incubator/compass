@@ -115,40 +115,30 @@ func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type,
 	}
 
 	if resourceType.IsTopLevel() {
-		if err = u.insertTenantAccess(ctx, resourceType, dbEntity, tenant); err != nil {
-			return errors.Wrap(err, "while inserting tenant access")
+		if err = u.upsertTenantAccess(ctx, resourceType, dbEntity, tenant); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func (u *upserter) insertTenantAccess(ctx context.Context, resourceType resource.Type, dbEntity interface{}, tenant string) error {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return err
-	}
-
-	vals := make([]string, 0, len(M2MColumns))
-	for _, c := range M2MColumns {
-		vals = append(vals, fmt.Sprintf(":%s", c))
-	}
-
+func (u *upserter) upsertTenantAccess(ctx context.Context, resourceType resource.Type, dbEntity interface{}, tenant string) error {
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return errors.Errorf("entity %s does not have access table", resourceType)
 	}
 
-	insertTenantAccessStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s ) ON CONFLICT ( tenant_id, id ) DO NOTHING", m2mTable, strings.Join(M2MColumns, ", "), strings.Join(vals, ", "))
+	var id string
+	if identifiable, ok := dbEntity.(Identifiable); ok {
+		id = identifiable.GetID()
+	}
 
-	log.C(ctx).Debugf("Executing DB query: %s", insertTenantAccessStmt)
-	_, err = persist.NamedExecContext(ctx, insertTenantAccessStmt, &TenantAccess{
+	return UpsertTenantAccessRecursively(ctx, m2mTable, &TenantAccess{
 		TenantID:   tenant,
-		ResourceID: dbEntity.(Identifiable).GetID(),
+		ResourceID: id,
 		Owner:      true,
 	})
-
-	return persistence.MapSQLError(ctx, err, resourceType, resource.Create, "while inserting tenant access record to '%s' table", m2mTable)
 }
 
 func (u *upserter) addTenantIsolation(query string, resourceType resource.Type, tenant string) (string, error) {

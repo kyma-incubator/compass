@@ -394,7 +394,7 @@ func TestRepository_Upsert(t *testing.T) {
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
 			{
-				Query:       regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ( tenant_id, id ) DO NOTHING`),
+				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`),
 				Args:        []driver.Value{givenTenant(), givenID(), true},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
