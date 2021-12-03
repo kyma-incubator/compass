@@ -179,7 +179,6 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 
 func getFakeCreator(oauthCfg oauth.Config, suite suite.Suite, shouldFail bool) auth.MtlsClientCreator {
 	return func(_ auth.CertificateCache, skipSSLValidation bool, timeout time.Duration) *http.Client {
-
 		return &http.Client{
 			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
 				suite.Require().Equal(req.URL.Host, oauthCfg.TokenBaseURL)

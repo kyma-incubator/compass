@@ -40,9 +40,10 @@ type CertificateCache interface {
 	Get() *tls.Certificate
 }
 
+// MtlsClientCreator is a constructor function for http.Clients
 type MtlsClientCreator func(cache CertificateCache, skipSSLValidation bool, timeout time.Duration) *http.Client
 
-// DefaultCreator is the default http client creator
+// DefaultMtlsClientCreator is the default http client creator
 func DefaultMtlsClientCreator(cc CertificateCache, skipSSLValidation bool, timeout time.Duration) *http.Client {
 	httpTransport := httpdirector.NewCorrelationIDTransport(&http.Transport{
 		TLSClientConfig: &tls.Config{
