@@ -213,7 +213,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
 	apiClient := http.Client{
-		Transport: httputil.NewSecuredTransport(http.DefaultTransport, pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, certCache, pkgAuth.DefaultCreator)),
+		Transport: httputil.NewSecuredTransport(http.DefaultTransport, pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, certCache, pkgAuth.DefaultMtlsClientCreator)),
 		Timeout:   cfg.APIConfig.Timeout,
 	}
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, apiClient)

@@ -68,6 +68,13 @@ func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider
 	suite.Require().Equal(matches, false)
 }
 
+func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider_DoesNotMatchWhenMtlsOauthCredentialsInContext() {
+	provider := auth.NewTokenAuthorizationProvider(nil)
+
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.MtlsOAuthCredentials{}))
+	suite.Require().Equal(matches, false)
+}
+
 func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider_DoesNotMatchNoCredentialsInContext() {
 	provider := auth.NewTokenAuthorizationProvider(nil)
 
@@ -124,10 +131,20 @@ func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider
 	suite.Require().Empty(authorization)
 }
 
-func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider_GetAuthorizationFailsWhenOAuthCredentialsAreInContext() {
+func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider_GetAuthorizationFailsWhenBasicCredentialsAreInContext() {
 	provider := auth.NewTokenAuthorizationProvider(nil)
 
 	authorization, err := provider.GetAuthorization(auth.SaveToContext(context.Background(), &auth.BasicCredentials{}))
+
+	suite.Require().Error(err)
+	suite.Require().Contains(err.Error(), "failed to cast credentials to oauth credentials type")
+	suite.Require().Empty(authorization)
+}
+
+func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider_GetAuthorizationFailsWhenMtlsOAuthCredentialsAreInContext() {
+	provider := auth.NewTokenAuthorizationProvider(nil)
+
+	authorization, err := provider.GetAuthorization(auth.SaveToContext(context.Background(), &auth.MtlsOAuthCredentials{}))
 
 	suite.Require().Error(err)
 	suite.Require().Contains(err.Error(), "failed to cast credentials to oauth credentials type")

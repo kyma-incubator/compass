@@ -1,3 +1,19 @@
+/*
+* Copyright 2020 The Compass Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+ */
+
 package auth
 
 import (
@@ -18,35 +34,19 @@ import (
 	"github.com/pkg/errors"
 )
 
-/*
- * Copyright 2020 The Compass Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 // CertificateCache missing godoc
 //go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore
 type CertificateCache interface {
 	Get() *tls.Certificate
 }
 
-type mtlsClientCreator func(cache CertificateCache, timeout time.Duration) *http.Client
+type MtlsClientCreator func(cache CertificateCache, skipSSLValidation bool, timeout time.Duration) *http.Client
 
 // DefaultCreator is the default http client creator
-func DefaultCreator(cc CertificateCache, timeout time.Duration) *http.Client {
+func DefaultMtlsClientCreator(cc CertificateCache, skipSSLValidation bool, timeout time.Duration) *http.Client {
 	httpTransport := httpdirector.NewCorrelationIDTransport(&http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: false,
+			InsecureSkipVerify: skipSSLValidation,
 			GetClientCertificate: func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
 				return cc.Get(), nil
 			},
@@ -70,13 +70,13 @@ type mtlsTokenAuthorizationProvider struct {
 }
 
 // NewMtlsTokenAuthorizationProvider constructs an TokenAuthorizationProvider
-func NewMtlsTokenAuthorizationProvider(oauthCfg oauth.Config, cache CertificateCache, creator mtlsClientCreator) *mtlsTokenAuthorizationProvider {
+func NewMtlsTokenAuthorizationProvider(oauthCfg oauth.Config, cache CertificateCache, creator MtlsClientCreator) *mtlsTokenAuthorizationProvider {
 	return &mtlsTokenAuthorizationProvider{
 		clientID:     oauthCfg.ClientID,
 		tokenURL:     oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
 		scopesClaim:  strings.Join(oauthCfg.ScopesClaim, " "),
 		tenantHeader: oauthCfg.TenantHeaderName,
-		httpClient:   creator(cache, oauthCfg.TokenRequestTimeout),
+		httpClient:   creator(cache, oauthCfg.SkipSSLValidation, oauthCfg.TokenRequestTimeout),
 	}
 }
 
@@ -160,7 +160,5 @@ func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentia
 	}
 
 	log.C(ctx).Debug("Successfully unmarshal response oauth token")
-	tokenResponse.Expiration += time.Now().Unix()
-
 	return tokenResponse, nil
 }

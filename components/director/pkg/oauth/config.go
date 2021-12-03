@@ -12,4 +12,5 @@ type Config struct {
 	TenantHeaderName      string        `envconfig:"APP_OAUTH_TENANT_HEADER_NAME"`
 	ScopesClaim           []string      `envconfig:"APP_OAUTH_SCOPES_CLAIM"`
 	TokenRequestTimeout   time.Duration `envconfig:"APP_OAUTH_TOKEN_REQUEST_TIMEOUT"`
+	SkipSSLValidation     bool          `envconfig:"APP_OAUTH_SKIP_SSL_VALIDATION"`
 }

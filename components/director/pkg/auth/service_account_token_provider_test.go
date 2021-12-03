@@ -68,6 +68,13 @@ func (suite *ServiceAccountTokenAuthorizationProviderTestSuite) TestServiceAccou
 	suite.Require().Equal(matches, false)
 }
 
+func (suite *ServiceAccountTokenAuthorizationProviderTestSuite) TestServiceAccountTokenAuthorizationProvider_DoesNotMatchWhenMtlsOAuthCredentialsInContext() {
+	provider := auth.NewServiceAccountTokenAuthorizationProvider()
+
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.MtlsOAuthCredentials{}))
+	suite.Require().Equal(matches, false)
+}
+
 func (suite *ServiceAccountTokenAuthorizationProviderTestSuite) TestServiceAccountTokenAuthorizationProvider_GetAuthorization() {
 	tokenContent := "test-token"
 	tokenFileName := "token"
