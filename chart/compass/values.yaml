@@ -76,16 +76,16 @@ global:
       version: "PR-2082"
     pairing_adapter:
       dir:
-      version: "PR-2082"
+      version: "PR-2118"
     director:
       dir:
-      version: "PR-2115"
+      version: "PR-2118"
     gateway:
       dir:
       version: "PR-2077"
     operations_controller:
       dir:
-      version: "PR-2084"
+      version: "PR-2118"
     ord_service:
       dir:
       version: "PR-48"
@@ -102,13 +102,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2112"
+      version: "PR-2118"
     console:
       dir:
       version: "PR-47"
     e2e_tests:
       dir:
-      version: "PR-2115"
+      version: "PR-2118"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -621,5 +621,9 @@ global:
     client:
       skipSSLValidation: false
 
-pairing-adapter:
-  enabled: false
+  pairingAdapter:
+    e2e:
+      appName: "test-app"
+      appID: "123-test-456"
+      clientUser: "test-user"
+      tenant: "test-tenant"
