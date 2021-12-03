@@ -134,6 +134,10 @@ func (u *upserter) upsertTenantAccess(ctx context.Context, resourceType resource
 		id = identifiable.GetID()
 	}
 
+	if len(id) == 0 {
+		return apperrors.NewInternalError("id cannot be empty, check if the entity implements Identifiable")
+	}
+
 	return UpsertTenantAccessRecursively(ctx, m2mTable, &TenantAccess{
 		TenantID:   tenant,
 		ResourceID: id,
