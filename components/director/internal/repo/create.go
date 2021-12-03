@@ -95,13 +95,13 @@ func (c *universalCreator) Create(ctx context.Context, resourceType resource.Typ
 	}
 
 	if resourceType.IsTopLevel() {
-		return c.unsafeCreateTopLevelEntity(ctx, id, tenant, dbEntity, resourceType)
+		return c.createTopLevelEntity(ctx, id, tenant, dbEntity, resourceType)
 	}
 
-	return c.unsafeCreateChildEntity(ctx, tenant, dbEntity, resourceType)
+	return c.createChildEntity(ctx, tenant, dbEntity, resourceType)
 }
 
-func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id string, tenant string, dbEntity interface{}, resourceType resource.Type) error {
+func (c *universalCreator) createTopLevelEntity(ctx context.Context, id string, tenant string, dbEntity interface{}, resourceType resource.Type) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -138,14 +138,14 @@ func (c *universalCreator) unsafeCreateTopLevelEntity(ctx context.Context, id st
 		return errors.Errorf("entity %s does not have access table", resourceType)
 	}
 
-	return UnsafeCreateTenantAccessRecursively(ctx, m2mTable, &TenantAccess{
+	return CreateTenantAccessRecursively(ctx, m2mTable, &TenantAccess{
 		TenantID:   tenant,
 		ResourceID: id,
 		Owner:      true,
 	})
 }
 
-func (c *universalCreator) unsafeCreateChildEntity(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
+func (c *universalCreator) createChildEntity(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
 	if err := c.checkParentAccess(ctx, tenant, dbEntity, resourceType); err != nil {
 		return apperrors.NewUnauthorizedError(fmt.Sprintf("Tenant %s does not have access to the parent of the currently created %s: %v", tenant, resourceType, err))
 	}
@@ -169,23 +169,19 @@ func (c *universalCreator) unsafeCreateChildEntity(ctx context.Context, tenant s
 }
 
 func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
-	parentResourceType, ok := resourceType.Parent()
-	if !ok {
-		return errors.Errorf("entity %s does not have parent", resourceType)
+	var parentID string
+	var parentResourceType resource.Type
+	if childEntity, ok := dbEntity.(ChildEntity); ok {
+		parentResourceType, parentID = childEntity.GetParent(resourceType)
+	}
+
+	if len(parentID) == 0 || len(parentResourceType) == 0 {
+		return errors.Errorf("unknown parent for entity type %s", resourceType)
 	}
 
 	parentAccessTable, ok := parentResourceType.TenantAccessTable()
 	if !ok {
 		return errors.Errorf("parent entity %s does not have access table", parentResourceType)
-	}
-
-	var parentID string
-	if childEntity, ok := dbEntity.(ChildEntity); ok {
-		parentID = childEntity.GetParentID()
-	}
-
-	if len(parentID) == 0 {
-		return errors.Errorf("unknown parentID for entity type %s and parentType %s", resourceType, parentResourceType)
 	}
 
 	conditions := Conditions{NewEqualCondition(M2MResourceIDColumn, parentID)}

@@ -62,7 +62,7 @@ func (g *universalExistQuerier) Exists(ctx context.Context, resourceType resourc
 
 	if g.tenantColumn != nil {
 		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
-		return g.unsafeExists(ctx, resourceType, conditions)
+		return g.exists(ctx, resourceType, conditions)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, g.ownerCheck)
@@ -72,15 +72,15 @@ func (g *universalExistQuerier) Exists(ctx context.Context, resourceType resourc
 
 	conditions = append(conditions, tenantIsolation)
 
-	return g.unsafeExists(ctx, resourceType, conditions)
+	return g.exists(ctx, resourceType, conditions)
 }
 
 // ExistsGlobal checks for existence of global entities without tenant isolation.
 func (g *universalExistQuerier) ExistsGlobal(ctx context.Context, conditions Conditions) (bool, error) {
-	return g.unsafeExists(ctx, g.resourceType, conditions)
+	return g.exists(ctx, g.resourceType, conditions)
 }
 
-func (g *universalExistQuerier) unsafeExists(ctx context.Context, resourceType resource.Type, conditions Conditions) (bool, error) {
+func (g *universalExistQuerier) exists(ctx context.Context, resourceType resource.Type, conditions Conditions) (bool, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return false, err

@@ -3,6 +3,8 @@ package api
 import (
 	"database/sql"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
@@ -43,9 +45,9 @@ type Entity struct {
 	version.Version
 }
 
-// GetParentID returns the parent ID of the entity.
-func (e *Entity) GetParentID() string {
-	return e.ApplicationID
+// GetParent returns the parent type and the parent ID of the entity.
+func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
+	return resource.Application, e.ApplicationID
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

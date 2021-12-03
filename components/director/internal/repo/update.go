@@ -110,14 +110,14 @@ func (u *updater) UpdateSingleWithVersion(ctx context.Context, resourceType reso
 // UpdateSingle updates the given entity if the tenant has owner access to it.
 // It is suitable for entities with externally managed tenant accesses (m2m table or view).
 func (u *updater) UpdateSingle(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error {
-	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, tenant, buildFieldsToSet(u.updatableColumns), resourceType)
+	return u.updateSingleWithFields(ctx, dbEntity, tenant, buildFieldsToSet(u.updatableColumns), resourceType)
 }
 
 func (u *updater) updateSingleWithVersion(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
 	fieldsToSet := buildFieldsToSet(u.updatableColumns)
 	fieldsToSet = append(fieldsToSet, "version = version+1")
 
-	if err := u.unsafeUpdateSingleWithFields(ctx, dbEntity, tenant, fieldsToSet, resourceType); err != nil {
+	if err := u.updateSingleWithFields(ctx, dbEntity, tenant, fieldsToSet, resourceType); err != nil {
 		if apperrors.IsConcurrentUpdate(err) {
 			return apperrors.NewConcurrentUpdate()
 		}
@@ -126,7 +126,7 @@ func (u *updater) updateSingleWithVersion(ctx context.Context, tenant string, db
 	return nil
 }
 
-func (u *updater) unsafeUpdateSingleWithFields(ctx context.Context, dbEntity interface{}, tenant string, fieldsToSet []string, resourceType resource.Type) error {
+func (u *updater) updateSingleWithFields(ctx context.Context, dbEntity interface{}, tenant string, fieldsToSet []string, resourceType resource.Type) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -185,7 +185,7 @@ func (u *updater) buildQuery(fieldsToSet []string, tenant string, resourceType r
 // UpdateSingleGlobal updates the given entity. In case of configured tenant column it checks if it matches the tenant inside the dbEntity.
 // It is suitable for entities without tenant or entities with tenant embedded in them.
 func (u *updaterGlobal) UpdateSingleGlobal(ctx context.Context, dbEntity interface{}) error {
-	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, buildFieldsToSet(u.updatableColumns))
+	return u.updateSingleWithFields(ctx, dbEntity, buildFieldsToSet(u.updatableColumns))
 }
 
 // UpdateSingleWithVersionGlobal updates the entity while checking its version as a way of optimistic locking.
@@ -212,7 +212,7 @@ func (u *updaterGlobal) TechnicalUpdate(ctx context.Context, dbEntity interface{
 		entity.SetUpdatedAt(time.Now())
 		dbEntity = entity
 	}
-	return u.unsafeUpdateSingleWithFields(ctx, dbEntity, buildFieldsToSet(u.updatableColumns))
+	return u.updateSingleWithFields(ctx, dbEntity, buildFieldsToSet(u.updatableColumns))
 }
 
 // Clone clones the updater.
@@ -232,7 +232,7 @@ func (u *updaterGlobal) updateSingleWithVersion(ctx context.Context, dbEntity in
 	fieldsToSet := buildFieldsToSet(u.updatableColumns)
 	fieldsToSet = append(fieldsToSet, "version = version+1")
 
-	if err := u.unsafeUpdateSingleWithFields(ctx, dbEntity, fieldsToSet); err != nil {
+	if err := u.updateSingleWithFields(ctx, dbEntity, fieldsToSet); err != nil {
 		if apperrors.IsConcurrentUpdate(err) {
 			return apperrors.NewConcurrentUpdate()
 		}
@@ -241,7 +241,7 @@ func (u *updaterGlobal) updateSingleWithVersion(ctx context.Context, dbEntity in
 	return nil
 }
 
-func (u *updaterGlobal) unsafeUpdateSingleWithFields(ctx context.Context, dbEntity interface{}, fieldsToSet []string) error {
+func (u *updaterGlobal) updateSingleWithFields(ctx context.Context, dbEntity interface{}, fieldsToSet []string) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}

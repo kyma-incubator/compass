@@ -72,7 +72,7 @@ func (g *universalPageableQuerier) List(ctx context.Context, resourceType resour
 
 	if g.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, additionalConditions...)
-		return g.unsafeList(ctx, resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+		return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -82,15 +82,15 @@ func (g *universalPageableQuerier) List(ctx context.Context, resourceType resour
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return g.unsafeList(ctx, resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+	return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 
 // ListGlobal lists a page of global entities without tenant isolation.
 func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
-	return g.unsafeList(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 
-func (g *universalPageableQuerier) unsafeList(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions ...Condition) (*pagination.Page, int, error) {
+func (g *universalPageableQuerier) list(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions ...Condition) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, -1, err

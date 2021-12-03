@@ -13,8 +13,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
-	accessstrategyautomock "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	accessstrategyautomock "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"

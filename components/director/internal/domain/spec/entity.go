@@ -2,6 +2,8 @@ package spec
 
 import (
 	"database/sql"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity represents a specification entity.
@@ -25,12 +27,12 @@ func (e *Entity) GetID() string {
 	return e.ID
 }
 
-// GetParentID returns the parent ID of the entity.
-func (e *Entity) GetParentID() string {
+// GetParent returns the parent type and the parent ID of the entity.
+func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
 	if e.APIDefID.Valid {
-		return e.APIDefID.String
+		return resource.API, e.APIDefID.String
 	}
-	return e.EventAPIDefID.String
+	return resource.EventDefinition, e.EventAPIDefID.String
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

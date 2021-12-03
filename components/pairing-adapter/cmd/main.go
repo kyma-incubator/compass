@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -26,23 +29,37 @@ func main() {
 	ctx, err := log.Configure(context.Background(), conf.Log)
 	exitOnError(err, "while configuring logger")
 
-	authStyle, err := getAuthStyle(conf.OAuth.AuthStyle)
+	authStyle, err := getAuthStyle(conf.Auth.OAuthStyle)
 	exitOnError(err, "while getting Auth Style")
 
-	cc := clientcredentials.Config{
-		TokenURL:     conf.OAuth.URL,
-		ClientID:     conf.OAuth.ClientID,
-		ClientSecret: conf.OAuth.ClientSecret,
-		AuthStyle:    authStyle,
+	transport := &http.Transport{}
+	client := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(transport),
+		Timeout:   conf.ClientTimeout,
 	}
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
 
-	baseClient := &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+	switch conf.Auth.Type {
+	case adapter.AuthTypeOauth:
+		cc := clientcredentials.Config{
+			TokenURL:     conf.Auth.URL,
+			ClientID:     conf.Auth.ClientID,
+			ClientSecret: conf.Auth.ClientSecret,
+			AuthStyle:    authStyle,
+		}
+		client = cc.Client(ctx)
+	case adapter.AuthTypeMTLS:
+		certCache, err := certloader.StartCertLoader(ctx, conf.Auth.ExternalClientCertSecret)
+		exitOnError(err, "Failed to initialize certificate loader")
+		transport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: conf.Auth.SkipSSLVerify,
+			GetClientCertificate: func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+				return certCache.Get(), nil
+			},
+		}
+	default:
+		exitOnError(errors.Errorf("auth type %s is not supported", conf.Auth.Type), "while configuring auth")
 	}
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, baseClient)
-
-	client := cc.Client(ctx)
-	client.Timeout = conf.ClientTimeout
 
 	cli := adapter.NewClient(client, conf.Mapping)
 
@@ -74,13 +91,13 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func getAuthStyle(style adapter.AuthStyle) (oauth2.AuthStyle, error) {
+func getAuthStyle(style adapter.OAuthStyle) (oauth2.AuthStyle, error) {
 	switch style {
-	case adapter.AuthStyleInParams:
+	case adapter.OAuthStyleInParams:
 		return oauth2.AuthStyleInParams, nil
-	case adapter.AuthStyleInHeader:
+	case adapter.OAuthStyleInHeader:
 		return oauth2.AuthStyleInHeader, nil
-	case adapter.AuthStyleAutoDetect:
+	case adapter.OAuthStyleAutoDetect:
 		return oauth2.AuthStyleAutoDetect, nil
 	default:
 		return -1, errors.New("unknown Auth style")

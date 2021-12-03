@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // ChildEntity is an interface for a child entity that can be used to obtain its parent ID.
 type ChildEntity interface {
-	GetParentID() string
+	GetParent(resource.Type) (resource.Type, string)
 }
 
 // Identifiable is an interface that can be used to identify an object.

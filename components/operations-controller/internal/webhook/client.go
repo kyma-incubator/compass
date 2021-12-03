@@ -24,6 +24,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	recerr "github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
@@ -38,11 +42,13 @@ const emptyBody = `{}`
 
 type client struct {
 	httpClient *http.Client
+	mtlsClient *http.Client
 }
 
-func NewClient(httpClient *http.Client) *client {
+func NewClient(httpClient *http.Client, mtlsClient *http.Client) *client {
 	return &client{
 		httpClient: httpClient,
+		mtlsClient: mtlsClient,
 	}
 }
 
@@ -94,15 +100,11 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 
 	req.Header = headers
 
-	if webhook.Auth != nil {
-		ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
-		req = req.WithContext(ctx)
+	resp, err := c.executeRequestWithCorrectClient(ctx, req, webhook)
+	if err != nil {
+		return nil, errors.Wrap(err, "while initially executing webhook")
 	}
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
 	defer func() {
 		err := resp.Body.Close()
 		if err != nil {
@@ -161,14 +163,9 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 
 	req.Header = headers
 
-	if webhook.Auth != nil {
-		ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
-		req = req.WithContext(ctx)
-	}
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.executeRequestWithCorrectClient(ctx, req, webhook)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while executing webhook for poll")
 	}
 	defer func() {
 		err := resp.Body.Close()
@@ -190,6 +187,22 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 	}
 
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
+}
+
+func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.Request, webhook graphql.Webhook) (*http.Response, error) {
+	if webhook.Auth != nil {
+		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
+			return c.mtlsClient.Do(req)
+		} else if webhook.Auth.Credential != nil {
+			ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
+			req = req.WithContext(ctx)
+			return c.httpClient.Do(req)
+		} else {
+			return nil, errors.New("could not determine auth flow for webhook")
+		}
+	} else {
+		return c.httpClient.Do(req)
+	}
 }
 
 func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) {

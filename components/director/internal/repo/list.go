@@ -85,7 +85,7 @@ func (l *universalLister) List(ctx context.Context, resourceType resource.Type, 
 
 	if l.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
-		return l.unsafeList(ctx, resourceType, dest, additionalConditions...)
+		return l.list(ctx, resourceType, dest, additionalConditions...)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -95,7 +95,7 @@ func (l *universalLister) List(ctx context.Context, resourceType resource.Type, 
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return l.unsafeList(ctx, resourceType, dest, additionalConditions...)
+	return l.list(ctx, resourceType, dest, additionalConditions...)
 }
 
 // SetSelectedColumns sets the selected columns for the query.
@@ -118,10 +118,10 @@ func (l *universalLister) Clone() *universalLister {
 
 // ListGlobal lists global entities without tenant isolation.
 func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
-	return l.unsafeList(ctx, l.resourceType, dest, additionalConditions...)
+	return l.list(ctx, l.resourceType, dest, additionalConditions...)
 }
 
-func (l *universalLister) unsafeList(ctx context.Context, resourceType resource.Type, dest Collection, conditions ...Condition) error {
+func (l *universalLister) list(ctx context.Context, resourceType resource.Type, dest Collection, conditions ...Condition) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err

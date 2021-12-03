@@ -5,9 +5,9 @@ import (
 	"net/url"
 	"regexp"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"

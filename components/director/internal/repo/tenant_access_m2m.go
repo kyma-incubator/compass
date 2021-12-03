@@ -3,11 +3,14 @@ package repo
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/pkg/errors"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"strings"
 )
 
 const (
@@ -18,6 +21,7 @@ const (
 	// M2MOwnerColumn is the column name of the owner in each tenant access table / view.
 	M2MOwnerColumn = "owner"
 
+	// RecursiveCreateTenantAccessCTEQuery is a recursive SQL query that creates a tenant access record for a tenant and all its parents.
 	RecursiveCreateTenantAccessCTEQuery = `WITH RECURSIVE parents AS
                    (SELECT t1.id, t1.parent
                     FROM business_tenant_mappings t1
@@ -28,6 +32,7 @@ const (
                              INNER JOIN parents t on t2.id = t.parent)
 			INSERT INTO %s ( %s ) (SELECT parents.id AS tenant_id, :id as id, :owner AS owner FROM parents)`
 
+	// RecursiveDeleteTenantAccessCTEQuery is a recursive SQL query that deletes tenant accesses based on given conditions for a tenant and all its parents.
 	RecursiveDeleteTenantAccessCTEQuery = `WITH RECURSIVE parents AS
                    (SELECT t1.id, t1.parent
                     FROM business_tenant_mappings t1
@@ -57,9 +62,9 @@ func (tc TenantAccessCollection) Len() int {
 	return len(tc)
 }
 
-// UnsafeCreateTenantAccessRecursively creates the given tenantAccess in the provided m2mTable while making sure to recursively
+// CreateTenantAccessRecursively creates the given tenantAccess in the provided m2mTable while making sure to recursively
 // add it to all the parents of the given tenant.
-func UnsafeCreateTenantAccessRecursively(ctx context.Context, m2mTable string, tenantAccess *TenantAccess) error {
+func CreateTenantAccessRecursively(ctx context.Context, m2mTable string, tenantAccess *TenantAccess) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -73,8 +78,12 @@ func UnsafeCreateTenantAccessRecursively(ctx context.Context, m2mTable string, t
 	return persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Create, "while inserting tenant access record to '%s' table", m2mTable)
 }
 
-// UnsafeDeleteTenantAccessRecursively deletes all the accesses to the provided resource IDs for the given tenant and all its parents.
-func UnsafeDeleteTenantAccessRecursively(ctx context.Context, m2mTable string, tenant string, resourceIDs []string) error {
+// DeleteTenantAccessRecursively deletes all the accesses to the provided resource IDs for the given tenant and all its parents.
+func DeleteTenantAccessRecursively(ctx context.Context, m2mTable string, tenant string, resourceIDs []string) error {
+	if len(resourceIDs) == 0 {
+		return errors.New("resourceIDs cannot be empty")
+	}
+
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -92,7 +101,7 @@ func UnsafeDeleteTenantAccessRecursively(ctx context.Context, m2mTable string, t
 	deleteTenantAccessStmt = sqlx.Rebind(sqlx.DOLLAR, deleteTenantAccessStmt)
 
 	log.C(ctx).Debugf("Executing DB query: %s", deleteTenantAccessStmt)
-	_, err = persist.NamedExecContext(ctx, deleteTenantAccessStmt, args)
+	_, err = persist.ExecContext(ctx, deleteTenantAccessStmt, args...)
 
-	return persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Delete, "while deleting tenant access record to '%s' table", m2mTable)
+	return persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Delete, "while deleting tenant access record from '%s' table", m2mTable)
 }

@@ -3,6 +3,8 @@ package fetchrequest
 import (
 	"database/sql"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity represents a fetch request.
@@ -24,12 +26,16 @@ func (e *Entity) GetID() string {
 	return e.ID
 }
 
-// GetParentID returns the ID of the parent.
-func (e *Entity) GetParentID() string {
+// GetParent returns the parent type and the parent ID of the entity.
+func (e *Entity) GetParent(currentResourceType resource.Type) (resource.Type, string) {
 	if e.SpecID.Valid {
-		return e.SpecID.String
+		if currentResourceType == resource.APISpecFetchRequest {
+			return resource.APISpecification, e.SpecID.String
+		} else {
+			return resource.EventSpecification, e.SpecID.String
+		}
 	}
-	return e.DocumentID.String
+	return resource.Document, e.DocumentID.String
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

@@ -61,20 +61,10 @@ func TestRepository_Delete(t *testing.T) {
 		Name: "Application Delete",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2 AND owner = true))`),
-				Args:     []driver.Value{givenID(), givenTenant()},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id"}).AddRow(givenID())}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id"}).AddRow(givenID()).AddRow("secondID")}
-				},
-			},
-			{
-				Query:       regexp.QuoteMeta(`DELETE FROM tenant_applications WHERE id IN ($1)`),
-				Args:        []driver.Value{givenID()},
-				ValidResult: sqlmock.NewResult(-1, 1),
+				Query:         regexp.QuoteMeta(`DELETE FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2 AND owner = true))`),
+				Args:          []driver.Value{givenID(), givenTenant()},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
 			},
 		},
 		ConverterMockProvider: func() testdb.Mock {
@@ -82,7 +72,6 @@ func TestRepository_Delete(t *testing.T) {
 		},
 		RepoConstructorFunc: application.NewRepository,
 		MethodArgs:          []interface{}{givenTenant(), givenID()},
-		IsTopLeveEntity:     true,
 	}
 
 	suite.Run(t)
@@ -96,10 +85,6 @@ func TestRepository_Delete(t *testing.T) {
 			OperationType:     operation.OperationTypeDelete,
 			OperationCategory: "unregisterApplication",
 		}
-		ctx = operation.SaveToContext(ctx, &[]*operation.Operation{op})
-
-		deletedAt := time.Now()
-
 		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appModel.DeletedAt = &deletedAt
 		entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
@@ -289,15 +274,11 @@ func TestRepository_Create(t *testing.T) {
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 			{
-				Query:       regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? )`),
+				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`),
 				Args:        []driver.Value{givenTenant(), givenID(), true},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityConverter{}
-		},
-		RepoConstructorFunc: application.NewRepository,
 		ModelEntity:         appModel,
 		DBEntity:            appEntity,
 		NilModelEntity:      nilAppModel,
@@ -336,15 +317,10 @@ func TestRepository_Create(t *testing.T) {
 			WithArgs(givenID(), nil, appModel.SystemNumber, appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error, repo.NewNullableStringFromJSONRawMessage(appModel.CorrelationIDs)).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? )`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
 			WithArgs(givenTenant(), givenID(), true).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		ctx = persistence.SaveToContext(ctx, db)
-
-		repo := application.NewRepository(mockConverter)
-
-		// WHEN
 		err := repo.Create(ctx, givenTenant(), appModel)
 
 		// then
@@ -388,7 +364,6 @@ func TestRepository_Upsert(t *testing.T) {
 	upsertStmt := regexp.QuoteMeta(`INSERT INTO public.applications ( id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids ) 
 	VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) 
 	ON CONFLICT ( system_number ) 
-	DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, status_condition=EXCLUDED.status_condition, provider_name=EXCLUDED.provider_name, base_url=EXCLUDED.base_url, labels=EXCLUDED.labels 
 	WHERE (public.applications.id IN (SELECT id FROM tenant_applications WHERE tenant_id = ? AND owner = true))`)
 
 	var nilAppModel *model.Application
@@ -449,15 +424,11 @@ func TestRepository_Upsert(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "Owner access is needed for resource modification")
 	})
-}
+=======
 
 func TestRepository_GetByID(t *testing.T) {
 	entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 	suite := testdb.RepoGetTestSuite{
-		Name: "Get Application",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2))`),
 				Args:     []driver.Value{givenID(), givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -689,7 +660,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 													WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $4)) AND "key" = $5 AND "value" ?| array[$6]
 													UNION SELECT "app_id" FROM public.labels
 													WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $7)) AND "key" = $8 AND "value" ?| array[$9]
-													EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $10)) AND "key" = $11 AND "value" @> $12
+													EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $10)) AND "key" = $11 AND "value" @> $12 
 													EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $13)) AND "key" = $14 AND "value" @> $15)
 												AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $16)) ORDER BY id LIMIT 2 OFFSET 0`),
 				Args:     []driver.Value{givenTenant(), model.ScenariosKey, "Java", givenTenant(), model.ScenariosKey, "Go", givenTenant(), model.ScenariosKey, "Elixir", givenTenant(), "foo", strconv.Quote("bar"), givenTenant(), "foo", strconv.Quote("baz"), givenTenant()},
@@ -709,11 +680,11 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 													WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $4)) AND "key" = $5 AND "value" ?| array[$6]
 													UNION SELECT "app_id" FROM public.labels
 													WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $7)) AND "key" = $8 AND "value" ?| array[$9]
+<<<<<<< HEAD
 													EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $10)) AND "key" = $11 AND "value" @> $12
-													EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $13)) AND "key" = $14 AND "value" @> $15)
-												AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $16))`),
+=======
+													EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $10)) AND "key" = $11 AND "value" @> $12 
 				Args:     []driver.Value{givenTenant(), model.ScenariosKey, "Java", givenTenant(), model.ScenariosKey, "Go", givenTenant(), model.ScenariosKey, "Elixir", givenTenant(), "foo", strconv.Quote("bar"), givenTenant(), "foo", strconv.Quote("baz"), givenTenant()},
-				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(2)}
 				},

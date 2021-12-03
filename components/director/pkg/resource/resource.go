@@ -110,39 +110,10 @@ var tenantAccessTable = map[Type]string{
 	RuntimeWebhook:        "runtime_webhooks_tenants",
 }
 
-var parentRelation = map[Type]Type{
-	RuntimeContext:        Runtime,
-	RuntimeLabel:          Runtime,
-	RuntimeContextLabel:   RuntimeContext,
-	ApplicationLabel:      Application,
-	Bundle:                Application,
-	Package:               Application,
-	Product:               Application,
-	Vendor:                Application,
-	Tombstone:             Application,
-	DocFetchRequest:       Document,
-	APISpecFetchRequest:   APISpecification,
-	EventSpecFetchRequest: EventSpecification,
-	APISpecification:      API,
-	EventSpecification:    EventDefinition,
-	Document:              Bundle,
-	BundleInstanceAuth:    Bundle,
-	API:                   Application,
-	EventDefinition:       Application,
-	AppWebhook:            Application,
-	RuntimeWebhook:        Runtime,
-}
-
 // TenantAccessTable returns the table / view with tenant accesses of the given type.
 func (t Type) TenantAccessTable() (string, bool) {
 	tbl, ok := tenantAccessTable[t]
 	return tbl, ok
-}
-
-// Parent returns the parent type of the given type.
-func (t Type) Parent() (Type, bool) {
-	parent, ok := parentRelation[t]
-	return parent, ok
 }
 
 // TopLevelEntities is a set of entities that has a many-to-many relationship with the tenants.
