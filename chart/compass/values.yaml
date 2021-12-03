@@ -79,7 +79,7 @@ global:
       version: "PR-2082"
     director:
       dir:
-      version: "PR-2119"
+      version: "PR-2123"
     gateway:
       dir:
       version: "PR-2077"
