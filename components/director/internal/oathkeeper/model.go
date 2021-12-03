@@ -3,12 +3,15 @@ package oathkeeper
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -91,11 +94,18 @@ type ReqBody struct {
 	Header  http.Header            `json:"header"`
 }
 
-// ReqData represents incomming request with parsed body and its header
+// ReqData represents incoming request with parsed body and its header
 type ReqData struct {
 	Body   ReqBody
 	Header http.Header
 	ctx    context.Context
+}
+
+// ExtraData represents the extra fields that might be provided in the incoming request
+type ExtraData struct {
+	InternalConsumerID string
+	ConsumerType       model.SystemAuthReferenceObjectType
+	AccessLevel        tenantEntity.Type
 }
 
 // NewReqData missing godoc
@@ -236,4 +246,51 @@ func (d *ReqData) ExtractCoordinates() (authenticator.Coordinates, bool, error) 
 	}
 
 	return coords, true, nil
+}
+
+// GetAccessLevelFromExtra gets access level from body extra if it exists.
+func (d *ReqData) GetAccessLevelFromExtra() tenantEntity.Type {
+	if d.Body.Extra == nil {
+		return ""
+	}
+	if _, found := d.Body.Extra[cert.AccessLevelExtraField]; !found {
+		return ""
+	}
+	return tenantEntity.Type(fmt.Sprint(d.Body.Extra[cert.AccessLevelExtraField]))
+}
+
+// GetConsumerTypeFromExtra gets consumer type from body extra if it exists.
+func (d *ReqData) GetConsumerTypeFromExtra() model.SystemAuthReferenceObjectType {
+	if d.Body.Extra == nil {
+		return ""
+	}
+	consumerType, found := d.Body.Extra[cert.ConsumerTypeExtraField]
+	if !found {
+		return ""
+	}
+	return model.SystemAuthReferenceObjectType(fmt.Sprint(consumerType))
+}
+
+// GetInternalConsumerIDFromExtra gets internal consumer id from body extra if it exists.
+func (d *ReqData) GetInternalConsumerIDFromExtra() string {
+	if d.Body.Extra == nil {
+		return ""
+	}
+	if _, found := d.Body.Extra[cert.InternalConsumerIDField]; !found {
+		return ""
+	}
+	return fmt.Sprint(d.Body.Extra[cert.InternalConsumerIDField])
+}
+
+// GetExtraDataWithDefaults gets body extra.
+func (d *ReqData) GetExtraDataWithDefaults() ExtraData {
+	consumerType := d.GetConsumerTypeFromExtra()
+	if consumerType == "" {
+		consumerType = model.RuntimeReference
+	}
+	return ExtraData{
+		InternalConsumerID: d.GetInternalConsumerIDFromExtra(),
+		ConsumerType:       consumerType,
+		AccessLevel:        d.GetAccessLevelFromExtra(),
+	}
 }
