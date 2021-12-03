@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	clientCredentialScopesPrefix     = "clientCredentialsRegistrationScopes"
+	scopesPerConsumerTypePrefix      = "scopesPerConsumerType"
 	clientCredentialGrantTypesPrefix = "clientCredentialsRegistrationGrantTypes"
 )
 
@@ -190,5 +190,5 @@ func (s *service) updateClient(ctx context.Context, clientID string, details *Cl
 func (s *service) buildPath(objType model.SystemAuthReferenceObjectType) string {
 	lowerCaseType := strings.ToLower(string(objType))
 	transformedObjType := strings.ReplaceAll(lowerCaseType, " ", "_")
-	return fmt.Sprintf("%s.%s", clientCredentialScopesPrefix, transformedObjType)
+	return fmt.Sprintf("%s.%s", scopesPerConsumerTypePrefix, transformedObjType)
 }
