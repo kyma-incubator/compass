@@ -10,8 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/utils"
@@ -55,7 +53,7 @@ func TestPrepareHttpClient(t *testing.T) {
 	var (
 		cfg              = &sb_http.Config{Timeout: time.Second, SkipSSLValidation: true}
 		ts               = httptest.NewUnstartedServer(testServerHandlerFunc(t))
-		basicCredentials = &graphql.BasicCredentialData{
+		basicCredentials = &auth.BasicCredentials{
 			Username: "testUser",
 			Password: "testPass",
 		}
