@@ -113,12 +113,7 @@ func unmarshalMappings(mappingsConfig string) ([]subjectConsumerTypeMapping, err
 }
 
 func subjectsMatch(actualSubject, expectedSubject string) bool {
-	actualSubjectComponents := strings.Split(actualSubject, ",")
 	expectedSubjectComponents := strings.Split(expectedSubject, ",")
-
-	if len(actualSubjectComponents) != len(expectedSubjectComponents) {
-		return false
-	}
 
 	for _, expectedSubjectComponent := range expectedSubjectComponents {
 		if !strings.Contains(actualSubject, strings.TrimSpace(expectedSubjectComponent)) {

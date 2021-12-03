@@ -111,20 +111,18 @@ func DecodeAndParseCerts(t *testing.T, crtResponse *model.CrtResponse) model.Dec
 
 // ClientCertPair returns a decoded client certificate and key pair.
 func ClientCertPair(t *testing.T, certBytes, keyBytes []byte) (*rsa.PrivateKey, [][]byte) {
-	crtBytes := DecodeBase64Cert(t, string(certBytes))
+	clientCrtPem, _ := pem.Decode(certBytes)
+	require.NotNil(t, clientCrtPem)
 
-	clientCertificateDecoded, _ := pem.Decode(crtBytes)
-	require.NotNil(t, clientCertificateDecoded)
+	clientCertificate, e := x509.ParseCertificate(clientCrtPem.Bytes)
+	require.NoError(t, e)
 
-	clientCertificate, err := x509.ParseCertificate(clientCertificateDecoded.Bytes)
-	require.NoError(t, err)
+	keyPemBlock, _ := pem.Decode(keyBytes)
+	require.NotNil(t, keyPemBlock)
 
-	keyDecoded, _ := pem.Decode(keyBytes)
-	require.NotNil(t, keyDecoded)
-
-	caPrivateKey, err := x509.ParsePKCS1PrivateKey(keyDecoded.Bytes)
+	caPrivateKey, err := x509.ParsePKCS1PrivateKey(keyPemBlock.Bytes)
 	if err != nil {
-		caPrivateKeyPKCS8, err := x509.ParsePKCS8PrivateKey(keyDecoded.Bytes)
+		caPrivateKeyPKCS8, err := x509.ParsePKCS8PrivateKey(keyPemBlock.Bytes)
 		require.NoError(t, err)
 		var ok bool
 		caPrivateKey, ok = caPrivateKeyPKCS8.(*rsa.PrivateKey)

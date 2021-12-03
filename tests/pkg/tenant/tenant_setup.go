@@ -187,7 +187,7 @@ func (mgr *TestTenantsManager) Init() {
 		},
 		TestIntegrationSystemSubaccount: {
 			Name:           TestIntegrationSystemSubaccount,
-			ExternalTenant: "7f8851be-ebcd-45b5-b441-8faf07c6ff88",
+			ExternalTenant: "123e4567-e89b-12d3-a456-426614174001",
 			ProviderName:   testProvider,
 			Type:           Subaccount,
 			Status:         Active,
@@ -197,9 +197,8 @@ func (mgr *TestTenantsManager) Init() {
 			Name:           TestIntegrationSystemManagedAccount,
 			ExternalTenant: "7e8ab2e3-3bb4-42e3-92b2-4e0bf48559d3",
 			ProviderName:   testProvider,
-			Type:           Subaccount,
+			Type:           Account,
 			Status:         Active,
-			Parent:         testDefaultTenant,
 		},
 	}
 	mgr.Cleanup()

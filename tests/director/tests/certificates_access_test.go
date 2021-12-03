@@ -19,16 +19,9 @@ func TestIntegrationSystemAccess(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("TestDirectorCertificateAccess Integration System consumer: manage account tenant entities", func(t *testing.T) {
 		ctx := context.Background()
-
-		// defaultTenantId is the parent of the subaccountID
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
-		//subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemSubaccount)
 
-		// Register integration system
-		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, defaultTenantId, "self-registered-integration-system")
-		defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, defaultTenantId, intSys)
-		require.NoError(t, err)
-		require.NotEmpty(t, intSys.ID)
+
 
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
@@ -37,27 +30,27 @@ func TestIntegrationSystemAccess(stdT *testing.T) {
 		applicationName := "int-sys-managed-app"
 		intSysManagedTenant := tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedAccount)
 
-		t.Log(fmt.Sprintf("Trying to create applications in account tenant %s via client certificate of integration system with ID %s", intSysManagedTenant, intSys.ID))
+		t.Log(fmt.Sprintf("Trying to create applications in account tenant %s", intSysManagedTenant))
 		app, err := fixtures.RegisterApplication(t, ctx, directorCertSecuredClient, applicationName, intSysManagedTenant)
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, intSysManagedTenant, &app)
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 		require.Equal(t, applicationName, app.Name)
 
-		t.Log(fmt.Sprintf("Trying to list applications in account tenant %s via client certificate of integration system with ID %s", intSysManagedTenant, intSys.ID))
+		t.Log(fmt.Sprintf("Trying to list applications in account tenant %s", intSysManagedTenant))
 		apps := fixtures.GetApplicationPage(t, ctx, directorCertSecuredClient, intSysManagedTenant)
 		require.Len(t, apps.Data, 1)
 		require.Equal(t, applicationName, apps.Data[0].Name)
 
-		t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s via client certificate of integration system with ID %s", intSysManagedTenant, intSys.ID))
-		rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, intSysManagedTenant, &graphql.RuntimeInput{
-			Name: "test-runtime",
-		})
+		t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s", intSysManagedTenant))
+		rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, intSysManagedTenant, &graphql.RuntimeInput{Name: "managed-runtime",})
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, intSysManagedTenant, &rt)
 		require.NoError(t, err)
 		require.NotEmpty(t, rt.ID)
 
-		t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate of integration system with ID %s", intSysManagedTenant, intSys.ID))
+		t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate", intSysManagedTenant))
 		at, err := fixtures.CreateApplicationTemplate(t, ctx, directorCertSecuredClient, defaultTenantId, "test-app-template")
+		defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, intSysManagedTenant, &at)
 		require.NoError(t, err)
 		require.NotEmpty(t, at.ID)
 	})
@@ -65,42 +58,31 @@ func TestIntegrationSystemAccess(stdT *testing.T) {
 	t.Run("TestDirectorCertificateAccess Integration System consumer: cannot manage entities in non-managed tenant types", func(t *testing.T) {
 		ctx := context.Background()
 
-		// defaultTenantId is the parent of the subaccountID
-		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
-		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemSubaccount)
-
 		// Build graphql director client configured with certificate
-		clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key, subaccountID)
+		clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
 
-		// Register integration system
-		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, defaultTenantId, "self-registered-integration-system")
-		defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, defaultTenantId, intSys)
-		require.NoError(t, err)
-		require.NotEmpty(t, intSys.ID)
+		nonManagedTenant := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
-		applicationName := "int-sys-managed-app"
-		intSysManagedTenant := tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedAccount)
-
-		t.Log(fmt.Sprintf("Trying to create applications in subaccount tenant %s via client certificate of integration system with ID %s", intSysManagedTenant, intSys.ID))
-		app, err := fixtures.RegisterApplication(t, ctx, directorCertSecuredClient, applicationName, intSysManagedTenant)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, intSysManagedTenant, &app)
+		t.Log(fmt.Sprintf("Trying to create applications in subaccount tenant %s", nonManagedTenant))
+		app, err := fixtures.RegisterApplication(t, ctx, directorCertSecuredClient, "non-managed-app", nonManagedTenant)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, nonManagedTenant, &app)
 		require.Error(t, err)
 
-		t.Log(fmt.Sprintf("Trying to list applications in subaccount tenant %s via client certificate of integration system with ID %s", intSysManagedTenant, intSys.ID))
+		t.Log(fmt.Sprintf("Trying to list applications in subaccount tenant %s", nonManagedTenant))
 		getAppReq := fixtures.FixGetApplicationsRequestWithPagination()
 		apps := graphql.ApplicationPage{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, intSysManagedTenant, getAppReq, &apps)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, nonManagedTenant, getAppReq, &apps)
 		require.Error(t, err)
 
-		t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s via client certificate of integration system with ID %s", intSysManagedTenant, intSys.ID))
-		_, err = fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, intSysManagedTenant, &graphql.RuntimeInput{
-			Name: "test-runtime",
-		})
+		t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s", nonManagedTenant))
+		rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, nonManagedTenant, &graphql.RuntimeInput{Name: "non-managed-runtime",})
+		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, nonManagedTenant, &rt)
 		require.Error(t, err)
 
-		t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate of integration system with ID %s", intSysManagedTenant, intSys.ID))
-		_, err = fixtures.CreateApplicationTemplate(t, ctx, directorCertSecuredClient, defaultTenantId, "test-app-template")
+		t.Log(fmt.Sprintf("Trying to create application template in account tenant %s", nonManagedTenant))
+		at, err := fixtures.CreateApplicationTemplate(t, ctx, directorCertSecuredClient, nonManagedTenant, "non-managed-app-template")
+		defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, nonManagedTenant, &at)
 		require.Error(t, err)
 	})
 }
