@@ -6,13 +6,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-
-	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
-
-	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
-
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -46,9 +39,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"

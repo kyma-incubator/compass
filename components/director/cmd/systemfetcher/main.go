@@ -7,14 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-	gcli "github.com/machinebox/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -34,9 +26,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
