@@ -21,8 +21,6 @@ func TestIntegrationSystemAccess(stdT *testing.T) {
 		ctx := context.Background()
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
 
-
-
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain)

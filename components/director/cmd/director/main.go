@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/internal/info"
@@ -434,17 +433,11 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
+	intSysConverter := integrationsystem.NewConverter()
+	intSysRepo := integrationsystem.NewRepository(intSysConverter)
+
 	consumerExistsCheckers := map[model.SystemAuthReferenceObjectType]func(ctx context.Context, id string) (bool, error){
-		model.IntegrationSystemReference: func(ctx context.Context, id string) (bool, error) {
-			_, err := systemAuthSvc.GetGlobal(ctx, id)
-			if err != nil {
-				if apperrors.IsNotFoundError(err) {
-					return false, nil
-				}
-				return false, err
-			}
-			return true, nil
-		},
+		model.IntegrationSystemReference: intSysRepo.Exists,
 	}
 
 	objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
