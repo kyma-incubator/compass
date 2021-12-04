@@ -59,7 +59,7 @@ type config struct {
 	ClientTimeout     time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
-	CertLoaderConfig certloader.Config
+	ExternalClientCertSecret string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET"`
 }
 
 func main() {
@@ -89,7 +89,7 @@ func main() {
 		},
 	}
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	certCache, err := certloader.StartCertLoader(ctx, cfg.ExternalClientCertSecret)
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)

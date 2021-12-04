@@ -440,14 +440,13 @@ global:
       externalClientCertSecret:
         name: "external-client-certificate"
         namespace: compass-system
-        certKey: "tls.crt"
-        keyKey: "tls.key"
+        keyKey: tls.key
+        crtKey: tls.crt
     rotationCronjob:
       name: "external-certificate-rotation"
       schedule: "*/1 * * * *" # Executes every minute
       certValidity: "7"
       clientCertRetryAttempts: "8"
-    isLocalSetup: false
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local

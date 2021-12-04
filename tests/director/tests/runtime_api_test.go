@@ -537,7 +537,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(stdT *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", protectedConsumerSubaccountIdsLabel))
+		require.Contains(t, err.Error(), "could not set protected label key consumer_subaccount_ids")
 		require.Empty(t, protectedLabel)
 
 		t.Log("Successfully get runtime")

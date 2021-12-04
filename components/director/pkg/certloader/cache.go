@@ -10,25 +10,25 @@ type Cache interface {
 	Get() *tls.Certificate
 }
 
-type certificateCache struct {
+type certificatesCache struct {
 	tlsCert *tls.Certificate
 	mutex   sync.RWMutex
 }
 
 // NewCertificateCache is responsible for in-memory managing of a TLS certificate
-func NewCertificateCache() *certificateCache {
-	return &certificateCache{}
+func NewCertificateCache() *certificatesCache {
+	return &certificatesCache{}
 }
 
 // Get returns a parsed TLS certificate
-func (cc *certificateCache) Get() *tls.Certificate {
+func (cc *certificatesCache) Get() *tls.Certificate {
 	cc.mutex.RLock()
 	defer cc.mutex.RUnlock()
 
 	return cc.tlsCert
 }
 
-func (cc *certificateCache) put(tlsCert *tls.Certificate) {
+func (cc *certificatesCache) put(tlsCert *tls.Certificate) {
 	cc.mutex.Lock()
 	defer cc.mutex.Unlock()
 

@@ -53,5 +53,5 @@ subjects:
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: Role
-  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  name: director-external-client-certificate
   apiGroup: rbac.authorization.k8s.io

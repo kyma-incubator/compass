@@ -62,7 +62,7 @@ type config struct {
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 	ClientTimeout           time.Duration `envconfig:"default=60s"`
 
-	CertLoaderConfig certloader.Config
+	ExternalClientCertSecret string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET"`
 }
 
 type appTemplateConfig struct {
@@ -100,7 +100,7 @@ func main() {
 		log.D().Fatal(err)
 	}
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	certCache, err := certloader.StartCertLoader(ctx, cfg.ExternalClientCertSecret)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize certificate loader"))
 	}
