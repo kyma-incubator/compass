@@ -73,7 +73,7 @@ func (r *repository) Create(ctx context.Context, def model.LabelDefinition) erro
 }
 
 // Upsert missing godoc
-func (r *repository) Upsert(ctx context.Context, tenant string, label model.LabelDefinition) error {
+func (r *repository) Upsert(ctx context.Context, label model.LabelDefinition) error {
 	labelEntity, err := r.conv.ToEntity(label)
 	if err != nil {
 		return errors.Wrap(err, "while creating label definition entity from model")

@@ -698,7 +698,7 @@ func TestRepository_Upsert(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		// WHEN
-		err := labelRepo.Upsert(ctx, tnt, labeldefModel)
+		err := labelRepo.Upsert(ctx, labeldefModel)
 		// THEN
 		require.NoError(t, err)
 	})
@@ -716,7 +716,7 @@ func TestRepository_Upsert(t *testing.T) {
 
 		// WHEN
 		ctx := context.TODO()
-		err := labelRepo.Upsert(ctx, "tenant", labeldefModel)
+		err := labelRepo.Upsert(ctx, labeldefModel)
 		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())

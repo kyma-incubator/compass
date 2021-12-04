@@ -17,7 +17,7 @@ import (
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
-	Upsert(ctx context.Context, tenant string, def model.LabelDefinition) error
+	Upsert(ctx context.Context, def model.LabelDefinition) error
 	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 	Update(ctx context.Context, def model.LabelDefinition) error
 	Exists(ctx context.Context, tenant string, key string) (bool, error)
@@ -161,10 +161,10 @@ func (s *service) Update(ctx context.Context, def model.LabelDefinition) error {
 }
 
 // Upsert creates or updates label definitions depending on its existence
-func (s service) Upsert(ctx context.Context, tenant string, def model.LabelDefinition) error {
+func (s service) Upsert(ctx context.Context, def model.LabelDefinition) error {
 	def.ID = s.uidService.Generate()
 
-	if err := s.repo.Upsert(ctx, tenant, def); err != nil {
+	if err := s.repo.Upsert(ctx, def); err != nil {
 		return errors.Wrapf(err, "while upserting Label Definition with id %s and key %s", def.ID, def.Key)
 	}
 	log.C(ctx).Debugf("Successfully upserted Label Definition with id %s and key %s", def.ID, def.Key)

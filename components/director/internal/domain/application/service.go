@@ -366,37 +366,37 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 
 // Upsert missing godoc
 func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput) error {
-	appTenant, err := tenant.LoadFromContext(ctx)
+	tenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
 	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (err error) {
-		if err = s.appRepo.Upsert(ctx, appTenant, application); err != nil {
+		if err = s.appRepo.Upsert(ctx, tenant, application); err != nil {
 			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
 		}
 		return
 	}
 
-	return s.genericUpsert(ctx, appTenant, in, upserterFunc)
+	return s.genericUpsert(ctx, tenant, in, upserterFunc)
 }
 
 // UpsertFromTemplate missing godoc
 func (s *service) UpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error {
-	appTenant, err := tenant.LoadFromContext(ctx)
+	tenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
 	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (err error) {
 		application.ApplicationTemplateID = appTemplateID
-		if err = s.appRepo.Upsert(ctx, appTenant, application); err != nil {
+		if err = s.appRepo.Upsert(ctx, tenant, application); err != nil {
 			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
 		}
 		return
 	}
 
-	return s.genericUpsert(ctx, appTenant, in, upserterFunc)
+	return s.genericUpsert(ctx, tenant, in, upserterFunc)
 }
 
 // Delete missing godoc

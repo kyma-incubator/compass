@@ -869,7 +869,7 @@ func TestService_Upsert(t *testing.T) {
 			Name: "Success",
 			LabelDefRepoFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("Upsert", ctx, testTenant, labelDefinition).Return(nil).Once()
+				repo.On("Upsert", ctx, labelDefinition).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -883,7 +883,7 @@ func TestService_Upsert(t *testing.T) {
 			Name: "Error when labelDefinition repository fails",
 			LabelDefRepoFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("Upsert", ctx, testTenant, labelDefinition).Return(testErr).Once()
+				repo.On("Upsert", ctx, labelDefinition).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -906,7 +906,7 @@ func TestService_Upsert(t *testing.T) {
 			svc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentLister, nil, uidService, defaultScenarioEnabled)
 
 			// WHEN
-			err := svc.Upsert(ctx, testTenant, labelDefinition)
+			err := svc.Upsert(ctx, labelDefinition)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
