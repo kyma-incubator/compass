@@ -46,11 +46,9 @@ func (tw *testWatch) ResultChan() <-chan watch.Event {
 
 func Test_CertificateLoaderWatch(t *testing.T) {
 	config := Config{
-		ExternalClientCert: ExternalClientCert{
-			Secret:  "namespace/resource-name",
-			CertKey: "tls.crt",
-			KeyKey:  "tls.key",
-		},
+		ExternalClientCertSecret:  "namespace/resource-name",
+		ExternalClientCertCertKey: "tls.crt",
+		ExternalClientCertKeyKey:  "tls.key",
 	}
 
 	t.Run("should insert secret data on add event", func(t *testing.T) {
@@ -250,52 +248,11 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 	})
 }
 
-func Test_LocalCertificateLoader(t *testing.T) {
-	ctx := context.Background()
-	config := Config{
-		ExternalClientCert: ExternalClientCert{
-			Secret:  "namespace/resource-name",
-			CertKey: "tls.crt",
-			KeyKey:  "tls.key",
-		},
-		IsLocalSetup: true,
-	}
-
-	t.Run("In local setup return empty cache if certificate and key are not provided", func(t *testing.T) {
-		// WHEN
-		certCache, err := StartCertLoader(ctx, config)
-		tlsCert := certCache.Get()
-
-		// THEN
-		require.Empty(t, certCache)
-		require.Nil(t, tlsCert)
-		require.NoError(t, err)
-	})
-
-	t.Run("In local setup should return populated certificate cache with the provided certificate and key", func(t *testing.T) {
-		// GIVEN
-		certBytes, keyBytes := generateTestCertAndKey(t, testCN)
-		config.Cert = string(certBytes)
-		config.Key = string(keyBytes)
-
-		// WHEN
-		certCache, err := StartCertLoader(ctx, config)
-		tlsCert := certCache.Get()
-
-		// THEN
-		require.NotEmpty(t, certCache)
-		require.NotNil(t, tlsCert)
-		require.NoError(t, err)
-	})
-}
-
 func Test_CertificateParsing(t *testing.T) {
 	ctx := context.Background()
 	config := Config{
-		ExternalClientCert: ExternalClientCert{
-			CertKey: "tls.crt",
-			KeyKey:  "tls.key",
-		},
+		ExternalClientCertCertKey: "tls.crt",
+		ExternalClientCertKeyKey:  "tls.key",
 	}
 	certBytes, keyBytes := generateTestCertAndKey(t, testCN)
 	invalidCert := "-----BEGIN CERTIFICATE-----\naZOCUHlJ1wKwnYiLnOofB1xyIUZhVLaJy7Ob\n-----END CERTIFICATE-----\n"

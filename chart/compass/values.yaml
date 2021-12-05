@@ -440,8 +440,8 @@ global:
       externalClientCertSecret:
         name: "external-client-certificate"
         namespace: compass-system
-        certKey: "tls.crt"
-        keyKey: "tls.key"
+        certKey: tls.crt
+        keyKey: tls.key
     rotationCronjob:
       name: "external-certificate-rotation"
       schedule: "*/1 * * * *" # Executes every minute

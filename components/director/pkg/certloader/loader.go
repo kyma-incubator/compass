@@ -19,7 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-const certsListLoaderCorrelationID = "cert-loader"
+const certsListLoaderCorrelationID = "cert-loader-id"
 
 // Loader provide mechanism to load certificate data into in-memory storage
 type Loader interface {
@@ -32,13 +32,9 @@ type Manager interface {
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
 
-type localCertificateLoader struct {
-	config    Config
-	certCache *certificateCache
-}
-
 type certificateLoader struct {
-	localCertificateLoader
+	config            Config
+	certCache         *certificateCache
 	secretManager     Manager
 	secretName        string
 	reconnectInterval time.Duration
@@ -48,39 +44,17 @@ type certificateLoader struct {
 // and update in-memory cache with that certificate if there is any change
 func NewCertificateLoader(config Config, certCache *certificateCache, secretManager Manager, secretName string, reconnectInterval time.Duration) Loader {
 	return &certificateLoader{
-		localCertificateLoader: localCertificateLoader{
-			config:    config,
-			certCache: certCache,
-		},
+		config:            config,
+		certCache:         certCache,
 		secretManager:     secretManager,
 		secretName:        secretName,
 		reconnectInterval: reconnectInterval,
 	}
 }
 
-func newLocalCertificateLoader(certCache *certificateCache, config Config) Loader {
-	return &localCertificateLoader{
-		certCache: certCache,
-		config:    config,
-	}
-}
-
 // StartCertLoader prepares and run certificate loader goroutine
 func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error) {
-	certCache := NewCertificateCache()
-
-	// If is local setup(only director) and there are certificate and key provided in the environment, populate cert cache with them.
-	// If certificate and key are not provided return empty cache.
-	if certLoaderConfig.IsLocalSetup {
-		if certLoaderConfig.Cert != "" && certLoaderConfig.Key != "" {
-			localCertLoader := newLocalCertificateLoader(certCache, certLoaderConfig)
-			localCertLoader.Run(ctx)
-			return certCache, nil
-		}
-		return certCache, nil
-	}
-
-	parsedCertSecret, err := namespacedname.Parse(certLoaderConfig.ExternalClientCert.Secret)
+	parsedCertSecret, err := namespacedname.Parse(certLoaderConfig.ExternalClientCertSecret)
 	if err != nil {
 		return nil, err
 	}
@@ -89,31 +63,21 @@ func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error
 	if err != nil {
 		return nil, err
 	}
+
+	certCache := NewCertificateCache()
 	certLoader := NewCertificateLoader(certLoaderConfig, certCache, k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace), parsedCertSecret.Name, time.Second)
 	go certLoader.Run(ctx)
 
 	return certCache, nil
 }
 
-// Run populates the certificate cache on local setup with provided certificate and key
-func (lcl *localCertificateLoader) Run(ctx context.Context) {
-	ctx = initializeLoggerContext(ctx)
-	certSecretData := map[string][]byte{lcl.config.CertKey: []byte(lcl.config.Cert), lcl.config.KeyKey: []byte(lcl.config.Key)}
-	tlsCert, err := parseCertificate(ctx, certSecretData, lcl.config)
-	log.C(ctx).Error(err)
-	lcl.certCache.put(tlsCert)
-}
-
 // Run uses kubernetes watch mechanism to listen for resource changes and update certificate cache
 func (cl *certificateLoader) Run(ctx context.Context) {
-	ctx = initializeLoggerContext(ctx)
-	cl.startKubeWatch(ctx)
-}
-
-func initializeLoggerContext(ctx context.Context) context.Context {
 	entry := log.C(ctx)
 	entry = entry.WithField(log.FieldRequestID, certsListLoaderCorrelationID)
-	return log.ContextWithLogger(ctx, entry)
+	ctx = log.ContextWithLogger(ctx, entry)
+
+	cl.startKubeWatch(ctx)
 }
 
 func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
@@ -181,8 +145,8 @@ func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan wa
 
 func parseCertificate(ctx context.Context, secretData map[string][]byte, config Config) (*tls.Certificate, error) {
 	log.C(ctx).Info("Parsing provided certificate data...")
-	certBytes := secretData[config.CertKey]
-	privateKeyBytes := secretData[config.KeyKey]
+	certBytes := secretData[config.ExternalClientCertCertKey]
+	privateKeyBytes := secretData[config.ExternalClientCertKeyKey]
 
 	if certBytes == nil || privateKeyBytes == nil {
 		return nil, errors.New("There is no certificate data provided")
