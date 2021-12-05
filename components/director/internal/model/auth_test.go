@@ -11,7 +11,7 @@ import (
 var accessStrategy = "accessStrategy"
 
 func TestAuthInput_ToAuth(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.AuthInput
@@ -72,7 +72,7 @@ func TestAuthInput_ToAuth(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToAuth()
 
 			// then
@@ -82,7 +82,7 @@ func TestAuthInput_ToAuth(t *testing.T) {
 }
 
 func TestCredentialDataInput_ToCredentialData(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.CredentialDataInput
@@ -121,7 +121,7 @@ func TestCredentialDataInput_ToCredentialData(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToCredentialData()
 
 			// then
@@ -131,7 +131,7 @@ func TestCredentialDataInput_ToCredentialData(t *testing.T) {
 }
 
 func TestBasicCredentialDataInput_ToBasicCredentialData(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.BasicCredentialDataInput
@@ -162,7 +162,7 @@ func TestBasicCredentialDataInput_ToBasicCredentialData(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToBasicCredentialData()
 
 			// then
@@ -172,7 +172,7 @@ func TestBasicCredentialDataInput_ToBasicCredentialData(t *testing.T) {
 }
 
 func TestOAuthCredentialDataInput_ToOAuthCredentialData(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.OAuthCredentialDataInput
@@ -205,7 +205,7 @@ func TestOAuthCredentialDataInput_ToOAuthCredentialData(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToOAuthCredentialData()
 
 			// then
@@ -215,7 +215,7 @@ func TestOAuthCredentialDataInput_ToOAuthCredentialData(t *testing.T) {
 }
 
 func TestCredentialRequestAuthInput_ToCredentialRequestAuth(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.CredentialRequestAuthInput
@@ -248,7 +248,7 @@ func TestCredentialRequestAuthInput_ToCredentialRequestAuth(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToCredentialRequestAuth()
 
 			// then
@@ -258,7 +258,7 @@ func TestCredentialRequestAuthInput_ToCredentialRequestAuth(t *testing.T) {
 }
 
 func TestCSRFTokenCredentialRequestAuthInput_ToCSRFTokenCredentialRequestAuth(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.CSRFTokenCredentialRequestAuthInput
@@ -309,7 +309,7 @@ func TestCSRFTokenCredentialRequestAuthInput_ToCSRFTokenCredentialRequestAuth(t 
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToCSRFTokenCredentialRequestAuth()
 
 			// then

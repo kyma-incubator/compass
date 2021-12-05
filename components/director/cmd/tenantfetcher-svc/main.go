@@ -202,12 +202,12 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.DefaultScenarioEnabled)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, cfg.ProtectedLabelPattern)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, cfg.ProtectedLabelPattern, tenantSvc)
 
 	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc, cfg.TenantProvider)
-	subscriber := tenantfetcher.NewSubscriber(provisioner, runtimeSvc, labelSvc, uidSvc, cfg.SubscriptionProviderLabelKey, cfg.ConsumerSubaccountIDsLabelKey)
+	subscriber := tenantfetcher.NewSubscriber(provisioner, runtimeSvc, labelSvc, uidSvc, tenantSvc, cfg.SubscriptionProviderLabelKey, cfg.ConsumerSubaccountIDsLabelKey)
 	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, transact, cfg)
 
 	log.C(ctx).Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)

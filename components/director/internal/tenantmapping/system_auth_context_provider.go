@@ -226,5 +226,5 @@ func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ct
 func buildPath(refObjectType model.SystemAuthReferenceObjectType) string {
 	lowerCaseType := strings.ToLower(string(refObjectType))
 	transformedObjType := strings.ReplaceAll(lowerCaseType, " ", "_")
-	return fmt.Sprintf("%s.%s", clientCredentialScopesPrefix, transformedObjType)
+	return fmt.Sprintf("%s.%s", scopesPerConsumerTypePrefix, transformedObjType)
 }

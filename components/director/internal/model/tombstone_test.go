@@ -8,12 +8,11 @@ import (
 )
 
 func TestTombstoneInput_ToTombstone(t *testing.T) {
-	// given
+	// GIVEN
 	id := "test"
 	ordID := "foo"
 	appID := "bar"
 	removalDate := "Sample"
-	tenant := "tenant"
 
 	testCases := []struct {
 		Name     string
@@ -29,7 +28,6 @@ func TestTombstoneInput_ToTombstone(t *testing.T) {
 			Expected: &model.Tombstone{
 				ID:            id,
 				OrdID:         ordID,
-				TenantID:      tenant,
 				ApplicationID: appID,
 				RemovalDate:   removalDate,
 			},
@@ -43,10 +41,10 @@ func TestTombstoneInput_ToTombstone(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
-			result := testCase.Input.ToTombstone(id, tenant, appID)
+			// WHEN
+			result := testCase.Input.ToTombstone(id, appID)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

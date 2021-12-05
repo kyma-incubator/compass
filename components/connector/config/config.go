@@ -55,6 +55,8 @@ type Config struct {
 	OneTimeTokenURL             string
 	HttpClientSkipSslValidation bool          `envconfig:"default=false"`
 	HTTPClientTimeout           time.Duration `envconfig:"default=30s"`
+
+	SubjectConsumerMappingConfig string `envconfig:"default=[]"`
 }
 
 func (c *Config) String() string {
@@ -68,7 +70,7 @@ func (c *Config) String() string {
 		"RevocationConfigMapName: %s, "+
 		"DirectorURL: %s "+
 		"KubernetesClientPollInteval: %s, KubernetesClientPollTimeout: %s"+
-		"OneTimeTokenURL: %s, HTTPClienttimeout: %s",
+		"OneTimeTokenURL: %s, HTTPClienttimeout: %s, SubjectConsumerMappingConfig: %s",
 		c.ExternalAddress, c.APIEndpoint, c.HydratorAddress,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
@@ -79,5 +81,5 @@ func (c *Config) String() string {
 		c.RevocationConfigMapName,
 		c.DirectorURL,
 		c.KubernetesClient.PollInteval, c.KubernetesClient.PollTimeout,
-		c.OneTimeTokenURL, c.HTTPClientTimeout)
+		c.OneTimeTokenURL, c.HTTPClientTimeout, c.SubjectConsumerMappingConfig)
 }

@@ -413,26 +413,41 @@ func TestListLabelDefinitions(t *testing.T) {
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 	ctx := context.TODO()
 
-	firstSchema := map[string]interface{}{
-		"test": "test",
+	jsonSchema := map[string]interface{}{
+		"items": map[string]interface{}{
+			"enum": []string{"DEFAULT", "test"},
+			"type": "string",
+		},
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
 	}
-	firstLabelDefinition := fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, "first", firstSchema, tenantID)
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, firstLabelDefinition.Key, false, tenantID)
 
-	secondSchema := map[string]interface{}{
-		"test": "test",
+	input := graphql.LabelDefinitionInput{
+		Key:    "scenarios",
+		Schema: json.MarshalJSONSchema(t, jsonSchema),
 	}
-	secondLabelDefinition := fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, "second", secondSchema, tenantID)
-	defer fixtures.DeleteLabelDefinition(t, ctx, dexGraphQLClient, secondLabelDefinition.Key, false, tenantID)
+
+	in, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(input)
+	require.NoError(t, err)
+
+	createRequest := fixtures.FixCreateLabelDefinitionRequest(in)
+	saveExample(t, createRequest.Query(), "create label definition")
+
+	output := graphql.LabelDefinition{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createRequest, &output)
+
+	firstLabelDefinition := &output
+	defer tenant.TestTenants.CleanupTenant(tenantID)
 
 	//WHEN
 	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, tenantID)
+	saveExample(t, fixtures.FixLabelDefinitionsRequest().Query(), "query label definition")
 
 	//THEN
 	require.NoError(t, err)
-	require.Len(t, labelDefinitions, 2)
+	require.Len(t, labelDefinitions, 1)
 	assert.Contains(t, labelDefinitions, firstLabelDefinition)
-	assert.Contains(t, labelDefinitions, secondLabelDefinition)
 }
 
 func TestDeleteLastScenarioForApplication(t *testing.T) {

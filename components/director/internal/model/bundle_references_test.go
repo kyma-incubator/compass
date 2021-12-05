@@ -10,11 +10,10 @@ import (
 )
 
 func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
-	// given
+	// GIVEN
 	bundleRefID := "foo"
 	bundleID := "bundle-id"
 	refID := "ref-id"
-	tenant := "tnt"
 	apiDefaultTargetURL := "http://test.com"
 	testCases := []struct {
 		Name                     string
@@ -33,7 +32,6 @@ func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
 			},
 			Expected: &model.BundleReference{
 				ID:                  bundleRefID,
-				Tenant:              tenant,
 				BundleID:            &bundleID,
 				ObjectType:          model.BundleAPIReference,
 				ObjectID:            &refID,
@@ -59,7 +57,6 @@ func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
 			},
 			Expected: &model.BundleReference{
 				ID:                  bundleRefID,
-				Tenant:              tenant,
 				BundleID:            &bundleID,
 				ObjectType:          model.BundleEventReference,
 				ObjectID:            &refID,
@@ -75,10 +72,10 @@ func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
-			result, err := testCase.BundleReferenceInput.ToBundleReference(bundleRefID, tenant, testCase.InputReferenceObjectType, &bundleID, testCase.InputReferenceObjectID)
+			// WHEN
+			result, err := testCase.BundleReferenceInput.ToBundleReference(bundleRefID, testCase.InputReferenceObjectType, &bundleID, testCase.InputReferenceObjectID)
 
-			// then
+			// THEN
 			if testCase.ExpectedErr != nil {
 				assert.Error(t, err)
 				assert.EqualError(t, err, testCase.ExpectedErr.Error())

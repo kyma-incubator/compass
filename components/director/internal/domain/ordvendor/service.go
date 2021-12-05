@@ -12,8 +12,8 @@ import (
 // VendorRepository missing godoc
 //go:generate mockery --name=VendorRepository --output=automock --outpkg=automock --case=underscore
 type VendorRepository interface {
-	Create(ctx context.Context, item *model.Vendor) error
-	Update(ctx context.Context, item *model.Vendor) error
+	Create(ctx context.Context, tenant string, item *model.Vendor) error
+	Update(ctx context.Context, tenant string, item *model.Vendor) error
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Vendor, error)
@@ -47,10 +47,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Ven
 	}
 
 	id := s.uidService.Generate()
-	vendor := in.ToVendor(id, tnt, applicationID)
+	vendor := in.ToVendor(id, applicationID)
 
-	err = s.vendorRepo.Create(ctx, vendor)
-	if err != nil {
+	if err = s.vendorRepo.Create(ctx, tnt, vendor); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Vendor with id %s and title %s for Application with id %s", id, vendor.Title, applicationID)
 	}
 	log.C(ctx).Debugf("Successfully created a Vendor with id %s and title %s for Application with id %s", id, vendor.Title, applicationID)
@@ -72,8 +71,7 @@ func (s *service) Update(ctx context.Context, id string, in model.VendorInput) e
 
 	vendor.SetFromUpdateInput(in)
 
-	err = s.vendorRepo.Update(ctx, vendor)
-	if err != nil {
+	if err = s.vendorRepo.Update(ctx, tnt, vendor); err != nil {
 		return errors.Wrapf(err, "while updating Vendor with id %s", id)
 	}
 	return nil

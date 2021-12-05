@@ -11,7 +11,7 @@ import (
 
 func TestConverter_ToGraphQL(t *testing.T) {
 	emptyCertCommonName := ""
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.Auth
@@ -39,7 +39,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			converter := auth.NewConverter()
 			res, err := converter.ToGraphQL(testCase.Input)
 
@@ -51,7 +51,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *graphql.AuthInput
@@ -76,7 +76,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			converter := auth.NewConverter()
 			res, err := converter.InputFromGraphQL(testCase.Input)
 

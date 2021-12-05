@@ -8,7 +8,7 @@ import (
 )
 
 func TestVersionInput_ToVersion(t *testing.T) {
-	// given
+	// GIVEN
 	value := "foo"
 	deprecated := true
 	deprecatedSince := "bar"
@@ -43,10 +43,10 @@ func TestVersionInput_ToVersion(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToVersion()
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

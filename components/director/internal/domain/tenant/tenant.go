@@ -32,6 +32,21 @@ func LoadFromContext(ctx context.Context) (string, error) {
 	return tenant.InternalID, nil
 }
 
+// LoadTenantPairFromContext retrieves the whole tenant context from the provided request context. It returns error if such ID cannot be found.
+func LoadTenantPairFromContext(ctx context.Context) (TenantCtx, error) {
+	tenant, ok := ctx.Value(TenantContextKey).(TenantCtx)
+
+	if !ok {
+		return TenantCtx{}, apperrors.NewCannotReadTenantError()
+	}
+
+	if tenant.InternalID == "" {
+		return TenantCtx{}, apperrors.NewTenantRequiredError()
+	}
+
+	return tenant, nil
+}
+
 // SaveToContext returns a child context of the provided context, including the provided tenant information.
 // The internal tenant ID can be later retrieved from the context by calling LoadFromContext.
 func SaveToContext(ctx context.Context, internalID, externalID string) context.Context {

@@ -382,6 +382,7 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 				expiresAt
 			}
 			certCommonName
+			accessStrategy
 			additionalHeaders
 			additionalQueryParams
 			requestAuth { 

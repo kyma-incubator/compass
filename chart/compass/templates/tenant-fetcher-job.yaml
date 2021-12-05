@@ -174,12 +174,10 @@ spec:
                 value: "{{ $config.query.pageSize}}"
               - name: APP_DEFAULT_SCENARIO_ENABLED
                 value: {{ $.Values.global.enableCompassDefaultScenarioAssignment | quote }}
-              - name: APP_MOVED_RUNTIME_BY_LABEL_SOURCE_TENANT_FIELD
-                value: {{ default "sourceGlobalAccountGUID" $config.fieldMapping.movedRuntimeByLabelSourceField }}
-              - name: APP_MOVED_RUNTIME_BY_LABEL_TARGET_TENANT_FIELD
-                value: {{ default "targetGlobalAccountGUID" $config.fieldMapping.movedRuntimeByLabelTargetField }}
-              - name: APP_MOVED_RUNTIME_LABEL_KEY
-                value: {{ default "movedRuntimeLabelKey" $config.fieldMapping.movedRuntimeLabelKey }}
+              - name: APP_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD
+                value: {{ default "sourceGlobalAccountGUID" $config.fieldMapping.movedSubaccountSourceField }}
+              - name: APP_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD
+                value: {{ default "targetGlobalAccountGUID" $config.fieldMapping.movedSubaccountTargetField }}
               - name: APP_TENANT_INSERT_CHUNK_SIZE
                 value: {{ default "500" $config.tenantInsertChunkSize | quote }}
               - name: APP_DIRECTOR_GRAPHQL_ENDPOINT

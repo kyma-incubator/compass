@@ -21,7 +21,7 @@ import (
 const (
 	apiDefID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
 	specID           = "sssssssss-ssss-ssss-ssss-ssssssssssss"
-	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
+	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
@@ -43,6 +43,10 @@ func fixAPIDefinitionModel(id string, name, targetURL string) *model.APIDefiniti
 }
 
 func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
+	return fixFullAPIDefinitionModelWithID(apiDefID, placeholder)
+}
+
+func fixFullAPIDefinitionModelWithID(id string, placeholder string) (model.APIDefinition, model.Spec, model.BundleReference) {
 	apiType := model.APISpecTypeOpenAPI
 	spec := model.Spec{
 		ID:         specID,
@@ -64,7 +68,6 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 	}
 
 	apiBundleReference := model.BundleReference{
-		Tenant:              tenantID,
 		BundleID:            str.Ptr(bundleID),
 		ObjectType:          model.BundleAPIReference,
 		ObjectID:            str.Ptr(apiDefID),
@@ -75,7 +78,6 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 	return model.APIDefinition{
 		ApplicationID:                           appID,
 		PackageID:                               str.Ptr(packageID),
-		Tenant:                                  tenantID,
 		Name:                                    placeholder,
 		Description:                             str.Ptr("desc_" + placeholder),
 		TargetURLs:                              api.ConvertTargetURLToJSONArray(fmt.Sprintf("https://%s.com", placeholder)),
@@ -105,7 +107,7 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 		Extensible:                              json.RawMessage(extensible),
 		ResourceHash:                            str.Ptr(resourceHash),
 		BaseEntity: &model.BaseEntity{
-			ID:        apiDefID,
+			ID:        id,
 			Ready:     true,
 			CreatedAt: &fixedTimestamp,
 			UpdatedAt: &time.Time{},
@@ -226,7 +228,6 @@ func fixEntityAPIDefinition(id string, name, targetURL string) *api.Entity {
 
 func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	return api.Entity{
-		TenantID:                                tenantID,
 		ApplicationID:                           appID,
 		PackageID:                               repo.NewValidNullableString(packageID),
 		Name:                                    placeholder,
@@ -273,20 +274,8 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	}
 }
 
-func fixUpdateTenantIsolationSubquery() string {
-	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
-}
-
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN \( with recursive children AS \(SELECT t1\.id, t1\.parent FROM business_tenant_mappings t1 WHERE id = \$%d UNION ALL SELECT t2\.id, t2\.parent FROM business_tenant_mappings t2 INNER JOIN children t on t\.id = t2\.parent\) SELECT id from children \)`, i)
-}
-
 func fixAPIDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
+	return []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash"}
@@ -294,14 +283,14 @@ func fixAPIDefinitionColumns() []string {
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
-	return []driver.Value{id, tenantID, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
+	return []driver.Value{id, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		ordID, "shortDescription", &boolVar, "apiProtocol", repo.NewValidNullableString("[]"),
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "visibility", &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, "implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`), repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash)}
 }
 
 func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, appID, packageID, apiDef.Name, apiDef.Description, apiDef.Group,
+	return []driver.Value{id, appID, packageID, apiDef.Name, apiDef.Description, apiDef.Group,
 		apiDef.OrdID, apiDef.ShortDescription, apiDef.SystemInstanceAware, apiDef.APIProtocol, repo.NewNullableStringFromJSONRawMessage(apiDef.Tags), repo.NewNullableStringFromJSONRawMessage(apiDef.Countries),
 		repo.NewNullableStringFromJSONRawMessage(apiDef.Links), repo.NewNullableStringFromJSONRawMessage(apiDef.APIResourceLinks),
 		apiDef.ReleaseStatus, apiDef.SunsetDate, repo.NewNullableStringFromJSONRawMessage(apiDef.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(apiDef.Labels), apiDef.Visibility,
@@ -312,7 +301,6 @@ func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
 	return &model.FetchRequest{
 		ID:     id,
-		Tenant: tenantID,
 		URL:    url,
 		Auth:   nil,
 		Mode:   "SINGLE",
@@ -321,14 +309,13 @@ func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchReque
 			Condition: model.FetchRequestStatusConditionInitial,
 			Timestamp: timestamp,
 		},
-		ObjectType: model.SpecFetchRequestReference,
+		ObjectType: model.APISpecFetchRequestReference,
 		ObjectID:   specID,
 	}
 }
 
 func fixModelBundleReference(bundleID, apiID string) *model.BundleReference {
 	return &model.BundleReference{
-		Tenant:     tenantID,
 		BundleID:   str.Ptr(bundleID),
 		ObjectType: model.BundleAPIReference,
 		ObjectID:   str.Ptr(apiID),

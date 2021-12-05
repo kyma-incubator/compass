@@ -27,7 +27,7 @@ ALTER TABLE fetch_requests
 ALTER TABLE fetch_requests
     ADD CONSTRAINT event_api_def_fk FOREIGN KEY (tenant_id, event_api_def_id) REFERENCES event_api_definitions (tenant_id, id) ON DELETE CASCADE;
 
-INSERT INTO fetch_requests
+INSERT INTO fetch_requests (id, tenant_id, document_id, url, auth, mode, filter, status_condition, status_timestamp, status_message, spec_id, api_def_id, event_api_def_id)
     (SELECT uuid_generate_v4(),
             f.tenant_id,
             NULL::UUID,

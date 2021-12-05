@@ -12,11 +12,10 @@ import (
 )
 
 func TestApplicationCreateInput_ToApplication(t *testing.T) {
-	// given
+	// GIVEN
 	url := "https://foo.bar"
 	desc := "Sample"
 	id := "foo"
-	tenant := "sample"
 	intSysID := "bar"
 	providerName := "provider name"
 	timestamp := time.Now()
@@ -43,7 +42,6 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 			},
 			Expected: &model.Application{
 				Name:                "Foo",
-				Tenant:              tenant,
 				Description:         &desc,
 				HealthCheckURL:      &url,
 				IntegrationSystemID: &intSysID,
@@ -67,10 +65,10 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
-			result := testCase.Input.ToApplication(timestamp, id, tenant)
+			// WHEN
+			result := testCase.Input.ToApplication(timestamp, id)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}
@@ -84,7 +82,7 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 		intSysID       = "int sys id"
 	)
 	t.Run("successfully overrides values with new input", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		timestamp := time.Now()
 		statusCondition := model.ApplicationStatusConditionConnected
 		filledAppUpdate := model.ApplicationUpdateInput{
@@ -96,10 +94,10 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 		}
 		app := model.Application{}
 
-		//WHEN
+		// WHEN
 		app.SetFromUpdateInput(filledAppUpdate, timestamp)
 
-		//THEN
+		// THEN
 		assert.Equal(t, filledAppUpdate.Description, app.Description)
 		assert.Equal(t, filledAppUpdate.HealthCheckURL, app.HealthCheckURL)
 		assert.Equal(t, filledAppUpdate.IntegrationSystemID, app.IntegrationSystemID)
@@ -108,7 +106,7 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 	})
 
 	t.Run("does not override values when input is missing", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		timestamp := time.Now()
 		statusCondition := model.ApplicationStatusConditionConnected
 		filledAppUpdate := model.ApplicationUpdateInput{
@@ -122,10 +120,10 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 			IntegrationSystemID: str.Ptr(intSysID),
 		}
 
-		//WHEN
+		// WHEN
 		app.SetFromUpdateInput(filledAppUpdate, timestamp)
 
-		//THEN
+		// THEN
 		assert.Equal(t, description, *app.Description)
 		assert.Equal(t, healthCheckURL, *app.HealthCheckURL)
 		assert.Equal(t, intSysID, *app.IntegrationSystemID)

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -19,8 +21,9 @@ import (
 )
 
 const (
-	tnt         = "tenant"
-	externalTnt = "external-tnt"
+	tnt          = "tenant"
+	targetTenant = "targetTenant"
+	externalTnt  = "external-tnt"
 )
 
 func TestServiceCreateFormation(t *testing.T) {
@@ -177,7 +180,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			lblDefRepo := testCase.LabelDefRepositoryFn()
 			lblDefService := testCase.LabelDefServiceFn()
 
-			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil)
+			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil, nil)
 
 			// WHEN
 			actual, err := svc.CreateFormation(ctx, tnt, in)
@@ -323,7 +326,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			lblDefRepo := testCase.LabelDefRepositoryFn()
 			lblDefService := testCase.LabelDefServiceFn()
 
-			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil)
+			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil, nil)
 
 			// WHEN
 			actual, err := svc.DeleteFormation(ctx, tnt, in)
@@ -366,7 +369,7 @@ func TestServiceAssignFormation(t *testing.T) {
 	objectID := "123"
 	lbl := &model.Label{
 		ID:         "123",
-		Tenant:     tnt,
+		Tenant:     str.Ptr(tnt),
 		Key:        model.ScenariosKey,
 		Value:      []interface{}{testFormation},
 		ObjectID:   objectID,
@@ -382,18 +385,16 @@ func TestServiceAssignFormation(t *testing.T) {
 	}
 
 	asa := model.AutomaticScenarioAssignment{
-		ScenarioName: testFormation,
-		Tenant:       tnt,
-		Selector: model.LabelSelector{
-			Key:   "global_subaccount_id",
-			Value: objectID,
-		},
+		ScenarioName:   testFormation,
+		Tenant:         tnt,
+		TargetTenantID: targetTenant,
 	}
 
 	testCases := []struct {
 		Name               string
-		UIDServiceFn       func() *automock.UIDService
+		UIDServiceFn       func() *automock.UidService
 		LabelServiceFn     func() *automock.LabelService
+		TenantServiceFn    func() *automock.TenantService
 		AsaServiceFN       func() *automock.AutomaticFormationAssignmentService
 		ObjectType         graphql.FormationObjectType
 		InputFormation     model.Formation
@@ -402,8 +403,8 @@ func TestServiceAssignFormation(t *testing.T) {
 	}{
 		{
 			Name: "success for application if label does not exist",
-			UIDServiceFn: func() *automock.UIDService {
-				uidService := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				uidService := &automock.UidService{}
 				uidService.On("Generate").Return(fixUUID())
 				return uidService
 			},
@@ -423,8 +424,8 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for application if formation is already added",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -442,8 +443,8 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for application with new formation",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -473,8 +474,13 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for tenant",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
+			},
+			TenantServiceFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetInternalTenant", ctx, objectID).Return(targetTenant, nil)
+				return svc
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				return &automock.LabelService{}
@@ -491,8 +497,8 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application when label does not exist and can't create it",
-			UIDServiceFn: func() *automock.UIDService {
-				uidService := &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				uidService := &automock.UidService{}
 				uidService.On("Generate").Return(fixUUID())
 				return uidService
 			},
@@ -511,8 +517,8 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application while getting label",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -528,8 +534,8 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application while converting label values to string slice",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -541,7 +547,7 @@ func TestServiceAssignFormation(t *testing.T) {
 					Version:    0,
 				}).Return(&model.Label{
 					ID:         "123",
-					Tenant:     tnt,
+					Tenant:     str.Ptr(tnt),
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormation},
 					ObjectID:   objectID,
@@ -559,14 +565,14 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application while converting label value to string",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(&model.Label{
 					ID:         "123",
-					Tenant:     tnt,
+					Tenant:     str.Ptr(tnt),
 					Key:        model.ScenariosKey,
 					Value:      []interface{}{5},
 					ObjectID:   objectID,
@@ -584,8 +590,8 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application when updating label fails",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -601,9 +607,35 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
+			Name: "error for tenant when tenant conversion fails",
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
+			},
+			TenantServiceFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetInternalTenant", ctx, objectID).Return("", testErr)
+				return svc
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				return &automock.LabelService{}
+			},
+			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
+				asaService := &automock.AutomaticFormationAssignmentService{}
+				return asaService
+			},
+			ObjectType:         graphql.FormationObjectTypeTenant,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
 			Name: "error for tenant when create fails",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
+			},
+			TenantServiceFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetInternalTenant", ctx, objectID).Return(targetTenant, nil)
+				return svc
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				return &automock.LabelService{}
@@ -619,8 +651,8 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "error when object type is unknown",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				return &automock.LabelService{}
@@ -640,8 +672,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			uidService := testCase.UIDServiceFn()
 			labelService := testCase.LabelServiceFn()
 			asaService := testCase.AsaServiceFN()
+			tenantSvc := &automock.TenantService{}
+			if testCase.TenantServiceFn != nil {
+				tenantSvc = testCase.TenantServiceFn()
+			}
 
-			svc := formation.NewService(nil, nil, labelService, uidService, nil, asaService)
+			svc := formation.NewService(nil, nil, labelService, uidService, nil, asaService, tenantSvc)
 
 			// WHEN
 			actual, err := svc.AssignFormation(ctx, tnt, objectID, testCase.ObjectType, testCase.InputFormation)
@@ -656,7 +692,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				require.Nil(t, actual)
 			}
 
-			mock.AssertExpectationsForObjects(t, uidService, labelService, asaService)
+			mock.AssertExpectationsForObjects(t, uidService, labelService, asaService, tenantSvc)
 		})
 	}
 }
@@ -677,7 +713,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 	objectID := "123"
 	lblSingleFormation := &model.Label{
 		ID:         "123",
-		Tenant:     tnt,
+		Tenant:     str.Ptr(tnt),
 		Key:        model.ScenariosKey,
 		Value:      []interface{}{testFormation},
 		ObjectID:   objectID,
@@ -686,7 +722,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 	}
 	lbl := &model.Label{
 		ID:         "123",
-		Tenant:     tnt,
+		Tenant:     str.Ptr(tnt),
 		Key:        model.ScenariosKey,
 		Value:      []interface{}{testFormation, secondTestFormation},
 		ObjectID:   objectID,
@@ -702,17 +738,14 @@ func TestServiceUnassignFormation(t *testing.T) {
 	}
 
 	asa := model.AutomaticScenarioAssignment{
-		ScenarioName: testFormation,
-		Tenant:       tnt,
-		Selector: model.LabelSelector{
-			Key:   "global_subaccount_id",
-			Value: objectID,
-		},
+		ScenarioName:   testFormation,
+		Tenant:         tnt,
+		TargetTenantID: objectID,
 	}
 
 	testCases := []struct {
 		Name               string
-		UIDServiceFn       func() *automock.UIDService
+		UIDServiceFn       func() *automock.UidService
 		LabelServiceFn     func() *automock.LabelService
 		LabelRepoFn        func() *automock.LabelRepository
 		AsaServiceFN       func() *automock.AutomaticFormationAssignmentService
@@ -723,8 +756,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 	}{
 		{
 			Name: "success for application",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -751,8 +784,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for application if formation do not exist",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -779,8 +812,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for application when formation is last",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -802,8 +835,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for tenant",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				return &automock.LabelService{}
@@ -824,8 +857,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application while getting label",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -844,8 +877,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application while converting label values to string slice",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -857,7 +890,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 					Version:    0,
 				}).Return(&model.Label{
 					ID:         "123",
-					Tenant:     tnt,
+					Tenant:     str.Ptr(tnt),
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormation},
 					ObjectID:   objectID,
@@ -878,14 +911,14 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application while converting label value to string",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, tnt, lblInput).Return(&model.Label{
 					ID:         "123",
-					Tenant:     tnt,
+					Tenant:     str.Ptr(tnt),
 					Key:        model.ScenariosKey,
 					Value:      []interface{}{5},
 					ObjectID:   objectID,
@@ -906,8 +939,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application when formation is last and delete fails",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -928,8 +961,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application when updating label fails",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -955,8 +988,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for tenant when delete fails",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				return &automock.LabelService{}
@@ -976,8 +1009,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for tenant when delete fails",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				return &automock.LabelService{}
@@ -996,8 +1029,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error when object type is unknown",
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+			UIDServiceFn: func() *automock.UidService {
+				return &automock.UidService{}
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				return &automock.LabelService{}
@@ -1022,7 +1055,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			labelRepo := testCase.LabelRepoFn()
 			asaService := testCase.AsaServiceFN()
 
-			svc := formation.NewService(nil, labelRepo, labelService, uidService, nil, asaService)
+			svc := formation.NewService(nil, labelRepo, labelService, uidService, nil, asaService, nil)
 
 			// WHEN
 			actual, err := svc.UnassignFormation(ctx, tnt, objectID, testCase.ObjectType, testCase.InputFormation)

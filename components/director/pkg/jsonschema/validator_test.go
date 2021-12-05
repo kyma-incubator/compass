@@ -190,9 +190,9 @@ func TestValidator_ValidateRaw(t *testing.T) {
 func TestNewValidatorFromStringSchema_NotValidSchema(t *testing.T) {
 	//GIVEN
 	stringSchema := `"schema"`
-	//WHEN
+	// WHEN
 	_, err := jsonschema.NewValidatorFromStringSchema(stringSchema)
-	//THEN
+	// THEN
 	require.Error(t, err)
 	assert.EqualError(t, err, "schema is invalid")
 }

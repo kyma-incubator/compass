@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/mock"
@@ -184,7 +186,7 @@ func TestService_List(t *testing.T) {
 }
 
 func TestService_DeleteMany(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 	tenantInput := newModelBusinessTenantMappingInput(testName, "", "")
 	testErr := errors.New("test")
@@ -235,7 +237,7 @@ func TestService_DeleteMany(t *testing.T) {
 }
 
 func TestService_CreateAndUpsert(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 
 	tenantInputs := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", "", ""),
@@ -697,7 +699,7 @@ func Test_ListLabels(t *testing.T) {
 		labels := map[string]*model.Label{
 			"label-key": {
 				ID:         "5ef5ebd0-987d-4cb6-a3c1-7d710de259a2",
-				Tenant:     tenantID,
+				Tenant:     str.Ptr(tenantID),
 				Key:        "label-key",
 				Value:      "value",
 				ObjectID:   tenantID,

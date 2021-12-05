@@ -67,9 +67,18 @@ func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 
 	objectField := labelableObjectField(queryFor)
 
-	cond := repo.NewTenantIsolationCondition("tenant_id", tenant)
-	stmtPrefixFormatWithTenantIsolation := stmtPrefixFormat + " " + cond.GetQueryPart()
+	var cond repo.Condition
+	if queryFor == model.TenantLabelableObject {
+		cond = repo.NewEqualCondition("tenant_id", tenant)
+	} else {
+		var err error
+		cond, err = repo.NewTenantIsolationCondition(queryFor.GetResourceType(), tenant.String(), false)
+		if err != nil {
+			return "", nil, err
+		}
+	}
 
+	stmtPrefixFormatWithTenantIsolation := stmtPrefixFormat + " " + cond.GetQueryPart()
 	stmtPrefix := fmt.Sprintf(stmtPrefixFormatWithTenantIsolation, objectField, tableName, objectField)
 	var stmtPrefixArgs []interface{}
 	stmtPrefixArgs = append(stmtPrefixArgs, tenant)

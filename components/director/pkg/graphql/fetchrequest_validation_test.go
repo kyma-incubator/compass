@@ -39,9 +39,9 @@ func TestFetchRequestInput_Validate_URL(t *testing.T) {
 			//GIVEN
 			fr := fixValidFetchRequestInput()
 			fr.URL = testCase.Value
-			//WHEN
+			// WHEN
 			err := fr.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -80,9 +80,9 @@ func TestFetchRequestInput_Validate_Auth(t *testing.T) {
 			//GIVEN
 			fr := fixValidFetchRequestInput()
 			fr.Auth = testCase.Value
-			//WHEN
+			// WHEN
 			err := fr.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -120,9 +120,9 @@ func TestFetchRequestInput_Validate_Mode(t *testing.T) {
 			//GIVEN
 			fr := fixValidFetchRequestInput()
 			fr.Mode = testCase.Value
-			//WHEN
+			// WHEN
 			err := fr.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -165,9 +165,9 @@ func TestFetchRequestInput_Validate_Filter(t *testing.T) {
 			//GIVEN
 			fr := fixValidFetchRequestInput()
 			fr.Filter = testCase.Value
-			//WHEN
+			// WHEN
 			err := fr.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

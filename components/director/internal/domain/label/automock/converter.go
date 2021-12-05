@@ -15,18 +15,20 @@ type Converter struct {
 }
 
 // FromEntity provides a mock function with given fields: in
-func (_m *Converter) FromEntity(in label.Entity) (model.Label, error) {
+func (_m *Converter) FromEntity(in *label.Entity) (*model.Label, error) {
 	ret := _m.Called(in)
 
-	var r0 model.Label
-	if rf, ok := ret.Get(0).(func(label.Entity) model.Label); ok {
+	var r0 *model.Label
+	if rf, ok := ret.Get(0).(func(*label.Entity) *model.Label); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.Label)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Label)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(label.Entity) error); ok {
+	if rf, ok := ret.Get(1).(func(*label.Entity) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)
@@ -36,18 +38,20 @@ func (_m *Converter) FromEntity(in label.Entity) (model.Label, error) {
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *Converter) ToEntity(in model.Label) (label.Entity, error) {
+func (_m *Converter) ToEntity(in *model.Label) (*label.Entity, error) {
 	ret := _m.Called(in)
 
-	var r0 label.Entity
-	if rf, ok := ret.Get(0).(func(model.Label) label.Entity); ok {
+	var r0 *label.Entity
+	if rf, ok := ret.Get(0).(func(*model.Label) *label.Entity); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(label.Entity)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*label.Entity)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.Label) error); ok {
+	if rf, ok := ret.Get(1).(func(*model.Label) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

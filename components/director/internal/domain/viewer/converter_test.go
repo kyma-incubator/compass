@@ -49,9 +49,9 @@ func TestToViewer(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			//WHEN
+			// WHEN
 			viewer, err := viewer.ToViewer(tc.Input)
-			//THEN
+			// THEN
 			if tc.ExpectedErr {
 				require.Error(t, err)
 			} else {

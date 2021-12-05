@@ -272,8 +272,9 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 		t.Log("Trying to Webhook to application template with tenant")
 		err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, addReq, &actualWebhook)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "not found")
+		require.Contains(t, err.Error(), "unknown parent for entity type webhook")
 	})
+
 	t.Run("succeeds with no tenant", func(t *testing.T) {
 
 		t.Log("Add Webhook to application template")

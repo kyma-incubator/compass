@@ -8,10 +8,10 @@ import (
 	"encoding/pem"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"github.com/kyma-incubator/compass/components/director/pkg/namespacedname"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	v1 "k8s.io/api/core/v1"

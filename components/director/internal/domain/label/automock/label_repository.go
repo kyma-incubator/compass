@@ -15,13 +15,13 @@ type LabelRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, _a1
-func (_m *LabelRepository) Create(ctx context.Context, _a1 *model.Label) error {
-	ret := _m.Called(ctx, _a1)
+// Create provides a mock function with given fields: ctx, tenant, _a2
+func (_m *LabelRepository) Create(ctx context.Context, tenant string, _a2 *model.Label) error {
+	ret := _m.Called(ctx, tenant, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Label) error); ok {
-		r0 = rf(ctx, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Label) error); ok {
+		r0 = rf(ctx, tenant, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -52,13 +52,13 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 	return r0, r1
 }
 
-// UpdateWithVersion provides a mock function with given fields: ctx, _a1
-func (_m *LabelRepository) UpdateWithVersion(ctx context.Context, _a1 *model.Label) error {
-	ret := _m.Called(ctx, _a1)
+// UpdateWithVersion provides a mock function with given fields: ctx, tenant, _a2
+func (_m *LabelRepository) UpdateWithVersion(ctx context.Context, tenant string, _a2 *model.Label) error {
+	ret := _m.Called(ctx, tenant, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Label) error); ok {
-		r0 = rf(ctx, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Label) error); ok {
+		r0 = rf(ctx, tenant, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -66,13 +66,13 @@ func (_m *LabelRepository) UpdateWithVersion(ctx context.Context, _a1 *model.Lab
 	return r0
 }
 
-// Upsert provides a mock function with given fields: ctx, _a1
-func (_m *LabelRepository) Upsert(ctx context.Context, _a1 *model.Label) error {
-	ret := _m.Called(ctx, _a1)
+// Upsert provides a mock function with given fields: ctx, tenant, _a2
+func (_m *LabelRepository) Upsert(ctx context.Context, tenant string, _a2 *model.Label) error {
+	ret := _m.Called(ctx, tenant, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Label) error); ok {
-		r0 = rf(ctx, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Label) error); ok {
+		r0 = rf(ctx, tenant, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}

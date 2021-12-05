@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -53,6 +55,9 @@ func TestGenerateOneTimeToken(t *testing.T) {
 	headers := http.Header{}
 	headers.Add(suggestedTokenHeaderKey, "true")
 	contextWithEnabledSuggestion := context.WithValue(context.TODO(), header.ContextKey, headers)
+	contextWithEnabledSuggestion = tenant.SaveToContext(contextWithEnabledSuggestion, "test-tenant", "external-tenant")
+	ctx := tenant.SaveToContext(context.TODO(), "test-tenant", "external-tenant")
+	ctxWithoutExternalTenant := tenant.SaveToContext(context.TODO(), "test-tenant", "")
 
 	ottConfig := onetimetoken.Config{
 		ConnectorURL:          connectorURL,
@@ -80,17 +85,17 @@ func TestGenerateOneTimeToken(t *testing.T) {
 	}{
 		{
 			description: "Generate Application token, no int system, should succeed",
-			ctx:         context.TODO(),
+			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", context.TODO(), model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", context.TODO(), appID).Return(&model.Application{BaseEntity: &model.BaseEntity{ID: appID}}, nil)
+				appSvc.On("Get", ctx, appID).Return(&model.Application{BaseEntity: &model.BaseEntity{ID: appID}}, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -198,13 +203,13 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token should fail when no such app found",
-			ctx:         context.TODO(),
+			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				return &automock.SystemAuthService{}
 			},
 			appSvc: func() onetimetoken.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", context.TODO(), appID).Return(nil, errors.New("not found"))
+				appSvc.On("Get", ctx, appID).Return(nil, errors.New("not found"))
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -228,17 +233,17 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token should fail on db error",
-			ctx:         context.TODO(),
+			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", context.TODO(), model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", errors.New("db error"))
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", context.TODO(), appID).Return(&model.Application{}, nil)
+				appSvc.On("Get", ctx, appID).Return(&model.Application{}, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -264,11 +269,11 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			timeService:               directorTime.NewService(),
 		},
 		{
-			description: "Generate Application token, with int system, should succeed",
-			ctx:         context.TODO(),
+			description: "Generate Application token, with int system, should succeed when external tenant is in the context",
+			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", context.TODO(), model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -276,9 +281,8 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			appSvc: func() onetimetoken.ApplicationService {
 				app := &model.Application{}
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
-				app.Tenant = "test-tenant"
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", context.TODO(), appID).Return(app, nil)
+				appSvc.On("Get", ctx, appID).Return(app, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -294,7 +298,79 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetExternalTenant", context.TODO(), "test-tenant").Return("external-tenant", nil)
+				return tenantSvc
+			},
+			httpClient: func() onetimetoken.HTTPDoer {
+				respBody := new(bytes.Buffer)
+				respBody.WriteString(fmt.Sprintf(`{"token":"%s"}`, tokenValue))
+				mockHTTPClient := &automock.HTTPDoer{}
+				response := &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       ioutil.NopCloser(respBody),
+				}
+				mockHTTPClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
+					b, err := req.GetBody()
+					if err != nil {
+						return false
+					}
+					appData := pairing.RequestData{}
+					err = json.NewDecoder(b).Decode(&appData)
+					if err != nil {
+						return false
+					}
+					tenantMatches := appData.Tenant == "external-tenant"
+					clientUserMatches := appData.ClientUser == ""
+					appIDMatches := appData.Application.ID == appID
+					urlMatches := req.URL.String() == "https://my-integration-service.url"
+
+					return urlMatches && appIDMatches && tenantMatches && clientUserMatches
+				})).Return(response, nil)
+				return mockHTTPClient
+			},
+			tokenGenerator: func() onetimetoken.TokenGenerator {
+				return &automock.TokenGenerator{}
+			},
+			shouldHaveError: false,
+			objectID:        appID,
+			tokenType:       model.ApplicationReference,
+			expectedToken:   tokenValue,
+			connectorURL:    connectorURL,
+			intSystemToAdapterMapping: map[string]string{
+				integrationSystemID: "https://my-integration-service.url",
+			},
+			timeService: directorTime.NewService(),
+		},
+		{
+			description: "Generate Application token, with int system, should succeed when external tenant is not in the context",
+			ctx:         ctxWithoutExternalTenant,
+			systemAuthSvc: func() onetimetoken.SystemAuthService {
+				systemAuthSvc := &automock.SystemAuthService{}
+				systemAuthSvc.On("Create", ctxWithoutExternalTenant, model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+					return authInput.OneTimeToken.Token == tokenValue
+				})).Return("", nil)
+				return systemAuthSvc
+			},
+			appSvc: func() onetimetoken.ApplicationService {
+				app := &model.Application{}
+				app.IntegrationSystemID = str.Ptr(integrationSystemID)
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", ctxWithoutExternalTenant, appID).Return(app, nil)
+				return appSvc
+			},
+			appConverter: func() onetimetoken.ApplicationConverter {
+				mockAppConverter := &automock.ApplicationConverter{}
+				givenGraphQLApp := graphql.Application{
+					IntegrationSystemID: str.Ptr(integrationSystemID),
+					BaseEntity: &graphql.BaseEntity{
+						ID: appID,
+					},
+				}
+				mockAppConverter.On("ToGraphQL", mock.Anything).Return(&givenGraphQLApp)
+				return mockAppConverter
+			},
+			tenantSvc: func() onetimetoken.ExternalTenantsService {
+				tenantSvc := &automock.ExternalTenantsService{}
+				tenantSvc.On("GetExternalTenant", ctxWithoutExternalTenant, "test-tenant").Return("external-tenant", nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -350,7 +426,6 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			appSvc: func() onetimetoken.ApplicationService {
 				app := &model.Application{BaseEntity: &model.BaseEntity{ID: appID}}
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
-				app.Tenant = "test-tenant"
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Get", contextWithEnabledSuggestion, appID).Return(app, nil)
 				return appSvc
@@ -368,7 +443,6 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetExternalTenant", contextWithEnabledSuggestion, "test-tenant").Return("external-tenant", nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -413,10 +487,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token, with int system, but no adapters defined should succeed",
-			ctx:         context.TODO(),
+			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", context.TODO(), model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, model.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -424,9 +498,8 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			appSvc: func() onetimetoken.ApplicationService {
 				app := &model.Application{}
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
-				app.Tenant = "test-tenant"
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", context.TODO(), appID).Return(app, nil)
+				appSvc.On("Get", ctx, appID).Return(app, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -453,19 +526,18 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token, with int system, should fail when int system fails",
-			ctx:         context.TODO(),
+			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				return &automock.SystemAuthService{}
 			},
 			appSvc: func() onetimetoken.ApplicationService {
 				app := &model.Application{}
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
-				app.Tenant = "test-tenant"
 				app.BaseEntity = &model.BaseEntity{
 					ID: appID,
 				}
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", context.TODO(), appID).Return(app, nil)
+				appSvc.On("Get", ctx, appID).Return(app, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -481,7 +553,6 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetExternalTenant", context.TODO(), "test-tenant").Return("external-tenant", nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -522,7 +593,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 		},
 		{
-			description: "Generate Application token, with int system, should fail when no external tenant found",
+			description: "Generate Application token, with int system, should fail when no tenant in the context",
 			ctx:         context.TODO(),
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				return &automock.SystemAuthService{}
@@ -530,7 +601,6 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			appSvc: func() onetimetoken.ApplicationService {
 				app := &model.Application{}
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
-				app.Tenant = "test-tenant"
 				app.BaseEntity = &model.BaseEntity{
 					ID: appID,
 				}
@@ -543,7 +613,45 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetExternalTenant", context.TODO(), "test-tenant").Return("", errors.New("some-error"))
+				return tenantSvc
+			},
+			httpClient: func() onetimetoken.HTTPDoer {
+				return &automock.HTTPDoer{}
+			},
+			tokenGenerator: func() onetimetoken.TokenGenerator {
+				return &automock.TokenGenerator{}
+			},
+			shouldHaveError: true,
+			objectID:        appID,
+			tokenType:       model.ApplicationReference,
+			errorMsg:        "cannot read tenant from context",
+			connectorURL:    connectorURL,
+			intSystemToAdapterMapping: map[string]string{
+				integrationSystemID: "https://my-integration-service.url",
+			},
+		},
+		{
+			description: "Generate Application token, with int system, should fail when no external tenant found",
+			ctx:         ctxWithoutExternalTenant,
+			systemAuthSvc: func() onetimetoken.SystemAuthService {
+				return &automock.SystemAuthService{}
+			},
+			appSvc: func() onetimetoken.ApplicationService {
+				app := &model.Application{}
+				app.IntegrationSystemID = str.Ptr(integrationSystemID)
+				app.BaseEntity = &model.BaseEntity{
+					ID: appID,
+				}
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", ctxWithoutExternalTenant, appID).Return(app, nil)
+				return appSvc
+			},
+			appConverter: func() onetimetoken.ApplicationConverter {
+				return &automock.ApplicationConverter{}
+			},
+			tenantSvc: func() onetimetoken.ExternalTenantsService {
+				tenantSvc := &automock.ExternalTenantsService{}
+				tenantSvc.On("GetExternalTenant", ctxWithoutExternalTenant, "test-tenant").Return("", errors.New("some-error"))
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -563,13 +671,13 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token, should fail on token generating error",
-			ctx:         context.TODO(),
+			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				return &automock.SystemAuthService{}
 			},
 			appSvc: func() onetimetoken.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", context.TODO(), appID).Return(&model.Application{}, nil)
+				appSvc.On("Get", ctx, appID).Return(&model.Application{}, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -595,10 +703,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Runtime token should succeed",
-			ctx:         context.TODO(),
+			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", context.TODO(), model.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, model.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -630,7 +738,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Runtime token should fail on token generating error",
-			ctx:         context.TODO(),
+			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				return &automock.SystemAuthService{}
 			},
@@ -660,10 +768,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Runtime token should fail on db error",
-			ctx:         context.TODO(),
+			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", context.TODO(), model.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, model.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", errors.New("db error"))
 				return systemAuthSvc
@@ -708,10 +816,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 			tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator, ottConfig, test.intSystemToAdapterMapping, timeService)
 
-			//WHEN
+			// WHEN
 			token, err := tokenSvc.GenerateOneTimeToken(test.ctx, test.objectID, test.tokenType)
 
-			//THEN
+			// THEN
 			if test.shouldHaveError {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), test.errorMsg)
@@ -1045,10 +1153,10 @@ func TestIsTokenValid(t *testing.T) {
 			// GIVEN
 			tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator, ottConfig, intSystemToAdapterMapping, timeService)
 
-			//WHEN
+			// WHEN
 			isValid, err := tokenSvc.IsTokenValid(test.systemAuth)
 
-			//THEN
+			// THEN
 			if test.shouldHaveError {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), test.errorMsg)

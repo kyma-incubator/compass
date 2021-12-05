@@ -14,20 +14,22 @@ type Converter struct {
 	mock.Mock
 }
 
-// FromEntity provides a mock function with given fields: in
-func (_m *Converter) FromEntity(in fetchrequest.Entity) (model.FetchRequest, error) {
-	ret := _m.Called(in)
+// FromEntity provides a mock function with given fields: in, objectType
+func (_m *Converter) FromEntity(in *fetchrequest.Entity, objectType model.FetchRequestReferenceObjectType) (*model.FetchRequest, error) {
+	ret := _m.Called(in, objectType)
 
-	var r0 model.FetchRequest
-	if rf, ok := ret.Get(0).(func(fetchrequest.Entity) model.FetchRequest); ok {
-		r0 = rf(in)
+	var r0 *model.FetchRequest
+	if rf, ok := ret.Get(0).(func(*fetchrequest.Entity, model.FetchRequestReferenceObjectType) *model.FetchRequest); ok {
+		r0 = rf(in, objectType)
 	} else {
-		r0 = ret.Get(0).(model.FetchRequest)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FetchRequest)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(fetchrequest.Entity) error); ok {
-		r1 = rf(in)
+	if rf, ok := ret.Get(1).(func(*fetchrequest.Entity, model.FetchRequestReferenceObjectType) error); ok {
+		r1 = rf(in, objectType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -36,18 +38,20 @@ func (_m *Converter) FromEntity(in fetchrequest.Entity) (model.FetchRequest, err
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *Converter) ToEntity(in model.FetchRequest) (fetchrequest.Entity, error) {
+func (_m *Converter) ToEntity(in *model.FetchRequest) (*fetchrequest.Entity, error) {
 	ret := _m.Called(in)
 
-	var r0 fetchrequest.Entity
-	if rf, ok := ret.Get(0).(func(model.FetchRequest) fetchrequest.Entity); ok {
+	var r0 *fetchrequest.Entity
+	if rf, ok := ret.Get(0).(func(*model.FetchRequest) *fetchrequest.Entity); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(fetchrequest.Entity)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fetchrequest.Entity)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.FetchRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(*model.FetchRequest) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

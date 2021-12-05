@@ -27,14 +27,14 @@ type Converter interface {
 }
 
 type repository struct {
-	creator            repo.Creator
+	creator            repo.CreatorGlobal
 	singleGetter       repo.SingleGetter
 	singleGetterGlobal repo.SingleGetterGlobal
 	lister             repo.Lister
 	listerGlobal       repo.ListerGlobal
 	deleter            repo.Deleter
 	deleterGlobal      repo.DeleterGlobal
-	updater            repo.Updater
+	updater            repo.UpdaterGlobal
 
 	conv Converter
 }
@@ -42,14 +42,14 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		creator:            repo.NewCreator(resource.SystemAuth, tableName, tableColumns),
-		singleGetter:       repo.NewSingleGetter(resource.SystemAuth, tableName, tenantColumn, tableColumns),
+		creator:            repo.NewCreatorGlobal(resource.SystemAuth, tableName, tableColumns),
+		singleGetter:       repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.SystemAuth, tableName, tableColumns),
-		lister:             repo.NewLister(resource.SystemAuth, tableName, tenantColumn, tableColumns),
+		lister:             repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.SystemAuth, tableName, tableColumns),
-		deleter:            repo.NewDeleter(resource.SystemAuth, tableName, tenantColumn),
+		deleter:            repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.SystemAuth, tableName),
-		updater:            repo.NewUpdater(resource.SystemAuth, tableName, []string{"value"}, tenantColumn, []string{"id"}),
+		updater:            repo.NewUpdaterWithEmbeddedTenant(resource.SystemAuth, tableName, []string{"value"}, tenantColumn, []string{"id"}),
 		conv:               conv,
 	}
 }
@@ -68,7 +68,7 @@ func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 // GetByID missing godoc
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error) {
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.SystemAuth, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
@@ -127,7 +127,7 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 		repo.NewEqualCondition(objTypeFieldName, objectID),
 	}
 
-	err = r.lister.List(ctx, tenant, &entities, conditions...)
+	err = r.lister.List(ctx, resource.SystemAuth, tenant, &entities, conditions...)
 
 	if err != nil {
 		return nil, err
@@ -192,7 +192,7 @@ func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, obje
 	if objectType == model.IntegrationSystemReference {
 		return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
 	}
-	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
+	return r.deleter.DeleteMany(ctx, resource.SystemAuth, tenant, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
 }
 
 // DeleteByIDForObject missing godoc
@@ -205,7 +205,7 @@ func (r *repository) DeleteByIDForObject(ctx context.Context, tenant, id string,
 	}
 	objTypeCond = repo.NewNotNullCondition(column)
 
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
+	return r.deleter.DeleteOne(ctx, resource.SystemAuth, tenant, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond})
 }
 
 // DeleteByIDForObjectGlobal missing godoc
@@ -232,7 +232,7 @@ func (r *repository) Update(ctx context.Context, item *model.SystemAuth) error {
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
-	return r.updater.UpdateSingle(ctx, entity)
+	return r.updater.UpdateSingleGlobal(ctx, entity)
 }
 
 func referenceObjectField(objectType model.SystemAuthReferenceObjectType) (string, error) {

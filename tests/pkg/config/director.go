@@ -1,5 +1,7 @@
 package config
 
+import "github.com/kyma-incubator/compass/tests/pkg/certs"
+
 type DirectorConfig struct {
 	BaseDirectorConfig
 	HealthUrl                      string `envconfig:"default=https://director.kyma.local/healthz"`
@@ -11,18 +13,10 @@ type DirectorConfig struct {
 	DefaultNormalizationPrefix     string `envconfig:"default=mp-"`
 	GatewayOauth                   string
 	DirectorExternalCertSecuredURL string
-	CA                             ConnectorCAConfig
+	CA                             certs.CAConfig
+	ExternalCA                     certs.CAConfig
 }
 
 type BaseDirectorConfig struct {
 	DefaultScenario string `envconfig:"default=DEFAULT"`
-}
-
-type ConnectorCAConfig struct {
-	Certificate          []byte `envconfig:"-"`
-	Key                  []byte `envconfig:"-"`
-	SecretName           string
-	SecretNamespace      string
-	SecretCertificateKey string
-	SecretKeyKey         string
 }

@@ -16,9 +16,9 @@ import (
 // LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
 type LabelRepository interface {
-	Create(ctx context.Context, label *model.Label) error
-	Upsert(ctx context.Context, label *model.Label) error
-	UpdateWithVersion(ctx context.Context, label *model.Label) error
+	Create(ctx context.Context, tenant string, label *model.Label) error
+	Upsert(ctx context.Context, tenant string, label *model.Label) error
+	UpdateWithVersion(ctx context.Context, tenant string, label *model.Label) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
@@ -71,8 +71,7 @@ func (s *labelService) CreateLabel(ctx context.Context, tenant, id string, label
 	}
 	label := labelInput.ToLabel(id, tenant)
 
-	err := s.labelRepo.Create(ctx, label)
-	if err != nil {
+	if err := s.labelRepo.Create(ctx, tenant, label); err != nil {
 		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}
 	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
@@ -88,8 +87,7 @@ func (s *labelService) UpsertLabel(ctx context.Context, tenant string, labelInpu
 
 	label := labelInput.ToLabel(s.uidService.Generate(), tenant)
 
-	err := s.labelRepo.Upsert(ctx, label)
-	if err != nil {
+	if err := s.labelRepo.Upsert(ctx, tenant, label); err != nil {
 		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}
 	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
@@ -97,15 +95,14 @@ func (s *labelService) UpsertLabel(ctx context.Context, tenant string, labelInpu
 	return nil
 }
 
-// UpsertLabel missing godoc
+// UpdateLabel missing godoc
 func (s *labelService) UpdateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error {
 	if err := s.validateLabel(ctx, tenant, labelInput); err != nil {
 		return err
 	}
 	label := labelInput.ToLabel(id, tenant)
 
-	err := s.labelRepo.UpdateWithVersion(ctx, label)
-	if err != nil {
+	if err := s.labelRepo.UpdateWithVersion(ctx, tenant, label); err != nil {
 		return errors.Wrapf(err, "while updating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}
 	log.C(ctx).Debugf("Successfully updated Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
@@ -113,7 +110,7 @@ func (s *labelService) UpdateLabel(ctx context.Context, tenant, id string, label
 	return nil
 }
 
-// UpsertLabel missing godoc
+// GetLabel missing godoc
 func (s *labelService) GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error) {
 	label, err := s.labelRepo.GetByKey(ctx, tenant, labelInput.ObjectType, labelInput.ObjectID, labelInput.Key)
 	if err != nil {

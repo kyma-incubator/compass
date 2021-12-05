@@ -8,11 +8,11 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 
@@ -159,10 +159,11 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	ordClient := ord.NewClient(httpClient, accessStrategyExecutorProvider)
 
-	return ord.NewAggregatorService(transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
+	return ord.NewAggregatorService(transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, ordClient)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

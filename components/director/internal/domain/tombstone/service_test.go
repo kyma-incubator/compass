@@ -15,7 +15,7 @@ import (
 )
 
 func TestService_Create(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	ctx := context.TODO()
@@ -35,7 +35,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.TombstoneRepository {
 				repo := &automock.TombstoneRepository{}
-				repo.On("Create", ctx, modelTombstone).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelTombstone).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -50,7 +50,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Tombstone creation",
 			RepositoryFn: func() *automock.TombstoneRepository {
 				repo := &automock.TombstoneRepository{}
-				repo.On("Create", ctx, modelTombstone).Return(testErr).Once()
+				repo.On("Create", ctx, tenantID, modelTombstone).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -65,13 +65,13 @@ func TestService_Create(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			uidSvc := testCase.UIDServiceFn()
 
 			svc := tombstone.NewService(repo, uidSvc)
 
-			// when
+			// WHEN
 			result, err := svc.Create(ctx, appID, testCase.Input)
 
 			// then
@@ -96,7 +96,7 @@ func TestService_Create(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	modelTombstone := fixTombstoneModel()
@@ -121,7 +121,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.TombstoneRepository {
 				repo := &automock.TombstoneRepository{}
 				repo.On("GetByID", ctx, tenantID, tombstoneID).Return(modelTombstone, nil).Once()
-				repo.On("Update", ctx, inputTombstoneModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputTombstoneModel).Return(nil).Once()
 				return repo
 			},
 			InputID:     tombstoneID,
@@ -133,7 +133,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.TombstoneRepository {
 				repo := &automock.TombstoneRepository{}
 				repo.On("GetByID", ctx, tenantID, tombstoneID).Return(modelTombstone, nil).Once()
-				repo.On("Update", ctx, inputTombstoneModel).Return(testErr).Once()
+				repo.On("Update", ctx, tenantID, inputTombstoneModel).Return(testErr).Once()
 				return repo
 			},
 			InputID:     tombstoneID,
@@ -155,12 +155,12 @@ func TestService_Update(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := tombstone.NewService(repo, nil)
 
-			// when
+			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
 
 			// then
@@ -185,7 +185,7 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	ctx := context.TODO()
@@ -222,12 +222,12 @@ func TestService_Delete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := tombstone.NewService(repo, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
 			// then
@@ -315,7 +315,7 @@ func TestService_Exist(t *testing.T) {
 }
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	tsModel := fixTombstoneModel()
@@ -360,7 +360,7 @@ func TestService_Get(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := tombstone.NewService(repo, nil)
 
-			// when
+			// WHEN
 			ts, err := svc.Get(ctx, testCase.InputID)
 
 			// then
@@ -386,7 +386,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_ListByApplicationID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	tombstones := []*model.Tombstone{
@@ -435,7 +435,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 
 			svc := tombstone.NewService(repo, nil)
 
-			// when
+			// WHEN
 			docs, err := svc.ListByApplicationID(ctx, appID)
 
 			// then

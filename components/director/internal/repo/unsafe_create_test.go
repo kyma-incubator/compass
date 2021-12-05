@@ -21,9 +21,9 @@ import (
 )
 
 func TestUnsafeCreate(t *testing.T) {
-	expectedQuery := regexp.QuoteMeta(`INSERT INTO users ( id_col, tenant_id, first_name, last_name, age ) 
+	expectedQuery := regexp.QuoteMeta(`INSERT INTO users ( id, tenant_id, first_name, last_name, age ) 
 		VALUES ( ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_id, first_name, last_name ) DO NOTHING`)
-	sut := repo.NewUnsafeCreator(UserType, "users", []string{"id_col", "tenant_id", "first_name", "last_name", "age"}, []string{"tenant_id", "first_name", "last_name"})
+	sut := repo.NewUnsafeCreator(UserType, "users", []string{"id", "tenant_id", "first_name", "last_name", "age"}, []string{"tenant_id", "first_name", "last_name"})
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
@@ -106,7 +106,7 @@ func TestUnsafeCreate(t *testing.T) {
 }
 
 func TestUnsafeCreateWhenWrongConfiguration(t *testing.T) {
-	sut := repo.NewUnsafeCreator("users", "UserType", []string{"id_col", "tenant_id", "column_does_not_exist"}, []string{"id_col", "tenant_id"})
+	sut := repo.NewUnsafeCreator("users", "UserType", []string{"id", "tenant_id", "column_does_not_exist"}, []string{"id", "tenant_id"})
 	// GIVEN
 	db, mock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), db)

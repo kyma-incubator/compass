@@ -4,10 +4,30 @@ import (
 	"database/sql"
 	"encoding/json"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
+
+// ChildEntity is an interface for a child entity that can be used to obtain its parent ID.
+type ChildEntity interface {
+	GetParent(resource.Type) (resource.Type, string)
+}
+
+// Identifiable is an interface that can be used to identify an object.
+type Identifiable interface {
+	GetID() string
+}
+
+// EntityWithExternalTenant is an interface that can be used for object with an external tenant to add tenant_id to the struct.
+// This is needed for update operations when we want to use named arguments in the SQL queries.
+type EntityWithExternalTenant interface {
+	DecorateWithTenantID(tenant string) interface{}
+}
 
 // Entity denotes an DB-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values
 type Entity interface {
+	Identifiable
+
 	GetReady() bool
 	SetReady(ready bool)
 
@@ -24,7 +44,7 @@ type Entity interface {
 	SetError(err sql.NullString)
 }
 
-// BaseEntity missing godoc
+// BaseEntity represents a base implementation of Entity
 type BaseEntity struct {
 	ID        string         `db:"id"`
 	Ready     bool           `db:"ready"`
@@ -34,17 +54,22 @@ type BaseEntity struct {
 	Error     sql.NullString `db:"error"`
 }
 
-// GetReady missing godoc
+// GetID returns the ID of the entity
+func (e *BaseEntity) GetID() string {
+	return e.ID
+}
+
+// GetReady returns the ready value of the entity
 func (e *BaseEntity) GetReady() bool {
 	return e.Ready
 }
 
-// SetReady missing godoc
+// SetReady sets the ready value of the entity
 func (e *BaseEntity) SetReady(ready bool) {
 	e.Ready = ready
 }
 
-// GetCreatedAt missing godoc
+// GetCreatedAt returns the created_at value of the entity
 func (e *BaseEntity) GetCreatedAt() time.Time {
 	if e.CreatedAt == nil {
 		return time.Time{}
@@ -52,12 +77,12 @@ func (e *BaseEntity) GetCreatedAt() time.Time {
 	return *e.CreatedAt
 }
 
-// SetCreatedAt missing godoc
+// SetCreatedAt sets the created_at value of the entity
 func (e *BaseEntity) SetCreatedAt(t time.Time) {
 	e.CreatedAt = &t
 }
 
-// GetUpdatedAt missing godoc
+// GetUpdatedAt returns the updated_at value of the entity
 func (e *BaseEntity) GetUpdatedAt() time.Time {
 	if e.UpdatedAt == nil {
 		return time.Time{}
@@ -65,12 +90,12 @@ func (e *BaseEntity) GetUpdatedAt() time.Time {
 	return *e.UpdatedAt
 }
 
-// SetUpdatedAt missing godoc
+// SetUpdatedAt sets the updated_at value of the entity
 func (e *BaseEntity) SetUpdatedAt(t time.Time) {
 	e.UpdatedAt = &t
 }
 
-// GetDeletedAt missing godoc
+// GetDeletedAt returns the deleted_at value of the entity
 func (e *BaseEntity) GetDeletedAt() time.Time {
 	if e.DeletedAt == nil {
 		return time.Time{}
@@ -78,22 +103,22 @@ func (e *BaseEntity) GetDeletedAt() time.Time {
 	return *e.DeletedAt
 }
 
-// SetDeletedAt missing godoc
+// SetDeletedAt sets the deleted_at value of the entity
 func (e *BaseEntity) SetDeletedAt(t time.Time) {
 	e.DeletedAt = &t
 }
 
-// GetError missing godoc
+// GetError returns the error value of the entity
 func (e *BaseEntity) GetError() sql.NullString {
 	return e.Error
 }
 
-// SetError missing godoc
+// SetError sets the error value of the entity
 func (e *BaseEntity) SetError(err sql.NullString) {
 	e.Error = err
 }
 
-// NewNullableString missing godoc
+// NewNullableString returns a new sql.NullString based on the given string pointer
 func NewNullableString(text *string) sql.NullString {
 	nullString := sql.NullString{}
 	if text != nil {
@@ -104,7 +129,7 @@ func NewNullableString(text *string) sql.NullString {
 	return nullString
 }
 
-// NewNullableInt missing godoc
+// NewNullableInt returns a new sql.NullInt32 based on the given int pointer
 func NewNullableInt(i *int) sql.NullInt32 {
 	nullInt := sql.NullInt32{}
 	if i != nil {
@@ -115,7 +140,7 @@ func NewNullableInt(i *int) sql.NullInt32 {
 	return nullInt
 }
 
-// NewValidNullableString missing godoc
+// NewValidNullableString returns a new sql.NullString based on the given string
 func NewValidNullableString(text string) sql.NullString {
 	if text == "" {
 		return sql.NullString{}
@@ -127,7 +152,7 @@ func NewValidNullableString(text string) sql.NullString {
 	}
 }
 
-// NewNullableStringFromJSONRawMessage missing godoc
+// NewNullableStringFromJSONRawMessage returns a new sql.NullString based on the given json.RawMessage
 func NewNullableStringFromJSONRawMessage(json json.RawMessage) sql.NullString {
 	nullString := sql.NullString{}
 	if json != nil {
@@ -137,7 +162,7 @@ func NewNullableStringFromJSONRawMessage(json json.RawMessage) sql.NullString {
 	return nullString
 }
 
-// NewNullableBool missing godoc
+// NewNullableBool returns a new sql.NullBool based on the given bool pointer
 func NewNullableBool(boolean *bool) sql.NullBool {
 	var sqlBool sql.NullBool
 	if boolean != nil {
@@ -147,7 +172,7 @@ func NewNullableBool(boolean *bool) sql.NullBool {
 	return sqlBool
 }
 
-// NewValidNullableBool missing godoc
+// NewValidNullableBool returns a new sql.NullBool based on the given bool
 func NewValidNullableBool(boolean bool) sql.NullBool {
 	return sql.NullBool{
 		Valid: true,
@@ -155,7 +180,7 @@ func NewValidNullableBool(boolean bool) sql.NullBool {
 	}
 }
 
-// StringPtrFromNullableString missing godoc
+// StringPtrFromNullableString returns a string pointer based on the given sql.NullString
 func StringPtrFromNullableString(sqlString sql.NullString) *string {
 	if sqlString.Valid {
 		return &sqlString.String
@@ -164,7 +189,7 @@ func StringPtrFromNullableString(sqlString sql.NullString) *string {
 	return nil
 }
 
-// JSONRawMessageFromNullableString missing godoc
+// JSONRawMessageFromNullableString returns a json.RawMessage based on the given sql.NullString
 func JSONRawMessageFromNullableString(sqlString sql.NullString) json.RawMessage {
 	if sqlString.Valid {
 		return json.RawMessage(sqlString.String)
@@ -172,7 +197,7 @@ func JSONRawMessageFromNullableString(sqlString sql.NullString) json.RawMessage 
 	return nil
 }
 
-// IntPtrFromNullableInt missing godoc
+// IntPtrFromNullableInt returns an int pointer based on the given sql.NullInt32
 func IntPtrFromNullableInt(i sql.NullInt32) *int {
 	if i.Valid {
 		val := int(i.Int32)
@@ -182,7 +207,7 @@ func IntPtrFromNullableInt(i sql.NullInt32) *int {
 	return nil
 }
 
-// BoolPtrFromNullableBool missing godoc
+// BoolPtrFromNullableBool returns a bool pointer based on the given sql.NullBool
 func BoolPtrFromNullableBool(sqlBool sql.NullBool) *bool {
 	if sqlBool.Valid {
 		return &sqlBool.Bool
