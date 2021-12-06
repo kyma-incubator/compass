@@ -591,7 +591,7 @@ func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value in
 func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {
 	result := make(map[string]*model.Label)
 	for labelKey, label := range labels {
-		protected, err := regexp.MatchString(labelKey, protectedLabelsKeyPattern)
+		protected, err := regexp.MatchString(protectedLabelsKeyPattern, labelKey)
 		if err != nil {
 			return nil, err
 		}
@@ -617,11 +617,11 @@ func unsafeExtractModifiableLabels(labels map[string]interface{}, protectedLabel
 }
 
 func isLabelModifiable(labelKey, protectedLabelsKeyPattern, immutableLabelsKeyPattern string) (bool, error) {
-	protected, err := regexp.MatchString(labelKey, protectedLabelsKeyPattern)
+	protected, err := regexp.MatchString(protectedLabelsKeyPattern, labelKey)
 	if err != nil {
 		return false, err
 	}
-	immutable, err := regexp.MatchString(labelKey, immutableLabelsKeyPattern)
+	immutable, err := regexp.MatchString(immutableLabelsKeyPattern, labelKey)
 	if err != nil {
 		return false, err
 	}
