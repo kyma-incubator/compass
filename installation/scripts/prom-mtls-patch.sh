@@ -179,7 +179,7 @@ spec:
     spec:
       initContainers:
       - name: certs-init
-        image: frapsoft/openssl
+        image: frapsoft/openssl@sha256:7afbc23fda8b0b3872623c16af8e3490b2cee951aed14b3794389c2f946cc8c7
         command: ['sh', '-c', 'openssl req -newkey rsa:2048 -nodes -days 365000 -subj "/CN=$(NODE_NAME)" -keyout /etc/certs/node.key -out /etc/certs/node.csr && openssl x509 -req -days 365000 -set_serial 01 -in /etc/certs/node.csr -out /etc/certs/node.crt -CA /etc/istio/certs/ca-cert.pem -CAkey /etc/istio/certs/ca-key.pem']
         env:
           - name: NODE_NAME
@@ -193,7 +193,7 @@ spec:
         - name: node-certs
           mountPath: /etc/certs
       - name: web-config-init
-        image: busybox
+        image: busybox:1.34.1
         command: ['sh', '-c', 'printf "tls_server_config:\n  cert_file: /etc/certs/node.crt\n  key_file: /etc/certs/node.key" > /etc/certs/web.yaml'] 
         volumeMounts:
         - name: node-certs
