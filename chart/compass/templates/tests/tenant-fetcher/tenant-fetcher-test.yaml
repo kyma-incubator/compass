@@ -33,7 +33,7 @@ spec:
           args: ["-c", "./tenant-fetcher.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           resources:
             limits:
-              memory: "300Mi"
+              memory: "1Gi"
           env:
             - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
