@@ -68,6 +68,13 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	if contentType == "application/x-www-form-urlencoded" {
 		// mtls client credentials is performed
 		log.C(r.Context()).Infof("mtls client credentials: %s", string(body))
+		err = r.ParseForm()
+		if err != nil {
+			log.C(r.Context()).Errorf("Cannot parse form. Error: %s", err)
+		}
+		log.C(r.Context()).Infof("mtls client credentials body: %s", string(body))
+		log.C(r.Context()).Infof("mtls client credentials post-form: %+v", r.PostForm)
+		log.C(r.Context()).Infof("mtls client credentials form: %+v", r.Form)
 	} else {
 		if len(body) > 0 {
 			err = json.Unmarshal(body, &claims)
