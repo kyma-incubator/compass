@@ -173,10 +173,6 @@ func GetAuthorizationToken(ctx context.Context, httpClient httputils.Client, cre
 		return httputils.Token{}, errors.Wrapf(err, "while reading token response body from %q", credentials.TokenURL)
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return httputils.Token{}, errors.Wrapf(err, "oauth server returned unexpected status code %d and body: %s", response.StatusCode, respBody)
-	}
-
 	tokenResponse := httputils.Token{}
 	err = json.Unmarshal(respBody, &tokenResponse)
 	if err != nil {
