@@ -501,16 +501,16 @@ global:
         skipSSLValidation: false
     oauth:
       client: ""
-      secret: ""
       tokenEndpointProtocol: ""
       tokenBaseUrl: ""
       tokenPath: ""
       scopesClaim: ""
       tenantHeaderName: ""
+      tokenRequestTimeout: 10s
+      skipSSLValidation: true
     secret:
       name: "compass-system-fetcher-secret"
       clientIdKey: client-id
-      clientSecretKey: client-secret
       oauthUrlKey: url
     paging:
       pageSize: 200

@@ -76,11 +76,6 @@ spec:
                     secretKeyRef:
                       name: {{ .Values.global.systemFetcher.secret.name }}
                       key: {{ .Values.global.systemFetcher.secret.clientIdKey }}
-                - name: APP_OAUTH_CLIENT_SECRET
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ .Values.global.systemFetcher.secret.name }}
-                      key: {{ .Values.global.systemFetcher.secret.clientSecretKey }}
                 - name: APP_OAUTH_TOKEN_BASE_URL
                   valueFrom:
                     secretKeyRef:
@@ -90,6 +85,10 @@ spec:
                   value: {{ .Values.global.systemFetcher.oauth.tokenPath }}
                 - name: APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL
                   value: {{ .Values.global.systemFetcher.oauth.tokenEndpointProtocol }}
+                - name: APP_OAUTH_TOKEN_REQUEST_TIMEOUT
+                  value: {{ .Values.global.systemFetcher.oauth.tokenRequestTimeout }}
+                - name: APP_OAUTH_SKIP_SSL_VALIDATION
+                  value: {{ .Values.global.systemFetcher.oauth.skipSSLValidation }}
                 - name: APP_DB_USER
                   valueFrom:
                     secretKeyRef:
@@ -168,7 +167,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   {{ .Values.global.systemFetcher.secret.clientIdKey }}: {{ .Values.global.systemFetcher.oauth.client | b64enc | quote }}
-  {{ .Values.global.systemFetcher.secret.clientSecretKey }}: {{ .Values.global.systemFetcher.oauth.secret | b64enc | quote }}
   {{ .Values.global.systemFetcher.secret.oauthUrlKey }}: {{ .Values.global.systemFetcher.oauth.tokenBaseUrl | b64enc | quote }}
 {{ end }}
 {{ end }}
