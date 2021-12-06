@@ -40,11 +40,13 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	authorization := r.Header.Get("authorization")
 	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
+		log.C(r.Context()).Errorf("client secret not found in header: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "client secret not found in header"), http.StatusBadRequest)
 		return
 	}
 
 	if h.expectedID != id || h.expectedSecret != secret {
+		log.C(r.Context()).Error("client secret or client id doesn't match expected")
 		httphelpers.WriteError(writer, errors.New("client secret or client id doesn't match expected"), http.StatusBadRequest)
 		return
 	}
@@ -57,14 +59,21 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
 		return
 	}
 
-	if len(body) > 0 {
-		err = json.Unmarshal(body, &claims)
-		if err != nil {
-			log.C(r.Context()).WithError(err).Infof("Cannot json unmarshal the request body. Error: %s. Proceeding with empty claims", err)
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "application/x-www-form-urlencoded" {
+		// mtls client credentials is performed
+		log.C(r.Context()).Infof("mtls client credentials: %s", string(body))
+	} else {
+		if len(body) > 0 {
+			err = json.Unmarshal(body, &claims)
+			if err != nil {
+				log.C(r.Context()).WithError(err).Infof("Cannot json unmarshal the request body. Error: %s. Proceeding with empty claims", err)
+			}
 		}
 	}
 
@@ -78,6 +87,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	}
 
 	if err != nil {
+		log.C(r.Context()).Errorf("while creating oauth token: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while creating oauth token"), http.StatusInternalServerError)
 		return
 	}
@@ -85,6 +95,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	response := createResponse(output)
 	payload, err := json.Marshal(response)
 	if err != nil {
+		log.C(r.Context()).Errorf("while marshalling response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
@@ -93,6 +104,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write(payload)
 	if err != nil {
+		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
 		return
 	}
