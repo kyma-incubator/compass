@@ -179,7 +179,7 @@ spec:
     spec:
       initContainers:
       - name: certs-init
-        image: frapsoft/openssl@sha256:7afbc23fda8b0b3872623c16af8e3490b2cee951aed14b3794389c2f946cc8c7
+        image: emberstack/openssl:alpine-latest
         command: ['sh', '-c', 'openssl req -newkey rsa:2048 -nodes -days 365000 -subj "/CN=$(NODE_NAME)" -keyout /etc/certs/node.key -out /etc/certs/node.csr && openssl x509 -req -days 365000 -set_serial 01 -in /etc/certs/node.csr -out /etc/certs/node.crt -CA /etc/istio/certs/ca-cert.pem -CAkey /etc/istio/certs/ca-key.pem']
         env:
           - name: NODE_NAME
