@@ -248,8 +248,7 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern)
-	if err != nil {
+	if in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern); err != nil {
 		return "", err
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
@@ -319,8 +318,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern)
-	if err != nil {
+	if in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern); err != nil {
 		return err
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
@@ -397,11 +395,11 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return err
 	}
 
-	protected, err := isMatchingRegex(labelInput.Key, s.protectedLabelPattern)
+	protected, err := regexp.MatchString(labelInput.Key, s.protectedLabelPattern)
 	if err != nil {
 		return err
 	}
-	immutable, err := isMatchingRegex(labelInput.Key, s.immutableLabelPattern)
+	immutable, err := regexp.MatchString(labelInput.Key, s.immutableLabelPattern)
 	if err != nil {
 		return err
 	}
@@ -409,8 +407,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return apperrors.NewInvalidDataError("could not set unmodifiable label with key %s", labelInput.Key)
 	}
 	if labelInput.Key != model.ScenariosKey {
-		err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, labelInput)
-		if err != nil {
+		if err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, labelInput); err != nil {
 			return errors.Wrapf(err, "while creating label for Runtime")
 		}
 	}
@@ -493,15 +490,11 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 		return err
 	}
 
-	protected, err := isMatchingRegex(key, s.protectedLabelPattern)
+	modifiable, err := isLabelModifiable(key, s.protectedLabelPattern, s.immutableLabelPattern)
 	if err != nil {
 		return err
 	}
-	immutable, err := isMatchingRegex(key, s.immutableLabelPattern)
-	if err != nil {
-		return err
-	}
-	if protected || immutable {
+	if !modifiable {
 		return apperrors.NewInvalidDataError("could not delete unmodifiable label with key %s", key)
 	}
 	if key != model.ScenariosKey {
@@ -602,7 +595,7 @@ func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value in
 func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {
 	result := make(map[string]*model.Label)
 	for labelKey, label := range labels {
-		protected, err := isMatchingRegex(labelKey, protectedLabelsKeyPattern)
+		protected, err := regexp.MatchString(labelKey, protectedLabelsKeyPattern)
 		if err != nil {
 			return nil, err
 		}
@@ -616,27 +609,27 @@ func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKey
 func unsafeExtractModifiableLabels(labels map[string]interface{}, protectedLabelsKeyPattern string, immutableLabelsKeyPattern string) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	for labelKey, label := range labels {
-		protected, err := isMatchingRegex(labelKey, protectedLabelsKeyPattern)
+		modifiable, err := isLabelModifiable(labelKey, protectedLabelsKeyPattern, immutableLabelsKeyPattern)
 		if err != nil {
-			return nil, err
+			return result, err
 		}
-		immutable, err := isMatchingRegex(labelKey, immutableLabelsKeyPattern)
-		if err != nil {
-			return nil, err
-		}
-		if !protected && !immutable {
+		if modifiable {
 			result[labelKey] = label
 		}
 	}
 	return result, nil
 }
 
-func isMatchingRegex(labelKey string, labelKeyPattern string) (bool, error) {
-	matched, err := regexp.MatchString(labelKeyPattern, labelKey)
+func isLabelModifiable(labelKey, protectedLabelsKeyPattern, immutableLabelsKeyPattern string) (bool, error) {
+	protected, err := regexp.MatchString(labelKey, protectedLabelsKeyPattern)
 	if err != nil {
 		return false, err
 	}
-	return matched, nil
+	immutable, err := regexp.MatchString(labelKey, immutableLabelsKeyPattern)
+	if err != nil {
+		return false, err
+	}
+	return !protected && !immutable, err
 }
 
 func convertLabelValue(value interface{}) (string, error) {
