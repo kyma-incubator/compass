@@ -256,8 +256,8 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 	for key, value := range mandatoryLabels {
 		in.Labels[key] = value
 	}
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
-	if err != nil {
+
+	if err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}
 
