@@ -395,15 +395,11 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return err
 	}
 
-	protected, err := regexp.MatchString(labelInput.Key, s.protectedLabelPattern)
+	modifiable, err := isLabelModifiable(labelInput.Key, s.protectedLabelPattern, s.immutableLabelPattern)
 	if err != nil {
 		return err
 	}
-	immutable, err := regexp.MatchString(labelInput.Key, s.immutableLabelPattern)
-	if err != nil {
-		return err
-	}
-	if protected || immutable {
+	if !modifiable {
 		return apperrors.NewInvalidDataError("could not set unmodifiable label with key %s", labelInput.Key)
 	}
 	if labelInput.Key != model.ScenariosKey {
