@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -1344,7 +1344,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid `ordID` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1352,7 +1353,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Missing `title` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1377,7 +1379,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid empty `shortDescription` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1385,7 +1388,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "New lines in `shortDescription` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1402,7 +1406,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Exceeded length of `description` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1410,7 +1415,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid empty `description` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1418,7 +1424,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "New lines in `description` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1426,7 +1433,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Missing `title` field in `Links` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1434,7 +1442,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Missing `url` field in `Links` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1442,7 +1451,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid `url` field in `Links` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1450,7 +1460,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid `Links` field when it is invalid JSON for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1458,7 +1469,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid `Links` field when it isn't a JSON array for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1484,7 +1496,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid JSON object `Labels` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1492,7 +1505,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "`Labels` values are not array for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1500,7 +1514,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "`Labels` values are not array of strings for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1508,7 +1523,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid key for JSON `Labels` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1516,7 +1532,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Missing `type` field of `CredentialExchangeStrategies` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1524,7 +1541,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid `type` field of `CredentialExchangeStrategies` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1532,7 +1550,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "`type` field is not with value `custom` when `customType` field is provided for `CredentialExchangeStrategies` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1540,7 +1559,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid `customType` field when `type` field is set to `custom` for `CredentialExchangeStrategies` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1548,7 +1568,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "`type` field is not with value `custom` when `customDescription` field is provided for `CredentialExchangeStrategies` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1556,7 +1577,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid `callbackURL` field of `CredentialExchangeStrategies` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1564,7 +1586,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid `CredentialExchangeStrategies` field when it is invalid JSON for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1572,7 +1595,8 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		}, {
+		},
+		{
 			Name: "Invalid `CredentialExchangeStrategies` field when it isn't a JSON array for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1589,6 +1613,58 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		},
+		{
+			Name: "Invalid `correlationIds` field when it is invalid JSON for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CorrelationIDs = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `correlationIds` field when it isn't a JSON array for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CorrelationIDs = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `correlationIds` field when it is an empty JSON array for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CorrelationIDs = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `correlationIds` field when it contains non string value for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsNonStringElement)
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid value for `correlationIds` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Success when `correlationIds` are valid",
+			DocumentProvider: func() []*ord.Document {
+				return []*ord.Document{fixORDDocument()}
+			},
+			ExpectedToBeValid: true,
 		},
 	}
 

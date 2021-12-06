@@ -8,7 +8,6 @@ import (
 type Vendor struct {
 	ID            string
 	OrdID         string
-	TenantID      string
 	ApplicationID string
 	Title         string
 	Partners      json.RawMessage
@@ -24,7 +23,7 @@ type VendorInput struct {
 }
 
 // ToVendor missing godoc
-func (i *VendorInput) ToVendor(id, tenantID, appID string) *Vendor {
+func (i *VendorInput) ToVendor(id, appID string) *Vendor {
 	if i == nil {
 		return nil
 	}
@@ -32,7 +31,6 @@ func (i *VendorInput) ToVendor(id, tenantID, appID string) *Vendor {
 	return &Vendor{
 		ID:            id,
 		OrdID:         i.OrdID,
-		TenantID:      tenantID,
 		ApplicationID: appID,
 		Title:         i.Title,
 		Partners:      i.Partners,

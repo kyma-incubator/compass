@@ -51,7 +51,6 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 	}
 
 	output := &Entity{
-		TenantID:                      in.TenantID,
 		ApplicationID:                 in.ApplicationID,
 		Name:                          in.Name,
 		Description:                   repo.NewNullableString(in.Description),
@@ -62,6 +61,7 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 		Links:                         repo.NewNullableStringFromJSONRawMessage(in.Links),
 		Labels:                        repo.NewNullableStringFromJSONRawMessage(in.Labels),
 		CredentialExchangeStrategies:  repo.NewNullableStringFromJSONRawMessage(in.CredentialExchangeStrategies),
+		CorrelationIDs:                repo.NewNullableStringFromJSONRawMessage(in.CorrelationIDs),
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -87,7 +87,6 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 	}
 
 	output := &model.Bundle{
-		TenantID:                       entity.TenantID,
 		ApplicationID:                  entity.ApplicationID,
 		Name:                           entity.Name,
 		Description:                    repo.StringPtrFromNullableString(entity.Description),
@@ -98,6 +97,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 		Links:                          repo.JSONRawMessageFromNullableString(entity.Links),
 		Labels:                         repo.JSONRawMessageFromNullableString(entity.Labels),
 		CredentialExchangeStrategies:   repo.JSONRawMessageFromNullableString(entity.CredentialExchangeStrategies),
+		CorrelationIDs:                 repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,

@@ -121,7 +121,7 @@ func (c *converter) InputFromGraphQLEventSpec(in *graphql.EventSpecInput) (*mode
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in model.Spec) Entity {
+func (c *converter) ToEntity(in *model.Spec) *Entity {
 	refID := repo.NewValidNullableString(in.ObjectID)
 
 	var apiDefID sql.NullString
@@ -143,9 +143,8 @@ func (c *converter) ToEntity(in model.Spec) Entity {
 		eventSpecType = repo.NewValidNullableString(string(*in.EventType))
 	}
 
-	return Entity{
+	return &Entity{
 		ID:              in.ID,
-		TenantID:        in.Tenant,
 		APIDefID:        apiDefID,
 		EventAPIDefID:   eventAPIDefID,
 		SpecData:        repo.NewNullableString(in.Data),
@@ -158,10 +157,10 @@ func (c *converter) ToEntity(in model.Spec) Entity {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (model.Spec, error) {
-	objectID, objectType, err := c.objectReferenceFromEntity(in)
+func (c *converter) FromEntity(in *Entity) (*model.Spec, error) {
+	objectID, objectType, err := c.objectReferenceFromEntity(*in)
 	if err != nil {
-		return model.Spec{}, errors.Wrap(err, "while determining object reference")
+		return nil, errors.Wrap(err, "while determining object reference")
 	}
 
 	var apiSpecFormat model.SpecFormat
@@ -197,9 +196,8 @@ func (c *converter) FromEntity(in Entity) (model.Spec, error) {
 		specFormat = eventSpecFormat
 	}
 
-	return model.Spec{
+	return &model.Spec{
 		ID:         in.ID,
-		Tenant:     in.TenantID,
 		ObjectType: objectType,
 		ObjectID:   objectID,
 		Data:       repo.StringPtrFromNullableString(in.SpecData),

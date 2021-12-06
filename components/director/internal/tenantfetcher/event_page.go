@@ -15,10 +15,10 @@ import (
 const GlobalAccountRegex = "^GLOBALACCOUNT_.*|GlobalAccount"
 
 type eventsPage struct {
-	fieldMapping                    TenantFieldMapping
-	movedRuntimeByLabelFieldMapping MovedRuntimeByLabelFieldMapping
-	providerName                    string
-	payload                         []byte
+	fieldMapping                 TenantFieldMapping
+	movedSubaccountsFieldMapping MovedSubaccountsFieldMapping
+	providerName                 string
+	payload                      []byte
 }
 
 func (ep eventsPage) getEventsDetails() [][]byte {
@@ -54,11 +54,11 @@ func (ep eventsPage) getEventsDetails() [][]byte {
 	return tenantDetails
 }
 
-func (ep eventsPage) getMovedRuntimes() []model.MovedRuntimeByLabelMappingInput {
+func (ep eventsPage) getMovedSubaccounts() []model.MovedSubaccountMappingInput {
 	eds := ep.getEventsDetails()
-	mappings := make([]model.MovedRuntimeByLabelMappingInput, 0, len(eds))
+	mappings := make([]model.MovedSubaccountMappingInput, 0, len(eds))
 	for _, detail := range eds {
-		mapping, err := ep.eventDataToMovedRuntime(detail)
+		mapping, err := ep.eventDataToMovedSubaccount(detail)
 		if err != nil {
 			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
 			continue
@@ -86,26 +86,47 @@ func (ep eventsPage) getTenantMappings(eventsType EventsType) []model.BusinessTe
 	return tenants
 }
 
-func (ep eventsPage) eventDataToMovedRuntime(eventData []byte) (*model.MovedRuntimeByLabelMappingInput, error) {
-	id, ok := gjson.GetBytes(eventData, ep.movedRuntimeByLabelFieldMapping.LabelValue).Value().(string)
-	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", ep.movedRuntimeByLabelFieldMapping.LabelValue)
+func (ep eventsPage) eventDataToMovedSubaccount(eventData []byte) (*model.MovedSubaccountMappingInput, error) {
+	jsonPayload := string(eventData)
+	if !gjson.Valid(jsonPayload) {
+		return nil, errors.Errorf("invalid json payload")
 	}
 
-	source, ok := gjson.GetBytes(eventData, ep.movedRuntimeByLabelFieldMapping.SourceTenant).Value().(string)
+	id, ok := gjson.GetBytes(eventData, ep.movedSubaccountsFieldMapping.LabelValue).Value().(string)
 	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", ep.movedRuntimeByLabelFieldMapping.SourceTenant)
+		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountsFieldMapping.LabelValue)
 	}
 
-	target, ok := gjson.GetBytes(eventData, ep.movedRuntimeByLabelFieldMapping.TargetTenant).Value().(string)
+	source, ok := gjson.GetBytes(eventData, ep.movedSubaccountsFieldMapping.SourceTenant).Value().(string)
 	if !ok {
-		return nil, errors.Errorf("invalid format of %s field", ep.movedRuntimeByLabelFieldMapping.TargetTenant)
+		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountsFieldMapping.SourceTenant)
 	}
 
-	return &model.MovedRuntimeByLabelMappingInput{
-		LabelValue:   id,
-		SourceTenant: source,
-		TargetTenant: target,
+	target, ok := gjson.GetBytes(eventData, ep.movedSubaccountsFieldMapping.TargetTenant).Value().(string)
+	if !ok {
+		return nil, errors.Errorf("invalid format of %s field", ep.movedSubaccountsFieldMapping.TargetTenant)
+	}
+
+	nameResult := gjson.Get(jsonPayload, ep.fieldMapping.NameField)
+	if !nameResult.Exists() {
+		return nil, invalidFieldFormatError(ep.fieldMapping.NameField)
+	}
+
+	subdomain := gjson.Get(jsonPayload, ep.fieldMapping.SubdomainField)
+	if !subdomain.Exists() {
+		log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.SubdomainField, id)
+	}
+
+	subaccountInput, err := constructSubaccountTenant(jsonPayload, nameResult.String(), subdomain.String(), id, ep)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.MovedSubaccountMappingInput{
+		TenantMappingInput: *subaccountInput,
+		SubaccountID:       id,
+		SourceTenant:       source,
+		TargetTenant:       target,
 	}, nil
 }
 

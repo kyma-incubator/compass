@@ -14,10 +14,10 @@ const (
 
 func TestTokenGenerator_NewToken(t *testing.T) {
 	t.Run("should generate token", func(t *testing.T) {
-		// given
+		// GIVEN
 		tokenGenerator := NewTokenGenerator(tokenLength)
 
-		// when
+		// WHEN
 		newToken, apperr := tokenGenerator.NewToken()
 
 		// then

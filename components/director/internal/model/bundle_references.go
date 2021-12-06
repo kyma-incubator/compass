@@ -5,7 +5,6 @@ import "github.com/pkg/errors"
 // BundleReference missing godoc
 type BundleReference struct {
 	ID                  string
-	Tenant              string
 	BundleID            *string
 	ObjectType          BundleReferenceObjectType
 	ObjectID            *string
@@ -28,7 +27,7 @@ type BundleReferenceInput struct {
 }
 
 // ToBundleReference missing godoc
-func (b *BundleReferenceInput) ToBundleReference(id, tenant string, objectType BundleReferenceObjectType, bundleID, objectID *string) (*BundleReference, error) {
+func (b *BundleReferenceInput) ToBundleReference(id string, objectType BundleReferenceObjectType, bundleID, objectID *string) (*BundleReference, error) {
 	if b == nil {
 		return nil, nil
 	}
@@ -39,7 +38,6 @@ func (b *BundleReferenceInput) ToBundleReference(id, tenant string, objectType B
 
 	return &BundleReference{
 		ID:                  id,
-		Tenant:              tenant,
 		BundleID:            bundleID,
 		ObjectType:          objectType,
 		ObjectID:            objectID,

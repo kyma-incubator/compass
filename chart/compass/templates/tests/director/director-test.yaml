@@ -111,17 +111,25 @@ spec:
             - name: APP_INFO_API_ENDPOINT
               value: {{ .Values.global.director.info.path }}
             - name: APP_INFO_CERT_SUBJECT
-              value: {{ quote (printf .Values.global.mtlsClient.subjectPattern .Values.global.mtlsClient.locality .Values.global.mtlsClient.commonName) }}
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName | trimPrefix "/" | replace "/" ", " | quote }}
             - name: APP_INFO_CERT_ISSUER
-              value: {{ .Values.global.mtlsClient.issuer }}
+              value: {{ .Values.global.externalCertConfiguration.issuer }}
             - name: APP_CA_SECRET_NAME
               value: "{{ .Values.global.connector.secrets.ca.name }}"
             - name: APP_CA_SECRET_NAMESPACE
               value: "{{ .Values.global.connector.secrets.ca.namespace }}"
+            - name: APP_EXTERNAL_CA_SECRET_NAME
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CA_SECRET_NAMESPACE
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}"
             - name: APP_CA_SECRET_CERTIFICATE_KEY
               value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
             - name: APP_CA_SECRET_KEY_KEY
               value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
+            - name: APP_EXTERNAL_CA_SECRET_CERTIFICATE_KEY
+              value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.crtKey | quote }}
+            - name: APP_EXTERNAL_CA_SECRET_KEY_KEY
+              value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey | quote }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.director.skipPattern }}
           {{ if .Values.global.isLocalEnv }}

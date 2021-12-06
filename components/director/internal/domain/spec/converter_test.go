@@ -13,7 +13,7 @@ import (
 )
 
 func TestConverter_ToGraphQLAPISpec(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name      string
 		Input     *model.Spec
@@ -48,7 +48,7 @@ func TestConverter_ToGraphQLAPISpec(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			converter := spec.NewConverter(&automock.FetchRequestConverter{})
 
-			// when
+			// WHEN
 			res, err := converter.ToGraphQLAPISpec(testCase.Input)
 
 			// then
@@ -63,7 +63,7 @@ func TestConverter_ToGraphQLAPISpec(t *testing.T) {
 }
 
 func TestConverter_ToGraphQLEventSpec(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name      string
 		Input     *model.Spec
@@ -98,7 +98,7 @@ func TestConverter_ToGraphQLEventSpec(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			converter := spec.NewConverter(&automock.FetchRequestConverter{})
 
-			// when
+			// WHEN
 			res, err := converter.ToGraphQLEventSpec(testCase.Input)
 
 			// then
@@ -115,7 +115,7 @@ func TestConverter_ToGraphQLEventSpec(t *testing.T) {
 func TestConverter_InputFromGraphQLAPISpec(t *testing.T) {
 	testErr := errors.New("test")
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
 		FetchRequestConvFn func() *automock.FetchRequestConverter
@@ -158,7 +158,7 @@ func TestConverter_InputFromGraphQLAPISpec(t *testing.T) {
 			frConv := testCase.FetchRequestConvFn()
 			converter := spec.NewConverter(frConv)
 
-			// when
+			// WHEN
 			res, err := converter.InputFromGraphQLAPISpec(testCase.Input)
 
 			// then
@@ -178,7 +178,7 @@ func TestConverter_InputFromGraphQLAPISpec(t *testing.T) {
 func TestConverter_InputFromGraphQLEventSpec(t *testing.T) {
 	testErr := errors.New("test")
 
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
 		FetchRequestConvFn func() *automock.FetchRequestConverter
@@ -221,7 +221,7 @@ func TestConverter_InputFromGraphQLEventSpec(t *testing.T) {
 			frConv := testCase.FetchRequestConvFn()
 			converter := spec.NewConverter(frConv)
 
-			// when
+			// WHEN
 			res, err := converter.InputFromGraphQLEventSpec(testCase.Input)
 
 			// then
@@ -239,30 +239,29 @@ func TestConverter_InputFromGraphQLEventSpec(t *testing.T) {
 }
 
 func TestConverter_FromEntity(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name               string
-		Input              spec.Entity
-		Expected           model.Spec
+		Input              *spec.Entity
+		Expected           *model.Spec
 		ExpectedErrMessage string
 	}{
 		{
 			Name:               "All properties given for API",
 			Input:              fixAPISpecEntity(),
-			Expected:           *fixModelAPISpec(),
+			Expected:           fixModelAPISpec(),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name:               "All properties given for Event",
 			Input:              fixEventSpecEntity(),
-			Expected:           *fixModelEventSpec(),
+			Expected:           fixModelEventSpec(),
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Error when no reference entity",
-			Input: spec.Entity{
-				ID:       "2",
-				TenantID: "tenant",
+			Input: &spec.Entity{
+				ID: "2",
 			},
 			ExpectedErrMessage: "while determining object reference: incorrect Object Reference ID and its type for Entity with ID '2'",
 		},
@@ -272,7 +271,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			conv := spec.NewConverter(&automock.FetchRequestConverter{})
 
-			// when
+			// WHEN
 			res, err := conv.FromEntity(testCase.Input)
 
 			if testCase.ExpectedErrMessage != "" {
@@ -289,20 +288,20 @@ func TestConverter_FromEntity(t *testing.T) {
 }
 
 func TestConverter_ToEntity(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
-		Input    model.Spec
-		Expected spec.Entity
+		Input    *model.Spec
+		Expected *spec.Entity
 	}{
 		{
 			Name:     "All properties given for API",
-			Input:    *fixModelAPISpec(),
+			Input:    fixModelAPISpec(),
 			Expected: fixAPISpecEntity(),
 		},
 		{
 			Name:     "All properties given for Event",
-			Input:    *fixModelEventSpec(),
+			Input:    fixModelEventSpec(),
 			Expected: fixEventSpecEntity(),
 		},
 	}
@@ -311,7 +310,7 @@ func TestConverter_ToEntity(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			conv := spec.NewConverter(&automock.FetchRequestConverter{})
 
-			// when
+			// WHEN
 			res := conv.ToEntity(testCase.Input)
 
 			// then

@@ -10,7 +10,6 @@ import (
 // Package missing godoc
 type Package struct {
 	ID                string
-	TenantID          string
 	ApplicationID     string
 	OrdID             string
 	Vendor            *string
@@ -54,7 +53,7 @@ type PackageInput struct {
 }
 
 // ToPackage missing godoc
-func (i *PackageInput) ToPackage(id, tenantID, appID string, pkgHash uint64) *Package {
+func (i *PackageInput) ToPackage(id, appID string, pkgHash uint64) *Package {
 	if i == nil {
 		return nil
 	}
@@ -66,7 +65,6 @@ func (i *PackageInput) ToPackage(id, tenantID, appID string, pkgHash uint64) *Pa
 
 	return &Package{
 		ID:                id,
-		TenantID:          tenantID,
 		ApplicationID:     appID,
 		OrdID:             i.OrdID,
 		Vendor:            i.Vendor,

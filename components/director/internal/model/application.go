@@ -12,7 +12,6 @@ import (
 // Application missing godoc
 type Application struct {
 	ProviderName          *string
-	Tenant                string
 	Name                  string
 	Description           *string
 	Status                *ApplicationStatus
@@ -135,7 +134,7 @@ type ApplicationRegisterInputWithTemplate struct {
 }
 
 // ToApplication missing godoc
-func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant string) *Application {
+func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string) *Application {
 	if i == nil {
 		return nil
 	}
@@ -143,7 +142,6 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant
 	return &Application{
 		Name:                i.Name,
 		Description:         i.Description,
-		Tenant:              tenant,
 		HealthCheckURL:      i.HealthCheckURL,
 		IntegrationSystemID: i.IntegrationSystemID,
 		ProviderName:        i.ProviderName,

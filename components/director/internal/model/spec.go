@@ -1,13 +1,13 @@
 package model
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 )
 
-// Spec missing godoc
+// Spec represents a specification of a resource.
 type Spec struct {
 	ID         string
-	Tenant     string
 	ObjectType SpecReferenceObjectType
 	ObjectID   string
 
@@ -18,88 +18,99 @@ type Spec struct {
 	CustomType *string
 }
 
-// SpecReferenceObjectType missing godoc
+// SpecReferenceObjectType represents the type of the referenced object by the Spec.
 type SpecReferenceObjectType string
 
 const (
-	// APISpecReference missing godoc
+	// APISpecReference is a reference to an API Specification.
 	APISpecReference SpecReferenceObjectType = "API"
-	// EventSpecReference missing godoc
+	// EventSpecReference is a reference to an Event Specification.
 	EventSpecReference SpecReferenceObjectType = "Event"
 )
 
-// SpecFormat missing godoc
+// GetResourceType returns the resource type of the specification based on the referenced entity.
+func (obj SpecReferenceObjectType) GetResourceType() resource.Type {
+	switch obj {
+	case APISpecReference:
+		return resource.APISpecification
+	case EventSpecReference:
+		return resource.EventSpecification
+	}
+	return ""
+}
+
+// SpecFormat is the format of the specification.
 type SpecFormat string
 
 const (
-	// SpecFormatYaml missing godoc
+	// SpecFormatYaml is the YAML format.
 	SpecFormatYaml SpecFormat = "YAML"
-	// SpecFormatJSON missing godoc
+	// SpecFormatJSON is the JSON format.
 	SpecFormatJSON SpecFormat = "JSON"
-	// SpecFormatXML missing godoc
+	// SpecFormatXML is the XML format.
 	SpecFormatXML SpecFormat = "XML"
 
 	// ORD Formats
 
-	// SpecFormatApplicationJSON missing godoc
+	// SpecFormatApplicationJSON is the Application JSON format.
 	SpecFormatApplicationJSON SpecFormat = "application/json"
-	// SpecFormatTextYAML missing godoc
+	// SpecFormatTextYAML is the Text YAML format.
 	SpecFormatTextYAML SpecFormat = "text/yaml"
-	// SpecFormatApplicationXML missing godoc
+	// SpecFormatApplicationXML is the Application XML format.
 	SpecFormatApplicationXML SpecFormat = "application/xml"
-	// SpecFormatPlainText missing godoc
+	// SpecFormatPlainText is the Plain Text format.
 	SpecFormatPlainText SpecFormat = "text/plain"
-	// SpecFormatOctetStream missing godoc
+	// SpecFormatOctetStream is the Octet Stream format.
 	SpecFormatOctetStream SpecFormat = "application/octet-stream"
 )
 
-// APISpecType missing godoc
+// APISpecType is the type of the API Specification.
 type APISpecType string
 
 const (
-	// APISpecTypeOdata missing godoc
+	// APISpecTypeOdata is the OData Specification.
 	APISpecTypeOdata APISpecType = "ODATA"
-	// APISpecTypeOpenAPI missing godoc
+	// APISpecTypeOpenAPI is the OpenAPI Specification.
 	APISpecTypeOpenAPI APISpecType = "OPEN_API"
 
 	// ORD Formats
 
-	// APISpecTypeOpenAPIV2 missing godoc
+	// APISpecTypeOpenAPIV2 is the OpenAPI V2 Specification.
 	APISpecTypeOpenAPIV2 APISpecType = "openapi-v2"
-	// APISpecTypeOpenAPIV3 missing godoc
+	// APISpecTypeOpenAPIV3 is the OpenAPI V3 Specification.
 	APISpecTypeOpenAPIV3 APISpecType = "openapi-v3"
-	// APISpecTypeRaml missing godoc
+	// APISpecTypeRaml is the RAML Specification.
 	APISpecTypeRaml APISpecType = "raml-v1"
-	// APISpecTypeEDMX missing godoc
+	// APISpecTypeEDMX is the EDMX Specification.
 	APISpecTypeEDMX APISpecType = "edmx"
-	// APISpecTypeCsdl missing godoc
+	// APISpecTypeCsdl is the CSDL Specification.
 	APISpecTypeCsdl APISpecType = "csdl-json"
-	// APISpecTypeWsdlV1 missing godoc
+	// APISpecTypeWsdlV1 is the WSDL V1 Specification.
 	APISpecTypeWsdlV1 APISpecType = "wsdl-v1"
-	// APISpecTypeWsdlV2 missing godoc
+	// APISpecTypeWsdlV2 is the WSDL V2 Specification.
 	APISpecTypeWsdlV2 APISpecType = "wsdl-v2"
-	// APISpecTypeRfcMetadata missing godoc
+	// APISpecTypeRfcMetadata is the RFC Metadata Specification.
 	APISpecTypeRfcMetadata APISpecType = "sap-rfc-metadata-v1"
-	// APISpecTypeCustom missing godoc
+	// APISpecTypeCustom is the Custom Specification.
 	APISpecTypeCustom APISpecType = "custom"
 )
 
-// EventSpecType missing godoc
+// EventSpecType is the type of the Event Specification.
 type EventSpecType string
 
 const (
-	// EventSpecTypeAsyncAPI missing godoc
+	// EventSpecTypeAsyncAPI is the AsyncAPI Specification.
 	EventSpecTypeAsyncAPI EventSpecType = "ASYNC_API"
 
 	// ORD Formats
 
-	// EventSpecTypeAsyncAPIV2 missing godoc
+	// EventSpecTypeAsyncAPIV2 is the AsyncAPI V2 Specification.
 	EventSpecTypeAsyncAPIV2 EventSpecType = "asyncapi-v2"
-	// EventSpecTypeCustom missing godoc
+	// EventSpecTypeCustom is the Custom Specification.
 	EventSpecTypeCustom EventSpecType = "custom"
 )
 
-// SpecInput missing godoc
+// SpecInput is an input for creating/updating specification.
 type SpecInput struct {
 	Data       *string
 	Format     SpecFormat
@@ -110,8 +121,8 @@ type SpecInput struct {
 	FetchRequest *FetchRequestInput
 }
 
-// ToSpec missing godoc
-func (s *SpecInput) ToSpec(id, tenant string, objectType SpecReferenceObjectType, objectID string) (*Spec, error) {
+// ToSpec converts the input to a Spec.
+func (s *SpecInput) ToSpec(id string, objectType SpecReferenceObjectType, objectID string) (*Spec, error) {
 	if s == nil {
 		return nil, nil
 	}
@@ -126,7 +137,6 @@ func (s *SpecInput) ToSpec(id, tenant string, objectType SpecReferenceObjectType
 
 	return &Spec{
 		ID:         id,
-		Tenant:     tenant,
 		ObjectType: objectType,
 		ObjectID:   objectID,
 		Data:       s.Data,

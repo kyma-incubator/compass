@@ -86,7 +86,7 @@ type EventConverter interface {
 //go:generate mockery --name=DocumentService --output=automock --outpkg=automock --case=underscore
 type DocumentService interface {
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error)
-	CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error)
+	CreateInBundle(ctx context.Context, appID, bundleID string, in model.DocumentInput) (string, error)
 	ListByBundleIDs(ctx context.Context, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
 }
 
@@ -101,11 +101,8 @@ type DocumentConverter interface {
 // SpecService missing godoc
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore
 type SpecService interface {
-	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
-	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
 	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	ListByReferenceObjectIDs(ctx context.Context, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
-	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
 }
 
 // BundleReferenceService missing godoc

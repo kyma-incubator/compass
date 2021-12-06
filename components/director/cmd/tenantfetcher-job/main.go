@@ -2,7 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"net/http"
 	"time"
+
+	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 
@@ -23,24 +30,26 @@ import (
 )
 
 type config struct {
-	Database                        persistence.DatabaseConfig
-	KubernetesConfig                tenantfetcher.KubeConfig
-	OAuthConfig                     tenantfetcher.OAuth2Config
-	APIConfig                       tenantfetcher.APIConfig
-	QueryConfig                     tenantfetcher.QueryConfig
-	TenantFieldMapping              tenantfetcher.TenantFieldMapping
-	MovedRuntimeByLabelFieldMapping tenantfetcher.MovedRuntimeByLabelFieldMapping
+	Database                    persistence.DatabaseConfig
+	KubernetesConfig            tenantfetcher.KubeConfig
+	OAuthConfig                 tenantfetcher.OAuth2Config
+	APIConfig                   tenantfetcher.APIConfig
+	QueryConfig                 tenantfetcher.QueryConfig
+	TenantFieldMapping          tenantfetcher.TenantFieldMapping
+	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
 
 	Log      log.Config
 	Features features.Config
 
-	TenantProvider       string        `envconfig:"APP_TENANT_PROVIDER"`
-	AccountsRegion       string        `envconfig:"default=central,APP_ACCOUNT_REGION"`
-	SubaccountRegions    []string      `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
-	MetricsPushEndpoint  string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
-	MovedRuntimeLabelKey string        `envconfig:"default=moved_runtime,APP_MOVED_RUNTIME_LABEL_KEY"`
-	ClientTimeout        time.Duration `envconfig:"default=60s"`
-	FullResyncInterval   time.Duration `envconfig:"default=12h"`
+	TenantProvider              string        `envconfig:"APP_TENANT_PROVIDER"`
+	AccountsRegion              string        `envconfig:"default=central,APP_ACCOUNT_REGION"`
+	SubaccountRegions           []string      `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
+	MetricsPushEndpoint         string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+	TenantInsertChunkSize       int           `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
+	ClientTimeout               time.Duration `envconfig:"default=60s"`
+	FullResyncInterval          time.Duration `envconfig:"default=12h"`
+	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
+	HTTPClientSkipSslValidation bool          `envconfig:"default=false"`
 
 	ShouldSyncSubaccounts bool `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
 }
@@ -102,24 +111,46 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
 
+	runtimeConverter := runtime.NewConverter()
+	runtimeRepository := runtime.NewRepository(runtimeConverter)
+
 	scenarioAssignConv := scenarioassignment.NewConverter()
 	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)
-	scenarioAssignEngine := scenarioassignment.NewEngine(labelService, labelRepository, scenarioAssignRepo)
+	scenarioAssignEngine := scenarioassignment.NewEngine(labelService, labelRepository, scenarioAssignRepo, runtimeRepository)
 
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
 	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 
-	runtimeConverter := runtime.NewConverter()
-	runtimeRepository := runtime.NewRepository(runtimeConverter)
-	runtimeService := runtime.NewService(runtimeRepository, labelRepository, labelDefService, labelService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern)
+	runtimeService := runtime.NewService(runtimeRepository, labelRepository, labelDefService, labelService, uidSvc, scenarioAssignEngine, cfg.Features.ProtectedLabelPattern, tenantStorageSvc)
 
 	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, cfg.ClientTimeout)
 	if metricsPusher != nil {
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	if cfg.ShouldSyncSubaccounts {
-		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedRuntimeByLabelFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelDefService, labelService, cfg.MovedRuntimeLabelKey, cfg.FullResyncInterval)
+	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
+	gqlClient.Log = func(s string) {
+		log.D().Debug(s)
 	}
-	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval)
+	directorClient := graphqlclient.NewDirector(gqlClient)
+
+	if cfg.ShouldSyncSubaccounts {
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedSubaccountFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelRepository, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv)
+	}
+	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv)
+}
+
+func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: skipSSLValidation,
+		},
+	}
+
+	client := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")),
+		Timeout:   timeout,
+	}
+
+	return gcli.NewClient(url, gcli.WithHTTPClient(client))
 }

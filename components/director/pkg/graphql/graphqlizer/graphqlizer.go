@@ -570,6 +570,60 @@ func (g *Graphqlizer) AutomaticScenarioAssignmentSetInputToGQL(in graphql.Automa
 	}`)
 }
 
+// WriteTenantsInputToGQL creates tenant input for writeTenants mutation from multiple tenants
+func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingInput) (string, error) {
+	return g.genericToGQL(in, `
+		{{ $n := (len .) }}
+		{{ range $i, $tenant := . }}
+			{{- if $i }}, {{- end }}
+			{
+				name: "{{ $tenant.Name }}",
+ 				externalTenant: "{{ $tenant.ExternalTenant }}",
+				{{- if $tenant.Parent }}
+				parent: "{{ $tenant.Parent }}",
+				{{- end }}
+				{{- if $tenant.Region }}
+				region: "{{ $tenant.Region }}",
+				{{- end }}
+				{{- if $tenant.Subdomain }}
+				subdomain: "{{ $tenant.Subdomain }}",
+				{{- end }}
+				type: "{{ $tenant.Type }}",
+				provider: "{{ $tenant.Provider }}"
+			}
+		{{ end }}`)
+}
+
+// DeleteTenantsInputToGQL creates tenant input for deleteTenants mutation from multiple external tenant ids
+func (g *Graphqlizer) DeleteTenantsInputToGQL(in []graphql.BusinessTenantMappingInput) (string, error) {
+	return g.genericToGQL(in, `
+		{{ $n := (len .) }}
+		{{ range $i, $tenant := . }}
+			{{- if $i }}, {{- end }}
+			"{{ $tenant.ExternalTenant }}"
+		{{ end }}`)
+}
+
+// UpdateTenantsInputToGQL creates tenant input for updateTenant
+func (g *Graphqlizer) UpdateTenantsInputToGQL(in graphql.BusinessTenantMappingInput) (string, error) {
+	return g.genericToGQL(in, `
+		{
+			name: "{{ .Name }}",
+ 			externalTenant: "{{ .ExternalTenant }}",
+			{{- if .Parent }}
+			parent: "{{ .Parent }}",
+			{{- end }}
+			{{- if .Region }}
+			region: "{{ .Region }}",
+			{{- end }}
+			{{- if .Subdomain }}
+			subdomain: "{{ .Subdomain }}",
+			{{- end }}
+			type: "{{ .Type }}",
+			provider: "{{ .Provider }}"
+		}`)
+}
+
 func (g *Graphqlizer) marshal(obj interface{}) string {
 	var out string
 

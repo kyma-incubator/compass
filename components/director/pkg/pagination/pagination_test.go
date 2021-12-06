@@ -59,10 +59,10 @@ func TestComputeOffset(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//WHEN
+			// WHEN
 			offset, err := DecodeOffsetCursor(testCase.InputCursor)
 
-			//THEN
+			// THEN
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 			} else {
@@ -90,7 +90,7 @@ func TestConvertOffsetLimitAndOrderedColumnToSQL(t *testing.T) {
 		// WHEN
 		sql, err := ConvertOffsetLimitAndOrderedColumnToSQL(5, 5, "id")
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, sql, `ORDER BY id LIMIT 5 OFFSET 5`)
 	})
@@ -99,7 +99,7 @@ func TestConvertOffsetLimitAndOrderedColumnToSQL(t *testing.T) {
 		// WHEN
 		_, err := ConvertOffsetLimitAndOrderedColumnToSQL(5, 10, "")
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), `to use pagination you must provide column to order by`)
 	})
@@ -108,7 +108,7 @@ func TestConvertOffsetLimitAndOrderedColumnToSQL(t *testing.T) {
 		// WHEN
 		_, err := ConvertOffsetLimitAndOrderedColumnToSQL(-1, 5, "id")
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), `page size cannot be smaller than 1`)
 	})
@@ -117,7 +117,7 @@ func TestConvertOffsetLimitAndOrderedColumnToSQL(t *testing.T) {
 		// WHEN
 		_, err := ConvertOffsetLimitAndOrderedColumnToSQL(5, -1, "id")
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), `offset cannot be smaller than 0`)
 	})
@@ -128,11 +128,11 @@ func TestDecodeAndEncodeCursorTogether(t *testing.T) {
 		//GIVEN
 		offset := 4
 
-		//WHEN
+		// WHEN
 		cursor := EncodeNextOffsetCursor(offset, 0)
 		decodedOffset, err := DecodeOffsetCursor(cursor)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, offset, decodedOffset)
 	})
@@ -142,10 +142,10 @@ func TestDecodeAndEncodeCursorTogether(t *testing.T) {
 		offset := 4
 		pageSize := 5
 
-		//WHEN
+		// WHEN
 		cursor := EncodeNextOffsetCursor(offset, pageSize)
 		decodedOffset, err := DecodeOffsetCursor(cursor)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, offset+pageSize, decodedOffset)
 	})
@@ -154,11 +154,11 @@ func TestDecodeAndEncodeCursorTogether(t *testing.T) {
 		//GIVEN
 		cursor := "RHBLdEo0ajlqRHExMDA="
 
-		//WHEN
+		// WHEN
 		offset, err := DecodeOffsetCursor(cursor)
 		encodedCusor := EncodeNextOffsetCursor(offset, 0)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, cursor, encodedCusor)
 	})
@@ -168,11 +168,11 @@ func TestDecodeAndEncodeCursorTogether(t *testing.T) {
 		cursor := "RHBLdEo0ajlqRHExMDA="
 		nextCursor := "RHBLdEo0ajlqRHExMDU="
 
-		//WHEN
+		// WHEN
 		offset, err := DecodeOffsetCursor(cursor)
 		encodedCusor := EncodeNextOffsetCursor(offset, 5)
 
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, nextCursor, encodedCusor)
 	})

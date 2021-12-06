@@ -19,15 +19,15 @@ type DocumentRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Document, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.Document, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error)
-	Create(ctx context.Context, item *model.Document) error
+	Create(ctx context.Context, tenant string, item *model.Document) error
 	Delete(ctx context.Context, tenant, id string) error
 }
 
 // FetchRequestRepository missing godoc
 //go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
 type FetchRequestRepository interface {
-	Create(ctx context.Context, item *model.FetchRequest) error
-	Delete(ctx context.Context, tenant, id string) error
+	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
+	Delete(ctx context.Context, tenant, id string, objectType model.FetchRequestReferenceObjectType) error
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectIDs []string) ([]*model.FetchRequest, error)
 }
 
@@ -85,7 +85,7 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 }
 
 // CreateInBundle missing godoc
-func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error) {
+func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.DocumentInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -93,18 +93,16 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 
 	id := s.uidService.Generate()
 
-	document := in.ToDocumentWithinBundle(id, tnt, bundleID)
-	err = s.repo.Create(ctx, document)
-	if err != nil {
+	document := in.ToDocumentWithinBundle(id, bundleID, appID)
+	if err = s.repo.Create(ctx, tnt, document); err != nil {
 		return "", errors.Wrap(err, "while creating Document")
 	}
 
 	if in.FetchRequest != nil {
 		generatedID := s.uidService.Generate()
 		fetchRequestID := &generatedID
-		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, tnt, model.DocumentFetchRequestReference, id)
-		err := s.fetchRequestRepo.Create(ctx, fetchRequestModel)
-		if err != nil {
+		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, model.DocumentFetchRequestReference, id)
+		if err := s.fetchRequestRepo.Create(ctx, tnt, fetchRequestModel); err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for Document %s", id)
 		}
 	}

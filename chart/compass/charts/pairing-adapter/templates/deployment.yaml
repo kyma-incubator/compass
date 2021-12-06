@@ -1,3 +1,4 @@
+{{ $global := . }}
 {{- range $adapterName, $config := .Values.deployment.adapters -}}
 {{if eq $config.enabled true}}
 ---
@@ -26,6 +27,14 @@ spec:
                 release: {{ $.Release.Name }}
                 system: {{ $adapterName }}
         spec:
+{{ if $.Values.global.isLocalEnv }}
+      # HostAliases are used by Pod to resolve kyma.local domain
+            hostAliases:
+              - ip: {{ $.Values.global.minikubeIP }}
+                hostnames:
+                  - "{{ $.Values.global.externalServicesMock.certSecuredHost }}.{{ $.Values.global.ingress.domainName }}"
+{{ end }}
+            serviceAccountName: {{ $.Release.Name }}-pairing-adapter
             nodeSelector:
               {{- toYaml $.Values.deployment.nodeSelector | nindent 14 }}
             containers:
@@ -34,30 +43,43 @@ spec:
               imagePullPolicy: {{ $.Values.deployment.image.pullPolicy }}
               env:
               - name: MAPPING_TEMPLATE_EXTERNAL_URL
+{{ if contains "local" $adapterName }}
+                value: {{ tpl $config.envs.mappingTemplateExternalURL $global }}
+{{ else }}
                 value: {{ $config.envs.mappingTemplateExternalURL  }}
+{{ end }}
               - name: MAPPING_TEMPLATE_HEADERS
                 value: {{ $config.envs.mappingTemplateHeaders | quote }}
               - name: MAPPING_TEMPLATE_JSON_BODY
                 value: {{ $config.envs.mappingTemplateJSONBody | quote }}
               - name: MAPPING_TEMPLATE_TOKEN_FROM_RESPONSE
                 value: {{ $config.envs.mappingTemplateTokenFromResponse | quote }}
-              - name: OAUTH_URL
+              - name: AUTH_TYPE
+                value: {{ $config.auth.type }}
+{{if eq $config.auth.type "oauth" }}
+              - name: AUTH_URL
                 valueFrom:
                     secretKeyRef:
-                        name: {{ $config.oauthSecret }}
+                        name: {{ $config.auth.secret }}
                         key: url
-              - name: OAUTH_CLIENT_ID
+              - name: AUTH_CLIENT_ID
                 valueFrom:
                     secretKeyRef:
-                        name: {{ $config.oauthSecret }}
+                        name: {{ $config.auth.secret }}
                         key: clientID
-              - name: OAUTH_CLIENT_SECRET
+              - name: AUTH_CLIENT_SECRET
                 valueFrom:
                     secretKeyRef:
-                        name: {{ $config.oauthSecret }}
+                        name: {{ $config.auth.secret }}
                         key: clientSecret
-              - name: OAUTH_AUTH_STYLE
+              - name: AUTH_OAUTH_STYLE
                 value: {{ $config.envs.oauthStyle | quote }}
+{{ else if eq $config.auth.type "mtls" }}
+              - name: EXTERNAL_CLIENT_CERT_SECRET
+                value: "{{ $.Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ $.Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+              - name: SKIP_SSL_VERIFY
+                value: "{{ $config.envs.skipSSLVerify }}"
+{{ end }}
               - name: LOG_FORMAT
                 value: {{ $.Values.global.log.format | quote }}
               ports:

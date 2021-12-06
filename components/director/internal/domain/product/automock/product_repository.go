@@ -14,13 +14,13 @@ type ProductRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, item
-func (_m *ProductRepository) Create(ctx context.Context, item *model.Product) error {
-	ret := _m.Called(ctx, item)
+// Create provides a mock function with given fields: ctx, tenant, item
+func (_m *ProductRepository) Create(ctx context.Context, tenant string, item *model.Product) error {
+	ret := _m.Called(ctx, tenant, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Product) error); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Product) error); ok {
+		r0 = rf(ctx, tenant, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -109,13 +109,13 @@ func (_m *ProductRepository) ListByApplicationID(ctx context.Context, tenantID s
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: ctx, item
-func (_m *ProductRepository) Update(ctx context.Context, item *model.Product) error {
-	ret := _m.Called(ctx, item)
+// Update provides a mock function with given fields: ctx, tenant, item
+func (_m *ProductRepository) Update(ctx context.Context, tenant string, item *model.Product) error {
+	ret := _m.Called(ctx, tenant, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Product) error); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Product) error); ok {
+		r0 = rf(ctx, tenant, item)
 	} else {
 		r0 = ret.Error(0)
 	}

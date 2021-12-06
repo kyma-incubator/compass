@@ -26,6 +26,7 @@ spec:
           hostnames:
             # Used for calls to Director
             - "{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}"
       {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       containers:
@@ -41,9 +42,9 @@ spec:
           name: https
       - env:
           - name: SERVER_METRIC_ADDRESS
-            value: "127.0.0.1:{{ .Values.metrics.port }}"
+            value: ":{{ .Values.metrics.port }}"
           - name: SERVER_HEALTH_ADDRESS
-            value: "127.0.0.1:{{ .Values.health.port }}"
+            value: ":{{ .Values.health.port }}"
           - name: SERVER_ENABLE_LEADER_ELECTION
             value: "true"
           - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT
@@ -52,6 +53,8 @@ spec:
             value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.operations.path }}"
           - name: HTTP_CLIENT_SKIP_SSL_VALIDATION
             value: "{{ .Values.http.client.skipSSLValidation }}"
+          - name: EXTERNAL_CLIENT_CERT_SECRET
+            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}
         name: {{ .Chart.Name }}
         ports:
@@ -60,9 +63,9 @@ spec:
             protocol: TCP
         resources:
           limits:
-            cpu: 100m
-            memory: 30Mi
+            cpu: {{ .Values.manager.resources.limits.cpu }}
+            memory: {{ .Values.manager.resources.limits.memory }}
           requests:
-            cpu: 100m
-            memory: 20Mi
+            cpu: {{ .Values.manager.resources.requests.cpu }}
+            memory: {{ .Values.manager.resources.requests.memory }}
       terminationGracePeriodSeconds: 10

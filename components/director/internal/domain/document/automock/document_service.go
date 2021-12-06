@@ -15,20 +15,20 @@ type DocumentService struct {
 	mock.Mock
 }
 
-// CreateInBundle provides a mock function with given fields: ctx, bundleID, in
-func (_m *DocumentService) CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error) {
-	ret := _m.Called(ctx, bundleID, in)
+// CreateInBundle provides a mock function with given fields: ctx, appID, bundleID, in
+func (_m *DocumentService) CreateInBundle(ctx context.Context, appID string, bundleID string, in model.DocumentInput) (string, error) {
+	ret := _m.Called(ctx, appID, bundleID, in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.DocumentInput) string); ok {
-		r0 = rf(ctx, bundleID, in)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.DocumentInput) string); ok {
+		r0 = rf(ctx, appID, bundleID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.DocumentInput) error); ok {
-		r1 = rf(ctx, bundleID, in)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.DocumentInput) error); ok {
+		r1 = rf(ctx, appID, bundleID, in)
 	} else {
 		r1 = ret.Error(1)
 	}

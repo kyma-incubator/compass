@@ -22,12 +22,14 @@ const (
 type TenantMappingRepository interface {
 	UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error
 	Upsert(ctx context.Context, item model.BusinessTenantMapping) error
+	Update(ctx context.Context, model *model.BusinessTenantMapping) error
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error)
 	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
+	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 }
 
 // LabelUpsertService is responsible for creating, or updating already existing labels, and their label definitions.
@@ -114,6 +116,16 @@ func (s *service) GetTenantByExternalID(ctx context.Context, id string) (*model.
 	return s.tenantMappingRepo.GetByExternalTenant(ctx, id)
 }
 
+// GetTenantByID returns the tenant with the provided ID.
+func (s *service) GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.Get(ctx, id)
+}
+
+// GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
+func (s *service) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
+	return s.tenantMappingRepo.GetLowestOwnerForResource(ctx, resourceType, objectID)
+}
+
 // MultipleToTenantMapping assigns a new internal ID to all the provided tenants, and returns the BusinessTenantMappingInputs as BusinessTenantMappings.
 func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMappingInput) []model.BusinessTenantMapping {
 	tenants := make([]model.BusinessTenantMapping, 0, len(tenantInputs))
@@ -137,6 +149,17 @@ func (s *service) MultipleToTenantMapping(tenantInputs []model.BusinessTenantMap
 		}
 	}
 	return tenants
+}
+
+// Update updates tenant
+func (s *service) Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error {
+	tenant := tenantInput.ToBusinessTenantMapping(id)
+
+	if err := s.tenantMappingRepo.Update(ctx, tenant); err != nil {
+		return errors.Wrapf(err, "while updating tenant with id %s", id)
+	}
+
+	return nil
 }
 
 // CreateManyIfNotExists creates all provided tenants if they do not exist.
@@ -222,10 +245,10 @@ func tenantLocality(tenants []model.BusinessTenantMappingInput) (map[string]stri
 	return subdomains, regions
 }
 
-// DeleteMany removes all provided tenants from the Compass storage.
-func (s *service) DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error {
-	for _, tenantInput := range tenantInputs {
-		err := s.tenantMappingRepo.DeleteByExternalTenant(ctx, tenantInput.ExternalTenant)
+// DeleteMany removes all tenants with the provided external tenant ids from the Compass storage.
+func (s *service) DeleteMany(ctx context.Context, externalTenantIDs []string) error {
+	for _, externalTenantID := range externalTenantIDs {
+		err := s.tenantMappingRepo.DeleteByExternalTenant(ctx, externalTenantID)
 		if err != nil {
 			return errors.Wrap(err, "while deleting tenant")
 		}

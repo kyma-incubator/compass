@@ -42,6 +42,18 @@ func (c *converter) ToGraphQL(in model.LabelDefinition) (graphql.LabelDefinition
 	}, nil
 }
 
+// ToGraphQLInput missing godoc
+func (c *converter) ToGraphQLInput(in model.LabelDefinition) (graphql.LabelDefinitionInput, error) {
+	schema, err := graphql.MarshalSchema(in.Schema)
+	if err != nil {
+		return graphql.LabelDefinitionInput{}, err
+	}
+	return graphql.LabelDefinitionInput{
+		Key:    in.Key,
+		Schema: schema,
+	}, nil
+}
+
 // ToEntity missing godoc
 func (c *converter) ToEntity(in model.LabelDefinition) (Entity, error) {
 	out := Entity{

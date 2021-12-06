@@ -8,12 +8,11 @@ import (
 )
 
 func TestBundleCreateInput_ToBundle(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	appID := "bar"
 	desc := "Sample"
 	name := "sample"
-	tenant := "tenant"
 
 	testCases := []struct {
 		Name     string
@@ -28,7 +27,6 @@ func TestBundleCreateInput_ToBundle(t *testing.T) {
 				Description: &desc,
 			},
 			Expected: &model.Bundle{
-				TenantID:      tenant,
 				ApplicationID: appID,
 				Name:          name,
 				Description:   &desc,
@@ -47,8 +45,8 @@ func TestBundleCreateInput_ToBundle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
-			result := testCase.Input.ToBundle(id, appID, tenant)
+			// WHEN
+			result := testCase.Input.ToBundle(id, appID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

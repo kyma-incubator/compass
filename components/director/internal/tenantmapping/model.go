@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
+	scopesPerConsumerTypePrefix = "scopesPerConsumerType"
 )
 
 // TenantContext missing godoc

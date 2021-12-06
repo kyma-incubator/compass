@@ -18,7 +18,7 @@ import (
 )
 
 func TestResolver_DeleteBundleInstanceAuth(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -133,7 +133,7 @@ func TestResolver_DeleteBundleInstanceAuth(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -141,10 +141,10 @@ func TestResolver_DeleteBundleInstanceAuth(t *testing.T) {
 
 			resolver := bundleinstanceauth.NewResolver(transact, svc, nil, converter, bndlConverter)
 
-			// when
+			// WHEN
 			result, err := resolver.DeleteBundleInstanceAuth(context.TODO(), id)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedResult, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
@@ -157,7 +157,7 @@ func TestResolver_DeleteBundleInstanceAuth(t *testing.T) {
 }
 
 func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
-	// given
+	// GIVEN
 	modelBundle := fixModelBundle(testBundleID, nil, nil)
 	gqlRequestInput := fixGQLRequestInput()
 	modelRequestInput := fixModelRequestInput()
@@ -324,7 +324,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			bndlSvc := testCase.BndlServiceFn()
@@ -335,7 +335,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 
 			result, err := resolver.RequestBundleInstanceAuthCreation(context.TODO(), testBundleID, *gqlRequestInput)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedResult, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
@@ -345,7 +345,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 }
 
 func TestResolver_SetBundleInstanceAuth(t *testing.T) {
-	// given
+	// GIVEN
 
 	testAuthID := "foo"
 
@@ -467,7 +467,7 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -475,10 +475,10 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 
 			resolver := bundleinstanceauth.NewResolver(transact, svc, nil, converter, bndlConverter)
 
-			// when
+			// WHEN
 			result, err := resolver.SetBundleInstanceAuth(context.TODO(), testAuthID, *gqlSetInput)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedResult, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
@@ -488,7 +488,7 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 }
 
 func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "bar"
@@ -698,7 +698,7 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			bundleSvc := testCase.BundleServiceFn()
@@ -707,10 +707,10 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 
 			resolver := bundleinstanceauth.NewResolver(transact, svc, bundleSvc, converter, bndlConverter)
 
-			// when
+			// WHEN
 			result, err := resolver.RequestBundleInstanceAuthDeletion(context.TODO(), id)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.ExpectedResult, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 

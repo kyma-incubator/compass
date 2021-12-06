@@ -29,6 +29,14 @@ spec:
           labels:
             cronjob: tenant-fetcher
         spec:
+          {{ if $.Values.global.isLocalEnv }}
+          # HostAliases are used by Pod to resolve kyma.local domain
+          hostAliases:
+            - ip: {{ $.Values.global.minikubeIP }}
+              hostnames:
+                # Used for calls to Director
+                - "{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}"
+          {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
           containers:
           - name: fetcher
@@ -166,12 +174,16 @@ spec:
                 value: "{{ $config.query.pageSize}}"
               - name: APP_DEFAULT_SCENARIO_ENABLED
                 value: {{ $.Values.global.enableCompassDefaultScenarioAssignment | quote }}
-              - name: APP_MOVED_RUNTIME_BY_LABEL_SOURCE_TENANT_FIELD
-                value: {{ default "sourceGlobalAccountGUID" $config.fieldMapping.movedRuntimeByLabelSourceField }}
-              - name: APP_MOVED_RUNTIME_BY_LABEL_TARGET_TENANT_FIELD
-                value: {{ default "targetGlobalAccountGUID" $config.fieldMapping.movedRuntimeByLabelTargetField }}
-              - name: APP_MOVED_RUNTIME_LABEL_KEY
-                value: {{ default "movedRuntimeLabelKey" $config.fieldMapping.movedRuntimeLabelKey }}
+              - name: APP_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD
+                value: {{ default "sourceGlobalAccountGUID" $config.fieldMapping.movedSubaccountSourceField }}
+              - name: APP_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD
+                value: {{ default "targetGlobalAccountGUID" $config.fieldMapping.movedSubaccountTargetField }}
+              - name: APP_TENANT_INSERT_CHUNK_SIZE
+                value: {{ default "500" $config.tenantInsertChunkSize | quote }}
+              - name: APP_DIRECTOR_GRAPHQL_ENDPOINT
+                value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
+              - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
+                value: "{{ $.Values.global.http.client.skipSSLValidation }}"
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
               - name: APP_METRICS_PUSH_ENDPOINT
                 value: {{ $.Values.global.metrics.pushEndpoint}}

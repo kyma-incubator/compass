@@ -20,8 +20,7 @@ import (
 const documentTable = "public.documents"
 
 var (
-	documentColumns = []string{"id", "tenant_id", "bundle_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
-	tenantColumn    = "tenant_id"
+	documentColumns = []string{"id", "bundle_id", "app_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	bundleIDColumn  = "bundle_id"
 	orderByColumns  = repo.OrderByParams{repo.NewAscOrderBy("bundle_id"), repo.NewAscOrderBy("id")}
 )
@@ -29,8 +28,8 @@ var (
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in model.Document) (*Entity, error)
-	FromEntity(in Entity) (model.Document, error)
+	ToEntity(in *model.Document) (*Entity, error)
+	FromEntity(in *Entity) (*model.Document, error)
 }
 
 type repository struct {
@@ -47,12 +46,12 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		existQuerier:    repo.NewExistQuerier(resource.Document, documentTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(resource.Document, documentTable, tenantColumn, documentColumns),
-		unionLister:     repo.NewUnionLister(resource.Document, documentTable, tenantColumn, documentColumns),
-		deleter:         repo.NewDeleter(resource.Document, documentTable, tenantColumn),
-		pageableQuerier: repo.NewPageableQuerier(resource.Document, documentTable, tenantColumn, documentColumns),
-		creator:         repo.NewCreator(resource.Document, documentTable, documentColumns),
+		existQuerier:    repo.NewExistQuerier(documentTable),
+		singleGetter:    repo.NewSingleGetter(documentTable, documentColumns),
+		unionLister:     repo.NewUnionLister(documentTable, documentColumns),
+		deleter:         repo.NewDeleter(documentTable),
+		pageableQuerier: repo.NewPageableQuerier(documentTable, documentColumns),
+		creator:         repo.NewCreator(documentTable, documentColumns),
 		conv:            conv,
 	}
 }
@@ -67,22 +66,22 @@ func (d DocumentCollection) Len() int {
 
 // Exists missing godoc
 func (r *repository) Exists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerier.Exists(ctx, resource.Document, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // GetByID missing godoc
 func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Document, error) {
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Document, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
-	docModel, err := r.conv.FromEntity(entity)
+	docModel, err := r.conv.FromEntity(&entity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Document entity to model")
 	}
 
-	return &docModel, nil
+	return docModel, nil
 }
 
 // GetForBundle missing godoc
@@ -93,40 +92,40 @@ func (r *repository) GetForBundle(ctx context.Context, tenant string, id string,
 		repo.NewEqualCondition("id", id),
 		repo.NewEqualCondition("bundle_id", bundleID),
 	}
-	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Document, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
 	}
 
-	documentModel, err := r.conv.FromEntity(ent)
+	documentModel, err := r.conv.FromEntity(&ent)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Document entity to model")
 	}
 
-	return &documentModel, nil
+	return documentModel, nil
 }
 
 // Create missing godoc
-func (r *repository) Create(ctx context.Context, item *model.Document) error {
+func (r *repository) Create(ctx context.Context, tenant string, item *model.Document) error {
 	if item == nil {
 		return apperrors.NewInternalError("Document cannot be empty")
 	}
 
-	entity, err := r.conv.ToEntity(*item)
+	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while creating Document entity from model")
 	}
 
 	log.C(ctx).Debugf("Persisting Document entity with id %s to db", item.ID)
-	return r.creator.Create(ctx, entity)
+	return r.creator.Create(ctx, resource.Document, tenant, entity)
 }
 
 // CreateMany missing godoc
-func (r *repository) CreateMany(ctx context.Context, items []*model.Document) error {
+func (r *repository) CreateMany(ctx context.Context, tenant string, items []*model.Document) error {
 	for _, item := range items {
 		if item == nil {
 			return apperrors.NewInternalError("Document cannot be empty")
 		}
-		err := r.Create(ctx, item)
+		err := r.Create(ctx, tenant, item)
 		if err != nil {
 			return errors.Wrapf(err, "while creating Document with ID %s", item.ID)
 		}
@@ -137,24 +136,24 @@ func (r *repository) CreateMany(ctx context.Context, items []*model.Document) er
 
 // Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenant, id string) error {
-	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.deleter.DeleteOne(ctx, resource.Document, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // ListByBundleIDs missing godoc
 func (r *repository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, pageSize int, cursor string) ([]*model.DocumentPage, error) {
 	var documentCollection DocumentCollection
-	counts, err := r.unionLister.List(ctx, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &documentCollection)
+	counts, err := r.unionLister.List(ctx, resource.Document, tenantID, bundleIDs, bundleIDColumn, pageSize, cursor, orderByColumns, &documentCollection)
 	if err != nil {
 		return nil, err
 	}
 
 	documentByID := map[string][]*model.Document{}
 	for _, documentEnt := range documentCollection {
-		m, err := r.conv.FromEntity(documentEnt)
+		m, err := r.conv.FromEntity(&documentEnt)
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating Document model from entity")
 		}
-		documentByID[documentEnt.BndlID] = append(documentByID[documentEnt.BndlID], &m)
+		documentByID[documentEnt.BndlID] = append(documentByID[documentEnt.BndlID], m)
 	}
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)

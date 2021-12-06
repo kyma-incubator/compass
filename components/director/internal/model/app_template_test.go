@@ -11,7 +11,7 @@ import (
 )
 
 func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
-	// given
+	// GIVEN
 	testID := "test"
 	testName := "name"
 	testDescription := str.Ptr("desc")
@@ -33,10 +33,11 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 	}
 	expectedTestWebhooks := []model.Webhook{
 		{
-			ApplicationTemplateID: str.Ptr(testID),
-			Type:                  testWebhooks[0].Type,
-			URL:                   testWebhooks[0].URL,
-			Mode:                  testWebhooks[0].Mode,
+			ObjectID:   testID,
+			ObjectType: model.ApplicationTemplateWebhookReference,
+			Type:       testWebhooks[0].Type,
+			URL:        testWebhooks[0].URL,
+			Mode:       testWebhooks[0].Mode,
 		},
 	}
 
@@ -74,21 +75,21 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToApplicationTemplate(testID)
 
 			for i, webhook := range result.Webhooks {
 				testCase.Expected.Webhooks[i].ID = webhook.ID
 			}
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}
 }
 
 func TestApplicationFromTemplateInputValues_FindPlaceholderValue(t *testing.T) {
-	// given
+	// GIVEN
 	var values model.ApplicationFromTemplateInputValues = []*model.ApplicationTemplateValueInput{
 		{Placeholder: "a", Value: "foo"},
 		{Placeholder: "b", Value: "bar"},
@@ -117,10 +118,10 @@ func TestApplicationFromTemplateInputValues_FindPlaceholderValue(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result, err := values.FindPlaceholderValue(testCase.Input)
 
-			// then
+			// THEN
 			if testCase.ExpectedResult != nil {
 				assert.Equal(t, testCase.ExpectedResult, &result)
 			}

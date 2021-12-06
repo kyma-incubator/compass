@@ -13,62 +13,62 @@ import (
 	"github.com/pkg/errors"
 )
 
-// LabelDefRepository missing godoc
-//go:generate mockery --name=LabelDefRepository --output=automock --outpkg=automock --case=underscore
-type LabelDefRepository interface {
+//go:generate mockery --exported --name=labelDefRepository --output=automock --outpkg=automock --case=underscore
+type labelDefRepository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
 	Exists(ctx context.Context, tenant string, key string) (bool, error)
 	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 	UpdateWithVersion(ctx context.Context, def model.LabelDefinition) error
 }
 
-// LabelRepository missing godoc
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
-type LabelRepository interface {
+//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore
+type labelRepository interface {
 	Delete(context.Context, string, model.LabelableObject, string, string) error
 }
 
-// LabelDefService missing godoc
-//go:generate mockery --name=LabelDefService --output=automock --outpkg=automock --case=underscore
-type LabelDefService interface {
+//go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore
+type labelDefService interface {
 	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
 	ValidateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant, key string) error
 	ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error
 }
 
-// LabelService missing godoc
-//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
-type LabelService interface {
+//go:generate mockery --exported --name=labelService --output=automock --outpkg=automock --case=underscore
+type labelService interface {
 	CreateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
 	UpdateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
 	GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error)
 }
 
-// UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
-type UIDService interface {
+//go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore
+type uidService interface {
 	Generate() string
 }
 
-// AutomaticFormationAssignmentService missing godoc
-//go:generate mockery --name=AutomaticFormationAssignmentService --output=automock --outpkg=automock --case=underscore
-type AutomaticFormationAssignmentService interface {
+//go:generate mockery --exported --name=automaticFormationAssignmentService --output=automock --outpkg=automock --case=underscore
+type automaticFormationAssignmentService interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
+//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore
+type tenantService interface {
+	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
+}
+
 type service struct {
-	labelDefRepository LabelDefRepository
-	labelRepository    LabelRepository
-	labelService       LabelService
-	labelDefService    LabelDefService
-	asaService         AutomaticFormationAssignmentService
-	uuidService        UIDService
+	labelDefRepository labelDefRepository
+	labelRepository    labelRepository
+	labelService       labelService
+	labelDefService    labelDefService
+	asaService         automaticFormationAssignmentService
+	uuidService        uidService
+	tenantSvc          tenantService
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository LabelDefRepository, labelRepository LabelRepository, labelService LabelService, uuidService UIDService, labelDefService LabelDefService, asaService AutomaticFormationAssignmentService) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, labelService labelService, uuidService uidService, labelDefService labelDefService, asaService automaticFormationAssignmentService, tenantSvc tenantService) *service {
 	return &service{
 		labelDefRepository: labelDefRepository,
 		labelRepository:    labelRepository,
@@ -76,6 +76,7 @@ func NewService(labelDefRepository LabelDefRepository, labelRepository LabelRepo
 		labelDefService:    labelDefService,
 		asaService:         asaService,
 		uuidService:        uuidService,
+		tenantSvc:          tenantSvc,
 	}
 }
 
@@ -120,8 +121,11 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}
 		return f, nil
 	case graphql.FormationObjectTypeTenant:
-		_, err := s.asaService.Create(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, objectID))
+		tenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
 		if err != nil {
+			return nil, err
+		}
+		if _, err = s.asaService.Create(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, tenantID)); err != nil {
 			return nil, err
 		}
 		return &formation, err
@@ -257,11 +261,8 @@ func newLabelInput(formation, objectID string, objectType model.LabelableObject)
 
 func newAutomaticScenarioAssignmentModel(formation, callerTenant, targetTenant string) model.AutomaticScenarioAssignment {
 	return model.AutomaticScenarioAssignment{
-		ScenarioName: formation,
-		Tenant:       callerTenant,
-		Selector: model.LabelSelector{
-			Key:   "global_subaccount_id",
-			Value: targetTenant,
-		},
+		ScenarioName:   formation,
+		Tenant:         callerTenant,
+		TargetTenantID: targetTenant,
 	}
 }

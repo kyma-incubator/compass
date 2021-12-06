@@ -131,7 +131,7 @@ do
 
     sec=$((currTime-startTime))
     min=$((sec/60))
-    if (( min > 60 )); then
+    if (( min > 120 )); then
         echo "Timeout for test suite '${suiteName}' occurred."
         testExitCode=1
         break

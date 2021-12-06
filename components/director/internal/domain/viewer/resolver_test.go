@@ -25,21 +25,21 @@ func TestResolver_Viewer(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		ctx := context.TODO()
 		ctx = consumer.SaveToContext(ctx, cons)
 		resolver := viewer.NewViewerResolver()
 
-		//WHEN
+		// WHEN
 		vwr, err := resolver.Viewer(ctx)
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, vwr)
 		assert.Equal(t, expectedViewer, *vwr)
 	})
 
 	t.Run("Error while converting", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		ctx := context.TODO()
 		invalidConsumer := consumer.Consumer{
 			ConsumerID:   uuid.New().String(),
@@ -47,22 +47,22 @@ func TestResolver_Viewer(t *testing.T) {
 		}
 		ctx = consumer.SaveToContext(ctx, invalidConsumer)
 		resolver := viewer.NewViewerResolver()
-		//WHEN
+		// WHEN
 		_, err := resolver.Viewer(ctx)
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, apperrors.NewInternalError("viewer does not exist").Error())
 	})
 
 	t.Run("No consumer in ctx", func(t *testing.T) {
-		//GIVEN
+		// GIVEN
 		ctx := context.TODO()
 		resolver := viewer.NewViewerResolver()
 
-		//WHEN
+		// WHEN
 		_, err := resolver.Viewer(ctx)
 
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while getting viewer from context: Internal Server Error: cannot read consumer from context")
 	})

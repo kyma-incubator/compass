@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 
@@ -29,7 +31,7 @@ import (
 )
 
 func TestService_Create(t *testing.T) {
-	// given
+	// GIVEN
 	timestamp := time.Now()
 	testErr := errors.New("Test error")
 	Documents := []*model.DocumentInput{
@@ -159,12 +161,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -208,12 +210,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -257,12 +259,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -341,12 +343,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -425,12 +427,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -466,12 +468,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -513,12 +515,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -557,7 +559,7 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(testErr).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(testErr).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -703,12 +705,12 @@ func TestService_Create(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -761,10 +763,10 @@ func TestService_Create(t *testing.T) {
 			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			result, err := svc.Create(ctx, testCase.Input)
 
-			// then
+			// THEN
 			assert.IsType(t, "string", result)
 			if testCase.ExpectedErr != nil {
 				require.NotNil(t, err)
@@ -784,14 +786,14 @@ func TestService_Create(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
 
 func TestService_CreateFromTemplate(t *testing.T) {
-	// given
+	// GIVEN
 	timestamp := time.Now()
 	testErr := errors.New("Test error")
 	Documents := []*model.DocumentInput{
@@ -921,12 +923,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -970,12 +972,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1019,12 +1021,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1103,12 +1105,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1187,12 +1189,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1228,12 +1230,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1275,12 +1277,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1319,7 +1321,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(testErr).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(testErr).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -1465,12 +1467,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				repo.On("Create", ctx, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
+				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1523,7 +1525,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			result, err := svc.CreateFromTemplate(ctx, testCase.Input, &appTemplteID)
 
 			// then
@@ -1546,7 +1548,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
@@ -1611,7 +1613,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				appRepoMock := &automock.ApplicationRepository{}
 				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
 
-				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+				appRepoMock.On("Create", ctx, tnt, mock.MatchedBy(func(obj interface{}) bool {
 					app, ok := obj.(*model.Application)
 					if !ok {
 						return false
@@ -1622,7 +1624,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil)
 				return webhookRepo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1667,7 +1669,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				appRepoMock := &automock.ApplicationRepository{}
 				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
 
-				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+				appRepoMock.On("Create", ctx, tnt, mock.MatchedBy(func(obj interface{}) bool {
 					app, ok := obj.(*model.Application)
 					if !ok {
 						return false
@@ -1678,7 +1680,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil)
 				return webhookRepo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1728,7 +1730,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				}, nil).Once()
 				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
 
-				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+				appRepoMock.On("Create", ctx, tnt, mock.MatchedBy(func(obj interface{}) bool {
 					app, ok := obj.(*model.Application)
 					if !ok {
 						return false
@@ -1739,7 +1741,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil)
 				return webhookRepo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1811,7 +1813,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
 				expectedTemplates := []string{"t1", "t3", "t5"}
 				callTimes := 0
-				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+				appRepoMock.On("Create", ctx, tnt, mock.MatchedBy(func(obj interface{}) bool {
 					if callTimes > 2 {
 						return false
 					}
@@ -1827,7 +1829,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, mock.Anything).Return(nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil)
 				return webhookRepo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1893,7 +1895,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 				appRepoMock := &automock.ApplicationRepository{}
 				appRepoMock.On("ListAll", ctx, mock.Anything).Return(nil, nil)
 
-				appRepoMock.On("Create", ctx, mock.MatchedBy(func(obj interface{}) bool {
+				appRepoMock.On("Create", ctx, tnt, mock.MatchedBy(func(obj interface{}) bool {
 					app, ok := obj.(*model.Application)
 					if !ok {
 						return false
@@ -1954,7 +1956,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			err := svc.CreateManyIfNotExistsWithEventualTemplate(ctx, testCase.Inputs)
 
 			// then
@@ -1977,7 +1979,7 @@ func TestService_CreateManyIfNotExistsWithEventualTemplate(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -2030,7 +2032,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, id).Return(true, nil).Twice()
 				return repo
 			},
@@ -2055,7 +2057,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfterStatusUpdate).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfterStatusUpdate).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, id).Return(true, nil).Once()
 				return repo
 			},
@@ -2078,7 +2080,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfter).Return(testErr).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(testErr).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2161,7 +2163,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, id).Return(true, nil).Once()
 				return repo
 			},
@@ -2185,7 +2187,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, id).Return(false, nil).Once()
 				return repo
 			},
@@ -2208,7 +2210,7 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
-				repo.On("Update", ctx, applicationModelAfter).Return(nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
 				repo.On("Exists", ctx, tnt, id).Return(false, testErr).Once()
 				return repo
 			},
@@ -2237,7 +2239,7 @@ func TestService_Update(t *testing.T) {
 			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil)
 			svc.SetTimestampGen(timestampGenFunc)
 
-			// when
+			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
 
 			// then
@@ -2256,7 +2258,7 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System foo is still used and cannot be deleted. Unassign the system from the following formations first: Easter. Then, unassign the system from the following runtimes, too: test-runtime]")
 	id := "foo"
@@ -2280,13 +2282,11 @@ func TestService_Delete(t *testing.T) {
 	applicationModel := &model.Application{
 		Name:        "foo",
 		Description: &desc,
-		Tenant:      tnt,
 		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 
 	runtimeModel := &model.Runtime{
-		Name:   "test-runtime",
-		Tenant: tnt,
+		Name: "test-runtime",
 	}
 
 	ctx := context.TODO()
@@ -2305,18 +2305,18 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil).Once()
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("Delete", ctx, tnt, applicationModel.ID).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			InputID:            id,
@@ -2326,19 +2326,19 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success when application is part of a scenario but not with runtime",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil).Once()
+				repo.On("Delete", ctx, tnt, applicationModel.ID).Return(nil).Once()
 				repo.AssertNotCalled(t, "Delete")
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			InputID:            id,
@@ -2348,18 +2348,18 @@ func TestService_Delete(t *testing.T) {
 			Name: "Returns error when application deletion failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Delete", ctx, applicationModel.Tenant, applicationModel.ID).Return(testErr).Once()
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("Delete", ctx, tnt, applicationModel.ID).Return(testErr).Once()
+				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			InputID:            id,
@@ -2370,18 +2370,18 @@ func TestService_Delete(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
-				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{runtimeModel}, nil)
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{runtimeModel}, nil)
 				return repo
 			},
 			InputID:            id,
@@ -2396,7 +2396,7 @@ func TestService_Delete(t *testing.T) {
 			runtimeRepo := testCase.RuntimeRepoFn()
 			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
 			// then
@@ -2413,7 +2413,7 @@ func TestService_Delete(t *testing.T) {
 }
 
 func TestService_Unpair(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System foo is still used and cannot be deleted. Unassign the system from the following formations first: Easter. Then, unassign the system from the following runtimes, too: test-runtime]")
 	id := "foo"
@@ -2439,7 +2439,6 @@ func TestService_Unpair(t *testing.T) {
 	applicationModel := &model.Application{
 		Name:        "foo",
 		Description: &desc,
-		Tenant:      tnt,
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionConnected,
 			Timestamp: timestamp,
@@ -2450,7 +2449,6 @@ func TestService_Unpair(t *testing.T) {
 	applicationModelWithInitialStatus := &model.Application{
 		Name:        "foo",
 		Description: &desc,
-		Tenant:      tnt,
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
 			Timestamp: timestamp,
@@ -2459,8 +2457,7 @@ func TestService_Unpair(t *testing.T) {
 	}
 
 	runtimeModel := &model.Runtime{
-		Name:   "test-runtime",
-		Tenant: tnt,
+		Name: "test-runtime",
 	}
 
 	ctx := context.Background()
@@ -2480,14 +2477,14 @@ func TestService_Unpair(t *testing.T) {
 			Name: "Success",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Update", ctx, applicationModelWithInitialStatus).Return(nil).Once()
-				repo.On("Exists", ctx, applicationModelWithInitialStatus.Tenant, applicationModelWithInitialStatus.ID).Return(true, nil).Once()
-				repo.On("GetByID", ctx, applicationModelWithInitialStatus.Tenant, applicationModelWithInitialStatus.ID).Return(applicationModelWithInitialStatus, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelWithInitialStatus).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, applicationModelWithInitialStatus.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, tnt, applicationModelWithInitialStatus.ID).Return(applicationModelWithInitialStatus, nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2506,19 +2503,19 @@ func TestService_Unpair(t *testing.T) {
 			Name: "Success when application is part of a scenario but not with runtime",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Update", ctx, applicationModel).Return(nil).Once()
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
-				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModel).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			ContextFn: func() context.Context {
@@ -2532,19 +2529,19 @@ func TestService_Unpair(t *testing.T) {
 			Name: "Success when operation type is SYNC and sets the application status to INITIAL",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Update", mock.Anything, applicationModelWithInitialStatus).Return(nil).Once()
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
-				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				repo.On("Update", mock.Anything, tnt, applicationModelWithInitialStatus).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			InputID: id,
@@ -2557,19 +2554,19 @@ func TestService_Unpair(t *testing.T) {
 			Name: "Success when operation type is ASYNC and does not change the application status",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Update", mock.Anything, applicationModel).Return(nil).Once()
-				repo.On("Exists", mock.Anything, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
-				repo.On("GetByID", mock.Anything, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				repo.On("Update", mock.Anything, tnt, applicationModel).Return(nil).Once()
+				repo.On("Exists", mock.Anything, tnt, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", mock.Anything, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", mock.Anything, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("GetByKey", mock.Anything, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", mock.Anything, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				repo.On("ListAll", mock.Anything, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			InputID: id,
@@ -2583,14 +2580,14 @@ func TestService_Unpair(t *testing.T) {
 			Name: "Returns error when application fetch failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(nil, testErr).Once()
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(nil, testErr).Once()
+				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2611,19 +2608,19 @@ func TestService_Unpair(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
-				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, applicationModel.Tenant, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{runtimeModel}, nil)
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{runtimeModel}, nil)
 				return repo
 			},
 			ContextFn: func() context.Context {
@@ -2639,14 +2636,14 @@ func TestService_Unpair(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
-				repo.On("Update", ctx, applicationModel).Return(testErr).Once()
-				repo.On("Exists", ctx, applicationModel.Tenant, applicationModel.ID).Return(true, nil).Once()
-				repo.On("GetByID", ctx, applicationModel.Tenant, applicationModel.ID).Return(applicationModel, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModel).Return(testErr).Once()
+				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
+				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, applicationModel.Tenant, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationModel.ID, model.ScenariosKey).Return(emptyScenarioLabel, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -2673,7 +2670,7 @@ func TestService_Unpair(t *testing.T) {
 			ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
-			// when
+			// WHEN
 			err := svc.Unpair(ctx, testCase.InputID)
 
 			// then
@@ -2692,7 +2689,7 @@ func TestService_Unpair(t *testing.T) {
 }
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -2749,7 +2746,7 @@ func TestService_Get(t *testing.T) {
 
 			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			app, err := svc.Get(ctx, testCase.InputID)
 
 			// then
@@ -2767,7 +2764,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_List(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	modelApplications := []*model.Application{
@@ -2856,7 +2853,7 @@ func TestService_List(t *testing.T) {
 
 			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, after)
 
 			// then
@@ -2874,7 +2871,7 @@ func TestService_List(t *testing.T) {
 }
 
 func TestService_ListGlobal(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	modelApplications := []*model.Application{
@@ -2963,7 +2960,7 @@ func TestService_ListGlobal(t *testing.T) {
 
 			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			app, err := svc.ListGlobal(ctx, testCase.InputPageSize, after)
 
 			// then
@@ -3237,17 +3234,17 @@ func TestService_ListByRuntimeID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
+			// GIVEN
 			runtimeRepository := testCase.RuntimeRepositoryFn()
 			labelRepository := testCase.LabelRepositoryFn()
 			appRepository := testCase.AppRepositoryFn()
 			cfgProvider := testCase.ConfigProviderFn()
 			svc := application.NewService(nil, cfgProvider, appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil)
 
-			//WHEN
+			// WHEN
 			results, err := svc.ListByRuntimeID(ctx, testCase.Input, first, cursor)
 
-			//THEN
+			// THEN
 			if testCase.ExpectedError != nil {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
@@ -3318,7 +3315,7 @@ func TestService_Exist(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
+			// GIVEN
 			appRepo := testCase.RepositoryFn()
 			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
 
@@ -3340,7 +3337,7 @@ func TestService_Exist(t *testing.T) {
 }
 
 func TestService_SetLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
@@ -3424,7 +3421,7 @@ func TestService_SetLabel(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, labelSvc, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.SetLabel(ctx, testCase.InputLabel)
 
 			// then
@@ -3441,7 +3438,7 @@ func TestService_SetLabel(t *testing.T) {
 }
 
 func TestService_GetLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
@@ -3463,7 +3460,7 @@ func TestService_GetLabel(t *testing.T) {
 
 	modelLabel := &model.Label{
 		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
-		Tenant:     tnt,
+		Tenant:     str.Ptr(tnt),
 		Key:        labelKey,
 		Value:      labelValue,
 		ObjectID:   applicationID,
@@ -3538,7 +3535,7 @@ func TestService_GetLabel(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
 
 			// then
@@ -3556,7 +3553,7 @@ func TestService_GetLabel(t *testing.T) {
 }
 
 func TestService_ListLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
@@ -3578,7 +3575,7 @@ func TestService_ListLabel(t *testing.T) {
 
 	modelLabel := &model.Label{
 		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
-		Tenant:     tnt,
+		Tenant:     str.Ptr(tnt),
 		Key:        labelKey,
 		Value:      labelValue,
 		ObjectID:   applicationID,
@@ -3654,7 +3651,7 @@ func TestService_ListLabel(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
 
 			// then
@@ -3672,7 +3669,7 @@ func TestService_ListLabel(t *testing.T) {
 }
 
 func TestService_DeleteLabel(t *testing.T) {
-	// given
+	// GIVEN
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
@@ -3748,7 +3745,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)
 
 			// then
@@ -3812,7 +3809,7 @@ func TestService_GetByNameAndSystemNumber(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
+			// GIVEN
 			appRepo := testCase.RepositoryFn()
 			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
 
@@ -3846,7 +3843,7 @@ type MatcherFunc func(app *model.Application) bool
 func modelFromInput(in model.ApplicationRegisterInput, tenant, applicationID string, applicationModelMatcherFn MatcherFunc) testModel {
 	webhooksModel := make([]*model.Webhook, 0, len(in.Webhooks))
 	for _, item := range in.Webhooks {
-		webhooksModel = append(webhooksModel, item.ToApplicationWebhook(uuid.New().String(), &tenant, applicationID))
+		webhooksModel = append(webhooksModel, item.ToWebhook(uuid.New().String(), applicationID, model.ApplicationWebhookReference))
 	}
 
 	return testModel{

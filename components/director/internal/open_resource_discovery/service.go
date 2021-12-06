@@ -3,6 +3,8 @@ package ord
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/tidwall/gjson"
@@ -33,12 +35,13 @@ type Service struct {
 	productSvc         ProductService
 	vendorSvc          VendorService
 	tombstoneSvc       TombstoneService
+	tenantSvc          TenantService
 
 	ordClient Client
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client Client) *Service {
+func NewAggregatorService(transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, client Client) *Service {
 	return &Service{
 		transact:           transact,
 		appSvc:             appSvc,
@@ -53,6 +56,7 @@ func NewAggregatorService(transact persistence.Transactioner, labelRepo labelRep
 		productSvc:         productSvc,
 		vendorSvc:          vendorSvc,
 		tombstoneSvc:       tombstoneSvc,
+		tenantSvc:          tenantSvc,
 		ordClient:          client,
 	}
 }
@@ -131,7 +135,12 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	ctx = tenant.SaveToContext(ctx, app.Tenant, "")
+	tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, app.ID)
+	if err != nil {
+		return err
+	}
+
+	ctx = tenant.SaveToContext(ctx, tnt, "")
 
 	webhooks, err := s.webhookSvc.ListForApplication(ctx, app.ID)
 	if err != nil {
@@ -591,12 +600,12 @@ func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecR
 		return err
 	}
 	for _, spec := range specsFromDB {
-		fr, err := s.specSvc.GetFetchRequest(ctx, spec.ID)
+		fr, err := s.specSvc.GetFetchRequest(ctx, spec.ID, objectType)
 		if err != nil {
 			return err
 		}
 		if fr.Status != nil && fr.Status.Condition == model.FetchRequestStatusConditionFailed {
-			if _, err := s.specSvc.RefetchSpec(ctx, spec.ID); err != nil {
+			if _, err := s.specSvc.RefetchSpec(ctx, spec.ID, objectType); err != nil {
 				return errors.Wrapf(err, "while refetching spec %s", spec.ID)
 			}
 		}
@@ -731,6 +740,7 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 		Links:                          in.Links,
 		Labels:                         in.Labels,
 		CredentialExchangeStrategies:   in.CredentialExchangeStrategies,
+		CorrelationIDs:                 in.CorrelationIDs,
 	}
 }
 

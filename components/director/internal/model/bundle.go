@@ -9,7 +9,6 @@ import (
 
 // Bundle missing godoc
 type Bundle struct {
-	TenantID                       string
 	ApplicationID                  string
 	Name                           string
 	Description                    *string
@@ -20,6 +19,7 @@ type Bundle struct {
 	Links                          json.RawMessage
 	Labels                         json.RawMessage
 	CredentialExchangeStrategies   json.RawMessage
+	CorrelationIDs                 json.RawMessage
 	*BaseEntity
 }
 
@@ -39,6 +39,7 @@ func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
 	bndl.Links = update.Links
 	bndl.Labels = update.Labels
 	bndl.CredentialExchangeStrategies = update.CredentialExchangeStrategies
+	bndl.CorrelationIDs = update.CorrelationIDs
 }
 
 // BundleCreateInput missing godoc
@@ -57,6 +58,7 @@ type BundleCreateInput struct {
 	EventDefinitions               []*EventDefinitionInput `json:",omitempty"`
 	EventSpecs                     []*SpecInput            `json:",omitempty"`
 	Documents                      []*DocumentInput        `json:",omitempty"`
+	CorrelationIDs                 json.RawMessage         `json:"correlationIds"`
 }
 
 // BundleUpdateInput missing godoc
@@ -70,6 +72,7 @@ type BundleUpdateInput struct {
 	Links                          json.RawMessage
 	Labels                         json.RawMessage
 	CredentialExchangeStrategies   json.RawMessage
+	CorrelationIDs                 json.RawMessage
 }
 
 // BundlePage missing godoc
@@ -83,13 +86,12 @@ type BundlePage struct {
 func (BundlePage) IsPageable() {}
 
 // ToBundle missing godoc
-func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle {
+func (i *BundleCreateInput) ToBundle(id, applicationID string) *Bundle {
 	if i == nil {
 		return nil
 	}
 
 	return &Bundle{
-		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
 		Name:                           i.Name,
 		Description:                    i.Description,
@@ -100,6 +102,7 @@ func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle
 		Links:                          i.Links,
 		Labels:                         i.Labels,
 		CredentialExchangeStrategies:   i.CredentialExchangeStrategies,
+		CorrelationIDs:                 i.CorrelationIDs,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,

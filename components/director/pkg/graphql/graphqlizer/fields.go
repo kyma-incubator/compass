@@ -382,6 +382,7 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 				expiresAt
 			}
 			certCommonName
+			accessStrategy
 			additionalHeaders
 			additionalQueryParams
 			requestAuth { 
@@ -505,7 +506,9 @@ func (fp *GqlFieldsProvider) ForTenant() string {
 		internalID
 		name
 		initialized
-		labels`
+		labels
+		parentID
+		type`
 }
 
 // OmitForBundle missing godoc

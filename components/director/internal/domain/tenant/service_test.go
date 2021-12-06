@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/mock"
@@ -184,7 +186,7 @@ func TestService_List(t *testing.T) {
 }
 
 func TestService_DeleteMany(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 	tenantInput := newModelBusinessTenantMappingInput(testName, "", "")
 	testErr := errors.New("test")
@@ -219,7 +221,7 @@ func TestService_DeleteMany(t *testing.T) {
 			svc := tenant.NewService(tenantMappingRepo, nil)
 
 			// WHEN
-			err := svc.DeleteMany(ctx, []model.BusinessTenantMappingInput{tenantInput})
+			err := svc.DeleteMany(ctx, []string{tenantInput.ExternalTenant})
 
 			// THEN
 			if testCase.ExpectedOutput != nil {
@@ -235,7 +237,7 @@ func TestService_DeleteMany(t *testing.T) {
 }
 
 func TestService_CreateAndUpsert(t *testing.T) {
-	//GIVEN
+	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
 
 	tenantInputs := []model.BusinessTenantMappingInput{newModelBusinessTenantMappingInput("test1", "", ""),
@@ -562,6 +564,76 @@ func Test_MultipleToTenantMapping(t *testing.T) {
 	}
 }
 
+func Test_Update(t *testing.T) {
+	tnt := model.BusinessTenantMappingInput{
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parent:         testParentID,
+		Subdomain:      testSubdomain,
+		Region:         testRegion,
+		Type:           string(tenantEntity.Account),
+		Provider:       testProvider,
+	}
+	tntToBusinessTenantMapping := &model.BusinessTenantMapping{
+		ID:             testID,
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parent:         testParentID,
+		Type:           tenantEntity.Account,
+		Provider:       testProvider,
+		Status:         tenantEntity.Active,
+		Initialized:    nil,
+	}
+
+	testCases := []struct {
+		Name                      string
+		InputID                   string
+		InputTenant               model.BusinessTenantMappingInput
+		TenantMappingRepositoryFn func() *automock.TenantMappingRepository
+		ExpectedErr               error
+	}{
+		{
+			Name:        "Success",
+			InputID:     testID,
+			InputTenant: tnt,
+			TenantMappingRepositoryFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("Update", mock.Anything, tntToBusinessTenantMapping).Return(nil)
+				return tenantMappingRepo
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name:        "Returns error when can't update the tenant",
+			InputID:     testID,
+			InputTenant: tnt,
+			TenantMappingRepositoryFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("Update", mock.Anything, tntToBusinessTenantMapping).Return(testError)
+				return tenantMappingRepo
+			},
+			ExpectedErr: testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			ctx := context.TODO()
+			tenantMappingRepo := testCase.TenantMappingRepositoryFn()
+			serialUUIDService := &serialUUIDService{}
+			svc := tenant.NewService(tenantMappingRepo, serialUUIDService)
+			err := svc.Update(ctx, testCase.InputID, testCase.InputTenant)
+
+			if testCase.ExpectedErr != nil {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func Test_MoveBeforeIndex(t *testing.T) {
 	testCases := []struct {
 		Name           string
@@ -627,7 +699,7 @@ func Test_ListLabels(t *testing.T) {
 		labels := map[string]*model.Label{
 			"label-key": {
 				ID:         "5ef5ebd0-987d-4cb6-a3c1-7d710de259a2",
-				Tenant:     tenantID,
+				Tenant:     str.Ptr(tenantID),
 				Key:        "label-key",
 				Value:      "value",
 				ObjectID:   tenantID,

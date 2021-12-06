@@ -25,6 +25,9 @@ import (
 	"net/http"
 	"testing"
 
+	accessstrategy2 "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	internal_errors "github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
@@ -55,7 +58,7 @@ func TestClient_Do_WhenUrlTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 		Object: web_hook.RequestObject{},
 	}
 
-	client := webhook.NewClient(http.DefaultClient)
+	client := webhook.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -72,7 +75,7 @@ func TestClient_Do_WhenUrlTemplateIsNil_ShouldReturnError(t *testing.T) {
 		Object: web_hook.RequestObject{},
 	}
 
-	client := webhook.NewClient(http.DefaultClient)
+	client := webhook.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -93,7 +96,7 @@ func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(http.DefaultClient)
+	client := webhook.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -115,7 +118,7 @@ func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) 
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(http.DefaultClient)
+	client := webhook.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -138,12 +141,36 @@ func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 		Object: web_hook.RequestObject{Application: app},
 	}
 
-	client := webhook.NewClient(http.DefaultClient)
+	client := webhook.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Do(nil, webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "nil Context")
+}
+
+func TestClient_Do_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T) {
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			URLTemplate:    &URLTemplate,
+			InputTemplate:  &inputTemplate,
+			HeaderTemplate: &headersTemplate,
+			OutputTemplate: &emptyTemplate,
+			Auth:           &graphql.Auth{AccessStrategy: str.Ptr("wrong")},
+		},
+		Object: web_hook.RequestObject{Application: app},
+	}
+
+	client := webhook.NewClient(http.DefaultClient, nil)
+
+	_, err := client.Do(context.Background(), webhookReq)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "could not determine auth flow")
 }
 
 func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
@@ -163,7 +190,7 @@ func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 
 	client := webhook.NewClient(&http.Client{
 		Transport: mockedTransport{err: errors.New(mockedError)},
-	})
+	}, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -196,7 +223,7 @@ func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnErro
 				StatusCode: http.StatusAccepted,
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -229,7 +256,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *tes
 				StatusCode: http.StatusAccepted,
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -265,7 +292,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldPar
 				StatusCode: http.StatusAccepted,
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -300,7 +327,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_Sho
 				StatusCode: http.StatusNotFound,
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -334,7 +361,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t
 				StatusCode: http.StatusInternalServerError,
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -382,7 +409,7 @@ func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.
 				require.Equal(t, password, basicCreds.Password)
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -431,11 +458,49 @@ func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 				require.Equal(t, tokenURL, oAuthCredentials.TokenURL)
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
 	require.NoError(t, err)
+}
+
+func TestClient_Do_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	mtlsCalled := false
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.Request{
+		Webhook: graphql.Webhook{
+			URLTemplate:    &URLTemplate,
+			OutputTemplate: &outputTemplate,
+			Mode:           &webhookAsyncMode,
+			Auth: &graphql.Auth{
+				AccessStrategy: str.Ptr(string(accessstrategy2.CMPmTLSAccessStrategy)),
+			},
+		},
+		Object: web_hook.RequestObject{Application: app},
+	}
+
+	mtlsClient := &http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Header:     http.Header{"Location": []string{mockedLocationURL}},
+				StatusCode: http.StatusAccepted,
+			},
+			roundTripExpectations: func(r *http.Request) {
+				mtlsCalled = true
+			},
+		},
+	}
+
+	client := webhook.NewClient(nil, mtlsClient)
+
+	_, err := client.Do(context.Background(), webhookReq)
+
+	require.NoError(t, err)
+	require.True(t, mtlsCalled)
 }
 
 func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
@@ -478,7 +543,7 @@ func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 				require.True(t, correlationIDAttached)
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -497,7 +562,7 @@ func TestClient_Poll_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T
 		},
 	}
 
-	client := webhook.NewClient(http.DefaultClient)
+	client := webhook.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -519,12 +584,36 @@ func TestClient_Poll_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook.NewClient(http.DefaultClient)
+	client := webhook.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Poll(nil, webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "nil Context")
+}
+
+func TestClient_Poll_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T) {
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhook.PollRequest{
+
+		Request: &webhook.Request{
+			Webhook: graphql.Webhook{
+				HeaderTemplate: &headersTemplate,
+				StatusTemplate: &emptyTemplate,
+				Auth:           &graphql.Auth{AccessStrategy: str.Ptr("wrong")},
+			},
+			Object: web_hook.RequestObject{Application: app},
+		},
+		PollURL: mockedLocationURL,
+	}
+
+	client := webhook.NewClient(http.DefaultClient, nil)
+
+	_, err := client.Poll(context.Background(), webhookReq)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "could not determine auth flow")
 }
 
 func TestClient_Poll_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
@@ -543,7 +632,7 @@ func TestClient_Poll_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 
 	client := webhook.NewClient(&http.Client{
 		Transport: mockedTransport{err: errors.New(mockedError)},
-	})
+	}, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -572,7 +661,7 @@ func TestClient_Poll_WhenParseStatusTemplateFails_ShouldReturnError(t *testing.T
 		Transport: mockedTransport{
 			resp: &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte("{}")))},
 		},
-	})
+	}, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -603,7 +692,7 @@ func TestClient_Poll_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *t
 				StatusCode: http.StatusOK,
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -635,7 +724,7 @@ func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError
 				StatusCode: http.StatusInternalServerError,
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -681,7 +770,7 @@ func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testin
 				require.Equal(t, password, basicCreds.Password)
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -728,10 +817,52 @@ func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T)
 				require.Equal(t, tokenURL, oAuthCredentials.TokenURL)
 			},
 		},
-	})
+	}, nil)
 	_, err := client.Poll(context.Background(), webhookReq)
 
 	require.NoError(t, err)
+}
+
+func TestClient_Poll_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
+	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	mtlsCalled := false
+
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	pollRequest := &webhook.PollRequest{
+		Request: &webhook.Request{
+			Webhook: graphql.Webhook{
+				OutputTemplate: &outputTemplate,
+				StatusTemplate: &statusTemplate,
+				Mode:           &webhookAsyncMode,
+				Auth: &graphql.Auth{
+					AccessStrategy: str.Ptr(string(accessstrategy2.CMPmTLSAccessStrategy)),
+				},
+			},
+			Object: web_hook.RequestObject{Application: app},
+		},
+		PollURL: "https://test-domain.com/poll/",
+	}
+
+	mtlsClient := &http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Header:     http.Header{"Location": []string{mockedLocationURL}},
+				StatusCode: http.StatusOK,
+			},
+			roundTripExpectations: func(r *http.Request) {
+				mtlsCalled = true
+			},
+		},
+	}
+
+	client := webhook.NewClient(nil, mtlsClient)
+
+	_, err := client.Poll(context.Background(), pollRequest)
+
+	require.NoError(t, err)
+	require.True(t, mtlsCalled)
 }
 
 func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsNullErrorField_ShouldBeSuccessful(t *testing.T) {
@@ -757,7 +888,7 @@ func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsNullErrorField_Sho
 				StatusCode: http.StatusOK,
 			},
 		},
-	})
+	}, nil)
 	_, err := client.Poll(context.Background(), webhookReq)
 
 	require.NoError(t, err)
@@ -786,7 +917,7 @@ func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsEmptyErrorField_Sh
 				StatusCode: http.StatusOK,
 			},
 		},
-	})
+	}, nil)
 	_, err := client.Poll(context.Background(), webhookReq)
 
 	require.NoError(t, err)
@@ -830,7 +961,7 @@ func TestClient_Poll_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 				require.True(t, correlationIDAttached)
 			},
 		},
-	})
+	}, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 

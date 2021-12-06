@@ -10,7 +10,7 @@ import (
 )
 
 func TestToLabel(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	tenant := "sample"
 
@@ -32,8 +32,24 @@ func TestToLabel(t *testing.T) {
 			},
 			Expected: &model.Label{
 				ID:         id,
-				Tenant:     tenant,
 				Key:        labelKey,
+				Value:      labelValue,
+				ObjectID:   id,
+				ObjectType: model.ApplicationLabelableObject,
+			},
+		},
+		{
+			Name: "All properties given for scenario label",
+			Input: &model.LabelInput{
+				Key:        model.ScenariosKey,
+				Value:      labelValue,
+				ObjectID:   id,
+				ObjectType: model.ApplicationLabelableObject,
+			},
+			Expected: &model.Label{
+				ID:         id,
+				Tenant:     &tenant,
+				Key:        model.ScenariosKey,
 				Value:      labelValue,
 				ObjectID:   id,
 				ObjectType: model.ApplicationLabelableObject,
@@ -43,15 +59,14 @@ func TestToLabel(t *testing.T) {
 			Name:  "Empty",
 			Input: &model.LabelInput{},
 			Expected: &model.Label{
-				ID:     id,
-				Tenant: tenant,
+				ID: id,
 			},
 		},
 	}
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			// when
+			// WHEN
 			result := testCase.Input.ToLabel(id, tenant)
 
 			// then
