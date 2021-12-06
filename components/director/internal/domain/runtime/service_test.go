@@ -28,12 +28,14 @@ var (
 	immutableLabelPattern   = "^xsappnameCMPClone$"
 )
 
-func TestService_Create(t *testing.T) {
+func TestService_CreateWithMandatoryLabels(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
 	extSubaccountID := "extSubaccountID"
 	subaccountID := "subaccountID"
+	xsappNameCMPClone := "xsappnameCMPClone"
+	xsappNameCMPCloneValue := "xsappnameCMPCloneValue"
 
 	desc := "Lorem ipsum"
 	labels := map[string]interface{}{
@@ -87,6 +89,12 @@ func TestService_Create(t *testing.T) {
 		scenarioassignment.SubaccountIDKey: extSubaccountID,
 	}
 
+	labelsForDBMockWithXsappName := map[string]interface{}{
+		model.ScenariosKey:        []interface{}{"DEFAULT"},
+		runtime.IsNormalizedLabel: "true",
+		xsappNameCMPClone:         xsappNameCMPCloneValue,
+	}
+
 	parentScenarios := map[string]interface{}{
 		model.ScenariosKey: []interface{}{"test"},
 	}
@@ -116,7 +124,6 @@ func TestService_Create(t *testing.T) {
 		require.NoError(t, err)
 		return subaccountID == tenantCtx.InternalID && extSubaccountID == tenantCtx.ExternalID
 	})
-
 	ctxWithGlobalaccountMatcher := mock.MatchedBy(func(ctx context.Context) bool {
 		tenantCtx, err := tenant.LoadTenantPairFromContext(ctx)
 		require.NoError(t, err)
@@ -151,6 +158,7 @@ func TestService_Create(t *testing.T) {
 		UIDServiceFn         func() *automock.UidService
 		EngineServiceFn      func() *automock.ScenarioAssignmentEngine
 		Input                model.RuntimeInput
+		MandatoryLabels      func() map[string]interface{}
 		Context              context.Context
 		ExpectedErr          error
 	}{
@@ -168,7 +176,7 @@ func TestService_Create(t *testing.T) {
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMock).Return(nil).Once()
+				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithXsappName).Return(nil).Once()
 				return repo
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -185,7 +193,12 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInput(),
+			Input: modelInput(),
+			MandatoryLabels: func() map[string]interface{} {
+				mandatoryLabels := make(map[string]interface{})
+				mandatoryLabels[xsappNameCMPClone] = xsappNameCMPCloneValue
+				return mandatoryLabels
+			},
 			Context:     ctx,
 			ExpectedErr: nil,
 		},
@@ -223,7 +236,10 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel(),
+			Input: modelInputWithSubaccountLabel(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctx,
 			ExpectedErr: nil,
 		},
@@ -261,7 +277,10 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel(),
+			Input: modelInputWithSubaccountLabel(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctxWithSubaccount,
 			ExpectedErr: nil,
 		},
@@ -298,7 +317,10 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{}, nil)
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel(),
+			Input: modelInputWithSubaccountLabel(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctx,
 			ExpectedErr: nil,
 		},
@@ -333,7 +355,10 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInputWithoutLabels(),
+			Input: modelInputWithoutLabels(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctx,
 			ExpectedErr: nil,
 		},
@@ -351,8 +376,7 @@ func TestService_Create(t *testing.T) {
 				return repo
 			},
 			TenantSvcFn: func() *automock.TenantService {
-				tenantSvc := &automock.TenantService{}
-				return tenantSvc
+				return &automock.TenantService{}
 			},
 			UIDServiceFn: func() *automock.UidService {
 				svc := &automock.UidService{}
@@ -362,7 +386,10 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInputWithInvalidSubaccountLabel(),
+			Input: modelInputWithInvalidSubaccountLabel(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctx,
 			ExpectedErr: errors.New("while converting global_subaccount_id label"),
 		},
@@ -392,7 +419,10 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel(),
+			Input: modelInputWithSubaccountLabel(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -407,6 +437,9 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.LabelUpsertService{}
 				return repo
 			},
+			TenantSvcFn: func() *automock.TenantService {
+				return &automock.TenantService{}
+			},
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				return repo
@@ -420,7 +453,10 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInput(),
+			Input: modelInput(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -450,7 +486,10 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel(),
+			Input: modelInputWithSubaccountLabel(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctx,
 			ExpectedErr: apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey)),
 		},
@@ -486,7 +525,10 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel(),
+			Input: modelInputWithSubaccountLabel(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -523,7 +565,10 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return(nil, testErr)
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel(),
+			Input: modelInputWithSubaccountLabel(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -544,6 +589,9 @@ func TestService_Create(t *testing.T) {
 				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMock).Return(testErr).Once()
 				return repo
 			},
+			TenantSvcFn: func() *automock.TenantService {
+				return &automock.TenantService{}
+			},
 			UIDServiceFn: func() *automock.UidService {
 				svc := &automock.UidService{}
 				svc.On("Generate").Return(runtimeID)
@@ -553,7 +601,10 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
 			},
-			Input:       modelInput(),
+			Input: modelInput(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -591,7 +642,10 @@ func TestService_Create(t *testing.T) {
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
 				return svc
 			},
-			Input:       modelInputWithSubaccountLabel(),
+			Input: modelInputWithSubaccountLabel(),
+			MandatoryLabels: func() map[string]interface{} {
+				return nilLabels
+			},
 			Context:     ctx,
 			ExpectedErr: testErr,
 		},
@@ -604,14 +658,12 @@ func TestService_Create(t *testing.T) {
 			labelSvc := testCase.LabelUpsertServiceFn()
 			scenariosSvc := testCase.ScenariosServiceFn()
 			engineSvc := testCase.EngineServiceFn()
-			tenantSvc := &automock.TenantService{}
-			if testCase.TenantSvcFn != nil {
-				tenantSvc = testCase.TenantSvcFn()
-			}
+			tenantSvc := testCase.TenantSvcFn()
+			mandatoryLabels := testCase.MandatoryLabels()
 			svc := runtime.NewService(repo, nil, scenariosSvc, labelSvc, idSvc, engineSvc, tenantSvc, protectedLabelPattern, immutableLabelPattern)
 
 			// WHEN
-			result, err := svc.Create(testCase.Context, testCase.Input)
+			result, err := svc.CreateWithMandatoryLabels(testCase.Context, testCase.Input, mandatoryLabels)
 
 			// then
 			assert.IsType(t, "string", result)
@@ -622,12 +674,7 @@ func TestService_Create(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			}
 
-			repo.AssertExpectations(t)
-			idSvc.AssertExpectations(t)
-			labelSvc.AssertExpectations(t)
-			scenariosSvc.AssertExpectations(t)
-			engineSvc.AssertExpectations(t)
-			tenantSvc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, repo, idSvc, labelSvc, scenariosSvc, engineSvc, tenantSvc)
 		})
 	}
 
