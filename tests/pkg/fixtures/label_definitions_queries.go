@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/json"
@@ -11,6 +12,13 @@ import (
 )
 
 func CreateLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
+	output, err := CreateLabelDefinitionWithinTenantError(t, ctx, gqlClient, key, schema, tenantID)
+	require.NoError(t, err)
+
+	return output
+}
+
+func CreateLabelDefinitionWithinTenantError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, key string, schema interface{}, tenantID string) (*graphql.LabelDefinition, error) {
 	input := graphql.LabelDefinitionInput{
 		Key:    key,
 		Schema: json.MarshalJSONSchema(t, schema),
@@ -18,16 +26,35 @@ func CreateLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, 
 
 	in, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(input)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	createRequest := FixCreateLabelDefinitionRequest(in)
 
 	output := graphql.LabelDefinition{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createRequest, &output)
-	require.NoError(t, err)
+	return &output, err
+}
 
-	return &output
+func UpsertScenariosLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, scenarios []string) *graphql.LabelDefinition {
+	jsonSchema := map[string]interface{}{
+		"items": map[string]interface{}{
+			"enum": scenarios,
+			"type": "string",
+		},
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+	}
+
+	output, err := CreateLabelDefinitionWithinTenantError(t, ctx, gqlClient, "scenarios", jsonSchema, tenantID)
+	if err != nil {
+		if strings.Contains(err.Error(), "Object is not unique") {
+			return UpdateLabelDefinitionWithinTenant(t, ctx, gqlClient, "scenarios", jsonSchema, tenantID)
+		}
+	}
+	require.NoError(t, err)
+	return output
 }
 
 func CreateScenariosLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, scenarios []string) *graphql.LabelDefinition {

@@ -6,9 +6,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/vrischmann/envconfig"
-
 	"github.com/stretchr/testify/require"
+	"github.com/vrischmann/envconfig"
 )
 
 type TenantStatus string
@@ -43,6 +42,8 @@ const (
 	ApplicationsForRuntimeWithHiddenAppsTenantName             = "TestApplicationsForRuntimeWithHiddenApps"
 	TestDeleteApplicationIfInScenario                          = "TestDeleteApplicationIfInScenario"
 	TestProviderSubaccount                                     = "TestProviderSubaccount"
+	TestIntegrationSystemSubaccount                            = "TestIntegrationSystemSubaccount"
+	TestIntegrationSystemManagedAccount                        = "TestIntegrationSystemManagedAccount"
 )
 
 type Tenant struct {
@@ -184,52 +185,36 @@ func (mgr *TestTenantsManager) Init() {
 			Status:         Active,
 			Parent:         testDefaultTenant,
 		},
+		TestIntegrationSystemSubaccount: {
+			Name:           TestIntegrationSystemSubaccount,
+			ExternalTenant: "123e4567-e89b-12d3-a456-426614174001",
+			ProviderName:   testProvider,
+			Type:           Subaccount,
+			Status:         Active,
+			Parent:         testDefaultTenant,
+		},
+		TestIntegrationSystemManagedAccount: {
+			Name:           TestIntegrationSystemManagedAccount,
+			ExternalTenant: "7e8ab2e3-3bb4-42e3-92b2-4e0bf48559d3",
+			ProviderName:   testProvider,
+			Type:           Account,
+			Status:         Active,
+		},
 	}
 	mgr.Cleanup()
 }
 
 func (mgr TestTenantsManager) Cleanup() {
-	dbCfg := persistence.DatabaseConfig{}
-	if err := envconfig.Init(&dbCfg); err != nil {
-		log.Fatal(err)
-	}
-	transact, closeFunc, err := persistence.Configure(context.TODO(), dbCfg)
-
-	defer func() {
-		err := closeFunc()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	tx, err := transact.Begin()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	tenants := mgr.List()
 	ids := make([]string, 0, len(tenants))
 	for _, tnt := range tenants {
 		ids = append(ids, tnt.ExternalTenant)
 	}
+	mgr.cleanup(ids)
+}
 
-	query, args, err := sqlx.In(deleteLabelDefinitions, ids)
-	if err != nil {
-		log.Fatal(err)
-	}
-	query = sqlx.Rebind(sqlx.BindType("postgres"), query)
-
-	// A tenant is considered initialized if there is any labelDefinitions associated with it.
-	// On first request for a given tenant a labelDefinition for key scenario and value DEFAULT is created.
-	// Therefore, once accessed a tenant is considered initialized. That's the reason we clean up (uninitialize) all the tests tenants here.
-	// There is a test relying on this (testing tenants graphql query).
-	if _, err = tx.ExecContext(context.TODO(), query, args...); err != nil {
-		log.Fatal(err)
-	}
-
-	if err = tx.Commit(); err != nil {
-		log.Fatal(err)
-	}
+func (mgr TestTenantsManager) CleanupTenant(id string) {
+	mgr.cleanup([]string{id})
 }
 
 func (mgr TestTenantsManager) GetIDByName(t require.TestingT, name string) string {
@@ -254,4 +239,42 @@ func (mgr TestTenantsManager) List() []Tenant {
 	}
 
 	return toReturn
+}
+
+func (mgr TestTenantsManager) cleanup(ids []string) {
+	dbCfg := persistence.DatabaseConfig{}
+	if err := envconfig.Init(&dbCfg); err != nil {
+		log.Fatal(err)
+	}
+	transact, closeFunc, err := persistence.Configure(context.TODO(), dbCfg)
+
+	defer func() {
+		err := closeFunc()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	tx, err := transact.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	query, args, err := sqlx.In(deleteLabelDefinitions, ids)
+	if err != nil {
+		log.Fatal(err)
+	}
+	query = sqlx.Rebind(sqlx.BindType("postgres"), query)
+
+	// A tenant is considered initialized if there is any labelDefinitions associated with it.
+	// On first request for a given tenant a labelDefinition for key scenario and value DEFAULT is created.
+	// Therefore, once accessed a tenant is considered initialized. That's the reason we clean up (uninitialize) all the tests tenants here.
+	// There is a test relying on this (testing tenants graphql query).
+	if _, err = tx.ExecContext(context.TODO(), query, args...); err != nil {
+		log.Fatal(err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
-	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -15,20 +13,27 @@ import (
 
 const (
 	productID        = "productID"
-	tenantID         = "tenantID"
+	tenantID         = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	appID            = "appID"
 	ordID            = "com.compass.v1"
 	externalTenantID = "externalTenantID"
 	correlationIDs   = `["id1", "id2"]`
 )
 
+func fixNilModelProduct() *model.Product {
+	return nil
+}
+
 func fixEntityProduct() *product.Entity {
+	return fixEntityProductWithTitle("title")
+}
+
+func fixEntityProductWithTitle(title string) *product.Entity {
 	return &product.Entity{
 		ID:               productID,
 		OrdID:            ordID,
-		TenantID:         tenantID,
 		ApplicationID:    appID,
-		Title:            "title",
+		Title:            title,
 		ShortDescription: "short desc",
 		Vendor:           "vendorID",
 		Parent: sql.NullString{
@@ -44,13 +49,16 @@ func fixEntityProduct() *product.Entity {
 }
 
 func fixProductModel() *model.Product {
+	return fixProductModelWithTitle("title")
+}
+
+func fixProductModelWithTitle(title string) *model.Product {
 	parent := "parent"
 	return &model.Product{
 		ID:               productID,
 		OrdID:            ordID,
-		TenantID:         tenantID,
 		ApplicationID:    appID,
-		Title:            "title",
+		Title:            title,
 		ShortDescription: "short desc",
 		Vendor:           "vendorID",
 		Parent:           &parent,
@@ -73,34 +81,18 @@ func fixProductModelInput() *model.ProductInput {
 }
 
 func fixProductColumns() []string {
-	return []string{"ord_id", "tenant_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id"}
+	return []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id"}
 }
 
 func fixProductRow() []driver.Value {
-	return []driver.Value{ordID, tenantID, appID, "title", "short desc", "vendorID", "parent",
+	return fixProductRowWithTitle("title")
+}
+
+func fixProductRowWithTitle(title string) []driver.Value {
+	return []driver.Value{ordID, appID, title, "short desc", "vendorID", "parent",
 		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), productID}
 }
 
 func fixProductUpdateArgs() []driver.Value {
 	return []driver.Value{"title", "short desc", "vendorID", "parent", repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs)}
-}
-
-func fixUpdateTenantIsolationSubquery() string {
-	return `tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`
-}
-
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
-
-func fixUnescapedTenantIsolationSubquery() string {
-	return fixUnescapedTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
-}
-
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
 }

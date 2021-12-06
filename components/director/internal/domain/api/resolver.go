@@ -258,7 +258,7 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 		return nil, errors.Errorf("spec for API with id %q not found", apiID)
 	}
 
-	spec, err := r.specService.RefetchSpec(ctx, dbSpec.ID)
+	spec, err := r.specService.RefetchSpec(ctx, dbSpec.ID, model.APISpecReference)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// AssertSQLNullStringEqualTo missing godoc
+// AssertSQLNullStringEqualTo is a helper to check if the sql.NullString is equal to the given string.
 func AssertSQLNullStringEqualTo(t *testing.T, in sql.NullString, text *string) {
 	if text != nil {
 		sqlStr := sql.NullString{}
@@ -20,7 +20,7 @@ func AssertSQLNullStringEqualTo(t *testing.T, in sql.NullString, text *string) {
 	}
 }
 
-// AssertSQLNullBool missing godoc
+// AssertSQLNullBool is a helper to check if the sql.NullBool is equal to the given bool.
 func AssertSQLNullBool(t *testing.T, in sql.NullBool, boolean *bool) {
 	if boolean != nil {
 		require.True(t, in.Valid)

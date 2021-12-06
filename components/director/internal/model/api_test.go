@@ -10,14 +10,13 @@ import (
 )
 
 func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
-	// given
+	// GIVEN
 	id := "foo"
 	appID := "baz"
 	desc := "Sample"
 	name := "sample"
 	targetURL := "https://foo.bar"
 	group := "sampleGroup"
-	tenant := "tenant"
 
 	testCases := []struct {
 		Name     string
@@ -38,7 +37,6 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 				Description:   &desc,
 				TargetURLs:    api.ConvertTargetURLToJSONArray(targetURL),
 				Group:         &group,
-				Tenant:        tenant,
 				BaseEntity: &model.BaseEntity{
 					ID:    id,
 					Ready: true,
@@ -54,10 +52,10 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// when
-			result := testCase.Input.ToAPIDefinitionWithinBundle(id, appID, tenant, 0)
+			// WHEN
+			result := testCase.Input.ToAPIDefinitionWithinBundle(id, appID, 0)
 
-			// then
+			// THEN
 			assert.Equal(t, testCase.Expected, result)
 		})
 	}

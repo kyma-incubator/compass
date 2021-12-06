@@ -128,9 +128,9 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			sut := testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -173,9 +173,9 @@ func TestLabelDefinitionInput_Validate_Key(t *testing.T) {
 			//GIVEN
 			sut := fixValidLabelDefinitionInput()
 			sut.Key = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -208,9 +208,9 @@ func TestLabelDefinitionInput_Validate_Schema(t *testing.T) {
 			//GIVEN
 			sut := fixValidLabelDefinitionInput()
 			sut.Schema = testCase.Value
-			//WHEN
+			// WHEN
 			err := sut.Validate()
-			//THEN
+			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {

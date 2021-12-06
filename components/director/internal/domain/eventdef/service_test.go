@@ -21,7 +21,7 @@ import (
 )
 
 func TestService_Get(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -69,7 +69,7 @@ func TestService_Get(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := event.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			document, err := svc.Get(ctx, testCase.InputID)
 
 			// then
@@ -95,7 +95,7 @@ func TestService_Get(t *testing.T) {
 }
 
 func TestService_GetForBundle(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -147,7 +147,7 @@ func TestService_GetForBundle(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			svc := event.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			eventDef, err := svc.GetForBundle(ctx, testCase.InputID, testCase.BundleID)
 
 			// then
@@ -173,7 +173,7 @@ func TestService_GetForBundle(t *testing.T) {
 }
 
 func TestService_ListByBundleIDs(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	firstEventID := "foo"
@@ -314,7 +314,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 
 			svc := event.NewService(repo, nil, nil, bndlRefSvc)
 
-			// when
+			// WHEN
 			events, err := svc.ListByBundleIDs(ctx, bundleIDs, testCase.PageSize, after)
 
 			// then
@@ -340,7 +340,7 @@ func TestService_ListByBundleIDs(t *testing.T) {
 }
 
 func TestService_ListByApplicationID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -389,7 +389,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 
 			svc := event.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			docs, err := svc.ListByApplicationID(ctx, appID)
 
 			// then
@@ -415,7 +415,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 }
 
 func TestService_Create(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -452,7 +452,6 @@ func TestService_Create(t *testing.T) {
 	modelEventDefinition := &model.EventDefinition{
 		PackageID:     &packageID,
 		ApplicationID: appID,
-		Tenant:        tenantID,
 		Name:          name,
 		Version:       &model.Version{},
 		BaseEntity: &model.BaseEntity{
@@ -482,7 +481,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, modelEventDefinition).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelEventDefinition).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -508,7 +507,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Success in ORD scenario where many bundle ids are passed",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, modelEventDefinition).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelEventDefinition).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -536,7 +535,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Event Creation",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, modelEventDefinition).Return(testErr).Once()
+				repo.On("Create", ctx, tenantID, modelEventDefinition).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -558,7 +557,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - Spec Creation",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, modelEventDefinition).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelEventDefinition).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -582,7 +581,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error - BundleReference Event Creation",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, modelEventDefinition).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelEventDefinition).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -609,7 +608,7 @@ func TestService_Create(t *testing.T) {
 			Name: "Error in ORD scenario - BundleReference Event Creation",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, modelEventDefinition).Return(nil).Once()
+				repo.On("Create", ctx, tenantID, modelEventDefinition).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -638,7 +637,7 @@ func TestService_Create(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			uidService := testCase.UIDServiceFn()
 			specService := testCase.SpecServiceFn()
@@ -647,7 +646,7 @@ func TestService_Create(t *testing.T) {
 			svc := event.NewService(repo, uidService, specService, bundleReferenceService)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			result, err := svc.Create(ctx, appID, &bundleID, &packageID, testCase.Input, testCase.SpecsInput, testCase.BundleIDs, 0)
 
 			// then
@@ -675,7 +674,7 @@ func TestService_Create(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -697,7 +696,6 @@ func TestService_Update(t *testing.T) {
 
 	modelSpec := &model.Spec{
 		ID:         id,
-		Tenant:     tenantID,
 		ObjectType: model.EventSpecReference,
 		ObjectID:   id,
 		Data:       &spec,
@@ -729,7 +727,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(eventDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputEventDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -748,7 +746,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(eventDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputEventDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -767,7 +765,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputEventDefinitionModel).Return(testErr).Once()
+				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(testErr).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -783,7 +781,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputEventDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -801,7 +799,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputEventDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -820,7 +818,7 @@ func TestService_Update(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(eventDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputEventDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -838,14 +836,14 @@ func TestService_Update(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			specSvc := testCase.SpecServiceFn()
 
 			svc := event.NewService(repo, nil, specSvc, nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			err := svc.Update(ctx, testCase.InputID, testCase.Input, testCase.SpecInput)
 
 			// then
@@ -871,7 +869,7 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_UpdateManyBundles(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -897,7 +895,6 @@ func TestService_UpdateManyBundles(t *testing.T) {
 
 	modelSpec := &model.Spec{
 		ID:         id,
-		Tenant:     tenantID,
 		ObjectType: model.EventSpecReference,
 		ObjectID:   id,
 		Data:       &spec,
@@ -935,7 +932,7 @@ func TestService_UpdateManyBundles(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(eventDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputEventDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -964,7 +961,7 @@ func TestService_UpdateManyBundles(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(eventDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputEventDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -988,7 +985,7 @@ func TestService_UpdateManyBundles(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(eventDefinitionModel, nil).Once()
-				repo.On("Update", ctx, inputEventDefinitionModel).Return(nil).Once()
+				repo.On("Update", ctx, tenantID, inputEventDefinitionModel).Return(nil).Once()
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -1013,7 +1010,7 @@ func TestService_UpdateManyBundles(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 			specSvc := testCase.SpecServiceFn()
 			bndlRefSvc := testCase.BundleReferenceServiceFn()
@@ -1021,7 +1018,7 @@ func TestService_UpdateManyBundles(t *testing.T) {
 			svc := event.NewService(repo, nil, specSvc, bndlRefSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			// when
+			// WHEN
 			err := svc.UpdateInManyBundles(ctx, testCase.InputID, testCase.Input, testCase.SpecInput, testCase.BundleIDsForCreation, testCase.BundleIDsForDeletion, 0)
 
 			// then
@@ -1048,7 +1045,7 @@ func TestService_UpdateManyBundles(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 
 	id := "foo"
@@ -1087,12 +1084,12 @@ func TestService_Delete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := event.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
 
 			// then
@@ -1117,7 +1114,7 @@ func TestService_Delete(t *testing.T) {
 }
 
 func TestService_DeleteAllByBundleID(t *testing.T) {
-	// given
+	// GIVEN
 	testErr := errors.New("Test error")
 	id := "foo"
 
@@ -1155,12 +1152,12 @@ func TestService_DeleteAllByBundleID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// given
+			// GIVEN
 			repo := testCase.RepositoryFn()
 
 			svc := event.NewService(repo, nil, nil, nil)
 
-			// when
+			// WHEN
 			err := svc.DeleteAllByBundleID(ctx, testCase.InputID)
 
 			// then
@@ -1185,7 +1182,7 @@ func TestService_DeleteAllByBundleID(t *testing.T) {
 }
 
 func TestService_ListFetchRequests(t *testing.T) {
-	// given
+	// GIVEN
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
@@ -1213,7 +1210,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 			Name: "Success",
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(fetchRequests, nil).Once()
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs, model.EventSpecReference).Return(fetchRequests, nil).Once()
 				return svc
 			},
 			ExpectedFetchRequests: fetchRequests,
@@ -1222,7 +1219,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 			Name: "Success - Fetch Request Not Found",
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(nil, apperrors.NewNotFoundError(resource.FetchRequest, "")).Once()
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs, model.EventSpecReference).Return(nil, apperrors.NewNotFoundError(resource.FetchRequest, "")).Once()
 				return svc
 			},
 			ExpectedFetchRequests: nil,
@@ -1231,7 +1228,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 			Name: "Error while listing Fetch Requests",
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
-				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs).Return(nil, testErr).Once()
+				svc.On("ListFetchRequestsByReferenceObjectIDs", ctx, tenantID, specIDs, model.EventSpecReference).Return(nil, testErr).Once()
 				return svc
 			},
 			ExpectedFetchRequests: nil,
@@ -1245,7 +1242,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 
 			svc := event.NewService(nil, nil, specService, nil)
 
-			// when
+			// WHEN
 			frs, err := svc.ListFetchRequests(ctx, specIDs)
 
 			// then
@@ -1262,7 +1259,7 @@ func TestService_ListFetchRequests(t *testing.T) {
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := event.NewService(nil, nil, nil, nil)
-		// when
+		// WHEN
 		_, err := svc.ListFetchRequests(context.TODO(), nil)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})

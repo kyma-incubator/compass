@@ -5,73 +5,49 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-// NewConverter missing godoc
+// SubaccountIDKey is the key used for the subaccount_id label
+const SubaccountIDKey = "global_subaccount_id"
+
+// NewConverter creates a new instance of gqlConverter
 func NewConverter() *converter {
 	return &converter{}
 }
 
 type converter struct{}
 
-// FromInputGraphQL missing godoc
-func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput) model.AutomaticScenarioAssignment {
-	out := model.AutomaticScenarioAssignment{
-		ScenarioName: in.ScenarioName,
-	}
-
-	if in.Selector != nil {
-		out.Selector = c.LabelSelectorFromInput(*in.Selector)
-	}
-	return out
-}
-
-// LabelSelectorFromInput missing godoc
-func (c *converter) LabelSelectorFromInput(in graphql.LabelSelectorInput) model.LabelSelector {
-	return model.LabelSelector{
-		Key:   in.Key,
-		Value: in.Value,
+// FromInputGraphQL converts from GraphQL input to internal model
+func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, targetTenantInternalID string) model.AutomaticScenarioAssignment {
+	return model.AutomaticScenarioAssignment{
+		ScenarioName:   in.ScenarioName,
+		TargetTenantID: targetTenantInternalID,
 	}
 }
 
-// ToGraphQL missing godoc
-func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment) graphql.AutomaticScenarioAssignment {
+// ToGraphQL converts from internal model to GraphQL output
+func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment {
 	return graphql.AutomaticScenarioAssignment{
 		ScenarioName: in.ScenarioName,
 		Selector: &graphql.Label{
-			Key:   in.Selector.Key,
-			Value: in.Selector.Value,
+			Key:   SubaccountIDKey,
+			Value: targetTenantExternalID,
 		},
 	}
 }
 
-// ToEntity missing godoc
+// ToEntity converts from internal model to entity
 func (c *converter) ToEntity(in model.AutomaticScenarioAssignment) Entity {
 	return Entity{
-		TenantID:      in.Tenant,
-		Scenario:      in.ScenarioName,
-		SelectorKey:   in.Selector.Key,
-		SelectorValue: in.Selector.Value,
+		TenantID:       in.Tenant,
+		Scenario:       in.ScenarioName,
+		TargetTenantID: in.TargetTenantID,
 	}
 }
 
-// FromEntity missing godoc
+// FromEntity converts from entity to internal model
 func (c *converter) FromEntity(in Entity) model.AutomaticScenarioAssignment {
 	return model.AutomaticScenarioAssignment{
-		ScenarioName: in.Scenario,
-		Tenant:       in.TenantID,
-		Selector: model.LabelSelector{
-			Key:   in.SelectorKey,
-			Value: in.SelectorValue,
-		},
+		ScenarioName:   in.Scenario,
+		Tenant:         in.TenantID,
+		TargetTenantID: in.TargetTenantID,
 	}
-}
-
-// MultipleToGraphQL missing godoc
-func (c *converter) MultipleToGraphQL(assignments []*model.AutomaticScenarioAssignment) []*graphql.AutomaticScenarioAssignment {
-	gqlAssignments := make([]*graphql.AutomaticScenarioAssignment, 0, len(assignments))
-
-	for _, v := range assignments {
-		assignment := c.ToGraphQL(*v)
-		gqlAssignments = append(gqlAssignments, &assignment)
-	}
-	return gqlAssignments
 }

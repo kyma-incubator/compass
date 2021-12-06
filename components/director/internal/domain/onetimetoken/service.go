@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -209,14 +211,22 @@ func (s *service) getAppToken(ctx context.Context, id string) (*model.OneTimeTok
 }
 
 func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, app model.Application) (*model.OneTimeToken, error) {
-	extTenant, err := s.extTenantsSvc.GetExternalTenant(ctx, app.Tenant)
+	tntCtx, err := tenant.LoadTenantPairFromContext(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting external tenant for internal tenant [%s]", app.Tenant)
+		return nil, err
+	}
+
+	extTenant := tntCtx.ExternalID
+	if len(extTenant) == 0 {
+		extTenant, err = s.extTenantsSvc.GetExternalTenant(ctx, tntCtx.InternalID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting external tenant for internal tenant [%s]", tntCtx.InternalID)
+		}
 	}
 
 	clientUser, err := client.LoadFromContext(ctx)
 	if err != nil {
-		log.C(ctx).Infof("unable to provide client_user for internal tenant [%s] with corresponding external tenant [%s]", app.Tenant, extTenant)
+		log.C(ctx).Infof("unable to provide client_user for internal tenant [%s] with corresponding external tenant [%s]", tntCtx.InternalID, extTenant)
 	}
 
 	graphqlApp := s.appConverter.ToGraphQL(&app)

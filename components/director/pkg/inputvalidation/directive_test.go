@@ -29,9 +29,9 @@ func TestDirective_Validate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		//GIVEN
 		ts := testStruct{}
-		//WHEN
+		// WHEN
 		result, err := validatorDirective.Validate(ctx, ts, next(ts, nil))
-		//THEN
+		// THEN
 		require.NoError(t, err)
 		require.Equal(t, ts, result)
 	})
@@ -39,9 +39,9 @@ func TestDirective_Validate(t *testing.T) {
 	t.Run("object is invalid", func(t *testing.T) {
 		//GIVEN
 		ts := testStruct{returnErr: testErr}
-		//WHEN
+		// WHEN
 		result, err := validatorDirective.Validate(ctx, ts, next(ts, nil))
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "field=testError")
 		assert.Contains(t, err.Error(), "Invalid data testStruct")
@@ -50,15 +50,15 @@ func TestDirective_Validate(t *testing.T) {
 
 	t.Run("object is not validatable", func(t *testing.T) {
 		_, err := validatorDirective.Validate(ctx, nil, next("test", nil))
-		//THEN
+		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "object is not validatable")
 	})
 
 	t.Run("next resolver return err", func(t *testing.T) {
-		//WHEN
+		// WHEN
 		_, err := validatorDirective.Validate(ctx, nil, next(nil, testErr))
-		//THEN
+		// THEN
 		require.Error(t, err)
 	})
 }

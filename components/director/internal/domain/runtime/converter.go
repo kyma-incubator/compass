@@ -1,7 +1,10 @@
 package runtime
 
 import (
+	"database/sql"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -114,13 +117,50 @@ func (c *converter) statusConditionToModel(in *graphql.RuntimeStatusCondition) *
 	return &condition
 }
 
-// MultipleFromEntities missing godoc
-func (c *converter) MultipleFromEntities(entities RuntimeCollection) []*model.Runtime {
-	items := make([]*model.Runtime, 0, len(entities))
-	for _, ent := range entities {
-		model := ent.ToModel()
-
-		items = append(items, model)
+func (*converter) ToEntity(model *model.Runtime) (*Runtime, error) {
+	if model == nil {
+		return nil, nil
 	}
-	return items
+	var nullDescription sql.NullString
+	if model.Description != nil && len(*model.Description) > 0 {
+		nullDescription = sql.NullString{
+			String: *model.Description,
+			Valid:  true,
+		}
+	}
+	if model.Status == nil {
+		return nil, apperrors.NewInternalError("invalid input model")
+	}
+
+	return &Runtime{
+		ID:                model.ID,
+		Name:              model.Name,
+		Description:       nullDescription,
+		StatusCondition:   string(model.Status.Condition),
+		StatusTimestamp:   model.Status.Timestamp,
+		CreationTimestamp: model.CreationTimestamp,
+	}, nil
+}
+
+func (*converter) FromEntity(e *Runtime) *model.Runtime {
+	if e == nil {
+		return nil
+	}
+
+	var description *string
+	if e.Description.Valid {
+		description = new(string)
+		*description = e.Description.String
+	}
+
+	return &model.Runtime{
+		ID:          e.ID,
+		Name:        e.Name,
+		Description: description,
+		Status: &model.RuntimeStatus{
+			Condition: model.RuntimeStatusCondition(e.StatusCondition),
+			Timestamp: e.StatusTimestamp,
+		},
+		CreationTimestamp: e.CreationTimestamp,
+	}
 }

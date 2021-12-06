@@ -121,15 +121,18 @@ func TestTenantFormationFlow(t *testing.T) {
 	const (
 		firstFormation  = "FIRST"
 		secondFormation = "SECOND"
-		targetTenantID  = "3cdf1346-9d23-4c22-93dc-144d71e0f335"
 	)
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+
 	ctx := context.Background()
 	defaultValue := conf.DefaultScenario
 	assignment := graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: firstFormation,
 		Selector: &graphql.LabelSelectorInput{
 			Key:   "global_subaccount_id",
-			Value: targetTenantID,
+			Value: subaccountID,
 		},
 	}
 
@@ -137,8 +140,6 @@ func TestTenantFormationFlow(t *testing.T) {
 	if conf.DefaultScenarioEnabled {
 		expectedFormations = append(expectedFormations, defaultValue)
 	}
-
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Logf("Should create formation: %s", firstFormation)
 	var formation graphql.Formation
@@ -154,8 +155,8 @@ func TestTenantFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, secondFormation, unusedFormation.Name)
 
-	t.Logf("Assign tenant %s to formation %s", targetTenantID, firstFormation)
-	assignReq := fixtures.FixAssignFormationRequest(targetTenantID, "TENANT", firstFormation)
+	t.Logf("Assign tenant %s to formation %s", subaccountID, firstFormation)
+	assignReq := fixtures.FixAssignFormationRequest(subaccountID, "TENANT", firstFormation)
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, assignReq, &assignFormation)
 	require.NoError(t, err)
@@ -166,8 +167,8 @@ func TestTenantFormationFlow(t *testing.T) {
 	require.Equal(t, 1, len(asaPage.Data))
 	assertions.AssertAutomaticScenarioAssignment(t, assignment, *asaPage.Data[0])
 
-	t.Logf("Unassign tenant %s from formation %s", targetTenantID, firstFormation)
-	unassignReq := fixtures.FixUnassignFormationRequest(targetTenantID, "TENANT", firstFormation)
+	t.Logf("Unassign tenant %s from formation %s", subaccountID, firstFormation)
+	unassignReq := fixtures.FixUnassignFormationRequest(subaccountID, "TENANT", firstFormation)
 	var unassignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, unassignReq, &unassignFormation)
 	require.NoError(t, err)

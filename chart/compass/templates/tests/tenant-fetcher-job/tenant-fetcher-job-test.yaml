@@ -53,10 +53,6 @@ spec:
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
-            {{ if (index .Values.global.tenantFetchers "subaccount-fetcher") }}
-            - name: APP_MOVED_RUNTIME_LABEL_KEY
-              value: {{ default "movedRuntimeLabelKey" (index .Values.global.tenantFetchers "subaccount-fetcher" "fieldMapping" "movedRuntimeLabelKey") }}
-            {{end}}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:

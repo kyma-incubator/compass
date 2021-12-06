@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 
@@ -56,6 +58,8 @@ type config struct {
 
 	ClientTimeout     time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
+
+	ExternalClientCertSecret string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET"`
 }
 
 func main() {
@@ -85,14 +89,19 @@ func main() {
 		},
 	}
 
-	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg.Features, transact, httpClient)
+	certCache, err := certloader.StartCertLoader(ctx, cfg.ExternalClientCertSecret)
+	exitOnError(err, "Failed to initialize certificate loader")
+
+	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
+
+	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg.Features, transact, httpClient, accessStrategyExecutorProvider)
 	err = ordAggregator.SyncORDDocuments(ctx)
 	exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 
 	log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
 }
 
-func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig features.Config, transact persistence.Transactioner, httpClient *http.Client) *ord.Service {
+func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig features.Config, transact persistence.Transactioner, httpClient *http.Client, accessStrategyExecutorProvider *accessstrategy.Provider) *ord.Service {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -131,8 +140,6 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	tombstoneRepo := tombstone.NewRepository(tombstoneConverter)
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 
-	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider()
-
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	assignmentConv := scenarioassignment.NewConverter()
@@ -152,10 +159,11 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, featuresConfig
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	ordClient := ord.NewClient(httpClient, accessStrategyExecutorProvider)
 
-	return ord.NewAggregatorService(transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, ordClient)
+	return ord.NewAggregatorService(transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, ordClient)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

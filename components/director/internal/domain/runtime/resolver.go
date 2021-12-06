@@ -52,7 +52,6 @@ type RuntimeService interface {
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error)
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
-	UpdateTenantID(ctx context.Context, runtimeID, newTenantID string) error
 }
 
 // ScenarioAssignmentService missing godoc
@@ -265,34 +264,6 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, err
-	}
-
-	gqlRuntime := r.converter.ToGraphQL(runtime)
-
-	return gqlRuntime, nil
-}
-
-// SetRuntimeTenant sets internal tenant id for the runtime
-func (r *Resolver) SetRuntimeTenant(ctx context.Context, runtimeID, tenantID string) (*graphql.Runtime, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	if err := r.runtimeService.UpdateTenantID(ctx, runtimeID, tenantID); err != nil {
-		return nil, err
-	}
-
-	runtime, err := r.runtimeService.Get(ctx, runtimeID)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 

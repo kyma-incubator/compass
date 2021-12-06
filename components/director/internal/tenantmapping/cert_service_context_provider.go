@@ -2,9 +2,11 @@ package tenantmapping
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -14,74 +16,91 @@ import (
 )
 
 // NewCertServiceContextProvider implements the ObjectContextProvider interface by looking for tenant information directly populated in the certificate.
-func NewCertServiceContextProvider(tenantRepo TenantRepository) *certServiceContextProvider {
+func NewCertServiceContextProvider(tenantRepo TenantRepository, scopesGetter ScopesGetter, consumerExistsFuncs map[model.SystemAuthReferenceObjectType]func(context.Context, string) (bool, error)) *certServiceContextProvider {
 	return &certServiceContextProvider{
 		tenantRepo: tenantRepo,
 		tenantKeys: KeysExtra{
 			TenantKey:         ProviderTenantKey,
 			ExternalTenantKey: ProviderExternalTenantKey,
 		},
+		scopesGetter:        scopesGetter,
+		consumerExistsFuncs: consumerExistsFuncs,
 	}
 }
 
 type certServiceContextProvider struct {
 	tenantRepo TenantRepository
 	tenantKeys KeysExtra
+
+	scopesGetter ScopesGetter
+
+	consumerExistsFuncs map[model.SystemAuthReferenceObjectType]func(context.Context, string) (bool, error)
 }
 
 // GetObjectContext is the certServiceContextProvider implementation of the ObjectContextProvider interface
 // By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
-// There we should only convert the tenant identifier from external to internal. Additionally, we mark the consumer in this flow as Runtime.
-func (m *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
-	logger := log.C(ctx).WithFields(logrus.Fields{
-		"consumer_type": consumer.Runtime,
-	})
-
-	ctx = log.ContextWithLogger(ctx, logger)
-
+// There we should only convert the tenant identifier from external to internal.
+func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+	// the authID in this flow is an OU selected by the Connector
 	externalTenantID := authDetails.AuthID
 
-	matchedComponentName, ok := reqData.Body.Header[authenticator.ComponentName]
-	if !ok || len(matchedComponentName) == 0 {
-		return ObjectContext{}, errors.New("empty matched component header")
-	}
+	extraData := reqData.GetExtraDataWithDefaults()
 
-	// This if is needed to separate the director from ord flow because for the director flow we need to use the internal ID of the subaccount
-	// whereas in the ord flow we expect external IDs in order ord views to work properly(using Automatic Scenario Assignments)
-	log.C(ctx).Infof("Matched component name is %s", matchedComponentName[0])
-	if matchedComponentName[0] == "director" { // Director Flow, do the tenant conversion
-		scopes := "runtime:read runtime:write tenant:read"
+	logger := log.C(ctx).WithFields(logrus.Fields{
+		"consumer_type": extraData.ConsumerType,
+	})
+	ctx = log.ContextWithLogger(ctx, logger)
 
-		log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
-		tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
+	if extraData.AccessLevel != "" {
+		var err error
+		externalTenantID, err = reqData.GetExternalTenantID() // will return tenant ID from header if it exists
 		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
-
-				log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-				return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider), nil
-			}
-			return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
+			log.C(ctx).WithError(err).Errorf("Failed to get external tenant ID: %v", err)
+			return ObjectContext{}, err
 		}
-
-		objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
-
-		log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
-
-		return objCtx, nil
 	}
 
-	// ORD Flow, set the external tenant ID both for internal and external tenants
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, externalTenantID), m.tenantKeys, "", authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider)
+	scopes, err := p.directorScopes(reqData.GetConsumerTypeFromExtra())
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to get scopes for consumer type %s: %v", extraData.ConsumerType, err)
+		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Failed to extract scopes for consumer with type %s", extraData.ConsumerType))
+	}
 
+	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
+	tenantMapping, err := p.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			// tenant not in DB yet, might be because we have not imported all subaccounts yet
+			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
+			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), p.tenantKeys, scopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Runtime, CertServiceObjectContextProvider), nil
+		}
+		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
+	}
+
+	if extraData.AccessLevel != "" && tenantMapping.Type != extraData.AccessLevel {
+		return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s with ID %s", authDetails.AuthID, extraData.AccessLevel, tenantMapping.ExternalTenant))
+	}
+
+	if extraData.InternalConsumerID != "" {
+		found, err := p.consumerExistsFuncs[extraData.ConsumerType](ctx, extraData.InternalConsumerID)
+		if err != nil {
+			return ObjectContext{}, errors.Wrapf(err, "while getting %s with ID %s", extraData.ConsumerType, extraData.InternalConsumerID)
+		}
+		if !found {
+			return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("%s with ID %s does not exist", extraData.ConsumerType, extraData.InternalConsumerID))
+		}
+	}
+
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), p.tenantKeys, scopes,
+		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(extraData.ConsumerType), CertServiceObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
-
 	return objCtx, nil
 }
 
 // Match checks if there is "client-id-from-certificate" Header with nonempty value and "client-certificate-issuer" Header with value "certificate-service".
 // If so AuthDetails object is build.
-func (m *certServiceContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
 
@@ -90,4 +109,16 @@ func (m *certServiceContextProvider) Match(_ context.Context, data oathkeeper.Re
 	}
 
 	return false, nil, nil
+}
+
+func (p *certServiceContextProvider) directorScopes(consumerType model.SystemAuthReferenceObjectType) (string, error) {
+	if consumerType == "" {
+		consumerType = "default"
+	}
+
+	declaredScopes, err := p.scopesGetter.GetRequiredScopes(buildPath(consumerType))
+	if err != nil {
+		return "", errors.Wrap(err, "while fetching scopes")
+	}
+	return strings.Join(declaredScopes, " "), nil
 }

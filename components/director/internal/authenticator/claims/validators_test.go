@@ -60,7 +60,6 @@ func TestValidator_Validate(t *testing.T) {
 
 	invalidLabel := &model.Label{
 		ID:         "lbl-id",
-		Tenant:     providerTenantID,
 		Key:        consumerIDsLabelKey,
 		Value:      []interface{}{"invalid-value"},
 		ObjectID:   runtimeID,
@@ -69,7 +68,6 @@ func TestValidator_Validate(t *testing.T) {
 
 	lbl := &model.Label{
 		ID:         "lbl-id",
-		Tenant:     providerTenantID,
 		Key:        consumerIDsLabelKey,
 		Value:      []interface{}{extTenantID},
 		ObjectID:   runtimeID,

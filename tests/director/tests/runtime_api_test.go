@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -132,17 +131,16 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	const (
-		labelKey     = "labelKey"
-		labelValue   = "labelValue"
 		testScenario = "test-scenario"
 	)
 	// GIVEN
 	ctx := context.Background()
+	subaccount := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 	givenInput := graphql.RuntimeInput{
 		Name:        "runtime-with-scenario-assignments",
 		Description: ptr.String("runtime-1-description"),
-		Labels:      graphql.Labels{labelKey: []interface{}{labelValue}},
+		Labels:      graphql.Labels{"global_subaccount_id": []interface{}{subaccount}},
 	}
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
 	require.NoError(t, err)
@@ -156,46 +154,18 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled, false)
+	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled, true)
 
 	// update label definition
-	const defaultValue = "DEFAULT"
-	enumValue := []string{defaultValue, testScenario}
-	jsonSchema := map[string]interface{}{
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": enumValue,
-		},
-	}
-	var schema interface{} = jsonSchema
-	marshalledSchema := json.MarshalJSONSchema(t, schema)
-
-	givenLabelDef := graphql.LabelDefinitionInput{
-		Key:    ScenariosLabel,
-		Schema: marshalledSchema,
-	}
-	labelDefInGQL, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(givenLabelDef)
-	require.NoError(t, err)
-	actualLabelDef := graphql.LabelDefinition{}
-
-	// WHEN
-	updateLabelDefReq := fixtures.FixUpdateLabelDefinitionRequest(labelDefInGQL)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateLabelDefReq, &actualLabelDef)
-
-	//THEN
-	require.NoError(t, err)
-	assert.Equal(t, givenLabelDef.Key, actualLabelDef.Key)
-	assertions.AssertGraphQLJSONSchema(t, givenLabelDef.Schema, actualLabelDef.Schema)
+	_ = fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{testScenario, "DEFAULT"})
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{"DEFAULT"})
 
 	// register automatic sccenario assignment
 	givenScenarioAssignment := graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: testScenario,
 		Selector: &graphql.LabelSelectorInput{
-			Key:   labelKey,
-			Value: labelValue,
+			Key:   "global_subaccount_id",
+			Value: subaccount,
 		},
 	}
 
@@ -220,11 +190,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	require.NoError(t, err)
 	scenarios, hasScenarios := actualRuntime.Labels["scenarios"]
 	assert.True(t, hasScenarios)
-	if conf.DefaultScenarioEnabled {
-		assert.Len(t, scenarios, 2)
-	} else {
-		assert.Len(t, scenarios, 1)
-	}
+	assert.Len(t, scenarios, 1)
 	assert.Contains(t, scenarios, testScenario)
 
 	// delete runtime
@@ -242,90 +208,6 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getScenarioAssignmentsReq, &actualScenarioAssignments)
 	require.NoError(t, err)
 	assert.Equal(t, actualScenarioAssignments.TotalCount, 0)
-}
-
-func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
-
-	firstRuntimeName := "unique-name-1"
-	givenInput := graphql.RuntimeInput{
-		Name:        firstRuntimeName,
-		Description: ptr.String("runtime-1-description"),
-		Labels:      graphql.Labels{"ggg": []interface{}{"hhh"}},
-	}
-	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
-	require.NoError(t, err)
-	firstRuntime := graphql.RuntimeExt{}
-	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-
-	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &firstRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &firstRuntime)
-	//THEN
-	require.NoError(t, err)
-	require.NotEmpty(t, firstRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, firstRuntime, conf.DefaultScenarioEnabled, false)
-
-	// try to create second runtime with first runtime name
-	//GIVEN
-	givenInput = graphql.RuntimeInput{
-		Name:        firstRuntimeName,
-		Description: ptr.String("runtime-1-description"),
-	}
-	runtimeInGQL, err = testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
-	require.NoError(t, err)
-	registerReq = fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-	saveExampleInCustomDir(t, registerReq.Query(), RegisterRuntimeCategory, "register runtime")
-
-	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, nil)
-
-	//THEN
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not unique")
-
-	// create second runtime
-	//GIVEN
-	secondRuntimeName := "unique-name-2"
-	givenInput = graphql.RuntimeInput{
-		Name:        secondRuntimeName,
-		Description: ptr.String("runtime-1-description"),
-		Labels:      graphql.Labels{"ggg": []interface{}{"hhh"}},
-	}
-	runtimeInGQL, err = testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
-	require.NoError(t, err)
-	secondRuntime := graphql.RuntimeExt{}
-	registerReq = fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-
-	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &secondRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &secondRuntime)
-
-	//THEN
-	require.NoError(t, err)
-	require.NotEmpty(t, secondRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, secondRuntime, conf.DefaultScenarioEnabled, false)
-
-	//Update first runtime with second runtime name, failed
-
-	//GIVEN
-	givenInput = graphql.RuntimeInput{
-		Name:        secondRuntimeName,
-		Description: ptr.String("runtime-1-description"),
-	}
-	runtimeInGQL, err = testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
-	require.NoError(t, err)
-	registerReq = fixtures.FixUpdateRuntimeRequest(firstRuntime.ID, runtimeInGQL)
-
-	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &secondRuntime)
-
-	//THEN
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not unique")
 }
 
 func TestQueryRuntimes(t *testing.T) {

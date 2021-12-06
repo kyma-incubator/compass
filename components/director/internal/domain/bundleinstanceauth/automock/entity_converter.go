@@ -15,18 +15,20 @@ type EntityConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: entity
-func (_m *EntityConverter) FromEntity(entity bundleinstanceauth.Entity) (model.BundleInstanceAuth, error) {
+func (_m *EntityConverter) FromEntity(entity *bundleinstanceauth.Entity) (*model.BundleInstanceAuth, error) {
 	ret := _m.Called(entity)
 
-	var r0 model.BundleInstanceAuth
-	if rf, ok := ret.Get(0).(func(bundleinstanceauth.Entity) model.BundleInstanceAuth); ok {
+	var r0 *model.BundleInstanceAuth
+	if rf, ok := ret.Get(0).(func(*bundleinstanceauth.Entity) *model.BundleInstanceAuth); ok {
 		r0 = rf(entity)
 	} else {
-		r0 = ret.Get(0).(model.BundleInstanceAuth)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.BundleInstanceAuth)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(bundleinstanceauth.Entity) error); ok {
+	if rf, ok := ret.Get(1).(func(*bundleinstanceauth.Entity) error); ok {
 		r1 = rf(entity)
 	} else {
 		r1 = ret.Error(1)
@@ -36,18 +38,20 @@ func (_m *EntityConverter) FromEntity(entity bundleinstanceauth.Entity) (model.B
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *EntityConverter) ToEntity(in model.BundleInstanceAuth) (bundleinstanceauth.Entity, error) {
+func (_m *EntityConverter) ToEntity(in *model.BundleInstanceAuth) (*bundleinstanceauth.Entity, error) {
 	ret := _m.Called(in)
 
-	var r0 bundleinstanceauth.Entity
-	if rf, ok := ret.Get(0).(func(model.BundleInstanceAuth) bundleinstanceauth.Entity); ok {
+	var r0 *bundleinstanceauth.Entity
+	if rf, ok := ret.Get(0).(func(*model.BundleInstanceAuth) *bundleinstanceauth.Entity); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(bundleinstanceauth.Entity)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*bundleinstanceauth.Entity)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.BundleInstanceAuth) error); ok {
+	if rf, ok := ret.Get(1).(func(*model.BundleInstanceAuth) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

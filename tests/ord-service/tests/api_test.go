@@ -45,7 +45,6 @@ const (
 	scenarioName       = "formation-filtering"
 	scenariosLabel     = "scenarios"
 	selectorKey        = "global_subaccount_id"
-	subTenantID        = "123e4567-e89b-12d3-a456-426614174001"
 	restAPIProtocol    = "rest"
 	odataV2APIProtocol = "odata-v2"
 )
@@ -55,9 +54,12 @@ func TestORDService(stdT *testing.T) {
 
 	ctx := context.Background()
 
-	defaultTestTenant := tenant.TestTenants.GetDefaultTenantID()
+	defaultTestTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
 	secondaryTenant := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
-	tenantFilteringTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
+
+	tenantFilteringTenant := tenant.TestTenants.GetDefaultTenantID()
+	subTenantID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+
 	tenantAPIProtocolFiltering := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 
 	// Cannot use tenant constants as the names become too long and cannot be inserted

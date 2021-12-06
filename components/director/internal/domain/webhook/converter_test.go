@@ -24,7 +24,7 @@ var (
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *model.Webhook
@@ -55,10 +55,10 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			}
 			converter := webhook.NewConverter(authConv)
 
-			// when
+			// WHEN
 			res, err := converter.ToGraphQL(testCase.Input)
 
-			// then
+			// THEN
 			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			authConv.AssertExpectations(t)
@@ -67,7 +67,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	input := []*model.Webhook{
 		fixApplicationModelWebhook("1", "foo", "", "baz"),
 		fixApplicationModelWebhook("2", "bar", "", "bez"),
@@ -84,17 +84,17 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	authConv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil, nil)
 	converter := webhook.NewConverter(authConv)
 
-	// when
+	// WHEN
 	res, err := converter.MultipleToGraphQL(input)
 
-	// then
+	// THEN
 	assert.NoError(t, err)
 	assert.Equal(t, expected, res)
 	authConv.AssertExpectations(t)
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	testCases := []struct {
 		Name     string
 		Input    *graphql.WebhookInput
@@ -129,7 +129,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			}
 			converter := webhook.NewConverter(authConv)
 
-			// when
+			// WHEN
 			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
@@ -145,7 +145,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
-	// given
+	// GIVEN
 	input := []*graphql.WebhookInput{
 		fixGQLWebhookInput("https://test-domain.com"),
 		fixGQLWebhookInput("https://test-domain.com"),
@@ -159,7 +159,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	authConv.On("InputFromGraphQL", input[0].Auth).Return(expected[0].Auth, nil)
 	converter := webhook.NewConverter(authConv)
 
-	// when
+	// WHEN
 	res, err := converter.MultipleInputFromGraphQL(input)
 
 	// then
@@ -171,20 +171,20 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 func TestConverter_ToEntity(t *testing.T) {
 	sut := webhook.NewConverter(nil)
 
-	b, err := json.Marshal(givenBasicAuth())
+	b, err := json.Marshal(fixBasicAuth())
 	require.NoError(t, err)
 	expectedBasicAuthAsString := string(b)
 
 	testCases := map[string]struct {
-		in       model.Webhook
-		expected webhook.Entity
+		in       *model.Webhook
+		expected *webhook.Entity
 	}{
 		"success when Auth not provided": {
-			in: model.Webhook{
+			in: &model.Webhook{
 				ID:             "givenID",
-				ApplicationID:  &givenAppID,
+				ObjectID:       givenAppID,
+				ObjectType:     model.ApplicationWebhookReference,
 				URL:            stringPtr("https://test-domain.com"),
-				TenantID:       stringPtr("givenTenant"),
 				Type:           model.WebhookTypeConfigurationChanged,
 				Mode:           &modelWebhookMode,
 				URLTemplate:    &emptyTemplate,
@@ -192,11 +192,10 @@ func TestConverter_ToEntity(t *testing.T) {
 				HeaderTemplate: &emptyTemplate,
 				OutputTemplate: &emptyTemplate,
 			},
-			expected: webhook.Entity{
+			expected: &webhook.Entity{
 				ID:             "givenID",
 				ApplicationID:  repo.NewValidNullableString(givenAppID),
 				URL:            repo.NewValidNullableString("https://test-domain.com"),
-				TenantID:       repo.NewValidNullableString("givenTenant"),
 				Type:           "CONFIGURATION_CHANGED",
 				Auth:           sql.NullString{Valid: false},
 				Mode:           repo.NewValidNullableString("SYNC"),
@@ -207,10 +206,10 @@ func TestConverter_ToEntity(t *testing.T) {
 			},
 		},
 		"success when Auth provided": {
-			in: model.Webhook{
-				Auth: givenBasicAuth(),
+			in: &model.Webhook{
+				Auth: fixBasicAuth(),
 			},
-			expected: webhook.Entity{
+			expected: &webhook.Entity{
 				Auth: sql.NullString{Valid: true, String: expectedBasicAuthAsString},
 			},
 		},
@@ -230,18 +229,17 @@ func TestConverter_ToEntity(t *testing.T) {
 func TestConverter_FromEntity(t *testing.T) {
 	// GIVEN
 	sut := webhook.NewConverter(nil)
-	b, err := json.Marshal(givenBasicAuth())
+	b, err := json.Marshal(fixBasicAuth())
 	require.NoError(t, err)
 
 	testCases := map[string]struct {
-		inEntity      webhook.Entity
-		expectedModel model.Webhook
+		inEntity      *webhook.Entity
+		expectedModel *model.Webhook
 		expectedErr   error
 	}{
 		"success when Auth not provided": {
-			inEntity: webhook.Entity{
+			inEntity: &webhook.Entity{
 				ID:             "givenID",
-				TenantID:       repo.NewValidNullableString("givenTenant"),
 				Type:           "CONFIGURATION_CHANGED",
 				URL:            repo.NewValidNullableString("https://test-domain.com"),
 				ApplicationID:  repo.NewValidNullableString(givenAppID),
@@ -251,12 +249,12 @@ func TestConverter_FromEntity(t *testing.T) {
 				HeaderTemplate: repo.NewValidNullableString(emptyTemplate),
 				OutputTemplate: repo.NewValidNullableString(emptyTemplate),
 			},
-			expectedModel: model.Webhook{
+			expectedModel: &model.Webhook{
 				ID:             "givenID",
-				TenantID:       stringPtr("givenTenant"),
 				Type:           "CONFIGURATION_CHANGED",
 				URL:            stringPtr("https://test-domain.com"),
-				ApplicationID:  &givenAppID,
+				ObjectID:       givenAppID,
+				ObjectType:     model.ApplicationWebhookReference,
 				Auth:           nil,
 				Mode:           &modelWebhookMode,
 				URLTemplate:    &emptyTemplate,
@@ -266,20 +264,23 @@ func TestConverter_FromEntity(t *testing.T) {
 			},
 		},
 		"success when Auth provided": {
-			inEntity: webhook.Entity{
-				ID: "givenID",
+			inEntity: &webhook.Entity{
+				ID:            "givenID",
+				ApplicationID: repo.NewValidNullableString("appID"),
 				Auth: sql.NullString{
 					Valid:  true,
 					String: string(b),
 				},
 			},
-			expectedModel: model.Webhook{
-				ID:   "givenID",
-				Auth: givenBasicAuth(),
+			expectedModel: &model.Webhook{
+				ID:         "givenID",
+				ObjectID:   "appID",
+				ObjectType: model.ApplicationWebhookReference,
+				Auth:       fixBasicAuth(),
 			},
 		},
 		"got error on unmarshaling JSON": {
-			inEntity: webhook.Entity{
+			inEntity: &webhook.Entity{
 				Auth: sql.NullString{
 					Valid:  true,
 					String: "it is not even a proper JSON!",
@@ -299,16 +300,5 @@ func TestConverter_FromEntity(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedModel, actual)
 		})
-	}
-}
-
-func givenBasicAuth() *model.Auth {
-	return &model.Auth{
-		Credential: model.CredentialData{
-			Basic: &model.BasicCredentialData{
-				Username: "aaa",
-				Password: "bbb",
-			},
-		},
 	}
 }

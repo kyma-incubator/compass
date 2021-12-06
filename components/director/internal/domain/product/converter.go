@@ -24,7 +24,6 @@ func (c *converter) ToEntity(in *model.Product) *Entity {
 	output := &Entity{
 		ID:               in.ID,
 		OrdID:            in.OrdID,
-		TenantID:         in.TenantID,
 		ApplicationID:    in.ApplicationID,
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
@@ -46,7 +45,6 @@ func (c *converter) FromEntity(entity *Entity) (*model.Product, error) {
 	output := &model.Product{
 		ID:               entity.ID,
 		OrdID:            entity.OrdID,
-		TenantID:         entity.TenantID,
 		ApplicationID:    entity.ApplicationID,
 		Title:            entity.Title,
 		ShortDescription: entity.ShortDescription,

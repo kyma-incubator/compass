@@ -9,16 +9,18 @@ import (
 )
 
 const (
-	AuthStyleAutoDetect AuthStyle = "AuthDetect"
-	AuthStyleInParams   AuthStyle = "InParams"
-	AuthStyleInHeader   AuthStyle = "InHeader"
+	OAuthStyleAutoDetect OAuthStyle = "AuthDetect"
+	OAuthStyleInParams   OAuthStyle = "InParams"
+	OAuthStyleInHeader   OAuthStyle = "InHeader"
+	AuthTypeOauth                   = "oauth"
+	AuthTypeMTLS                    = "mtls"
 )
 
-type AuthStyle string
+type OAuthStyle string
 
 type Configuration struct {
 	Mapping       Mapping
-	OAuth         OAuth
+	Auth          Auth
 	Port          string        `envconfig:"default=8080"`
 	ClientTimeout time.Duration `envconfig:"default=30s"`
 	ServerTimeout time.Duration `envconfig:"default=30s"`
@@ -32,11 +34,14 @@ type Mapping struct {
 	TemplateTokenFromResponse string
 }
 
-type OAuth struct {
-	URL          string
-	ClientID     string
-	ClientSecret string
-	AuthStyle    AuthStyle `envconfig:"default=AuthDetect"`
+type Auth struct {
+	Type                     string
+	ClientID                 string     `envconfig:"optional"`
+	ClientSecret             string     `envconfig:"optional"`
+	URL                      string     `envconfig:"optional"`
+	OAuthStyle               OAuthStyle `envconfig:"optional,default=AuthDetect"`
+	ExternalClientCertSecret string     `envconfig:"optional,EXTERNAL_CLIENT_CERT_SECRET"`
+	SkipSSLVerify            bool       `envconfig:"default=false,SKIP_SSL_VERIFY"`
 }
 
 // swagger:response externalToken

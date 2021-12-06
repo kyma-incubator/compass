@@ -183,7 +183,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 
 		// WHEN
 		validationHydrator.ResolveConnectorTokenHeader(w, req)
-		//THEN
+		// THEN
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 	})
 

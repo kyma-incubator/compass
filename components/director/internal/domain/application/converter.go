@@ -37,7 +37,6 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 	}
 
 	return &Entity{
-		TenantID:              in.Tenant,
 		Name:                  in.Name,
 		ProviderName:          repo.NewNullableString(in.ProviderName),
 		Description:           repo.NewNullableString(in.Description),
@@ -69,7 +68,6 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 
 	return &model.Application{
 		ProviderName: repo.StringPtrFromNullableString(entity.ProviderName),
-		Tenant:       entity.TenantID,
 		Name:         entity.Name,
 		SystemNumber: repo.StringPtrFromNullableString(entity.SystemNumber),
 		Description:  repo.StringPtrFromNullableString(entity.Description),
@@ -227,7 +225,6 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 
 	return &model.Application{
 		ProviderName:        obj.ProviderName,
-		Tenant:              tenantID,
 		Name:                obj.Name,
 		Description:         obj.Description,
 		Status:              c.statusGraphQLToModel(obj.Status),

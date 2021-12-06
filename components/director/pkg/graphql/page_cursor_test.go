@@ -32,11 +32,11 @@ func TestPageCursor_UnmarshalGQL(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			//when
+			// WHEN
 			var pageCursor PageCursor
 			err := pageCursor.UnmarshalGQL(tc.input)
 
-			//then
+			// THEN
 			if tc.err {
 				assert.Error(t, err)
 				assert.EqualError(t, err, tc.errmsg)
@@ -55,10 +55,10 @@ func TestPageCursor_MarshalGQL(t *testing.T) {
 	expectedCursor := `"cursor"`
 	buf := bytes.Buffer{}
 
-	//when
+	// WHEN
 	fixCursor.MarshalGQL(&buf)
 
-	//then
+	// THEN
 	assert.NotNil(t, buf)
 	assert.Equal(t, expectedCursor, buf.String())
 }
