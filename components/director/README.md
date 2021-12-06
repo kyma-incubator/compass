@@ -25,7 +25,7 @@ where `tenant` is any valid UUID and `authorization` is JWT token with all scope
 
 You can set `tenant` header as any UUID.
 
-> **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret, locally we can override the secret data with certificate and key that we need for testing or debugging. Check [Configuration](#configuration) section for environment variables.
+> **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret. Locally, you can override the secret data with certificate and key that you need for testing or debugging. Check [Configuration](#configuration) section for environment variables.
 
 ### Prerequisites
 
@@ -67,20 +67,20 @@ The Director binary allows to override some configuration parameters. You can sp
 | **APP_TENANT_MAPPING_ENDPOINT**              | `/tenant-mapping`               | The endpoint of Tenant Mapping Service                             |
 | **APP_CONFIGURATION_FILE**                   | None                            | The path to the configuration file                                 |
 | **APP_CONFIGURATION_FILE_RELOAD**            | `1m`                            | The period after which the configuration file is reloaded          |
-| **APP_JWKS_ENDPOINT**                        | `file://hack/default-jwks.json`  | The path for JWKS                                                  |
+| **APP_JWKS_ENDPOINT**                        | `file://hack/default-jwks.json` | The path for JWKS                                                  |
 | **APP_JWKS_SYNC_PERIOD**                     | `5m`                            | The period when the JWKS is synced                                 |
-| **APP_ALLOW_JWT_SIGNING_NONE**                        | `false`                | Enable trust to tokens signed with the `none` algorithm. Must be used for test purposes only. |
+| **APP_ALLOW_JWT_SIGNING_NONE**               | `false`                | Enable trust to tokens signed with the `none` algorithm. Must be used for test purposes only. |
 | **APP_ONE_TIME_TOKEN_URL**                   | None                            | The endpoint for fetching a one-time token                         |
 | **APP_URL**                                  | None                            | The endpoint of the application (Director)                         |
 | **APP_CONNECTOR_URL**                        | None                            | The endpoint of Connector                                          |
-| **APP_OAUTH20_URL**              | None                            | The endpoint for managing OAuth 2.0 clients                        |
+| **APP_OAUTH20_URL**                          | None                            | The endpoint for managing OAuth 2.0 clients                        |
 | **APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT** | None                            | The public endpoint for fetching OAuth 2.0 access token            |
 | **APP_OAUTH20_HTTP_CLIENT_TIMEOUT**          | `3m`                            | The timeout of HTTP client for managing OAuth 2.0 clients          |
 | **APP_STATIC_USERS_SRC**                     | None                            | The path for static users configuration file                       |
 | **APP_LEGACY_CONNECTOR_URL**                 | None                            | The URL of the legacy Connector signing request info endpoint      |
 | **APP_DEFAULT_SCENARIO_ENABLED**             | `true`                          | The toggle that enables automatic assignment of default scenario   | 
-| **APP_EXTERNAL_CLIENT_CERT_VALUE**           | `certValue`                     | External client certificate which will be used to populate the certificate cache   | 
-| **APP_EXTERNAL_CLIENT_KEY_VALUE**            | `keyValue`                      | External client certificate key which will be put into certificate cache   | 
+| **APP_EXTERNAL_CLIENT_CERT_VALUE**           | `certValue`                     | External client certificate which is used to populate the certificate cache   | 
+| **APP_EXTERNAL_CLIENT_KEY_VALUE**            | `keyValue`                      | External client certificate key which is added into certificate cache   | 
 
 ## Usage
 
