@@ -25,6 +25,8 @@ where `tenant` is any valid UUID and `authorization` is JWT token with all scope
 
 You can set `tenant` header as any UUID.
 
+> **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret, locally we can override the secret data with certificate and key that we need for testing or debugging. Check [Configuration](#configuration) section for environment variables.
+
 ### Prerequisites
 
 > **NOTE:** Use script `run.sh` to perform these steps automatically.
@@ -77,6 +79,8 @@ The Director binary allows to override some configuration parameters. You can sp
 | **APP_STATIC_USERS_SRC**                     | None                            | The path for static users configuration file                       |
 | **APP_LEGACY_CONNECTOR_URL**                 | None                            | The URL of the legacy Connector signing request info endpoint      |
 | **APP_DEFAULT_SCENARIO_ENABLED**             | `true`                          | The toggle that enables automatic assignment of default scenario   | 
+| **APP_EXTERNAL_CLIENT_CERT_VALUE**           | `certValue`                     | External client certificate which will be used to populate the certificate cache   | 
+| **APP_EXTERNAL_CLIENT_KEY_VALUE**            | `keyValue`                      | External client certificate key which will be put into certificate cache   | 
 
 ## Usage
 
