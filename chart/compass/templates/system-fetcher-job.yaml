@@ -86,9 +86,9 @@ spec:
                 - name: APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL
                   value: {{ .Values.global.systemFetcher.oauth.tokenEndpointProtocol }}
                 - name: APP_OAUTH_TOKEN_REQUEST_TIMEOUT
-                  value: {{ .Values.global.systemFetcher.oauth.tokenRequestTimeout }}
+                  value: {{ .Values.global.systemFetcher.oauth.tokenRequestTimeout | quote }}
                 - name: APP_OAUTH_SKIP_SSL_VALIDATION
-                  value: {{ .Values.global.systemFetcher.oauth.skipSSLValidation }}
+                  value: "{{ .Values.global.systemFetcher.oauth.skipSSLValidation }}"
                 - name: APP_DB_USER
                   valueFrom:
                     secretKeyRef:
