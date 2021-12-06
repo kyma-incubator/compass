@@ -194,7 +194,7 @@ spec:
           mountPath: /etc/certs
       - name: web-config-init
         image: busybox:1.34.1
-        command: ['sh', '-c', 'printf "tls_server_config:\n  cert_file: /etc/certs/node.crt\n  key_file: /etc/certs/node.key" > /etc/certs/web.yaml'] 
+        command: ['sh', '-c', 'printf "tls_server_config:\\n  cert_file: /etc/certs/node.crt\\n  key_file: /etc/certs/node.key" > /etc/certs/web.yaml']
         volumeMounts:
         - name: node-certs
           mountPath: /etc/certs
