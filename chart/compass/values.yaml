@@ -447,7 +447,6 @@ global:
       schedule: "*/1 * * * *" # Executes every minute
       certValidity: "7"
       clientCertRetryAttempts: "8"
-    isLocalSetup: false
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
