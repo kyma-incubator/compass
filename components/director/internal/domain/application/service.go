@@ -373,7 +373,7 @@ func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput)
 
 	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (err error) {
 		if err = s.appRepo.Upsert(ctx, tenant, application); err != nil {
-			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
+			return errors.Wrapf(err, "while upserting Application with name %s", application.Name)
 		}
 		return
 	}
@@ -391,7 +391,7 @@ func (s *service) UpsertFromTemplate(ctx context.Context, in model.ApplicationRe
 	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (err error) {
 		application.ApplicationTemplateID = appTemplateID
 		if err = s.appRepo.Upsert(ctx, tenant, application); err != nil {
-			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
+			return errors.Wrapf(err, "while upserting Application with name %s from template", application.Name)
 		}
 		return
 	}

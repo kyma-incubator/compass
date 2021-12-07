@@ -301,7 +301,7 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.A
 	return r.updateSingle(ctx, tenant, model, false)
 }
 
-// Upsert missing godoc
+// Upsert inserts application for given tenant or update it if it already exists
 func (r *pgRepository) Upsert(ctx context.Context, tenant string, model *model.Application) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
