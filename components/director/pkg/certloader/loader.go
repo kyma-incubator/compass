@@ -153,7 +153,7 @@ func (cl *certificatesLoader) parseCertificate(ctx context.Context, secretData m
 
 	certs, err := cert.DecodeCertificates(certChainBytes)
 	if err != nil {
-		return nil, errors.Wrap(err,"Error while decoding certificate pem block")
+		return nil, errors.Wrap(err, "Error while decoding certificate pem block")
 	}
 
 	privateKeyPem, _ := pem.Decode(privateKeyBytes)
