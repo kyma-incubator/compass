@@ -62,13 +62,14 @@ func (s *SystemFetcherHandler) HandleFunc(rw http.ResponseWriter, req *http.Requ
 		return
 	}
 
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	resp := []byte("[]")
 	if len(s.mockedSystems) > 0 {
 		resp = s.mockedSystems[0]
 		s.mockedSystems = s.mockedSystems[1:]
 	}
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+
 	_, err := rw.Write(resp)
 	if err != nil {
 		httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)

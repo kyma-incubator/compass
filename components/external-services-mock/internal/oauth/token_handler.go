@@ -17,9 +17,10 @@ import (
 )
 
 type handler struct {
-	expectedSecret string
-	expectedID     string
-	signingKey     *rsa.PrivateKey
+	expectedSecret   string
+	expectedID       string
+	tenantHeaderName string
+	signingKey       *rsa.PrivateKey
 }
 
 func NewHandler(expectedSecret, expectedID string) *handler {
@@ -29,11 +30,12 @@ func NewHandler(expectedSecret, expectedID string) *handler {
 	}
 }
 
-func NewHandlerWithSigningKey(expectedSecret, expectedID string, signingKey *rsa.PrivateKey) *handler {
+func NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeaderName string, signingKey *rsa.PrivateKey) *handler {
 	return &handler{
-		expectedSecret: expectedSecret,
-		expectedID:     expectedID,
-		signingKey:     signingKey,
+		expectedSecret:   expectedSecret,
+		expectedID:       expectedID,
+		tenantHeaderName: tenantHeaderName,
+		signingKey:       signingKey,
 	}
 }
 
@@ -69,17 +71,16 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 
 	contentType := r.Header.Get("Content-Type")
 	if contentType == "application/x-www-form-urlencoded" {
-		// mtls client credentials is performed
-		//log.C(r.Context()).Infof("mtls client credentials: %+v", r)
-		form, err := url.ParseQuery(string(body))
-		if err != nil {
+		if form, err := url.ParseQuery(string(body)); err != nil {
 			log.C(r.Context()).Errorf("Cannot parse form. Error: %s", err)
+		} else {
+			client := form.Get("client_id")
+			scopes := form.Get("scopes")
+			tenant := r.Header.Get(h.tenantHeaderName)
+			claims["client_id"] = client
+			claims["scopes"] = scopes
+			claims["x-zid"] = tenant
 		}
-		grantType := form.Get("grant_type")
-		client := form.Get("client_id")
-		scopes := form.Get("scopes")
-		log.C(r.Context()).Infof("Grant type is: %s, client is: %s, scopes are: %s", grantType, client, scopes)
-
 	} else {
 		if len(body) > 0 {
 			err = json.Unmarshal(body, &claims)

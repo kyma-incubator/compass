@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -52,7 +53,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 	claimsBody, err := json.Marshal(expectedClaims)
 	require.NoError(t, err)
 
-	secret, id := "secret", "id"
+	secret, id, tenantHeader := "secret", "id", "x-zid"
 	req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer(claimsBody))
 
 	encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
@@ -61,7 +62,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 
-	h := oauth2.NewHandlerWithSigningKey(secret, id, key)
+	h := oauth2.NewHandlerWithSigningKey(secret, id, tenantHeader, key)
 	r := httptest.NewRecorder()
 
 	//WHEN
@@ -86,4 +87,51 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, expectedClaims, claims)
+}
+
+func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
+	//GIVEN
+	scopes, id, tenantHeader := "scopes", "id", "x-zid"
+
+	form := url.Values{}
+	form.Add("grant_type", "client_credentials")
+	form.Add("client_id", id)
+	form.Add("scopes", scopes)
+
+	body := strings.NewReader(form.Encode())
+	req, err := http.NewRequest(http.MethodPost, "http://target.com/oauth/token", body)
+	require.NoError(t, err)
+	req.Header.Set(tenantHeader, "tenant1")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	h := oauth2.NewHandlerWithSigningKey("", id, tenantHeader, key)
+	r := httptest.NewRecorder()
+
+	//WHEN
+	h.GenerateWithoutCredentials(r, req)
+	resp := r.Result()
+
+	//THEN
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	respBody, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var response oauth2.TokenResponse
+	err = json.Unmarshal(respBody, &response)
+
+	require.NoError(t, err)
+	assert.NotEmpty(t, response.AccessToken)
+
+	claims := &oauth2.Claims{}
+
+	_, err = jwt.ParseWithClaims(response.AccessToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return key.Public(), nil
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, "tenant1", claims.Tenant)
+	require.Equal(t, id, claims.Client)
+	require.Equal(t, scopes, claims.Scopes)
 }

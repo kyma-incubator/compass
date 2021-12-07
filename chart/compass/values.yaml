@@ -500,12 +500,12 @@ global:
       client:
         skipSSLValidation: false
     oauth:
-      client: ""
-      tokenEndpointProtocol: ""
-      tokenBaseUrl: ""
-      tokenPath: ""
-      scopesClaim: ""
-      tenantHeaderName: ""
+      client: "client_id"
+      tokenEndpointProtocol: "https"
+      tokenBaseUrl: "compass-external-services-mock-sap-mtls.kyma.local"
+      tokenPath: "/cert/token"
+      scopesClaim: "scopes"
+      tenantHeaderName: "x-zid"
       tokenRequestTimeout: 10s
       skipSSLValidation: true
     secret:
