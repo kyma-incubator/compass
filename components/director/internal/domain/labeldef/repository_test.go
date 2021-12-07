@@ -692,8 +692,8 @@ func TestRepository_Upsert(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.label_definitions ( id, tenant_id, key, schema, version ) VALUES ( ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_id, key ) DO UPDATE SET schema=EXCLUDED.schema`)
-		dbMock.ExpectExec(escapedQuery).WithArgs(labeldefEntity.ID, labeldefEntity.TenantID, labeldefEntity.Key, labeldefEntity.SchemaJSON, labeldefEntity.Version).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`INSERT INTO public.label_definitions ( id, tenant_id, key, schema, version ) VALUES ( ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_id, key ) DO UPDATE SET schema=EXCLUDED.schema WHERE  public.label_definitions.tenant_id = ?`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(labeldefEntity.ID, labeldefEntity.TenantID, labeldefEntity.Key, labeldefEntity.SchemaJSON, labeldefEntity.Version, labeldefEntity.TenantID).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
