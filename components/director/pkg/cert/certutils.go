@@ -1,7 +1,13 @@
 package cert
 
 import (
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"regexp"
+
+	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
 )
@@ -120,6 +126,45 @@ func GetPossibleRegexTopLevelMatches(pattern string) int {
 		}
 	}
 	return count
+}
+
+// DecodeCertificates accepts raw certificate chain and return slice of parsed certificates
+func DecodeCertificates(pemCertChain []byte) ([]*x509.Certificate, error) {
+	if pemCertChain == nil {
+		return nil, errors.New("Certificate data is empty")
+	}
+
+	var certificates []*x509.Certificate
+
+	for block, rest := pem.Decode(pemCertChain); block != nil && rest != nil; {
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to decode one of the pem blocks")
+		}
+
+		certificates = append(certificates, cert)
+
+		block, rest = pem.Decode(rest)
+	}
+
+	if len(certificates) == 0 {
+		return nil, errors.New("No certificates found in the pem block")
+	}
+
+	return certificates, nil
+}
+
+// NewTLSCertificate creates tls certificate from given certificate chain in form of slice of certificates
+func NewTLSCertificate(key *rsa.PrivateKey, certificates ...*x509.Certificate) tls.Certificate {
+	rawCerts := make([][]byte, len(certificates))
+	for i, c := range certificates {
+		rawCerts[i] = c.Raw
+	}
+
+	return tls.Certificate{
+		Certificate: rawCerts,
+		PrivateKey:  key,
+	}
 }
 
 func getRegexMatch(regex, text string) string {

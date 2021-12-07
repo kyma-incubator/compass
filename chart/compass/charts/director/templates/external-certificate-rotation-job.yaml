@@ -125,7 +125,7 @@ spec:
                   confirmValidIssuerLocalityOrRetry
 
                   echo -e "${YELLOW}Creating/Updating client certificate secret... ${NC}"
-                  kubectl create secret tls "$CLIENT_CERT_SECRET_NAME" --namespace=compass-system --cert=/tmp/client-certificate.pem --key=/tmp/unencrypted-private-key.pem --save-config --dry-run=client -o yaml | kubectl apply -f -
+                  kubectl create secret generic "$CLIENT_CERT_SECRET_NAME" --namespace=compass-system --from-literal="$CLIENT_CERT_CERT_KEY"="$(cat /tmp/client-certificate_pkcs7.pem)" --from-literal="$CLIENT_CERT_KEY_KEY"="$(cat /tmp/unencrypted-private-key.pem)" --save-config --dry-run=client -o yaml | kubectl apply -f -
 
                   set +e
               env:
@@ -146,6 +146,10 @@ spec:
                   value: {{ .Values.global.externalCertConfiguration.rotationCronjob.clientCertRetryAttempts | quote }}
                 - name: CLIENT_CERT_SECRET_NAME
                   value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+                - name: CLIENT_CERT_CERT_KEY
+                  value:  {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}
+                - name: CLIENT_CERT_KEY_KEY
+                  value:  {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}
                 - name: CERT_SVC_CLIENT_ID
                   valueFrom:
                     secretKeyRef:

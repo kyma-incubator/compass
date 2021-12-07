@@ -6,7 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.11.0
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20211202093511-2cee60a69700
+	github.com/kyma-incubator/compass/components/director v0.0.0-20211207104822-c6754b5f4286
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -43,7 +43,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/urfave/cli v1.22.1 // indirect
-	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/mod v0.5.0 // indirect
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
@@ -69,7 +68,6 @@ require (
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
-	github.com/avast/retry-go v3.0.0+incompatible // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect

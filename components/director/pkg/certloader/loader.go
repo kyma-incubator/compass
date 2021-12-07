@@ -8,6 +8,8 @@ import (
 	"encoding/pem"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"github.com/kyma-incubator/compass/components/director/pkg/namespacedname"
 
@@ -145,21 +147,16 @@ func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan wa
 
 func parseCertificate(ctx context.Context, secretData map[string][]byte, config Config) (*tls.Certificate, error) {
 	log.C(ctx).Info("Parsing provided certificate data...")
-	certBytes := secretData[config.ExternalClientCertCertKey]
+	certChainBytes := secretData[config.ExternalClientCertCertKey]
 	privateKeyBytes := secretData[config.ExternalClientCertKeyKey]
 
-	if certBytes == nil || privateKeyBytes == nil {
+	if certChainBytes == nil || privateKeyBytes == nil {
 		return nil, errors.New("There is no certificate data provided")
 	}
 
-	clientCrtPem, _ := pem.Decode(certBytes)
-	if clientCrtPem == nil {
-		return nil, errors.New("Error while decoding certificate pem block")
-	}
-
-	clientCert, err := x509.ParseCertificate(clientCrtPem.Bytes)
+	certs, err := cert.DecodeCertificates(certChainBytes)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Error while decoding certificate pem block")
 	}
 
 	privateKeyPem, _ := pem.Decode(privateKeyBytes)
@@ -181,8 +178,7 @@ func parseCertificate(ctx context.Context, secretData map[string][]byte, config 
 	}
 
 	log.C(ctx).Info("Successfully parse certificate")
-	return &tls.Certificate{
-		Certificate: [][]byte{clientCert.Raw},
-		PrivateKey:  privateKey,
-	}, nil
+	tlsCert := cert.NewTLSCertificate(privateKey, certs...)
+
+	return &tlsCert, nil
 }
