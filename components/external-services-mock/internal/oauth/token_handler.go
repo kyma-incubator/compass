@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -67,14 +68,16 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	contentType := r.Header.Get("Content-Type")
 	if contentType == "application/x-www-form-urlencoded" {
 		// mtls client credentials is performed
-		log.C(r.Context()).Infof("mtls client credentials: %s", string(body))
-		err = r.ParseForm()
+		log.C(r.Context()).Infof("mtls client credentials: %+v", r)
+		form, err := url.ParseQuery(string(body))
 		if err != nil {
 			log.C(r.Context()).Errorf("Cannot parse form. Error: %s", err)
 		}
-		log.C(r.Context()).Infof("mtls client credentials body: %s", string(body))
-		log.C(r.Context()).Infof("mtls client credentials post-form: %+v", r.PostForm)
-		log.C(r.Context()).Infof("mtls client credentials form: %+v", r.Form)
+		grantType := form.Get("grant_type")
+		client := form.Get("client_id")
+		scopes := form.Get("scopes")
+		log.C(r.Context()).Infof("Grant type is: %s, client is: %s, scopes are: %s", grantType, client, scopes)
+
 	} else {
 		if len(body) > 0 {
 			err = json.Unmarshal(body, &claims)
@@ -110,6 +113,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write(payload)
+	log.C(r.Context()).Infof("Returning: %s", string(payload))
 	if err != nil {
 		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
