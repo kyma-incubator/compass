@@ -468,7 +468,7 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Tran
 
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
 
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, protectedLabelPattern, immutableLabelPattern)
 
@@ -713,7 +713,7 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, lblRepo, scenarioAssignmentRepo, rtRepo)
 
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, lblRepo, labelSvc)
 
 	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
 }

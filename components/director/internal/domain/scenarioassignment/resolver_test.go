@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -34,6 +36,17 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		},
 	}
 
+	subaccountInput := func() model.BusinessTenantMappingInput {
+		return model.BusinessTenantMappingInput{
+			ExternalTenant: externalTargetTenantID,
+			Parent:         tenantID,
+			Type:           "subaccount",
+			Provider:       "lazilyWhileASACreation",
+		}
+	}
+
+	ctx := tenant.SaveToContext(context.TODO(), tenantID, "")
+
 	txGen := txtest.NewTransactionContextGenerator(errors.New("some persistence error"))
 
 	t.Run("happy path", func(t *testing.T) {
@@ -47,12 +60,13 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		mockSvc.On("Create", mock.Anything, fixModel()).Return(fixModel(), nil).Once()
 
 		tenantSvc := &automock.TenantService{}
+		tenantSvc.On("CreateManyIfNotExists", mock.Anything, subaccountInput()).Return(nil).Once()
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return(targetTenantID, nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc)
 
 		// WHEN
-		actual, err := sut.CreateAutomaticScenarioAssignment(context.TODO(), givenInput)
+		actual, err := sut.CreateAutomaticScenarioAssignment(ctx, givenInput)
 
 		// THEN
 		require.NoError(t, err)
@@ -60,16 +74,34 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, mockConverter, tenantSvc)
 	})
 
+	t.Run("error when tenant creation fail", func(t *testing.T) {
+		tx, transact := txGen.ThatDoesntExpectCommit()
+
+		tenantSvc := &automock.TenantService{}
+		tenantSvc.On("CreateManyIfNotExists", mock.Anything, subaccountInput()).Return(testErr).Once()
+
+		sut := scenarioassignment.NewResolver(transact, nil, nil, tenantSvc)
+
+		// WHEN
+		_, err := sut.CreateAutomaticScenarioAssignment(ctx, givenInput)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, tx, transact, tenantSvc)
+	})
+
 	t.Run("error when tenant conversion fail", func(t *testing.T) {
 		tx, transact := txGen.ThatDoesntExpectCommit()
 
 		tenantSvc := &automock.TenantService{}
+		tenantSvc.On("CreateManyIfNotExists", mock.Anything, subaccountInput()).Return(nil).Once()
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return("", testErr).Once()
 
 		sut := scenarioassignment.NewResolver(transact, nil, nil, tenantSvc)
 
 		// WHEN
-		_, err := sut.CreateAutomaticScenarioAssignment(context.TODO(), givenInput)
+		_, err := sut.CreateAutomaticScenarioAssignment(ctx, givenInput)
 
 		// THEN
 		require.Error(t, err)
@@ -95,6 +127,7 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		mockConverter.On("FromInputGraphQL", givenInput, targetTenantID).Return(fixModel()).Once()
 
 		tenantSvc := &automock.TenantService{}
+		tenantSvc.On("CreateManyIfNotExists", mock.Anything, subaccountInput()).Return(nil).Once()
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return(targetTenantID, nil).Once()
 
 		mockSvc := &automock.AsaService{}
@@ -103,7 +136,7 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc)
 
 		// WHEN
-		_, err := sut.CreateAutomaticScenarioAssignment(context.TODO(), givenInput)
+		_, err := sut.CreateAutomaticScenarioAssignment(ctx, givenInput)
 
 		// THEN
 		assert.EqualError(t, err, fmt.Sprintf("while creating Assignment: %s", errMsg))
@@ -119,12 +152,13 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		mockSvc.On("Create", mock.Anything, fixModel()).Return(fixModel(), nil).Once()
 
 		tenantSvc := &automock.TenantService{}
+		tenantSvc.On("CreateManyIfNotExists", mock.Anything, subaccountInput()).Return(nil).Once()
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return(targetTenantID, nil).Once()
 
 		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc)
 
 		// WHEN
-		_, err := sut.CreateAutomaticScenarioAssignment(context.TODO(), givenInput)
+		_, err := sut.CreateAutomaticScenarioAssignment(ctx, givenInput)
 
 		// THEN
 		assert.EqualError(t, err, "while committing transaction: some persistence error")

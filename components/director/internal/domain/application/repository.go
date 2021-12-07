@@ -23,8 +23,10 @@ import (
 const applicationTable string = `public.applications`
 
 var (
-	applicationColumns = []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
-	updatableColumns   = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
+	applicationColumns    = []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
+	updatableColumns      = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
+	upsertableColumns     = []string{"name", "description", "status_condition", "provider_name", "base_url", "labels"}
+	matchingSystemColumns = []string{"system_number"}
 )
 
 // EntityConverter missing godoc
@@ -46,6 +48,7 @@ type pgRepository struct {
 	creator               repo.Creator
 	updater               repo.Updater
 	globalUpdater         repo.UpdaterGlobal
+	upserter              repo.Upserter
 	conv                  EntityConverter
 }
 
@@ -63,6 +66,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		creator:               repo.NewCreator(applicationTable, applicationColumns),
 		updater:               repo.NewUpdater(applicationTable, updatableColumns, []string{"id"}),
 		globalUpdater:         repo.NewUpdaterGlobal(resource.Application, applicationTable, updatableColumns, []string{"id"}),
+		upserter:              repo.NewUpserter(applicationTable, applicationColumns, matchingSystemColumns, upsertableColumns),
 		conv:                  conv,
 	}
 }
@@ -295,6 +299,22 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.A
 // Update missing godoc
 func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.Application) error {
 	return r.updateSingle(ctx, tenant, model, false)
+}
+
+// Upsert inserts application for given tenant or update it if it already exists
+func (r *pgRepository) Upsert(ctx context.Context, tenant string, model *model.Application) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be empty")
+	}
+
+	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
+	appEnt, err := r.conv.ToEntity(model)
+	if err != nil {
+		return errors.Wrap(err, "while converting to Application entity")
+	}
+
+	log.C(ctx).Debugf("Upserting Application entity with id %s to db", model.ID)
+	return r.upserter.Upsert(ctx, resource.Application, tenant, appEnt)
 }
 
 // TechnicalUpdate missing godoc

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 )
 
 const (
@@ -97,37 +97,12 @@ func (cs ConnectorClientSet) GenerateCertificateForToken(ctx context.Context, to
 		return tls.Certificate{}, err
 	}
 
-	certs, err := decodeCertificates(pemCertChain)
+	certs, err := cert.DecodeCertificates(pemCertChain)
 	if err != nil {
 		return tls.Certificate{}, err
 	}
 
-	return NewTLSCertificate(key, certs...), nil
-}
-
-func decodeCertificates(pemCertChain []byte) ([]*x509.Certificate, error) {
-	if pemCertChain == nil {
-		return nil, errors.New("Certificate data is empty")
-	}
-
-	var certificates []*x509.Certificate
-
-	for block, rest := pem.Decode(pemCertChain); block != nil && rest != nil; {
-		cert, err := x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			return nil, errors.Wrap(err, "Failed to decode one of the pem blocks")
-		}
-
-		certificates = append(certificates, cert)
-
-		block, rest = pem.Decode(rest)
-	}
-
-	if len(certificates) == 0 {
-		return nil, errors.New("No certificates found in the pem block")
-	}
-
-	return certificates, nil
+	return cert.NewTLSCertificate(key, certs...), nil
 }
 
 func encodeCSR(csr *x509.CertificateRequest) string {
@@ -136,18 +111,6 @@ func encodeCSR(csr *x509.CertificateRequest) string {
 	})
 
 	return base64.StdEncoding.EncodeToString(pemCSR)
-}
-
-func NewTLSCertificate(key *rsa.PrivateKey, certificates ...*x509.Certificate) tls.Certificate {
-	rawCerts := make([][]byte, len(certificates))
-	for i, c := range certificates {
-		rawCerts[i] = c.Raw
-	}
-
-	return tls.Certificate{
-		Certificate: rawCerts,
-		PrivateKey:  key,
-	}
 }
 
 func NewCSR(subject string, key *rsa.PrivateKey) (*rsa.PrivateKey, *x509.CertificateRequest, error) {

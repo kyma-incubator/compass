@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	tnt2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -66,6 +68,7 @@ type scenarioAssignmentEngine interface {
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore
 type tenantService interface {
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
@@ -576,11 +579,23 @@ func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value in
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
 	}
+
 	log.C(ctx).Infof("Runtime registered by tenant %s with %s label with value %s. Will proceed with the subaccount as tenant...", callingTenant, scenarioassignment.SubaccountIDKey, sa)
+
+	if err := s.tenantSvc.CreateManyIfNotExists(ctx, model.BusinessTenantMappingInput{
+		ExternalTenant: sa,
+		Parent:         callingTenant,
+		Type:           string(tnt2.Subaccount),
+		Provider:       "lazilyWhileRuntimeCreation",
+	}); err != nil {
+		return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
+	}
+
 	tnt, err := s.tenantSvc.GetTenantByExternalID(ctx, sa)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting tenant %s", sa)
 	}
+
 	if callingTenant != tnt.ID && callingTenant != tnt.Parent {
 		log.C(ctx).Errorf("Caller tenant %s is not parent of the subaccount %s in the %s label", callingTenant, sa, scenarioassignment.SubaccountIDKey)
 		return nil, apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey))
