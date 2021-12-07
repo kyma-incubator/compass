@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	tnt2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -54,6 +56,7 @@ type automaticFormationAssignmentService interface {
 
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore
 type tenantService interface {
+	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
@@ -121,10 +124,20 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}
 		return f, nil
 	case graphql.FormationObjectTypeTenant:
+		if err := s.tenantSvc.CreateManyIfNotExists(ctx, model.BusinessTenantMappingInput{
+			ExternalTenant: objectID,
+			Parent:         tnt,
+			Type:           string(tnt2.Subaccount),
+			Provider:       "lazilyWhileFormationCreation",
+		}); err != nil {
+			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
+		}
+
 		tenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
 		if err != nil {
 			return nil, err
 		}
+
 		if _, err = s.asaService.Create(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, tenantID)); err != nil {
 			return nil, err
 		}
