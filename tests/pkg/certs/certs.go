@@ -14,10 +14,11 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
-
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/model"
@@ -110,26 +111,25 @@ func DecodeAndParseCerts(t *testing.T, crtResponse *model.CrtResponse) model.Dec
 }
 
 // ClientCertPair returns a decoded client certificate and key pair.
-func ClientCertPair(t *testing.T, certBytes, keyBytes []byte) (*rsa.PrivateKey, [][]byte) {
-	clientCrtPem, _ := pem.Decode(certBytes)
-	require.NotNil(t, clientCrtPem)
+func ClientCertPair(t *testing.T, certChainBytes, privateKeyBytes []byte) (*rsa.PrivateKey, [][]byte) {
+	certs, err := cert.DecodeCertificates(certChainBytes)
+	require.NoError(t, err)
 
-	clientCertificate, e := x509.ParseCertificate(clientCrtPem.Bytes)
-	require.NoError(t, e)
+	privateKeyPem, _ := pem.Decode(privateKeyBytes)
+	require.NotNil(t, privateKeyPem)
 
-	keyPemBlock, _ := pem.Decode(keyBytes)
-	require.NotNil(t, keyPemBlock)
-
-	caPrivateKey, err := x509.ParsePKCS1PrivateKey(keyPemBlock.Bytes)
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyPem.Bytes)
 	if err != nil {
-		caPrivateKeyPKCS8, err := x509.ParsePKCS8PrivateKey(keyPemBlock.Bytes)
+		pkcs8PrivateKey, err := x509.ParsePKCS8PrivateKey(privateKeyPem.Bytes)
 		require.NoError(t, err)
+
 		var ok bool
-		caPrivateKey, ok = caPrivateKeyPKCS8.(*rsa.PrivateKey)
+		privateKey, ok = pkcs8PrivateKey.(*rsa.PrivateKey)
 		require.True(t, ok)
 	}
 
-	return caPrivateKey, [][]byte{clientCertificate.Raw}
+	tlsCert := cert.NewTLSCertificate(privateKey, certs...)
+	return privateKey, tlsCert.Certificate
 }
 
 // CheckIfSubjectEquals verifies that specified subject is equal to this in certificate
