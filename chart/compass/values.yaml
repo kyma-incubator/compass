@@ -78,7 +78,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2120"
+      version: "PR-2125"
     connectivity_adapter:
       dir:
       version: "PR-2082"
@@ -87,7 +87,7 @@ global:
       version: "PR-2118"
     director:
       dir:
-      version: "PR-2120"
+      version: "PR-2125"
     gateway:
       dir:
       version: "PR-2077"
