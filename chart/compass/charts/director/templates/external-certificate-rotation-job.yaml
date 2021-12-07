@@ -125,7 +125,7 @@ spec:
                   confirmValidIssuerLocalityOrRetry
 
                   echo -e "${YELLOW}Creating/Updating client certificate secret... ${NC}"
-                  kubectl create secret tls external-client-certificate --namespace=compass-system --cert=/tmp/client-certificate.pem --key=/tmp/unencrypted-private-key.pem --save-config --dry-run=client -o yaml | kubectl apply -f -
+                  kubectl create secret tls external-client-certificate --namespace=compass-system --cert=/tmp/client-certificate_pkcs7.pem --key=/tmp/unencrypted-private-key.pem --save-config --dry-run=client -o yaml | kubectl apply -f -
 
                   set +e
               env:
