@@ -41,7 +41,7 @@ type repository struct {
 	deleter          repo.Deleter
 	updater          repo.UpdaterGlobal
 	versionedUpdater repo.UpdaterGlobal
-	upserter         repo.Upserter
+	upserter         repo.UpserterGlobal
 }
 
 // NewRepository missing godoc
@@ -54,7 +54,7 @@ func NewRepository(conv EntityConverter) *repository {
 		deleter:          repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		updater:          repo.NewUpdaterWithEmbeddedTenant(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns),
 		versionedUpdater: repo.NewUpdaterWithEmbeddedTenant(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, versionedIDColumns),
-		upserter:         repo.NewUpserter(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}),
+		upserter:         repo.NewUpserterWithEmbeddedTenant(resource.LabelDefinition, tableName, labeldefColumns, []string{tenantColumn, keyColumn}, []string{schemaColumn}, tenantColumn),
 	}
 }
 
@@ -79,7 +79,7 @@ func (r *repository) Upsert(ctx context.Context, label model.LabelDefinition) er
 		return errors.Wrap(err, "while creating label definition entity from model")
 	}
 
-	return r.upserter.Upsert(ctx, labelEntity)
+	return r.upserter.UpsertGlobal(ctx, labelEntity)
 }
 
 // GetByKey missing godoc

@@ -55,7 +55,7 @@ type Converter interface {
 }
 
 type pgRepository struct {
-	upserter           repo.Upserter
+	upserter           repo.UpserterGlobal
 	unsafeCreator      repo.UnsafeCreator
 	existQuerierGlobal repo.ExistQuerierGlobal
 	singleGetterGlobal repo.SingleGetterGlobal
@@ -69,7 +69,7 @@ type pgRepository struct {
 // NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		upserter:           repo.NewUpserter(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
+		upserter:           repo.NewUpserterGlobal(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
 		unsafeCreator:      repo.NewUnsafeCreator(resource.Tenant, tableName, insertColumns, conflictingColumns),
 		existQuerierGlobal: repo.NewExistQuerierGlobal(resource.Tenant, tableName),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
@@ -88,7 +88,7 @@ func (r *pgRepository) UnsafeCreate(ctx context.Context, item model.BusinessTena
 
 // Upsert adds the provided tenant into the Compass storage if it does not exist, or updates it if it does.
 func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) error {
-	return r.upserter.Upsert(ctx, r.conv.ToEntity(&item))
+	return r.upserter.UpsertGlobal(ctx, r.conv.ToEntity(&item))
 }
 
 // Get retrieves the active tenant with matching internal ID from the Compass storage.
