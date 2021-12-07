@@ -23,8 +23,8 @@ const (
 )
 
 var (
-	bundleReferencesColumns         = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url", "id"}
-	updatableColumns                = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url"}
+	bundleReferencesColumns         = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url", "id", "is_default_bundle"}
+	updatableColumns                = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url", "is_default_bundle"}
 	updatableColumnsWithoutBundleID = []string{"api_def_id", "event_def_id", "api_def_url"}
 )
 

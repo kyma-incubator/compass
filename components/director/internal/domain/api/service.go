@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -134,11 +133,11 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 
 // CreateInBundle missing godoc
 func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
-	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0)
+	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0, "")
 }
 
 // Create missing godoc
-func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput, defaultTargetURLPerBundle map[string]string, apiHash uint64) (string, error) {
+func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput, defaultTargetURLPerBundle map[string]string, apiHash uint64, defaultBundleID string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -161,6 +160,7 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 		}
 	}
 
+	// when defaultTargetURLPerBundle == nil we are in the graphQL flow
 	if defaultTargetURLPerBundle == nil {
 		bundleRefInput := &model.BundleReferenceInput{
 			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(in.TargetURLs)),
@@ -174,6 +174,9 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 			bundleRefInput := &model.BundleReferenceInput{
 				APIDefaultTargetURL: &defaultTargetURL,
 			}
+			if defaultBundleID != "" && crrBndlID == defaultBundleID {
+				bundleRefInput.IsDefaultBundle = true
+			}
 			err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, &crrBndlID)
 			if err != nil {
 				return "", err
@@ -186,11 +189,11 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
-	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, nil, 0)
+	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, nil, 0, "")
 }
 
 // UpdateInManyBundles missing godoc
-func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64) error {
+func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
@@ -207,6 +210,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
 	}
 
+	// when defaultTargetURLPerBundle == nil we are in the graphQL flow
 	if defaultTargetURLPerBundleForUpdate == nil {
 		bundleRefInput := &model.BundleReferenceInput{
 			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(in.TargetURLs)),
@@ -216,13 +220,13 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 			return err
 		}
 	} else {
-		err = s.updateBundleReferences(ctx, &api.ID, defaultTargetURLPerBundleForUpdate)
+		err = s.updateBundleReferences(ctx, &api.ID, defaultTargetURLPerBundleForUpdate, defaultBundleID)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = s.createBundleReferences(ctx, &api.ID, defaultTargetURLPerBundleForCreation)
+	err = s.createBundleReferences(ctx, &api.ID, defaultTargetURLPerBundleForCreation, defaultBundleID)
 	if err != nil {
 		return err
 	}
@@ -297,11 +301,15 @@ func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*m
 	return fetchRequests, nil
 }
 
-func (s *service) updateBundleReferences(ctx context.Context, apiID *string, defaultTargetURLPerBundleForUpdate map[string]string) error {
+func (s *service) updateBundleReferences(ctx context.Context, apiID *string, defaultTargetURLPerBundleForUpdate map[string]string, defaultBundleID string) error {
 	for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundleForUpdate {
 		bundleRefInput := &model.BundleReferenceInput{
 			APIDefaultTargetURL: &defaultTargetURL,
 		}
+		if defaultBundleID != "" && defaultBundleID == crrBndlID {
+			bundleRefInput.IsDefaultBundle = true
+		}
+
 		err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, apiID, &crrBndlID)
 		if err != nil {
 			return err
@@ -310,11 +318,15 @@ func (s *service) updateBundleReferences(ctx context.Context, apiID *string, def
 	return nil
 }
 
-func (s *service) createBundleReferences(ctx context.Context, apiID *string, defaultTargetURLPerBundleForCreation map[string]string) error {
+func (s *service) createBundleReferences(ctx context.Context, apiID *string, defaultTargetURLPerBundleForCreation map[string]string, defaultBundleID string) error {
 	for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundleForCreation {
 		bundleRefInput := &model.BundleReferenceInput{
 			APIDefaultTargetURL: &defaultTargetURL,
 		}
+		if defaultBundleID != "" && crrBndlID == defaultBundleID {
+			bundleRefInput.IsDefaultBundle = true
+		}
+
 		err := s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, apiID, &crrBndlID)
 		if err != nil {
 			return err

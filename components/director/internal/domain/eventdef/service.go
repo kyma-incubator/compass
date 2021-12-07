@@ -131,11 +131,11 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 
 // CreateInBundle missing godoc
 func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
-	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0)
+	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0, "")
 }
 
 // Create missing godoc
-func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64) (string, error) {
+func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64, defaultBundleID string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
@@ -157,13 +157,20 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 		}
 	}
 
+	// if bundleIDs == nil we are in the graphQL flow
 	if bundleIDs == nil {
 		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID); err != nil {
 			return "", err
 		}
 	} else {
 		for _, bndlID := range bundleIDs {
-			if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, &bndlID); err != nil {
+			bundleRefInput := &model.BundleReferenceInput{}
+			if defaultBundleID != "" && bndlID == defaultBundleID {
+				bundleRefInput = &model.BundleReferenceInput{
+					IsDefaultBundle: true,
+				}
+			}
+			if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleEventReference, &eventAPI.ID, &bndlID); err != nil {
 				return "", err
 			}
 		}
@@ -174,11 +181,11 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
-	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, 0)
+	return s.UpdateInManyBundles(ctx, id, in, specIn, nil,nil, nil, 0, "")
 }
 
 // UpdateInManyBundles missing godoc
-func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsForCreation []string, bundleIDsForDeletion []string, eventHash uint64) error {
+func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -196,7 +203,11 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 	}
 
 	for _, bundleID := range bundleIDsForCreation {
-		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &event.ID, &bundleID); err != nil {
+		createBundleRefInput := &model.BundleReferenceInput{}
+		if defaultBundleID != "" && bundleID == defaultBundleID {
+			createBundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: true}
+		}
+		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *createBundleRefInput, model.BundleEventReference, &event.ID, &bundleID); err != nil {
 			return err
 		}
 	}
@@ -204,6 +215,19 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 	for _, bundleID := range bundleIDsForDeletion {
 		if err = s.bundleReferenceService.DeleteByReferenceObjectID(ctx, model.BundleEventReference, &event.ID, &bundleID); err != nil {
 			return err
+		}
+	}
+
+	if bundleIDsFromBundleReference != nil {
+		for _, bundleID := range bundleIDsFromBundleReference {
+			bundleRefInput := &model.BundleReferenceInput{}
+			if defaultBundleID != "" && bundleID == defaultBundleID {
+				bundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: true}
+			}
+			err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleEventReference, &event.ID, &bundleID)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

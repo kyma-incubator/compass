@@ -2,7 +2,6 @@ package ord
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -452,6 +451,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 		return equalStrings(apisFromDB[i].OrdID, api.OrdID)
 	})
 
+	defaultConsumptionBundleID := extractDefaultConsumptionBundle(bundlesFromDB, api.DefaultConsumptionBundle)
 	defaultTargetURLPerBundle := extractAllBundleReferencesForAPI(bundlesFromDB, api)
 
 	var packageID *string
@@ -467,7 +467,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 	}
 
 	if !isAPIFound {
-		_, err := s.apiSvc.Create(ctx, appID, nil, packageID, api, specs, defaultTargetURLPerBundle, apiHash)
+		_, err := s.apiSvc.Create(ctx, appID, nil, packageID, api, specs, defaultTargetURLPerBundle, apiHash, defaultConsumptionBundleID)
 		return err
 	}
 
@@ -482,7 +482,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 	// in case of API update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
 	defaultTargetURLPerBundleForCreation := extractAllBundleReferencesForCreation(defaultTargetURLPerBundle, allBundleIDsForAPI)
 
-	if err := s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash); err != nil {
+	if err := s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID); err != nil {
 		return err
 	}
 	if api.VersionInput.Value != apisFromDB[i].Version.Value {
@@ -502,6 +502,8 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 	i, isEventFound := searchInSlice(len(eventsFromDB), func(i int) bool {
 		return equalStrings(eventsFromDB[i].OrdID, event.OrdID)
 	})
+
+	defaultConsumptionBundleID := extractDefaultConsumptionBundle(bundlesFromDB, event.DefaultConsumptionBundle)
 
 	bundleIDsFromBundleReference := make([]string, 0)
 	for _, br := range event.PartOfConsumptionBundles {
@@ -525,7 +527,7 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 	}
 
 	if !isEventFound {
-		_, err := s.eventSvc.Create(ctx, appID, nil, packageID, event, specs, bundleIDsFromBundleReference, eventHash)
+		_, err := s.eventSvc.Create(ctx, appID, nil, packageID, event, specs, bundleIDsFromBundleReference, eventHash, defaultConsumptionBundleID)
 		return err
 	}
 
@@ -554,7 +556,7 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 		}
 	}
 
-	if err := s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsForCreation, bundleIDsForDeletion, eventHash); err != nil {
+	if err := s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultConsumptionBundleID); err != nil {
 		return err
 	}
 	if event.VersionInput.Value != eventsFromDB[i].Version.Value {
@@ -742,6 +744,22 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 		CredentialExchangeStrategies:   in.CredentialExchangeStrategies,
 		CorrelationIDs:                 in.CorrelationIDs,
 	}
+}
+
+// extractDefaultConsumptionBundle converts the defaultConsumptionBundle which is bundle ORD_ID into internal bundle_id
+func extractDefaultConsumptionBundle(bundlesFromDB []*model.Bundle, defaultConsumptionBundle *string) string {
+	var bundleID string
+	if defaultConsumptionBundle == nil {
+		return bundleID
+	}
+
+	for _, bndl := range bundlesFromDB {
+		if equalStrings(bndl.OrdID, defaultConsumptionBundle) {
+			bundleID = bndl.ID
+			break
+		}
+	}
+	return bundleID
 }
 
 func extractAllBundleReferencesForAPI(bundlesFromDB []*model.Bundle, api model.APIDefinitionInput) map[string]string {

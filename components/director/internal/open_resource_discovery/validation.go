@@ -326,6 +326,9 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateAPIPartOfConsumptionBundles(value, api.TargetURLs, regexp.MustCompile(BundleOrdIDRegex))
 		})),
+		validation.Field(&api.DefaultConsumptionBundle, validation.Match(regexp.MustCompile(BundleOrdIDRegex)), validation.By(func(value interface{}) error {
+			return validateDefaultConsumptionBundle(value, api.PartOfConsumptionBundles)
+		})),
 		validation.Field(&api.Extensible, validation.By(func(value interface{}) error {
 			return validateExtensibleField(value, api.OrdPackageID, packagePolicyLevels)
 		})),
@@ -385,6 +388,9 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.Labels, validation.By(validateORDLabels)),
 		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
 			return validateEventPartOfConsumptionBundles(value, regexp.MustCompile(BundleOrdIDRegex))
+		})),
+		validation.Field(&event.DefaultConsumptionBundle, validation.Match(regexp.MustCompile(BundleOrdIDRegex)), validation.By(func(value interface{}) error {
+			return validateDefaultConsumptionBundle(value, event.PartOfConsumptionBundles)
 		})),
 		validation.Field(&event.Extensible, validation.By(func(value interface{}) error {
 			return validateExtensibleField(value, event.OrdPackageID, packagePolicyLevels)
@@ -1027,6 +1033,30 @@ func validateAPIPartOfConsumptionBundles(value interface{}, targetURLs json.RawM
 		}
 	}
 
+	return nil
+}
+
+func validateDefaultConsumptionBundle(value interface{}, partOfConsumptionBundles []*model.ConsumptionBundleReference) error {
+	defaultConsumptionBundle, ok := value.(*string)
+	if !ok {
+		return errors.New("error while casting to defaultConsumptionBundle")
+	}
+
+	if defaultConsumptionBundle == nil {
+		return nil
+	}
+
+	var isFound bool
+	for _, bundleRef := range partOfConsumptionBundles {
+		if *defaultConsumptionBundle == bundleRef.BundleOrdID {
+			isFound = true
+			break
+		}
+	}
+
+	if !isFound {
+		return errors.New("defaultConsumptionBundle MUST be an existing option in the corresponding partOfConsumptionBundles array")
+	}
 	return nil
 }
 
