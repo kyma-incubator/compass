@@ -38,6 +38,8 @@ func NewHandlerWithSigningKey(expectedSecret, expectedID string, signingKey *rsa
 }
 
 func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
+	log.C(r.Context()).Infof("Generate: %+v", r)
+
 	authorization := r.Header.Get("authorization")
 	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
@@ -51,12 +53,12 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(writer, errors.New("client secret or client id doesn't match expected"), http.StatusBadRequest)
 		return
 	}
-
 	h.GenerateWithoutCredentials(writer, r)
 }
 
 func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http.Request) {
 	claims := map[string]interface{}{}
+	log.C(r.Context()).Infof("GenerateWithoutCredentials: %+v", r)
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -68,7 +70,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	contentType := r.Header.Get("Content-Type")
 	if contentType == "application/x-www-form-urlencoded" {
 		// mtls client credentials is performed
-		log.C(r.Context()).Infof("mtls client credentials: %+v", r)
+		//log.C(r.Context()).Infof("mtls client credentials: %+v", r)
 		form, err := url.ParseQuery(string(body))
 		if err != nil {
 			log.C(r.Context()).Errorf("Cannot parse form. Error: %s", err)

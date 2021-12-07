@@ -135,6 +135,8 @@ func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentia
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Set(p.tenantHeader, credentials.Tenant)
 
+	log.C(ctx).Infof("Sending request: %+v", request)
+
 	response, err := p.httpClient.Do(request)
 	if err != nil {
 		return httputils.Token{}, errors.Wrap(err, "while send request to token endpoint")
@@ -149,6 +151,8 @@ func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentia
 	if err != nil {
 		return httputils.Token{}, errors.Wrapf(err, "while reading token response body from %q", p.tokenURL)
 	}
+
+	log.C(ctx).Infof("Recieved response: %s", string(respBody))
 
 	if response.StatusCode != http.StatusOK {
 		return httputils.Token{}, errors.Wrapf(err, "oauth server returned unexpected status code %d and body: %s", response.StatusCode, respBody)

@@ -48,7 +48,7 @@ data:
   global.systemFetcher.oauth.client: "client_id"
   global.systemFetcher.oauth.tokenBaseUrl: "compass-external-services-mock-sap-mtls.kyma.local"
   global.systemFetcher.oauth.tokenPath: "/cert/token"
-  global.systemFetcher.oauth.tokenEndpointProtocol: "http"
+  global.systemFetcher.oauth.tokenEndpointProtocol: "https"
   global.systemFetcher.oauth.scopesClaim: "scopes"
   global.systemFetcher.oauth.tenantHeaderName: "x-zid"
   global.systemFetcher.oauth.tokenRequestTimeout: "10s"
