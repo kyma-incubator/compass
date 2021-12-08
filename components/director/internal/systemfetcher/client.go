@@ -13,9 +13,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ApiClient missing godoc
-//go:generate mockery --name=ApiClient --output=automock --outpkg=automock --case=underscore
-type ApiClient interface {
+// APIClient missing godoc
+//go:generate mockery --name=APIClient --output=automock --outpkg=automock --case=underscore
+type APIClient interface {
 	Do(*http.Request, string) (*http.Response, error)
 }
 
@@ -33,11 +33,11 @@ type APIConfig struct {
 // Client missing godoc
 type Client struct {
 	apiConfig  APIConfig
-	httpClient ApiClient
+	httpClient APIClient
 }
 
 // NewClient missing godoc
-func NewClient(apiConfig APIConfig, client ApiClient) *Client {
+func NewClient(apiConfig APIConfig, client APIClient) *Client {
 	return &Client{
 		apiConfig:  apiConfig,
 		httpClient: client,

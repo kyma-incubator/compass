@@ -195,7 +195,7 @@ type mockData struct {
 	expectedTenantFilterCriteria string
 	statusCodeToReturn           int
 	bodiesToReturn               [][]byte
-	httpClient                   systemfetcher.ApiClient
+	httpClient                   systemfetcher.APIClient
 	callNumber                   int
 	pageCount                    int
 }

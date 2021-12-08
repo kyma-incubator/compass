@@ -18,7 +18,7 @@ type oauthClient struct {
 	c *http.Client
 }
 
-// NewOauthClient
+// NewOauthClient missing docs
 func NewOauthClient(oauthCfg oauth.Config, client *http.Client) *oauthClient {
 	return &oauthClient{
 		clientID:     oauthCfg.ClientID,
@@ -30,7 +30,7 @@ func NewOauthClient(oauthCfg oauth.Config, client *http.Client) *oauthClient {
 	}
 }
 
-// Do
+// Do missing docs
 func (oc *oauthClient) Do(req *http.Request, tenant string) (*http.Response, error) {
 	req = req.WithContext(auth.SaveToContext(req.Context(), &auth.OAuthCredentials{
 		ClientID:          oc.clientID,
