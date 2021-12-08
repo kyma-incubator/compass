@@ -172,7 +172,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   {{ .Values.global.systemFetcher.secret.clientIdKey }}: {{ .Values.global.systemFetcher.oauth.client | b64enc | quote }}
-  {{ .Values.global.systemFetcher.secret.oauthUrlKey }}: {{ .Values.global.systemFetcher.oauth.tokenBaseUrl | b64enc | quote }}
+  {{ .Values.global.systemFetcher.secret.oauthUrlKey }}: {{ printf "%s.%s" .Values.global.systemFetcher.oauth.tokenBaseUrl .Values.global.ingress.domainName | b64enc | quote }}
 {{ end }}
 {{ end }}
 ---
