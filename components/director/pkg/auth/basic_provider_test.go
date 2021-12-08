@@ -61,13 +61,6 @@ func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider
 	suite.Require().Equal(matches, false)
 }
 
-func (suite *MtlsTokenAuthorizationProviderTestSuite) TestBasicAuthorizationProvider_GetAuthorizationFailsWhenMtlsOAuthCredentialsAreInContext() {
-	provider := auth.NewBasicAuthorizationProvider()
-
-	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.MtlsOAuthCredentials{}))
-	suite.Require().Equal(matches, false)
-}
-
 func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider_DoesNotMatchNoCredentialsInContext() {
 	provider := auth.NewBasicAuthorizationProvider()
 
@@ -107,16 +100,6 @@ func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider
 	provider := auth.NewBasicAuthorizationProvider()
 
 	authorization, err := provider.GetAuthorization(auth.SaveToContext(context.Background(), &auth.OAuthCredentials{}))
-
-	suite.Require().Error(err)
-	suite.Require().Contains(err.Error(), "failed to cast credentials to basic credentials type")
-	suite.Require().Empty(authorization)
-}
-
-func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider_GetAuthorizationFailsWhenMtlsOAuthCredentialsAreInContext() {
-	provider := auth.NewBasicAuthorizationProvider()
-
-	authorization, err := provider.GetAuthorization(auth.SaveToContext(context.Background(), &auth.MtlsOAuthCredentials{}))
 
 	suite.Require().Error(err)
 	suite.Require().Contains(err.Error(), "failed to cast credentials to basic credentials type")

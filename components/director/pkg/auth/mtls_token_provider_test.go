@@ -44,7 +44,6 @@ const (
 )
 
 var oauthCfg = oauth.Config{
-	TenantHeaderName:      "x-tenant",
 	ClientID:              "client-id",
 	TokenEndpointProtocol: "https",
 	TokenBaseURL:          "test.mtls.domain.com",
@@ -96,7 +95,7 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorizationProvider_Matches() {
 	provider := auth.NewMtlsTokenAuthorizationProvider(oauth.Config{}, &automock.CertificateCache{}, auth.DefaultMtlsClientCreator)
 
-	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.MtlsOAuthCredentials{}))
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.OAuthCredentials{}))
 	suite.Require().Equal(matches, true)
 }
 
@@ -104,13 +103,6 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 	provider := auth.NewMtlsTokenAuthorizationProvider(oauth.Config{}, &automock.CertificateCache{}, auth.DefaultMtlsClientCreator)
 
 	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.BasicCredentials{}))
-	suite.Require().Equal(matches, false)
-}
-
-func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorizationProvider_DoesNotMatchWhenOauthCredentialsInContext() {
-	provider := auth.NewMtlsTokenAuthorizationProvider(oauth.Config{}, &automock.CertificateCache{}, auth.DefaultMtlsClientCreator)
-
-	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.OAuthCredentials{}))
 	suite.Require().Equal(matches, false)
 }
 
@@ -124,8 +116,10 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorizationProvider_GetAuthorization() {
 	provider := auth.NewMtlsTokenAuthorizationProvider(oauthCfg, nil, getFakeCreator(oauthCfg, suite.Suite, false))
 
-	ctx := auth.SaveToContext(context.Background(), &auth.MtlsOAuthCredentials{
-		Tenant: tenant,
+	ctx := auth.SaveToContext(context.Background(), &auth.OAuthCredentials{
+		ClientID: oauthCfg.ClientID,
+		Scopes:   oauthCfg.ScopesClaim,
+		TokenURL: oauthCfg.
 	})
 	authorization, err := provider.GetAuthorization(ctx)
 
@@ -138,7 +132,7 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorizationProvider_GetAuthorizationFailsWhenRequestFails() {
 	provider := auth.NewMtlsTokenAuthorizationProvider(oauthCfg, nil, getFakeCreator(oauthCfg, suite.Suite, true))
 
-	ctx := auth.SaveToContext(context.Background(), &auth.MtlsOAuthCredentials{
+	ctx := auth.SaveToContext(context.Background(), &auth.OAuthCredentials{
 		Tenant: tenant,
 	})
 	authorization, err := provider.GetAuthorization(ctx)
@@ -154,16 +148,6 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 
 	suite.Require().Error(err)
 	suite.Require().True(apperrors.IsNotFoundError(err))
-	suite.Require().Empty(authorization)
-}
-
-func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorizationProvider_GetAuthorizationFailsWhenOAuthCredentialsAreInContext() {
-	provider := auth.NewMtlsTokenAuthorizationProvider(oauthCfg, nil, getFakeCreator(oauthCfg, suite.Suite, true))
-
-	authorization, err := provider.GetAuthorization(auth.SaveToContext(context.Background(), &auth.OAuthCredentials{}))
-
-	suite.Require().Error(err)
-	suite.Require().Contains(err.Error(), "failed to cast credentials to mtls oauth credentials type")
 	suite.Require().Empty(authorization)
 }
 

@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/stretchr/testify/require"
 )
@@ -55,7 +57,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		PageSize:                    4,
 		PagingSkipParam:             "$skip",
 		PagingSizeParam:             "$top",
-	}, *mock.httpClient)
+	}, mock.httpClient)
 
 	t.Run("Success", func(t *testing.T) {
 		mock.callNumber = 0
@@ -193,7 +195,7 @@ type mockData struct {
 	expectedTenantFilterCriteria string
 	statusCodeToReturn           int
 	bodiesToReturn               [][]byte
-	httpClient                   *http.Client
+	httpClient                   systemfetcher.ApiClient
 	callNumber                   int
 	pageCount                    int
 }
@@ -232,7 +234,7 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 	})
 
 	ts := httptest.NewServer(mux)
-	mock.httpClient = ts.Client()
+	mock.httpClient = systemfetcher.NewOauthClient(oauth.Config{}, ts.Client())
 
 	return &mock, ts.URL
 }

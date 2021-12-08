@@ -62,22 +62,13 @@ func DefaultMtlsClientCreator(cc CertificateCache, skipSSLValidation bool, timeo
 
 // mtlsTokenAuthorizationProvider presents a AuthorizationProvider implementation which crafts OAuth Bearer token values for the Authorization header using mtls http client
 type mtlsTokenAuthorizationProvider struct {
-	clientID     string
-	tokenURL     string
-	scopesClaim  string
-	tenantHeader string
-
 	httpClient *http.Client
 }
 
 // NewMtlsTokenAuthorizationProvider constructs an TokenAuthorizationProvider
 func NewMtlsTokenAuthorizationProvider(oauthCfg oauth.Config, cache CertificateCache, creator MtlsClientCreator) *mtlsTokenAuthorizationProvider {
 	return &mtlsTokenAuthorizationProvider{
-		clientID:     oauthCfg.ClientID,
-		tokenURL:     oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
-		scopesClaim:  strings.Join(oauthCfg.ScopesClaim, " "),
-		tenantHeader: oauthCfg.TenantHeaderName,
-		httpClient:   creator(cache, oauthCfg.SkipSSLValidation, oauthCfg.TokenRequestTimeout),
+		httpClient: creator(cache, oauthCfg.SkipSSLValidation, oauthCfg.TokenRequestTimeout),
 	}
 }
 
@@ -93,7 +84,7 @@ func (p *mtlsTokenAuthorizationProvider) Matches(ctx context.Context) bool {
 		return false
 	}
 
-	return credentials.Type() == MtlsOAuthCredentialType
+	return credentials.Type() == OAuthCredentialType
 }
 
 // GetAuthorization crafts an OAuth Bearer token to inject as part of the executing request
@@ -105,7 +96,7 @@ func (p *mtlsTokenAuthorizationProvider) GetAuthorization(ctx context.Context) (
 		return "", err
 	}
 
-	mtlsCredentials, ok := credentials.Get().(*MtlsOAuthCredentials)
+	mtlsCredentials, ok := credentials.Get().(*OAuthCredentials)
 	if !ok {
 		return "", errors.New("failed to cast credentials to mtls oauth credentials type")
 	}
@@ -118,22 +109,26 @@ func (p *mtlsTokenAuthorizationProvider) GetAuthorization(ctx context.Context) (
 	return "Bearer " + token.AccessToken, nil
 }
 
-func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentials *MtlsOAuthCredentials) (httputils.Token, error) {
-	log.C(ctx).Info("Getting authorization token")
+func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentials *OAuthCredentials) (httputils.Token, error) {
+	log.C(ctx).Debug("Getting authorization token")
 
 	form := url.Values{}
 	form.Add("grant_type", "client_credentials")
-	form.Add("client_id", p.clientID)
-	form.Add("scopes", p.scopesClaim)
+	form.Add("client_id", credentials.ClientID)
+	form.Add("scopes", credentials.Scopes)
 
 	body := strings.NewReader(form.Encode())
-	request, err := http.NewRequest(http.MethodPost, p.tokenURL, body)
+	request, err := http.NewRequest(http.MethodPost, credentials.TokenURL, body)
 	if err != nil {
 		return httputils.Token{}, errors.Wrap(err, "Failed to create authorisation token request")
 	}
 
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	request.Header.Set(p.tenantHeader, credentials.Tenant)
+	if credentials.AdditionalHeaders != nil {
+		for headerName, headerValue := range credentials.AdditionalHeaders {
+			request.Header.Set(headerName, headerValue)
+		}
+	}
 
 	log.C(ctx).Infof("Sending request: %+v", request)
 
@@ -149,7 +144,7 @@ func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentia
 
 	respBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return httputils.Token{}, errors.Wrapf(err, "while reading token response body from %q", p.tokenURL)
+		return httputils.Token{}, errors.Wrapf(err, "while reading token response body from %q", credentials.TokenURL)
 	}
 
 	log.C(ctx).Infof("Received response: %s", string(respBody))

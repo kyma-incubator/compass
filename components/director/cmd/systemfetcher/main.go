@@ -219,11 +219,12 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 		authProvider = pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, certCache, pkgAuth.DefaultMtlsClientCreator)
 	}
 
-	apiClient := http.Client{
+	client := &http.Client{
 		Transport: httputil.NewSecuredTransport(http.DefaultTransport, authProvider),
 		Timeout:   cfg.APIConfig.Timeout,
 	}
-	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, apiClient)
+	oauthClient := systemfetcher.NewOauthClient(cfg.OAuth2Config, client)
+	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, oauthClient)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{

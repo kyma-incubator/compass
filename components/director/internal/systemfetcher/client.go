@@ -8,12 +8,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/paging"
 	"github.com/pkg/errors"
 )
+
+// ApiClient missing godoc
+//go:generate mockery --name=ApiClient --output=automock --outpkg=automock --case=underscore
+type ApiClient interface {
+	Do(*http.Request, string) (*http.Response, error)
+}
 
 // APIConfig missing godoc
 type APIConfig struct {
@@ -29,11 +33,11 @@ type APIConfig struct {
 // Client missing godoc
 type Client struct {
 	apiConfig  APIConfig
-	httpClient http.Client
+	httpClient ApiClient
 }
 
 // NewClient missing godoc
-func NewClient(apiConfig APIConfig, client http.Client) *Client {
+func NewClient(apiConfig APIConfig, client ApiClient) *Client {
 	return &Client{
 		apiConfig:  apiConfig,
 		httpClient: client,
@@ -71,9 +75,7 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url, tenant string) 
 		return nil, errors.Wrap(err, "failed to create new HTTP request")
 	}
 
-	req = req.WithContext(addCredentialsToContext(req.Context(), tenant))
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req, tenant)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute HTTP request")
 	}
@@ -110,8 +112,4 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 		*systems = append(*systems, currentSystems...)
 		return uint64(len(currentSystems)), nil
 	}
-}
-
-func addCredentialsToContext(ctx context.Context, tenant string) context.Context {
-	return auth.SaveToContext(ctx, &auth.MtlsOAuthCredentials{Tenant: tenant})
 }
