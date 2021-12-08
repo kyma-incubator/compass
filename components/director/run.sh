@@ -77,6 +77,9 @@ DB_NAME="compass"
 DB_PORT="5432"
 DB_HOST="127.0.0.1"
 
+CLIENT_CERT_SECRET_NAMESPACE="default"
+CLIENT_CERT_SECRET_NAME="external-client-certificate"
+
 function cleanup() {
     if [[ ${DEBUG} ]]; then
        echo -e "${GREEN}Cleanup Director binary${NC}"
@@ -89,9 +92,16 @@ function cleanup() {
     else
         echo -e "${GREEN}Skipping Postgres container cleanup${NC}"
     fi
+
+    echo -e "${GREEN}Destroying k3d cluster..."
+    k3d cluster delete k3d-cluster
 }
 
 trap cleanup EXIT
+
+echo -e "${GREEN}Creating k3d cluster..."
+curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v5.2.0 bash
+k3d cluster create k3d-cluster --api-port 6550 --servers 1 --port 443:443@loadbalancer --image rancher/k3s:v1.22.4-k3s1 --kubeconfig-update-default --wait
 
 if [[ ${REUSE_DB} = true ]]; then
     echo -e "${GREEN}Will reuse existing Postgres container${NC}"
@@ -198,9 +208,16 @@ export APP_ALLOW_JWT_SIGNING_NONE=true
 export APP_INFO_CERT_ISSUER="C=BG, L=Local, O=CMP, OU=Local, CN=CMP"
 export APP_INFO_CERT_SUBJECT="C=BG, O=CMP, OU=Local, L=Local, CN=local-clients"
 export APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY="non-existent-label-key"
+export APP_EXTERNAL_CLIENT_CERT_SECRET=${CLIENT_CERT_SECRET_NAMESPACE}/${CLIENT_CERT_SECRET_NAME}
+export APP_EXTERNAL_CLIENT_CERT_KEY="tls.crt"
+export APP_EXTERNAL_CLIENT_KEY_KEY="tls.key"
+export APP_EXTERNAL_CLIENT_CERT_VALUE="certValue"
+export APP_EXTERNAL_CLIENT_KEY_VALUE="keyValue"
 
 # Tenant Fetcher properties
 export APP_SUBSCRIPTION_CALLBACK_SCOPE=Callback
+
+kubectl create secret generic "$CLIENT_CERT_SECRET_NAME" --from-literal="$APP_EXTERNAL_CLIENT_CERT_KEY"="$APP_EXTERNAL_CLIENT_CERT_VALUE" --from-literal="$APP_EXTERNAL_CLIENT_KEY_KEY"="$APP_EXTERNAL_CLIENT_KEY_VALUE" --save-config --dry-run=client -o yaml | kubectl apply -f -
 
 if [[  ${DEBUG} ]]; then
     echo -e "${GREEN}Debug mode activated on port $DEBUG_PORT${NC}"

@@ -44,12 +44,18 @@ func (tw *testWatch) ResultChan() <-chan watch.Event {
 	return tw.events
 }
 
-func Test_CertificatesLoader(t *testing.T) {
+func Test_CertificateLoaderWatch(t *testing.T) {
+	config := Config{
+		ExternalClientCertSecret:  "namespace/resource-name",
+		ExternalClientCertCertKey: "tls.crt",
+		ExternalClientCertKeyKey:  "tls.key",
+	}
+
 	t.Run("should insert secret data on add event", func(t *testing.T) {
 		// given
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		cache, watcher, secretManagerMock := preparation(ctx, 1)
+		cache, watcher, secretManagerMock := preparation(ctx, 1, config)
 		certBytes, keyBytes := generateTestCertAndKey(t, testCN)
 
 		// when
@@ -78,7 +84,7 @@ func Test_CertificatesLoader(t *testing.T) {
 		// given
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		cache, watcher, secretManagerMock := preparation(ctx, 1)
+		cache, watcher, secretManagerMock := preparation(ctx, 1, config)
 		certBytes, keyBytes := generateTestCertAndKey(t, testCN)
 
 		// when
@@ -107,7 +113,7 @@ func Test_CertificatesLoader(t *testing.T) {
 		// given
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		cache, watcher, secretManagerMock := preparation(ctx, 1)
+		cache, watcher, secretManagerMock := preparation(ctx, 1, config)
 
 		// when
 		watcher.putEvent(watch.Event{
@@ -133,7 +139,7 @@ func Test_CertificatesLoader(t *testing.T) {
 		// given
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		cache, watcher, secretManagerMock := preparation(ctx, 1)
+		cache, watcher, secretManagerMock := preparation(ctx, 1, config)
 		certBytes, keyBytes := generateTestCertAndKey(t, testCN)
 
 		// when
@@ -172,7 +178,7 @@ func Test_CertificatesLoader(t *testing.T) {
 		// given
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		cache, watcher, secretManagerMock := preparation(ctx, 2)
+		cache, watcher, secretManagerMock := preparation(ctx, 2, config)
 		certBytes, keyBytes := generateTestCertAndKey(t, testCN)
 
 		// when
@@ -209,7 +215,7 @@ func Test_CertificatesLoader(t *testing.T) {
 		// given
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		cache, watcher, secretManagerMock := preparation(ctx, 2)
+		cache, watcher, secretManagerMock := preparation(ctx, 2, config)
 		certBytes, keyBytes := generateTestCertAndKey(t, testCN)
 
 		// when
@@ -244,6 +250,10 @@ func Test_CertificatesLoader(t *testing.T) {
 
 func Test_CertificateParsing(t *testing.T) {
 	ctx := context.Background()
+	config := Config{
+		ExternalClientCertCertKey: "tls.crt",
+		ExternalClientCertKeyKey:  "tls.key",
+	}
 	certBytes, keyBytes := generateTestCertAndKey(t, testCN)
 	invalidCert := "-----BEGIN CERTIFICATE-----\naZOCUHlJ1wKwnYiLnOofB1xyIUZhVLaJy7Ob\n-----END CERTIFICATE-----\n"
 	invalidKey := "-----BEGIN RSA PRIVATE KEY-----\n7qFmWkbkOAM9CUPx5RwSRt45oxlQjvDniZALWqbYxgO5f8cYZsEAyOU1n2DXgiei\n-----END RSA PRIVATE KEY-----\n"
@@ -260,7 +270,7 @@ func Test_CertificateParsing(t *testing.T) {
 		{
 			Name:             "Error when secret data is empty",
 			SecretData:       map[string][]byte{},
-			ExpectedErrorMsg: "There is no certificate data in the secret",
+			ExpectedErrorMsg: "There is no certificate data provided",
 		},
 		{
 			Name:             "Error when certificate data is invalid",
@@ -286,7 +296,7 @@ func Test_CertificateParsing(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			tlsCert, err := parseCertificate(ctx, testCase.SecretData)
+			tlsCert, err := parseCertificate(ctx, testCase.SecretData, config)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -300,14 +310,14 @@ func Test_CertificateParsing(t *testing.T) {
 	}
 }
 
-func preparation(ctx context.Context, number int) (Cache, *testWatch, *automock.Manager) {
+func preparation(ctx context.Context, number int, config Config) (Cache, *testWatch, *automock.Manager) {
 	cache := NewCertificateCache()
 	watcher := &testWatch{
 		events: make(chan watch.Event, 50),
 	}
 	secretManagerMock := &automock.Manager{}
 	secretManagerMock.On("Watch", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(watcher, nil).Times(number)
-	loader := NewCertificatesLoader(cache, secretManagerMock, secretName, time.Millisecond)
+	loader := NewCertificateLoader(config, cache, secretManagerMock, secretName, time.Millisecond)
 	go loader.Run(ctx)
 
 	return cache, watcher, secretManagerMock

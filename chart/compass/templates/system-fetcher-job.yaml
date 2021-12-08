@@ -130,6 +130,10 @@ spec:
                   value: /config/config.yaml
                 - name: APP_EXTERNAL_CLIENT_CERT_SECRET
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+                - name: APP_EXTERNAL_CLIENT_CERT_KEY
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+                - name: APP_EXTERNAL_CLIENT_KEY_KEY
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
               command:
                 - "/bin/sh"
               args:
@@ -203,5 +207,5 @@ subjects:
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: Role
-  name: director-external-client-certificate
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io
