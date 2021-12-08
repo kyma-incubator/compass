@@ -25,11 +25,9 @@ where `tenant` is any valid UUID and `authorization` is JWT token with all scope
 
 You can set `tenant` header as any UUID.
 
-> **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret. Locally, you can override the secret data with certificate and key that you need for testing or debugging. Check [Configuration](#configuration) section for environment variables.
-
 ### Prerequisites
 
-> **NOTE:** Use script `run.sh` to perform these steps automatically.
+> **NOTE:** Use script `run.sh` to perform these steps automatically. Check [Local Development](#local-development) section.
 
 Before you can run Director you have to configure access to PostgreSQL database. For development purpose you can run PostgreSQL instance in the docker container executing following command:
 
@@ -78,10 +76,23 @@ The Director binary allows to override some configuration parameters. You can sp
 | **APP_OAUTH20_HTTP_CLIENT_TIMEOUT**          | `3m`                            | The timeout of HTTP client for managing OAuth 2.0 clients          |
 | **APP_STATIC_USERS_SRC**                     | None                            | The path for static users configuration file                       |
 | **APP_LEGACY_CONNECTOR_URL**                 | None                            | The URL of the legacy Connector signing request info endpoint      |
-| **APP_DEFAULT_SCENARIO_ENABLED**             | `true`                          | The toggle that enables automatic assignment of default scenario   | 
-| **APP_EXTERNAL_CLIENT_CERT_VALUE**           | `certValue`                     | External client certificate which is used to populate the certificate cache   | 
-| **APP_EXTERNAL_CLIENT_KEY_VALUE**            | `keyValue`                      | External client certificate key which is added into certificate cache   | 
+| **APP_DEFAULT_SCENARIO_ENABLED**             | `true`                          | The toggle that enables automatic assignment of default scenario   |
 
 ## Usage
 
 Find examples of GraphQL calls [here](examples/README.md).
+
+
+## Local Development
+There is a `./run.sh` script that automatically run director locally with necessary configuration and environment variables. There are several useful flag that can be used:
+- `--skip-db-cleanup` Will not delete the DB on script termination.
+- `--reuse-db` Can be used in combination with the previous one to reuse already existing DB.
+- `--dump-db` Will start director with DB, populated with data from CMP development environment
+- `--debug` Starts director in debugging mode on default port `40000`
+
+> **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret. Locally, you can override the secret data with certificate and key that you need for testing or debugging. Check the table below for environment variables.
+
+| Environment variable                         | Default value                   | Description                                                        |
+| -------------------------------------------- | ------------------------------- | ------------------------------------------------------------------ |
+| **APP_EXTERNAL_CLIENT_CERT_VALUE**           | `certValue`                     | External client certificate which is used to populate the certificate cache   | 
+| **APP_EXTERNAL_CLIENT_KEY_VALUE**            | `keyValue`                      | External client certificate key which is added into certificate cache   | 
