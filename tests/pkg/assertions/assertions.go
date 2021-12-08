@@ -535,6 +535,25 @@ func AssertBundleCorrelationIds(t *testing.T, respBody string, entitiesMap map[s
 	}
 }
 
+func AssertDefaultBundleID(t *testing.T, respBody string, numberOfEntities int, entityDefaultBundleMap, ordAndInternalIDsMappingForBundles map[string]string) {
+	for i := 0; i < numberOfEntities; i++ {
+		entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
+		partOfConsumptionBundles := gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles", i)).Array()
+
+		for j := 0; j < len(partOfConsumptionBundles); j++ {
+			internalBundleID :=  gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles.%d.bundleID", i, j)).String()
+			ordID := ordAndInternalIDsMappingForBundles[internalBundleID]
+
+			expectedDefaultBundleOrdID, ok := entityDefaultBundleMap[entityTitle]
+			if ok && expectedDefaultBundleOrdID == ordID {
+				require.True(t, gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles.%d.isDefaultBundle", i, j)).Bool())
+			} else {
+				require.False(t, gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles.%d.isDefaultBundle", i, j)).Bool())
+			}
+		}
+	}
+}
+
 func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody string, entityType string, numberOfEntitiesForBundle map[string]int, entitiesDataForBundle map[string][]string) {
 	numberOfBundles := len(gjson.Get(respBody, "value").Array())
 
