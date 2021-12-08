@@ -158,6 +158,7 @@ global:
       oauthTokenPath: "/secured/oauth/token"
       distinguishLabel: "distinguishingLabel"
       label: "selfRegLabel"
+      labelPattern: "^xsappnameCMPClone$"
       labelValuePrefix: "self-reg-prefix-"
       responseKey: "self-reg-key"
       path: "/external-api/self-reg"

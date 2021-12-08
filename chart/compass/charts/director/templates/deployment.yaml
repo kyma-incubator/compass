@@ -196,6 +196,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.distinguishLabel }}
             - name: APP_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
+            - name: APP_SELF_REGISTER_LABEL_KEY_PATTERN
+              value: {{ .Values.global.director.selfRegister.labelPattern }}
             - name: APP_SELF_REGISTER_LABEL_VALUE_PREFIX
               value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
             - name: APP_SELF_REGISTER_RESPONSE_KEY
