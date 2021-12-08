@@ -90,7 +90,7 @@ There is a `./run.sh` script that automatically runs director locally with the n
 - `--dump-db` - Starts director with DB, populated with data from CMP development environment.
 - `--debug` - Starts director in debugging mode on default port `40000`. `Note:` As a prerequisite, you must have `delve` installed on your machine. 
 
-> **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret. Locally, you can override the secret data with certificate and key that you need for testing or debugging. As a prerequisite, the Kubernetes version installed on your machine must be v1.18 or higher. Check the table below for environment variables.
+> **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret. Locally, you can override the secret data with certificate and key that you need for testing or debugging. As a prerequisite, the kubectl version installed on your machine must be v1.18 or higher. Check the table below for environment variables.
 
 | Environment variable                         | Default value                   | Description                                                        |
 | -------------------------------------------- | ------------------------------- | ------------------------------------------------------------------ |
