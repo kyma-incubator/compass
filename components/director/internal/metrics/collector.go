@@ -90,7 +90,7 @@ func (c *Collector) GraphQLHandlerWithInstrumentation(handler http.Handler) http
 }
 
 // InstrumentOAuth20HTTPClient missing godoc
-func (c *Collector) InstrumentOAuth20HTTPClient(client *http.Client) {
+func (c *Collector) InstrumentOAuth20HTTe2e-connectivity-adapterPClient(client *http.Client) {
 	client.Transport = promhttp.InstrumentRoundTripperCounter(c.hydraRequestTotal,
 		promhttp.InstrumentRoundTripperDuration(c.hydraRequestDuration, client.Transport),
 	)

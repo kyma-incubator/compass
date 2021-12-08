@@ -127,7 +127,7 @@ spec:
             - name: APP_CA_SECRET_KEY_KEY
               value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
             - name: APP_EXTERNAL_CA_SECRET_CERTIFICATE_KEY
-              value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.crtKey | quote }}
+              value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey | quote }}
             - name: APP_EXTERNAL_CA_SECRET_KEY_KEY
               value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey | quote }}
             - name: SKIP_TESTS_REGEX

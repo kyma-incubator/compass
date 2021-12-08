@@ -42,8 +42,12 @@ type certServiceContextProvider struct {
 // There we should only convert the tenant identifier from external to internal.
 func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	// the authID in this flow is an OU selected by the Connector
+	//TODO move in getExternalTenantID as last option
+	//TODO this will match internal_consumer_id or subaccountid if internal_consumer_id is missing // this is either m.InternalConsumerID if set in mapping or last OU
 	externalTenantID := authDetails.AuthID
-
+	//TODO idea - authid regex ot each mapping (says where from the  subject to find the auth id)
+	//TODO this way in authid we get the actual caller id and provider only flow will work for dest certs (no tenant header flow)
+	//
 	extraData := reqData.GetExtraDataWithDefaults()
 
 	logger := log.C(ctx).WithFields(logrus.Fields{
@@ -53,6 +57,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 
 	if extraData.AccessLevel != "" {
 		var err error
+		//TODO will fail if header is not provided ?? provider-flow subject mapping fails ?
 		externalTenantID, err = reqData.GetExternalTenantID() // will return tenant ID from header if it exists
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("Failed to get external tenant ID: %v", err)
@@ -93,6 +98,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 	}
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), p.tenantKeys, scopes,
+		//TODO consumerid is not authid but internal consumer id, authid should be put in tenant?
 		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(extraData.ConsumerType), CertServiceObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 	return objCtx, nil
