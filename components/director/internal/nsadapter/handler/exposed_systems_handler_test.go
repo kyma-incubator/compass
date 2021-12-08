@@ -350,7 +350,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}, testSubaccount, "loc-id")
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return("", errors.New("error"))
+		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return(errors.New("error"))
 
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
@@ -426,7 +426,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}, testSubaccount, "loc-id")
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return("success", nil)
+		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return (nil)
 
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
@@ -1275,7 +1275,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		labelFilter := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", "loc-id", testSubaccount))
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return("", errors.New("error"))
+		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return(errors.New("error"))
 
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
@@ -1341,7 +1341,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}, testSubaccount, "loc-id")
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return("success", nil)
+		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return(nil)
 
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,

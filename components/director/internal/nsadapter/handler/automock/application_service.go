@@ -159,22 +159,15 @@ func (_m *ApplicationService) Update(ctx context.Context, id string, in model.Ap
 }
 
 // Upsert provides a mock function with given fields: ctx, in
-func (_m *ApplicationService) Upsert(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
+func (_m *ApplicationService) Upsert(ctx context.Context, in model.ApplicationRegisterInput) error {
 	ret := _m.Called(ctx, in)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput) string); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput) error); ok {
 		r0 = rf(ctx, in)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationRegisterInput) error); ok {
-		r1 = rf(ctx, in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }

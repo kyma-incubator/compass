@@ -24,7 +24,7 @@ import (
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
-	Upsert(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
+	Upsert(ctx context.Context, in model.ApplicationRegisterInput) error
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 	GetSystem(ctx context.Context, locationID, virtualHost string) (*model.Application, error)
 	ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error)
@@ -296,7 +296,7 @@ func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 }
 
 func (a *Handler) upsertWithSystemNumber(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
-	if _, err := a.appSvc.Upsert(ctx, nsmodel.ToAppRegisterInput(system, scc.Subaccount, scc.LocationID)); err != nil {
+	if err := a.appSvc.Upsert(ctx, nsmodel.ToAppRegisterInput(system, scc.Subaccount, scc.LocationID)); err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while upserting Application"))
 		return false
 	}

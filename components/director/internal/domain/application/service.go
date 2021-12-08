@@ -329,11 +329,6 @@ func (s *service) ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter
 	return appsWithLabel, nil
 }
 
-func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
-	//TODO
-	return "", nil
-}
-
 func (s *service) ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error) {
 	labels, err := s.labelRepo.ListGlobalByKey(ctx, key)
 	if err != nil {
