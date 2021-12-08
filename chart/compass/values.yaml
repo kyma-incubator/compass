@@ -502,6 +502,7 @@ global:
     oauth:
       client: "client_id"
       tokenEndpointProtocol: "https"
+      tokenBaseUrl: "compass-external-services-mock-sap-mtls.{{ .Values.global.ingress.domainName }}"
       tokenPath: "/cert/token"
       scopesClaim: "scopes"
       tenantHeaderName: "x-zid"
