@@ -87,13 +87,13 @@ global:
       version: "PR-2118"
     director:
       dir:
-      version: "PR-2122"
+      version: "PR-2132"
     gateway:
       dir:
       version: "PR-2077"
     operations_controller:
       dir:
-      version: "PR-2122"
+      version: "PR-2132"
     ord_service:
       dir:
       version: "PR-48"
@@ -102,7 +102,7 @@ global:
       version: "PR-2117"
     system_broker:
       dir:
-      version: "PR-2084"
+      version: "PR-2132"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -110,7 +110,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2122"
+      version: "PR-2132"
     console:
       dir:
       version: "PR-47"
