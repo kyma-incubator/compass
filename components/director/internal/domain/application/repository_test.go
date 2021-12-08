@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"context"
+	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"fmt"
@@ -370,6 +371,73 @@ func TestRepository_Update(t *testing.T) {
 	}
 
 	suite.Run(t)
+}
+
+func TestRepository_Upsert(t *testing.T) {
+	upsertStmt := regexp.QuoteMeta(`INSERT INTO public.applications ( id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids ) 
+	VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) 
+	ON CONFLICT ( system_number )
+	DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description, status_condition=EXCLUDED.status_condition, provider_name=EXCLUDED.provider_name, base_url=EXCLUDED.base_url, labels=EXCLUDED.labels
+	WHERE (public.applications.id IN (SELECT id FROM tenant_applications WHERE tenant_id = ? AND owner = true))`)
+
+	var nilAppModel *model.Application
+	appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+	appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+
+	suite := testdb.RepoUpsertTestSuite{
+		Name: "Upsert Application",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         upsertStmt,
+				Args:          []driver.Value{givenID(), sql.NullString{}, appModel.SystemNumber, appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error, appEntity.CorrelationIDs, givenTenant()},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+			{
+				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`),
+				Args:        []driver.Value{givenTenant(), givenID(), true},
+				ValidResult: sqlmock.NewResult(-1, 1),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: application.NewRepository,
+		ModelEntity:         appModel,
+		DBEntity:            appEntity,
+		NilModelEntity:      nilAppModel,
+		TenantID:            givenTenant(),
+	}
+
+	suite.Run(t)
+
+	// Additional tests
+
+	t.Run("error if 0 affected rows", func(t *testing.T) {
+		ctx := context.Background()
+
+		mockConverter := &automock.EntityConverter{}
+		mockConverter.On("ToEntity", appModel).Return(appEntity, nil).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec(upsertStmt).
+			WithArgs(givenID(), sql.NullString{}, appModel.SystemNumber, appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.BaseURL, repo.NewNullableStringFromJSONRawMessage(appModel.Labels), appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error, appEntity.CorrelationIDs, givenTenant()).
+			WillReturnResult(sqlmock.NewResult(-1, 0))
+
+		ctx = persistence.SaveToContext(ctx, db)
+
+		repo := application.NewRepository(mockConverter)
+
+		// WHEN
+		err := repo.Upsert(ctx, givenTenant(), appModel)
+
+		// then
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Owner access is needed for resource modification")
+	})
 }
 
 func TestRepository_GetByID(t *testing.T) {

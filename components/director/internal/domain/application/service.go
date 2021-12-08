@@ -36,6 +36,7 @@ const (
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
+type repoUpserterFunc func(ctx context.Context, tenant string, application *model.Application) error
 
 // ApplicationRepository missing godoc
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
@@ -52,6 +53,7 @@ type ApplicationRepository interface {
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, tenant string, item *model.Application) error
+	Upsert(ctx context.Context, tenant string, model *model.Application) error
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
@@ -437,6 +439,41 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	}
 	log.C(ctx).Debugf("Successfully set Label for Application with id %s", app.ID)
 	return nil
+}
+
+// Upsert missing godoc
+func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput) error {
+	tenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (err error) {
+		if err = s.appRepo.Upsert(ctx, tenant, application); err != nil {
+			return errors.Wrapf(err, "while upserting Application with name %s", application.Name)
+		}
+		return
+	}
+
+	return s.genericUpsert(ctx, tenant, in, upserterFunc)
+}
+
+// UpsertFromTemplate missing godoc
+func (s *service) UpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error {
+	tenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (err error) {
+		application.ApplicationTemplateID = appTemplateID
+		if err = s.appRepo.Upsert(ctx, tenant, application); err != nil {
+			return errors.Wrapf(err, "while upserting Application with name %s from template", application.Name)
+		}
+		return
+	}
+
+	return s.genericUpsert(ctx, tenant, in, upserterFunc)
 }
 
 // Delete missing godoc
@@ -829,4 +866,41 @@ func removeDefaultScenario(scenarios []string) []string {
 	}
 
 	return scenarios
+}
+
+func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.ApplicationRegisterInput, repoUpserterFunc repoUpserterFunc) error {
+	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
+	if err != nil {
+		return errors.Wrap(err, "while validating Integration System ID")
+	}
+
+	if !exists {
+		return apperrors.NewNotFoundError(resource.IntegrationSystem, *in.IntegrationSystemID)
+	}
+
+	id := s.uidService.Generate()
+	log.C(ctx).Debugf("ID %s generated for Application with name %s", id, in.Name)
+	app := in.ToApplication(s.timestampGen(), id)
+
+	if err := repoUpserterFunc(ctx, appTenant, app); err != nil {
+		return errors.Wrap(err, "while upserting application")
+	}
+
+	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, appTenant, &in.Labels)
+
+	if in.Labels == nil {
+		in.Labels = map[string]interface{}{}
+	}
+	in.Labels[intSysKey] = ""
+	if in.IntegrationSystemID != nil {
+		in.Labels[intSysKey] = *in.IntegrationSystemID
+	}
+	in.Labels[nameKey] = s.appNameNormalizer.Normalize(app.Name)
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
+	if err != nil {
+		return errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
+	}
+
+	return nil
 }

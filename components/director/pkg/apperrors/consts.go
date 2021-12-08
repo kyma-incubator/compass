@@ -92,6 +92,8 @@ const (
 	ConcurrentUpdateMsg = "Could not update object due to concurrent update"
 	// ShouldUpdateSingleRowButUpdatedMsgF  is the error message for ShouldUpdateSingleRowButUpdated errors.
 	ShouldUpdateSingleRowButUpdatedMsgF = "should update single row, but updated %d rows"
+	// ShouldUpsertSingleRowButUpsertedMsgF  is the error message returned when upsert resulted in rows affected count not equal to 1.
+	ShouldUpsertSingleRowButUpsertedMsgF = "should upsert single row, but upserted %d rows"
 	// ShouldBeOwnerMsg is the error message for unauthorized due to missing owner access errors.
 	ShouldBeOwnerMsg = "Owner access is needed for resource modification"
 )
