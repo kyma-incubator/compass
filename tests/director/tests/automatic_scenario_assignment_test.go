@@ -124,6 +124,9 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 			rtms[1].ID: {prodScenario},
 			rtms[2].ID: {defaultScenario},
 		}
+		if !conf.DefaultScenarioEnabled {
+			expectedScenarios[rtms[2].ID] = []interface{}{}
+		}
 
 		//WHEN
 		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
@@ -143,6 +146,9 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 			rtms[1].ID: {prodScenario},
 			rtms[2].ID: {defaultScenario},
 		}
+		if !conf.DefaultScenarioEnabled {
+			scenarios[rtms[2].ID] = []interface{}{}
+		}
 
 		//WHEN
 		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
@@ -154,6 +160,9 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 			rtms[0].ID: {},
 			rtms[1].ID: {},
 			rtms[2].ID: {defaultScenario},
+		}
+		if !conf.DefaultScenarioEnabled {
+			expectedScenarios[rtms[2].ID] = []interface{}{}
 		}
 
 		//WHEN
@@ -172,6 +181,9 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 			rtms[1].ID: {prodScenario, devScenario},
 			rtms[2].ID: {defaultScenario},
 		}
+		if !conf.DefaultScenarioEnabled {
+			scenarios[rtms[2].ID] = []interface{}{}
+		}
 
 		//WHEN
 		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
@@ -185,6 +197,9 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 			rtms[0].ID: {manualScenario},
 			rtms[1].ID: {manualScenario},
 			rtms[2].ID: {defaultScenario},
+		}
+		if !conf.DefaultScenarioEnabled {
+			expectedScenarios[rtms[2].ID] = []interface{}{}
 		}
 
 		//WHEN

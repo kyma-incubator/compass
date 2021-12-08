@@ -144,7 +144,7 @@ type config struct {
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
 
-	ExternalClientCertSecret string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET"`
+	CertLoaderConfig certloader.Config
 }
 
 func main() {
@@ -200,7 +200,7 @@ func main() {
 	adminURL, err := url.Parse(cfg.OAuth20.URL)
 	exitOnError(err, "Error while parsing Hydra URL")
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.ExternalClientCertSecret)
+	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
@@ -468,7 +468,7 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Tran
 
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
 
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern, tenantSvc)
 
@@ -713,7 +713,7 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, lblRepo, scenarioAssignmentRepo, rtRepo)
 
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, lblRepo, labelSvc)
 
 	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, cfg.Features.ProtectedLabelPattern, tenantSvc)
 }

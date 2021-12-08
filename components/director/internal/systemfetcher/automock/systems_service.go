@@ -14,20 +14,6 @@ type SystemsService struct {
 	mock.Mock
 }
 
-// CreateManyIfNotExistsWithEventualTemplate provides a mock function with given fields: ctx, applicationInputs
-func (_m *SystemsService) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error {
-	ret := _m.Called(ctx, applicationInputs)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []model.ApplicationRegisterInputWithTemplate) error); ok {
-		r0 = rf(ctx, applicationInputs)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // GetByNameAndSystemNumber provides a mock function with given fields: ctx, name, systemNumber
 func (_m *SystemsService) GetByNameAndSystemNumber(ctx context.Context, name string, systemNumber string) (*model.Application, error) {
 	ret := _m.Called(ctx, name, systemNumber)
@@ -49,4 +35,32 @@ func (_m *SystemsService) GetByNameAndSystemNumber(ctx context.Context, name str
 	}
 
 	return r0, r1
+}
+
+// Upsert provides a mock function with given fields: ctx, in
+func (_m *SystemsService) Upsert(ctx context.Context, in model.ApplicationRegisterInput) error {
+	ret := _m.Called(ctx, in)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput) error); ok {
+		r0 = rf(ctx, in)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertFromTemplate provides a mock function with given fields: ctx, in, appTemplateID
+func (_m *SystemsService) UpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error {
+	ret := _m.Called(ctx, in, appTemplateID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput, *string) error); ok {
+		r0 = rf(ctx, in, appTemplateID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }

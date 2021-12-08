@@ -67,7 +67,7 @@ func TestSyncSystems(t *testing.T) {
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
-				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), appsInputs).Return(nil).Once()
+				systemSvc.On("UpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -102,7 +102,7 @@ func TestSyncSystems(t *testing.T) {
 			},
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
-				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), appsInputs).Return(nil).Once()
+				systemSvc.On("Upsert", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -117,7 +117,7 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Success with one tenant and multiple systems",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(2)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(3)
 				return mockedTx, transactioner
 			},
 			fixTestSystems: func() []systemfetcher.System {
@@ -148,7 +148,8 @@ func TestSyncSystems(t *testing.T) {
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
-				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), appsInputs).Return(nil).Once()
+				systemSvc.On("UpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
+				systemSvc.On("UpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[1].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -195,8 +196,8 @@ func TestSyncSystems(t *testing.T) {
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
-				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[0]}).Return(nil).Once()
-				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[1]}).Return(nil).Once()
+				systemSvc.On("UpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
+				systemSvc.On("UpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[1].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -342,10 +343,11 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Fail when service fails to save systems",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(1)
 				persistTx := &pAutomock.PersistenceTx{}
 
 				transactioner.On("Begin").Return(persistTx, nil).Once()
+				persistTx.On("Commit").Return(nil).Once()
 				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 
 				return mockedTx, transactioner
@@ -369,7 +371,7 @@ func TestSyncSystems(t *testing.T) {
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
-				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[0]}).Return(errors.New("expected")).Once()
+				systemSvc.On("UpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(errors.New("expected")).Once()
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -464,8 +466,8 @@ func TestSyncSystems(t *testing.T) {
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
-				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[0]}).Return(nil).Once()
-				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[1]}).Return(nil).Once()
+				systemSvc.On("UpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
+				systemSvc.On("UpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[1].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -482,7 +484,12 @@ func TestSyncSystems(t *testing.T) {
 		{
 			name: "Do nothing if system is already being deleted",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(3)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+				persistTx := &pAutomock.PersistenceTx{}
+
+				transactioner.On("Begin").Return(persistTx, nil).Twice()
+				persistTx.On("Commit").Return(nil).Once()
+				transactioner.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
 
 				return mockedTx, transactioner
 			},
@@ -525,7 +532,7 @@ func TestSyncSystems(t *testing.T) {
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 
-				systemSvc.On("CreateManyIfNotExistsWithEventualTemplate", txtest.CtxWithDBMatcher(), []model.ApplicationRegisterInputWithTemplate{appsInputs[0]}).Return(nil).Once()
+				systemSvc.On("UpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
 				systemSvc.On("GetByNameAndSystemNumber", txtest.CtxWithDBMatcher(), appsInputs[1].Name, *appsInputs[1].SystemNumber).Return(&model.Application{
 					BaseEntity: &model.BaseEntity{
 						ID: "id",

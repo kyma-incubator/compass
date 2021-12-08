@@ -123,13 +123,17 @@ spec:
                       name: compass-postgresql
                       key: postgresql-sslMode
                 - name: APP_DB_MAX_OPEN_CONNECTIONS
-                  value: "{{ .Values.global.systemFetcher.dbPool.maxOpenConnections }}"
+                  value: {{ .Values.global.systemFetcher.dbPool.maxOpenConnections | quote }}
                 - name: APP_DB_MAX_IDLE_CONNECTIONS
-                  value: "{{ .Values.global.systemFetcher.dbPool.maxIdleConnections }}"
+                  value: {{ .Values.global.systemFetcher.dbPool.maxIdleConnections | quote }}
                 - name: APP_CONFIGURATION_FILE
                   value: /config/config.yaml
                 - name: APP_EXTERNAL_CLIENT_CERT_SECRET
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+                - name: APP_EXTERNAL_CLIENT_CERT_KEY
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+                - name: APP_EXTERNAL_CLIENT_KEY_KEY
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
               command:
                 - "/bin/sh"
               args:
@@ -204,5 +208,5 @@ subjects:
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: Role
-  name: director-external-client-certificate
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io
