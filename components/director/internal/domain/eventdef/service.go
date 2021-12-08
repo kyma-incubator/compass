@@ -218,16 +218,14 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 		}
 	}
 
-	if bundleIDsFromBundleReference != nil {
-		for _, bundleID := range bundleIDsFromBundleReference {
-			bundleRefInput := &model.BundleReferenceInput{}
-			if defaultBundleID != "" && bundleID == defaultBundleID {
-				bundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: true}
-			}
-			err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleEventReference, &event.ID, &bundleID)
-			if err != nil {
-				return err
-			}
+	for _, bundleID := range bundleIDsFromBundleReference {
+		bundleRefInput := &model.BundleReferenceInput{}
+		if defaultBundleID != "" && bundleID == defaultBundleID {
+			bundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: true}
+		}
+		err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleEventReference, &event.ID, &bundleID)
+		if err != nil {
+			return err
 		}
 	}
 
