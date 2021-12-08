@@ -1006,7 +1006,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 
 	secondBundleReferenceInputWithDefaultBundle := &model.BundleReferenceInput{
 		APIDefaultTargetURL: str.Ptr(secondTargetURL),
-		IsDefaultBundle: true,
+		IsDefaultBundle:     true,
 	}
 
 	defaultTargetURLPerBundleForUpdate := map[string]string{firstBndlID: firstTargetURL}

@@ -541,7 +541,7 @@ func AssertDefaultBundleID(t *testing.T, respBody string, numberOfEntities int, 
 		partOfConsumptionBundles := gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles", i)).Array()
 
 		for j := 0; j < len(partOfConsumptionBundles); j++ {
-			internalBundleID :=  gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles.%d.bundleID", i, j)).String()
+			internalBundleID := gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles.%d.bundleID", i, j)).String()
 			ordID := ordAndInternalIDsMappingForBundles[internalBundleID]
 
 			expectedDefaultBundleOrdID, ok := entityDefaultBundleMap[entityTitle]

@@ -181,7 +181,7 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
-	return s.UpdateInManyBundles(ctx, id, in, specIn, nil,nil, nil, 0, "")
+	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, nil, 0, "")
 }
 
 // UpdateInManyBundles missing godoc
