@@ -60,7 +60,6 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 
 func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http.Request) {
 	claims := map[string]interface{}{}
-	log.C(r.Context()).Infof("GenerateWithoutCredentials: %+v", r)
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -116,7 +115,6 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write(payload)
-	log.C(r.Context()).Infof("Returning: %s", string(payload))
 	if err != nil {
 		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
