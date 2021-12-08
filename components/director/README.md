@@ -84,15 +84,15 @@ Find examples of GraphQL calls [here](examples/README.md).
 
 
 ## Local Development
-There is a `./run.sh` script that automatically run director locally with necessary configuration and environment variables. There are several useful flag that can be used:
-- `--skip-db-cleanup` Will not delete the DB on script termination.
-- `--reuse-db` Can be used in combination with the previous one to reuse already existing DB.
-- `--dump-db` Will start director with DB, populated with data from CMP development environment.
-- `--debug` Starts director in debugging mode on default port `40000`. `Note:` You need to have `delve` installed on your machine in advance. 
+There is a `./run.sh` script that automatically runs director locally with the necessary configuration and environment variables. There are several flags that can be used:
+- `--skip-db-cleanup` - Does not delete the DB on script termination.
+- `--reuse-db` - Can be used in combination with `--skip-db-cleanup` to reuse an already existing DB.
+- `--dump-db` - Starts director with DB, populated with data from CMP development environment.
+- `--debug` - Starts director in debugging mode on default port `40000`. `Note:` As a prerequisite, you must have `delve` installed on your machine. 
 
 > **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret. Locally, you can override the secret data with certificate and key that you need for testing or debugging. Check the table below for environment variables.
 
 | Environment variable                         | Default value                   | Description                                                        |
 | -------------------------------------------- | ------------------------------- | ------------------------------------------------------------------ |
-| **APP_EXTERNAL_CLIENT_CERT_VALUE**           | `certValue`                     | External client certificate which is used to populate the certificate cache   | 
-| **APP_EXTERNAL_CLIENT_KEY_VALUE**            | `keyValue`                      | External client certificate key which is added into certificate cache   | 
+| **APP_EXTERNAL_CLIENT_CERT_VALUE**           | `certValue`                     | External client certificate, which is used to populate the certificate cache   | 
+| **APP_EXTERNAL_CLIENT_KEY_VALUE**            | `keyValue`                      | External client certificate key, which is added into certificate cache   | 
