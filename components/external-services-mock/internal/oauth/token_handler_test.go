@@ -49,6 +49,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 	//GIVEN
 	expectedClaims := map[string]interface{}{
 		"test-claim": "test-value",
+		"x-zid":      "",
 	}
 	claimsBody, err := json.Marshal(expectedClaims)
 	require.NoError(t, err)
