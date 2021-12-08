@@ -440,8 +440,8 @@ global:
       externalClientCertSecret:
         name: "external-client-certificate"
         namespace: compass-system
+        certKey: tls.crt
         keyKey: tls.key
-        crtKey: tls.crt
     rotationCronjob:
       name: "external-certificate-rotation"
       schedule: "*/1 * * * *" # Executes every minute
@@ -502,7 +502,7 @@ global:
     oauth:
       client: "client_id"
       tokenEndpointProtocol: "https"
-      tokenBaseUrl: "compass-external-services-mock-sap-mtls.kyma.local"
+      tokenBaseUrl: "compass-external-services-mock-sap-mtls"
       tokenPath: "/cert/token"
       scopesClaim: "scopes"
       tenantHeaderName: "x-zid"
