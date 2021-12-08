@@ -87,8 +87,8 @@ Find examples of GraphQL calls [here](examples/README.md).
 There is a `./run.sh` script that automatically run director locally with necessary configuration and environment variables. There are several useful flag that can be used:
 - `--skip-db-cleanup` Will not delete the DB on script termination.
 - `--reuse-db` Can be used in combination with the previous one to reuse already existing DB.
-- `--dump-db` Will start director with DB, populated with data from CMP development environment
-- `--debug` Starts director in debugging mode on default port `40000`
+- `--dump-db` Will start director with DB, populated with data from CMP development environment.
+- `--debug` Starts director in debugging mode on default port `40000`. `Note:` You need to have `delve` installed on your machine in advance. 
 
 > **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret. Locally, you can override the secret data with certificate and key that you need for testing or debugging. Check the table below for environment variables.
 
