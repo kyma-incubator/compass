@@ -67,7 +67,7 @@ func (u tokenAuthorizationProvider) GetAuthorization(ctx context.Context) (strin
 		ClientID:     oAuthCredentials.ClientID,
 		ClientSecret: oAuthCredentials.ClientSecret,
 		TokenURL:     oAuthCredentials.TokenURL,
-	}, "")
+	}, oAuthCredentials.Scopes, oAuthCredentials.AdditionalHeaders)
 	if err != nil {
 		return "", err
 	}

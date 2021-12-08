@@ -92,11 +92,13 @@ func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider
 
 	provider := auth.NewTokenAuthorizationProvider(fakeClient)
 
-	clientID, clientSecret, tokenURL := "client-id", "client-secret", "https://test-domain.com/oauth/token"
+	clientID, clientSecret, tokenURL, scopes := "client-id", "client-secret", "https://test-domain.com/oauth/token", "scopes"
 	ctx := auth.SaveToContext(context.Background(), &auth.OAuthCredentials{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		TokenURL:     tokenURL,
+		ClientID:          clientID,
+		ClientSecret:      clientSecret,
+		TokenURL:          tokenURL,
+		Scopes:            scopes,
+		AdditionalHeaders: map[string]string{"h1": "v1"},
 	})
 	authorization, err := provider.GetAuthorization(ctx)
 

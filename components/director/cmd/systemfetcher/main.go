@@ -35,7 +35,9 @@ import (
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	pkgHttp "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	oauth "github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -212,8 +214,14 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
+	var authProvider pkgHttp.AuthorizationProvider = pkgAuth.NewTokenAuthorizationProvider(&http.Client{Timeout: cfg.OAuth2Config.TokenRequestTimeout})
+	if cfg.OAuth2Config.ClientSecret == "" {
+		// mTLS client credentials
+		authProvider = pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, certCache, pkgAuth.DefaultMtlsClientCreator)
+	}
+
 	apiClient := http.Client{
-		Transport: httputil.NewSecuredTransport(http.DefaultTransport, pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, certCache, pkgAuth.DefaultMtlsClientCreator)),
+		Transport: httputil.NewSecuredTransport(http.DefaultTransport, authProvider),
 		Timeout:   cfg.APIConfig.Timeout,
 	}
 	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, apiClient)

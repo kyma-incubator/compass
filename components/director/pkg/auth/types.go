@@ -53,9 +53,11 @@ type BasicCredentials struct {
 
 // OAuthCredentials implements the Credentials interface for the OAuth flow
 type OAuthCredentials struct {
-	ClientID     string
-	ClientSecret string
-	TokenURL     string
+	ClientID          string
+	ClientSecret      string
+	TokenURL          string
+	Scopes            string
+	AdditionalHeaders map[string]string
 }
 
 // MtlsOAuthCredentials implements the Credentials interface for the mTLS OAuth flow
