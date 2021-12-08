@@ -46,9 +46,10 @@ data:
   global.systemFetcher.systemsAPIFilterTenantCriteriaPattern: "tenant=%s"
   global.systemFetcher.systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] }, {"Name": "temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
   global.systemFetcher.oauth.client: "client_id"
-  global.systemFetcher.oauth.tokenBaseUrl: "compass-external-services-mock-sap-mtls"
-  global.systemFetcher.oauth.tokenPath: "/cert/token"
-  global.systemFetcher.oauth.tokenEndpointProtocol: "https"
+  global.systemFetcher.oauth.secret: "client_secret"
+  global.systemFetcher.oauth.tokenBaseUrl: "compass-external-services-mock"
+  global.systemFetcher.oauth.tokenPath: "/secured/oauth/token"
+  global.systemFetcher.oauth.tokenEndpointProtocol: "http"
   global.systemFetcher.oauth.scopesClaim: "scopes"
   global.systemFetcher.oauth.tenantHeaderName: "x-zid"
   global.systemFetcher.oauth.tokenRequestTimeout: "10s"

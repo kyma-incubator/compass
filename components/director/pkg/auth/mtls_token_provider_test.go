@@ -49,6 +49,7 @@ var oauthCfg = oauth.Config{
 	TokenBaseURL:          "test.mtls.domain.com",
 	TokenPath:             "/oauth/token",
 	ScopesClaim:           []string{"my-scope"},
+	TenantHeaderName:      "x-tenant",
 }
 
 func TestMtlsTokenAuthorizationProviderTestSuite(t *testing.T) {
@@ -117,9 +118,10 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 	provider := auth.NewMtlsTokenAuthorizationProvider(oauthCfg, nil, getFakeCreator(oauthCfg, suite.Suite, false))
 
 	ctx := auth.SaveToContext(context.Background(), &auth.OAuthCredentials{
-		ClientID: oauthCfg.ClientID,
-		Scopes:   oauthCfg.ScopesClaim,
-		TokenURL: oauthCfg.
+		ClientID:          oauthCfg.ClientID,
+		TokenURL:          oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
+		Scopes:            strings.Join(oauthCfg.ScopesClaim, " "),
+		AdditionalHeaders: map[string]string{oauthCfg.TenantHeaderName: tenant},
 	})
 	authorization, err := provider.GetAuthorization(ctx)
 
@@ -133,7 +135,10 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 	provider := auth.NewMtlsTokenAuthorizationProvider(oauthCfg, nil, getFakeCreator(oauthCfg, suite.Suite, true))
 
 	ctx := auth.SaveToContext(context.Background(), &auth.OAuthCredentials{
-		Tenant: tenant,
+		ClientID:          oauthCfg.ClientID,
+		TokenURL:          oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
+		Scopes:            strings.Join(oauthCfg.ScopesClaim, " "),
+		AdditionalHeaders: map[string]string{oauthCfg.TenantHeaderName: tenant},
 	})
 	authorization, err := provider.GetAuthorization(ctx)
 	suite.Require().Error(err)

@@ -590,6 +590,7 @@ global:
     basicSecuredPort: 8083
     oauthSecuredPort: 8084
     certSecuredHost: compass-external-services-mock-sap-mtls
+    unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials
 

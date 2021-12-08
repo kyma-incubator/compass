@@ -62,6 +62,9 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	claims := map[string]interface{}{}
 	log.C(r.Context()).Infof("GenerateWithoutCredentials: %+v", r)
 
+	tenant := r.Header.Get(h.tenantHeaderName)
+	claims["x-zid"] = tenant
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
@@ -76,10 +79,8 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 		} else {
 			client := form.Get("client_id")
 			scopes := form.Get("scopes")
-			tenant := r.Header.Get(h.tenantHeaderName)
 			claims["client_id"] = client
 			claims["scopes"] = scopes
-			claims["x-zid"] = tenant
 		}
 	} else {
 		if len(body) > 0 {
