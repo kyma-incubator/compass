@@ -1,11 +1,11 @@
 package handler
 
 import (
-"bytes"
-"fmt"
-"io"
-"net/http"
-"strconv"
+	"bytes"
+	"fmt"
+	"io"
+	"net/http"
+	"strconv"
 )
 
 func NewChunkedHandler() *ChunkedHandler {

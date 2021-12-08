@@ -3,6 +3,7 @@ package application_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -2711,7 +2712,6 @@ func TestService_Get(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		RepositoryFn        func() *automock.ApplicationRepository
-		Input               model.ApplicationRegisterInput
 		InputID             string
 		ExpectedApplication *model.Application
 		ExpectedErrMessage  string
@@ -2748,6 +2748,89 @@ func TestService_Get(t *testing.T) {
 
 			// WHEN
 			app, err := svc.Get(ctx, testCase.InputID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedApplication, app)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_GetSystem(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	tnt := "tenant"
+	locationID := "loc_id"
+	virtualHost := "vhost"
+	filter := labelfilter.NewForKeyWithQuery("SCC", fmt.Sprintf("{\"Subaccount\":%s, \"LocationId\":%s, \"Host\":%s}", tnt, locationID, virtualHost))
+
+	desc := "Lorem ipsum"
+
+	applicationModel := &model.Application{
+		Name:        "foo",
+		Description: &desc,
+		BaseEntity:  &model.BaseEntity{ID: "foo"},
+	}
+
+	externalTnt := "external-tnt"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name                string
+		Ctx                 context.Context
+		RepositoryFn        func() *automock.ApplicationRepository
+		ExpectedApplication *model.Application
+		ExpectedErrMessage  string
+	}{
+		{
+			Name: "Success",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return(applicationModel, nil).Once()
+				return repo
+			},
+			ExpectedApplication: applicationModel,
+		},
+		{
+			Name: "Returns error when application retrieval failed",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when extracting tenant from context",
+			Ctx:  context.TODO(),
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			ExpectedErrMessage: "while loading tenant from context:",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
+
+			// WHEN
+			app, err := svc.GetSystem(testCase.Ctx, locationID, virtualHost)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -3257,6 +3340,205 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			labelRepository.AssertExpectations(t)
 			appRepository.AssertExpectations(t)
 			cfgProvider.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListBySCC(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	tnt := "tenant"
+
+	app1ID := "foo"
+	app2ID := "bar"
+
+	app1 := fixModelApplication(app1ID, tnt, "foo", "Lorem Ipsum")
+	app2 := fixModelApplication(app2ID, tnt, "bar", "Lorem Ipsum")
+	applications := []*model.Application{app1, app2}
+
+	labelValue := stringPtr("{\"locationId\":\"locationId\", \"subaccount\":\"tenant\"}")
+
+	label := &model.Label{
+		Value: labelValue,
+	}
+
+	applicationsWitLabel := []*model.ApplicationWithLabel{
+		{
+			App:      app1,
+			SccLabel: label,
+		},
+		{
+			App:      app2,
+			SccLabel: label,
+		},
+	}
+
+	filter := &labelfilter.LabelFilter{Key: "SCC", Query: stringPtr("{\"locationId\":\"locationId\", \"subaccount\":\"tenant\"}")}
+
+	externalTnt := "external-tnt"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		Ctx                context.Context
+		RepositoryFn       func() *automock.ApplicationRepository
+		InputLabelFilter   *labelfilter.LabelFilter
+		ExpectedResult     []*model.ApplicationWithLabel
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAllByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return(applications, nil).Once()
+				return repo
+			},
+			InputLabelFilter:   filter,
+			ExpectedResult:     applicationsWitLabel,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when application listing failed",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAllByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return(nil, testErr).Once()
+				return repo
+			},
+			InputLabelFilter:   filter,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when extracting tenant from context",
+			Ctx:  context.TODO(),
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			ExpectedErrMessage: "while loading tenant from context:",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
+
+			// WHEN
+			app, err := svc.ListBySCC(testCase.Ctx, filter)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, app)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListSCCs(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	tnt := "tenant"
+
+	key := "SCC"
+
+	locationId1 := "locationId1"
+	locationId2 := "locationId2"
+	subaccount1 := "subaccount1"
+	subaccount2 := "subaccount2"
+
+	labelValue1 := fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", locationId1, subaccount1)
+	labelValue2 := fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", locationId2, subaccount2)
+
+	labels := []*model.Label{
+		{Value: labelValue1},
+		{Value: labelValue2},
+	}
+
+	sccs := []*model.SccMetadata{
+		{
+			Subaccount: subaccount1,
+			LocationId: locationId1,
+		},
+		{
+			Subaccount: subaccount2,
+			LocationId: locationId2,
+		},
+	}
+
+	filter := &labelfilter.LabelFilter{Key: "SCC", Query: stringPtr("{\"locationId\":\"locationId\", \"subaccount\":\"tenant\"}")}
+
+	externalTnt := "external-tnt"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		Ctx                context.Context
+		RepositoryFn       func() *automock.LabelRepository
+		InputLabelFilter   *labelfilter.LabelFilter
+		ExpectedResult     []*model.SccMetadata
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKey", ctx, key).Return(labels, nil).Once()
+				return repo
+			},
+			InputLabelFilter:   filter,
+			ExpectedResult:     sccs,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when labels listing failed",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKey", ctx, key).Return(nil, testErr).Once()
+				return repo
+			},
+			InputLabelFilter:   filter,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := application.NewService(nil, nil, nil, nil, nil, repo, nil, nil, nil, nil, nil)
+
+			// WHEN
+			app, err := svc.ListSCCs(testCase.Ctx, key)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, app)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
 		})
 	}
 }
@@ -3872,14 +4154,4 @@ func applicationFromTemplateMatcher(name string, description *string, appTemplat
 	return func(app *model.Application) bool {
 		return applicationMatcher(name, description)(app) && app.ApplicationTemplateID == appTemplateID
 	}
-}
-
-func contextThatHasTenant(expectedTenant string) interface{} {
-	return mock.MatchedBy(func(actual context.Context) bool {
-		actualTenant, err := tenant.LoadFromContext(actual)
-		if err != nil {
-			return false
-		}
-		return actualTenant == expectedTenant
-	})
 }

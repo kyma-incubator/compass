@@ -703,6 +703,83 @@ func TestPgRepository_GetByNameAndSystemNumber(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_GetByFilter(t *testing.T) {
+	entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), appName, "Test app description")
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Application By filter",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.applications WHERE id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" @> $3) AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $4))`),
+				Args:     []driver.Value{givenTenantAsUUID(), "SCC", "{\"Subaccount\":\"subacc\", \"LocationId\":\"LocationId\", \"Host\":\"Host\"}", givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixAppColumns()).
+							AddRow(entity.ID, entity.ApplicationTemplateID, entity.SystemNumber, entity.Name, entity.Description, entity.StatusCondition, entity.StatusTimestamp, entity.HealthCheckURL, entity.IntegrationSystemID, entity.ProviderName, entity.BaseURL, entity.Labels, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixAppColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       application.NewRepository,
+		ExpectedModelEntity:       fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description"),
+		ExpectedDBEntity:          entity,
+		MethodName:                "GetByFilter",
+		MethodArgs:                []interface{}{givenTenant(), []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("SCC", fmt.Sprintf("{\"Subaccount\":\"subacc\", \"LocationId\":\"LocationId\", \"Host\":\"Host\"}"))}},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_ListAllByFilter(t *testing.T) {
+	app1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
+	app2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
+	appEntity1 := fixDetailedEntityApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
+	appEntity2 := fixDetailedEntityApplication(t, app2ID, givenTenant(), "App 2", "App desc 2")
+
+	appModel1 := fixDetailedModelApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
+	appModel2 := fixDetailedModelApplication(t, app2ID, givenTenant(), "App 2", "App desc 2")
+
+	suite := testdb.RepoListTestSuite{
+		Name: "List Applications",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids FROM public.applications WHERE id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" @> $3) AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $4))`),
+				Args:     []driver.Value{givenTenantAsUUID(), "scc", "{\"locationId\":\"locationId\"}", givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAppColumns()).
+						AddRow(appEntity1.ID, appEntity1.ApplicationTemplateID, appEntity1.SystemNumber, appEntity1.Name, appEntity1.Description, appEntity1.StatusCondition, appEntity1.StatusTimestamp, appEntity1.HealthCheckURL, appEntity1.IntegrationSystemID, appEntity1.ProviderName, appEntity1.BaseURL, appEntity1.Labels, appEntity1.Ready, appEntity1.CreatedAt, appEntity1.UpdatedAt, appEntity1.DeletedAt, appEntity1.Error, appEntity1.CorrelationIDs).
+						AddRow(appEntity2.ID, appEntity2.ApplicationTemplateID, appEntity2.SystemNumber, appEntity2.Name, appEntity2.Description, appEntity2.StatusCondition, appEntity2.StatusTimestamp, appEntity2.HealthCheckURL, appEntity2.IntegrationSystemID, appEntity2.ProviderName, appEntity2.BaseURL, appEntity2.Labels, appEntity2.Ready, appEntity2.CreatedAt, appEntity2.UpdatedAt, appEntity2.DeletedAt, appEntity2.Error, appEntity2.CorrelationIDs),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixAppColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       application.NewRepository,
+		ExpectedModelEntities:     []interface{}{appModel1, appModel2},
+		ExpectedDBEntities:        []interface{}{appEntity1, appEntity2},
+		MethodArgs:                []interface{}{givenTenant(), []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"locationId\"}"))}},
+		MethodName:                "ListAllByFilter",
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func givenError() error {
 	return errors.New("some error")
 }

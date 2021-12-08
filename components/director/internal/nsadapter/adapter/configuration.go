@@ -1,9 +1,10 @@
 package adapter
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"time"
 )
 
 type Configuration struct {

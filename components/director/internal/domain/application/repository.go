@@ -150,6 +150,34 @@ func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.App
 	return appModel, nil
 }
 
+// GetByFilter missing godoc
+func (r *pgRepository) GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error) {
+	var appEnt Entity
+
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	if err = r.singleGetter.Get(ctx, resource.Application, tenant, conditions, repo.NoOrderBy, &appEnt); err != nil {
+		return nil, err
+	}
+
+	appModel := r.conv.FromEntity(&appEnt)
+
+	return appModel, nil
+}
+
 // ListAll missing godoc
 func (r *pgRepository) ListAll(ctx context.Context, tenantID string) ([]*model.Application, error) {
 	var entities EntityCollection
@@ -157,6 +185,32 @@ func (r *pgRepository) ListAll(ctx context.Context, tenantID string) ([]*model.A
 	err := r.lister.List(ctx, resource.Application, tenantID, &entities)
 
 	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+// ListAllByFilter missing godoc
+func (r *pgRepository) ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error) {
+	var entities EntityCollection
+
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	if err = r.lister.List(ctx, resource.Application, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 

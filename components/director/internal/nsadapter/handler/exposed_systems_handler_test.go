@@ -5,6 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/handler"
@@ -17,12 +23,9 @@ import (
 	txautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"testing"
 )
+
+const testSubaccount = "fd4f2041-fa83-48e0-b292-ff515bb776f0"
 
 type Reader struct {
 }
@@ -32,6 +35,8 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 }
 
 func TestHandler_ServeHTTP(t *testing.T) {
+	labelFilter := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", "loc-id", testSubaccount))
+
 	t.Run("failed to retrieve request body", func(t *testing.T) {
 
 		logsBuffer := &bytes.Buffer{}
@@ -191,7 +196,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(tx, nil)
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return(nil, errors.New("test"))
 		defer tntSvc.AssertExpectations(t)
@@ -229,9 +234,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(tx, nil)
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "customer"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "customer"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(nil, &tntSvc, &transact)
@@ -254,7 +259,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Details: []httputil.Detail{
 					{
 						Message:    "Provided id is not subaccount",
-						Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+						Subaccount: testSubaccount,
 						LocationId: "loc-id",
 					},
 				},
@@ -274,7 +279,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(tx, nil)
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{}, nil)
 		defer tntSvc.AssertExpectations(t)
@@ -299,7 +304,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Details: []httputil.Detail{
 					{
 						Message:    "Subaccount not found",
-						Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+						Subaccount: testSubaccount,
 						LocationId: "loc-id",
 					},
 				},
@@ -327,9 +332,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		appInput := nsmodel.ToAppRegisterInput(nsmodel.System{
@@ -342,11 +347,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				SystemNumber: "number",
 			},
 			TemplateID: "",
-		}, "loc-id")
-
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
+		}, testSubaccount, "loc-id")
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return("", errors.New("error"))
@@ -357,7 +358,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
 			},
 		}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -380,7 +381,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Details: []httputil.Detail{
 					{
 						Message:    "Creation failed",
-						Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+						Subaccount: testSubaccount,
 						LocationId: "loc-id",
 					},
 				},
@@ -407,9 +408,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		appInput := nsmodel.ToAppRegisterInput(nsmodel.System{
@@ -422,11 +423,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				SystemNumber: "number",
 			},
 			TemplateID: "",
-		}, "loc-id")
-
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
+		}, testSubaccount, "loc-id")
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return("success", nil)
@@ -437,7 +434,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
 			},
 		}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -474,14 +471,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -490,8 +484,8 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -514,7 +508,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Details: []httputil.Detail{
 					{
 						Message:    "Creation failed",
-						Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+						Subaccount: testSubaccount,
 						LocationId: "loc-id",
 					},
 				},
@@ -541,9 +535,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
@@ -565,10 +559,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 			TemplateID: "ss",
 		}
-		appInput := nsmodel.ToAppRegisterInput(system, "loc-id")
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
+		appInput := nsmodel.ToAppRegisterInput(system, testSubaccount, "loc-id")
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -577,10 +568,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").
-			Return(nil, nsmodel.NewSystemNotFoundError("fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080"))
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").
+			Return(nil, nsmodel.NewSystemNotFoundError(testSubaccount, "loc-id", "127.0.0.1:8080"))
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, appInput, str.Ptr(system.TemplateID)).Return("", errors.New("error"))
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -603,7 +594,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Details: []httputil.Detail{
 					{
 						Message:    "Creation failed",
-						Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+						Subaccount: testSubaccount,
 						LocationId: "loc-id",
 					},
 				},
@@ -630,9 +621,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
@@ -654,10 +645,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 			TemplateID: "ss",
 		}
-		appInput := nsmodel.ToAppRegisterInput(system, "loc-id")
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
+		appInput := nsmodel.ToAppRegisterInput(system, testSubaccount, "loc-id")
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -666,10 +654,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").
-			Return(nil, nsmodel.NewSystemNotFoundError("fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080"))
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").
+			Return(nil, nsmodel.NewSystemNotFoundError(testSubaccount, "loc-id", "127.0.0.1:8080"))
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, appInput, str.Ptr(system.TemplateID)).Return("success", nil)
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -706,9 +694,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		application := model.Application{
@@ -727,9 +715,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 			TemplateID: "",
 		})
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -738,9 +723,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(errors.New("error"))
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -763,7 +748,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Details: []httputil.Detail{
 					{
 						Message:    "Creation failed",
-						Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+						Subaccount: testSubaccount,
 						LocationId: "loc-id",
 					},
 				},
@@ -790,9 +775,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		application := model.Application{
@@ -818,9 +803,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			ObjectID:   application.ID,
 			ObjectType: model.ApplicationLabelableObject,
 		}
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -829,10 +811,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(errors.New("error"))
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -855,7 +837,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Details: []httputil.Detail{
 					{
 						Message:    "Creation failed",
-						Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+						Subaccount: testSubaccount,
 						LocationId: "loc-id",
 					},
 				},
@@ -882,9 +864,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		application := model.Application{
@@ -916,9 +898,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			ObjectID:   application.ID,
 			ObjectType: model.ApplicationLabelableObject,
 		}
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -927,11 +906,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(errors.New("error")).Once()
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -954,7 +933,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Details: []httputil.Detail{
 					{
 						Message:    "Creation failed",
-						Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+						Subaccount: testSubaccount,
 						LocationId: "loc-id",
 					},
 				},
@@ -981,9 +960,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		application := model.Application{
@@ -1015,9 +994,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			ObjectID:   application.ID,
 			ObjectType: model.ApplicationLabelableObject,
 		}
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -1026,11 +1002,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(nil).Once()
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -1065,17 +1041,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
-
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return(nil, errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -1098,7 +1070,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Details: []httputil.Detail{
 					{
 						Message:    "Creation failed",
-						Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+						Subaccount: testSubaccount,
 						LocationId: "loc-id",
 					},
 				},
@@ -1125,14 +1097,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: &model.Application{
 				BaseEntity: &model.BaseEntity{ID: "id"},
@@ -1142,9 +1111,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 		}
 
+		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
+
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		appSvc.Mock.On("MarkAsUnreachable", mock.Anything, appWithLabel.App.ID).Return(errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -1167,7 +1138,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Details: []httputil.Detail{
 					{
 						Message:    "Creation failed",
-						Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+						Subaccount: testSubaccount,
 						LocationId: "loc-id",
 					},
 				},
@@ -1194,14 +1165,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: &model.Application{
 				BaseEntity: &model.BaseEntity{ID: "id"},
@@ -1211,9 +1179,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 		}
 
+		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
+
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		appSvc.Mock.On("MarkAsUnreachable", mock.Anything, appWithLabel.App.ID).Return(nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
@@ -1285,9 +1255,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		appInput := nsmodel.ToAppRegisterInput(nsmodel.System{
@@ -1300,11 +1270,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				SystemNumber: "number",
 			},
 			TemplateID: "",
-		}, "loc-id")
+		}, testSubaccount, "loc-id")
 
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
+		labelFilter := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", "loc-id", testSubaccount))
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return("", errors.New("error"))
@@ -1315,7 +1283,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
 			},
 		}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -1355,9 +1323,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		appInput := nsmodel.ToAppRegisterInput(nsmodel.System{
@@ -1370,11 +1338,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				SystemNumber: "number",
 			},
 			TemplateID: "",
-		}, "loc-id")
-
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
+		}, testSubaccount, "loc-id")
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("Upsert", mock.Anything, appInput).Return("success", nil)
@@ -1385,7 +1349,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
 			},
 		}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -1425,14 +1389,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -1441,8 +1402,8 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -1482,9 +1443,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
@@ -1506,10 +1467,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 			TemplateID: "ss",
 		}
-		appInput := nsmodel.ToAppRegisterInput(system, "loc-id")
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
+		appInput := nsmodel.ToAppRegisterInput(system, testSubaccount, "loc-id")
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -1518,10 +1476,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").
-			Return(nil, nsmodel.NewSystemNotFoundError("fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080"))
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").
+			Return(nil, nsmodel.NewSystemNotFoundError(testSubaccount, "loc-id", "127.0.0.1:8080"))
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, appInput, str.Ptr(system.TemplateID)).Return("", errors.New("error"))
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -1561,9 +1519,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
@@ -1585,10 +1543,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 			TemplateID: "ss",
 		}
-		appInput := nsmodel.ToAppRegisterInput(system, "loc-id")
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
+		appInput := nsmodel.ToAppRegisterInput(system, testSubaccount, "loc-id")
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -1597,10 +1552,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").
-			Return(nil, nsmodel.NewSystemNotFoundError("fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080"))
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").
+			Return(nil, nsmodel.NewSystemNotFoundError(testSubaccount, "loc-id", "127.0.0.1:8080"))
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, appInput, str.Ptr(system.TemplateID)).Return("success", nil)
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -1640,9 +1595,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		application := model.Application{
@@ -1661,9 +1616,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 			TemplateID: "",
 		})
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -1672,9 +1624,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(errors.New("error"))
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -1714,9 +1666,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		application := model.Application{
@@ -1742,9 +1694,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			ObjectID:   application.ID,
 			ObjectType: model.ApplicationLabelableObject,
 		}
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -1753,10 +1702,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(errors.New("error"))
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -1796,9 +1745,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		application := model.Application{
@@ -1830,9 +1779,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			ObjectID:   application.ID,
 			ObjectType: model.ApplicationLabelableObject,
 		}
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -1841,11 +1787,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(errors.New("error")).Once()
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -1885,9 +1831,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
 		application := model.Application{
@@ -1919,9 +1865,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			ObjectID:   application.ID,
 			ObjectType: model.ApplicationLabelableObject,
 		}
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: nil,
 			SccLabel: &model.Label{
@@ -1930,11 +1873,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, "fd4f2041-fa83-48e0-b292-ff515bb776f0", "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(nil).Once()
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -1972,17 +1915,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
-
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return(nil, errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -2022,14 +1961,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: &model.Application{
 				BaseEntity: &model.BaseEntity{ID: "id"},
@@ -2039,9 +1975,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 		}
 
+		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
+
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		appSvc.Mock.On("MarkAsUnreachable", mock.Anything, appWithLabel.App.ID).Return(errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(errors.New("error"))
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -2082,14 +2020,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: &model.Application{
 				BaseEntity: &model.BaseEntity{ID: "id"},
@@ -2099,9 +2034,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 		}
 
+		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
+
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		appSvc.Mock.On("MarkAsUnreachable", mock.Anything, appWithLabel.App.ID).Return(nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
 		defer appSvc.AssertExpectations(t)
 
@@ -2139,19 +2076,15 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
-
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return(nil, errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return([]*model.SccMetadata{&model.SccMetadata{
-			Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+			Subaccount: testSubaccount,
 			LocationId: "loc-id",
 		}}, nil)
 		defer appSvc.AssertExpectations(t)
@@ -2193,17 +2126,11 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Once() //used in markAsUnreachable for unknown SCC
 		defer transact.AssertExpectations(t)
 
-		ids := []string{"fd4f2041-fa83-48e0-b292-ff515bb776f0"}
+		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: "fd4f2041-fa83-48e0-b292-ff515bb776f0", Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 		defer tntSvc.AssertExpectations(t)
 
-		labelFilters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "loc-id")),
-		}
-		labelFilters2 := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", "other-loc-id")),
-		}
 		appWithLabel := model.ApplicationWithLabel{
 			App: &model.Application{
 				BaseEntity: &model.BaseEntity{ID: "id"},
@@ -2213,11 +2140,15 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 		}
 
+		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
+
+		labelFilter2 := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", "other-loc-id", "marked-as-unreachable"))
+
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters).Return(nil, errors.New("error")).Once()
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error")).Once()
 		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return([]*model.SccMetadata{
 			{
-				Subaccount: "fd4f2041-fa83-48e0-b292-ff515bb776f0",
+				Subaccount: testSubaccount,
 				LocationId: "loc-id",
 			},
 			{
@@ -2225,8 +2156,8 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				LocationId: "other-loc-id",
 			},
 		}, nil)
-		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilters2).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil).Once()
-		appSvc.Mock.On("MarkAsUnreachable", mock.Anything, appWithLabel.App.ID).Return(nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter2).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil).Once()
+		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
 		defer appSvc.AssertExpectations(t)
 
 		endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)

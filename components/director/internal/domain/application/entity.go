@@ -21,6 +21,8 @@ type Entity struct {
 	SystemNumber          sql.NullString `db:"system_number"`
 	Labels                sql.NullString `db:"labels"`
 	CorrelationIDs        sql.NullString `db:"correlation_ids"`
+	SystemStatus          sql.NullString `db:"system_status"`
+
 	*repo.BaseEntity
 }
 

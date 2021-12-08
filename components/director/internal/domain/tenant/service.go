@@ -106,7 +106,7 @@ func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, err
 	return s.tenantMappingRepo.List(ctx)
 }
 
-func (s *service)  ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error){
+func (s *service) ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
 	//TODO implement
 	return nil, nil
 }

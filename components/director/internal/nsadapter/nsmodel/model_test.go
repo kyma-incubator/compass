@@ -2,10 +2,11 @@ package nsmodel
 
 import (
 	"fmt"
+	"testing"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type cases []struct {

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tidwall/gjson"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
@@ -42,8 +44,10 @@ type ApplicationRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	GetByNameAndSystemNumber(ctx context.Context, tenant, name, systemNumber string) (*model.Application, error)
+	GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
+	ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
 	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
@@ -58,6 +62,7 @@ type ApplicationRepository interface {
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+	ListGlobalByKey(ctx context.Context, key string) ([]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
@@ -280,42 +285,76 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	return s.genericCreate(ctx, in, creator)
 }
 
-func (s *service) GetSystem(ctx context.Context, subaccount, locationID, virtualHost string) (*model.Application, error){
-	//appTenant, err := tenant.LoadFromContext(ctx)
-	//if err != nil {
-	//	return nil, errors.Wrapf(err, "while loading tenant from context")
-	//}
-	//
-	////TODO fix filter
-	//labelfilter.NewForKey("SCC")
-	//
-	//app, err := s.appRepo.GetByFilter(ctx, appTenant, id)
-	//if err != nil {
-	//	return nil, errors.Wrapf(err, "while getting Application with id %s", id)
-	//}
-	//
-	//return app, nil
+// GetSystem missing godoc
+func (s *service) GetSystem(ctx context.Context, locationID, virtualHost string) (*model.Application, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
 
-	return nil, nil
+	filter := labelfilter.NewForKeyWithQuery("SCC", fmt.Sprintf("{\"Subaccount\":%s, \"LocationId\":%s, \"Host\":%s}", appTenant, locationID, virtualHost))
+
+	app, err := s.appRepo.GetByFilter(ctx, appTenant, []*labelfilter.LabelFilter{filter})
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Application with subaccount: %s, locationId: %s and virtualHost: %s", appTenant, locationID, virtualHost)
+	}
+
+	return app, nil
 }
 
-func (s *service) MarkAsUnreachable(ctx context.Context, id string) error{
-	//TODO
-	return nil
-}
-func (s *service) ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error){
-	//TODO 
-	return nil, nil
+func (s *service) ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	apps, err := s.appRepo.ListAllByFilter(ctx, appTenant, []*labelfilter.LabelFilter{filter})
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Applications by filters: %v", filter)
+	}
+
+	appsWithLabel := make([]*model.ApplicationWithLabel, 0, len(apps))
+	for _, app := range apps {
+		appWithLabel := &model.ApplicationWithLabel{
+			App: app,
+			SccLabel: &model.Label{
+				Value: filter.Query,
+			},
+		}
+		appsWithLabel = append(appsWithLabel, appWithLabel)
+	}
+
+	return appsWithLabel, nil
 }
 
-func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput) (string, error){
+func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
 	//TODO
 	return "", nil
 }
 
-func (s *service) ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error){
-	//TODO
-	return nil, nil
+func (s *service) ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error) {
+	labels, err := s.labelRepo.ListGlobalByKey(ctx, key)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting SCCs by key: %s", key)
+	}
+
+	sccs := make([]*model.SccMetadata, 0, len(labels))
+	for _, label := range labels {
+
+		v, ok := label.Value.(string)
+		if !ok {
+			return nil, errors.New("Label value is not of type string")
+		}
+
+		scc := &model.SccMetadata{
+			Subaccount: gjson.Get(v, "subaccount").String(),
+			LocationId: gjson.Get(v, "locationId").Str,
+		}
+
+		sccs = append(sccs, scc)
+	}
+
+	return sccs, nil
 }
 
 // CreateFromTemplate missing godoc

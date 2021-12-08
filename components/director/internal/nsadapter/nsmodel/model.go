@@ -2,6 +2,7 @@ package nsmodel
 
 import (
 	"encoding/json"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
@@ -108,11 +109,13 @@ func validateSCCs(value interface{}) error {
 	return nil
 }
 
-func ToAppRegisterInput(system System, locationID string) model.ApplicationRegisterInput {
+func ToAppRegisterInput(system System, subaccount, locationID string) model.ApplicationRegisterInput {
 	sccLabel := struct {
+		Subaccount string `json:"subaccount"`
 		Host       string `json:"host"`
 		LocationId string `json:"locationId"`
 	}{
+		subaccount,
 		system.Host,
 		locationID,
 	}
@@ -121,13 +124,13 @@ func ToAppRegisterInput(system System, locationID string) model.ApplicationRegis
 		ProviderName: str.Ptr("SAP"),
 		Labels:       map[string]interface{}{"scc": sccLabel, "applicationType": system.SystemType, "systemProtocol": system.Protocol},
 		SystemNumber: str.Ptr(system.SystemNumber),
-		Status:       str.Ptr(system.Status),
+		SystemStatus: str.Ptr(system.Status),
 	}
 }
 
 func ToAppUpdateInput(system System) model.ApplicationUpdateInput {
 	return model.ApplicationUpdateInput{
-		Description: str.Ptr(system.Description),
-		Status:      str.Ptr(system.Status),
+		Description:  str.Ptr(system.Description),
+		SystemStatus: str.Ptr(system.Status),
 	}
 }

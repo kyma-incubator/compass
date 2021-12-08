@@ -23,6 +23,8 @@ type Application struct {
 	Labels                json.RawMessage `json:"labels"`
 	CorrelationIDs        json.RawMessage `json:"correlationIds,omitempty"`
 	Type                  string          `json:"-"`
+	// SystemStatus shows whether the on-premise system is reachable or unreachable
+	SystemStatus *string
 
 	*BaseEntity
 }
@@ -37,6 +39,9 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	if app.Status == nil {
 		app.Status = &ApplicationStatus{}
 	}
+	app.Status.Condition = getApplicationStatusConditionOrDefault(update.StatusCondition)
+	app.Status.Timestamp = timestamp
+
 	if update.Description != nil {
 		app.Description = update.Description
 	}
@@ -49,8 +54,6 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	if update.ProviderName != nil {
 		app.ProviderName = update.ProviderName
 	}
-	app.Status.Condition = getApplicationStatusConditionOrDefault(update.StatusCondition)
-	app.Status.Timestamp = timestamp
 	if update.BaseURL != nil {
 		app.BaseURL = update.BaseURL
 	}
@@ -59,6 +62,9 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	}
 	if update.CorrelationIDs != nil {
 		app.CorrelationIDs = update.CorrelationIDs
+	}
+	if update.SystemStatus != nil {
+		app.SystemStatus = update.SystemStatus
 	}
 }
 
@@ -124,7 +130,7 @@ type ApplicationRegisterInput struct {
 	SystemNumber        *string
 	OrdLabels           json.RawMessage
 	CorrelationIDs      json.RawMessage
-	Status              *string
+	SystemStatus        *string
 }
 
 // ApplicationRegisterInputWithTemplate missing godoc
@@ -153,6 +159,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 		Labels:         i.OrdLabels,
 		CorrelationIDs: i.CorrelationIDs,
 		SystemNumber:   i.SystemNumber,
+		SystemStatus:   i.SystemStatus,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,
@@ -179,7 +186,7 @@ type ApplicationUpdateInput struct {
 	BaseURL             *string
 	Labels              json.RawMessage
 	CorrelationIDs      json.RawMessage
-	Status              *string
+	SystemStatus        *string
 }
 
 type ApplicationWithLabel struct {

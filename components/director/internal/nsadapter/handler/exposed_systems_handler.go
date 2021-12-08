@@ -5,6 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
@@ -16,8 +19,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
-	"io"
-	"net/http"
 )
 
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
@@ -25,9 +26,8 @@ type ApplicationService interface {
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
 	Upsert(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
-	GetSystem(ctx context.Context, subaccount, locationID, virtualHost string) (*model.Application, error)
-	MarkAsUnreachable(ctx context.Context, id string) error
-	ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error)
+	GetSystem(ctx context.Context, locationID, virtualHost string) (*model.Application, error)
+	ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
 	ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error) //TODO check what tenant will be used to execute this query
@@ -296,7 +296,7 @@ func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 }
 
 func (a *Handler) upsertWithSystemNumber(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
-	if _, err := a.appSvc.Upsert(ctx, nsmodel.ToAppRegisterInput(system, scc.LocationID)); err != nil {
+	if _, err := a.appSvc.Upsert(ctx, nsmodel.ToAppRegisterInput(system, scc.Subaccount, scc.LocationID)); err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while upserting Application"))
 		return false
 	}
@@ -305,10 +305,10 @@ func (a *Handler) upsertWithSystemNumber(ctx context.Context, scc nsmodel.SCC, s
 }
 
 func (a *Handler) upsert(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
-	app, err := a.appSvc.GetSystem(ctx, scc.Subaccount, scc.LocationID, system.Host)
+	app, err := a.appSvc.GetSystem(ctx, scc.LocationID, system.Host)
 
 	if err != nil && nsmodel.IsNotFoundError(err) {
-		if _, err := a.appSvc.CreateFromTemplate(ctx, nsmodel.ToAppRegisterInput(system, scc.LocationID), str.Ptr(system.TemplateID)); err != nil {
+		if _, err := a.appSvc.CreateFromTemplate(ctx, nsmodel.ToAppRegisterInput(system, scc.Subaccount, scc.LocationID), str.Ptr(system.TemplateID)); err != nil {
 			log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
 			return false
 		}
@@ -377,7 +377,7 @@ func (a *Handler) markSystemAsUnreachable(ctx context.Context, system *model.App
 
 	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 
-	if err := a.appSvc.MarkAsUnreachable(ctxWithTransaction, system.ID); err != nil {
+	if err := a.appSvc.Update(ctxWithTransaction, system.ID, model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}); err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while marking application with id %s as unreachable", system.ID))
 		return false
 	}
@@ -398,7 +398,7 @@ func (a *Handler) listAppsByScc(ctx context.Context, subaccount, locationID stri
 	}
 	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 
-	apps, err := a.appSvc.ListBySCC(ctxWithTransaction, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":%s}", locationID))})
+	apps, err := a.appSvc.ListBySCC(ctxWithTransaction, labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", locationID, subaccount)))
 	if err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while listing all applications for scc with subaccount %s and location id %s", subaccount, locationID))
 		if err := tx.Rollback(); err != nil {
@@ -476,7 +476,7 @@ func mapExternalToInternal(ctx context.Context, tenants []*model.BusinessTenantM
 	return notSubaccountIDs
 }
 
-func removeMarkedForRemoval( externalIDToTenant map[string]string){
+func removeMarkedForRemoval(externalIDToTenant map[string]string) {
 	for k, v := range externalIDToTenant {
 		if v == "for removal" {
 			delete(externalIDToTenant, k)

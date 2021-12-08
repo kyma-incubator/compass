@@ -3,9 +3,10 @@ package httputil
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"net/http"
 )
 
 func RespondWithError(ctx context.Context, w http.ResponseWriter, status int, err error) {

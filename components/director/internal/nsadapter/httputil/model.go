@@ -2,8 +2,9 @@ package httputil
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 // ErrorResponse missing godoc
@@ -17,7 +18,7 @@ func GetTimeoutMessage() []byte {
 		Message: "timeout",
 	}})
 	if err != nil {
-		log.D().Errorf("while marshaling error message  %s",  err.Error())
+		log.D().Errorf("while marshaling error message  %s", err.Error())
 	}
 
 	return marshal
@@ -35,8 +36,8 @@ func (e Error) Error() string {
 
 // Error missing godoc
 type DetailedError struct {
-	Code    int       `json:"code"`
-	Message string    `json:"message"`
+	Code    int      `json:"code"`
+	Message string   `json:"message"`
 	Details []Detail `json:"details"`
 }
 

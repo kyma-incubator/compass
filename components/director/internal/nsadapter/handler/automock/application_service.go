@@ -61,13 +61,13 @@ func (_m *ApplicationService) GetLabel(ctx context.Context, applicationID string
 	return r0, r1
 }
 
-// GetSystem provides a mock function with given fields: ctx, subaccount, locationID, virtualHost
-func (_m *ApplicationService) GetSystem(ctx context.Context, subaccount string, locationID string, virtualHost string) (*model.Application, error) {
-	ret := _m.Called(ctx, subaccount, locationID, virtualHost)
+// GetSystem provides a mock function with given fields: ctx, locationID, virtualHost
+func (_m *ApplicationService) GetSystem(ctx context.Context, locationID string, virtualHost string) (*model.Application, error) {
+	ret := _m.Called(ctx, locationID, virtualHost)
 
 	var r0 *model.Application
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.Application); ok {
-		r0 = rf(ctx, subaccount, locationID, virtualHost)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Application); ok {
+		r0 = rf(ctx, locationID, virtualHost)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Application)
@@ -75,8 +75,8 @@ func (_m *ApplicationService) GetSystem(ctx context.Context, subaccount string, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, subaccount, locationID, virtualHost)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, locationID, virtualHost)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -85,11 +85,11 @@ func (_m *ApplicationService) GetSystem(ctx context.Context, subaccount string, 
 }
 
 // ListBySCC provides a mock function with given fields: ctx, filter
-func (_m *ApplicationService) ListBySCC(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error) {
+func (_m *ApplicationService) ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*model.ApplicationWithLabel
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) []*model.ApplicationWithLabel); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *labelfilter.LabelFilter) []*model.ApplicationWithLabel); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -98,7 +98,7 @@ func (_m *ApplicationService) ListBySCC(ctx context.Context, filter []*labelfilt
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
@@ -128,20 +128,6 @@ func (_m *ApplicationService) ListSCCs(ctx context.Context, key string) ([]*mode
 	}
 
 	return r0, r1
-}
-
-// MarkAsUnreachable provides a mock function with given fields: ctx, id
-func (_m *ApplicationService) MarkAsUnreachable(ctx context.Context, id string) error {
-	ret := _m.Called(ctx, id)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, id)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }
 
 // SetLabel provides a mock function with given fields: ctx, label
