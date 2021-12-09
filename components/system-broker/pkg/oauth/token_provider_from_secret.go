@@ -163,6 +163,8 @@ func GetAuthorizationToken(ctx context.Context, httpClient httputils.Client, cre
 		}
 	}
 
+	log.C(ctx).Infof("Sending request: %+v", request)
+
 	response, err := httpClient.Do(request)
 	if err != nil {
 		return httputils.Token{}, errors.Wrap(err, "while send request to token endpoint")
