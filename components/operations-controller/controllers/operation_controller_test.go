@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
 	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 
 	"github.com/stretchr/testify/assert"
@@ -78,6 +80,33 @@ var (
 			OperationType: v1alpha1.OperationTypeCreate,
 			WebhookIDs:    []string{webhookGUID},
 			CorrelationID: correlationGUID,
+		},
+	}
+	initializedMockedOperation = &v1alpha1.Operation{
+		ObjectMeta: ctrl.ObjectMeta{
+			Name:              ctrlRequest.Name,
+			Namespace:         ctrlRequest.Namespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.OperationSpec{
+			ResourceID:    appGUID,
+			RequestObject: fmt.Sprintf(`{"TenantID":"%s"}`, tenantGUID),
+			ResourceType:  "application",
+			OperationType: v1alpha1.OperationTypeCreate,
+			WebhookIDs:    []string{webhookGUID},
+			CorrelationID: correlationGUID,
+		},
+		Status: v1alpha1.OperationStatus{
+			Webhooks: []v1alpha1.Webhook{
+				{WebhookID: webhookGUID, State: v1alpha1.StateInProgress},
+			},
+			Conditions: []v1alpha1.Condition{
+				{Type: v1alpha1.ConditionTypeReady, Status: corev1.ConditionFalse},
+				{Type: v1alpha1.ConditionTypeError, Status: corev1.ConditionFalse},
+			},
+			Phase:              v1alpha1.StateInProgress,
+			InitializedAt:      metav1.Time{Time: time.Now()},
+			ObservedGeneration: int64ToInt64Ptr(1),
 		},
 	}
 	originalLogger = *ctrl.Log
@@ -141,7 +170,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_D
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(&v1alpha1.OperationValidationErr{Description: mockedErr.Error()})
@@ -163,8 +192,8 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_D
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, mockedErr.Error())
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, mockedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.FetchApplicationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
@@ -175,7 +204,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_S
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(&v1alpha1.OperationValidationErr{Description: mockedErr.Error()})
@@ -198,9 +227,9 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_S
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, mockedOperation, mockedErr.Error())
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, mockedErr.Error())
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, mockedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.FetchApplicationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -211,7 +240,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_D
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(&v1alpha1.OperationValidationErr{Description: mockedErr.Error()})
@@ -233,9 +262,9 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_D
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, mockedOperation, mockedErr.Error())
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, mockedErr.Error())
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, mockedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.FetchApplicationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -246,7 +275,7 @@ func TestReconcile_FailureToParseRequestObject_When_DirectorUpdateOperationFails
 	stubLoggerAssertion(t, expectedErr, "Unable to parse request object")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
+	operation := *initializedMockedOperation
 	operation.Spec.RequestObject = ""
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -284,7 +313,7 @@ func TestReconcile_FailureToParseRequestObject_When_StatusManagerFailedStatusFai
 	stubLoggerAssertion(t, expectedErr, "Unable to parse request object")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
+	operation := *initializedMockedOperation
 	operation.Spec.RequestObject = ""
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -324,7 +353,7 @@ func TestReconcile_FailureToParseRequestObject_When_DirectorAndStatusManagerUpda
 	stubLoggerAssertion(t, expectedErr, "Unable to parse request object")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
+	operation := *initializedMockedOperation
 	operation.Spec.RequestObject = ""
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -362,8 +391,8 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_Wh
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to fetch application")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.CreationTimestamp = metav1.Time{}
+	operation := *initializedMockedOperation
+	operation.Status.InitializedAt = metav1.Time{}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -401,8 +430,8 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to fetch application")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.CreationTimestamp = metav1.Time{}
+	operation := *initializedMockedOperation
+	operation.Status.InitializedAt = metav1.Time{}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -440,7 +469,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -462,8 +491,8 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
@@ -472,9 +501,8 @@ func TestReconcile_FetchApplicationReturnsNotFoundErr_And_OperationIsDeleteAndIn
 	// GIVEN:
 	stubLoggerAssertion(t, notFoundErr.Error(), fmt.Sprintf("Unable to fetch application with ID %s", appGUID))
 	defer func() { ctrl.Log = &originalLogger }()
-	operation := *mockedOperation
+	operation := *initializedMockedOperation
 	operation.Spec.OperationType = v1alpha1.OperationTypeDelete
-	operation.Status = v1alpha1.OperationStatus{Phase: v1alpha1.StateInProgress}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -510,9 +538,8 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsUpdateAn
 	// GIVEN:
 	stubLoggerAssertion(t, notFoundErr.Error(), fmt.Sprintf("Unable to fetch application with ID %s", appGUID))
 	defer func() { ctrl.Log = &originalLogger }()
-	operation := *mockedOperation
+	operation := *initializedMockedOperation
 	operation.Spec.OperationType = v1alpha1.OperationTypeUpdate
-	operation.Status = v1alpha1.OperationStatus{Phase: v1alpha1.StateInProgress}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -537,7 +564,7 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsUpdateAn
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
 	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, &operation, "Application not found in director")
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
@@ -549,7 +576,7 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsNotDelet
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -570,8 +597,8 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsNotDelet
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
@@ -581,8 +608,8 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsSucceede
 	stubLoggerAssertion(t, notFoundErr.Error(), fmt.Sprintf("Unable to fetch application with ID %s", appGUID))
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status = v1alpha1.OperationStatus{Phase: v1alpha1.StateSuccess}
+	operation := *initializedMockedOperation
+	operation.Status.Phase = v1alpha1.StateSuccess
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -607,7 +634,7 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsSucceede
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
@@ -615,7 +642,7 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsSucceede
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -640,9 +667,9 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_When_StatusManager
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, mockedOperation, mockedErr.Error())
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation, mockedErr.Error())
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -650,7 +677,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_When_StatusManager
 func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -674,9 +701,9 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperatio
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, mockedOperation, mockedErr.Error())
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation, mockedErr.Error())
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -684,7 +711,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasError_And_UpdateOperatio
 func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_When_UpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -709,9 +736,9 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_When_UpdateOpera
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerSuccessStatusCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerSuccessStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.FailedStatusCallCount)
 }
@@ -719,7 +746,7 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_When_UpdateOpera
 func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_And_UpdateOperationSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -743,21 +770,21 @@ func TestReconcile_ApplicationIsReady_And_ApplicationHasNoError_And_UpdateOperat
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerSuccessStatusCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerSuccessStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.FailedStatusCallCount)
 }
 
 func TestReconcile_WebhookIsMissing_When_DirectorUpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
-	expectedErr := fmt.Errorf("missing webhook with ID: %s", mockedOperation.Spec.WebhookIDs[0])
+	expectedErr := fmt.Errorf("missing webhook with ID: %s", initializedMockedOperation.Spec.WebhookIDs[0])
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to retrieve webhook")
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -782,21 +809,21 @@ func TestReconcile_WebhookIsMissing_When_DirectorUpdateOperationFails_ShouldResu
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, expectedErr.Error())
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, expectedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
 
 func TestReconcile_WebhookIsMissing_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
-	expectedErr := fmt.Errorf("missing webhook with ID: %s", mockedOperation.Spec.WebhookIDs[0])
+	expectedErr := fmt.Errorf("missing webhook with ID: %s", initializedMockedOperation.Spec.WebhookIDs[0])
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to retrieve webhook")
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -822,22 +849,22 @@ func TestReconcile_WebhookIsMissing_When_StatusManagerFailedStatusFails_ShouldRe
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, mockedOperation, expectedErr.Error())
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, expectedErr.Error())
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation, expectedErr.Error())
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, expectedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
 
 func TestReconcile_WebhookIsMissing_When_DirectorAndStatusManagerUpdateSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
-	expectedErr := fmt.Errorf("missing webhook with ID: %s", mockedOperation.Spec.WebhookIDs[0])
+	expectedErr := fmt.Errorf("missing webhook with ID: %s", initializedMockedOperation.Spec.WebhookIDs[0])
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to retrieve webhook")
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -862,10 +889,10 @@ func TestReconcile_WebhookIsMissing_When_DirectorAndStatusManagerUpdateSucceeds_
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, mockedOperation, expectedErr.Error())
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, expectedErr.Error())
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation, expectedErr.Error())
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, expectedErr.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -873,7 +900,7 @@ func TestReconcile_WebhookIsMissing_When_DirectorAndStatusManagerUpdateSucceeds_
 func TestReconcile_ReconciliationTimeoutReached_When_DirectorUpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -898,9 +925,9 @@ func TestReconcile_ReconciliationTimeoutReached_When_DirectorUpdateOperationFail
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, recerr.ErrWebhookTimeoutReached.Error())
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, recerr.ErrWebhookTimeoutReached.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount)
 }
@@ -908,7 +935,7 @@ func TestReconcile_ReconciliationTimeoutReached_When_DirectorUpdateOperationFail
 func TestReconcile_ReconciliationTimeoutReached_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -934,10 +961,10 @@ func TestReconcile_ReconciliationTimeoutReached_When_StatusManagerFailedStatusFa
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, mockedOperation, recerr.ErrWebhookTimeoutReached.Error())
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, recerr.ErrWebhookTimeoutReached.Error())
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation, recerr.ErrWebhookTimeoutReached.Error())
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, recerr.ErrWebhookTimeoutReached.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -945,7 +972,7 @@ func TestReconcile_ReconciliationTimeoutReached_When_StatusManagerFailedStatusFa
 func TestReconcile_ReconciliationTimeoutReached_And_DirectorAndStatusManagerUpdateSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -970,10 +997,10 @@ func TestReconcile_ReconciliationTimeoutReached_And_DirectorAndStatusManagerUpda
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, mockedOperation, recerr.ErrWebhookTimeoutReached.Error())
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, recerr.ErrWebhookTimeoutReached.Error())
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation, recerr.ErrWebhookTimeoutReached.Error())
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, recerr.ErrWebhookTimeoutReached.Error())
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount)
 }
@@ -984,7 +1011,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	defer func() { ctrl.Log = &originalLogger }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -1012,9 +1039,9 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertWebhookDoCalled(t, webhookClient, mockedOperation, &application.Result.Webhooks[0])
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertWebhookDoCalled(t, webhookClient, initializedMockedOperation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount,
 		webhookClient.PollCallCount)
@@ -1027,7 +1054,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
+	operation := *initializedMockedOperation
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -1060,7 +1087,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
 	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, expectedErr.Error())
 	assertWebhookDoCalled(t, webhookClient, &operation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
@@ -1075,7 +1102,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
+	operation := *initializedMockedOperation
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -1111,7 +1138,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
 	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, &operation, expectedErr.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, expectedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, expectedErr.Error())
 	assertWebhookDoCalled(t, webhookClient, &operation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount,
@@ -1125,7 +1152,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
+	operation := *initializedMockedOperation
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -1160,7 +1187,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
 	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, &operation, expectedErr.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, expectedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, expectedErr.Error())
 	assertWebhookDoCalled(t, webhookClient, &operation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount,
@@ -1176,7 +1203,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	stubLoggerAssertion(t, expectedErr.Error(), "gone response status")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
+	operation := *initializedMockedOperation
 	typeDelete := v1alpha1.OperationTypeDelete
 	operation.Spec.OperationType = typeDelete
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
@@ -1224,8 +1251,8 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
+	operation := *initializedMockedOperation
+	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -1261,7 +1288,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
 	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
 	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, &operation, mockedErr.Error())
 	assertWebhookDoCalled(t, webhookClient, &operation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
@@ -1274,8 +1301,8 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
+	operation := *initializedMockedOperation
+	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -1314,7 +1341,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
 	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, &operation, mockedErr.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, mockedErr.Error())
 	assertWebhookDoCalled(t, webhookClient, &operation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount,
@@ -1326,8 +1353,8 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
+	operation := *initializedMockedOperation
+	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -1365,7 +1392,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
 	assertStatusManagerFailedStatusCalledWithOperation(t, statusMgrClient, &operation, mockedErr.Error())
 	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, mockedOperation, mockedErr.Error())
+	assertDirectorUpdateOperationWithErrorCalled(t, directorClient, initializedMockedOperation, mockedErr.Error())
 	assertWebhookDoCalled(t, webhookClient, &operation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount,
@@ -1375,7 +1402,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 func TestReconcile_OperationWithoutWebhookPollURL_And_AsyncWebhookExecutionSucceeds_When_StatusManagerInProgressWithPollURLFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -1404,10 +1431,10 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_AsyncWebhookExecutionSucce
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerInProgressWithPollURLCalled(t, statusMgrClient, mockedOperation, mockedLocationURL)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertWebhookDoCalled(t, webhookClient, mockedOperation, &application.Result.Webhooks[0])
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerInProgressWithPollURLCalled(t, statusMgrClient, initializedMockedOperation, mockedLocationURL)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertWebhookDoCalled(t, webhookClient, initializedMockedOperation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount,
 		statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount,
 		webhookClient.PollCallCount)
@@ -1416,7 +1443,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_AsyncWebhookExecutionSucce
 func TestReconcile_OperationWithoutWebhookPollURL_And_AsyncWebhookExecutionSucceeds_And_StatusManagerInProgressWithPollURLSucceeds_ShouldResultRequeueNoError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -1444,10 +1471,10 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_AsyncWebhookExecutionSucce
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerInProgressWithPollURLCalled(t, statusMgrClient, mockedOperation, mockedLocationURL)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertWebhookDoCalled(t, webhookClient, mockedOperation, &application.Result.Webhooks[0])
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerInProgressWithPollURLCalled(t, statusMgrClient, initializedMockedOperation, mockedLocationURL)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertWebhookDoCalled(t, webhookClient, initializedMockedOperation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, directorClient.UpdateOperationCallCount, statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount,
 		statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount,
 		webhookClient.PollCallCount)
@@ -1456,7 +1483,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_AsyncWebhookExecutionSucce
 func TestReconcile_OperationWithoutWebhookPollURL_And_SyncWebhookExecutionSucceeds_When_DirectorUpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -1485,10 +1512,10 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_SyncWebhookExecutionSuccee
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalled(t, directorClient, mockedOperation)
-	assertWebhookDoCalled(t, webhookClient, mockedOperation, &application.Result.Webhooks[0])
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorUpdateOperationCalled(t, directorClient, initializedMockedOperation)
+	assertWebhookDoCalled(t, webhookClient, initializedMockedOperation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.SuccessStatusCallCount, statusMgrClient.FailedStatusCallCount,
 		webhookClient.PollCallCount)
@@ -1497,7 +1524,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_SyncWebhookExecutionSuccee
 func TestReconcile_OperationWithoutWebhookPollURL_And_SyncWebhookExecutionSucceeds_When_StatusManagerSuccessStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -1527,11 +1554,11 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_SyncWebhookExecutionSuccee
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerSuccessStatusCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalled(t, directorClient, mockedOperation)
-	assertWebhookDoCalled(t, webhookClient, mockedOperation, &application.Result.Webhooks[0])
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerSuccessStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorUpdateOperationCalled(t, directorClient, initializedMockedOperation)
+	assertWebhookDoCalled(t, webhookClient, initializedMockedOperation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.FailedStatusCallCount,
 		webhookClient.PollCallCount)
@@ -1540,7 +1567,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_SyncWebhookExecutionSuccee
 func TestReconcile_OperationWithoutWebhookPollURL_And_SyncWebhookExecutionSucceeds_And_DirectorAndStatusManagerUpdateSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
-	k8sClient.GetReturns(mockedOperation, nil)
+	k8sClient.GetReturns(initializedMockedOperation, nil)
 
 	statusMgrClient := &controllersfakes.FakeStatusManager{}
 	statusMgrClient.InitializeReturns(nil)
@@ -1569,11 +1596,11 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_SyncWebhookExecutionSuccee
 
 	// SPECIFIC CLIENT ASSERTIONS:
 	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
-	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertStatusManagerSuccessStatusCalledWithOperation(t, statusMgrClient, mockedOperation)
-	assertDirectorFetchApplicationCalled(t, directorClient, mockedOperation.Spec.ResourceID, tenantGUID)
-	assertDirectorUpdateOperationCalled(t, directorClient, mockedOperation)
-	assertWebhookDoCalled(t, webhookClient, mockedOperation, &application.Result.Webhooks[0])
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertStatusManagerSuccessStatusCalledWithOperation(t, statusMgrClient, initializedMockedOperation)
+	assertDirectorFetchApplicationCalled(t, directorClient, initializedMockedOperation.Spec.ResourceID, tenantGUID)
+	assertDirectorUpdateOperationCalled(t, directorClient, initializedMockedOperation)
+	assertWebhookDoCalled(t, webhookClient, initializedMockedOperation, &application.Result.Webhooks[0])
 	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
 		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.FailedStatusCallCount,
 		webhookClient.PollCallCount)
@@ -1585,8 +1612,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_Di
 	stubLoggerAssertion(t, expectedErr, "Unable to calculate next poll time")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: "abc"}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: "abc"}}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -1632,8 +1659,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_St
 	stubLoggerAssertion(t, expectedErr, "Unable to calculate next poll time")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: "abc"}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: "abc"}}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -1681,8 +1708,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_Di
 	stubLoggerAssertion(t, expectedErr, "Unable to calculate next poll time")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: "abc"}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: "abc"}}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -1729,8 +1756,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_Shoul
 	stubLoggerAssertion(t, expectedErr, "Unable to calculate next poll time")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: time.Now().Format(time.RFC3339Nano)}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: time.Now().Format(time.RFC3339Nano)}}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -1774,8 +1801,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook Poll request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -1820,8 +1847,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_FatalEr
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook Poll request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -1870,8 +1897,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_FatalEr
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook Poll request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -1922,8 +1949,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_FatalEr
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook Poll request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -1971,9 +1998,9 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook Poll request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
-	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -2024,9 +2051,9 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook Poll request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
-	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -2079,9 +2106,9 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook Poll request")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
-	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -2130,8 +2157,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_When_StatusManagerInProgressWithPollURLAndLastTimestampFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -2175,8 +2202,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_When_WebhookTimeoutNotReached_ShouldResultRequeueAfterNoError(t *testing.T) {
 	// GIVEN:
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -2219,9 +2246,9 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_And_WebhookTimeoutReached_When_DirectorUpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
-	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -2270,9 +2297,9 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_And_WebhookTimeoutReached_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
-	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -2322,9 +2349,9 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsInProgress_And_WebhookTimeoutReached_And_DirectorAndStatusManagerUpdateSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
-	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(&operation, nil)
@@ -2373,8 +2400,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsSucceeded_When_DirectorUpdateOperationFails_ShouldResultRequeueAfterNoError(t *testing.T) {
 	// GIVEN:
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -2418,8 +2445,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsSucceeded_When_StatusManagerSuccessStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -2465,8 +2492,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsSucceeded_And_DirectorAndStatusManagerUpdateSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -2511,8 +2538,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsFailed_When_DirectorUpdateOperationFails_ShouldResultRequeueAfterNoError(t *testing.T) {
 	// GIVEN:
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -2556,8 +2583,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsFailed_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -2603,8 +2630,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_StatusIsFailed_And_DirectorAndStatusManagerUpdateSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -2651,7 +2678,7 @@ func TestReconcile_OperationNoWebhookPollURL_And_PollIntervalHasNotPassed_And_Sh
 	// GIVEN:
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
+	operation := *initializedMockedOperation
 	operation.Spec.WebhookIDs = []string{}
 	operation.Status.Webhooks = []v1alpha1.Webhook{}
 
@@ -2699,8 +2726,8 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	stubLoggerAssertion(t, fmt.Sprintf("unexpected poll status response: %s", unknownStatus), "unknown status code received")
 	defer func() { ctrl.Log = &originalLogger }()
 
-	operation := *mockedOperation
-	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: mockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
+	operation := *initializedMockedOperation
+	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook Poll is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
@@ -2760,5 +2787,9 @@ func strToStrPtr(str string) *string {
 }
 
 func intToIntPtr(i int) *int {
+	return &i
+}
+
+func int64ToInt64Ptr(i int64) *int64 {
 	return &i
 }
