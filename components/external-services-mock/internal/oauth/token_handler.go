@@ -47,8 +47,8 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 
 	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
-		body, err := ioutil.ReadAll(r.Body)
-		if err == nil {
+		body, e := ioutil.ReadAll(r.Body)
+		if e == nil {
 			log.C(r.Context()).Infof("Body: %s", body)
 		}
 
