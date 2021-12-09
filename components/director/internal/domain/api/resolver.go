@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// APIService missing godoc
+// APIService is responsible for the service-layer APIDefinition operations.
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
@@ -25,13 +25,13 @@ type APIService interface {
 	ListFetchRequests(ctx context.Context, specIDs []string) ([]*model.FetchRequest, error)
 }
 
-// RuntimeService missing godoc
+// RuntimeService is responsible for the service-layer Runtime operations.
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 }
 
-// APIConverter missing godoc
+// APIConverter converts EventDefinitions between the model.APIDefinition service-layer representation and the graphql-layer representation.
 //go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
@@ -40,20 +40,20 @@ type APIConverter interface {
 	InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, *model.SpecInput, error)
 }
 
-// FetchRequestConverter missing godoc
+// FetchRequestConverter converts FetchRequest between the model.FetchRequest service-layer representation and the graphql-layer one.
 //go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
-// BundleService missing godoc
+// BundleService is responsible for the service-layer Bundle operations.
 //go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
-// Resolver missing godoc
+// Resolver is an object responsible for resolver-layer APIDefinition operations
 type Resolver struct {
 	transact      persistence.Transactioner
 	svc           APIService
@@ -66,7 +66,7 @@ type Resolver struct {
 	specConverter SpecConverter
 }
 
-// NewResolver missing godoc
+// NewResolver returns a new object responsible for resolver-layer APIDefinition operations.
 func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc RuntimeService, bndlSvc BundleService, bndlRefSvc BundleReferenceService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
 	return &Resolver{
 		transact:      transact,
@@ -81,7 +81,7 @@ func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc Runt
 	}
 }
 
-// AddAPIDefinitionToBundle missing godoc
+// AddAPIDefinitionToBundle adds an APIDefinition to a Bundle with a given ID,
 func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -140,7 +140,7 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 	return gqlAPI, nil
 }
 
-// UpdateAPIDefinition missing godoc
+// UpdateAPIDefinition updates an APIDefinition by its ID.
 func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -191,7 +191,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 	return gqlAPI, nil
 }
 
-// DeleteAPIDefinition missing godoc
+// DeleteAPIDefinition deletes an APIDefinition by its ID.
 func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -237,7 +237,7 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 	return gqlAPI, nil
 }
 
-// RefetchAPISpec missing godoc
+// RefetchAPISpec refetches an APISpec for APIDefinition with given ID.
 func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -277,13 +277,13 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 	return converted, nil
 }
 
-// FetchRequest missing godoc
+// FetchRequest returns a FetchRequest by a given EventSpec via dataloaders.
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
 	params := dataloader.ParamFetchRequestAPIDef{ID: obj.ID, Ctx: ctx}
 	return dataloader.ForFetchRequestAPIDef(ctx).FetchRequestAPIDefByID.Load(params)
 }
 
-// FetchRequestAPIDefDataLoader missing godoc
+// FetchRequestAPIDefDataLoader is the dataloader implementation.
 func (r *Resolver) FetchRequestAPIDefDataLoader(keys []dataloader.ParamFetchRequestAPIDef) ([]*graphql.FetchRequest, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No APIDef specs found")}

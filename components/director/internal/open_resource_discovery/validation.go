@@ -1039,7 +1039,7 @@ func validateAPIPartOfConsumptionBundles(value interface{}, targetURLs json.RawM
 func validateDefaultConsumptionBundle(value interface{}, partOfConsumptionBundles []*model.ConsumptionBundleReference) error {
 	defaultConsumptionBundle, ok := value.(*string)
 	if !ok {
-		return errors.New("error while casting to defaultConsumptionBundle")
+		return errors.New(fmt.Sprintf("expected string value for defaultConsumptionBundle, found %T", value))
 	}
 
 	if defaultConsumptionBundle == nil {
@@ -1055,7 +1055,7 @@ func validateDefaultConsumptionBundle(value interface{}, partOfConsumptionBundle
 	}
 
 	if !isFound {
-		return errors.New("defaultConsumptionBundle MUST be an existing option in the corresponding partOfConsumptionBundles array")
+		return errors.New("defaultConsumptionBundle must be an existing option in the corresponding partOfConsumptionBundles array")
 	}
 	return nil
 }
