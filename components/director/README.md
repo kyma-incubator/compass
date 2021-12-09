@@ -2,6 +2,13 @@
 
 The Director exposes GraphQL API.
 
+- [Development](#development)
+    - [Prerequisites](#prerequisites)
+    - [Configuration](#configuration)
+- [Local Development](#local-development)
+    - [Prerequisites](#local-prerequisites)
+- [Usage](#usage)
+
 ## Development
 
 After you introduce changes in the GraphQL schema, run the `gqlgen.sh` script.
@@ -25,9 +32,9 @@ where `tenant` is any valid UUID and `authorization` is JWT token with all scope
 
 You can set `tenant` header as any UUID.
 
-### Prerequisites
+<h3 id="prerequisites">Prerequisites</h3>
 
-> **NOTE:** Use script `run.sh` to perform these steps automatically. Check [Local Development](#local-development) section.
+> **NOTE:** Use script `run.sh` to perform these steps automatically. Check [Local Development](#local-development) section for more information.
 
 Before you can run Director you have to configure access to PostgreSQL database. For development purpose you can run PostgreSQL instance in the docker container executing following command:
 
@@ -41,7 +48,7 @@ When you have PostgreSQL instance running you must import the database schema ru
 $ PGPASSWORD=pgsql@12345 psql -U postgres -W -h 127.0.0.1 -f <(cat components/schema-migrator/migrations/*.up.sql)
 ```
 
-## Configuration
+### Configuration
 
 The Director binary allows to override some configuration parameters. You can specify following environment variables.
 
@@ -78,21 +85,27 @@ The Director binary allows to override some configuration parameters. You can sp
 | **APP_LEGACY_CONNECTOR_URL**                 | None                            | The URL of the legacy Connector signing request info endpoint      |
 | **APP_DEFAULT_SCENARIO_ENABLED**             | `true`                          | The toggle that enables automatic assignment of default scenario   |
 
-## Usage
-
-Find examples of GraphQL calls [here](examples/README.md).
-
 
 ## Local Development
+
+<h3 id="local-prerequisites">Prerequisites</h3>
+
+> **NOTE:** The kubectl version installed on your machine must be v1.18 or higher.
+
 There is a `./run.sh` script that automatically runs director locally with the necessary configuration and environment variables. There are several flags that can be used:
 - `--skip-db-cleanup` - Does not delete the DB on script termination.
 - `--reuse-db` - Can be used in combination with `--skip-db-cleanup` to reuse an already existing DB.
 - `--dump-db` - Starts director with DB, populated with data from CMP development environment.
 - `--debug` - Starts director in debugging mode on default port `40000`. `Note:` As a prerequisite, you must have `delve` installed on your machine. 
 
-> **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret. Locally, you can override the secret data with certificate and key that you need for testing or debugging. As a prerequisite, the kubectl version installed on your machine must be v1.18 or higher. Check the table below for environment variables.
+> **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret. Locally, you can override the secret data with certificate and key that you need for testing or debugging. Check the table below for environment variables.
 
 | Environment variable                         | Default value                   | Description                                                        |
 | -------------------------------------------- | ------------------------------- | ------------------------------------------------------------------ |
 | **APP_EXTERNAL_CLIENT_CERT_VALUE**           | `certValue`                     | External client certificate, which is used to populate the certificate cache   | 
 | **APP_EXTERNAL_CLIENT_KEY_VALUE**            | `keyValue`                      | External client certificate key, which is added into certificate cache   | 
+
+
+## Usage
+
+Find examples of GraphQL calls [here](examples/README.md).
