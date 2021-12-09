@@ -216,6 +216,8 @@ spec:
         image: eu.gcr.io/kyma-project/tpi/node-exporter:1.0.1-1de56388
         imagePullPolicy: IfNotPresent
         name: node-exporter
+        livenessProbe: null
+        readinessProbe: null
         ports:
         - containerPort: 9100
           hostPort: 9100
