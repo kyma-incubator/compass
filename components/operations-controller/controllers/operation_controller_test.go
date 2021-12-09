@@ -47,6 +47,7 @@ import (
 const (
 	appGUID                = "f92f1fce-631a-4231-b43a-8f9fccebb22c"
 	correlationGUID        = "dea327aa-c173-46d5-9431-497e4057a83a"
+	correlationGUID2       = "ce887479-bccf-4bf1-96a9-05b731196b1e"
 	anotherCorrelationGUID = "575b8042-8bb1-4ffa-9464-8ec633eae0d3"
 	tenantGUID             = "4b7aa2e1-e060-4633-a795-1be0d207c3e2"
 	webhookGUID            = "d09731af-bc0a-4abf-9b09-f3c9d25d064b"
