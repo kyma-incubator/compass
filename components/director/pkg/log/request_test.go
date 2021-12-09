@@ -1,9 +1,12 @@
 package log_test
 
 import (
+	"bytes"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -53,4 +56,38 @@ func TestRequestLoggerUseCorrelationIDFromHeaderIfProvided(t *testing.T) {
 		require.True(t, exists)
 		require.Equal(t, correlationID, correlationIDFromLogger)
 	})).ServeHTTP(response, request)
+}
+
+func TestRequestLoggerWithMDC(t *testing.T) {
+	response := httptest.NewRecorder()
+	testURL, err := url.Parse("http://localhost:8080")
+	require.NoError(t, err)
+
+	request := &http.Request{
+		Method: http.MethodPost,
+		URL:    testURL,
+		Header: map[string][]string{},
+	}
+
+	oldLogger := logrus.StandardLogger().Out
+	buf := bytes.Buffer{}
+	logrus.SetOutput(&buf)
+	defer logrus.SetOutput(oldLogger)
+
+	handler := log.RequestLogger()
+	handler(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		hasMdc := false
+		if mdc := log.MdcFromContext(request.Context()); nil != mdc {
+			hasMdc = true
+			mdc.Set("test", "test")
+		}
+		require.True(t, hasMdc, "There is no MDC in the request context")
+
+		//remove the "Started handling ..." line
+		buf.Reset()
+	})).ServeHTTP(response, request)
+
+	logLine := buf.String()
+	hasMdcMessage := strings.Contains(logLine, "test=test")
+	require.True(t, hasMdcMessage, "The log line does not contain the MDC content: %v", logLine)
 }

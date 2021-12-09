@@ -26,6 +26,13 @@ const (
 	JwksKeyIDKey = "kid"
 )
 
+const (
+	logKeyConsumerType  string = "consumer-type"
+	logKeyConsumerId           = "consumer-id"
+	logKeyTokenClientId        = "token-client-id"
+	logKeyFlow                 = "flow"
+)
+
 // ClaimsValidator missing godoc
 //go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore
 type ClaimsValidator interface {
@@ -91,6 +98,13 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				log.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims: %v", err)
 				apperrors.WriteAppError(ctx, w, err, http.StatusUnauthorized)
 				return
+			}
+
+			if mdc := log.MdcFromContext(ctx); nil != mdc {
+				mdc.Set(logKeyConsumerType, tokenClaims.ConsumerType)
+				mdc.Set(logKeyConsumerId, tokenClaims.ConsumerID)
+				mdc.Set(logKeyTokenClientId, tokenClaims.TokenClientID)
+				mdc.Set(logKeyFlow, tokenClaims.Flow)
 			}
 
 			if err := a.claimsValidator.Validate(ctx, *tokenClaims); err != nil {

@@ -1,9 +1,11 @@
 package config
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 
-	"github.com/99designs/gqlgen/handler"
+	"github.com/99designs/gqlgen/graphql/handler"
+	handler2 "github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
@@ -22,10 +24,12 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 	}
 
 	externalExecutableSchema := externalschema.NewExecutableSchema(gqlInternalCfg)
+	gqlServer := handler.NewDefaultServer(externalExecutableSchema)
+	gqlServer.Use(log.NewGqlLoggingInterceptor())
 
 	externalRouter := mux.NewRouter()
-	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
+	externalRouter.HandleFunc("/", handler2.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
+	externalRouter.HandleFunc(cfg.APIEndpoint, gqlServer.ServeHTTP)
 	externalRouter.HandleFunc("/healthz", healthz.NewHTTPHandler())
 
 	externalRouter.Use(middlewares...)

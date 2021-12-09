@@ -10,6 +10,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	logKeyConsumerType  string = "consumer-type"
+	logKeyCertClientId         = "cert-client-id"
+	logKeyTokenClientId        = "token-client-id"
+)
+
 type authContextMiddleware struct {
 }
 
@@ -70,6 +76,12 @@ func (acm *authContextMiddleware) PropagateAuthentication(handler http.Handler) 
 			if consumerType != "" {
 				r = r.WithContext(PutIntoContext(r.Context(), ConsumerType, consumerType))
 			}
+
+			if mdc := log.MdcFromContext(ctx); nil != mdc {
+				if consumerType != "" {
+					mdc.Set(logKeyConsumerType, tokenClaims.ConsumerType)
+				}
+			}
 		}
 
 		clientIdFromToken := r.Header.Get(oathkeeper.ClientIdFromTokenHeader)
@@ -81,6 +93,14 @@ func (acm *authContextMiddleware) PropagateAuthentication(handler http.Handler) 
 		clientCertificateHash := r.Header.Get(oathkeeper.ClientCertificateHashHeader)
 		r = r.WithContext(PutIntoContext(r.Context(), ClientCertificateHashKey, clientCertificateHash))
 
+		if mdc := log.MdcFromContext(ctx); nil != mdc {
+			if clientIdFromToken != "" {
+				mdc.Set(logKeyTokenClientId, clientIdFromToken)
+			}
+			if clientIdFromCertificate != "" {
+				mdc.Set(logKeyCertClientId, clientIdFromCertificate)
+			}
+		}
 		handler.ServeHTTP(w, r)
 	})
 }
