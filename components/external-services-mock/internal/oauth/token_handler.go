@@ -43,8 +43,15 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	log.C(r.Context()).Infof("Generate: %+v", r)
 
 	authorization := r.Header.Get("authorization")
+	log.C(r.Context()).Infof("Authorization: %s", authorization)
+
 	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
+		body, err := ioutil.ReadAll(r.Body)
+		if err == nil {
+			log.C(r.Context()).Infof("Body: %s", body)
+		}
+
 		log.C(r.Context()).Errorf("client secret not found in header: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "client secret not found in header"), http.StatusBadRequest)
 		return
