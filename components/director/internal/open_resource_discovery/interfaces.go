@@ -43,8 +43,8 @@ type BundleReferenceService interface {
 // APIService is responsible for the service-layer API operations.
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
-	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64) (string, error)
-	UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64) error
+	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64, defaultBundleID string) (string, error)
+	UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64, defaultBundleID string) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error)
 }
@@ -52,8 +52,8 @@ type APIService interface {
 // EventService is responsible for the service-layer Event operations.
 //go:generate mockery --name=EventService --output=automock --outpkg=automock --case=underscore
 type EventService interface {
-	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64) (string, error)
-	UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsForCreation []string, bundleIDsForDeletion []string, eventHash uint64) error
+	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64, defaultBundleID string) (string, error)
+	UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error)
 }

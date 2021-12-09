@@ -48,6 +48,7 @@ const (
 	secondExpectedBundleTitle               = "BUNDLE TITLE 2"
 	expectedBundleDescription               = "lorem ipsum dolor nsq sme"
 	secondExpectedBundleDescription         = "foo bar"
+	firstBundleOrdID                        = "ns:consumptionBundle:BUNDLE_ID:v1"
 	expectedPackageTitle                    = "PACKAGE 1 TITLE"
 	expectedPackageDescription              = "lorem ipsum dolor set"
 	expectedProductTitle                    = "PRODUCT TITLE"
@@ -121,9 +122,15 @@ func TestORDAggregator(t *testing.T) {
 		systemInstancesMap[expectedFifthSystemInstanceName] = expectedFifthSystemInstanceDescription
 		systemInstancesMap[expectedSixthSystemInstanceName] = expectedSixthSystemInstanceDescription
 
+		apisDefaultBundleMap := make(map[string]string)
+		apisDefaultBundleMap[firstAPIExpectedTitle] = firstBundleOrdID
+
 		eventsMap := make(map[string]string)
 		eventsMap[firstEventTitle] = firstEventDescription
 		eventsMap[secondEventTitle] = secondEventDescription
+
+		eventsDefaultBundleMap := make(map[string]string)
+		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdID
 
 		bundlesMap := make(map[string]string)
 		bundlesMap[expectedBundleTitle] = expectedBundleDescription
@@ -240,6 +247,7 @@ func TestORDAggregator(t *testing.T) {
 			}
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles)
 			assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, expectedNumberOfBundles)
+			ordAndInternalIDsMappingForBundles := storeMappingBetweenORDAndInternalBundleID(t, respBody, expectedNumberOfBundles)
 			t.Log("Successfully verified bundles")
 
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$expand=apis&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
@@ -271,6 +279,10 @@ func TestORDAggregator(t *testing.T) {
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfAPIs, firstAPIExpectedTitle, firstAPIExpectedDescription, descriptionField)
 			t.Log("Successfully verified apis")
 
+			// Verify defaultBundle for apis
+			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfAPIs, apisDefaultBundleMap, ordAndInternalIDsMappingForBundles)
+			t.Log("Successfully verified defaultBundles for apis")
+
 			// Verify the api spec
 			specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
 			require.Equal(t, expectedNumberOfResourceDefinitionsPerAPI, len(specs))
@@ -301,6 +313,10 @@ func TestORDAggregator(t *testing.T) {
 			}
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEvents)
 			t.Log("Successfully verified events")
+
+			// Verify defaultBundle for events
+			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfEvents, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
+			t.Log("Successfully verified defaultBundles for events")
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
@@ -347,4 +363,20 @@ func verifyORDDocument(interval time.Duration, timeout time.Duration, conditiona
 
 func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, headers map[string][]string) string {
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
+}
+
+func storeMappingBetweenORDAndInternalBundleID(t *testing.T, respBody string, numberOfEntities int) map[string]string {
+	ordAndInternalIDsMapping := make(map[string]string)
+
+	for i := 0; i < numberOfEntities; i++ {
+		internalBundleID := gjson.Get(respBody, fmt.Sprintf("value.%d.id", i)).String()
+		require.NotEmpty(t, internalBundleID)
+
+		ordID := gjson.Get(respBody, fmt.Sprintf("value.%d.ordId", i)).String()
+		require.NotEmpty(t, ordID)
+
+		ordAndInternalIDsMapping[internalBundleID] = ordID
+	}
+
+	return ordAndInternalIDsMapping
 }
