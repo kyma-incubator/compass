@@ -9,6 +9,7 @@ type BundleReference struct {
 	ObjectType          BundleReferenceObjectType
 	ObjectID            *string
 	APIDefaultTargetURL *string
+	IsDefaultBundle     bool
 }
 
 // BundleReferenceObjectType missing godoc
@@ -24,6 +25,7 @@ const (
 // BundleReferenceInput missing godoc
 type BundleReferenceInput struct {
 	APIDefaultTargetURL *string
+	IsDefaultBundle     bool
 }
 
 // ToBundleReference missing godoc
@@ -42,5 +44,6 @@ func (b *BundleReferenceInput) ToBundleReference(id string, objectType BundleRef
 		ObjectType:          objectType,
 		ObjectID:            objectID,
 		APIDefaultTargetURL: b.APIDefaultTargetURL,
+		IsDefaultBundle:     b.IsDefaultBundle,
 	}, nil
 }
