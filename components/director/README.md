@@ -7,6 +7,7 @@ The Director exposes GraphQL API.
     - [Configuration](#configuration)
 - [Local Development](#local-development)
     - [Prerequisites](#local-prerequisites)
+    - [Run](#local-run)
 - [Usage](#usage)
 
 ## Development
@@ -90,13 +91,16 @@ The Director binary allows to override some configuration parameters. You can sp
 
 <h3 id="local-prerequisites">Prerequisites</h3>
 
-> **NOTE:** The kubectl version installed on your machine must be v1.18 or higher.
+- You must install `kubectl` version 1.18 or higher.
+- To use `--debug` flag, first you must install `delve`.
+
+<h3 id="local-run">Run</h3>
 
 There is a `./run.sh` script that automatically runs director locally with the necessary configuration and environment variables. There are several flags that can be used:
 - `--skip-db-cleanup` - Does not delete the DB on script termination.
 - `--reuse-db` - Can be used in combination with `--skip-db-cleanup` to reuse an already existing DB.
 - `--dump-db` - Starts director with DB, populated with data from CMP development environment.
-- `--debug` - Starts director in debugging mode on default port `40000`. `Note:` As a prerequisite, you must have `delve` installed on your machine. 
+- `--debug` - Starts director in debugging mode on default port `40000`.
 
 > **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret. Locally, you can override the secret data with certificate and key that you need for testing or debugging. Check the table below for environment variables.
 
