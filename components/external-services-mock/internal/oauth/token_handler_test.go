@@ -133,6 +133,4 @@ func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, "tenant1", claims.Tenant)
-	require.Equal(t, id, claims.Client)
-	require.Equal(t, scopes, claims.Scopes)
 }

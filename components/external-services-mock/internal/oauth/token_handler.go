@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -79,22 +78,10 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 		return
 	}
 
-	contentType := r.Header.Get("Content-Type")
-	if contentType == "application/x-www-form-urlencoded" {
-		if form, err := url.ParseQuery(string(body)); err != nil {
-			log.C(r.Context()).Errorf("Cannot parse form. Error: %s", err)
-		} else {
-			client := form.Get("client_id")
-			scopes := form.Get("scopes")
-			claims["client_id"] = client
-			claims["scopes"] = scopes
-		}
-	} else {
-		if len(body) > 0 {
-			err = json.Unmarshal(body, &claims)
-			if err != nil {
-				log.C(r.Context()).WithError(err).Infof("Cannot json unmarshal the request body. Error: %s. Proceeding with empty claims", err)
-			}
+	if len(body) > 0 {
+		err = json.Unmarshal(body, &claims)
+		if err != nil {
+			log.C(r.Context()).WithError(err).Infof("Cannot json unmarshal the request body. Error: %s. Proceeding with empty claims", err)
 		}
 	}
 

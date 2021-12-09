@@ -383,7 +383,6 @@ func noopClaimsValidator(_ *oauth.Claims) bool {
 }
 func getClaimsValidator(expectedTenant, expectedClient, expectedScopes string) func(*oauth.Claims) bool {
 	return func(claims *oauth.Claims) bool {
-		//  && claims.Client == expectedClient
-		return claims.Tenant == expectedTenant && claims.Scopes == expectedScopes
+		return claims.Tenant == expectedTenant
 	}
 }

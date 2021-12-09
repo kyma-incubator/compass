@@ -49,7 +49,7 @@ data:
   global.systemFetcher.oauth.secret: "client_secret"
   global.systemFetcher.oauth.tokenBaseUrl: "compass-external-services-mock"
   global.systemFetcher.oauth.tokenPath: "/secured/oauth/token"
-  global.systemFetcher.oauth.tokenEndpointProtocol: "http"
+  global.systemFetcher.oauth.tokenEndpointProtocol: "https"
   global.systemFetcher.oauth.scopesClaim: "scopes"
   global.systemFetcher.oauth.tenantHeaderName: "x-zid"
   global.systemFetcher.oauth.tokenRequestTimeout: "10s"
