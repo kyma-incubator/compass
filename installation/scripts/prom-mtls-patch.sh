@@ -1,7 +1,7 @@
 function prometheusMTLSPatch() {
   patchPrometheusForMTLS
   patchAlertManagerForMTLS
-  enableNodeExporterTLS
+  enableNodeExporterMTLS
   patchDeploymentsToInjectSidecar
   patchKymaServiceMonitorsForMTLS
   removeKymaPeerAuthsForPrometheus
@@ -101,7 +101,7 @@ function patchDeploymentsToInjectSidecar() {
   done
 }
 
-function enableNodeExporterTLS() {
+function enableNodeExporterMTLS() {
   monitor=$(cat <<"EOF"
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -129,6 +129,9 @@ spec:
     port: metrics
     scheme: https
     tlsConfig:
+      caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+      certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+      keyFile: /etc/prometheus/secrets/istio.default/key.pem
       insecureSkipVerify: true
   jobLabel: jobLabel
   selector:
@@ -194,7 +197,7 @@ spec:
           mountPath: /etc/certs
       - name: web-config-init
         image: busybox:1.34.1
-        command: ['sh', '-c', 'printf "tls_server_config:\\n  cert_file: /etc/certs/node.crt\\n  key_file: /etc/certs/node.key" > /etc/certs/web.yaml']
+        command: ['sh', '-c', 'printf "tls_server_config:\\n  cert_file: /etc/certs/node.crt\\n  key_file: /etc/certs/node.key\\n  client_auth_type: \"RequireAndVerifyClientCert\"\\n  client_ca_file: /etc/istio/certs/ca-cert.pem" > /etc/certs/web.yaml']
         volumeMounts:
         - name: node-certs
           mountPath: /etc/certs
@@ -212,30 +215,12 @@ spec:
           value: 0.0.0.0
         image: eu.gcr.io/kyma-project/tpi/node-exporter:1.0.1-1de56388
         imagePullPolicy: IfNotPresent
-        livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /
-            port: 9100
-            scheme: HTTPS
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
         name: node-exporter
         ports:
         - containerPort: 9100
           hostPort: 9100
           name: metrics
           protocol: TCP
-        readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /
-            port: 9100
-            scheme: HTTPS
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
         resources: {}
         securityContext:
           allowPrivilegeEscalation: false
@@ -245,6 +230,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/certs
           name: node-certs
+        - name: istio-certs
+          mountPath: /etc/istio/certs
         - mountPath: /host/proc
           name: proc
           readOnly: true
@@ -323,6 +310,7 @@ function patchKymaServiceMonitorsForMTLS() {
     dex
     api-gateway
     monitoring-prometheus-pushgateway
+    cert-manager
   )
 
   crd="servicemonitors.monitoring.coreos.com"
