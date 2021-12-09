@@ -22,6 +22,12 @@ CREATE TABLE tenant_runtimes
     PRIMARY KEY (tenant_id, id)
 );
 
+-- this constraints has an update cascade on tenant_id of the runtime thus need to be dropped before updating the tenant_id of the runtimes below.
+ALTER TABLE labels DROP  CONSTRAINT  labels_tenant_id_fkey1;
+ALTER TABLE system_auths DROP  CONSTRAINT  system_auths_tenant_id_fkey1;
+ALTER TABLE runtime_contexts DROP CONSTRAINT runtime_contexts_tenant_id_fkey;
+ALTER TABLE webhooks DROP  CONSTRAINT  webhooks_runtime_id_fkey;
+
 UPDATE runtimes
 SET tenant_id =
         (SELECT id
@@ -85,7 +91,6 @@ ALTER TABLE event_api_definitions DROP  CONSTRAINT  event_api_definitions_tenant
 ALTER TABLE fetch_requests DROP  CONSTRAINT  fetch_requests_tenant_constraint;
 ALTER TABLE fetch_requests DROP  CONSTRAINT  fetch_requests_tenant_id_fkey2;
 ALTER TABLE labels DROP  CONSTRAINT  labels_tenant_id_fkey;
-ALTER TABLE labels DROP  CONSTRAINT  labels_tenant_id_fkey1;
 ALTER TABLE packages DROP  CONSTRAINT  packages_application_tenant_fk;
 ALTER TABLE packages DROP  CONSTRAINT  packages_tenant_id_fkey_cascade;
 ALTER TABLE products DROP  CONSTRAINT  products_application_tenant_fk;
@@ -95,14 +100,11 @@ ALTER TABLE tombstones DROP  CONSTRAINT  tombstones_application_tenant_fk;
 ALTER TABLE tombstones DROP  CONSTRAINT  tombstones_tenant_id_fkey_cascade;
 ALTER TABLE vendors DROP  CONSTRAINT  vendors_application_tenant_fk;
 ALTER TABLE vendors DROP  CONSTRAINT  vendors_tenant_id_fkey_cascade;
-ALTER TABLE webhooks DROP  CONSTRAINT  webhooks_runtime_id_fkey;
 ALTER TABLE webhooks DROP  CONSTRAINT  webhooks_tenant_constraint;
 ALTER TABLE webhooks DROP  CONSTRAINT  webhooks_tenant_id_fkey;
 ALTER TABLE system_auths DROP  CONSTRAINT  system_auths_tenant_id_fkey;
-ALTER TABLE system_auths DROP  CONSTRAINT  system_auths_tenant_id_fkey1;
 
 ALTER TABLE runtimes DROP CONSTRAINT runtimes_tenant_constraint;
-ALTER TABLE runtime_contexts DROP CONSTRAINT runtime_contexts_tenant_id_fkey;
 ALTER TABLE runtime_contexts DROP CONSTRAINT runtime_contexts_tenant_id_fkey1;
 
 -- Add Constraints
