@@ -29,7 +29,7 @@ func (m *opsInterceptor) Validate(_ graphql.ExecutableSchema) error {
 func (m *opsInterceptor) InterceptOperation(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
 	if mdc := MdcFromContext(ctx); nil != mdc {
 		opsCtx := graphql.GetOperationContext(ctx)
-		mdc.Set(logKeyOperationType, opsCtx.Operation.Operation)
+		mdc.Set(logKeyOperationType, string(opsCtx.Operation.Operation))
 
 		selectionSet := ""
 		for _, selection := range opsCtx.Operation.SelectionSet {
