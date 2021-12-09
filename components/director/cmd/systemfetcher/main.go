@@ -213,10 +213,18 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
-	var authProvider httputil.AuthorizationProvider = pkgAuth.NewTokenAuthorizationProvider(&http.Client{Timeout: cfg.OAuth2Config.TokenRequestTimeout})
+	var authProvider httputil.AuthorizationProvider
+
 	if cfg.OAuth2Config.ClientSecret == "" {
 		// mTLS client credentials
 		authProvider = pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, certCache, pkgAuth.DefaultMtlsClientCreator)
+	} else {
+		// plain client credentials
+		baseClient := &http.Client{
+			Timeout:   cfg.OAuth2Config.TokenRequestTimeout,
+			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: cfg.OAuth2Config.SkipSSLValidation}},
+		}
+		authProvider = pkgAuth.NewTokenAuthorizationProvider(baseClient)
 	}
 
 	client := &http.Client{
