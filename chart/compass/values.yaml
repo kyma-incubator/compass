@@ -96,10 +96,10 @@ global:
       version: "PR-2132"
     ord_service:
       dir:
-      version: "PR-49"
+      version: "PR-50"
     schema_migrator:
       dir:
-      version: "PR-2126"
+      version: "PR-2128"
     system_broker:
       dir:
       version: "PR-2132"
@@ -116,7 +116,7 @@ global:
       version: "PR-47"
     e2e_tests:
       dir:
-      version: "PR-2126"
+      version: "PR-2128"
   isLocalEnv: false
   oauth2:
     host: oauth2

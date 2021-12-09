@@ -2668,6 +2668,20 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
+			Name: "Invalid when `defaultConsumptionBundle` field doesn't match the required regex for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].DefaultConsumptionBundle = str.Ptr(invalidBundleOrdID)
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `defaultConsumptionBundle` field is not part of any bundles in the `partOfConsumptionBundles` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].DefaultConsumptionBundle = str.Ptr(secondBundleORDID)
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid field `entryPoints` when containing invalid URI for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -4130,6 +4144,21 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].PartOfConsumptionBundles = []*model.ConsumptionBundleReference{}
 
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid when `defaultConsumptionBundle` field doesn't match the required regex for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].DefaultConsumptionBundle = str.Ptr(invalidBundleOrdID)
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid when `defaultConsumptionBundle` field is not part of any bundles in the `partOfConsumptionBundles` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].DefaultConsumptionBundle = str.Ptr(secondBundleORDID)
 				return []*ord.Document{doc}
 			},
 		},

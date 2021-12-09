@@ -84,6 +84,7 @@ type EventDefinitionInput struct {
 	Extensible               json.RawMessage               `json:"extensible"`
 	ResourceDefinitions      []*EventResourceDefinition    `json:"resourceDefinitions"`
 	PartOfConsumptionBundles []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
+	DefaultConsumptionBundle *string                       `json:"defaultConsumptionBundle"`
 
 	*VersionInput `hash:"ignore"`
 }
