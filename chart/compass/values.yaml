@@ -78,31 +78,31 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2125"
+      version: "PR-2126"
     connectivity_adapter:
       dir:
-      version: "PR-2082"
+      version: "PR-2126"
     pairing_adapter:
       dir:
       version: "PR-2118"
     director:
       dir:
-      version: "PR-2125"
+      version: "PR-2126"
     gateway:
       dir:
-      version: "PR-2077"
+      version: "PR-2126"
     operations_controller:
       dir:
-      version: "PR-2118"
+      version: "PR-2126"
     ord_service:
       dir:
-      version: "PR-48"
+      version: "PR-49"
     schema_migrator:
       dir:
-      version: "PR-2115"
+      version: "PR-2126"
     system_broker:
       dir:
-      version: "PR-2084"
+      version: "PR-2126"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -110,13 +110,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2118"
+      version: "PR-2126"
     console:
       dir:
       version: "PR-47"
     e2e_tests:
       dir:
-      version: "PR-2125"
+      version: "PR-2126"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -440,8 +440,8 @@ global:
       externalClientCertSecret:
         name: "external-client-certificate"
         namespace: compass-system
+        certKey: tls.crt
         keyKey: tls.key
-        crtKey: tls.crt
     rotationCronjob:
       name: "external-certificate-rotation"
       schedule: "*/1 * * * *" # Executes every minute
