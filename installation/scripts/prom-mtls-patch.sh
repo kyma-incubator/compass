@@ -289,8 +289,8 @@ EOF
 
   kubectl get secret istio-ca-secret --namespace=istio-system -o yaml | grep -v '^\s*namespace:\s' | kubectl replace --force --namespace=kyma-system -f -
 
-  kubectl apply --force -f monitor.yaml
-  kubectl apply --force -f daemonset.yaml
+  kubectl apply -f monitor.yaml
+  kubectl apply -f daemonset.yaml
 
   rm monitor.yaml
   rm daemonset.yaml
