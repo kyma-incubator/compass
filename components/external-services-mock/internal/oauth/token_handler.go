@@ -39,18 +39,9 @@ func NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeaderName strin
 }
 
 func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
-	log.C(r.Context()).Infof("Generate: %+v", r)
-
 	authorization := r.Header.Get("authorization")
-	log.C(r.Context()).Infof("Authorization: %s", authorization)
-
 	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
-		body, e := ioutil.ReadAll(r.Body)
-		if e == nil {
-			log.C(r.Context()).Infof("Body: %s", body)
-		}
-
 		log.C(r.Context()).Errorf("client secret not found in header: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "client secret not found in header"), http.StatusBadRequest)
 		return
@@ -66,7 +57,6 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 
 func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http.Request) {
 	claims := map[string]interface{}{}
-	log.C(r.Context()).Infof("GenerateWithoutCredentials: %+v", r)
 
 	tenant := r.Header.Get(h.tenantHeaderName)
 	claims["x-zid"] = tenant
@@ -111,7 +101,6 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write(payload)
-	log.C(r.Context()).Infof("Returning: %s", string(payload))
 	if err != nil {
 		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)

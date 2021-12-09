@@ -186,7 +186,7 @@ func getFakeCreator(oauthCfg oauth.Config, suite suite.Suite, shouldFail bool) a
 
 				suite.Require().Equal(form.Get("grant_type"), "client_credentials")
 				suite.Require().Equal(form.Get("client_id"), oauthCfg.ClientID)
-				suite.Require().Equal(form.Get("scopes"), strings.Join(oauthCfg.ScopesClaim, " "))
+				suite.Require().Equal(form.Get("scope"), strings.Join(oauthCfg.ScopesClaim, " "))
 
 				if shouldFail {
 					return nil, errors.New("error")

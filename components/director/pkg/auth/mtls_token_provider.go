@@ -110,12 +110,10 @@ func (p *mtlsTokenAuthorizationProvider) GetAuthorization(ctx context.Context) (
 }
 
 func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentials *OAuthCredentials) (httputils.Token, error) {
-	log.C(ctx).Debug("Getting authorization token")
-
 	form := url.Values{}
 	form.Add("grant_type", "client_credentials")
 	form.Add("client_id", credentials.ClientID)
-	form.Add("scopes", credentials.Scopes)
+	form.Add("scope", credentials.Scopes)
 
 	body := strings.NewReader(form.Encode())
 	request, err := http.NewRequest(http.MethodPost, credentials.TokenURL, body)
@@ -129,8 +127,6 @@ func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentia
 			request.Header.Set(headerName, headerValue)
 		}
 	}
-
-	log.C(ctx).Infof("Sending request: %+v", request)
 
 	response, err := p.httpClient.Do(request)
 	if err != nil {
@@ -146,8 +142,6 @@ func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentia
 	if err != nil {
 		return httputils.Token{}, errors.Wrapf(err, "while reading token response body from %q", credentials.TokenURL)
 	}
-
-	log.C(ctx).Infof("Received response: %s", string(respBody))
 
 	if response.StatusCode != http.StatusOK {
 		return httputils.Token{}, errors.Wrapf(err, "oauth server returned unexpected status code %d and body: %s", response.StatusCode, respBody)
