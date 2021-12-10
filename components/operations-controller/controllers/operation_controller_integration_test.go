@@ -546,6 +546,88 @@ func TestController_Scenarios(t *testing.T) {
 		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
 	})
 
+	t.Run("Success after retriggering a failed Async Webhook due to timeout", func(t *testing.T) {
+		mode := graphql.WebhookModeAsync
+		application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode, Timeout: intToIntPtr(4)})
+
+		directorClient.FetchApplicationReturns(application, nil)
+		directorClient.UpdateOperationReturns(nil)
+
+		webhookClient.DoReturns(&web_hook.Response{Location: &mockedLocationURL}, nil)
+		webhookClient.PollReturns(prepareResponseStatus("IN_PROGRESS"), nil)
+
+		updateInvocationVars(&fetchApplicationInvocations, &updateOperationInvocations, &doInvocations, &pollInvocations, directorClient, webhookClient)
+
+		operation := *mockedOperation
+		err := kubeClient.Create(ctx, &operation)
+		require.NoError(t, err)
+
+		defer func() {
+			err := kubeClient.Delete(ctx, &operation)
+			require.NoError(t, err)
+		}()
+
+		expectedStatus := expectedFailedStatus(webhookGUID, errors.ErrWebhookTimeoutReached.Error())
+		expectedStatus.Webhooks[0].WebhookPollURL = mockedLocationURL
+		namespacedName := types.NamespacedName{Namespace: operation.ObjectMeta.Namespace, Name: operation.ObjectMeta.Name}
+
+		require.Eventually(t, func() bool {
+			var operation = &v1alpha1.Operation{}
+			err := kubeClient.Get(ctx, namespacedName, operation)
+			require.NoError(t, err)
+
+			if len(operation.Status.Webhooks) == 0 {
+				return false
+			}
+
+			expectedStatus.Webhooks[0].RetriesCount = operation.Status.Webhooks[0].RetriesCount
+			expectedStatus.Webhooks[0].LastPollTimestamp = operation.Status.Webhooks[0].LastPollTimestamp
+
+			return assertStatusEquals(expectedStatus, &operation.Status)
+		}, eventuallyTimeout, eventuallyTick)
+
+		require.Equal(t, updateOperationInvocations+1, directorClient.UpdateOperationCallCount())
+		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
+
+		t.Log("Operation timed out... Retrigger should succeed...")
+
+		webhookClient.PollReturns(prepareResponseStatus("SUCCEEDED"), nil)
+
+		updateInvocationVars(&fetchApplicationInvocations, &updateOperationInvocations, &doInvocations, &pollInvocations, directorClient, webhookClient)
+
+		// Retrigger by updating the correlationID
+		err = kubeClient.Get(ctx, namespacedName, &operation)
+		require.NoError(t, err)
+		operation.Spec.CorrelationID = correlationGUID2
+
+		err = kubeClient.Update(ctx, &operation)
+		require.NoError(t, err)
+
+		expectedStatus = expectedSuccessStatus(webhookGUID)
+		expectedStatus.Webhooks[0].WebhookPollURL = mockedLocationURL
+
+		require.Eventually(t, func() bool {
+			var operation = &v1alpha1.Operation{}
+			err := kubeClient.Get(ctx, namespacedName, operation)
+			require.NoError(t, err)
+
+			return assertStatusEquals(expectedStatus, &operation.Status)
+		}, eventuallyTimeout, eventuallyTick)
+
+		require.Equal(t, fetchApplicationInvocations+2, directorClient.FetchApplicationCallCount())
+		assertDirectorFetchApplicationInvocation(t, directorClient, operation.Spec.ResourceID, tenantGUID, fetchApplicationInvocations)
+		assertDirectorFetchApplicationInvocation(t, directorClient, operation.Spec.ResourceID, tenantGUID, fetchApplicationInvocations+1)
+
+		require.Equal(t, updateOperationInvocations+1, directorClient.UpdateOperationCallCount())
+		assertDirectorUpdateOperationInvocation(t, directorClient, &operation, updateOperationInvocations)
+
+		require.Equal(t, doInvocations+1, webhookClient.DoCallCount())
+		assertWebhookDoInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], doInvocations)
+
+		require.Equal(t, pollInvocations+1, webhookClient.PollCallCount())
+		assertWebhookPollInvocation(t, webhookClient, &operation, &application.Result.Webhooks[0], pollInvocations)
+	})
+
 	t.Run("Successful Sync Webhook flow", func(t *testing.T) {
 		mode := graphql.WebhookModeSync
 		application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})

@@ -44,7 +44,7 @@ func NewManager(k8sClient client.Client) *manager {
 // The method executes only if the generation of the Operation CR mismatches the observed generation in the status,
 // which allows the method to be used on the same resource over and over, for example when consecutive async requests
 // are scheduled on the same Operation CR and the old status should be wiped off.
-func (m *manager) Initialize(operation *v1alpha1.Operation) error {
+func (m *manager) Initialize(ctx context.Context, operation *v1alpha1.Operation) error {
 	if err := operation.Validate(); err != nil {
 		return err
 	}
@@ -54,22 +54,24 @@ func (m *manager) Initialize(operation *v1alpha1.Operation) error {
 		return nil
 	}
 
-	status.ObservedGeneration = &operation.Generation
+	return m.updateStatusFunc(ctx, operation, func(operation *v1alpha1.Operation) {
+		status := &operation.Status
+		status.ObservedGeneration = &operation.Generation
 
-	status.Phase = v1alpha1.StateInProgress
-	status.Conditions = []v1alpha1.Condition{
-		{Type: v1alpha1.ConditionTypeReady, Status: corev1.ConditionFalse},
-		{Type: v1alpha1.ConditionTypeError, Status: corev1.ConditionFalse},
-	}
-
-	if len(operation.Spec.WebhookIDs) > 0 {
-		status.Webhooks = []v1alpha1.Webhook{
-			{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress},
+		status.Phase = v1alpha1.StateInProgress
+		status.Conditions = []v1alpha1.Condition{
+			{Type: v1alpha1.ConditionTypeReady, Status: corev1.ConditionFalse},
+			{Type: v1alpha1.ConditionTypeError, Status: corev1.ConditionFalse},
 		}
-	}
 
-	status.InitializedAt = metav1.Now()
-	return nil
+		if len(operation.Spec.WebhookIDs) > 0 {
+			status.Webhooks = []v1alpha1.Webhook{
+				{WebhookID: operation.Spec.WebhookIDs[0], State: v1alpha1.StateInProgress},
+			}
+		}
+
+		status.InitializedAt = metav1.Now()
+	})
 }
 
 // InProgressWithPollURL sets the status of an Operation CR to In Progress, ensures that none of the conditions are set to True,
