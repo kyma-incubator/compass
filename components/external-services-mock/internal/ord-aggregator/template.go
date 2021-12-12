@@ -340,6 +340,7 @@ const ordDocument = `{
                "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
             }
          ],
+         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID:v1",
          "version":"2.1.2"
       },
       {
@@ -546,6 +547,7 @@ const ordDocument = `{
                "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
             }
          ],
+         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID:v1",
          "version":"2.1.2"
       },
       {
