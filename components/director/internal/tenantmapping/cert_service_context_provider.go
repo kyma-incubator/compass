@@ -41,29 +41,25 @@ type certServiceContextProvider struct {
 // By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
 // There we should only convert the tenant identifier from external to internal.
 func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
-	// the authID in this flow is an OU selected by the Connector
-	externalTenantID := authDetails.AuthID
+	externalTenantID, err := reqData.GetExternalTenantID()
+	if err != nil {
+		if !apperrors.IsKeyDoesNotExist(err) {
+			log.C(ctx).WithError(err).Errorf("Failed to get external tenant ID: %v", err)
+			return ObjectContext{}, errors.Wrap(err, "while fetching tenant external id")
+		}
+		externalTenantID = authDetails.AuthID // the authID in this flow is an OU selected by the Connector - matches a subaccount tenant
+	}
 
-	extraData := reqData.GetExtraDataWithDefaults()
-
+	consumerType := reqData.ConsumerType()
 	logger := log.C(ctx).WithFields(logrus.Fields{
-		"consumer_type": extraData.ConsumerType,
+		"consumer_type": consumerType,
 	})
 	ctx = log.ContextWithLogger(ctx, logger)
 
-	if extraData.AccessLevel != "" {
-		var err error
-		externalTenantID, err = reqData.GetExternalTenantID() // will return tenant ID from header if it exists
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Failed to get external tenant ID: %v", err)
-			return ObjectContext{}, err
-		}
-	}
-
-	scopes, err := p.directorScopes(reqData.GetConsumerTypeFromExtra())
+	scopes, err := p.directorScopes(consumerType)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to get scopes for consumer type %s: %v", extraData.ConsumerType, err)
-		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Failed to extract scopes for consumer with type %s", extraData.ConsumerType))
+		log.C(ctx).WithError(err).Errorf("Failed to get scopes for consumer type %s: %v", consumerType, err)
+		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Failed to extract scopes for consumer with type %s", consumerType))
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
@@ -78,22 +74,14 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	if extraData.AccessLevel != "" && tenantMapping.Type != extraData.AccessLevel {
-		return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s with ID %s", authDetails.AuthID, extraData.AccessLevel, tenantMapping.ExternalTenant))
-	}
-
-	if extraData.InternalConsumerID != "" {
-		found, err := p.consumerExistsFuncs[extraData.ConsumerType](ctx, extraData.InternalConsumerID)
-		if err != nil {
-			return ObjectContext{}, errors.Wrapf(err, "while getting %s with ID %s", extraData.ConsumerType, extraData.InternalConsumerID)
-		}
-		if !found {
-			return ObjectContext{}, apperrors.NewUnauthorizedError(fmt.Sprintf("%s with ID %s does not exist", extraData.ConsumerType, extraData.InternalConsumerID))
+	if reqData.IsConsumerProviderFlow() {
+		if err := p.verifyTenantAccess(ctx, tenantMapping, authDetails, reqData); err != nil {
+			return ObjectContext{}, err
 		}
 	}
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), p.tenantKeys, scopes,
-		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(extraData.ConsumerType), CertServiceObjectContextProvider)
+		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), CertServiceObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 	return objCtx, nil
 }
@@ -112,13 +100,41 @@ func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper.Re
 }
 
 func (p *certServiceContextProvider) directorScopes(consumerType model.SystemAuthReferenceObjectType) (string, error) {
-	if consumerType == "" {
-		consumerType = "default"
-	}
-
 	declaredScopes, err := p.scopesGetter.GetRequiredScopes(buildPath(consumerType))
 	if err != nil {
 		return "", errors.Wrap(err, "while fetching scopes")
 	}
 	return strings.Join(declaredScopes, " "), nil
+}
+
+func (p *certServiceContextProvider) verifyTenantAccess(ctx context.Context, tenant *model.BusinessTenantMapping, authDetails oathkeeper.AuthDetails, reqData oathkeeper.ReqData) error {
+	data := reqData.GetExtraDataWithDefaults()
+	var accessLevelExists bool
+	for _, al := range data.AccessLevels {
+		if tenant.Type == al {
+			accessLevelExists = true
+			break
+		}
+	}
+
+	if !accessLevelExists {
+		return apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s tenant with ID %s", authDetails.AuthID, tenant.Type, tenant.ExternalTenant))
+	}
+
+	return p.verifyConsumerExists(ctx, data)
+}
+
+func (p *certServiceContextProvider) verifyConsumerExists(ctx context.Context, data oathkeeper.ExtraData) error {
+	if data.InternalConsumerID == "" {
+		return nil
+	}
+
+	found, err := p.consumerExistsFuncs[data.ConsumerType](ctx, data.InternalConsumerID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting %s with ID %s", data.ConsumerType, data.InternalConsumerID)
+	}
+	if !found {
+		return apperrors.NewUnauthorizedError(fmt.Sprintf("%s with ID %s does not exist", data.ConsumerType, data.InternalConsumerID))
+	}
+	return nil
 }

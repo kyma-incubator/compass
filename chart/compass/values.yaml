@@ -220,7 +220,7 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_level": "account", "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=123e4567-e89b-12d3-a456-426614174001, CN=compass"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=123e4567-e89b-12d3-a456-426614174001, CN=compass"}]'
 
   system_broker:
     enabled: true

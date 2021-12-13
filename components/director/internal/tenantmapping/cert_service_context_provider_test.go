@@ -26,7 +26,6 @@ import (
 func TestCertServiceContextProvider(t *testing.T) {
 	testError := errors.New("test error")
 	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
-	tenantKeyNotFoundErr := apperrors.NewKeyDoesNotExistError(string(resource.Tenant))
 
 	emptyCtx := context.TODO()
 	tenantID := uuid.New().String()
@@ -83,7 +82,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			},
 			ScopesGetterFn: func() *automock.ScopesGetter {
 				scopesGetter := &automock.ScopesGetter{}
-				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.default").Return(scopes, nil)
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
 				return scopesGetter
 			},
 			ConsumerExistsCheckers: consumerExistsCheckers,
@@ -102,7 +101,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			},
 			ScopesGetterFn: func() *automock.ScopesGetter {
 				scopesGetter := &automock.ScopesGetter{}
-				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.default").Return(scopes, nil)
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
 				return scopesGetter
 			},
 			ConsumerExistsCheckers: consumerExistsCheckers,
@@ -121,7 +120,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			},
 			ScopesGetterFn: func() *automock.ScopesGetter {
 				scopesGetter := &automock.ScopesGetter{}
-				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.default").Return(scopes, nil)
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
 				return scopesGetter
 			},
 			ConsumerExistsCheckers: consumerExistsCheckers,
@@ -136,33 +135,13 @@ func TestCertServiceContextProvider(t *testing.T) {
 			TenantRepoFn: unusedTenantRepo,
 			ScopesGetterFn: func() *automock.ScopesGetter {
 				scopesGetter := &automock.ScopesGetter{}
-				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.default").Return(nil, testError)
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(nil, testError)
 				return scopesGetter
 			},
 			ConsumerExistsCheckers: consumerExistsCheckers,
 			ReqDataInput:           reqData,
 			AuthDetailsInput:       authDetails,
 			ExpectedErr:            errors.New("failed to extract scopes"),
-		},
-		{
-			Name:         "Error when can't extract external tenant id",
-			TenantRepoFn: unusedTenantRepo,
-			ScopesGetterFn: func() *automock.ScopesGetter {
-				return &automock.ScopesGetter{}
-			},
-			ReqDataInput: oathkeeper.ReqData{
-				Body: oathkeeper.ReqBody{
-					Header: map[string][]string{
-						componentHeaderKey: {"director"},
-					},
-					Extra: map[string]interface{}{
-						cert.AccessLevelExtraField:  tenantID,
-						cert.ConsumerTypeExtraField: model.RuntimeReference,
-					},
-				}},
-			ConsumerExistsCheckers: consumerExistsCheckers,
-			AuthDetailsInput:       authDetails,
-			ExpectedErr:            tenantKeyNotFoundErr,
 		},
 		{
 			Name: "Error when consumer don't have access",

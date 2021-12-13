@@ -37,6 +37,8 @@ func TestParseCertHeader(t *testing.T) {
 		cert.AccessLevelExtraField:   "test_access_level",
 	}
 
+	noopAuthSessionExtra := func(ctx context.Context, s string) map[string]interface{} { return nil }
+
 	for _, testCase := range []struct {
 		name                            string
 		certHeader                      string
@@ -60,6 +62,7 @@ func TestParseCertHeader(t *testing.T) {
 			found:            true,
 			expectedHash:     "f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad",
 			expectedClientID: "test-application",
+			authSessionExtraFromSubjectFunc: noopAuthSessionExtra,
 		},
 		{
 			name: "connector header parser should append extra",
@@ -86,6 +89,7 @@ func TestParseCertHeader(t *testing.T) {
 			found:            true,
 			expectedHash:     "f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad",
 			expectedClientID: "2d149cda-a4fe-45c9-a21d-915c52fb56a1",
+			authSessionExtraFromSubjectFunc: noopAuthSessionExtra,
 		},
 		{
 			name: "external header parser should return common name and hash when subject use + for same values separation",
@@ -97,6 +101,7 @@ func TestParseCertHeader(t *testing.T) {
 			found:            true,
 			expectedHash:     "f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad",
 			expectedClientID: "123e4567-e89b-12d3-a456-426614174001",
+			authSessionExtraFromSubjectFunc: noopAuthSessionExtra,
 		},
 		{
 			name: "should not found certificate data if non is matching",
@@ -106,6 +111,7 @@ func TestParseCertHeader(t *testing.T) {
 			subjectMatcher: oathkeeper.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
 			clientIDFunc:   cert.GetCommonName,
 			found:          false,
+			authSessionExtraFromSubjectFunc: noopAuthSessionExtra,
 		},
 		{
 			name:           "should not found certificate data if header is invalid",
@@ -114,6 +120,7 @@ func TestParseCertHeader(t *testing.T) {
 			subjectMatcher: oathkeeper.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
 			clientIDFunc:   cert.GetCommonName,
 			found:          false,
+			authSessionExtraFromSubjectFunc: noopAuthSessionExtra,
 		},
 		{
 			name:           "should not found certificate data if header is empty",
@@ -122,6 +129,7 @@ func TestParseCertHeader(t *testing.T) {
 			subjectMatcher: oathkeeper.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
 			clientIDFunc:   cert.GetCommonName,
 			found:          false,
+			authSessionExtraFromSubjectFunc: noopAuthSessionExtra,
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
