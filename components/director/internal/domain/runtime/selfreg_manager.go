@@ -59,40 +59,41 @@ func NewSelfRegisterManager(cfg SelfRegConfig, caller ExternalSvcCaller) *selfRe
 
 // PrepareRuntimeForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
 // is being self-registered
-func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput) (model.RuntimeInput, error) {
+func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput) (map[string]interface{}, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
+	labels := make(map[string]interface{})
 	if err != nil {
-		return model.RuntimeInput{}, errors.Wrapf(err, "while loading consumer")
+		return labels, errors.Wrapf(err, "while loading consumer")
 	}
 	if distinguishLabel, exists := in.Labels[s.cfg.SelfRegisterDistinguishLabelKey]; exists && consumerInfo.Flow.IsCertFlow() { // this means that the runtime is being self-registered
 		distinguishLabelVal := str.CastOrEmpty(distinguishLabel)
 
 		request, err := s.createSelfRegPrepRequest(distinguishLabelVal, consumerInfo.ConsumerID)
 		if err != nil {
-			return model.RuntimeInput{}, err
+			return labels, err
 		}
 
 		response, err := s.caller.Call(request)
 		if err != nil {
-			return model.RuntimeInput{}, errors.Wrapf(err, "while executing preparation of self registered runtime")
+			return labels, errors.Wrapf(err, "while executing preparation of self registered runtime")
 		}
 		defer httputils.Close(ctx, response.Body)
 
 		respBytes, err := io.ReadAll(response.Body)
 		if err != nil {
-			return model.RuntimeInput{}, errors.Wrapf(err, "while reading response body")
+			return labels, errors.Wrapf(err, "while reading response body")
 		}
 
 		if response.StatusCode != http.StatusCreated {
-			return model.RuntimeInput{}, errors.New(fmt.Sprintf("received unexpected status %d while preparing self-registered runtime: %s", response.StatusCode, string(respBytes)))
+			return labels, errors.New(fmt.Sprintf("received unexpected status %d while preparing self-registered runtime: %s", response.StatusCode, string(respBytes)))
 		}
 
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
-		in.Labels[s.cfg.SelfRegisterLabelKey] = selfRegLabelVal.Str
+		labels[s.cfg.SelfRegisterLabelKey] = selfRegLabelVal.Str
 
 		log.C(ctx).Infof("Successfully executed prep for self-registered runtime with distinguishing label value %s", distinguishLabelVal)
 	}
-	return in, nil
+	return labels, nil
 }
 
 // CleanupSelfRegisteredRuntime executes cleanup calls for self-registered runtimes
