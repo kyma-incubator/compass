@@ -40,13 +40,13 @@ func TestMain(m *testing.M) {
 		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
 	}
 
-	secret, err := k8sClientSet.CoreV1().Secrets(conf.CA.SecretNamespace).Get(ctx, conf.CA.SecretName, metav1.GetOptions{})
+	secret, err := k8sClientSet.CoreV1().Secrets(conf.CA.SecretNamespace).Get(ctx, conf.CA.SecretName, metav1.GetOptions{}) // TODO:: Remove after everything is adapted
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
 	}
 
-	conf.CA.Key = secret.Data[conf.CA.SecretKeyKey]
-	conf.CA.Certificate = secret.Data[conf.CA.SecretCertificateKey]
+	conf.CA.Key = secret.Data[conf.CA.SecretKeyKey] // TODO:: Remove after everything is adapted
+	conf.CA.Certificate = secret.Data[conf.CA.SecretCertificateKey] // TODO:: Remove after everything is adapted
 
 	extCrtSecret, err := k8sClientSet.CoreV1().Secrets(conf.ExternalCA.SecretNamespace).Get(ctx, conf.ExternalCA.SecretName, metav1.GetOptions{})
 	if err != nil {

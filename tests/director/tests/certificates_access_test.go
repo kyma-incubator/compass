@@ -11,19 +11,17 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/stretchr/testify/require"
 )
 
-func TestIntegrationSystemAccess(stdT *testing.T) {
-	t := testingx.NewT(stdT)
+func TestIntegrationSystemAccess(t *testing.T) {
 	t.Run("TestDirectorCertificateAccess Integration System consumer: manage account tenant entities", func(t *testing.T) {
 		ctx := context.Background()
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
 
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain, conf.SkipSSLValidation)
 		managedTenant := tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedAccount)
 
 		t.Log(fmt.Sprintf("Trying to create applications in account tenant %s", managedTenant))
@@ -55,7 +53,7 @@ func TestIntegrationSystemAccess(stdT *testing.T) {
 
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain, conf.SkipSSLValidation)
 
 		nonManagedTenant := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 

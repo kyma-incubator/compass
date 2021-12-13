@@ -28,7 +28,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -40,8 +39,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func TestSelfRegisterFlow(stdT *testing.T) {
-	t := testingx.NewT(stdT)
+func TestSelfRegisterFlow(t *testing.T) {
 	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
 		ctx := context.Background()
 		distinguishLblValue := "test-distinguish-value"
@@ -52,7 +50,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subaccountID)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
 
 		// Register application
 		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", defaultTenantId)
@@ -104,8 +102,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 	})
 }
 
-func TestConsumerProviderFlow(stdT *testing.T) {
-	t := testingx.NewT(stdT)
+func TestConsumerProviderFlow(t *testing.T) {
 	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
 		ctx := context.Background()
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
@@ -116,7 +113,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subscriptionProviderSubaccountID)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
 
 		runtimeInput := graphql.RuntimeInput{
 			Name:        "providerRuntime",
