@@ -34,7 +34,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
@@ -49,9 +48,7 @@ const (
 	odataV2APIProtocol = "odata-v2"
 )
 
-func TestORDService(stdT *testing.T) {
-	t := testingx.NewT(stdT)
-
+func TestORDService(t *testing.T) {
 	ctx := context.Background()
 
 	defaultTestTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
@@ -138,7 +135,7 @@ func TestORDService(stdT *testing.T) {
 
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
 	require.NoError(t, err)
-	extIssuerCertHttpClient := extIssuerCertClient(t, subTenantID)
+	extIssuerCertHttpClient := extIssuerCertClient2(t, testConfig.SkipSSLValidation)
 
 	t.Run("401 when requests to ORD Service are unsecured", func(t *testing.T) {
 		makeRequestWithStatusExpect(t, unsecuredHttpClient, testConfig.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
@@ -321,6 +318,7 @@ func TestORDService(stdT *testing.T) {
 		},
 		{
 			msg:       subTenantID + " as Runtime using externally issued certificate",
+			//headers:   map[string][]string{tenantHeader: {secondaryTenant}}, // The tenant comes from the certificate // TODO:: Workaround for if extraData.AccessLevel != "" then reqData.GetExternalTenantID(), Remove after fix!
 			headers:   map[string][]string{}, // The tenant comes from the certificate
 			appInput:  appInputInScenario,
 			apisMap:   apisMapInScenario,
@@ -743,8 +741,9 @@ func makeRequestWithStatusExpect(t require.TestingT, httpClient *http.Client, ur
 
 // extIssuerCertClient returns http client configured with client certificate manually signed by connector's CA
 // and a subject matching external issuer's subject contract.
-func extIssuerCertClient(t require.TestingT, subTenantID string) *http.Client {
-	clientKey, certChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subTenantID)
+func extIssuerCertClient(t *testing.T, subTenantID string) *http.Client { // TODO:: Remove/Replace with external cert once edit every test - subscription test
+	clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subTenantID)
+	//clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
 
 	return &http.Client{
 		Timeout: 20 * time.Second,
@@ -752,12 +751,33 @@ func extIssuerCertClient(t require.TestingT, subTenantID string) *http.Client {
 			TLSClientConfig: &tls.Config{
 				Certificates: []tls.Certificate{
 					{
-						Certificate: certChain,
+						Certificate: rawCertChain,
 						PrivateKey:  clientKey,
 					},
 				},
 				ClientAuth:         tls.RequireAndVerifyClientCert,
 				InsecureSkipVerify: true,
+			},
+		},
+	}
+}
+
+func extIssuerCertClient2(t *testing.T, skipSSLValidation bool) *http.Client { // TODO:: Rename after all tests are adapted
+	//clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subTenantID)
+	clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
+
+	return &http.Client{
+		Timeout: 20 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{
+					{
+						Certificate: rawCertChain,
+						PrivateKey:  clientKey,
+					},
+				},
+				ClientAuth:         tls.RequireAndVerifyClientCert,
+				InsecureSkipVerify: skipSSLValidation,
 			},
 		},
 	}

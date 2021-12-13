@@ -93,7 +93,7 @@ func TestConnector(t *testing.T) {
 }
 
 func certificateGenerationSuite(t *testing.T, directorClient clients.Client, appID string) {
-	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
+	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSSLValidation)
 
 	clientKey := certs.CreateKey(t)
 
@@ -273,7 +273,7 @@ func certificateGenerationSuite(t *testing.T, directorClient clients.Client, app
 func appCsrInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID string, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
 	t.Run("should use default values to build CSR info response", func(t *testing.T) {
 		// given
-		client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
+		client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSSLValidation)
 		expectedMetadataURL := testConfig.ConnectivityAdapterMtlsUrl
 		expectedEventsURL := testConfig.EventsBaseURL
 
@@ -308,7 +308,7 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID 
 }
 
 func appMgmInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID string, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
-	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
+	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSSLValidation)
 
 	clientKey := certs.CreateKey(t)
 
@@ -338,7 +338,7 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID 
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 
 		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
-		client, err := clients.NewSecuredClient(testConfig.SkipSslVerify, clientKey, crtChainBytes, testConfig.Tenant)
+		client, err := clients.NewSecuredClient(testConfig.SkipSSLValidation, clientKey, crtChainBytes, testConfig.Tenant)
 		require.NoError(t, err)
 
 		// when
@@ -367,7 +367,7 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient clients.Client, appID 
 }
 
 func certificateRotationSuite(t *testing.T, directorClient clients.Client, appID string) {
-	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
+	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSSLValidation)
 	clientKey := certs.CreateKey(t)
 
 	t.Run("should renew client certificate", func(t *testing.T) {
@@ -378,7 +378,7 @@ func certificateRotationSuite(t *testing.T, directorClient clients.Client, appID
 		require.NotEmpty(t, infoResponse.Certificate)
 
 		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
-		client, err := clients.NewSecuredClient(testConfig.SkipSslVerify, clientKey, crtChainBytes, testConfig.Tenant)
+		client, err := clients.NewSecuredClient(testConfig.SkipSSLValidation, clientKey, crtChainBytes, testConfig.Tenant)
 		require.NoError(t, err)
 
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
@@ -396,7 +396,7 @@ func certificateRotationSuite(t *testing.T, directorClient clients.Client, appID
 		require.Nil(t, errorResponse)
 
 		crtChainBytesRenewed := certs.DecodeBase64Cert(t, certificateResponse.CRTChain)
-		clientWithRenewedCert, err := clients.NewSecuredClient(testConfig.SkipSslVerify, clientKey, crtChainBytesRenewed, testConfig.Tenant)
+		clientWithRenewedCert, err := clients.NewSecuredClient(testConfig.SkipSSLValidation, clientKey, crtChainBytesRenewed, testConfig.Tenant)
 		require.NoError(t, err)
 
 		_, errorResponse = clientWithRenewedCert.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
@@ -405,7 +405,7 @@ func certificateRotationSuite(t *testing.T, directorClient clients.Client, appID
 }
 
 func certificateRevocationSuite(t *testing.T, directorClient clients.Client, appID string) {
-	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
+	client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSSLValidation)
 
 	clientKey := certs.CreateKey(t)
 
@@ -419,7 +419,7 @@ func certificateRevocationSuite(t *testing.T, directorClient clients.Client, app
 
 		// when
 		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
-		client, err := clients.NewSecuredClient(testConfig.SkipSslVerify, clientKey, crtChainBytes, testConfig.Tenant)
+		client, err := clients.NewSecuredClient(testConfig.SkipSSLValidation, clientKey, crtChainBytes, testConfig.Tenant)
 		require.NoError(t, err)
 
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)

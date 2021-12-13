@@ -220,7 +220,7 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_level": "account", "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=123e4567-e89b-12d3-a456-426614174001, CN=compass"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_level": "account", "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=p8075207-1478-4a80-bd26-24a4785a2bfp, CN=compass"}]' # TODO:: invalid OU SA to workaround a bug. Change it to f8075207-1478-4a80-bd26-24a4785a2bfd after bug resolution
 
   system_broker:
     enabled: true
@@ -425,7 +425,7 @@ global:
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "" # It's empty because in local setup we use connector CA which didn't have Locality property
-    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=123e4567-e89b-12d3-a456-426614174001/L=%s/CN=%s"
+    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=f8075207-1478-4a80-bd26-24a4785a2bfd/L=%s/CN=%s"
     commonName: "compass"
     locality: "local"
     certSvcApiPath: "/cert"
@@ -596,6 +596,12 @@ global:
     oauthSecretName: compass-external-services-mock-oauth-credentials
 
   tests:
+    http:
+      client:
+        skipSSLValidation:
+          director: false
+          ordService: false
+          connectivityAdapter: true
     ordService:
       skipPattern: ""
     director:
@@ -611,8 +617,6 @@ global:
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1
-    skipTLSVerify: true
-
     token:
       server:
         enabled: false
