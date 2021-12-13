@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -40,6 +41,7 @@ var (
 	ctx                          context.Context
 	clientKey                    *rsa.PrivateKey
 	appsForRuntimeTenantID       string
+	runtimeSubaccountTenantID    string
 )
 
 func TestMain(m *testing.M) {
@@ -50,8 +52,8 @@ func TestMain(m *testing.M) {
 
 	dexToken := server.Token()
 
-	appsForRuntimeTenantID = cfg.AppsForRuntimeTenant
-
+	appsForRuntimeTenantID = cfg.Tenant
+	runtimeSubaccountTenantID = cfg.RuntimeSubaccountTenantID
 	key, err := certs.GenerateKey()
 	if err != nil {
 		log.Errorf("Failed to generate private key: %s", err.Error())
@@ -63,7 +65,7 @@ func TestMain(m *testing.M) {
 		log.Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)
 	}
-	directorAppsForRuntimeClient, err = clients.NewStaticUserClient(ctx, cfg.DirectorURL, cfg.AppsForRuntimeTenant, dexToken)
+	directorAppsForRuntimeClient, err = clients.NewStaticUserClient(ctx, cfg.DirectorURL, cfg.Tenant, dexToken)
 	if err != nil {
 		log.Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)
@@ -78,6 +80,18 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	configmapCleaner = k8s.NewConfigMapCleaner(configmapInterface, cfg.RevocationConfigMapName)
+
+	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
+	}
+	extCrtSecret, err := k8sClientSet.CoreV1().Secrets(cfg.ExternallyIssuedCert.SecretNamespace).Get(ctx, cfg.ExternallyIssuedCert.SecretName, metav1.GetOptions{})
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
+	}
+
+	cfg.ExternallyIssuedCert.Key = extCrtSecret.Data[cfg.ExternallyIssuedCert.SecretKeyKey]
+	cfg.ExternallyIssuedCert.Certificate = extCrtSecret.Data[cfg.ExternallyIssuedCert.SecretCertificateKey]
 
 	exitCode := m.Run()
 

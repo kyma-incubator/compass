@@ -7,6 +7,8 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,19 +48,15 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 
 	// Register Runtime
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, &graphql.RuntimeInput{
-		Name:   "test-runtime",
-		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
+		Name: "test-runtime",
+		Labels: map[string]interface{}{
+			ScenariosLabel:         []string{TestScenario},
+			"global_subaccount_id": runtimeSubaccountTenantID,
+		},
 	})
 	defer fixtures.CleanupRuntime(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
-
-	// Issue a certificate for the Runtime
-	ott, err := directorAppsForRuntimeClient.GenerateRuntimeToken(t, runtime.ID)
-	require.NoError(t, err)
-	rtCertResult, rtConfiguration := clients.GenerateRuntimeCertificate(t, &ott, connectorClient, clientKey)
-	certs.AssertCertificate(t, rtConfiguration.CertificateSigningRequestInfo.Subject, rtCertResult)
-	defer certs.Cleanup(t, configmapCleaner, rtCertResult)
 
 	// Register second Application
 	secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
@@ -82,17 +80,46 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	appIdToCommonName[secondApp.ID] = secondAppCommonName
 	defer certs.Cleanup(t, configmapCleaner, secondCertResult)
 
-	// Call "ApplicationsForRuntime" and assert that sys_auth ids from the query match the Apps' certificate CN
-	rtCertChain := certs.DecodeCertChain(t, rtCertResult.CertificateChain)
-	securedClient := clients.NewCertificateSecuredConnectorClient(cfg.DirectorMtlsURL, clientKey, rtCertChain...)
+	testCases := []struct {
+		name      string
+		getClient func() *gcli.Client
+	}{
+		{
+			name: "successful 'ApplicationsForRuntime' call with client certificate issued by Connector",
+			getClient: func() *gcli.Client {
+				ott, err := directorAppsForRuntimeClient.GenerateRuntimeToken(t, runtime.ID)
+				require.NoError(t, err)
+				rtCertResult, rtConfiguration := clients.GenerateRuntimeCertificate(t, &ott, connectorClient, clientKey)
+				certs.AssertCertificate(t, rtConfiguration.CertificateSigningRequestInfo.Subject, rtCertResult)
+				defer certs.Cleanup(t, configmapCleaner, rtCertResult)
 
-	apps, err := fixtures.AppsForRuntime(ctx, securedClient.GraphQlClient, appsForRuntimeTenantID, runtime.ID)
-	require.NoError(t, err)
-	require.Equal(t, 2, len(apps.Data))
-	for _, app := range apps.Data {
-		certCN := appIdToCommonName[app.ID]
-		require.NotEmpty(t, app.Auths)
-		systemAuthID := app.Auths[0].ID
-		require.Equal(t, certCN, systemAuthID)
+				rtCertChain := certs.DecodeCertChain(t, rtCertResult.CertificateChain)
+				securedClient := clients.NewCertificateSecuredConnectorClient(cfg.DirectorMtlsURL, clientKey, rtCertChain...)
+				return securedClient.GraphQlClient
+			},
+		},
+		{
+			name: "successful 'ApplicationsForRuntime' call with externally issued client certificate",
+			getClient: func() *gcli.Client {
+				clientKey, rawCertChain := certs.ClientCertPair(t, cfg.ExternallyIssuedCert.Certificate, cfg.ExternallyIssuedCert.Key)
+				directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(cfg.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
+				return directorCertSecuredClient
+			},
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			client := test.getClient()
+			apps, err := fixtures.AppsForRuntime(ctx, client, appsForRuntimeTenantID, runtime.ID)
+			require.NoError(t, err)
+			require.Equal(t, 2, len(apps.Data))
+			for _, app := range apps.Data {
+				certCN := appIdToCommonName[app.ID]
+				require.NotEmpty(t, app.Auths)
+				systemAuthID := app.Auths[0].ID
+				require.Equal(t, certCN, systemAuthID)
+			}
+		})
 	}
 }

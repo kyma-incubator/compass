@@ -248,8 +248,19 @@ func (d *ReqData) ExtractCoordinates() (authenticator.Coordinates, bool, error) 
 	return coords, true, nil
 }
 
-// GetAccessLevelFromExtra gets access level from body extra if it exists.
-func (d *ReqData) GetAccessLevelFromExtra() tenantEntity.Type {
+// IsConsumerProviderFlow returns true if a tenant header is missing or is provided, but it differs from
+// the client ID found in the certificate
+func (d *ReqData) IsConsumerProviderFlow() bool {
+	clientIDFromCert := d.Body.Header.Get(ClientIDCertKey)
+	tenant, err := d.GetExternalTenantID()
+	if err != nil {
+		return false
+	}
+	return clientIDFromCert != tenant
+}
+
+// TenantAccessLevel gets access level from body extra if it exists.
+func (d *ReqData) TenantAccessLevel() tenantEntity.Type {
 	if d.Body.Extra == nil {
 		return ""
 	}
@@ -259,20 +270,21 @@ func (d *ReqData) GetAccessLevelFromExtra() tenantEntity.Type {
 	return tenantEntity.Type(fmt.Sprint(d.Body.Extra[cert.AccessLevelExtraField]))
 }
 
-// GetConsumerTypeFromExtra gets consumer type from body extra if it exists.
-func (d *ReqData) GetConsumerTypeFromExtra() model.SystemAuthReferenceObjectType {
-	if d.Body.Extra == nil {
-		return ""
+// ConsumerType gets consumer type from body extra if it exists.
+func (d *ReqData) ConsumerType() model.SystemAuthReferenceObjectType {
+	defaultConsumerType := model.RuntimeReference
+	if d.Body.Extra == nil || !d.IsConsumerProviderFlow() {
+		return defaultConsumerType
 	}
 	consumerType, found := d.Body.Extra[cert.ConsumerTypeExtraField]
 	if !found {
-		return ""
+		return defaultConsumerType
 	}
 	return model.SystemAuthReferenceObjectType(fmt.Sprint(consumerType))
 }
 
-// GetInternalConsumerIDFromExtra gets internal consumer id from body extra if it exists.
-func (d *ReqData) GetInternalConsumerIDFromExtra() string {
+// InternalConsumerID gets internal consumer id from body extra if it exists.
+func (d *ReqData) InternalConsumerID() string {
 	if d.Body.Extra == nil {
 		return ""
 	}
@@ -284,13 +296,9 @@ func (d *ReqData) GetInternalConsumerIDFromExtra() string {
 
 // GetExtraDataWithDefaults gets body extra.
 func (d *ReqData) GetExtraDataWithDefaults() ExtraData {
-	consumerType := d.GetConsumerTypeFromExtra()
-	if consumerType == "" {
-		consumerType = model.RuntimeReference
-	}
 	return ExtraData{
-		InternalConsumerID: d.GetInternalConsumerIDFromExtra(),
-		ConsumerType:       consumerType,
-		AccessLevel:        d.GetAccessLevelFromExtra(),
+		InternalConsumerID: d.InternalConsumerID(),
+		ConsumerType:       d.ConsumerType(),
+		AccessLevel:        d.TenantAccessLevel(),
 	}
 }

@@ -67,6 +67,7 @@ func NewProcessor(subjectConsumerTypeMappingConfig string, ouPattern string) (*p
 func (p *processor) AuthIDFromSubjectFunc() func(subject string) string {
 	authIDFromMappingFunc := p.authIDFromMappings()
 	authIDFromOUsFunc := cert.GetRemainingOrganizationalUnit(p.ouPattern)
+
 	return func(subject string) string {
 		if authIDFromMapping := authIDFromMappingFunc(subject); authIDFromMapping != "" {
 			return authIDFromMapping
@@ -90,6 +91,11 @@ func (p *processor) AuthSessionExtraFromSubjectFunc() func(context.Context, stri
 
 		return nil
 	}
+}
+
+// EmptyAuthSessionExtraFunc returns a function which returns an empty auth session body extra.
+func (p *processor) EmptyAuthSessionExtraFunc() func(context.Context, string) map[string]interface{} {
+	return func(ctx context.Context, subject string) map[string]interface{} { return nil }
 }
 
 func (p *processor) authIDFromMappings() func(subject string) string {

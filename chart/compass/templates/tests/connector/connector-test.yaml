@@ -44,10 +44,20 @@ spec:
             value: {{ .Values.global.connector.revocation.configmap.name | quote }}
           - name: APP_TENANT
             value: "{{.Values.global.defaultTenant}}"
-          - name: APP_APPS_FOR_RUNTIME_TENANT
-            value: "{{ (index .Values.global.tenants 13).id }}"
+          - name: APP_RUNTIME_SUBACCOUNT_TENANT_ID
+            value: "{{ .Values.global.certificateTenant }}"
           - name: DOMAIN
             value: "{{ .Values.global.ingress.domainName }}"
+          - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+            value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+          - name: APP_EXTERNALLY_ISSUED_CERT_SECRET_NAME
+            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+          - name: APP_EXTERNALLY_ISSUED_CERT_SECRET_NAMESPACE
+            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}"
+          - name: APP_EXTERNALLY_ISSUED_CERT_SECRET_CERTIFICATE_KEY
+            value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey | quote }}
+          - name: APP_EXTERNALLY_ISSUED_CERT_SECRET_KEY_KEY
+            value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey | quote }}
           - name: USER_EMAIL
             valueFrom:
               secretKeyRef:
