@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -58,14 +57,14 @@ func (suite *ServiceAccountTokenAuthorizationProviderTestSuite) TestServiceAccou
 func (suite *ServiceAccountTokenAuthorizationProviderTestSuite) TestServiceAccountTokenAuthorizationProvider_DoesNotMatchWhenBasicCredentialsInContext() {
 	provider := auth.NewServiceAccountTokenAuthorizationProvider()
 
-	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.BasicCredentialData{}))
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.BasicCredentials{}))
 	suite.Require().Equal(matches, false)
 }
 
 func (suite *ServiceAccountTokenAuthorizationProviderTestSuite) TestServiceAccountTokenAuthorizationProvider_DoesNotMatchWhenOAuthCredentialsInContext() {
 	provider := auth.NewServiceAccountTokenAuthorizationProvider()
 
-	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.OAuthCredentialData{}))
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.OAuthCredentials{}))
 	suite.Require().Equal(matches, false)
 }
 

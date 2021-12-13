@@ -23,8 +23,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/stretchr/testify/suite"
 )
 
@@ -52,14 +50,14 @@ func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider
 func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider_Matches() {
 	provider := auth.NewBasicAuthorizationProvider()
 
-	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.BasicCredentialData{}))
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.BasicCredentials{}))
 	suite.Require().Equal(matches, true)
 }
 
 func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider_DoesNotMatchWhenOAuthCredentialsInContext() {
 	provider := auth.NewBasicAuthorizationProvider()
 
-	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.OAuthCredentialData{}))
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.OAuthCredentials{}))
 	suite.Require().Equal(matches, false)
 }
 
@@ -74,7 +72,7 @@ func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider
 	provider := auth.NewBasicAuthorizationProvider()
 
 	username, password := "user", "pass"
-	ctx := auth.SaveToContext(context.Background(), &graphql.BasicCredentialData{
+	ctx := auth.SaveToContext(context.Background(), &auth.BasicCredentials{
 		Username: username,
 		Password: password,
 	})
@@ -101,7 +99,7 @@ func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider
 func (suite *BasicAuthorizationProviderTestSuite) TestBasicAuthorizationProvider_GetAuthorizationFailsWhenOAuthCredentialsAreInContext() {
 	provider := auth.NewBasicAuthorizationProvider()
 
-	authorization, err := provider.GetAuthorization(auth.SaveToContext(context.Background(), &graphql.OAuthCredentialData{}))
+	authorization, err := provider.GetAuthorization(auth.SaveToContext(context.Background(), &auth.OAuthCredentials{}))
 
 	suite.Require().Error(err)
 	suite.Require().Contains(err.Error(), "failed to cast credentials to basic credentials type")
