@@ -85,7 +85,7 @@ func assertK8sDeleteCalledWithOperation(t *testing.T, k8sClient *controllersfake
 
 func assertStatusManagerInitializeCalledWithOperation(t *testing.T, statusManagerClient *controllersfakes.FakeStatusManager, expectedOperation *v1alpha1.Operation) {
 	require.Equal(t, 1, statusManagerClient.InitializeCallCount())
-	actualOperation := statusManagerClient.InitializeArgsForCall(0)
+	_, actualOperation := statusManagerClient.InitializeArgsForCall(0)
 	require.Equal(t, expectedOperation, actualOperation)
 }
 

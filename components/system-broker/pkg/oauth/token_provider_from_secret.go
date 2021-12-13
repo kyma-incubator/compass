@@ -107,7 +107,7 @@ func (c *tokenAuthorizationProviderFromSecret) GetAuthorization(ctx context.Cont
 		return "", errors.Wrap(err, "while get credentials from secret")
 	}
 
-	token, err := GetAuthorizationToken(ctx, c.httpClient, credentials, scopes)
+	token, err := GetAuthorizationToken(ctx, c.httpClient, credentials, scopes, nil)
 	if err != nil {
 		return "", err
 	}
@@ -141,7 +141,7 @@ func (c *tokenAuthorizationProviderFromSecret) extractOAuthClientFromSecret(ctx 
 	}, nil
 }
 
-func GetAuthorizationToken(ctx context.Context, httpClient httputils.Client, credentials Credentials, scopes string) (httputils.Token, error) {
+func GetAuthorizationToken(ctx context.Context, httpClient httputils.Client, credentials Credentials, scopes string, additionalHeaders map[string]string) (httputils.Token, error) {
 	log.C(ctx).Infof("Getting authorization token from endpoint: %s", credentials.TokenURL)
 
 	form := url.Values{}
@@ -157,6 +157,11 @@ func GetAuthorizationToken(ctx context.Context, httpClient httputils.Client, cre
 
 	request.SetBasicAuth(credentials.ClientID, credentials.ClientSecret)
 	request.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+	if additionalHeaders != nil {
+		for headerName, headerValue := range additionalHeaders {
+			request.Header.Set(headerName, headerValue)
+		}
+	}
 
 	response, err := httpClient.Do(request)
 	if err != nil {
