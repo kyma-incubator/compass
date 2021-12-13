@@ -53,6 +53,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 		Name:        "Foo",
 		Description: &desc,
 	}
+	labels := map[string]interface{}{"xsappnameCMPClone": "clone"}
 
 	testCases := []struct {
 		Name             string
@@ -77,7 +78,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("Create", contextParam, modelInput).Return("foo", nil).Once()
+				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, labels).Return("foo", nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -86,7 +87,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(modelInput),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
 			Input:            gqlInput,
 			ExpectedRuntime:  gqlRuntime,
 			ExpectedErr:      nil,
@@ -100,7 +101,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("Create", contextParam, modelInput).Return("", testErr).Once()
+				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, labels).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -108,7 +109,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(labels),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -122,7 +123,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("Create", contextParam, modelInput).Return("foo", nil).Once()
+				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, labels).Return("foo", nil).Once()
 				svc.On("Get", contextParam, "foo").Return(nil, testErr).Once()
 				return svc
 			},
@@ -131,7 +132,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(labels),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -199,6 +200,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 		Description: &desc,
 	}
 	runtimeID := "foo"
+	emptyLabels := make(map[string]interface{})
 
 	testCases := []struct {
 		Name             string
@@ -232,7 +234,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(emptyLabels),
 			RuntimeID:        runtimeID,
 			Input:            gqlInput,
 			ExpectedRuntime:  gqlRuntime,
@@ -255,7 +257,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(emptyLabels),
 			RuntimeID:        runtimeID,
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
@@ -279,7 +281,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(modelInput),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(emptyLabels),
 			RuntimeID:        runtimeID,
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
