@@ -267,13 +267,14 @@ func (d *ReqData) TenantAccessLevels() []tenantEntity.Type {
 	if _, found := d.Body.Extra[cert.AccessLevelsExtraField]; !found {
 		return nil
 	}
-	accessLevelsJSONStr, ok := d.Body.Extra[cert.AccessLevelsExtraField].([]string)
+	// TODO prettify
+	accessLevelsRaw, ok := d.Body.Extra[cert.AccessLevelsExtraField].([]interface{})
 	if !ok {
 		return nil
 	}
-	accessLevels := make([]tenantEntity.Type, len(accessLevelsJSONStr))
-	for _, al := range accessLevelsJSONStr {
-		accessLevels = append(accessLevels, tenantEntity.Type(al))
+	accessLevels := make([]tenantEntity.Type, 0)
+	for _, al := range accessLevelsRaw {
+		accessLevels = append(accessLevels, tenantEntity.Type(fmt.Sprintf("%s", al)))
 	}
 	return accessLevels
 }

@@ -159,14 +159,14 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ReqDataInput: oathkeeper.ReqData{
 				Body: oathkeeper.ReqBody{
 					Extra: map[string]interface{}{
-						cert.AccessLevelExtraField:  tenantEntity.Subaccount,
+						cert.AccessLevelsExtraField: []interface{}{tenantEntity.Subaccount},
 						cert.ConsumerTypeExtraField: model.IntegrationSystemReference,
 					},
 					Header: directorHeadersWithTenant,
 				},
 			},
 			AuthDetailsInput: authDetails,
-			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s with ID %s", authDetails.AuthID, testSubaccount.Type, testAccount.ExternalTenant)),
+			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s tenant with ID %s", authDetails.AuthID, testAccount.Type, testAccount.ExternalTenant)),
 		},
 		{
 			Name: "Error when consumer exists check function fails",
@@ -188,7 +188,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ReqDataInput: oathkeeper.ReqData{
 				Body: oathkeeper.ReqBody{
 					Extra: map[string]interface{}{
-						cert.AccessLevelExtraField:   tenantEntity.Account,
+						cert.AccessLevelsExtraField:  []interface{}{tenantEntity.Account},
 						cert.InternalConsumerIDField: internalConsumerID,
 						cert.ConsumerTypeExtraField:  model.IntegrationSystemReference,
 					},
@@ -218,7 +218,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ReqDataInput: oathkeeper.ReqData{
 				Body: oathkeeper.ReqBody{
 					Extra: map[string]interface{}{
-						cert.AccessLevelExtraField:   tenantEntity.Account,
+						cert.AccessLevelsExtraField:  []interface{}{tenantEntity.Account},
 						cert.InternalConsumerIDField: internalConsumerID,
 						cert.ConsumerTypeExtraField:  model.IntegrationSystemReference,
 					},

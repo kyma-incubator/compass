@@ -64,8 +64,8 @@ global:
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
-    - name: TestIntegrationSystemSubaccount
-      id: 123e4567-e89b-12d3-a456-426614174001
+    - name: TestIntegrationSystemManagedSubaccount
+      id: 3cfcdd62-320d-403b-b66a-4ee3cdd06947
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestIntegrationSystemManagedAccount

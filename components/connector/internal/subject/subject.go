@@ -90,7 +90,7 @@ func (p *processor) AuthSessionExtraFromSubjectFunc() func(context.Context, stri
 			log.C(ctx).Infof("trying to match subject pattern %s", m.Subject)
 			if subjectsMatch(subject, m.Subject) {
 				log.C(ctx).Infof("pattern matched subject!")
-				return cert.GetExtra(m.ConsumerType, m.InternalConsumerID, m.TenantAccessLevels)
+				return cert.GetAuthSessionExtra(m.ConsumerType, m.InternalConsumerID, m.TenantAccessLevels)
 			}
 		}
 
