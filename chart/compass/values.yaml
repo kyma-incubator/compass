@@ -87,13 +87,13 @@ global:
       version: "PR-2118"
     director:
       dir:
-      version: "PR-2128"
+      version: "PR-2132"
     gateway:
       dir:
       version: "PR-2126"
     operations_controller:
       dir:
-      version: "PR-2133"
+      version: "PR-2132"
     ord_service:
       dir:
       version: "PR-50"
@@ -102,7 +102,7 @@ global:
       version: "PR-2128"
     system_broker:
       dir:
-      version: "PR-2126"
+      version: "PR-2132"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -110,7 +110,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2128"
+      version: "PR-2132"
     console:
       dir:
       version: "PR-47"
@@ -500,13 +500,15 @@ global:
       client:
         skipSSLValidation: false
     oauth:
-      client: ""
+      client: "client_id"
       secret: ""
-      tokenEndpointProtocol: ""
-      tokenBaseUrl: ""
-      tokenPath: ""
-      scopesClaim: ""
-      tenantHeaderName: ""
+      tokenEndpointProtocol: "https"
+      tokenBaseUrl: "compass-external-services-mock-sap-mtls"
+      tokenPath: "/cert/token"
+      scopesClaim: "scopes"
+      tenantHeaderName: "x-zid"
+      tokenRequestTimeout: 10s
+      skipSSLValidation: true
     secret:
       name: "compass-system-fetcher-secret"
       clientIdKey: client-id
@@ -588,6 +590,7 @@ global:
     basicSecuredPort: 8083
     oauthSecuredPort: 8084
     certSecuredHost: compass-external-services-mock-sap-mtls
+    unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials
 
