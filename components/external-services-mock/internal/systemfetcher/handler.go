@@ -69,6 +69,7 @@ func (s *SystemFetcherHandler) HandleFunc(rw http.ResponseWriter, req *http.Requ
 	}
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+
 	_, err := rw.Write(resp)
 	if err != nil {
 		httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)

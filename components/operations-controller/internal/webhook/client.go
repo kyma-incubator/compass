@@ -194,7 +194,7 @@ func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.
 		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
 			return c.mtlsClient.Do(req)
 		} else if webhook.Auth.Credential != nil {
-			ctx = auth.SaveToContext(ctx, webhook.Auth.Credential)
+			ctx = saveToContext(ctx, webhook.Auth.Credential)
 			req = req.WithContext(ctx)
 			return c.httpClient.Do(req)
 		} else {
@@ -259,4 +259,26 @@ func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
 		return recerr.NewWebhookStatusGoneErr(*goneStatusCode)
 	}
 	return nil
+}
+
+func saveToContext(ctx context.Context, credentialData graphql.CredentialData) context.Context {
+	var credentials auth.Credentials
+
+	switch v := credentialData.(type) {
+	case *graphql.BasicCredentialData:
+		credentials = &auth.BasicCredentials{
+			Username: v.Username,
+			Password: v.Password,
+		}
+	case *graphql.OAuthCredentialData:
+		credentials = &auth.OAuthCredentials{
+			ClientID:     v.ClientID,
+			ClientSecret: v.ClientSecret,
+			TokenURL:     v.URL,
+		}
+	default:
+		return ctx
+	}
+
+	return auth.SaveToContext(ctx, credentials)
 }

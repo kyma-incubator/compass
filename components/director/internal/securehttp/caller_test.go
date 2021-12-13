@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"golang.org/x/oauth2"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 const (
@@ -31,12 +31,12 @@ const (
 
 func TestCaller_Call(t *testing.T) {
 	oauthServer := httptest.NewServer(getTestOauthServer(t))
-	oauthCredentials := &graphql.OAuthCredentialData{
+	oauthCredentials := &auth.OAuthCredentials{
 		ClientID:     testClientID,
 		ClientSecret: testClientSecret,
-		URL:          oauthServer.URL,
+		TokenURL:     oauthServer.URL,
 	}
-	basicCredentials := &graphql.BasicCredentialData{
+	basicCredentials := &auth.BasicCredentials{
 		Username: testUser,
 		Password: testPassword,
 	}
@@ -44,7 +44,7 @@ func TestCaller_Call(t *testing.T) {
 	testCases := []struct {
 		Name        string
 		Server      *httptest.Server
-		Credentials graphql.CredentialData
+		Credentials auth.Credentials
 		ExpectedErr error
 	}{
 		{

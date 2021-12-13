@@ -7,14 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-	gcli "github.com/machinebox/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -28,6 +20,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
@@ -35,20 +28,26 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+	oauth "github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
 
 type config struct {
 	APIConfig      systemfetcher.APIConfig
-	OAuth2Config   systemfetcher.OAuth2Config
+	OAuth2Config   oauth.Config
 	SystemFetcher  systemfetcher.Config
 	Database       persistence.DatabaseConfig
 	TemplateConfig appTemplateConfig
@@ -104,9 +103,8 @@ func main() {
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize certificate loader"))
 	}
-	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
 
-	sf, err := createSystemFetcher(cfg, cfgProvider, transact, &http.Client{Timeout: cfg.ClientTimeout}, accessStrategyExecutorProvider)
+	sf, err := createSystemFetcher(cfg, cfgProvider, transact, &http.Client{Timeout: cfg.ClientTimeout}, certCache)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
 	}
@@ -162,7 +160,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	return nil
 }
 
-func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient *http.Client, accessStrategyExecutorProvider *accessstrategy.Provider) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
 	uidSvc := uid.NewService()
 
 	tenantConv := tenant.NewConverter()
@@ -203,7 +201,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessStrategyExecutorProvider)
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
@@ -215,7 +213,26 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
 
-	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, cfg.OAuth2Config, systemfetcher.DefaultClientCreator)
+	var authProvider httputil.AuthorizationProvider
+
+	if cfg.OAuth2Config.ClientSecret == "" {
+		// mTLS client credentials
+		authProvider = pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, certCache, pkgAuth.DefaultMtlsClientCreator)
+	} else {
+		// plain client credentials
+		baseClient := &http.Client{
+			Timeout:   cfg.OAuth2Config.TokenRequestTimeout,
+			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: cfg.OAuth2Config.SkipSSLValidation}},
+		}
+		authProvider = pkgAuth.NewTokenAuthorizationProvider(baseClient)
+	}
+
+	client := &http.Client{
+		Transport: httputil.NewSecuredTransport(http.DefaultTransport, authProvider),
+		Timeout:   cfg.APIConfig.Timeout,
+	}
+	oauthClient := systemfetcher.NewOauthClient(cfg.OAuth2Config, client)
+	systemsAPIClient := systemfetcher.NewClient(cfg.APIConfig, oauthClient)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{

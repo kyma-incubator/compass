@@ -44,6 +44,10 @@ spec:
                   secretKeyRef:
                     name: {{ .Values.global.externalServicesMock.oauthSecretName }}
                     key: client-secret
+              - name: APP_OAUTH_SCOPES
+                value: "{{ .Values.global.systemFetcher.oauth.scopesClaim }}"
+              - name: APP_OAUTH_TENANT_HEADER
+                value: "{{ .Values.global.systemFetcher.oauth.tenantHeaderName }}"
               - name: BASIC_USERNAME
                 valueFrom:
                   secretKeyRef:

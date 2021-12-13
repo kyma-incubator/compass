@@ -67,6 +67,9 @@ type ORDServers struct {
 type OAuthConfig struct {
 	ClientID     string `envconfig:"APP_CLIENT_ID"`
 	ClientSecret string `envconfig:"APP_CLIENT_SECRET"`
+
+	Scopes       string `envconfig:"APP_OAUTH_SCOPES"`
+	TenantHeader string `envconfig:"APP_OAUTH_TENANT_HEADER"`
 }
 
 type BasicCredentialsConfig struct {
@@ -113,7 +116,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
 
 	// Oauth server handlers
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, key)
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
 	router.HandleFunc("/secured/oauth/token", tokenHandler.Generate).Methods(http.MethodPost)
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
@@ -128,14 +131,16 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	configChangeSvc := configurationchange.NewService()
 	configChangeHandler := configurationchange.NewConfigurationHandler(configChangeSvc, logger)
 	configChangeRouter := router.PathPrefix("/audit-log/v2/configuration-changes").Subrouter()
-	configChangeRouter.Use(oauthMiddleware(&key.PublicKey))
+	configChangeRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
 
 	// System fetcher handlers
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
-	router.HandleFunc("/systemfetcher/systems", systemFetcherHandler.HandleFunc)
+	systemsRouter := router.PathPrefix("/systemfetcher/systems").Subrouter()
+	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator(cfg.DefaultTenant, cfg.ClientID, cfg.Scopes)))
+	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
 	tenantFetcherHandler := tenantfetcher.NewHandler()
@@ -172,7 +177,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 
 	oauthRouter := router.PathPrefix("/external-api/secured/oauth").Subrouter()
-	oauthRouter.Use(oauthMiddleware(&key.PublicKey))
+	oauthRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	oauthRouter.HandleFunc("/spec", apispec.HandleFunc)
 
 	basicAuthRouter := router.PathPrefix("/external-api/secured/basic").Subrouter()
@@ -190,7 +195,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 
 	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.SelfRegConfig)
 	selfRegRouter := router.PathPrefix(cfg.SelfRegConfig.Path).Subrouter()
-	selfRegRouter.Use(oauthMiddleware(&key.PublicKey))
+	selfRegRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	selfRegRouter.HandleFunc("", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
 	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
 
@@ -219,7 +224,7 @@ func initCertSecuredServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, key)
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
 	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
 
 	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
@@ -271,7 +276,7 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router := mux.NewRouter()
 
 	configRouter := router.PathPrefix("/.well-known").Subrouter()
-	configRouter.Use(oauthMiddleware(&key.PublicKey))
+	configRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	configRouter.HandleFunc("/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.OauthPort), "open"))
@@ -285,7 +290,7 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	}
 }
 
-func oauthMiddleware(key *rsa.PublicKey) func(next http.Handler) http.Handler {
+func oauthMiddleware(key *rsa.PublicKey, validateClaims func(claims *oauth.Claims) bool) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -299,10 +304,16 @@ func oauthMiddleware(key *rsa.PublicKey) func(next http.Handler) http.Handler {
 			}
 
 			token := strings.TrimPrefix(authHeader, "Bearer ")
-			if _, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) {
+			parsed := &oauth.Claims{}
+
+			if _, err := jwt.ParseWithClaims(token, parsed, func(_ *jwt.Token) (interface{}, error) {
 				return key, nil
 			}); err != nil {
 				httphelpers.WriteError(w, errors.Wrap(err, "Invalid Bearer token"), http.StatusUnauthorized)
+				return
+			}
+			if !validateClaims(parsed) {
+				httphelpers.WriteError(w, errors.New("Could not validate claims"), http.StatusUnauthorized)
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -364,5 +375,14 @@ func stopServer(server *http.Server) {
 
 	if err := server.Shutdown(ctx); err != nil {
 		log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
+	}
+}
+
+func noopClaimsValidator(_ *oauth.Claims) bool {
+	return true
+}
+func getClaimsValidator(expectedTenant, expectedClient, expectedScopes string) func(*oauth.Claims) bool {
+	return func(claims *oauth.Claims) bool {
+		return claims.Tenant == expectedTenant
 	}
 }

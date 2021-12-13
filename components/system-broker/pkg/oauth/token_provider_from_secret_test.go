@@ -102,7 +102,7 @@ func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizati
 
 func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizationProviderFromSecret_GetAuthorizationToken() {
 	httpClient := &MockClient{
-		DoFunc: suite.validResponseDoFunc(),
+		DoFunc: suite.validResponseDoFunc(nil),
 	}
 
 	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, httpClient, time.Second, suite.k8sClientFunc)
@@ -115,7 +115,7 @@ func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizati
 
 func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizationProviderFromSecret_GetAuthorizationTokenBasedOnTokenValidity() {
 	httpClient := &MockClient{
-		DoFunc: suite.validResponseDoFunc(),
+		DoFunc: suite.validResponseDoFunc(nil),
 	}
 
 	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, httpClient, time.Second, suite.k8sClientFunc)
@@ -158,7 +158,7 @@ func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizati
 func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizationProviderFromSecret_GetAuthorizationToken_ShouldReturnErrorIfReturnedTokenIsEmpty() {
 	suite.accessToken.AccessToken = ""
 	httpClient := &MockClient{
-		DoFunc: suite.validResponseDoFunc(),
+		DoFunc: suite.validResponseDoFunc(nil),
 	}
 
 	provider, err := oauth.NewAuthorizationProviderFromSecret(suite.config, httpClient, time.Second, suite.k8sClientFunc)
@@ -184,9 +184,30 @@ func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestTokenAuthorizati
 	suite.Require().Empty(authorization)
 }
 
-func (suite *TokenAuthorizationProviderFromSecretTestSuite) validResponseDoFunc() func(*http.Request) (*http.Response, error) {
+func (suite *TokenAuthorizationProviderFromSecretTestSuite) TestGetAuthorizationTokenAdditionalHeaders() {
+	expectedHeaders := map[string]string{"x-zid": "tenant1"}
+	httpClient := &MockClient{
+		DoFunc: suite.validResponseDoFunc(expectedHeaders),
+	}
+	oauthCfg := oauth.Credentials{
+		ClientID:     suite.clientID,
+		ClientSecret: suite.clientSecret,
+		TokenURL:     suite.tokenEndpoint,
+	}
+
+	authorization, err := oauth.GetAuthorizationToken(context.TODO(), httpClient, oauthCfg, "", expectedHeaders)
+	suite.Require().NoError(err)
+	suite.Require().Equal(suite.accessToken.AccessToken, authorization.AccessToken)
+}
+
+func (suite *TokenAuthorizationProviderFromSecretTestSuite) validResponseDoFunc(additionalHeaders map[string]string) func(*http.Request) (*http.Response, error) {
 	return func(req *http.Request) (*http.Response, error) {
 		suite.Require().Equal(suite.tokenEndpoint, req.URL.String())
+		if additionalHeaders != nil {
+			for headerName, headerVal := range additionalHeaders {
+				suite.Require().Equal(headerVal, req.Header.Get(headerName))
+			}
+		}
 
 		username, password, ok := req.BasicAuth()
 		suite.Require().True(ok, "Expected client credentials from secret to be provided as basic header")
