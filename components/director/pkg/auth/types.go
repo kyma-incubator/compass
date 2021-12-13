@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 type contextKey string
@@ -52,9 +51,11 @@ type BasicCredentials struct {
 
 // OAuthCredentials implements the Credentials interface for the OAuth flow
 type OAuthCredentials struct {
-	ClientID     string
-	ClientSecret string
-	TokenURL     string
+	ClientID          string
+	ClientSecret      string
+	TokenURL          string
+	Scopes            string
+	AdditionalHeaders map[string]string
 }
 
 // Get returns the specified Credentials implementation
@@ -89,24 +90,6 @@ func LoadFromContext(ctx context.Context) (Credentials, error) {
 }
 
 // SaveToContext saves the given credentials in the specified context
-func SaveToContext(ctx context.Context, credentialData graphql.CredentialData) context.Context {
-	var credentials Credentials
-
-	switch v := credentialData.(type) {
-	case *graphql.BasicCredentialData:
-		credentials = &BasicCredentials{
-			Username: v.Username,
-			Password: v.Password,
-		}
-	case *graphql.OAuthCredentialData:
-		credentials = &OAuthCredentials{
-			ClientID:     v.ClientID,
-			ClientSecret: v.ClientSecret,
-			TokenURL:     v.URL,
-		}
-	default:
-		return ctx
-	}
-
+func SaveToContext(ctx context.Context, credentials Credentials) context.Context {
 	return context.WithValue(ctx, CredentialsCtxKey, credentials)
 }

@@ -8,29 +8,27 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	director_http "github.com/kyma-incubator/compass/components/director/pkg/http"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 // Caller can be used to call secured http endpoints with given credentials
 type Caller struct {
-	credentials graphql.CredentialData
+	credentials auth.Credentials
 
 	provider director_http.AuthorizationProvider
 	client   *http.Client
 }
 
 // NewCaller creates a new Caller
-func NewCaller(credentials graphql.CredentialData, clientTimeout time.Duration) *Caller {
+func NewCaller(credentials auth.Credentials, clientTimeout time.Duration) *Caller {
 	c := &Caller{
 		credentials: credentials,
 		client:      &http.Client{Timeout: clientTimeout},
 	}
 
-	switch credentials.(type) {
-	case *graphql.BasicCredentialData:
+	switch credentials.Type() {
+	case auth.BasicCredentialType:
 		c.provider = auth.NewBasicAuthorizationProvider()
-	case *graphql.OAuthCredentialData:
+	case auth.OAuthCredentialType:
 		c.provider = auth.NewTokenAuthorizationProvider(&http.Client{Timeout: clientTimeout})
 	}
 	c.client.Transport = director_http.NewCorrelationIDTransport(director_http.NewSecuredTransport(http.DefaultTransport, c.provider))

@@ -25,6 +25,8 @@ spec:
               hostnames:
                 # Used for calls to Director
                 - "{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
+                - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+                - "{{ .Values.global.externalServicesMock.unSecuredHost }}.{{ .Values.global.ingress.domainName }}"
           {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-system-fetcher
           containers:
@@ -90,6 +92,10 @@ spec:
                   value: {{ .Values.global.systemFetcher.oauth.tokenPath }}
                 - name: APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL
                   value: {{ .Values.global.systemFetcher.oauth.tokenEndpointProtocol }}
+                - name: APP_OAUTH_TOKEN_REQUEST_TIMEOUT
+                  value: {{ .Values.global.systemFetcher.oauth.tokenRequestTimeout | quote }}
+                - name: APP_OAUTH_SKIP_SSL_VALIDATION
+                  value: "{{ .Values.global.systemFetcher.oauth.skipSSLValidation }}"
                 - name: APP_DB_USER
                   valueFrom:
                     secretKeyRef:
@@ -173,7 +179,7 @@ metadata:
 data:
   {{ .Values.global.systemFetcher.secret.clientIdKey }}: {{ .Values.global.systemFetcher.oauth.client | b64enc | quote }}
   {{ .Values.global.systemFetcher.secret.clientSecretKey }}: {{ .Values.global.systemFetcher.oauth.secret | b64enc | quote }}
-  {{ .Values.global.systemFetcher.secret.oauthUrlKey }}: {{ .Values.global.systemFetcher.oauth.tokenBaseUrl | b64enc | quote }}
+  {{ .Values.global.systemFetcher.secret.oauthUrlKey }}: {{ printf "%s.%s" .Values.global.systemFetcher.oauth.tokenBaseUrl .Values.global.ingress.domainName | b64enc | quote }}
 {{ end }}
 {{ end }}
 ---

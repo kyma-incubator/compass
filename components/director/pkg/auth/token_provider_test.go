@@ -25,7 +25,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	httputilsfakes "github.com/kyma-incubator/compass/components/system-broker/pkg/http/httpfakes"
 	"github.com/pkg/errors"
 
@@ -58,14 +57,14 @@ func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider
 func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider_Matches() {
 	provider := auth.NewTokenAuthorizationProvider(nil)
 
-	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.OAuthCredentialData{}))
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.OAuthCredentials{}))
 	suite.Require().Equal(matches, true)
 }
 
 func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider_DoesNotMatchWhenBasicCredentialsInContext() {
 	provider := auth.NewTokenAuthorizationProvider(nil)
 
-	matches := provider.Matches(auth.SaveToContext(context.Background(), &graphql.BasicCredentialData{}))
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.BasicCredentials{}))
 	suite.Require().Equal(matches, false)
 }
 
@@ -86,11 +85,13 @@ func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider
 
 	provider := auth.NewTokenAuthorizationProvider(fakeClient)
 
-	clientID, clientSecret, tokenURL := "client-id", "client-secret", "https://test-domain.com/oauth/token"
-	ctx := auth.SaveToContext(context.Background(), &graphql.OAuthCredentialData{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		URL:          tokenURL,
+	clientID, clientSecret, tokenURL, scopes := "client-id", "client-secret", "https://test-domain.com/oauth/token", "scopes"
+	ctx := auth.SaveToContext(context.Background(), &auth.OAuthCredentials{
+		ClientID:          clientID,
+		ClientSecret:      clientSecret,
+		TokenURL:          tokenURL,
+		Scopes:            scopes,
+		AdditionalHeaders: map[string]string{"h1": "v1"},
 	})
 	authorization, err := provider.GetAuthorization(ctx)
 
@@ -107,7 +108,7 @@ func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider
 
 	provider := auth.NewTokenAuthorizationProvider(fakeClient)
 
-	ctx := auth.SaveToContext(context.Background(), &graphql.OAuthCredentialData{})
+	ctx := auth.SaveToContext(context.Background(), &auth.OAuthCredentials{})
 	authorization, err := provider.GetAuthorization(ctx)
 
 	suite.Require().Error(err)
@@ -125,10 +126,10 @@ func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider
 	suite.Require().Empty(authorization)
 }
 
-func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider_GetAuthorizationFailsWhenOAuthCredentialsAreInContext() {
+func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider_GetAuthorizationFailsWhenBasicCredentialsAreInContext() {
 	provider := auth.NewTokenAuthorizationProvider(nil)
 
-	authorization, err := provider.GetAuthorization(auth.SaveToContext(context.Background(), &graphql.BasicCredentialData{}))
+	authorization, err := provider.GetAuthorization(auth.SaveToContext(context.Background(), &auth.BasicCredentials{}))
 
 	suite.Require().Error(err)
 	suite.Require().Contains(err.Error(), "failed to cast credentials to oauth credentials type")
