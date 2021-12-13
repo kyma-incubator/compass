@@ -9,7 +9,6 @@ metadata:
     kyma-project.io/installation: ""
 data:
   global.externalServicesMock.enabled: "true"
-  global.externalServicesMock.auditlog: "false"
   gateway.gateway.auditlog.enabled: "false"
   gateway.gateway.auditlog.authMode: "oauth"
   global.systemFetcher.enabled: "true"
@@ -31,3 +30,8 @@ data:
   operations-controller.http.client.skipSSLValidation: "true"
   global.systemFetcher.http.client.skipSSLValidation: "true"
   global.http.client.skipSSLValidation: "true"
+  global.tests.http.client.skipSSLValidation.director: "true"
+  global.tests.http.client.skipSSLValidation.ordService: "true"
+  global.externalCertConfiguration.secrets.externalCertSvcSecret.manage: "true"
+  global.externalServicesMock.oauthSecret.manage: "true"
+  global.tests.basicCredentials.manage: "true"

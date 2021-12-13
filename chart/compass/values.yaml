@@ -64,45 +64,49 @@ global:
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
-    - name: TestIntegrationSystemSubaccount
+    - name: TestCertificateSubaccount
       id: 123e4567-e89b-12d3-a456-426614174001
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestIntegrationSystemManagedSubaccount
+      id: 3cfcdd62-320d-403b-b66a-4ee3cdd06947
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestIntegrationSystemManagedAccount
       id: 7e8ab2e3-3bb4-42e3-92b2-4e0bf48559d3
       type: account
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
 
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2126"
+      version: "PR-2166"
     connectivity_adapter:
       dir:
-      version: "PR-2138"
+      version: "PR-2166"
     pairing_adapter:
       dir:
-      version: "PR-2118"
+      version: "PR-2166"
     director:
       dir:
-      version: "PR-2142"
+      version: "PR-2153"
     gateway:
       dir:
-      version: "PR-2126"
+      version: "PR-2166"
     operations_controller:
       dir:
-      version: "PR-2132"
+      version: "PR-2166"
     ord_service:
       dir:
-      version: "PR-51"
+      version: "PR-58"
     schema_migrator:
       dir:
-      version: "PR-2150"
+      version: "PR-2187"
     system_broker:
       dir:
-      version: "PR-2132"
+      version: "PR-2166"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -110,13 +114,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2132"
+      version: "PR-2153"
     console:
       dir:
-      version: "PR-49"
+      version: "PR-54"
     e2e_tests:
       dir:
-      version: "PR-2123"
+      version: "PR-2153"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -137,6 +141,10 @@ global:
     graphql:
       external:
         port: 3000
+    tls:
+      secure:
+        internal:
+          host: compass-director-internal
     validator:
       port: 8080
     metrics:
@@ -180,9 +188,6 @@ global:
   log:
     format: "kibana"
 
-  testCredentials:
-    secretName: "test-credentials-secret"
-
   enableCompassDefaultScenarioAssignment: true
 
   tenantConfig:
@@ -220,7 +225,7 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_level": "account", "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=123e4567-e89b-12d3-a456-426614174001, CN=compass"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}]'
 
   system_broker:
     enabled: true
@@ -253,6 +258,7 @@ global:
         host: compass-gateway-sap-mtls
         certSecret: compass-gateway-mtls-certs # Use connector's root CA as root CA by default. This should be overridden for productive deployments.
     headers:
+      rateLimit: X-Flow-Identity
       request:
         remove:
           - "Client-Id-From-Token"
@@ -308,6 +314,7 @@ global:
     domainName: "kyma.local"
 
   database:
+    sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
     manageSecrets: true
     embedded:
       enabled: true
@@ -412,7 +419,7 @@ global:
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       name: "provider"
-      subscriptionProviderIdProperty: "subscriptionProviderId"
+      subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
@@ -425,14 +432,15 @@ global:
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "" # It's empty because in local setup we use connector CA which didn't have Locality property
-    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=123e4567-e89b-12d3-a456-426614174001/L=%s/CN=%s"
+    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
+    ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
     commonName: "compass"
     locality: "local"
     certSvcApiPath: "/cert"
     tokenPath: "/secured/oauth/token"
     secrets:
       externalCertSvcSecret:
-        manage: true
+        manage: false
         name: "cert-svc-secret"
         clientIdKey: client-id
         clientSecretKey: client-secret
@@ -448,6 +456,7 @@ global:
       schedule: "*/1 * * * *" # Executes every minute
       certValidity: "7"
       clientCertRetryAttempts: "8"
+      containerName: "certificate-rotation"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
@@ -467,6 +476,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
+    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8086/.well-known/open-resource-discovery
 
   systemFetcher:
     enabled: false
@@ -563,7 +573,7 @@ global:
         discriminatorValue: ""
         detailsField: "details"
         entityTypeField: "entityType"
-        parentIDField: "parentGuid"
+        globalAccountID: "gaID"
         regionField: "region"
         movedSubaccountTargetField: "targetGlobalAccountGUID"
         movedSubaccountSourceField: "sourceGlobalAccountGUID"
@@ -585,20 +595,57 @@ global:
 
   externalServicesMock:
     enabled: false
-    auditlog: false
     certSecuredPort: 8081
-    unsecuredPort: 8082
-    basicSecuredPort: 8083
-    oauthSecuredPort: 8084
+    ordCertSecuredPort: 8082
+    unsecuredPort: 8083
+    basicSecuredPort: 8084
+    oauthSecuredPort: 8085
+    ordGlobalRegistryPort: 8086
     certSecuredHost: compass-external-services-mock-sap-mtls
+    ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
-    oauthSecretName: compass-external-services-mock-oauth-credentials
+    oauthSecret:
+      manage: false
+      name: compass-external-services-mock-oauth-credentials
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      oauthUrlKey: url
+      oauthTokenPath: "/secured/oauth/token"
+    auditlog:
+      applyMockConfiguration: false
+      managementApiPath: /audit-log/v2/configuration-changes/search
+      secret:
+        name: "auditlog-instance-management"
+        urlKey: url
+        tokenUrlKey: token-url
+        clientIdKey: client-id
+        clientSecretKey: client-secret
 
   tests:
+    http:
+      client:
+        skipSSLValidation:
+          director: false
+          ordService: false
+          connectivityAdapter: true
     ordService:
       skipPattern: ""
-    director:
+      accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
+      consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
+      providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
+      consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
+      consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
+      externalClientCertTestSecretName: "external-client-certificate-test-secret"
+      externalClientCertTestSecretNamespace: "compass-system"
+      certSvcInstanceTestSecretName: "cert-svc-secret"
+      consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      subscriptionOauthSecret:
+        name: compass-external-services-mock-oauth-credentials
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
+    externalServicesMock:
       skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
@@ -608,11 +655,14 @@ global:
     ordServiceFQDN: http://compass-ord-service.compass-system.svc.cluster.local
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
+    basicCredentials:
+      manage: false
+      secretName: "test-basic-credentials-secret"
+    subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+    subscriptionProviderIdValue: "id-value!t12345"
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1
-    skipTLSVerify: true
-
     token:
       server:
         enabled: false

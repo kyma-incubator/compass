@@ -13,14 +13,14 @@ const (
 )
 
 type TenantsResponse struct {
-	Result []*graphql.Tenant `json:"result"`
+	Result *graphql.TenantPage `json:"result"`
 }
 
 type TenantResponse struct {
 	Result *graphql.Tenant `json:"result"`
 }
 
-func GetTenants(gqlClient *gcli.Client) ([]*graphql.Tenant, error) {
+func GetTenants(gqlClient *gcli.Client) (*graphql.TenantPage, error) {
 	query := FixTenantsRequest().Query()
 	req := gcli.NewRequest(query)
 

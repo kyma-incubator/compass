@@ -57,22 +57,42 @@ type TenantConfig struct {
 
 type config struct {
 	TenantConfig
-	CA certs.CAConfig
+	ExternalCA certs.CAConfig
 
-	DirectorURL                      string
-	DirectorExternalCertSecuredURL   string
-	ORDServiceURL                    string
-	ORDExternalCertSecuredServiceURL string
-	ORDServiceStaticPrefix           string
-	ORDServiceDefaultResponseType    string
-	DefaultScenarioEnabled           bool `envconfig:"default=true"`
-	ExternalServicesMockURL          string
-	ClientID                         string
-	ClientSecret                     string
-	SubscriptionProviderLabelKey     string
-	ConsumerSubaccountIdsLabelKey    string
-	SelfRegisterDistinguishLabelKey  string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
-	SelfRegisterLabelKey             string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
+	ExternalServicesMockBaseURL           string
+	DirectorURL                           string
+	DirectorExternalCertSecuredURL        string
+	ORDServiceURL                         string
+	ORDExternalCertSecuredServiceURL      string
+	ORDServiceStaticPrefix                string
+	ORDServiceDefaultResponseType         string
+	DefaultScenarioEnabled                bool `envconfig:"default=true"`
+	ConsumerTokenURL                      string
+	TokenPath                             string
+	ClientID                              string
+	ClientSecret                          string
+	SubscriptionURL                       string
+	SubscriptionTokenURL                  string
+	SubscriptionClientID                  string
+	SubscriptionClientSecret              string
+	SubscriptionProviderLabelKey          string
+	SubscriptionProviderID                string
+	SelfRegisterLabelKey                  string
+	SelfRegisterLabelValuePrefix          string
+	SkipSSLValidation                     bool
+	TestExternalCertSubject               string
+	ExternalClientCertTestSecretName      string
+	ExternalClientCertTestSecretNamespace string
+	CertSvcInstanceTestSecretName         string
+	ExternalCertCronjobContainerName      string
+	BasicUsername                         string
+	BasicPassword                         string
+	AccountTenantID                       string
+	SubaccountTenantID                    string
+	TestConsumerAccountID                 string
+	TestProviderSubaccountID              string
+	TestConsumerSubaccountID              string
+	TestConsumerTenantID                  string
 }
 
 var testConfig config
@@ -93,13 +113,13 @@ func TestMain(m *testing.M) {
 		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
 	}
 
-	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CA.SecretNamespace).Get(ctx, testConfig.CA.SecretName, metav1.GetOptions{})
+	extCrtSecret, err := k8sClientSet.CoreV1().Secrets(testConfig.ExternalCA.SecretNamespace).Get(ctx, testConfig.ExternalCA.SecretName, metav1.GetOptions{})
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
 	}
 
-	testConfig.CA.Certificate = secret.Data[testConfig.CA.SecretCertificateKey]
-	testConfig.CA.Key = secret.Data[testConfig.CA.SecretKeyKey]
+	testConfig.ExternalCA.Key = extCrtSecret.Data[testConfig.ExternalCA.SecretKeyKey]
+	testConfig.ExternalCA.Certificate = extCrtSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
 
 	testConfig.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(testConfig.RegionalHandlerEndpoint, testConfig.TenantPathParam, testConfig.RegionPathParam, testConfig.TenantFetcherURL, testConfig.RootAPI)
 

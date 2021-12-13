@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -40,25 +42,24 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	t.Log("Register Application through Gateway with Dex id Token")
 	app := graphql.ApplicationExt{}
+
+	timeFrom := time.Now()
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
 	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
 	require.NoError(t, err)
+	timeTo := timeFrom.Add(1 * time.Minute)
 
 	t.Log("Get auditlog service Token")
-	auditlogToken := fixtures.GetAuditlogMockToken(t, &httpClient, testConfig.ExternalServicesMockBaseURL)
+	auditlogToken := token.GetClientCredentialsToken(t, context.Background(), testConfig.Auditlog.TokenURL+"/oauth/token", testConfig.Auditlog.ClientID, testConfig.Auditlog.ClientSecret, "")
 
-	t.Log("Get auditlog from external services mock")
-	auditlogs := fixtures.SearchForAuditlogByString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName)
+	t.Log("Get auditlog from auditlog API")
+	auditlogs := fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog, auditlogToken, appName, timeFrom, timeTo)
 
 	assert.Eventually(t, func() bool {
-		auditlogs = fixtures.SearchForAuditlogByString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName)
+		auditlogs = fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog, auditlogToken, appName, timeFrom, timeTo)
 		t.Logf("Waiting for auditlog items to be %d, but currently are: %d", 2, len(auditlogs))
 		return len(auditlogs) == 2
 	}, time.Minute, time.Millisecond*500)
-
-	for _, auditlog := range auditlogs {
-		defer fixtures.DeleteAuditlogByID(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, auditlog.UUID)
-	}
 
 	t.Log("Compare request to director with auditlog")
 	requestBody := prepareRegisterAppRequestBody(t, registerRequest)
@@ -85,7 +86,7 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	assert.Equal(t, requestBody.String(), preRequest)
 	assert.Equal(t, 2, len(auditlogs))
-	assert.Equal(t, "admin", pre.Object.ID["consumerID"])
+	assert.Equal(t, staticUser, pre.Object.ID["consumerID"])
 	assert.Equal(t, "Static User", pre.Object.ID["apiConsumer"])
 
 	var postRequest string
@@ -96,7 +97,7 @@ func TestAuditlogIntegration(t *testing.T) {
 	}
 
 	assert.Equal(t, requestBody.String(), postRequest)
-	assert.Equal(t, "admin", post.Object.ID["consumerID"])
+	assert.Equal(t, staticUser, post.Object.ID["consumerID"])
 	assert.Equal(t, "Static User", post.Object.ID["apiConsumer"])
 }
 

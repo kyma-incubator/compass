@@ -42,7 +42,8 @@ const (
 	ApplicationsForRuntimeWithHiddenAppsTenantName             = "TestApplicationsForRuntimeWithHiddenApps"
 	TestDeleteApplicationIfInScenario                          = "TestDeleteApplicationIfInScenario"
 	TestProviderSubaccount                                     = "TestProviderSubaccount"
-	TestIntegrationSystemSubaccount                            = "TestIntegrationSystemSubaccount"
+	TestConsumerSubaccount                                     = "TestConsumerSubaccount"
+	TestIntegrationSystemManagedSubaccount                     = "TestIntegrationSystemManagedSubaccount"
 	TestIntegrationSystemManagedAccount                        = "TestIntegrationSystemManagedAccount"
 )
 
@@ -185,9 +186,9 @@ func (mgr *TestTenantsManager) Init() {
 			Status:         Active,
 			Parent:         testDefaultTenant,
 		},
-		TestIntegrationSystemSubaccount: {
-			Name:           TestIntegrationSystemSubaccount,
-			ExternalTenant: "123e4567-e89b-12d3-a456-426614174001",
+		TestIntegrationSystemManagedSubaccount: {
+			Name:           TestIntegrationSystemManagedSubaccount,
+			ExternalTenant: "3cfcdd62-320d-403b-b66a-4ee3cdd06947",
 			ProviderName:   testProvider,
 			Type:           Subaccount,
 			Status:         Active,

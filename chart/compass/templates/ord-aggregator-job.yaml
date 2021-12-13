@@ -23,7 +23,7 @@ spec:
           hostAliases:
             - ip: {{ .Values.global.minikubeIP }}
               hostnames:
-                - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+                - "{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
           {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-ord-aggregator
           containers:
