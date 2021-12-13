@@ -157,6 +157,36 @@ func TestMiddleware(t *testing.T) {
 		assertLastLogEntryError(t, "while getting service: All attempts fail:\n#1: test error\n#2: test error", hook)
 	})
 
+	t.Run("director returns unauthorized error", func(t *testing.T) {
+		logger, hook := test.NewNullLogger()
+
+		ctx := log.ContextWithLogger(req.Context(), logrus.NewEntry(logger))
+		request := req.WithContext(ctx)
+
+		gqlQueryBuilder := director.NewClient(nil, &graphqlizer.Graphqlizer{}, &graphqlizer.GqlFieldsProvider{})
+		expectedQuery := gqlQueryBuilder.GetApplicationsByNameRequest(appName)
+
+		var apps appdetails.GqlSuccessfulAppPage
+		gqlClient := &automock.GraphQLClient{}
+		gqlClient.On("Run", mock.Anything, expectedQuery, &apps).Return(errors.New("insufficient scopes provided"))
+
+		cliProvider := &automock.Provider{}
+		cliProvider.On("GQLClient", mock.AnythingOfType("*http.Request")).Return(gqlClient)
+		appMiddleware := appdetails.NewApplicationMiddleware(cliProvider)
+
+		router := mux.NewRouter()
+		router.Use(appMiddleware.Middleware)
+		router.HandleFunc("/{app-name}", fixDummyHandler())
+		rw := httptest.NewRecorder()
+
+		//WHEN
+		router.ServeHTTP(rw, request)
+
+		//THEN
+		assert.Equal(t, http.StatusUnauthorized, rw.Code)
+		mock.AssertExpectationsForObjects(t, gqlClient, cliProvider)
+		assertLastLogEntryError(t, "while getting service: All attempts fail:\n#1: insufficient scopes provided\n#2: insufficient scopes provided", hook)
+	})
 }
 
 func assertAppInContext(t *testing.T, expectedApp graphql.ApplicationExt) func(w http.ResponseWriter, r *http.Request) {

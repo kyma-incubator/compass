@@ -3,11 +3,14 @@ package res
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
+
+const unauthorizedErrorMessage = "insufficient scopes provided"
 
 type ErrorResponse struct {
 	Code  int    `json:"code"`
@@ -33,11 +36,11 @@ func WriteErrorMessage(writer http.ResponseWriter, errMessage string, appErrorCo
 		"appErrorCode": appErrorCode,
 	}).Infof("writing error...")
 	writer.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
-	writer.WriteHeader(errorCodeToHTTPStatus(appErrorCode))
+	writer.WriteHeader(errorCodeToHTTPStatus(errMessage, appErrorCode))
 
 	response := ErrorResponse{
 		Error: errMessage,
-		Code:  errorCodeToHTTPStatus(appErrorCode),
+		Code:  errorCodeToHTTPStatus(errMessage, appErrorCode),
 	}
 
 	err := json.NewEncoder(writer).Encode(response)
@@ -50,7 +53,11 @@ func WriteErrorMessage(writer http.ResponseWriter, errMessage string, appErrorCo
 Copied from https://github.com/kyma-project/kyma/tree/main/components/application-registry
 */
 
-func errorCodeToHTTPStatus(code int) int {
+func errorCodeToHTTPStatus(errMessage string, code int) int {
+	if strings.Contains(errMessage, unauthorizedErrorMessage) {
+		return http.StatusUnauthorized
+	}
+
 	switch code {
 	case apperrors.CodeInternal:
 		return http.StatusInternalServerError
