@@ -43,7 +43,7 @@ func TestIntegrationSystemAccess(stdT *testing.T) {
 		},
 		{
 			name:      "Integration System cannot manage customer tenant entities",
-			tenant:    tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedSubaccount),
+			tenant:    tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant),
 			expectErr: true,
 		},
 	}
@@ -56,7 +56,7 @@ func TestIntegrationSystemAccess(stdT *testing.T) {
 			clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
 			directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
 
-			t.Log(fmt.Sprintf("Trying to create applications in account tenant %s", test.tenant))
+			t.Log(fmt.Sprintf("Trying to create application in account tenant %s", test.tenant))
 			app, err := fixtures.RegisterApplication(t, ctx, directorCertSecuredClient, fmt.Sprintf("app-%s", test.resourceSuffix), test.tenant)
 			defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, test.tenant, &app)
 			assertError(t, test.expectErr, err, app.ID)
