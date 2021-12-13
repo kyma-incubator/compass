@@ -68,8 +68,23 @@ func TestStatusManager(t *testing.T) {
 		},
 	}
 
-	err = k8sClient.Create(ctx, operation)
-	require.NoError(t, err)
+	initializeOperationBeforeEach := func(test func(t *testing.T)) func(t *testing.T) {
+		return func(t *testing.T) {
+			operation := operation.DeepCopy()
+			err = k8sClient.Create(ctx, operation)
+			require.NoError(t, err)
+
+			defer func() {
+				err = k8sClient.Delete(ctx, operation)
+				require.NoError(t, err)
+			}()
+
+			err = statusManager.Initialize(context.TODO(), operation)
+			require.NoError(t, err)
+
+			test(t)
+		}
+	}
 
 	namespacedName := types.NamespacedName{Namespace: operation.ObjectMeta.Namespace, Name: operation.ObjectMeta.Name}
 
@@ -82,7 +97,12 @@ func TestStatusManager(t *testing.T) {
 		err = k8sClient.Create(ctx, invalidOperation)
 		require.NoError(t, err)
 
-		err = statusManager.Initialize(invalidOperation)
+		defer func() {
+			err = k8sClient.Delete(ctx, invalidOperation)
+			require.NoError(t, err)
+		}()
+
+		err = statusManager.Initialize(context.TODO(), invalidOperation)
 		require.Error(t, err)
 
 		_, isValErr := err.(*v1alpha1.OperationValidationErr)
@@ -91,8 +111,20 @@ func TestStatusManager(t *testing.T) {
 	})
 
 	t.Run("Test Initialize when generation and observed generation mismatch should initialize status with initial values", func(t *testing.T) {
-		originOperation := operation.DeepCopy()
-		err = statusManager.Initialize(originOperation)
+		operation := operation.DeepCopy()
+		err = k8sClient.Create(ctx, operation)
+		require.NoError(t, err)
+
+		defer func() {
+			err = k8sClient.Delete(ctx, operation)
+			require.NoError(t, err)
+		}()
+
+		var originOperation = &v1alpha1.Operation{}
+		err = k8sClient.Get(ctx, namespacedName, originOperation)
+		require.NoError(t, err)
+
+		err = statusManager.Initialize(context.TODO(), originOperation)
 		require.NoError(t, err)
 
 		require.Equal(t, int64(1), *originOperation.Status.ObservedGeneration)
@@ -113,14 +145,26 @@ func TestStatusManager(t *testing.T) {
 	})
 
 	t.Run("Test Initialize when generation and observed generation match shouldn not affect status", func(t *testing.T) {
-		originOperation := operation.DeepCopy()
-		err = statusManager.Initialize(originOperation)
+		operation := operation.DeepCopy()
+		err = k8sClient.Create(ctx, operation)
+		require.NoError(t, err)
+
+		defer func() {
+			err = k8sClient.Delete(ctx, operation)
+			require.NoError(t, err)
+		}()
+
+		var originOperation = &v1alpha1.Operation{}
+		err = k8sClient.Get(ctx, namespacedName, originOperation)
+		require.NoError(t, err)
+
+		err = statusManager.Initialize(context.TODO(), originOperation)
 		require.NoError(t, err)
 
 		err = statusManager.SuccessStatus(ctx, originOperation)
 		require.NoError(t, err)
 
-		err = statusManager.Initialize(originOperation)
+		err = statusManager.Initialize(context.TODO(), originOperation)
 		require.NoError(t, err)
 
 		var actualOperation = &v1alpha1.Operation{}
@@ -147,7 +191,7 @@ func TestStatusManager(t *testing.T) {
 		}
 	})
 
-	t.Run("Test In Progress with Poll URL", func(t *testing.T) {
+	t.Run("Test In Progress with Poll URL", initializeOperationBeforeEach(func(t *testing.T) {
 		var originOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, originOperation)
 		require.NoError(t, err)
@@ -175,9 +219,9 @@ func TestStatusManager(t *testing.T) {
 			require.Empty(t, op.Status.Conditions[0].Message)
 			require.Empty(t, op.Status.Conditions[1].Message)
 		}
-	})
+	}))
 
-	t.Run("Test In Progress with Poll URL And Last Poll Tiimestamp should succeed", func(t *testing.T) {
+	t.Run("Test In Progress with Poll URL And Last Poll Tiimestamp should succeed", initializeOperationBeforeEach(func(t *testing.T) {
 		var originOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, originOperation)
 		require.NoError(t, err)
@@ -207,9 +251,9 @@ func TestStatusManager(t *testing.T) {
 			require.Empty(t, op.Status.Conditions[0].Message)
 			require.Empty(t, op.Status.Conditions[1].Message)
 		}
-	})
+	}))
 
-	t.Run("Test Success Status should succeed", func(t *testing.T) {
+	t.Run("Test Success Status should succeed", initializeOperationBeforeEach(func(t *testing.T) {
 		var originOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, originOperation)
 		require.NoError(t, err)
@@ -241,9 +285,9 @@ func TestStatusManager(t *testing.T) {
 				}
 			}
 		}
-	})
+	}))
 
-	t.Run("Test Success Status after In Progress with Poll URL And Last Poll Timestamp should not discard Poll URL and Last Poll Timestamp from the status", func(t *testing.T) {
+	t.Run("Test Success Status after In Progress with Poll URL And Last Poll Timestamp should not discard Poll URL and Last Poll Timestamp from the status", initializeOperationBeforeEach(func(t *testing.T) {
 		var originOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, originOperation)
 		require.NoError(t, err)
@@ -283,9 +327,9 @@ func TestStatusManager(t *testing.T) {
 				}
 			}
 		}
-	})
+	}))
 
-	t.Run("Test Failed Status should succeed", func(t *testing.T) {
+	t.Run("Test Failed Status should succeed", initializeOperationBeforeEach(func(t *testing.T) {
 		var originOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, originOperation)
 		require.NoError(t, err)
@@ -318,9 +362,9 @@ func TestStatusManager(t *testing.T) {
 				}
 			}
 		}
-	})
+	}))
 
-	t.Run("Test Failed Status after In Progress with Poll URL And Last Poll Timestamp should not discard Poll URL and Last Poll Timestamp from the status", func(t *testing.T) {
+	t.Run("Test Failed Status after In Progress with Poll URL And Last Poll Timestamp should not discard Poll URL and Last Poll Timestamp from the status", initializeOperationBeforeEach(func(t *testing.T) {
 		var originOperation = &v1alpha1.Operation{}
 		err = k8sClient.Get(ctx, namespacedName, originOperation)
 		require.NoError(t, err)
@@ -361,5 +405,5 @@ func TestStatusManager(t *testing.T) {
 				}
 			}
 		}
-	})
+	}))
 }

@@ -78,7 +78,7 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return r.handleGetOperationError(ctx, &req, err)
 	}
 
-	if err := r.statusManager.Initialize(operation); err != nil {
+	if err := r.statusManager.Initialize(ctx, operation); err != nil {
 		return r.handleInitializationError(ctx, err, operation)
 	}
 
