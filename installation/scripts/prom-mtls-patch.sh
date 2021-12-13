@@ -102,6 +102,10 @@ function patchDeploymentsToInjectSidecar() {
 }
 
 function enableNodeExporterMTLS() {
+  # Note: The two CRDs described in the two variables below are left as they are with all their properties
+  # since it's risky to omit some properties due to different strategic merge patch strategies.
+  # https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/#notes-on-the-strategic-merge-patch
+
   monitor=$(cat <<"EOF"
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -142,6 +146,10 @@ spec:
 EOF
   )
   echo "$monitor" > monitor.yaml
+
+  # The patches around the DaemonSet involve an addition of two init containers that together setup certificates
+  # for the node-exporter application to use. There are also two new mounts - a shared directory (node-certs)
+  # and the Istio CA secret (istio-certs).
 
   daemonset=$(cat <<"EOF"
 apiVersion: apps/v1
