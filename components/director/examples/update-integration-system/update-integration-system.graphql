@@ -28,6 +28,7 @@ mutation {
           expiresAt
         }
         certCommonName
+        accessStrategy
         additionalHeaders
         additionalQueryParams
         requestAuth {
