@@ -56,6 +56,7 @@ query {
             expiresAt
           }
           certCommonName
+          accessStrategy
           additionalHeaders
           additionalQueryParams
           requestAuth {
@@ -108,6 +109,7 @@ query {
                 expiresAt
               }
               certCommonName
+              accessStrategy
               additionalHeaders
               additionalQueryParams
               requestAuth {
@@ -157,6 +159,7 @@ query {
               expiresAt
             }
             certCommonName
+            accessStrategy
             additionalHeaders
             additionalQueryParams
             requestAuth {
@@ -209,6 +212,7 @@ query {
                       expiresAt
                     }
                     certCommonName
+                    accessStrategy
                     additionalHeaders
                     additionalQueryParams
                     requestAuth {
@@ -287,6 +291,7 @@ query {
                       expiresAt
                     }
                     certCommonName
+                    accessStrategy
                     additionalHeaders
                     additionalQueryParams
                     requestAuth {
@@ -361,6 +366,7 @@ query {
                     expiresAt
                   }
                   certCommonName
+                  accessStrategy
                   additionalHeaders
                   additionalQueryParams
                   requestAuth {
@@ -427,6 +433,7 @@ query {
             expiresAt
           }
           certCommonName
+          accessStrategy
           additionalHeaders
           additionalQueryParams
           requestAuth {

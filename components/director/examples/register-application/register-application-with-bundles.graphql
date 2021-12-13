@@ -293,6 +293,7 @@ mutation {
           expiresAt
         }
         certCommonName
+        accessStrategy
         additionalHeaders
         additionalQueryParams
         requestAuth {
@@ -345,6 +346,7 @@ mutation {
               expiresAt
             }
             certCommonName
+            accessStrategy
             additionalHeaders
             additionalQueryParams
             requestAuth {
@@ -394,6 +396,7 @@ mutation {
             expiresAt
           }
           certCommonName
+          accessStrategy
           additionalHeaders
           additionalQueryParams
           requestAuth {
@@ -446,6 +449,7 @@ mutation {
                     expiresAt
                   }
                   certCommonName
+                  accessStrategy
                   additionalHeaders
                   additionalQueryParams
                   requestAuth {
@@ -524,6 +528,7 @@ mutation {
                     expiresAt
                   }
                   certCommonName
+                  accessStrategy
                   additionalHeaders
                   additionalQueryParams
                   requestAuth {
@@ -598,6 +603,7 @@ mutation {
                   expiresAt
                 }
                 certCommonName
+                accessStrategy
                 additionalHeaders
                 additionalQueryParams
                 requestAuth {
@@ -664,6 +670,7 @@ mutation {
           expiresAt
         }
         certCommonName
+        accessStrategy
         additionalHeaders
         additionalQueryParams
         requestAuth {
