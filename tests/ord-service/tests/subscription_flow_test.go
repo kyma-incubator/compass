@@ -125,7 +125,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		}
 
 		// Register provider runtime with the necessary label
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, defaultTenantId, &runtimeInput)
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtimeInput)
 		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, defaultTenantId, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)

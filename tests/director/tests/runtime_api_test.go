@@ -658,7 +658,6 @@ func TestQuerySpecificRuntimeWithCertificate(stdT *testing.T) {
 	t.Run("Query specific runtime with externally issued certificate", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
-		tenantId := tenant.TestTenants.GetDefaultTenantID()
 		subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 		// Build graphql director client configured with certificate
@@ -673,7 +672,7 @@ func TestQuerySpecificRuntimeWithCertificate(stdT *testing.T) {
 		registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 		createdRuntime := graphql.RuntimeExt{}
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, registerReq, &createdRuntime)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, tenantId, &createdRuntime)
+		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &createdRuntime)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, createdRuntime.ID)
