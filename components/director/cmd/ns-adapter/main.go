@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -23,24 +24,28 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/adapter"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/handler"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/nsmodel"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	directorHandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -60,6 +65,9 @@ func main() {
 
 	err = calculateTemplateMappings(ctx, conf, transact)
 	exitOnError(err, "while calculating template mappings")
+
+	certCache, err := certloader.StartCertLoader(ctx, conf.ExternalClientCertSecret)
+	exitOnError(err, "Failed to initialize certificate loader")
 
 	uidSvc := uid.NewService()
 
@@ -100,7 +108,7 @@ func main() {
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, conf.DefaultScenarioEnabled)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, &http.Client{Timeout: conf.ClientTimeout}, accessstrategy.NewDefaultExecutorProvider())
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, &http.Client{Timeout: conf.ClientTimeout}, accessstrategy.NewDefaultExecutorProvider(certCache))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
@@ -109,6 +117,10 @@ func main() {
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc)
 
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
+
 	tntSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	defer func() {
@@ -116,7 +128,9 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	h := handler.NewHandler(appSvc, tntSvc, transact)
+	registerAppTemplate(ctx, transact, appTemplateSvc)
+
+	h := handler.NewHandler(appSvc, appConverter, appTemplateSvc, tntSvc, transact)
 	ch := handler.NewChunkedHandler()
 
 	handlerWithTimeout, err := directorHandler.WithTimeoutWithErrorMessage(h, conf.ServerTimeout, httputil.GetTimeoutMessage())
@@ -129,7 +143,7 @@ func main() {
 
 	router.Use(correlation.AttachCorrelationIDToContext())
 	router.NewRoute().
-		Methods(http.MethodPut).
+		Methods(http.MethodPost).
 		Path("/api/v1/notifications").
 		Handler(handlerWithTimeout)
 	router.NewRoute().
@@ -153,6 +167,81 @@ func main() {
 
 	log.C(ctx).Infof("API listening on %s", conf.Address)
 	exitOnError(server.ListenAndServe(), "on starting HTTP server")
+}
+
+func registerAppTemplate(ctx context.Context, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService) {
+	tx, err := transact.Begin()
+	if err != nil {
+		exitOnError(err, "Error while begining transaction")
+	}
+	defer transact.RollbackUnlessCommitted(ctx, tx)
+	ctxWithTx := persistence.SaveToContext(ctx, tx)
+
+	appTemplate := model.ApplicationTemplateInput{
+		Name:        "S4HANA", //TODO extract const
+		Description: str.Ptr("Template for systems pushed from Notifications Service"),
+		ApplicationInputJSON: `{
+									"name": "on-premise-system",
+									"description": "{{description}}",
+									"providerName": "SAP",
+									"labels": {"scc": "{\"Subaccount\":\"{{subaccount}}\", \"LocationId\":\"{{location-id}}\", \"Host\":\"{{host}}\"}", "applicationType":"{{system-type}}", "systemProtocol": "{{protocol}}" },
+									"systemNumber": "{{system-number}}",
+									"systemStatus": "{{system-status}}"
+								}`,
+		Placeholders: []model.ApplicationTemplatePlaceholder{
+			{
+				Name:        "description",
+				Description: str.Ptr("description of the system"),
+			},
+			{
+				Name:        "subaccount",
+				Description: str.Ptr("subaccount to which the scc is connected"),
+			},
+			{
+				Name:        "location-id",
+				Description: str.Ptr("location id of the scc"),
+			},
+			{
+				Name:        "system-type",
+				Description: str.Ptr("type of the system"),
+			},
+			{
+				Name:        "host",
+				Description: str.Ptr("host of the system"),
+			},
+			{
+				Name:        "protocol",
+				Description: str.Ptr("protocol of the system"),
+			},
+			{
+				Name:        "system-number",
+				Description: str.Ptr("unique identification of the system"),
+			},
+			{
+				Name:        "system-status",
+				Description: str.Ptr("describes whether the system is reachable or not"),
+			},
+		},
+		AccessLevel: model.GlobalApplicationTemplateAccessLevel, //TODO check proper access level
+	}
+
+	_, err = appTemplateSvc.GetByName(ctxWithTx, "S4HANA")
+	if err != nil {
+		if !strings.Contains(err.Error(), "Object not found") {
+			exitOnError(err, fmt.Sprintf("Error while getting application template with name: %s", "on-premise-systems-template"))
+
+		}
+
+		templateId, err := appTemplateSvc.Create(ctxWithTx, appTemplate)
+		if err != nil {
+			exitOnError(err, "Error while registering application template")
+		}
+		fmt.Println(fmt.Sprintf("successfully registered application template with id:%s", templateId))
+	}
+
+	if err := tx.Commit(); err != nil {
+		exitOnError(err, "while committing transaction")
+	}
 }
 
 func exitOnError(err error, context string) {

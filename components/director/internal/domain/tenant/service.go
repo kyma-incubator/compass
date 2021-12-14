@@ -30,6 +30,7 @@ type TenantMappingRepository interface {
 	ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error)
 	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
+	ListByExternalTenants(ctx context.Context, externalTenant []string) ([]*model.BusinessTenantMapping, error)
 }
 
 // LabelUpsertService is responsible for creating, or updating already existing labels, and their label definitions.
@@ -107,8 +108,7 @@ func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, err
 }
 
 func (s *service) ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
-	//TODO implement
-	return nil, nil
+	return s.tenantMappingRepo.ListByExternalTenants(ctx, ids)
 }
 
 // GetTenantByExternalID returns the tenant with the provided external ID.

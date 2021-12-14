@@ -3,6 +3,7 @@ package proxy
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
@@ -31,6 +32,8 @@ func (t *AdapterTransport) RoundTrip(req *http.Request) (resp *http.Response, er
 		return t.RoundTripper.RoundTrip(req)
 	}
 
+	fmt.Println(">>>>>>>>>>>>>>>")
+
 	buf := &bytes.Buffer{}
 	_, err = io.Copy(buf, req.Body)
 	if err != nil {
@@ -38,6 +41,7 @@ func (t *AdapterTransport) RoundTrip(req *http.Request) (resp *http.Response, er
 	}
 
 	requestBody := buf.Bytes()
+	fmt.Println(string(requestBody))
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +89,7 @@ func (t *AdapterTransport) RoundTrip(req *http.Request) (resp *http.Response, er
 	resp.Body = ioutil.NopCloser(bytes.NewReader(responseBody))
 	defer httpcommon.CloseBody(req.Context(), resp.Body)
 
+	fmt.Println(">>>>>>>>>>>>>>>>>> Responce Body: ", string(responseBody))
 	err = t.auditlogSink.Log(req.Context(), AuditlogMessage{
 		CorrelationIDHeaders: correlationHeaders,
 		Request:              string(requestBody),

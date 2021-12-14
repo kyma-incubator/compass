@@ -33,19 +33,30 @@ type ApplicationService interface {
 	ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error) //TODO check what tenant will be used to execute this query
 }
 
+type ApplicationConverter interface {
+	CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error)
+}
+
+type ApplicationTemplateService interface {
+	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
+}
+
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
 type TenantService interface {
 	ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
 }
 
-func NewHandler(appSvc ApplicationService, tntSvc TenantService, transact persistence.Transactioner) *Handler {
-	return &Handler{appSvc: appSvc, tntSvc: tntSvc, transact: transact}
+func NewHandler(appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, tntSvc TenantService, transact persistence.Transactioner) *Handler {
+	return &Handler{appSvc: appSvc, appConverter: appConverter, appTemplateSvc: appTemplateSvc, tntSvc: tntSvc, transact: transact}
 }
 
 type Handler struct {
-	appSvc   ApplicationService
-	tntSvc   TenantService
-	transact persistence.Transactioner
+	appSvc         ApplicationService
+	appConverter   ApplicationConverter
+	appTemplateSvc ApplicationTemplateService
+	tntSvc         TenantService
+	transact       persistence.Transactioner
 }
 
 //Description	Upsert ExposedSystems is a bulk create-or-update operation on exposed on-premise systems. It takes a list of fully described exposed systems, creates the ones CMP isn't aware of and updates the metadata for the ones it is.
@@ -68,7 +79,7 @@ type Handler struct {
 func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	logger := log.C(ctx)
-
+	fmt.Println(">>>>>>>>>>>>>>>>>Start")
 	defer func() {
 		if err := req.Body.Close(); err != nil {
 			logger.Error("Got error on closing request body", err)
@@ -137,6 +148,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	details := make([]httputil.Detail, 0, 0)
 	notSubaccountIDs := mapExternalToInternal(ctx, tenants, externalIDToTenant)
+	fmt.Printf("ExternalIDs: %+v,Tenants: %+v, external id to tenant %+v", externalIDs, tenants, externalIDToTenant)
 	for _, scc := range reportData.Value {
 		if _, ok := notSubaccountIDs[scc.Subaccount]; ok {
 			addErrorDetailsMsg(&details, &scc, "Provided id is not subaccount")
@@ -239,6 +251,7 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 
 	sccsToMarkAsUnreachable := difference(sccs, sccsFromNs)
 	for _, scc := range sccsToMarkAsUnreachable {
+		//TODO use internal ID
 		ctxWithSubaccount := tenant.SaveToContext(ctx, scc.Subaccount)
 		appsWithLabels, ok := a.listAppsByScc(ctxWithSubaccount, scc.Subaccount, scc.LocationId)
 		if ok {
@@ -251,8 +264,9 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 
 func (a *Handler) processDelta(ctx context.Context, reportData nsmodel.Report, idToTenant map[string]string, details *[]httputil.Detail) {
 	for _, scc := range reportData.Value {
-		if _, ok := idToTenant[scc.Subaccount]; ok {
-			ctxWithTenant := tenant.SaveToContext(ctx, idToTenant[scc.Subaccount])
+		if tnt, ok := idToTenant[scc.Subaccount]; ok {
+			fmt.Println(">>>>>>>> tenant: ", tnt)
+			ctxWithTenant := tenant.SaveToContext(ctx, tnt)
 			if ok := a.handleSccSystems(ctxWithTenant, scc); !ok {
 				addErrorDetails(details, &scc)
 			}
@@ -285,6 +299,7 @@ func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 
 		if txSucceeded {
 			if err := tx.Commit(); err != nil {
+				txSucceeded = false
 				log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
 			}
 		}
@@ -295,8 +310,68 @@ func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 	return success
 }
 
+func (a *Handler) prepareAppInput(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) (*model.ApplicationRegisterInput, error) {
+	template, err := a.appTemplateSvc.Get(ctx, system.TemplateID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting application template with id: %s", system.TemplateID)
+	}
+
+	values := model.ApplicationFromTemplateInputValues{
+		{
+			Placeholder: "description",
+			Value:       system.Description,
+		},
+		{
+			Placeholder: "subaccount",
+			Value:       scc.Subaccount,//TODO use internal ID
+		},
+		{
+			Placeholder: "location-id",
+			Value:       scc.LocationID,
+		},
+		{
+			Placeholder: "system-type",
+			Value:       system.SystemType,
+		},
+		{
+			Placeholder: "host",
+			Value:       system.Host,
+		},
+		{
+			Placeholder: "protocol",
+			Value:       system.Protocol,
+		},
+		{
+			Placeholder: "system-number",
+			Value:       system.SystemNumber,
+		},
+		{
+			Placeholder: "system-status",
+			Value:       system.Status,
+		},
+	}
+
+	appInputJson, err := a.appTemplateSvc.PrepareApplicationCreateInputJSON(template, values)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while preparing application create input from template with id:%s", system.TemplateID)
+	}
+
+	appInput, err := a.appConverter.CreateInputJSONToModel(ctx, appInputJson)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while preparing application create input from json")
+	}
+
+	return &appInput, nil
+}
+
 func (a *Handler) upsertWithSystemNumber(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
-	if err := a.appSvc.Upsert(ctx, nsmodel.ToAppRegisterInput(system, scc.Subaccount, scc.LocationID)); err != nil {
+	appInput, err := a.prepareAppInput(ctx, scc, system)
+	if err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while upserting Application"))
+		return false
+	}
+
+	if err := a.appSvc.Upsert(ctx, *appInput); err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while upserting Application"))
 		return false
 	}
@@ -308,7 +383,13 @@ func (a *Handler) upsert(ctx context.Context, scc nsmodel.SCC, system nsmodel.Sy
 	app, err := a.appSvc.GetSystem(ctx, scc.LocationID, system.Host)
 
 	if err != nil && nsmodel.IsNotFoundError(err) {
-		if _, err := a.appSvc.CreateFromTemplate(ctx, nsmodel.ToAppRegisterInput(system, scc.Subaccount, scc.LocationID), str.Ptr(system.TemplateID)); err != nil {
+		appInput, err := a.prepareAppInput(ctx, scc, system)
+		if err != nil {
+			log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
+			return false
+		}
+
+		if _, err := a.appSvc.CreateFromTemplate(ctx, *appInput, str.Ptr(system.TemplateID)); err != nil {
 			log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
 			return false
 		}
@@ -354,6 +435,7 @@ func (a *Handler) updateSystem(ctx context.Context, system nsmodel.System, app *
 }
 
 func (a *Handler) markAsUnreachable(ctx context.Context, scc nsmodel.SCC) bool {
+	//TODO use internal ID
 	apps, ok := a.listAppsByScc(ctx, scc.Subaccount, scc.LocationID)
 	if !ok {
 		return false

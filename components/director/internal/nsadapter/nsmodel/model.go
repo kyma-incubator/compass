@@ -62,9 +62,10 @@ func matchProps(data []byte, tm systemfetcher.TemplateMapping) bool {
 }
 
 type SCC struct {
-	Subaccount     string   `json:"subaccount"`
-	LocationID     string   `json:"locationID"`
-	ExposedSystems []System `json:"exposedSystems"`
+	Subaccount            string   `json:"subaccount"`
+	InternalSubbaccountID string   `json:"-"`
+	LocationID            string   `json:"locationID"`
+	ExposedSystems        []System `json:"exposedSystems"`
 }
 
 func (s SCC) Validate() error {
@@ -107,25 +108,6 @@ func validateSCCs(value interface{}) error {
 		}
 	}
 	return nil
-}
-
-func ToAppRegisterInput(system System, subaccount, locationID string) model.ApplicationRegisterInput {
-	sccLabel := struct {
-		Subaccount string `json:"subaccount"`
-		Host       string `json:"host"`
-		LocationId string `json:"locationId"`
-	}{
-		subaccount,
-		system.Host,
-		locationID,
-	}
-	return model.ApplicationRegisterInput{
-		Name:         "on-premise-system", //TODO doublecheck the name
-		ProviderName: str.Ptr("SAP"),
-		Labels:       map[string]interface{}{"scc": sccLabel, "applicationType": system.SystemType, "systemProtocol": system.Protocol},
-		SystemNumber: str.Ptr(system.SystemNumber),
-		SystemStatus: str.Ptr(system.Status),
-	}
 }
 
 func ToAppUpdateInput(system System) model.ApplicationUpdateInput {

@@ -13,6 +13,8 @@ type Configuration struct {
 	Address       string        `envconfig:"default=127.0.0.1:8080"`
 	Log           *log.Config
 
+	ExternalClientCertSecret string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET"`
+
 	DefaultScenarioEnabled bool `envconfig:"default=true"`
 	Database               persistence.DatabaseConfig
 
