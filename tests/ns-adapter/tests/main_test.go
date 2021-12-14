@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"testing"
@@ -51,6 +52,7 @@ func TestMain(m *testing.M) {
 	}
 	testConfig.DirectorURL = fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain)
 
+	tenant.TestTenants.Init()
 
 	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	if err != nil {

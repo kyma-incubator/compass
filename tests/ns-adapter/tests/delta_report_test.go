@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/stretchr/testify/require"
@@ -43,7 +45,6 @@ func TestDeltaReport(stdT *testing.T) {
 		// Query for application with LabelFilter "scc"
 		labelFilter := graphql.LabelFilter{
 			Key:   "scc",
-			Query: str.Ptr("$[*] ? (@ == \"scc\")"),
 		}
 
 		//WHEN
@@ -380,7 +381,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 func sendRequest(t *testing.T, body []byte, reportType string) *http.Response {
 	buffer := bytes.NewBuffer(body)
-	req, err := http.NewRequest(http.MethodPost, "https://compass-ns-adapter.kyma.local/nsadapter/api/v1/notification", buffer)
+	req, err := http.NewRequest(http.MethodPost, "https://compass-gateway-sap-mtls.kyma.local/nsadapter/api/v1/notifications", buffer)
 	if err != nil {
 		panic(err)
 	}
@@ -388,13 +389,10 @@ func sendRequest(t *testing.T, body []byte, reportType string) *http.Response {
 	q.Add("reportType", reportType)
 	req.URL.RawQuery = q.Encode()
 
-	//clientKey, rawCertChain := certs.IssueExternalIssuerCertificate( t, testConfig.CA.Certificate, testConfig.CA.Key, "08b6da37-e911-48fb-a0cb-fa635a6c5678")
-	//TODO edit subject and check hash
-	header := certs.CreateCertDataHeader("subj", "df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a")
+	clientKey, rawCertChain := certs.IssueExternalIssuerCertificate( t, testConfig.CA.Certificate, testConfig.CA.Key, "08b6da37-e911-48fb-a0cb-fa635a6c5678")
+	client := gql.NewCertAuthorizedHTTPClient(clientKey, rawCertChain)
 
-	req.Header.Set("Certificate-Data", header)
-
-	client := http.Client{}
+	fmt.Printf("req >>>>>>>>>>>>>>>>>>> %+v", req)
 	resp, err := client.Do(req)
 	if err != nil {
 		panic(err)
