@@ -25,23 +25,25 @@ func TestIntegrationSystemAccess(stdT *testing.T) {
 		expectErr      bool
 	}{
 		{
-			name:   "Integration System can manage account tenant entities",
-			tenant: tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedAccount),
+			name:           "Integration System can manage account tenant entities",
+			tenant:         tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedAccount),
+			resourceSuffix: "account-owned",
 		},
 		{
-			name:   "Integration System can manage subaccount tenant entities",
-			tenant: tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedSubaccount),
+			name:           "Integration System can manage subaccount tenant entities",
+			tenant:         tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedSubaccount),
+			resourceSuffix: "subaccount-owned",
 		},
 		{
-			name:      "Integration System cannot manage customer tenant entities",
-			tenant:    tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant),
-			expectErr: true,
+			name:           "Integration System cannot manage customer tenant entities",
+			tenant:         tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant),
+			resourceSuffix: "customer-owned",
+			expectErr:      true,
 		},
 	}
 	for _, test := range testCases {
-		t.Run("TestDirectorCertificateAccess Integration System consumer: manage account tenant entities", func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
-			defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
 
 			// Build graphql director client configured with certificate
 			clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
@@ -79,7 +81,7 @@ func TestIntegrationSystemAccess(stdT *testing.T) {
 			}
 
 			t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate", test.tenant))
-			at, err := fixtures.CreateApplicationTemplate(t, ctx, directorCertSecuredClient, defaultTenantId, fmt.Sprintf("app-template-%s", test.resourceSuffix))
+			at, err := fixtures.CreateApplicationTemplate(t, ctx, directorCertSecuredClient, test.tenant, fmt.Sprintf("app-template-%s", test.resourceSuffix))
 			defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, test.tenant, &at)
 			if test.expectErr {
 				require.Error(t, err)
