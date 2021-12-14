@@ -17,6 +17,7 @@ spec:
   template:
     metadata:
       annotations:
+        restartOnNewInstallationMarker: {{ randAlphaNum 5 | quote }} # Restarts the deployment on a new Helm installation. (https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments)
         {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
         sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
         {{ end }}
@@ -196,6 +197,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.distinguishLabel }}
             - name: APP_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
+            - name: APP_SELF_REGISTER_LABEL_KEY_PATTERN
+              value: "^{{ .Values.global.director.selfRegister.label }}$"
             - name: APP_SELF_REGISTER_LABEL_VALUE_PREFIX
               value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
             - name: APP_SELF_REGISTER_RESPONSE_KEY

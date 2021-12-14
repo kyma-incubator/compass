@@ -81,13 +81,13 @@ global:
       version: "PR-2126"
     connectivity_adapter:
       dir:
-      version: "PR-2126"
+      version: "PR-2138"
     pairing_adapter:
       dir:
       version: "PR-2118"
     director:
       dir:
-      version: "PR-2132"
+      version: "PR-2123"
     gateway:
       dir:
       version: "PR-2126"
@@ -113,10 +113,10 @@ global:
       version: "PR-2132"
     console:
       dir:
-      version: "PR-47"
+      version: "PR-48"
     e2e_tests:
       dir:
-      version: "PR-2128"
+      version: "PR-2123"
   isLocalEnv: false
   oauth2:
     host: oauth2
