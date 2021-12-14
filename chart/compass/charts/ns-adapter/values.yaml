@@ -19,5 +19,3 @@ deployment:
   nodeSelector: {}
   external:
     port: 3005
-  systemToTemplateMappings: '[]'
-  systemToTemplateMappings2: '[{  "Name": "ABAP System",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "Non-SAP System",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "SAP HANA",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'

@@ -17,9 +17,9 @@ spec:
   http:
     - match:
         - uri:
-            exact: /nsadapter/api/v1/chinked
+            prefix: /api/v1
       route:
         - destination:
+            host: {{ .Values.global.oathkeeper.host }}
             port:
-              number: {{ .Values.global.gateway.port }}
-            host: {{ .Values.global.gateway.tls.host }}
+              number: {{ .Values.global.oathkeeper.port }}

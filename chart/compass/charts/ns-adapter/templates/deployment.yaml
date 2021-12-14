@@ -106,7 +106,9 @@ spec:
                   name: {{ .Values.global.expectedSchemaVersionUpdateJob.cm.name }}
                   key: schemaVersion
             - name: APP_SYSTEM_TO_TEMPLATE_MAPPINGS
-              value: {{ .Values.deployment.systemToTemplateMappings | quote }}
+              value: {{ .Values.global.nsAdapter.systemToTemplateMappings | quote }}
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
           livenessProbe:
             httpGet:
               port: {{ .Values.deployment.external.port }}

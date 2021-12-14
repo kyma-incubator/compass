@@ -66,25 +66,25 @@ spec:
     config:
       claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
 ---
-{{/*apiVersion: oathkeeper.ory.sh/v1alpha1*/}}
-{{/*kind: Rule*/}}
-{{/*metadata:*/}}
-{{/*  name: compass-gateway-nsadapter*/}}
-{{/*spec:*/}}
-{{/*  # Configuration of oathkeeper for secure endpoint of compass gateway*/}}
-{{/*  upstream:*/}}
-{{/*    url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"*/}}
-{{/*  match:*/}}
-{{/*    methods: ["GET", "POST", "OPTIONS"]*/}}
-{{/*    url: <http|https>://compass-ns-adapter.compass-system.svc.cluster.local:3005{{ .Values.global.nsAdapter.prefix }}/<.*>*/}}
-{{/*  authenticators:*/}}
-{{/*    - handler: jwt*/}}
-{{/*      config:*/}}
-{{/*        trusted_issuers: ["https://dex.{{ .Values.global.ingress.domainName }}"]*/}}
-{{/*  authorizer:*/}}
-{{/*    handler: allow*/}}
-{{/*  mutators:*/}}
-{{/*    - handler: noop*/}}
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: compass-gateway-nsadapter
+spec:
+  # Configuration of oathkeeper for secure endpoint of compass gateway
+  upstream:
+    url: http://compass-ns-adapter.compass-system.svc.cluster.local:3005{{ .Values.global.nsAdapter.prefix }}/api/v1/notifications
+  match:
+    methods: ["GET", "POST", "OPTIONS"]
+    url: <http|https>://compass-ns-adapter.kyma.local<(:(80|443))?>{{ .Values.global.nsAdapter.prefix }}/<.*>
+  authenticators:
+    - handler: jwt
+      config:
+        trusted_issuers: ["https://dex.{{ .Values.global.ingress.domainName }}"]
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: noop
 ---
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule

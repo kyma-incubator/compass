@@ -141,6 +141,9 @@ global:
 
   nsAdapter:
     prefix: /nsadapter
+    systemToTemplateMappings: '[]'
+    systemToTemplateMappings2: '[{  "Name": "ABAP System",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "Non-SAP System",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "SAP HANA",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
+
 
   director:
     host: compass-director.compass-system.svc.cluster.local
