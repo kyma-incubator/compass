@@ -18,15 +18,6 @@ import (
 func TestIntegrationSystemAccess(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 
-	assertError := func(t *testing.T, required bool, err error, resource interface{}) {
-		if required {
-			require.Error(t, err)
-		} else {
-			require.NoError(t, err)
-			require.NotEmpty(t, resource)
-		}
-	}
-
 	testCases := []struct {
 		name           string
 		tenant         string
@@ -59,23 +50,43 @@ func TestIntegrationSystemAccess(stdT *testing.T) {
 			t.Log(fmt.Sprintf("Trying to create application in account tenant %s", test.tenant))
 			app, err := fixtures.RegisterApplication(t, ctx, directorCertSecuredClient, fmt.Sprintf("app-%s", test.resourceSuffix), test.tenant)
 			defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, test.tenant, &app)
-			assertError(t, test.expectErr, err, app.ID)
+			if test.expectErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.NotEmpty(t, app.ID)
+			}
 
 			t.Log(fmt.Sprintf("Trying to list applications in account tenant %s", test.tenant))
 			getAppReq := fixtures.FixGetApplicationsRequestWithPagination()
 			apps := graphql.ApplicationPage{}
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, test.tenant, getAppReq, &apps)
-			assertError(t, test.expectErr, err, apps.Data)
+			if test.expectErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.NotEmpty(t, apps.Data)
+			}
 
 			t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s", test.tenant))
 			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, test.tenant, &graphql.RuntimeInput{Name: fmt.Sprintf("runtime-%s", test.resourceSuffix)})
 			defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, test.tenant, &rt)
-			assertError(t, test.expectErr, err, rt.ID)
+			if test.expectErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.NotEmpty(t, rt.ID)
+			}
 
 			t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate", test.tenant))
 			at, err := fixtures.CreateApplicationTemplate(t, ctx, directorCertSecuredClient, defaultTenantId, fmt.Sprintf("app-template-%s", test.resourceSuffix))
 			defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, test.tenant, &at)
-			assertError(t, test.expectErr, err, at.ID)
+			if test.expectErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.NotEmpty(t, at.ID)
+			}
 		})
 	}
 }
