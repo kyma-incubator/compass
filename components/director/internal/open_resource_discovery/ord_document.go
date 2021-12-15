@@ -123,9 +123,6 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
-			if _, ok := packageIDs[pkg.OrdID]; ok {
-				return errors.Errorf("found duplicate package with ord id %q", pkg.OrdID)
-			}
 			packageIDs[pkg.OrdID] = true
 			packagePolicyLevels[pkg.OrdID] = pkg.PolicyLevel
 		}
