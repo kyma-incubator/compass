@@ -6,6 +6,7 @@ function prometheusMTLSPatch() {
   patchKymaServiceMonitorsForMTLS
   removeKymaPeerAuthsForPrometheus
   patchMonitoringTests
+  patchCertManager
 }
 
 function patchPrometheusForMTLS() {
@@ -410,4 +411,15 @@ EOF
 
   rm testdef.yaml
   rm patchSidecarContainerCommand.yaml
+}
+
+function patchCertManager() {
+  kubectl label ns cert-manager istio-injection=enabled --overwrite || true
+
+  kubectl -n cert-manager patch deployment cert-manager-cainjector -p '{"spec":{"template":{"metadata":{"annotations":{"sidecar.istio.io/inject": "false"}}}}}' || true
+  kubectl -n cert-manager patch deployment cert-manager-webhook -p '{"spec":{"template":{"metadata":{"annotations":{"sidecar.istio.io/inject": "false"}}}}}' || true
+
+  kubectl rollout restart -n cert-manager deployment/cert-manager || true
+  kubectl rollout restart -n cert-manager deployment/cert-manager-cainjector || true
+  kubectl rollout restart -n cert-manager deployment/cert-manager-webhook || true
 }
