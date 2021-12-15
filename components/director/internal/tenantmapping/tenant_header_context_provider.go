@@ -51,7 +51,8 @@ func (p *tenantHeaderContextProvider) GetObjectContext(ctx context.Context, reqD
 			// tenant not in DB yet, might be because we have not imported all subaccounts yet
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), p.tenantKeys, "", authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), CertServiceObjectContextProvider), nil
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), p.tenantKeys, "", mergeWithOtherScopes, authDetails.Region,
+				"", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), CertServiceObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
@@ -61,7 +62,7 @@ func (p *tenantHeaderContextProvider) GetObjectContext(ctx context.Context, reqD
 		return ObjectContext{}, err
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), p.tenantKeys, "",
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), p.tenantKeys, "", mergeWithOtherScopes,
 		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), CertServiceObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 	return objCtx, nil
