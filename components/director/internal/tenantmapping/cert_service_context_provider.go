@@ -29,9 +29,9 @@ func NewCertServiceContextProvider(tenantRepo TenantRepository, scopesGetter Sco
 }
 
 type certServiceContextProvider struct {
-	tenantRepo TenantRepository
-	tenantKeys KeysExtra
-	scopesGetter ScopesGetter
+	tenantRepo          TenantRepository
+	tenantKeys          KeysExtra
+	scopesGetter        ScopesGetter
 	consumerExistsFuncs map[model.SystemAuthReferenceObjectType]func(context.Context, string) (bool, error)
 }
 
