@@ -248,15 +248,15 @@ func (d *ReqData) ExtractCoordinates() (authenticator.Coordinates, bool, error) 
 	return coords, true, nil
 }
 
-// IsConsumerProviderFlow returns true if a tenant header is missing or is provided, but it differs from
+// IsIntegrationSystemFlow returns true if a tenant header is missing or is provided, but it differs from
 // the client ID found in the certificate
-func (d *ReqData) IsConsumerProviderFlow() bool {
+func (d *ReqData) IsIntegrationSystemFlow() bool {
 	clientIDFromCert := d.Body.Header.Get(ClientIDCertKey)
 	tenant, err := d.GetExternalTenantID()
 	if err != nil {
 		return false
 	}
-	return clientIDFromCert != tenant
+	return clientIDFromCert != tenant && d.ConsumerType() == model.IntegrationSystemReference
 }
 
 // TenantAccessLevels gets the granted tenant access levels from body extra if they exist.
@@ -282,7 +282,7 @@ func (d *ReqData) TenantAccessLevels() []tenantEntity.Type {
 // ConsumerType gets consumer type from body extra if it exists.
 func (d *ReqData) ConsumerType() model.SystemAuthReferenceObjectType {
 	defaultConsumerType := model.RuntimeReference
-	if d.Body.Extra == nil || !d.IsConsumerProviderFlow() {
+	if d.Body.Extra == nil {
 		return defaultConsumerType
 	}
 	consumerType, found := d.Body.Extra[cert.ConsumerTypeExtraField]

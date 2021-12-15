@@ -76,8 +76,8 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 			Description: ptr.String("selfRegisterRuntime-description"),
 			Labels:      graphql.Labels{testConfig.SelfRegisterDistinguishLabelKey: distinguishLblValue},
 		}
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, defaultTenantId, &runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, defaultTenantId, &runtime)
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, subaccountID, &runtimeInput)
+		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subaccountID, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
@@ -87,7 +87,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 		// Verify that the label returned cannot be modified
 		setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
 		label := graphql.Label{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, defaultTenantId, setLabelRequest, &label)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, subaccountID, setLabelRequest, &label)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
 
@@ -108,7 +108,6 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
 		ctx := context.Background()
-		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
 		secondaryTenant := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
 		subscriptionProviderID := "xs-app-name"
 		subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
@@ -126,7 +125,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Register provider runtime with the necessary label
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, defaultTenantId, &runtime)
+		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 

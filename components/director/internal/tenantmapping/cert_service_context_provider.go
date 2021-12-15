@@ -31,9 +31,7 @@ func NewCertServiceContextProvider(tenantRepo TenantRepository, scopesGetter Sco
 type certServiceContextProvider struct {
 	tenantRepo TenantRepository
 	tenantKeys KeysExtra
-
 	scopesGetter ScopesGetter
-
 	consumerExistsFuncs map[model.SystemAuthReferenceObjectType]func(context.Context, string) (bool, error)
 }
 
@@ -41,20 +39,16 @@ type certServiceContextProvider struct {
 // By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
 // There we should only convert the tenant identifier from external to internal.
 func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
-	externalTenantID, err := reqData.GetExternalTenantID()
-	if err != nil {
-		if !apperrors.IsKeyDoesNotExist(err) {
-			log.C(ctx).WithError(err).Errorf("Failed to get external tenant ID: %v", err)
-			return ObjectContext{}, errors.Wrap(err, "while fetching tenant external id")
-		}
-		externalTenantID = authDetails.AuthID // the authID in this flow is an OU selected by the Connector - matches a subaccount tenant
-	}
-
 	consumerType := reqData.ConsumerType()
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumerType,
 	})
 	ctx = log.ContextWithLogger(ctx, logger)
+
+	externalTenantID, err := getExternalTenant(ctx, reqData, authDetails)
+	if err != nil {
+		return ObjectContext{}, err
+	}
 
 	scopes, err := p.directorScopes(consumerType)
 	if err != nil {
@@ -74,7 +68,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	if reqData.IsConsumerProviderFlow() {
+	if reqData.IsIntegrationSystemFlow() {
 		if err := p.verifyTenantAccess(ctx, tenantMapping, authDetails, reqData); err != nil {
 			return ObjectContext{}, err
 		}
@@ -97,6 +91,23 @@ func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper.Re
 	}
 
 	return false, nil, nil
+}
+
+func getExternalTenant(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (string, error) {
+	if reqData.ConsumerType() != model.IntegrationSystemReference {
+		return authDetails.AuthID, nil // the authID in this flow is an OU selected by the Connector - matches a subaccount tenant
+	}
+
+	id, err := reqData.GetExternalTenantID()
+	if err != nil {
+		if !apperrors.IsKeyDoesNotExist(err) {
+			log.C(ctx).WithError(err).Errorf("Failed to get external tenant ID: %v", err)
+			return "", errors.Wrap(err, "while fetching tenant external id")
+		}
+		id = authDetails.AuthID
+	}
+
+	return id, nil
 }
 
 func (p *certServiceContextProvider) directorScopes(consumerType model.SystemAuthReferenceObjectType) (string, error) {
