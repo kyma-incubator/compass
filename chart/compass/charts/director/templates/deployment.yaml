@@ -147,6 +147,11 @@ spec:
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName | trimPrefix "/" | replace "/" ", " | quote }}
             - name: APP_INFO_CERT_ISSUER
               value: {{ .Values.global.externalCertConfiguration.issuer }}
+            - name: APP_INFO_ROOT_CA
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.gateway.mtls.external.certSecret }}-cacert
+                  key: cacert
             {{- if .Values.deployment.pairingAdapterConfigMap }}
             - name: APP_PAIRING_ADAPTER_SRC
               value: /pairing-adapters/config.json
