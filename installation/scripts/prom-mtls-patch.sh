@@ -2,11 +2,11 @@ function prometheusMTLSPatch() {
   patchPrometheusForMTLS
   patchAlertManagerForMTLS
   enableNodeExporterMTLS
+  patchCertManager
   patchDeploymentsToInjectSidecar
   patchKymaServiceMonitorsForMTLS
   removeKymaPeerAuthsForPrometheus
   patchMonitoringTests
-  patchCertManager
 }
 
 function patchPrometheusForMTLS() {
