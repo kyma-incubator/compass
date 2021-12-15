@@ -246,6 +246,7 @@ global:
         oauth:
           host: compass-gateway-auth-oauth
     mtls:
+      manageCerts: true
       host: compass-gateway-mtls
       certSecret: compass-gateway-mtls-certs
       external:
