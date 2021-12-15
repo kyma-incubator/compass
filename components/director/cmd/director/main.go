@@ -433,18 +433,19 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
-	intSysConverter := integrationsystem.NewConverter()
-	intSysRepo := integrationsystem.NewRepository(intSysConverter)
+	//intSysConverter := integrationsystem.NewConverter()
+	//intSysRepo := integrationsystem.NewRepository(intSysConverter)
 
-	consumerExistsCheckers := map[model.SystemAuthReferenceObjectType]func(ctx context.Context, id string) (bool, error){
-		model.IntegrationSystemReference: intSysRepo.Exists,
-	}
+	//consumerExistsCheckers := map[model.SystemAuthReferenceObjectType]func(ctx context.Context, id string) (bool, error){
+	//	model.IntegrationSystemReference: intSysRepo.Exists,
+	//}
 
 	objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
 		tenantmapping.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(staticUsersRepo, staticGroupsRepo, tenantRepo),
 		tenantmapping.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(systemAuthSvc, cfgProvider, tenantRepo),
 		tenantmapping.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(tenantRepo, authenticators),
-		tenantmapping.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(tenantRepo, cfgProvider, consumerExistsCheckers),
+		tenantmapping.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(tenantRepo, cfgProvider),
+		tenantmapping.TenantHeaderObjectContextProvider:  tenantmapping.NewTenantHeaderContextProvider(tenantRepo),
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 

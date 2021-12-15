@@ -26,6 +26,8 @@ const (
 	AuthenticatorObjectContextProvider = "AuthenticatorObjectContextProvider"
 	// CertServiceObjectContextProvider missing godoc
 	CertServiceObjectContextProvider = "CertServiceObjectContextProvider"
+	// TenantHeaderObjectContextProvider missing godoc
+	TenantHeaderObjectContextProvider = "TenantHeaderObjectContextProvider"
 	// ConsumerTenantKey key for consumer tenant id in Claims.Tenant
 	ConsumerTenantKey = "consumerTenant"
 	// ExternalTenantKey key for external tenant id in Claims.Tenant
