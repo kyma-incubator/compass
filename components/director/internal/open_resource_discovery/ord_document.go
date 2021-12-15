@@ -128,25 +128,54 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		}
 	}
 
-	for _, doc := range docs {
+	ordMap := make(map[string]bool, 0)
+	for j, doc := range docs {
 		if err := validateDocumentInput(doc); err != nil {
 			return errors.Wrap(err, "error validating document")
 		}
 
-		for _, pkg := range doc.Packages {
+		pkgIdxesToRemove := make([]int, 0)
+		for i, pkg := range doc.Packages {
 			if err := validatePackageInput(pkg, packagesFromDB, resourceHashes); err != nil {
 				return errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID)
 			}
+
+			if _, exists := ordMap[pkg.OrdID]; exists {
+				pkgIdxesToRemove = append(pkgIdxesToRemove, i)
+			}
+
+			ordMap[pkg.OrdID] = true
 		}
-		for _, bndl := range doc.ConsumptionBundles {
+
+		for _, pkgIdx := range pkgIdxesToRemove {
+			docs[j].Packages[pkgIdx] = docs[j].Packages[len(docs[j].Packages)-1]
+			docs[j].Packages = docs[j].Packages[:len(docs[j].Packages)-1]
+
+			//docs[j].Packages = append(docs[j].Packages[:pkgIdx], docs[j].Packages[pkgIdx+1:]...)
+		}
+
+		bundleIdxesToRemove := make([]int, 0)
+		for i, bndl := range doc.ConsumptionBundles {
 			if err := validateBundleInput(bndl); err != nil {
 				return errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID))
 			}
-			if _, ok := bundleIDs[*bndl.OrdID]; ok {
-				return errors.Errorf("found duplicate bundle with ord id %q", *bndl.OrdID)
-			}
 			bundleIDs[*bndl.OrdID] = true
+
+			if bndl.OrdID != nil {
+				if _, exists := ordMap[*bndl.OrdID]; exists {
+					bundleIdxesToRemove = append(bundleIdxesToRemove, i)
+				}
+				ordMap[*bndl.OrdID] = true
+			}
 		}
+
+		for _, bndlIdx := range bundleIdxesToRemove {
+			docs[j].ConsumptionBundles[bndlIdx] = docs[j].ConsumptionBundles[len(docs[j].ConsumptionBundles)-1]
+			docs[j].ConsumptionBundles = docs[j].ConsumptionBundles[:len(docs[j].ConsumptionBundles)-1]
+
+			//docs[j].ConsumptionBundles = append(docs[j].ConsumptionBundles[:bndlIdx], docs[j].ConsumptionBundles[bndlIdx+1:]...)
+		}
+
 		for _, product := range doc.Products {
 			if err := validateProductInput(product); err != nil {
 				return errors.Wrapf(err, "error validating product with ord id %q", product.OrdID)
@@ -195,12 +224,6 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		for _, pkg := range doc.Packages {
 			if !vendorIDs[*pkg.Vendor] {
 				return errors.Errorf("package with id %q has a reference to unknown vendor %q", pkg.OrdID, *pkg.Vendor)
-			}
-			ordIDs := gjson.ParseBytes(pkg.PartOfProducts).Array()
-			for _, productID := range ordIDs {
-				if !productIDs[productID.String()] {
-					return errors.Errorf("package with id %q has a reference to unknown product %q", pkg.OrdID, productID.String())
-				}
 			}
 		}
 		for _, product := range doc.Products {

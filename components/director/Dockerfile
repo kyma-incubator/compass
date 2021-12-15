@@ -20,21 +20,8 @@ COPY . .
 # Build app
 #
 
-RUN go build -v -o director ./cmd/director/main.go \
-  && go build -v -o tenantfetcher-job ./cmd/tenantfetcher-job/main.go \
-  && go build -v -o tenantfetcher-svc ./cmd/tenantfetcher-svc/main.go \
-  && go build -v -o tenantloader ./cmd/tenantloader/main.go \
-  && go build -v -o ordaggregator ./cmd/ordaggregator/main.go \
-  && go build -v -o scopessynchronizer ./cmd/scopessynchronizer/main.go \
-  && go build -v -o systemfetcher ./cmd/systemfetcher/main.go
-RUN mkdir /app && mv ./director /app/director \
-  && mv ./tenantfetcher-job /app/tenantfetcher-job \
-  && mv ./tenantfetcher-svc /app/tenantfetcher-svc \
-  && mv ./tenantloader /app/tenantloader \
-  && mv ./ordaggregator /app/ordaggregator \
-  && mv ./scopessynchronizer /app/scopessynchronizer \
-  && mv ./systemfetcher /app/systemfetcher \
-  && mv ./licenses /app/licenses
+RUN go build -v -o ordaggregator ./cmd/ordaggregator/main.go
+RUN mkdir /app && mv ./ordaggregator /app/ordaggregator
 
 FROM alpine:3.14.2
 LABEL source = git@github.com:kyma-incubator/compass.git
