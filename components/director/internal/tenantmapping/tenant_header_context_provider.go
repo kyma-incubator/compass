@@ -104,19 +104,3 @@ func (p *tenantHeaderContextProvider) verifyTenantAccessLevels(tenant *model.Bus
 
 	return nil
 }
-
-//
-//func (p *tenantHeaderContextProvider) verifyConsumerExists(ctx context.Context, data oathkeeper.ExtraData) error {
-//	if data.InternalConsumerID == "" {
-//		return nil
-//	}
-//
-//	found, err := p.consumerExistsFuncs[data.ConsumerType](ctx, data.InternalConsumerID)
-//	if err != nil {
-//		return errors.Wrapf(err, "while getting %s with ID %s", data.ConsumerType, data.InternalConsumerID)
-//	}
-//	if !found {
-//		return apperrors.NewUnauthorizedError(fmt.Sprintf("%s with ID %s does not exist", data.ConsumerType, data.InternalConsumerID))
-//	}
-//	return nil
-//}

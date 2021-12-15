@@ -49,8 +49,7 @@ func (v *validator) Validate(ctx context.Context, claims Claims) error {
 
 	if claims.OnBehalfOf != "" {
 		log.C(ctx).Infof("Consumer-Provider call by %s on behalf of %s. Proceeding with double authentication crosscheck...", claims.Tenant[tenantmapping.ProviderTenantKey], claims.Tenant[tenantmapping.ConsumerTenantKey])
-		switch claims.ConsumerType {
-		case consumer.Runtime:
+		if claims.ConsumerType == consumer.Runtime {
 			return v.validateRuntimeConsumer(ctx, claims)
 		}
 	}
@@ -116,9 +115,5 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 		log.C(ctx).Errorf("Consumer's external tenant %s was not found in the %s label of any runtime in the provider tenant %s", expectedConsumerTenant, v.consumerSubaccountIDsLabelKey, claims.Tenant[tenantmapping.ProviderTenantKey])
 		return apperrors.NewUnauthorizedError(fmt.Sprintf("Consumer's external tenant %s was not found in the %s label of any runtime in the provider tenant %s", expectedConsumerTenant, v.consumerSubaccountIDsLabelKey, claims.Tenant[tenantmapping.ProviderTenantKey]))
 	}
-	return nil
-}
-
-func (v *validator) validateIntegrationSystemConsumer() error {
 	return nil
 }
