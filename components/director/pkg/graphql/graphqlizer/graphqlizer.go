@@ -577,19 +577,19 @@ func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingI
 		{{ range $i, $tenant := . }}
 			{{- if $i }}, {{- end }}
 			{
-				name: "{{ $tenant.Name }}",
- 				externalTenant: "{{ $tenant.ExternalTenant }}",
+				name: {{ quote $tenant.Name }},
+ 				externalTenant: {{ quote $tenant.ExternalTenant }},
 				{{- if $tenant.Parent }}
-				parent: "{{ $tenant.Parent }}",
+				parent: {{ quote $tenant.Parent }},
 				{{- end }}
 				{{- if $tenant.Region }}
-				region: "{{ $tenant.Region }}",
+				region: {{ quote $tenant.Region }},
 				{{- end }}
 				{{- if $tenant.Subdomain }}
-				subdomain: "{{ $tenant.Subdomain }}",
+				subdomain: {{ quote $tenant.Subdomain }},
 				{{- end }}
-				type: "{{ $tenant.Type }}",
-				provider: "{{ $tenant.Provider }}"
+				type: {{ quote $tenant.Type }},
+				provider: {{ quote $tenant.Provider }}
 			}
 		{{ end }}`)
 }
@@ -600,7 +600,7 @@ func (g *Graphqlizer) DeleteTenantsInputToGQL(in []graphql.BusinessTenantMapping
 		{{ $n := (len .) }}
 		{{ range $i, $tenant := . }}
 			{{- if $i }}, {{- end }}
-			"{{ $tenant.ExternalTenant }}"
+			{{ quote $tenant.ExternalTenant }}
 		{{ end }}`)
 }
 
@@ -608,19 +608,19 @@ func (g *Graphqlizer) DeleteTenantsInputToGQL(in []graphql.BusinessTenantMapping
 func (g *Graphqlizer) UpdateTenantsInputToGQL(in graphql.BusinessTenantMappingInput) (string, error) {
 	return g.genericToGQL(in, `
 		{
-			name: "{{ .Name }}",
- 			externalTenant: "{{ .ExternalTenant }}",
+			name: {{ quote .Name }},
+ 			externalTenant: {{ quote .ExternalTenant }},
 			{{- if .Parent }}
-			parent: "{{ .Parent }}",
+			parent: {{ quote .Parent }},
 			{{- end }}
 			{{- if .Region }}
-			region: "{{ .Region }}",
+			region: {{ quote .Region }},
 			{{- end }}
 			{{- if .Subdomain }}
-			subdomain: "{{ .Subdomain }}",
+			subdomain: {{ quote .Subdomain }},
 			{{- end }}
-			type: "{{ .Type }}",
-			provider: "{{ .Provider }}"
+			type: {{ quote .Type }},
+			provider: {{ quote .Provider }}
 		}`)
 }
 
@@ -677,6 +677,7 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["BundleInstanceAuthStatusInputToGQL"] = g.BundleInstanceAuthStatusInputToGQL
 	fm["BundleCreateInputToGQL"] = g.BundleCreateInputToGQL
 	fm["LabelSelectorInputToGQL"] = g.LabelSelectorInputToGQL
+	fm["quote"] = strconv.Quote
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {
