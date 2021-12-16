@@ -33,15 +33,17 @@ func TestReport_Validate(t *testing.T) {
 	}
 
 	validSCC := SCC{
-		Subaccount:     "subaccount",
-		LocationID:     "loc-id",
-		ExposedSystems: []System{validSystem},
+		ExternalSubaccountID:  "external-subaccount",
+		InternalSubbaccountID: "",
+		LocationID:            "loc-id",
+		ExposedSystems:        []System{validSystem},
 	}
 
 	invalidSCC := SCC{
-		Subaccount:     "",
-		LocationID:     "loc-id",
-		ExposedSystems: []System{},
+		ExternalSubaccountID:  "",
+		InternalSubbaccountID: "",
+		LocationID:            "loc-id",
+		ExposedSystems:        []System{},
 	}
 
 	cases := cases{
@@ -128,36 +130,49 @@ func TestSCC_Validate(t *testing.T) {
 	cases := cases{
 		{
 			data: SCC{
-				Subaccount:     "subaccount",
-				LocationID:     "loc-id",
-				ExposedSystems: []System{validSystem},
+				ExternalSubaccountID:  "external-subaccount",
+				InternalSubbaccountID: "",
+				LocationID:            "loc-id",
+				ExposedSystems:        []System{validSystem},
 			},
 			name:      "success",
 			expectErr: false,
 		},
 		{
 			data: SCC{
-				Subaccount:     "subaccount",
-				LocationID:     "",
-				ExposedSystems: []System{validSystem},
+				ExternalSubaccountID:  "external-subaccount",
+				InternalSubbaccountID: "",
+				LocationID:            "",
+				ExposedSystems:        []System{validSystem},
 			},
 			name:      "success with empty location ID",
 			expectErr: false,
 		},
 		{
 			data: SCC{
-				Subaccount:     "subaccount",
-				LocationID:     "loc-id",
-				ExposedSystems: []System{},
+				ExternalSubaccountID:  "external-subaccount",
+				InternalSubbaccountID: "",
+				LocationID:            "loc-id",
+				ExposedSystems:        []System{},
 			},
 			name:      "success with empty slice of systems",
 			expectErr: false,
 		},
 		{
 			data: SCC{
-				Subaccount:     "",
-				LocationID:     "loc-id",
-				ExposedSystems: []System{},
+				ExternalSubaccountID: "external-subaccount",
+				LocationID:           "loc-id",
+				ExposedSystems:       []System{},
+			},
+			name:      "success with missing internal subaccount id",
+			expectErr: false,
+		},
+		{
+			data: SCC{
+				ExternalSubaccountID:  "",
+				InternalSubbaccountID: "",
+				LocationID:            "loc-id",
+				ExposedSystems:        []System{},
 			},
 			name:          "fail with empty subaccount",
 			expectErr:     true,
@@ -174,8 +189,9 @@ func TestSCC_Validate(t *testing.T) {
 		},
 		{
 			data: SCC{
-				Subaccount: "subaccount",
-				LocationID: "loc-id",
+				ExternalSubaccountID:  "external-subaccount",
+				InternalSubbaccountID: "",
+				LocationID:            "loc-id",
 			},
 			name:          "fail with missing ExposedSystem",
 			expectErr:     true,
@@ -183,9 +199,10 @@ func TestSCC_Validate(t *testing.T) {
 		},
 		{
 			data: SCC{
-				Subaccount:     "subaccount",
-				LocationID:     "loc-id",
-				ExposedSystems: []System{invalidSystem},
+				ExternalSubaccountID:  "external-subaccount",
+				InternalSubbaccountID: "",
+				LocationID:            "loc-id",
+				ExposedSystems:        []System{invalidSystem},
 			},
 			name:          "fail with invalid system",
 			expectErr:     true,
