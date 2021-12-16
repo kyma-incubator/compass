@@ -12,7 +12,7 @@ import (
 // Repository missing godoc
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
-	GetVersion(ctx context.Context) (string, error)
+	GetVersion(ctx context.Context) (string, bool, error)
 }
 
 // ReadyConfig missing godoc
@@ -70,7 +70,7 @@ func (r *Ready) checkSchemaCompatibility(ctx context.Context) bool {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	schemaVersion, err := r.repo.GetVersion(ctx)
+	schemaVersion, dirty, err := r.repo.GetVersion(ctx)
 	if err != nil {
 		log.C(ctx).Error(err.Error())
 		return false
@@ -81,5 +81,10 @@ func (r *Ready) checkSchemaCompatibility(ctx context.Context) bool {
 		return false
 	}
 
-	return r.cfg.SchemaMigrationVersion == schemaVersion
+	if r.cfg.SchemaMigrationVersion != schemaVersion || dirty {
+		log.C(ctx).Errorf("Incompatible schema version. Expected: %s, Current (version, dirty): (%s, %v)", r.cfg.SchemaMigrationVersion, schemaVersion, dirty)
+		return false
+	}
+
+	return true
 }
