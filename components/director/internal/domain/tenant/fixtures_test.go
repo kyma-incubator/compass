@@ -138,30 +138,16 @@ func newGraphQLTenant(id, internalID, name string) *graphql.Tenant {
 	}
 }
 
-func fixTenantAccessesForApplication() []repo.TenantAccess {
+func fixTenantAccesses() []repo.TenantAccess {
 	return []repo.TenantAccess{
 		{
 			TenantID:   testID,
-			ResourceID: "app1",
+			ResourceID: "resourceID",
 			Owner:      true,
 		},
 	}
 }
 
-func fixTenantAccessesForRuntime() []repo.TenantAccess {
-	return []repo.TenantAccess{
-		{
-			TenantID:   testID,
-			ResourceID: "runtime1",
-			Owner:      true,
-		},
-	}
-}
-
-func fixTenantAccessesForRuntimeRow() []driver.Value {
-	return []driver.Value{testID, "runtime1", true}
-}
-
-func fixTenantAccessesForApplicationRow() []driver.Value {
-	return []driver.Value{testID, "app1", true}
+func fixTenantAccessesRow() []driver.Value {
+	return []driver.Value{testID, "resourceID", true}
 }
