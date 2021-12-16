@@ -173,7 +173,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 	}
 
 	if tntFromDB.Parent != model.Parent {
-		for _, topLevelEntity := range resource.TopLevelEntities {
+		for topLevelEntity := range resource.TopLevelEntities {
 			m2mTable, ok := topLevelEntity.TenantAccessTable()
 			if !ok {
 				return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
@@ -224,7 +224,7 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 		return err
 	}
 
-	for _, topLevelEntity := range resource.TopLevelEntities {
+	for topLevelEntity, topLevelEntityTable := range resource.TopLevelEntities {
 		m2mTable, ok := topLevelEntity.TenantAccessTable()
 		if !ok {
 			return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
@@ -243,8 +243,9 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 				resourceIDs = append(resourceIDs, ta.ResourceID)
 			}
 
-			if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, tnt.ID, resourceIDs); err != nil {
-				return errors.Wrapf(err, "while deleting tenant accesses for the tenant %s", tnt.ID)
+			deleter := repo.NewDeleterGlobal(topLevelEntity, topLevelEntityTable)
+			if err := deleter.DeleteManyGlobal(ctx, repo.Conditions{repo.NewInConditionForStringValues("id", resourceIDs)}); err != nil {
+				return errors.Wrapf(err, "while deleting resources owned by tenant %s", tnt.ID)
 			}
 		}
 	}

@@ -87,7 +87,7 @@ global:
       version: "PR-2118"
     director:
       dir:
-      version: "PR-2148"
+      version: "PR-2151"
     gateway:
       dir:
       version: "PR-2077"
@@ -99,7 +99,7 @@ global:
       version: "PR-52"
     schema_migrator:
       dir:
-      version: "PR-2131"
+      version: "PR-2151"
     system_broker:
       dir:
       version: "PR-2084"
