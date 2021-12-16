@@ -33,10 +33,12 @@ type ApplicationService interface {
 	ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error) //TODO check what tenant will be used to execute this query
 }
 
+//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
 type ApplicationConverter interface {
 	CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error)
 }
 
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore
 type ApplicationTemplateService interface {
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
@@ -155,12 +157,10 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	sccs := make([]*nsmodel.SCC, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
 		sccWithInternalID, ok := externalSubaccountIDToSCC[scc.ExternalSubaccountID]
-		if !ok {
+		if !ok || sccWithInternalID.InternalSubbaccountID == "" {
 			log.C(ctx).Warnf("Got SCC with subaccount id: %s which is not found", scc.ExternalSubaccountID)
 			addErrorDetailsMsg(&details, &scc, "Subaccount not found")
-		}
-
-		if sccWithInternalID.InternalSubbaccountID == "not subaccount" {
+		} else if sccWithInternalID.InternalSubbaccountID == "not subaccount" {
 			addErrorDetailsMsg(&details, &scc, "Provided id is not subaccount")
 		} else {
 			sccs = append(sccs, sccWithInternalID)
