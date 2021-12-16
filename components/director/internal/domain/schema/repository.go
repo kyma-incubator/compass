@@ -11,28 +11,34 @@ import (
 
 const (
 	schemaVersionColumn = "version"
+	schemaDirtyColumn   = "dirty"
 	tableName           = `"public"."schema_migrations"`
 )
 
-// PgRepository missing godoc
+// PgRepository represents a repository for schema migration operations
 type PgRepository struct {
 	singleGetter repo.SingleGetterGlobal
 }
 
-// NewRepository missing godoc
+// NewRepository creates a new instance of PgRepository
 func NewRepository() *PgRepository {
 	return &PgRepository{
-		singleGetter: repo.NewSingleGetterGlobal(resource.Schema, tableName, []string{schemaVersionColumn}),
+		singleGetter: repo.NewSingleGetterGlobal(resource.Schema, tableName, []string{schemaVersionColumn, schemaDirtyColumn}),
 	}
 }
 
-// GetVersion missing godoc
-func (r *PgRepository) GetVersion(ctx context.Context) (string, error) {
-	var version string
+type schemaVersion struct {
+	Version string `db:"version"`
+	Dirty   bool   `db:"dirty"`
+}
+
+// GetVersion returns the current schema version
+func (r *PgRepository) GetVersion(ctx context.Context) (string, bool, error) {
+	var version schemaVersion
 	err := r.singleGetter.GetGlobal(ctx, repo.Conditions{}, repo.NoOrderBy, &version)
 	if err != nil {
-		return "", errors.Wrap(err, "while getting schema version")
+		return "", false, errors.Wrap(err, "while getting schema version")
 	}
 
-	return version, nil
+	return version.Version, version.Dirty, nil
 }

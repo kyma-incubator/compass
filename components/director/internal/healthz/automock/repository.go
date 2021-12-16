@@ -14,7 +14,7 @@ type Repository struct {
 }
 
 // GetVersion provides a mock function with given fields: ctx
-func (_m *Repository) GetVersion(ctx context.Context) (string, error) {
+func (_m *Repository) GetVersion(ctx context.Context) (string, bool, error) {
 	ret := _m.Called(ctx)
 
 	var r0 string
@@ -24,12 +24,19 @@ func (_m *Repository) GetVersion(ctx context.Context) (string, error) {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+	var r1 bool
+	if rf, ok := ret.Get(1).(func(context.Context) bool); ok {
 		r1 = rf(ctx)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(bool)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
+		r2 = rf(ctx)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
