@@ -45,6 +45,12 @@ func (mdc *MDC) Set(key string, value interface{}) {
 	mdc.mdc[key] = value
 }
 
+func (mdc *MDC) SetIfNotEmpty(key string, value string) {
+	if value != "" {
+		mdc.Set(key, value)
+	}
+}
+
 func (mdc *MDC) appendFields(entry *logrus.Entry) *logrus.Entry {
 	if len(mdc.mdc) == 0 {
 		return entry

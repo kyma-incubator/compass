@@ -101,18 +101,10 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			}
 
 			if mdc := log.MdcFromContext(ctx); nil != mdc {
-				if tokenClaims.ConsumerType != "" {
-					mdc.Set(logKeyConsumerType, tokenClaims.ConsumerType)
-				}
-				if tokenClaims.ConsumerID != "" {
-					mdc.Set(logKeyConsumerId, tokenClaims.ConsumerID)
-				}
-				if tokenClaims.TokenClientID != "" {
-					mdc.Set(logKeyTokenClientId, tokenClaims.TokenClientID)
-				}
-				if tokenClaims.Flow != "" {
-					mdc.Set(logKeyFlow, tokenClaims.Flow)
-				}
+				mdc.Set(logKeyConsumerType, tokenClaims.ConsumerType)
+				mdc.Set(logKeyFlow, tokenClaims.Flow)
+				mdc.SetIfNotEmpty(logKeyConsumerId, tokenClaims.ConsumerID)
+				mdc.SetIfNotEmpty(logKeyTokenClientId, tokenClaims.TokenClientID)
 			}
 
 			if err := a.claimsValidator.Validate(ctx, *tokenClaims); err != nil {

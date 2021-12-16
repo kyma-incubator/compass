@@ -3,6 +3,7 @@ package log
 import (
 	"context"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -33,11 +34,8 @@ func TestContextWithMdc(t *testing.T) {
 		if mdc := MdcFromContext(ctx); nil == mdc {
 			t.Fatalf("An MDC instance should have been attached to the context")
 		} else {
-			if inner != &mdc.mdc {
-				t.Fatalf("The MDC instance has been replaced")
-			}
+			require.Equal(t, inner, &mdc.mdc)
 		}
-
 	})
 }
 
@@ -47,9 +45,7 @@ func TestAppendMdcToLogEntry(t *testing.T) {
 		entry := logrus.WithFields(make(map[string]interface{}))
 		newEntry := mdc.appendFields(entry)
 
-		if entry != newEntry {
-			t.Fatalf("The log entry should not have been modified")
-		}
+		require.Equal(t, entry, newEntry)
 	})
 
 	t.Run("append MDC content to a log entry", func(t *testing.T) {
@@ -62,17 +58,33 @@ func TestAppendMdcToLogEntry(t *testing.T) {
 		entry := logrus.WithFields(make(map[string]interface{}))
 		newEntry := mdc.appendFields(entry)
 
-		if entry == newEntry {
-			t.Fatalf("The log entry should have been modified")
-		}
+		require.NotEqual(t, entry, newEntry)
 
 		value, ok := newEntry.Data[testKey]
-		if !ok {
-			t.Fatalf("The expected key was not found in the log entry's data")
-		}
-		if value != testValue {
-			t.Fatalf("The filed value does not match. Expected '%v', but got '%v'", testValue, value)
-		}
+		require.Truef(t, ok, "Missing key: %v", testKey)
+		require.Equal(t, testValue, value)
+	})
+}
 
+func TestMdcSetValues(t *testing.T) {
+	t.Run("add value to mdc", func(t *testing.T) {
+		const testKey = "test"
+		const testValue = "test-val"
+
+		mdc := NewMappedDiagnosticContext()
+		mdc.SetIfNotEmpty(testKey, testValue)
+
+		_, ok := mdc.mdc[testKey]
+		require.True(t, ok, "Missing key: %v:%v", testKey, testValue)
+	})
+
+	t.Run("do not add empty value to mdc", func(t *testing.T) {
+		const testKey = "test"
+
+		mdc := NewMappedDiagnosticContext()
+		mdc.SetIfNotEmpty(testKey, "")
+
+		val, ok := mdc.mdc[testKey]
+		require.False(t, ok, "Unexpected value: %v", val)
 	})
 }
