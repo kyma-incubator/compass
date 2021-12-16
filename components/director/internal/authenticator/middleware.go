@@ -27,10 +27,10 @@ const (
 )
 
 const (
-	logKeyConsumerType  string = "consumer-type"
-	logKeyConsumerId           = "consumer-id"
-	logKeyTokenClientId        = "token-client-id"
-	logKeyFlow                 = "flow"
+	logKeyConsumerType  = "consumer-type"
+	logKeyConsumerId    = "consumer-id"
+	logKeyTokenClientId = "token-client-id"
+	logKeyFlow          = "flow"
 )
 
 // ClaimsValidator missing godoc
