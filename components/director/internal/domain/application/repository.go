@@ -25,7 +25,7 @@ const applicationTable string = `public.applications`
 var (
 	applicationColumns    = []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
 	updatableColumns      = []string{"name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
-	upsertableColumns     = []string{"name", "description", "status_condition", "system_status", "provider_name", "base_url", "labels"}
+	upsertableColumns     = []string{"name", "description", "status_condition", "system_status", "provider_name", "base_url"}
 	matchingSystemColumns = []string{"system_number"}
 )
 
@@ -156,6 +156,7 @@ func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.App
 
 // GetByFilter missing godoc
 func (r *pgRepository) GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error) {
+	fmt.Println("<<<<<<<<<<< GetByFilter")
 	var appEnt Entity
 
 	tenantID, err := uuid.Parse(tenant)
@@ -346,6 +347,13 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.A
 		return errors.Wrap(err, "while converting to Application entity")
 	}
 
+	fmt.Println(">>>>>>>>>>>")
+	fmt.Println(">>>>>>>>>>>")
+	fmt.Println(">>>>>>>>>>>")
+	fmt.Println(">>>>>>>>>>>")
+	fmt.Printf("%+v", *appEnt)
+	fmt.Println("Id: ", appEnt.ID)
+	log.C(ctx).Debugf("Upserting Application entity with id %s to db", model.ID)
 	log.C(ctx).Debugf("Persisting Application entity with id %s to db", model.ID)
 	return r.creator.Create(ctx, resource.Application, tenant, appEnt)
 }
@@ -356,17 +364,23 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.A
 }
 
 // Upsert inserts application for given tenant or update it if it already exists
-func (r *pgRepository) Upsert(ctx context.Context, tenant string, model *model.Application) error {
+func (r *pgRepository) Upsert(ctx context.Context, tenant string, model *model.Application) (string, error) {
 	if model == nil {
-		return apperrors.NewInternalError("model can not be empty")
+		return "", apperrors.NewInternalError("model can not be empty")
 	}
 
 	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
 	appEnt, err := r.conv.ToEntity(model)
 	if err != nil {
-		return errors.Wrap(err, "while converting to Application entity")
+		return "", errors.Wrap(err, "while converting to Application entity")
 	}
 
+	fmt.Println(">>>>>>>>>>>")
+	fmt.Println(">>>>>>>>>>>")
+	fmt.Println(">>>>>>>>>>>")
+	fmt.Println(">>>>>>>>>>>")
+	fmt.Printf("%+v", *appEnt)
+	fmt.Println("Id: ", appEnt.ID)
 	log.C(ctx).Debugf("Upserting Application entity with id %s to db", model.ID)
 	return r.upserter.Upsert(ctx, resource.Application, tenant, appEnt)
 }

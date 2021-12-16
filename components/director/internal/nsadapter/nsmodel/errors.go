@@ -1,16 +1,19 @@
 package nsmodel
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 const systemNotFoundErrMsgFormat = "system with subaccount [%s], location id [%s] and host [%s] does not exist"
 
+//TODO check if needed
 type SystemNotFoundError struct {
 	msg string
 }
 
 func IsNotFoundError(err error) bool {
-	_, ok := err.(*SystemNotFoundError)
-	return ok
+	return strings.Contains(err.Error(), "Object not found")
 }
 
 func NewSystemNotFoundError(subaccount, locationId, host string) *SystemNotFoundError {

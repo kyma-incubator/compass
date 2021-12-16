@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"io"
 	"net/http"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
@@ -26,7 +26,7 @@ type ApplicationService interface {
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
 	Upsert(ctx context.Context, in model.ApplicationRegisterInput) error
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
-	GetSystem(ctx context.Context, locationID, virtualHost string) (*model.Application, error)
+	GetSystem(ctx context.Context, sccSubaccount, locationID, virtualHost string) (*model.Application, error)
 	ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
@@ -127,12 +127,12 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	externalIDToTenant := make(map[string]string, len(reportData.Value))
+	externalSubaccountIDToSCC := make(map[string]*nsmodel.SCC, len(reportData.Value))
 	externalIDs := make([]string, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
-		if _, ok := externalIDToTenant[scc.Subaccount]; !ok {
-			externalIDs = append(externalIDs, scc.Subaccount)
-			externalIDToTenant[scc.Subaccount] = ""
+		if _, ok := externalSubaccountIDToSCC[scc.ExternalSubaccountID]; !ok {
+			externalIDs = append(externalIDs, scc.ExternalSubaccountID)
+			externalSubaccountIDToSCC[scc.ExternalSubaccountID] = &scc
 		}
 	}
 
@@ -145,23 +145,33 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
+	fmt.Println("-----------------")
+
+	mapExternalToInternal(ctx, tenants, externalSubaccountIDToSCC)
+	fmt.Println("-----------------")
 
 	details := make([]httputil.Detail, 0, 0)
-	notSubaccountIDs := mapExternalToInternal(ctx, tenants, externalIDToTenant)
-	fmt.Printf("ExternalIDs: %+v,Tenants: %+v, external id to tenant %+v", externalIDs, tenants, externalIDToTenant)
+	//TODO extract into separate method
+	sccs := make([]*nsmodel.SCC, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
-		if _, ok := notSubaccountIDs[scc.Subaccount]; ok {
+		sccWithInternalID, ok := externalSubaccountIDToSCC[scc.ExternalSubaccountID]
+		if !ok {
+			log.C(ctx).Warnf("Got SCC with subaccount id: %s which is not found", scc.ExternalSubaccountID)
+			addErrorDetailsMsg(&details, &scc, "Subaccount not found")
+		}
+
+		if sccWithInternalID.InternalSubbaccountID == "not subaccount" {
 			addErrorDetailsMsg(&details, &scc, "Provided id is not subaccount")
+		} else {
+			sccs = append(sccs, sccWithInternalID)
 		}
 	}
-	removeMarkedForRemoval(externalIDToTenant)
 
-	if len(tenants) != len(externalIDs) {
-		cleanNotFound(ctx, externalIDToTenant, reportData.Value, &details)
+	for _, scc := range sccs {
+		fmt.Printf(">>>>>>>>>>>>>>>>>> systems: %+v", scc.ExposedSystems)
 	}
-
 	if reportType == "delta" {
-		a.processDelta(ctx, reportData, externalIDToTenant, &details)
+		a.processDelta(ctx, sccs, &details)
 		if len(details) == 0 {
 			httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 			return
@@ -175,7 +185,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if reportType == "full" {
-		a.processDelta(ctx, reportData, externalIDToTenant, &details)
+		a.processDelta(ctx, sccs, &details)
 		a.handleUnreachableScc(ctx, reportData)
 		httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 		return
@@ -183,6 +193,10 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (a *Handler) listTenantsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
+	if len(ids) == 0 {
+		return make([]*model.BusinessTenantMapping, 0, 0), nil
+	}
+
 	tx, err := a.transact.Begin()
 	if err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while openning transaction"))
@@ -227,7 +241,6 @@ func (a *Handler) listSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
 	}
 
 	return sccs, nil
-
 }
 
 func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.Report) {
@@ -244,15 +257,35 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 	sccsFromNs := make([]*model.SccMetadata, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
 		sccsFromNs = append(sccsFromNs, &model.SccMetadata{
-			Subaccount: scc.Subaccount,
+			Subaccount: scc.ExternalSubaccountID,
 			LocationId: scc.LocationID,
 		})
 	}
 
 	sccsToMarkAsUnreachable := difference(sccs, sccsFromNs)
+
+	externalSubaccountToSCC := make(map[string]*model.SccMetadata)
+	externalSubaccounts := make([]string, 0, len(sccsToMarkAsUnreachable))
+	for _, scc := range sccsToMarkAsUnreachable {
+		externalSubaccounts = append(externalSubaccounts, scc.Subaccount)
+		externalSubaccountToSCC[scc.Subaccount] = scc
+	}
+
+	internalSubaccounts, err := a.listTenantsByExternalIDs(ctx, externalSubaccounts)
+	if err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while listing subaccounts"))
+		return
+	}
+
+	for _, subaccount := range internalSubaccounts {
+		externalSubaccountToSCC[subaccount.ExternalTenant].InternalSubaccountID = subaccount.ID
+	}
+
+	fmt.Println("+++++++++++++++")
+
 	for _, scc := range sccsToMarkAsUnreachable {
 		//TODO use internal ID
-		ctxWithSubaccount := tenant.SaveToContext(ctx, scc.Subaccount)
+		ctxWithSubaccount := tenant.SaveToContext(ctx, scc.InternalSubaccountID, "")
 		appsWithLabels, ok := a.listAppsByScc(ctxWithSubaccount, scc.Subaccount, scc.LocationId)
 		if ok {
 			for _, appWithLabels := range appsWithLabels {
@@ -262,14 +295,13 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 	}
 }
 
-func (a *Handler) processDelta(ctx context.Context, reportData nsmodel.Report, idToTenant map[string]string, details *[]httputil.Detail) {
-	for _, scc := range reportData.Value {
-		if tnt, ok := idToTenant[scc.Subaccount]; ok {
-			fmt.Println(">>>>>>>> tenant: ", tnt)
-			ctxWithTenant := tenant.SaveToContext(ctx, tnt)
-			if ok := a.handleSccSystems(ctxWithTenant, scc); !ok {
-				addErrorDetails(details, &scc)
-			}
+func (a *Handler) processDelta(ctx context.Context, sccs []*nsmodel.SCC, details *[]httputil.Detail) {
+	//TODO refactor details
+	for _, scc := range sccs {
+		fmt.Println(">>>>>>>> tenant: ", scc.InternalSubbaccountID)
+		ctxWithTenant := tenant.SaveToContext(ctx, scc.InternalSubbaccountID, scc.ExternalSubaccountID)
+		if ok := a.handleSccSystems(ctxWithTenant, *scc); !ok {
+			addErrorDetails(details, scc)
 		}
 	}
 }
@@ -281,6 +313,7 @@ func (a *Handler) handleSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 }
 
 func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
+	fmt.Println("<<<<<<<<<<< upsertSystems")
 	success := true
 	for _, system := range scc.ExposedSystems {
 		tx, err := a.transact.Begin()
@@ -323,7 +356,7 @@ func (a *Handler) prepareAppInput(ctx context.Context, scc nsmodel.SCC, system n
 		},
 		{
 			Placeholder: "subaccount",
-			Value:       scc.Subaccount,//TODO use internal ID
+			Value:       scc.ExternalSubaccountID, //TODO use internal ID
 		},
 		{
 			Placeholder: "location-id",
@@ -356,11 +389,13 @@ func (a *Handler) prepareAppInput(ctx context.Context, scc nsmodel.SCC, system n
 		return nil, errors.Wrapf(err, "while preparing application create input from template with id:%s", system.TemplateID)
 	}
 
+	fmt.Println("AppInputJson: ", appInputJson)
 	appInput, err := a.appConverter.CreateInputJSONToModel(ctx, appInputJson)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while preparing application create input from json")
 	}
 
+	fmt.Println("AppInputLabels: ", appInput.Labels)
 	return &appInput, nil
 }
 
@@ -380,7 +415,8 @@ func (a *Handler) upsertWithSystemNumber(ctx context.Context, scc nsmodel.SCC, s
 }
 
 func (a *Handler) upsert(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
-	app, err := a.appSvc.GetSystem(ctx, scc.LocationID, system.Host)
+	fmt.Println("<<<<<<<<<<< upsert")
+	app, err := a.appSvc.GetSystem(ctx, scc.ExternalSubaccountID, scc.LocationID, system.Host)
 
 	if err != nil && nsmodel.IsNotFoundError(err) {
 		appInput, err := a.prepareAppInput(ctx, scc, system)
@@ -436,7 +472,7 @@ func (a *Handler) updateSystem(ctx context.Context, system nsmodel.System, app *
 
 func (a *Handler) markAsUnreachable(ctx context.Context, scc nsmodel.SCC) bool {
 	//TODO use internal ID
-	apps, ok := a.listAppsByScc(ctx, scc.Subaccount, scc.LocationID)
+	apps, ok := a.listAppsByScc(ctx, scc.ExternalSubaccountID, scc.LocationID)
 	if !ok {
 		return false
 	}
@@ -538,41 +574,18 @@ func addErrorDetails(details *[]httputil.Detail, scc *nsmodel.SCC) {
 func addErrorDetailsMsg(details *[]httputil.Detail, scc *nsmodel.SCC, message string) {
 	*details = append(*details, httputil.Detail{
 		Message:    message,
-		Subaccount: scc.Subaccount,
+		Subaccount: scc.ExternalSubaccountID,
 		LocationId: scc.LocationID,
 	})
 }
 
-func mapExternalToInternal(ctx context.Context, tenants []*model.BusinessTenantMapping, externalIDToTenant map[string]string) map[string]interface{} {
-	notSubaccountIDs := make(map[string]interface{}, 0)
-
+func mapExternalToInternal(ctx context.Context, tenants []*model.BusinessTenantMapping, externalSubbaccountToSCC map[string]*nsmodel.SCC) {
 	for _, t := range tenants {
-		if t.Type == tenant.Subaccount {
-			externalIDToTenant[t.ExternalTenant] = t.ID
+		if t.Type == "subaccount" {
+			externalSubbaccountToSCC[t.ExternalTenant].InternalSubbaccountID = t.ID
 		} else {
 			log.C(ctx).Warnf("Got tenant with id: %s which is not asubaccount", t.ID)
-			externalIDToTenant[t.ExternalTenant] = "for removal"
-			notSubaccountIDs[t.ExternalTenant] = struct{}{}
-		}
-	}
-	return notSubaccountIDs
-}
-
-func removeMarkedForRemoval(externalIDToTenant map[string]string) {
-	for k, v := range externalIDToTenant {
-		if v == "for removal" {
-			delete(externalIDToTenant, k)
-		}
-	}
-}
-
-func cleanNotFound(ctx context.Context, externalIDToTenant map[string]string, sccs []nsmodel.SCC, details *[]httputil.Detail) {
-	for _, scc := range sccs {
-		internalID, ok := externalIDToTenant[scc.Subaccount]
-		if !ok || internalID == "" {
-			log.C(ctx).Warnf("Got SCC with subaccount id: %s which is not found", scc.Subaccount)
-			addErrorDetailsMsg(details, &scc, "Subaccount not found")
-			delete(externalIDToTenant, scc.Subaccount)
+			externalSubbaccountToSCC[t.ExternalTenant].InternalSubbaccountID = "not subaccount"
 		}
 	}
 }

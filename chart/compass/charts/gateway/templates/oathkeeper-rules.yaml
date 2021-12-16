@@ -73,14 +73,12 @@ metadata:
 spec:
   # Configuration of oathkeeper for secure endpoint of compass gateway
   upstream:
-    url: http://compass-ns-adapter.compass-system.svc.cluster.local:3005{{ .Values.global.nsAdapter.prefix }}/api/v1/notifications
+    url: http://compass-ns-adapter.compass-system.svc.cluster.local:3005
   match:
     methods: ["GET", "POST", "OPTIONS"]
-    url: <http|https>://compass-ns-adapter.kyma.local<(:(80|443))?>{{ .Values.global.nsAdapter.prefix }}/<.*>
+    url: <http|https>://compass-ns-adapter.kyma.local<(:(80|443))?>/<.*>
   authenticators:
-    - handler: jwt
-      config:
-        trusted_issuers: ["https://dex.{{ .Values.global.ingress.domainName }}"]
+    - handler: noop
   authorizer:
     handler: allow
   mutators:

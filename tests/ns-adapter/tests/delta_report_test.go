@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -39,12 +38,19 @@ type Report struct {
 
 func TestDeltaReport(stdT *testing.T) {
 	t := testingx.NewT(stdT)
+
+	expectedLabel := map[string]interface{}{
+		"Host":       "127.0.0.1:3000",
+		"Subaccount": "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+		"LocationId": "",
+	}
+
 	t.Run("Delta report - create system", func(t *testing.T) {
 		ctx := context.Background()
 
 		// Query for application with LabelFilter "scc"
 		labelFilter := graphql.LabelFilter{
-			Key:   "scc",
+			Key: "scc",
 		}
 
 		//WHEN
@@ -77,7 +83,8 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 
 		resp := sendRequest(t, body, "delta")
-		require.Equal(t, http.StatusNoContent, resp.Status)
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+		fmt.Printf("Response: %+v", resp)
 
 		applicationPage = graphql.ApplicationPageExt{}
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, query, &applicationPage)
@@ -87,7 +94,7 @@ func TestDeltaReport(stdT *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 		require.Equal(t, "nonSAPsys", app.Labels["applicationType"])
 		require.Equal(t, "http", app.Labels["systemProtocol"])
-		require.Equal(t, "{\"host\":\"127.0.0.1:3000\", \"locationId\":\"\"}", app.Labels["scc"])
+		require.Equal(t, expectedLabel, app.Labels["scc"])
 	})
 
 	t.Run("Delta report - update system", func(t *testing.T) {
@@ -95,8 +102,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 		// Query for application with LabelFilter "scc"
 		labelFilter := graphql.LabelFilter{
-			Key:   "scc",
-			Query: str.Ptr("$[*] ? (@ == \"scc\")"),
+			Key: "scc",
 		}
 
 		//WHEN
@@ -105,25 +111,50 @@ func TestDeltaReport(stdT *testing.T) {
 
 		// Register application
 
-		sccLabel := struct {
-			Host       string `json:"host"`
-			LocationId string `json:"locationId"`
-		}{
-			"127.0.0.1:3000",
-			"",
-		}
-		in := graphql.ApplicationRegisterInput{
-			Name:         "",
-			ProviderName: str.Ptr("SAP"),
-			Description:  str.Ptr("initial description"),
-			Labels:       map[string]interface{}{"scc": sccLabel, "applicationType": "nonSAPsys", "systemProtocol": "http"},
-			//TODO expose Status through GQL
-		}
-
-		application, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", in)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &application)
+		appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: "S4HANA", Values: []*graphql.TemplateValueInput{
+			{
+				Placeholder: "description",
+				Value:       "description of the system",
+			},
+			{
+				Placeholder: "subaccount",
+				Value:       "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+			},
+			{
+				Placeholder: "location-id",
+				Value:       "",
+			},
+			{
+				Placeholder: "system-type",
+				Value:       "nonSAPsys",
+			},
+			{
+				Placeholder: "host",
+				Value:       "127.0.0.1:3000",
+			},
+			{
+				Placeholder: "protocol",
+				Value:       "mail",
+			},
+			{
+				Placeholder: "system-number",
+				Value:       "",
+			},
+			{
+				Placeholder: "system-status",
+				Value:       "reachable",
+			},
+		}}
+		appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 		require.NoError(t, err)
-		require.NotEmpty(t, application.ID)
+		createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
+		outputApp := graphql.ApplicationExt{}
+		//WHEN
+
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient,"08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
+		require.NoError(t, err)
+		require.NotEmpty(t, outputApp.ID)
 
 		report := Report{
 			ReportType: "notification service",
@@ -133,7 +164,7 @@ func TestDeltaReport(stdT *testing.T) {
 				ExposedSystems: []System{{
 					Protocol:     "mail",
 					Host:         "127.0.0.1:3000",
-					SystemType:   "otherSAPsys",
+					SystemType:   "nonSAPsys",
 					Description:  "edited",
 					Status:       "reachable",
 					SystemNumber: "",
@@ -145,18 +176,19 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 
 		resp := sendRequest(t, body, "delta")
-		require.Equal(t, http.StatusNoContent, resp.Status)
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		query := fixtures.FixApplicationsFilteredPageableRequest(labelFilterGQL, 100, "")
 		applicationPage := graphql.ApplicationPageExt{}
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, query, &applicationPage)
+
 		require.NoError(t, err)
 		require.Equal(t, 1, len(applicationPage.Data))
 		app := applicationPage.Data[0]
-		require.Equal(t, "otherSAPsys", app.Labels["applicationType"])
+		require.Equal(t, "nonSAPsys", app.Labels["applicationType"])
 		require.Equal(t, "mail", app.Labels["systemProtocol"])
-		require.Equal(t, "{\"host\":\"127.0.0.1:3000\", \"locationId\":\"\"}", app.Labels["scc"])
-		require.Equal(t, "edited", app.Description)
+		require.Equal(t, expectedLabel, app.Labels["scc"])
+		require.Equal(t, "edited", *app.Description)
 	})
 
 	t.Run("Delta report - delete system", func(t *testing.T) {
@@ -164,8 +196,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 		// Query for application with LabelFilter "scc"
 		labelFilter := graphql.LabelFilter{
-			Key:   "scc",
-			Query: str.Ptr("$[*] ? (@ == \"scc\")"),
+			Key: "scc",
 		}
 
 		//WHEN
@@ -174,25 +205,50 @@ func TestDeltaReport(stdT *testing.T) {
 
 		// Register application
 
-		sccLabel := struct {
-			Host       string `json:"host"`
-			LocationId string `json:"locationId"`
-		}{
-			"127.0.0.1:3000",
-			"",
-		}
-		in := graphql.ApplicationRegisterInput{
-			Name:         "",
-			ProviderName: str.Ptr("SAP"),
-			Description:  str.Ptr("initial description"),
-			Labels:       map[string]interface{}{"scc": sccLabel, "applicationType": "nonSAPsys", "systemProtocol": "http"},
-			//TODO expose Status through GQL
-		}
-
-		application, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", in)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &application)
+		appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: "S4HANA", Values: []*graphql.TemplateValueInput{
+			{
+				Placeholder: "description",
+				Value:       "description of the system",
+			},
+			{
+				Placeholder: "subaccount",
+				Value:       "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+			},
+			{
+				Placeholder: "location-id",
+				Value:       "",
+			},
+			{
+				Placeholder: "system-type",
+				Value:       "nonSAPsys",
+			},
+			{
+				Placeholder: "host",
+				Value:       "127.0.0.1:3000",
+			},
+			{
+				Placeholder: "protocol",
+				Value:       "mail",
+			},
+			{
+				Placeholder: "system-number",
+				Value:       "",
+			},
+			{
+				Placeholder: "system-status",
+				Value:       "reachable",
+			},
+		}}
+		appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 		require.NoError(t, err)
-		require.NotEmpty(t, application.ID)
+		createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
+		outputApp := graphql.ApplicationExt{}
+		//WHEN
+
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient,"08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
+		require.NoError(t, err)
+		require.NotEmpty(t, outputApp.ID)
 
 		report := Report{
 			ReportType: "notification service",
@@ -207,7 +263,7 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 
 		resp := sendRequest(t, body, "delta")
-		require.Equal(t, http.StatusNoContent, resp.Status)
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		query := fixtures.FixApplicationsFilteredPageableRequest(labelFilterGQL, 100, "")
 		applicationPage := graphql.ApplicationPageExt{}
@@ -222,8 +278,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 		// Query for application with LabelFilter "scc"
 		labelFilter := graphql.LabelFilter{
-			Key:   "scc",
-			Query: str.Ptr("$[*] ? (@ == \"scc\")"),
+			Key: "scc",
 		}
 
 		//WHEN
@@ -256,7 +311,7 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 
 		resp := sendRequest(t, body, "delta")
-		require.Equal(t, http.StatusNoContent, resp.Status)
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		applicationPage = graphql.ApplicationPageExt{}
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, query, &applicationPage)
@@ -266,7 +321,7 @@ func TestDeltaReport(stdT *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 		require.Equal(t, "nonSAPsys", app.Labels["applicationType"])
 		require.Equal(t, "http", app.Labels["systemProtocol"])
-		require.Equal(t, "{\"host\":\"127.0.0.1:3000\", \"locationId\":\"\"}", app.Labels["scc"])
+		require.Equal(t, expectedLabel, app.Labels["scc"])
 	})
 
 	t.Run("Delta report - update system with systemNumber", func(t *testing.T) {
@@ -274,8 +329,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 		// Query for application with LabelFilter "scc"
 		labelFilter := graphql.LabelFilter{
-			Key:   "scc",
-			Query: str.Ptr("$[*] ? (@ == \"scc\")"),
+			Key: "scc",
 		}
 
 		//WHEN
@@ -283,27 +337,6 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 
 		// Register application
-
-		sccLabel := struct {
-			Host       string `json:"host"`
-			LocationId string `json:"locationId"`
-		}{
-			"127.0.0.1:3000",
-			"",
-		}
-		in := graphql.ApplicationRegisterInput{
-			Name:         "",
-			ProviderName: str.Ptr("SAP"),
-			Description:  str.Ptr("initial description"),
-			Labels:       map[string]interface{}{"scc": sccLabel, "applicationType": "nonSAPsys", "systemProtocol": "http"},
-			//TODO expose Status through GQL
-		}
-
-		application, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", in)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &application)
-		require.NoError(t, err)
-		require.NotEmpty(t, application.ID)
-
 		report := Report{
 			ReportType: "notification service",
 			Value: []SCC{{
@@ -312,8 +345,8 @@ func TestDeltaReport(stdT *testing.T) {
 				ExposedSystems: []System{{
 					Protocol:     "mail",
 					Host:         "127.0.0.1:3000",
-					SystemType:   "otherSAPsys",
-					Description:  "edited",
+					SystemType:   "nonSAPsys",
+					Description:  "initial description",
 					Status:       "reachable",
 					SystemNumber: "sysNumber",
 				}},
@@ -324,7 +357,7 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 
 		resp := sendRequest(t, body, "delta")
-		require.Equal(t, http.StatusNoContent, resp.Status)
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		query := fixtures.FixApplicationsFilteredPageableRequest(labelFilterGQL, 100, "")
 		applicationPage := graphql.ApplicationPageExt{}
@@ -332,10 +365,40 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(applicationPage.Data))
 		app := applicationPage.Data[0]
-		require.Equal(t, "otherSAPsys", app.Labels["applicationType"])
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+
+		report = Report{
+			ReportType: "notification service",
+			Value: []SCC{{
+				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				LocationID: "",
+				ExposedSystems: []System{{
+					Protocol:     "mail",
+					Host:         "127.0.0.1:3000",
+					SystemType:   "nonSAPsys",
+					Description:  "edited",
+					Status:       "reachable",
+					SystemNumber: "sysNumber",
+				}},
+			}},
+		}
+
+		body, err = json.Marshal(report)
+		require.NoError(t, err)
+
+		resp = sendRequest(t, body, "delta")
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		query = fixtures.FixApplicationsFilteredPageableRequest(labelFilterGQL, 100, "")
+		applicationPage = graphql.ApplicationPageExt{}
+		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, query, &applicationPage)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(applicationPage.Data))
+		app = applicationPage.Data[0]
+		require.Equal(t, "nonSAPsys", app.Labels["applicationType"])
 		require.Equal(t, "mail", app.Labels["systemProtocol"])
-		require.Equal(t, "{\"host\":\"127.0.0.1:3000\", \"locationId\":\"\"}", app.Labels["scc"])
-		require.Equal(t, "edited", app.Description)
+		require.Equal(t, expectedLabel, app.Labels["scc"])
+		require.Equal(t, "edited", *app.Description)
 	})
 
 	t.Run("Delta report - no systems", func(t *testing.T) {
@@ -343,8 +406,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 		// Query for application with LabelFilter "scc"
 		labelFilter := graphql.LabelFilter{
-			Key:   "scc",
-			Query: str.Ptr("$[*] ? (@ == \"scc\")"),
+			Key: "scc",
 		}
 
 		//WHEN
@@ -370,7 +432,7 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 
 		resp := sendRequest(t, body, "delta")
-		require.Equal(t, http.StatusNoContent, resp.Status)
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		applicationPage = graphql.ApplicationPageExt{}
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, query, &applicationPage)
@@ -389,7 +451,7 @@ func sendRequest(t *testing.T, body []byte, reportType string) *http.Response {
 	q.Add("reportType", reportType)
 	req.URL.RawQuery = q.Encode()
 
-	clientKey, rawCertChain := certs.IssueExternalIssuerCertificate( t, testConfig.CA.Certificate, testConfig.CA.Key, "08b6da37-e911-48fb-a0cb-fa635a6c5678")
+	clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, "08b6da37-e911-48fb-a0cb-fa635a6c5678")
 	client := gql.NewCertAuthorizedHTTPClient(clientKey, rawCertChain)
 
 	fmt.Printf("req >>>>>>>>>>>>>>>>>>> %+v", req)

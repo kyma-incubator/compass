@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -36,7 +37,7 @@ const (
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
-type repoUpserterFunc func(ctx context.Context, tenant string, application *model.Application) error
+type repoUpserterFunc func(ctx context.Context, tenant string, application *model.Application) (string, error)
 
 // ApplicationRepository missing godoc
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
@@ -53,7 +54,7 @@ type ApplicationRepository interface {
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, tenant string, item *model.Application) error
-	Upsert(ctx context.Context, tenant string, model *model.Application) error
+	Upsert(ctx context.Context, tenant string, model *model.Application) (string, error)
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
@@ -288,13 +289,26 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 }
 
 // GetSystem missing godoc
-func (s *service) GetSystem(ctx context.Context, locationID, virtualHost string) (*model.Application, error) {
+func (s *service) GetSystem(ctx context.Context, sccSubaccount, locationID, virtualHost string) (*model.Application, error) {
+	fmt.Println("<<<<<<<<<<< GetSystem")
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	filter := labelfilter.NewForKeyWithQuery("SCC", fmt.Sprintf("{\"Subaccount\":%s, \"LocationId\":%s, \"Host\":%s}", appTenant, locationID, virtualHost))
+	sccLabel := struct {
+		Host       string `json:"Host"`
+		Subaccount string `json:"Subaccount"`
+		LocationId string `json:"LocationId"`
+	}{
+		virtualHost, sccSubaccount, locationID,
+	}
+	marshal, err := json.Marshal(sccLabel)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while marshaling sccLabel with subaccount: %s, locationId: %s and virtualHost: %s", appTenant, locationID, virtualHost)
+	}
+
+	filter := labelfilter.NewForKeyWithQuery("scc", string(marshal))
 
 	app, err := s.appRepo.GetByFilter(ctx, appTenant, []*labelfilter.LabelFilter{filter})
 	if err != nil {
@@ -443,11 +457,12 @@ func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput)
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (err error) {
-		if err = s.appRepo.Upsert(ctx, tenant, application); err != nil {
-			return errors.Wrapf(err, "while upserting Application with name %s", application.Name)
+	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (string, error) {
+		id, err := s.appRepo.Upsert(ctx, tenant, application)
+		if err != nil {
+			return "", errors.Wrapf(err, "while upserting Application with name %s", application.Name)
 		}
-		return
+		return id, nil
 	}
 
 	return s.genericUpsert(ctx, tenant, in, upserterFunc)
@@ -460,12 +475,13 @@ func (s *service) UpsertFromTemplate(ctx context.Context, in model.ApplicationRe
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (err error) {
+	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (string, error) {
 		application.ApplicationTemplateID = appTemplateID
-		if err = s.appRepo.Upsert(ctx, tenant, application); err != nil {
-			return errors.Wrapf(err, "while upserting Application with name %s from template", application.Name)
+		id, err := s.appRepo.Upsert(ctx, tenant, application)
+		if err != nil {
+			return "", errors.Wrapf(err, "while upserting Application with name %s from template", application.Name)
 		}
-		return
+		return id, nil
 	}
 
 	return s.genericUpsert(ctx, tenant, in, upserterFunc)
@@ -877,9 +893,12 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	log.C(ctx).Debugf("ID %s generated for Application with name %s", id, in.Name)
 	app := in.ToApplication(s.timestampGen(), id)
 
-	if err := repoUpserterFunc(ctx, appTenant, app); err != nil {
+	id, err = repoUpserterFunc(ctx, appTenant, app)
+	if err != nil {
 		return errors.Wrap(err, "while upserting application")
 	}
+
+	app.ID = id
 
 	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, appTenant, &in.Labels)
 

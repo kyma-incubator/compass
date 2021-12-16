@@ -63,9 +63,6 @@ func main() {
 	transact, closeFunc, err := persistence.Configure(ctx, conf.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
-	err = calculateTemplateMappings(ctx, conf, transact)
-	exitOnError(err, "while calculating template mappings")
-
 	certCache, err := certloader.StartCertLoader(ctx, conf.ExternalClientCertSecret)
 	exitOnError(err, "Failed to initialize certificate loader")
 
@@ -130,6 +127,9 @@ func main() {
 
 	registerAppTemplate(ctx, transact, appTemplateSvc)
 
+	err = calculateTemplateMappings(ctx, conf, transact)
+	exitOnError(err, "while calculating template mappings")
+
 	h := handler.NewHandler(appSvc, appConverter, appTemplateSvc, tntSvc, transact)
 	ch := handler.NewChunkedHandler()
 
@@ -184,7 +184,7 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 									"name": "on-premise-system",
 									"description": "{{description}}",
 									"providerName": "SAP",
-									"labels": {"scc": "{\"Subaccount\":\"{{subaccount}}\", \"LocationId\":\"{{location-id}}\", \"Host\":\"{{host}}\"}", "applicationType":"{{system-type}}", "systemProtocol": "{{protocol}}" },
+									"labels": {"scc": {"Subaccount":"{{subaccount}}", "LocationId":"{{location-id}}", "Host":"{{host}}"}, "applicationType":"{{system-type}}", "systemProtocol": "{{protocol}}" },
 									"systemNumber": "{{system-number}}",
 									"systemStatus": "{{system-status}}"
 								}`,
@@ -281,13 +281,17 @@ func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, t
 	defer transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	fmt.Println(">>>>>>>>>> Mappings: ", systemToTemplateMappings)
 	for index, tm := range systemToTemplateMappings {
 		appTemplate, err := appTemplateSvc.GetByName(ctx, tm.Name)
 		if err != nil && !apperrors.IsNotFoundError(err) {
 			return err
 		}
+		fmt.Println(">>>>>>>>>> Id: ", appTemplate.ID)
 		systemToTemplateMappings[index].ID = appTemplate.ID
 	}
+	fmt.Println(">>>>>>>>>> Mappings: ", systemToTemplateMappings)
+
 	err = tx.Commit()
 	if err != nil {
 		return errors.Wrap(err, "failed to commit transaction")

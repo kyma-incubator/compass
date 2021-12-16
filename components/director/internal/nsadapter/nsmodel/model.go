@@ -62,7 +62,7 @@ func matchProps(data []byte, tm systemfetcher.TemplateMapping) bool {
 }
 
 type SCC struct {
-	Subaccount            string   `json:"subaccount"`
+	ExternalSubaccountID  string   `json:"subaccount"`
 	InternalSubbaccountID string   `json:"-"`
 	LocationID            string   `json:"locationID"`
 	ExposedSystems        []System `json:"exposedSystems"`
@@ -70,7 +70,7 @@ type SCC struct {
 
 func (s SCC) Validate() error {
 	return validation.ValidateStruct(&s,
-		validation.Field(&s.Subaccount, validation.Required),
+		validation.Field(&s.ExternalSubaccountID, validation.Required),
 		validation.Field(&s.LocationID, validation.NotNil),
 		validation.Field(&s.ExposedSystems, validation.NotNil, validation.By(validateSystems)), //TODO test if exposed systems field is nil, will validateSystems method be executed?
 	)
