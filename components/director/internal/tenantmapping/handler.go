@@ -247,16 +247,26 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 }
 
 func addScopesToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {
-	objScopes := make([][]string, 0, len(objectContexts))
+	objScopes := make([]string, 0)
+scopesBuilder:
 	for _, objCtx := range objectContexts {
-		objScopes = append(objScopes, strings.Split(objCtx.Scopes, " "))
+		currentScopes := strings.Split(objCtx.Scopes, " ")
+		switch objCtx.ScopesMergeStrategy {
+		case overrideAllScopes:
+			objScopes = currentScopes
+			break scopesBuilder
+		case mergeWithOtherScopes:
+			objScopes = append(objScopes, currentScopes...)
+		default: // Intersect
+			if len(objScopes) > 0 {
+				objScopes = intersect(objScopes, currentScopes)
+			} else {
+				objScopes = currentScopes
+			}
+		}
 	}
 
-	intersection := objScopes[0]
-	for _, s := range objScopes[1:] {
-		intersection = intersect(intersection, s)
-	}
-	joined := strings.Join(intersection, " ")
+	joined := strings.Join(objScopes, " ")
 	reqData.Body.Extra["scope"] = joined
 }
 

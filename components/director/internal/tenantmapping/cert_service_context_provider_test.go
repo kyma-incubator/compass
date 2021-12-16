@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/mock"
@@ -31,11 +32,14 @@ func TestCertServiceContextProvider(t *testing.T) {
 
 	scopes := []string{"runtime:read", "runtime:write", "tenant:read"}
 	scopesString := "runtime:read runtime:write tenant:read"
-	componentHeaderKey := "X-Component-Name"
-	directorComponentHeader := map[string][]string{componentHeaderKey: {"director"}}
 
-	reqData := oathkeeper.ReqData{
-		Body: oathkeeper.ReqBody{Header: directorComponentHeader},
+	reqData := oathkeeper.ReqData{}
+
+	internalConsumerID := "123"
+	reqDataWithInternalConsumerID := oathkeeper.ReqData{
+		Body: oathkeeper.ReqBody{Extra: map[string]interface{}{
+			cert.InternalConsumerIDField: internalConsumerID,
+		}},
 	}
 
 	internalSubaccount := "internalSubaccountID"
@@ -55,10 +59,11 @@ func TestCertServiceContextProvider(t *testing.T) {
 		AuthDetailsInput   oathkeeper.AuthDetails
 		ExpectedScopes     string
 		ExpectedInternalID string
+		ExpectedConsumerID string
 		ExpectedErr        error
 	}{
 		{
-			Name: "Success when component is director and cannot find internal tenant",
+			Name: "Success when cannot find internal tenant",
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("GetByExternalTenant", mock.Anything, tenantID).Return(nil, notFoundErr).Once()
@@ -76,7 +81,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Error when component is director and the error is different from not found",
+			Name: "Error when the error from getting the internal tenant is different from not found",
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("GetByExternalTenant", mock.Anything, tenantID).Return(nil, testError).Once()
@@ -94,7 +99,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ExpectedErr:        testError,
 		},
 		{
-			Name: "Success when component is director and internal tenant exists",
+			Name: "Success when internal tenant exists",
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("GetByExternalTenant", mock.Anything, tenantID).Return(testSubaccount, nil).Once()
@@ -109,6 +114,25 @@ func TestCertServiceContextProvider(t *testing.T) {
 			AuthDetailsInput:   authDetails,
 			ExpectedScopes:     scopesString,
 			ExpectedInternalID: internalSubaccount,
+			ExpectedErr:        nil,
+		},
+		{
+			Name: "Success when internal consumer ID is provided",
+			TenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", mock.Anything, tenantID).Return(testSubaccount, nil).Once()
+				return tenantRepo
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
+				return scopesGetter
+			},
+			ReqDataInput:       reqDataWithInternalConsumerID,
+			AuthDetailsInput:   authDetails,
+			ExpectedScopes:     scopesString,
+			ExpectedInternalID: internalSubaccount,
+			ExpectedConsumerID: internalConsumerID,
 			ExpectedErr:        nil,
 		},
 		{
@@ -130,7 +154,9 @@ func TestCertServiceContextProvider(t *testing.T) {
 			tenantRepo := testCase.TenantRepoFn()
 			scopesGetter := testCase.ScopesGetterFn()
 			provider := tenantmapping.NewCertServiceContextProvider(tenantRepo, scopesGetter)
-
+			if testCase.ExpectedConsumerID == "" {
+				testCase.ExpectedConsumerID = tenantID
+			}
 			// WHEN
 			objectCtx, err := provider.GetObjectContext(emptyCtx, testCase.ReqDataInput, testCase.AuthDetailsInput)
 
@@ -138,7 +164,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
 				require.Equal(t, consumer.Runtime, objectCtx.ConsumerType)
-				require.Equal(t, tenantID, objectCtx.ConsumerID)
+				require.Equal(t, testCase.ExpectedConsumerID, objectCtx.ConsumerID)
 				require.Equal(t, testCase.ExpectedInternalID, objectCtx.TenantContext.TenantID)
 				require.Equal(t, tenantID, objectCtx.TenantContext.ExternalTenantID)
 				require.Equal(t, testCase.ExpectedScopes, objectCtx.Scopes)

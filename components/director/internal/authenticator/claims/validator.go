@@ -15,23 +15,31 @@ import (
 	"github.com/pkg/errors"
 )
 
-// RuntimeService is used to interact with runtimes
+// RuntimeService is used to interact with runtimes.
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	GetLabel(context.Context, string, string) (*model.Label, error)
 	ListByFilters(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
+// IntegrationSystemService is used to check if integration system with a given ID exists.
+//go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore
+type IntegrationSystemService interface {
+	Exists(context.Context, string) (bool, error)
+}
+
 type validator struct {
 	runtimesSvc                   RuntimeService
+	intSystemSvc                  IntegrationSystemService
 	subscriptionProviderLabelKey  string
 	consumerSubaccountIDsLabelKey string
 }
 
 // NewValidator creates new claims validator
-func NewValidator(runtimesSvc RuntimeService, subscriptionProviderLabelKey, consumerSubaccountIDsLabelKey string) *validator {
+func NewValidator(runtimesSvc RuntimeService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountIDsLabelKey string) *validator {
 	return &validator{
 		runtimesSvc:                   runtimesSvc,
+		intSystemSvc:                  intSystemSvc,
 		subscriptionProviderLabelKey:  subscriptionProviderLabelKey,
 		consumerSubaccountIDsLabelKey: consumerSubaccountIDsLabelKey,
 	}
@@ -47,14 +55,19 @@ func (v *validator) Validate(ctx context.Context, claims Claims) error {
 		return apperrors.NewTenantNotFoundError(claims.Tenant[tenantmapping.ExternalTenantKey])
 	}
 
-	if claims.OnBehalfOf != "" {
-		log.C(ctx).Infof("Consumer-Provider call by %s on behalf of %s. Proceeding with double authentication crosscheck...", claims.Tenant[tenantmapping.ProviderTenantKey], claims.Tenant[tenantmapping.ConsumerTenantKey])
-		if claims.ConsumerType == consumer.Runtime {
-			return v.validateRuntimeConsumer(ctx, claims)
-		}
+	if claims.OnBehalfOf == "" {
+		return nil
 	}
 
-	return nil
+	log.C(ctx).Infof("Consumer-Provider call by %s on behalf of %s. Proceeding with double authentication crosscheck...", claims.Tenant[tenantmapping.ProviderTenantKey], claims.Tenant[tenantmapping.ConsumerTenantKey])
+	switch claims.ConsumerType {
+	case consumer.Runtime:
+		return v.validateRuntimeConsumer(ctx, claims)
+	case consumer.IntegrationSystem:
+		return v.validateIntegrationSystemConsumer(ctx, claims)
+	default:
+		return apperrors.NewUnauthorizedError(fmt.Sprintf("consumer with type %s is not supported", claims.ConsumerType))
+	}
 }
 
 func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) error {
@@ -115,5 +128,21 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 		log.C(ctx).Errorf("Consumer's external tenant %s was not found in the %s label of any runtime in the provider tenant %s", expectedConsumerTenant, v.consumerSubaccountIDsLabelKey, claims.Tenant[tenantmapping.ProviderTenantKey])
 		return apperrors.NewUnauthorizedError(fmt.Sprintf("Consumer's external tenant %s was not found in the %s label of any runtime in the provider tenant %s", expectedConsumerTenant, v.consumerSubaccountIDsLabelKey, claims.Tenant[tenantmapping.ProviderTenantKey]))
 	}
+	return nil
+}
+
+func (v *validator) validateIntegrationSystemConsumer(ctx context.Context, claims Claims) error {
+	if claims.Tenant[tenantmapping.ProviderExternalTenantKey] == claims.ConsumerID {
+		return nil // consumer ID is a subaccount tenant
+	}
+
+	exists, err := v.intSystemSvc.Exists(ctx, claims.ConsumerID)
+	if err != nil {
+		return errors.Wrapf(err, "while checking if integration system with ID %s exists", claims.ConsumerID)
+	}
+	if !exists {
+		return apperrors.NewUnauthorizedError(fmt.Sprintf("integration system with ID %s does not exist", claims.ConsumerID))
+	}
+
 	return nil
 }
