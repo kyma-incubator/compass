@@ -2,6 +2,7 @@ package ord
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/url"
 	"regexp"
 
@@ -90,6 +91,13 @@ func (c WellKnownConfig) Validate(baseURL string) error {
 // Documents is a slice of Document objects
 type Documents []*Document
 
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // Validate validates all the documents for a system instance
 func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
 	baseURL := calculatedBaseURL
@@ -126,6 +134,10 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			packageIDs[pkg.OrdID] = true
 			packagePolicyLevels[pkg.OrdID] = pkg.PolicyLevel
 		}
+
+		for _, bndl := range doc.ConsumptionBundles {
+			bundleIDs[*bndl.OrdID] = true
+		}
 	}
 
 	ordMap := make(map[string]bool, 0)
@@ -134,48 +146,39 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			return errors.Wrap(err, "error validating document")
 		}
 
-		pkgIdxesToRemove := make([]int, 0)
-		for i, pkg := range doc.Packages {
+		for i := len(docs[j].Packages) - 1; i >= 0; i-- {
+			pkg := docs[j].Packages[i]
 			if err := validatePackageInput(pkg, packagesFromDB, resourceHashes); err != nil {
 				return errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID)
 			}
 
 			if _, exists := ordMap[pkg.OrdID]; exists {
-				pkgIdxesToRemove = append(pkgIdxesToRemove, i)
+				docs[j].Packages = append(docs[j].Packages[:i], docs[j].Packages[i+1:]...)
 			}
 
 			ordMap[pkg.OrdID] = true
 		}
 
-		for _, pkgIdx := range pkgIdxesToRemove {
-			docs[j].Packages[pkgIdx] = docs[j].Packages[len(docs[j].Packages)-1]
-			docs[j].Packages = docs[j].Packages[:len(docs[j].Packages)-1]
+		log.D().Warnf("======%v======== finished packages", docs[j].Packages)
 
-			//docs[j].Packages = append(docs[j].Packages[:pkgIdx], docs[j].Packages[pkgIdx+1:]...)
-		}
-
-		bundleIdxesToRemove := make([]int, 0)
-		for i, bndl := range doc.ConsumptionBundles {
+		for i := len(docs[j].ConsumptionBundles) - 1; i >= 0; i-- {
+			bndl := docs[j].ConsumptionBundles[i]
 			if err := validateBundleInput(bndl); err != nil {
 				return errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID))
 			}
-			bundleIDs[*bndl.OrdID] = true
 
 			if bndl.OrdID != nil {
 				if _, exists := ordMap[*bndl.OrdID]; exists {
-					bundleIdxesToRemove = append(bundleIdxesToRemove, i)
+					docs[j].ConsumptionBundles = append(docs[j].ConsumptionBundles[:i], docs[j].ConsumptionBundles[i+1:]...)
+
 				}
 				ordMap[*bndl.OrdID] = true
 			}
 		}
 
-		for _, bndlIdx := range bundleIdxesToRemove {
-			docs[j].ConsumptionBundles[bndlIdx] = docs[j].ConsumptionBundles[len(docs[j].ConsumptionBundles)-1]
-			docs[j].ConsumptionBundles = docs[j].ConsumptionBundles[:len(docs[j].ConsumptionBundles)-1]
+		log.D().Warnf("======%v======== finished bundles", docs[j].ConsumptionBundles)
 
-			//docs[j].ConsumptionBundles = append(docs[j].ConsumptionBundles[:bndlIdx], docs[j].ConsumptionBundles[bndlIdx+1:]...)
-		}
-
+		log.D().Warn("Starting products...")
 		for _, product := range doc.Products {
 			if err := validateProductInput(product); err != nil {
 				return errors.Wrapf(err, "error validating product with ord id %q", product.OrdID)
@@ -185,6 +188,8 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 			productIDs[product.OrdID] = true
 		}
+
+		log.D().Warn("Starting api resources...")
 		for _, api := range doc.APIResources {
 			if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, resourceHashes); err != nil {
 				return errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID))
@@ -194,6 +199,8 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 			apiIDs[*api.OrdID] = true
 		}
+
+		log.D().Warn("Starting event resources...")
 		for _, event := range doc.EventResources {
 			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
 				return errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID))
@@ -203,6 +210,9 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 			eventIDs[*event.OrdID] = true
 		}
+
+		log.D().Warn("Starting vendors...")
+
 		for _, vendor := range doc.Vendors {
 			if err := validateVendorInput(vendor); err != nil {
 				return errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID)
@@ -212,12 +222,17 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 			vendorIDs[vendor.OrdID] = true
 		}
+
+		log.D().Warn("Starting tombstones...")
+
 		for _, tombstone := range doc.Tombstones {
 			if err := validateTombstoneInput(tombstone); err != nil {
 				return errors.Wrapf(err, "error validating tombstone with ord id %q", tombstone.OrdID)
 			}
 		}
 	}
+
+	log.D().Warn("Validate relations...")
 
 	// Validate entity relations
 	for _, doc := range docs {
