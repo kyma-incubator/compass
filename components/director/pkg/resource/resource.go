@@ -116,12 +116,15 @@ func (t Type) TenantAccessTable() (string, bool) {
 	return tbl, ok
 }
 
-// TopLevelEntities is a set of entities that has a many-to-many relationship with the tenants.
-var TopLevelEntities = []Type{Application, Runtime}
+// TopLevelEntities is a map of entities that has a many-to-many relationship with the tenants along with their table names.
+var TopLevelEntities = map[Type]string{
+	Application: "public.applications",
+	Runtime:     "public.runtimes",
+}
 
 // IsTopLevel returns true only if the entity has a many-to-many relationship with the tenants.
 func (t Type) IsTopLevel() bool {
-	for _, topLevelType := range TopLevelEntities {
+	for topLevelType := range TopLevelEntities {
 		if t == topLevelType {
 			return true
 		}
