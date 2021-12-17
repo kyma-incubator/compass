@@ -33,6 +33,7 @@ func (s System) Validate() error {
 		validation.Field(&s.SystemType, validation.Required),
 		validation.Field(&s.Description, validation.NotNil),
 		validation.Field(&s.Status, validation.Required),
+		validation.Field(&s.SystemNumber, validation.NotNil),
 	)
 }
 
@@ -62,17 +63,17 @@ func matchProps(data []byte, tm systemfetcher.TemplateMapping) bool {
 }
 
 type SCC struct {
-	ExternalSubaccountID string `json:"subaccount"`
-	InternalSubaccountID string `json:"-"`
-	LocationID           string `json:"locationID"`
-	ExposedSystems        []System `json:"exposedSystems"`
+	ExternalSubaccountID string   `json:"subaccount"`
+	InternalSubaccountID string   `json:"-"`
+	LocationID           string   `json:"locationID"`
+	ExposedSystems       []System `json:"exposedSystems"`
 }
 
 func (s SCC) Validate() error {
 	return validation.ValidateStruct(&s,
 		validation.Field(&s.ExternalSubaccountID, validation.Required),
 		validation.Field(&s.LocationID, validation.NotNil),
-		validation.Field(&s.ExposedSystems, validation.NotNil, validation.By(validateSystems)), //TODO test if exposed systems field is nil, will validateSystems method be executed?
+		validation.Field(&s.ExposedSystems, validation.NotNil, validation.By(validateSystems)),
 	)
 }
 

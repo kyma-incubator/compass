@@ -24,7 +24,7 @@ func TestReport_Validate(t *testing.T) {
 		SystemBase: SystemBase{
 			Protocol:     "protocol",
 			Host:         "host",
-			SystemType:   "systemNumber",
+			SystemType:   "systemType",
 			Description:  "description",
 			Status:       "status",
 			SystemNumber: "systemNumber",
@@ -108,7 +108,7 @@ func TestSCC_Validate(t *testing.T) {
 		SystemBase: SystemBase{
 			Protocol:     "protocol",
 			Host:         "host",
-			SystemType:   "systemNumber",
+			SystemType:   "systemType",
 			Description:  "description",
 			Status:       "status",
 			SystemNumber: "systemNumber",
@@ -119,7 +119,7 @@ func TestSCC_Validate(t *testing.T) {
 	invalidSystem := System{
 		SystemBase: SystemBase{
 			Host:         "host",
-			SystemType:   "systemNumber",
+			SystemType:   "systemType",
 			Description:  "description",
 			Status:       "status",
 			SystemNumber: "systemNumber",
@@ -226,14 +226,13 @@ func TestSystem_Validate(t *testing.T) {
 	emptyTemplateID := ""
 
 	cases := cases{
-		// TODO: Add test cases.
 		{
 			name: "success with all fields present",
 			data: System{
 				SystemBase: SystemBase{
 					Protocol:     protocol,
 					Host:         host,
-					SystemType:   systemNumber,
+					SystemType:   systemType,
 					Description:  description,
 					Status:       status,
 					SystemNumber: systemNumber,
@@ -258,14 +257,15 @@ func TestSystem_Validate(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			name: "success with missing systemNumber",
+			name: "success with empty systemNumber",
 			data: System{
 				SystemBase: SystemBase{
-					Protocol:    protocol,
-					Host:        host,
-					SystemType:  systemType,
-					Description: description,
-					Status:      status,
+					Protocol:     protocol,
+					Host:         host,
+					SystemType:   systemType,
+					Description:  description,
+					Status:       status,
+					SystemNumber: "",
 				},
 				TemplateID: emptyTemplateID,
 			},
@@ -275,10 +275,11 @@ func TestSystem_Validate(t *testing.T) {
 			name: "fail when missing protocol",
 			data: System{
 				SystemBase: SystemBase{
-					Host:        host,
-					SystemType:  systemType,
-					Description: description,
-					Status:      status,
+					Host:         host,
+					SystemType:   systemType,
+					Description:  description,
+					Status:       status,
+					SystemNumber: systemNumber,
 				},
 				TemplateID: emptyTemplateID,
 			},
@@ -289,11 +290,12 @@ func TestSystem_Validate(t *testing.T) {
 			name: "fail when protocol is empty",
 			data: System{
 				SystemBase: SystemBase{
-					Protocol:    "",
-					Host:        host,
-					SystemType:  systemType,
-					Description: description,
-					Status:      status,
+					Protocol:     "",
+					Host:         host,
+					SystemType:   systemType,
+					Description:  description,
+					Status:       status,
+					SystemNumber: systemNumber,
 				},
 				TemplateID: emptyTemplateID,
 			},
@@ -304,10 +306,11 @@ func TestSystem_Validate(t *testing.T) {
 			name: "fail when missing host",
 			data: System{
 				SystemBase: SystemBase{
-					Protocol:    protocol,
-					SystemType:  systemType,
-					Description: description,
-					Status:      status,
+					Protocol:     protocol,
+					SystemType:   systemType,
+					Description:  description,
+					Status:       status,
+					SystemNumber: systemNumber,
 				},
 				TemplateID: emptyTemplateID,
 			},
@@ -318,11 +321,12 @@ func TestSystem_Validate(t *testing.T) {
 			name: "fail when host is empty",
 			data: System{
 				SystemBase: SystemBase{
-					Protocol:    protocol,
-					Host:        "",
-					SystemType:  systemType,
-					Description: description,
-					Status:      status,
+					Protocol:     protocol,
+					Host:         "",
+					SystemType:   systemType,
+					Description:  description,
+					Status:       status,
+					SystemNumber: systemNumber,
 				},
 				TemplateID: emptyTemplateID,
 			},
@@ -333,10 +337,11 @@ func TestSystem_Validate(t *testing.T) {
 			name: "fail when missing systemType",
 			data: System{
 				SystemBase: SystemBase{
-					Protocol:    protocol,
-					Host:        host,
-					Description: description,
-					Status:      status,
+					Protocol:     protocol,
+					Host:         host,
+					Description:  description,
+					Status:       status,
+					SystemNumber: systemNumber,
 				},
 				TemplateID: emptyTemplateID,
 			},
@@ -347,11 +352,12 @@ func TestSystem_Validate(t *testing.T) {
 			name: "fail when systemType is empty",
 			data: System{
 				SystemBase: SystemBase{
-					Protocol:    protocol,
-					Host:        host,
-					SystemType:  "",
-					Description: description,
-					Status:      status,
+					Protocol:     protocol,
+					Host:         host,
+					SystemType:   "",
+					Description:  description,
+					Status:       status,
+					SystemNumber: systemNumber,
 				},
 				TemplateID: emptyTemplateID,
 			},
@@ -362,10 +368,11 @@ func TestSystem_Validate(t *testing.T) {
 			name: "fail when missing status",
 			data: System{
 				SystemBase: SystemBase{
-					Protocol:    protocol,
-					Host:        host,
-					SystemType:  systemType,
-					Description: description,
+					Protocol:     protocol,
+					Host:         host,
+					SystemType:   systemType,
+					Description:  description,
+					SystemNumber: systemNumber,
 				},
 				TemplateID: emptyTemplateID,
 			},
@@ -376,11 +383,12 @@ func TestSystem_Validate(t *testing.T) {
 			name: "fail when status is empty",
 			data: System{
 				SystemBase: SystemBase{
-					Protocol:    protocol,
-					Host:        host,
-					SystemType:  systemType,
-					Description: description,
-					Status:      "",
+					Protocol:     protocol,
+					Host:         host,
+					SystemType:   systemType,
+					Description:  description,
+					Status:       "",
+					SystemNumber: systemNumber,
 				},
 				TemplateID: emptyTemplateID,
 			},
@@ -391,9 +399,10 @@ func TestSystem_Validate(t *testing.T) {
 			name: "fail when multiple fields are missing",
 			data: System{
 				SystemBase: SystemBase{
-					Protocol:    protocol,
-					SystemType:  systemType,
-					Description: description,
+					Protocol:     protocol,
+					SystemType:   systemType,
+					Description:  description,
+					SystemNumber: systemNumber,
 				},
 				TemplateID: emptyTemplateID,
 			},
