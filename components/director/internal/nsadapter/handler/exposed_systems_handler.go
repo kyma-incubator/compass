@@ -157,10 +157,10 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	sccs := make([]*nsmodel.SCC, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
 		sccWithInternalID, ok := externalSubaccountIDToSCC[scc.ExternalSubaccountID]
-		if !ok || sccWithInternalID.InternalSubbaccountID == "" {
+		if !ok || sccWithInternalID.InternalSubaccountID == "" {
 			log.C(ctx).Warnf("Got SCC with subaccount id: %s which is not found", scc.ExternalSubaccountID)
 			addErrorDetailsMsg(&details, &scc, "Subaccount not found")
-		} else if sccWithInternalID.InternalSubbaccountID == "not subaccount" {
+		} else if sccWithInternalID.InternalSubaccountID == "not subaccount" {
 			addErrorDetailsMsg(&details, &scc, "Provided id is not subaccount")
 		} else {
 			sccs = append(sccs, sccWithInternalID)
@@ -298,8 +298,8 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 func (a *Handler) processDelta(ctx context.Context, sccs []*nsmodel.SCC, details *[]httputil.Detail) {
 	//TODO refactor details
 	for _, scc := range sccs {
-		fmt.Println(">>>>>>>> tenant: ", scc.InternalSubbaccountID)
-		ctxWithTenant := tenant.SaveToContext(ctx, scc.InternalSubbaccountID, scc.ExternalSubaccountID)
+		fmt.Println(">>>>>>>> tenant: ", scc.InternalSubaccountID)
+		ctxWithTenant := tenant.SaveToContext(ctx, scc.InternalSubaccountID, scc.ExternalSubaccountID)
 		if ok := a.handleSccSystems(ctxWithTenant, *scc); !ok {
 			addErrorDetails(details, scc)
 		}
@@ -582,10 +582,10 @@ func addErrorDetailsMsg(details *[]httputil.Detail, scc *nsmodel.SCC, message st
 func mapExternalToInternal(ctx context.Context, tenants []*model.BusinessTenantMapping, externalSubbaccountToSCC map[string]*nsmodel.SCC) {
 	for _, t := range tenants {
 		if t.Type == "subaccount" {
-			externalSubbaccountToSCC[t.ExternalTenant].InternalSubbaccountID = t.ID
+			externalSubbaccountToSCC[t.ExternalTenant].InternalSubaccountID = t.ID
 		} else {
 			log.C(ctx).Warnf("Got tenant with id: %s which is not asubaccount", t.ID)
-			externalSubbaccountToSCC[t.ExternalTenant].InternalSubbaccountID = "not subaccount"
+			externalSubbaccountToSCC[t.ExternalTenant].InternalSubaccountID = "not subaccount"
 		}
 	}
 }

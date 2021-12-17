@@ -62,9 +62,9 @@ func matchProps(data []byte, tm systemfetcher.TemplateMapping) bool {
 }
 
 type SCC struct {
-	ExternalSubaccountID  string   `json:"subaccount"`
-	InternalSubbaccountID string   `json:"-"`
-	LocationID            string   `json:"locationID"`
+	ExternalSubaccountID string `json:"subaccount"`
+	InternalSubaccountID string `json:"-"`
+	LocationID           string `json:"locationID"`
 	ExposedSystems        []System `json:"exposedSystems"`
 }
 
