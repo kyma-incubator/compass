@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -418,7 +419,7 @@ func (a *Handler) upsert(ctx context.Context, scc nsmodel.SCC, system nsmodel.Sy
 	fmt.Println("<<<<<<<<<<< upsert")
 	app, err := a.appSvc.GetSystem(ctx, scc.ExternalSubaccountID, scc.LocationID, system.Host)
 
-	if err != nil && nsmodel.IsNotFoundError(err) {
+	if err != nil && isNotFoundError(err) {
 		appInput, err := a.prepareAppInput(ctx, scc, system)
 		if err != nil {
 			log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
@@ -588,4 +589,8 @@ func mapExternalToInternal(ctx context.Context, tenants []*model.BusinessTenantM
 			externalSubbaccountToSCC[t.ExternalTenant].InternalSubaccountID = "not subaccount"
 		}
 	}
+}
+
+func isNotFoundError(err error) bool {
+	return strings.Contains(err.Error(), "Object not found")
 }
