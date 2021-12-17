@@ -114,7 +114,7 @@ func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type,
 	fmt.Printf("Args: %+v", args)
 
 	upsertedID := ""
-	log.C(ctx).Debugf("Executing DB query: %s", queryWithTenantIsolation)
+	log.C(ctx).Debugf("Executing DB query: %s", preparedQuery)
 	err = persist.GetContext(ctx, &upsertedID, preparedQuery, args...)
 	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName); err != nil {
 		return "", err
@@ -200,18 +200,9 @@ func (u *upserterGlobal) unsafeUpsert(ctx context.Context, resourceType resource
 	}
 
 	log.C(ctx).Warnf("Executing DB query: %s", query)
-	res, err := persist.NamedExecContext(ctx, query, dbEntity)
-	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName); err != nil {
-		return err
-	}
-
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return errors.Wrap(err, "while checking affected rows")
-	}
-
-	isTenantScopedUpsert := u.tenantColumn != nil
-	return assertSingleRowAffectedWhenUpserting(affected, isTenantScopedUpsert)
+	_, err = persist.NamedExecContext(ctx, query, dbEntity)
+	err = persistence.MapSQLError(ctx, err, resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName)
+	return err
 }
 
 func (u *upserterGlobal) addTenantIsolation(query string) string {

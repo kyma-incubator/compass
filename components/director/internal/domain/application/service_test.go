@@ -1676,7 +1676,7 @@ func TestService_Upsert(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1714,7 +1714,7 @@ func TestService_Upsert(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1745,7 +1745,7 @@ func TestService_Upsert(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1782,7 +1782,7 @@ func TestService_Upsert(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1816,7 +1816,7 @@ func TestService_Upsert(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(testErr).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("", testErr).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2054,7 +2054,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2092,7 +2092,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2123,7 +2123,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2160,7 +2160,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2194,7 +2194,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(testErr).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return("", testErr).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -3098,10 +3098,10 @@ func TestService_GetSystem(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	tnt := "tenant"
+	tnt := "id"
 	locationID := "loc_id"
 	virtualHost := "vhost"
-	filter := labelfilter.NewForKeyWithQuery("SCC", fmt.Sprintf("{\"Subaccount\":%s, \"LocationId\":%s, \"Host\":%s}", tnt, locationID, virtualHost))
+	filter := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"Host\":\"%s\",\"Subaccount\":\"%s\",\"LocationId\":\"%s\"}", virtualHost, tnt, locationID))
 
 	desc := "Lorem ipsum"
 
@@ -3161,7 +3161,7 @@ func TestService_GetSystem(t *testing.T) {
 			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
-			app, err := svc.GetSystem(testCase.Ctx, locationID, virtualHost)
+			app, err := svc.GetSystem(testCase.Ctx, "id", locationID, virtualHost)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -3705,7 +3705,7 @@ func TestService_ListBySCC(t *testing.T) {
 		},
 	}
 
-	filter := &labelfilter.LabelFilter{Key: "SCC", Query: stringPtr("{\"locationId\":\"locationId\", \"subaccount\":\"tenant\"}")}
+	filter := &labelfilter.LabelFilter{Key: "scc", Query: stringPtr("{\"locationId\":\"locationId\", \"subaccount\":\"tenant\"}")}
 
 	externalTnt := "external-tnt"
 
@@ -3784,7 +3784,7 @@ func TestService_ListSCCs(t *testing.T) {
 
 	tnt := "tenant"
 
-	key := "SCC"
+	key := "scc"
 
 	locationId1 := "locationId1"
 	locationId2 := "locationId2"
@@ -3810,7 +3810,7 @@ func TestService_ListSCCs(t *testing.T) {
 		},
 	}
 
-	filter := &labelfilter.LabelFilter{Key: "SCC", Query: stringPtr("{\"locationId\":\"locationId\", \"subaccount\":\"tenant\"}")}
+	filter := &labelfilter.LabelFilter{Key: "scc", Query: stringPtr("{\"locationId\":\"locationId\", \"subaccount\":\"tenant\"}")}
 
 	externalTnt := "external-tnt"
 

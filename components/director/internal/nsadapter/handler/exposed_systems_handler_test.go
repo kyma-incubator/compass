@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/handler/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	txautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
 	"io/ioutil"
 	"net/http"
@@ -34,7 +35,41 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 }
 
 func TestHandler_ServeHTTP(t *testing.T) {
+	appWithLabel := model.ApplicationWithLabel{
+		App: nil,
+		SccLabel: &model.Label{
+			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
+		},
+	}
+	application := model.Application{
+		BaseEntity: &model.BaseEntity{
+			ID: "id",
+		},
+	}
+	system := nsmodel.System{
+		SystemBase: nsmodel.SystemBase{
+			Protocol:     "HTTP",
+			Host:         "127.0.0.1:8080",
+			SystemType:   "otherSAPsys",
+			Description:  "description",
+			Status:       "disabled",
+			SystemNumber: "number",
+		},
+		TemplateID: "",
+	}
+	label := &model.LabelInput{
+		Key:        "applicationType",
+		Value:      system.SystemType,
+		ObjectID:   application.ID,
+		ObjectType: model.ApplicationLabelableObject,
+	}
 	labelFilter := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", "loc-id", testSubaccount))
+	protocolLabel := &model.LabelInput{
+		Key:        "systemProtocol",
+		Value:      system.Protocol,
+		ObjectID:   application.ID,
+		ObjectType: model.ApplicationLabelableObject,
+	}
 
 	t.Run("failed to retrieve request body", func(t *testing.T) {
 
@@ -332,18 +367,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{
-			ID:             "id",
-			ExternalTenant: testSubaccount,
-			Type:           "subaccount",
-		}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 
-		nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
-			Name:        "",
-			ID:          "ss",
-			SourceKey:   []string{"type"},
-			SourceValue: []string{"otherSAPsys"},
-		})
+		setMappings()
 		defer clearMappings()
 
 		appInputJson := "app-input-json"
@@ -360,12 +386,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("Upsert", mock.Anything, input).Return(errors.New("error"))
 
-		appWithLabel := model.ApplicationWithLabel{
-			App: nil,
-			SccLabel: &model.Label{
-				Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-			},
-		}
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer mock.AssertExpectationsForObjects(t, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
 
@@ -417,14 +437,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
-		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 
-		nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
-			Name:        "",
-			ID:          "ss",
-			SourceKey:   []string{"type"},
-			SourceValue: []string{"otherSAPsys"},
-		})
+		setMappings()
 		defer clearMappings()
 
 		appInputJson := "app-input-json"
@@ -441,12 +456,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("Upsert", mock.Anything, input).Return(nil)
 
-		appWithLabel := model.ApplicationWithLabel{
-			App: nil,
-			SccLabel: &model.Label{
-				Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-			},
-		}
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer mock.AssertExpectationsForObjects(t, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
 
@@ -466,1729 +475,1478 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
 	})
 
-	//t.Run("failed to get application by subaccount, location ID and virtual host", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "delta")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	marshal, _ := json.Marshal(httputil.ErrorResponse{
-	//		Error: httputil.DetailedError{
-	//			Code:    http.StatusOK,
-	//			Message: "Update/create failed for some on-premise systems",
-	//			Details: []httputil.Detail{
-	//				{
-	//					Message:    "Creation failed",
-	//					Subaccount: testSubaccount,
-	//					LocationId: "loc-id",
-	//				},
-	//			},
-	//		},
-	//	})
-	//	Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
-	//})
-	//
-	//t.Run("failed to register application from template", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
-	//		Name:        "",
-	//		ID:          "ss",
-	//		SourceKey:   []string{"description"},
-	//		SourceValue: []string{"description"},
-	//	})
-	//	defer clearMappings()
-	//
-	//	system := nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "",
-	//		},
-	//		TemplateID: "ss",
-	//	}
-	//	appInput := nsmodel.ToAppRegisterInput(system, testSubaccount, "loc-id")
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").
-	//		Return(nil, nsmodel.NewSystemNotFoundError(testSubaccount, "loc-id", "127.0.0.1:8080"))
-	//	appSvc.Mock.On("CreateFromTemplate", mock.Anything, appInput, str.Ptr(system.TemplateID)).Return("", errors.New("error"))
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "delta")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	marshal, _ := json.Marshal(httputil.ErrorResponse{
-	//		Error: httputil.DetailedError{
-	//			Code:    http.StatusOK,
-	//			Message: "Update/create failed for some on-premise systems",
-	//			Details: []httputil.Detail{
-	//				{
-	//					Message:    "Creation failed",
-	//					Subaccount: testSubaccount,
-	//					LocationId: "loc-id",
-	//				},
-	//			},
-	//		},
-	//	})
-	//	Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
-	//})
-	//
-	//t.Run("successfully create application", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
-	//		Name:        "",
-	//		ID:          "ss",
-	//		SourceKey:   []string{"description"},
-	//		SourceValue: []string{"description"},
-	//	})
-	//	defer clearMappings()
-	//
-	//	system := nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "",
-	//		},
-	//		TemplateID: "ss",
-	//	}
-	//	appInput := nsmodel.ToAppRegisterInput(system, testSubaccount, "loc-id")
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").
-	//		Return(nil, nsmodel.NewSystemNotFoundError(testSubaccount, "loc-id", "127.0.0.1:8080"))
-	//	appSvc.Mock.On("CreateFromTemplate", mock.Anything, appInput, str.Ptr(system.TemplateID)).Return("success", nil)
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "delta")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("failed to update application", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	application := model.Application{
-	//		BaseEntity: &model.BaseEntity{
-	//			ID: "id",
-	//		},
-	//	}
-	//	input := nsmodel.ToAppUpdateInput(nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "number",
-	//		},
-	//		TemplateID: "",
-	//	})
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(errors.New("error"))
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "delta")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	marshal, _ := json.Marshal(httputil.ErrorResponse{
-	//		Error: httputil.DetailedError{
-	//			Code:    http.StatusOK,
-	//			Message: "Update/create failed for some on-premise systems",
-	//			Details: []httputil.Detail{
-	//				{
-	//					Message:    "Creation failed",
-	//					Subaccount: testSubaccount,
-	//					LocationId: "loc-id",
-	//				},
-	//			},
-	//		},
-	//	})
-	//	Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
-	//})
-	//
-	//t.Run("failed to set label applicationType", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	application := model.Application{
-	//		BaseEntity: &model.BaseEntity{
-	//			ID: "id",
-	//		},
-	//	}
-	//	system := nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "number",
-	//		},
-	//		TemplateID: "",
-	//	}
-	//	input := nsmodel.ToAppUpdateInput(system)
-	//	label := &model.LabelInput{
-	//		Key:        "applicationType",
-	//		Value:      system.SystemType,
-	//		ObjectID:   application.ID,
-	//		ObjectType: model.ApplicationLabelableObject,
-	//	}
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
-	//	appSvc.Mock.On("SetLabel", mock.Anything, label).Return(errors.New("error"))
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "delta")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	marshal, _ := json.Marshal(httputil.ErrorResponse{
-	//		Error: httputil.DetailedError{
-	//			Code:    http.StatusOK,
-	//			Message: "Update/create failed for some on-premise systems",
-	//			Details: []httputil.Detail{
-	//				{
-	//					Message:    "Creation failed",
-	//					Subaccount: testSubaccount,
-	//					LocationId: "loc-id",
-	//				},
-	//			},
-	//		},
-	//	})
-	//	Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
-	//})
-	//
-	//t.Run("failed to set label systemProtocol", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	application := model.Application{
-	//		BaseEntity: &model.BaseEntity{
-	//			ID: "id",
-	//		},
-	//	}
-	//	system := nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "number",
-	//		},
-	//		TemplateID: "",
-	//	}
-	//	input := nsmodel.ToAppUpdateInput(system)
-	//	label := &model.LabelInput{
-	//		Key:        "applicationType",
-	//		Value:      system.SystemType,
-	//		ObjectID:   application.ID,
-	//		ObjectType: model.ApplicationLabelableObject,
-	//	}
-	//	protocolLabel := &model.LabelInput{
-	//		Key:        "systemProtocol",
-	//		Value:      system.Protocol,
-	//		ObjectID:   application.ID,
-	//		ObjectType: model.ApplicationLabelableObject,
-	//	}
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
-	//	appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
-	//	appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(errors.New("error")).Once()
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "delta")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	marshal, _ := json.Marshal(httputil.ErrorResponse{
-	//		Error: httputil.DetailedError{
-	//			Code:    http.StatusOK,
-	//			Message: "Update/create failed for some on-premise systems",
-	//			Details: []httputil.Detail{
-	//				{
-	//					Message:    "Creation failed",
-	//					Subaccount: testSubaccount,
-	//					LocationId: "loc-id",
-	//				},
-	//			},
-	//		},
-	//	})
-	//	Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
-	//})
-	//
-	//t.Run("successfully update system", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	application := model.Application{
-	//		BaseEntity: &model.BaseEntity{
-	//			ID: "id",
-	//		},
-	//	}
-	//	system := nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "number",
-	//		},
-	//		TemplateID: "",
-	//	}
-	//	input := nsmodel.ToAppUpdateInput(system)
-	//	label := &model.LabelInput{
-	//		Key:        "applicationType",
-	//		Value:      system.SystemType,
-	//		ObjectID:   application.ID,
-	//		ObjectType: model.ApplicationLabelableObject,
-	//	}
-	//	protocolLabel := &model.LabelInput{
-	//		Key:        "systemProtocol",
-	//		Value:      system.Protocol,
-	//		ObjectID:   application.ID,
-	//		ObjectType: model.ApplicationLabelableObject,
-	//	}
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
-	//	appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
-	//	appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(nil).Once()
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "delta")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("failed to list by SCC", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Rollback").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "delta")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	marshal, _ := json.Marshal(httputil.ErrorResponse{
-	//		Error: httputil.DetailedError{
-	//			Code:    http.StatusOK,
-	//			Message: "Update/create failed for some on-premise systems",
-	//			Details: []httputil.Detail{
-	//				{
-	//					Message:    "Creation failed",
-	//					Subaccount: testSubaccount,
-	//					LocationId: "loc-id",
-	//				},
-	//			},
-	//		},
-	//	})
-	//	Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
-	//})
-	//
-	//t.Run("fail to mark system as unreachable", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list by scc
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: &model.Application{
-	//			BaseEntity: &model.BaseEntity{ID: "id"},
-	//		},
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "delta")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	marshal, _ := json.Marshal(httputil.ErrorResponse{
-	//		Error: httputil.DetailedError{
-	//			Code:    http.StatusOK,
-	//			Message: "Update/create failed for some on-premise systems",
-	//			Details: []httputil.Detail{
-	//				{
-	//					Message:    "Creation failed",
-	//					Subaccount: testSubaccount,
-	//					LocationId: "loc-id",
-	//				},
-	//			},
-	//		},
-	//	})
-	//	Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
-	//})
-	//
-	//t.Run("successfully mark system as unreachable", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list by scc
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: &model.Application{
-	//			BaseEntity: &model.BaseEntity{ID: "id"},
-	//		},
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "delta")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("success when report type is delta and value is empty", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": []\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := make([]string, 0, 0)
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(nil, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "delta")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	////Full report tests
-	//t.Run("got error while upserting application", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\",\n          \"systemNumber\": \"number\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsert
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appInput := nsmodel.ToAppRegisterInput(nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "number",
-	//		},
-	//		TemplateID: "",
-	//	}, testSubaccount, "loc-id")
-	//
-	//	labelFilter := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", "loc-id", testSubaccount))
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("Upsert", mock.Anything, appInput).Return(errors.New("error"))
-	//
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("successfully upsert application", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\",\n          \"systemNumber\": \"number\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsert
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appInput := nsmodel.ToAppRegisterInput(nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "number",
-	//		},
-	//		TemplateID: "",
-	//	}, testSubaccount, "loc-id")
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("Upsert", mock.Anything, appInput).Return(nil)
-	//
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("failed to get application by subaccount, location ID and virtual host", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("failed to register application from template", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
-	//		Name:        "",
-	//		ID:          "ss",
-	//		SourceKey:   []string{"description"},
-	//		SourceValue: []string{"description"},
-	//	})
-	//	defer clearMappings()
-	//
-	//	system := nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "",
-	//		},
-	//		TemplateID: "ss",
-	//	}
-	//	appInput := nsmodel.ToAppRegisterInput(system, testSubaccount, "loc-id")
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").
-	//		Return(nil, nsmodel.NewSystemNotFoundError(testSubaccount, "loc-id", "127.0.0.1:8080"))
-	//	appSvc.Mock.On("CreateFromTemplate", mock.Anything, appInput, str.Ptr(system.TemplateID)).Return("", errors.New("error"))
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("successfully create application", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
-	//		Name:        "",
-	//		ID:          "ss",
-	//		SourceKey:   []string{"description"},
-	//		SourceValue: []string{"description"},
-	//	})
-	//	defer clearMappings()
-	//
-	//	system := nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "",
-	//		},
-	//		TemplateID: "ss",
-	//	}
-	//	appInput := nsmodel.ToAppRegisterInput(system, testSubaccount, "loc-id")
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").
-	//		Return(nil, nsmodel.NewSystemNotFoundError(testSubaccount, "loc-id", "127.0.0.1:8080"))
-	//	appSvc.Mock.On("CreateFromTemplate", mock.Anything, appInput, str.Ptr(system.TemplateID)).Return("success", nil)
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("failed to update application", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	application := model.Application{
-	//		BaseEntity: &model.BaseEntity{
-	//			ID: "id",
-	//		},
-	//	}
-	//	input := nsmodel.ToAppUpdateInput(nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "number",
-	//		},
-	//		TemplateID: "",
-	//	})
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(errors.New("error"))
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("failed to set label applicationType", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	application := model.Application{
-	//		BaseEntity: &model.BaseEntity{
-	//			ID: "id",
-	//		},
-	//	}
-	//	system := nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "number",
-	//		},
-	//		TemplateID: "",
-	//	}
-	//	input := nsmodel.ToAppUpdateInput(system)
-	//	label := &model.LabelInput{
-	//		Key:        "applicationType",
-	//		Value:      system.SystemType,
-	//		ObjectID:   application.ID,
-	//		ObjectType: model.ApplicationLabelableObject,
-	//	}
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
-	//	appSvc.Mock.On("SetLabel", mock.Anything, label).Return(errors.New("error"))
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("failed to set label systemProtocol", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	application := model.Application{
-	//		BaseEntity: &model.BaseEntity{
-	//			ID: "id",
-	//		},
-	//	}
-	//	system := nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "number",
-	//		},
-	//		TemplateID: "",
-	//	}
-	//	input := nsmodel.ToAppUpdateInput(system)
-	//	label := &model.LabelInput{
-	//		Key:        "applicationType",
-	//		Value:      system.SystemType,
-	//		ObjectID:   application.ID,
-	//		ObjectType: model.ApplicationLabelableObject,
-	//	}
-	//	protocolLabel := &model.LabelInput{
-	//		Key:        "systemProtocol",
-	//		Value:      system.Protocol,
-	//		ObjectID:   application.ID,
-	//		ObjectType: model.ApplicationLabelableObject,
-	//	}
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
-	//	appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
-	//	appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(errors.New("error")).Once()
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("successfully update system", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	application := model.Application{
-	//		BaseEntity: &model.BaseEntity{
-	//			ID: "id",
-	//		},
-	//	}
-	//	system := nsmodel.System{
-	//		SystemBase: nsmodel.SystemBase{
-	//			Protocol:     "HTTP",
-	//			Host:         "127.0.0.1:8080",
-	//			SystemType:   "otherSAPsys",
-	//			Description:  "description",
-	//			Status:       "disabled",
-	//			SystemNumber: "number",
-	//		},
-	//		TemplateID: "",
-	//	}
-	//	input := nsmodel.ToAppUpdateInput(system)
-	//	label := &model.LabelInput{
-	//		Key:        "applicationType",
-	//		Value:      system.SystemType,
-	//		ObjectID:   application.ID,
-	//		ObjectType: model.ApplicationLabelableObject,
-	//	}
-	//	protocolLabel := &model.LabelInput{
-	//		Key:        "systemProtocol",
-	//		Value:      system.Protocol,
-	//		ObjectID:   application.ID,
-	//		ObjectType: model.ApplicationLabelableObject,
-	//	}
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: nil,
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("GetSystem", mock.Anything, "loc-id", "127.0.0.1:8080").Return(&application, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
-	//	appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
-	//	appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(nil).Once()
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("failed to list by SCC", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Rollback").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("fail to mark system as unreachable", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list by scc
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: &model.Application{
-	//			BaseEntity: &model.BaseEntity{ID: "id"},
-	//		},
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(errors.New("error"))
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("successfully mark system as unreachable", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list by scc
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: &model.Application{
-	//			BaseEntity: &model.BaseEntity{ID: "id"},
-	//		},
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-	//	appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("success when there no unreachable SCCs", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Rollback").Return(nil)
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return([]*model.SccMetadata{&model.SccMetadata{
-	//		Subaccount: testSubaccount,
-	//		LocationId: "loc-id",
-	//	}}, nil)
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
-	//
-	//t.Run("success when there no unreachable SCCs", func(t *testing.T) {
-	//	body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
-	//
-	//	tx := &txautomock.PersistenceTx{}
-	//	tx.Mock.On("Commit").Return(nil)
-	//	tx.Mock.On("Rollback").Return(nil)
-	//	defer tx.AssertExpectations(t)
-	//
-	//	listSccsTx := &txautomock.PersistenceTx{}
-	//	listSccsTx.Mock.On("Commit").Return(nil)
-	//	defer listSccsTx.AssertExpectations(t)
-	//
-	//	transact := txautomock.Transactioner{}
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()                                   // used for list tenants
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()                                   //list for mark unreachable
-	//	transact.Mock.On("Begin").Return(listSccsTx, nil).Once()                           //used in listSCCs
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()                                   //used in listAppsBySCC
-	//	transact.Mock.On("Begin").Return(tx, nil).Once()                                   //used in markAsUnreachable for unknown SCC
-	//	transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Once() //used in markAsUnreachable for unknown SCC
-	//	defer transact.AssertExpectations(t)
-	//
-	//	ids := []string{testSubaccount}
-	//	tntSvc := automock.TenantService{}
-	//	tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-	//	defer tntSvc.AssertExpectations(t)
-	//
-	//	appWithLabel := model.ApplicationWithLabel{
-	//		App: &model.Application{
-	//			BaseEntity: &model.BaseEntity{ID: "id"},
-	//		},
-	//		SccLabel: &model.Label{
-	//			Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
-	//		},
-	//	}
-	//
-	//	unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
-	//
-	//	labelFilter2 := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", "other-loc-id", "marked-as-unreachable"))
-	//
-	//	appSvc := automock.ApplicationService{}
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error")).Once()
-	//	appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return([]*model.SccMetadata{
-	//		{
-	//			Subaccount: testSubaccount,
-	//			LocationId: "loc-id",
-	//		},
-	//		{
-	//			Subaccount: "marked-as-unreachable",
-	//			LocationId: "other-loc-id",
-	//		},
-	//	}, nil)
-	//	appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter2).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil).Once()
-	//	appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
-	//	defer appSvc.AssertExpectations(t)
-	//
-	//	endpoint := handler.NewHandler(&appSvc, &tntSvc, &transact)
-	//
-	//	req := httptest.NewRequest(http.MethodPut, "/v1", body)
-	//	q := req.URL.Query()
-	//	q.Add("reportType", "full")
-	//	req.URL.RawQuery = q.Encode()
-	//
-	//	rec := httptest.NewRecorder()
-	//
-	//	endpoint.ServeHTTP(rec, req)
-	//
-	//	resp := rec.Result()
-	//
-	//	Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
-	//})
+	t.Run("failed to get application by subaccount, location ID and virtual host", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
 
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		setMappings()
+		defer clearMappings()
+
+		appInputJson := "app-input-json"
+		applicationTemplate := &model.ApplicationTemplate{}
+
+		appTemplateSvc := automock.ApplicationTemplateService{}
+		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+
+		input := model.ApplicationRegisterInput{}
+		appConverterSvc := automock.ApplicationConverter{}
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "delta")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		marshal, _ := json.Marshal(httputil.ErrorResponse{
+			Error: httputil.DetailedError{
+				Code:    http.StatusOK,
+				Message: "Update/create failed for some on-premise systems",
+				Details: []httputil.Detail{
+					{
+						Message:    "Creation failed",
+						Subaccount: testSubaccount,
+						LocationId: "loc-id",
+					},
+				},
+			},
+		})
+		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
+	})
+
+	t.Run("failed to register application from template", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		setMappings()
+		defer clearMappings()
+
+		appInputJson := "app-input-json"
+		applicationTemplate := &model.ApplicationTemplate{}
+
+		appTemplateSvc := automock.ApplicationTemplateService{}
+		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+
+		input := model.ApplicationRegisterInput{}
+		appConverterSvc := automock.ApplicationConverter{}
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
+			Return(nil, errors.New("Object not found"))
+		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("", errors.New("error"))
+
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "delta")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		marshal, _ := json.Marshal(httputil.ErrorResponse{
+			Error: httputil.DetailedError{
+				Code:    http.StatusOK,
+				Message: "Update/create failed for some on-premise systems",
+				Details: []httputil.Detail{
+					{
+						Message:    "Creation failed",
+						Subaccount: testSubaccount,
+						LocationId: "loc-id",
+					},
+				},
+			},
+		})
+		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
+	})
+
+	t.Run("successfully create application", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		setMappings()
+		defer clearMappings()
+
+		appInputJson := "app-input-json"
+		applicationTemplate := &model.ApplicationTemplate{}
+
+		appTemplateSvc := automock.ApplicationTemplateService{}
+		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+
+		input := model.ApplicationRegisterInput{}
+		appConverterSvc := automock.ApplicationConverter{}
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
+			Return(nil, errors.New("Object not found"))
+		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("success", nil)
+
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "delta")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("failed to update application", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		input := nsmodel.ToAppUpdateInput(nsmodel.System{
+			SystemBase: nsmodel.SystemBase{
+				Protocol:     "HTTP",
+				Host:         "127.0.0.1:8080",
+				SystemType:   "otherSAPsys",
+				Description:  "description",
+				Status:       "disabled",
+				SystemNumber: "number",
+			},
+			TemplateID: "",
+		})
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "delta")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		marshal, _ := json.Marshal(httputil.ErrorResponse{
+			Error: httputil.DetailedError{
+				Code:    http.StatusOK,
+				Message: "Update/create failed for some on-premise systems",
+				Details: []httputil.Detail{
+					{
+						Message:    "Creation failed",
+						Subaccount: testSubaccount,
+						LocationId: "loc-id",
+					},
+				},
+			},
+		})
+		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
+	})
+
+	t.Run("failed to set label applicationType", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		input := nsmodel.ToAppUpdateInput(system)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
+		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "delta")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		marshal, _ := json.Marshal(httputil.ErrorResponse{
+			Error: httputil.DetailedError{
+				Code:    http.StatusOK,
+				Message: "Update/create failed for some on-premise systems",
+				Details: []httputil.Detail{
+					{
+						Message:    "Creation failed",
+						Subaccount: testSubaccount,
+						LocationId: "loc-id",
+					},
+				},
+			},
+		})
+		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
+	})
+
+	t.Run("failed to set label systemProtocol", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		input := nsmodel.ToAppUpdateInput(system)
+		protocolLabel := &model.LabelInput{
+			Key:        "systemProtocol",
+			Value:      system.Protocol,
+			ObjectID:   application.ID,
+			ObjectType: model.ApplicationLabelableObject,
+		}
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
+		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
+		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(errors.New("error")).Once()
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "delta")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		marshal, _ := json.Marshal(httputil.ErrorResponse{
+			Error: httputil.DetailedError{
+				Code:    http.StatusOK,
+				Message: "Update/create failed for some on-premise systems",
+				Details: []httputil.Detail{
+					{
+						Message:    "Creation failed",
+						Subaccount: testSubaccount,
+						LocationId: "loc-id",
+					},
+				},
+			},
+		})
+		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
+	})
+
+	t.Run("successfully update system", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		input := nsmodel.ToAppUpdateInput(system)
+		protocolLabel := &model.LabelInput{
+			Key:        "systemProtocol",
+			Value:      system.Protocol,
+			ObjectID:   application.ID,
+			ObjectType: model.ApplicationLabelableObject,
+		}
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
+		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
+		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(nil).Once()
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "delta")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("failed to list by SCC", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Rollback").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "delta")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		marshal, _ := json.Marshal(httputil.ErrorResponse{
+			Error: httputil.DetailedError{
+				Code:    http.StatusOK,
+				Message: "Update/create failed for some on-premise systems",
+				Details: []httputil.Detail{
+					{
+						Message:    "Creation failed",
+						Subaccount: testSubaccount,
+						LocationId: "loc-id",
+					},
+				},
+			},
+		})
+		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
+	})
+
+	t.Run("fail to mark system as unreachable", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list by scc
+		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		appWithLabel := model.ApplicationWithLabel{
+			App: &model.Application{
+				BaseEntity: &model.BaseEntity{ID: "id"},
+			},
+			SccLabel: &model.Label{
+				Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
+			},
+		}
+
+		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "delta")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		marshal, _ := json.Marshal(httputil.ErrorResponse{
+			Error: httputil.DetailedError{
+				Code:    http.StatusOK,
+				Message: "Update/create failed for some on-premise systems",
+				Details: []httputil.Detail{
+					{
+						Message:    "Creation failed",
+						Subaccount: testSubaccount,
+						LocationId: "loc-id",
+					},
+				},
+			},
+		})
+		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(marshal))
+	})
+
+	t.Run("successfully mark system as unreachable", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list by scc
+		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		appWithLabel := model.ApplicationWithLabel{
+			App: &model.Application{
+				BaseEntity: &model.BaseEntity{ID: "id"},
+			},
+			SccLabel: &model.Label{
+				Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
+			},
+		}
+
+		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "delta")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("success when report type is delta and value is empty", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": []\n}")
+
+		endpoint := handler.NewHandler(nil, nil, nil, nil, nil)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "delta")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	//Full report tests
+	t.Run("got error while upserting application", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\",\n          \"systemNumber\": \"number\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsert
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		setMappings()
+		defer clearMappings()
+
+		appInputJson := "app-input-json"
+		applicationTemplate := &model.ApplicationTemplate{}
+
+		appTemplateSvc := automock.ApplicationTemplateService{}
+		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+
+		input := model.ApplicationRegisterInput{}
+		appConverterSvc := automock.ApplicationConverter{}
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("Upsert", mock.Anything, input).Return(errors.New("error"))
+
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("successfully upsert application", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\",\n          \"systemNumber\": \"number\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsert
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		setMappings()
+		defer clearMappings()
+
+		appInputJson := "app-input-json"
+		applicationTemplate := &model.ApplicationTemplate{}
+
+		appTemplateSvc := automock.ApplicationTemplateService{}
+		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+
+		input := model.ApplicationRegisterInput{}
+		appConverterSvc := automock.ApplicationConverter{}
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("Upsert", mock.Anything, input).Return(nil)
+
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("failed to get application by subaccount, location ID and virtual host", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		setMappings()
+		defer clearMappings()
+
+		appInputJson := "app-input-json"
+		applicationTemplate := &model.ApplicationTemplate{}
+
+		appTemplateSvc := automock.ApplicationTemplateService{}
+		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+
+		input := model.ApplicationRegisterInput{}
+		appConverterSvc := automock.ApplicationConverter{}
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("failed to register application from template", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		setMappings()
+		defer clearMappings()
+
+		appInputJson := "app-input-json"
+		applicationTemplate := &model.ApplicationTemplate{}
+
+		appTemplateSvc := automock.ApplicationTemplateService{}
+		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+
+		input := model.ApplicationRegisterInput{}
+		appConverterSvc := automock.ApplicationConverter{}
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
+			Return(nil, errors.New("Object not found"))
+		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("", errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("successfully create application", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
+			Name:        "",
+			ID:          "ss",
+			SourceKey:   []string{"description"},
+			SourceValue: []string{"description"},
+		})
+		defer clearMappings()
+
+		setMappings()
+		defer clearMappings()
+
+		appInputJson := "app-input-json"
+		applicationTemplate := &model.ApplicationTemplate{}
+
+		appTemplateSvc := automock.ApplicationTemplateService{}
+		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+
+		input := model.ApplicationRegisterInput{}
+		appConverterSvc := automock.ApplicationConverter{}
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
+			Return(nil, errors.New("Object not found"))
+		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("success", nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("failed to update application", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		input := nsmodel.ToAppUpdateInput(nsmodel.System{
+			SystemBase: nsmodel.SystemBase{
+				Protocol:     "HTTP",
+				Host:         "127.0.0.1:8080",
+				SystemType:   "otherSAPsys",
+				Description:  "description",
+				Status:       "disabled",
+				SystemNumber: "number",
+			},
+			TemplateID: "",
+		})
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("failed to set label applicationType", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		input := nsmodel.ToAppUpdateInput(system)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
+		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(errors.New("error"))
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("failed to set label systemProtocol", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		input := nsmodel.ToAppUpdateInput(system)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
+		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
+		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(errors.New("error")).Once()
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("successfully update system", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": [\n        {\n          \"protocol\": \"HTTP\",\n          \"host\": \"127.0.0.1:8080\",\n          \"type\": \"otherSAPsys\",\n          \"status\": \"disabled\",\n          \"description\": \"description\"\n        }\n      ]\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once() // used for upsertSccSystems
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		input := nsmodel.ToAppUpdateInput(system)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
+		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
+		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(nil).Once()
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("failed to list by SCC", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Rollback").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("fail to mark system as unreachable", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list by scc
+		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		appWithLabel := model.ApplicationWithLabel{
+			App: &model.Application{
+				BaseEntity: &model.BaseEntity{ID: "id"},
+			},
+			SccLabel: &model.Label{
+				Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
+			},
+		}
+
+		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(errors.New("error"))
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("successfully mark system as unreachable", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		listSccsTx.Mock.On("Rollback").Return(nil) //used in listSCCs
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list by scc
+		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		appWithLabel := model.ApplicationWithLabel{
+			App: &model.Application{
+				BaseEntity: &model.BaseEntity{ID: "id"},
+			},
+			SccLabel: &model.Label{
+				Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
+			},
+		}
+
+		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
+		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return(nil, errors.New("error"))
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("success when there no unreachable SCCs", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Rollback").Return(nil)
+		listSccsTx.Mock.On("Commit").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
+		defer tntSvc.AssertExpectations(t)
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return([]*model.SccMetadata{&model.SccMetadata{
+			Subaccount: testSubaccount,
+			LocationId: "loc-id",
+		}}, nil)
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
+
+	t.Run("success when there no unreachable SCCs", func(t *testing.T) {
+		body := strings.NewReader("{\n  \"type\": \"notification-service\",\n  \"value\": [\n    {\n      \"subaccount\": \"fd4f2041-fa83-48e0-b292-ff515bb776f0\",\n      \"locationId\": \"loc-id\",\n      \"exposedSystems\": []\n    }\n  ]\n}")
+
+		tx := &txautomock.PersistenceTx{}
+		tx.Mock.On("Commit").Return(nil)
+		tx.Mock.On("Rollback").Return(nil)
+		defer tx.AssertExpectations(t)
+
+		listSccsTx := &txautomock.PersistenceTx{}
+		listSccsTx.Mock.On("Commit").Return(nil)
+		defer listSccsTx.AssertExpectations(t)
+
+		transact := txautomock.Transactioner{}
+		transact.Mock.On("Begin").Return(tx, nil).Once()                                   //used for list tenants
+		transact.Mock.On("Begin").Return(tx, nil).Once()                                   //used for getting template
+		transact.Mock.On("Begin").Return(tx, nil).Once()                                   //list for mark unreachable
+		transact.Mock.On("Begin").Return(listSccsTx, nil).Once()                           //used in listSCCs
+		transact.Mock.On("Begin").Return(tx, nil).Once()                                   //used in listAppsBySCC
+		transact.Mock.On("Begin").Return(tx, nil).Once()                                   //used in markAsUnreachable for unknown SCC
+		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Once() //used in markAsUnreachable for unknown SCC
+		defer transact.AssertExpectations(t)
+
+		ids := []string{testSubaccount}
+		tntSvc := automock.TenantService{}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil).Once()
+		ids = []string{"marked-as-unreachable"}
+		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: "marked-as-unreachable", Type: "subaccount"}}, nil).Once()
+		defer tntSvc.AssertExpectations(t)
+
+		appWithLabel := model.ApplicationWithLabel{
+			App: &model.Application{
+				BaseEntity: &model.BaseEntity{ID: "id"},
+			},
+			SccLabel: &model.Label{
+				Value: "{\"LocationId\":\"loc-id\",\"Host\":\"127.0.0.1:8080\"}",
+			},
+		}
+
+		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
+
+		labelFilter2 := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", "other-loc-id", "marked-as-unreachable"))
+
+		appSvc := automock.ApplicationService{}
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error")).Once()
+		appSvc.Mock.On("ListSCCs", mock.Anything, "scc").Return([]*model.SccMetadata{
+			{
+				Subaccount: testSubaccount,
+				LocationId: "loc-id",
+			},
+			{
+				Subaccount: "marked-as-unreachable",
+				LocationId: "other-loc-id",
+			},
+		}, nil)
+		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter2).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil).Once()
+		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
+		defer appSvc.AssertExpectations(t)
+
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
+
+		req := httptest.NewRequest(http.MethodPut, "/v1", body)
+		q := req.URL.Query()
+		q.Add("reportType", "full")
+		req.URL.RawQuery = q.Encode()
+
+		rec := httptest.NewRecorder()
+
+		endpoint.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+
+		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
+	})
 }
 
 func Verify(t *testing.T, resp *http.Response,
@@ -2218,4 +1976,13 @@ func Verify(t *testing.T, resp *http.Response,
 
 func clearMappings() {
 	nsmodel.Mappings = nil
+}
+
+func setMappings() {
+	nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
+		Name:        "",
+		ID:          "ss",
+		SourceKey:   []string{"type"},
+		SourceValue: []string{"otherSAPsys"},
+	})
 }

@@ -317,15 +317,22 @@ func (_m *ApplicationRepository) Update(ctx context.Context, tenant string, item
 }
 
 // Upsert provides a mock function with given fields: ctx, tenant, _a2
-func (_m *ApplicationRepository) Upsert(ctx context.Context, tenant string, _a2 *model.Application) error {
+func (_m *ApplicationRepository) Upsert(ctx context.Context, tenant string, _a2 *model.Application) (string, error) {
 	ret := _m.Called(ctx, tenant, _a2)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) error); ok {
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) string); ok {
 		r0 = rf(ctx, tenant, _a2)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Application) error); ok {
+		r1 = rf(ctx, tenant, _a2)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
