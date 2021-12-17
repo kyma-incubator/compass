@@ -87,7 +87,7 @@ global:
       version: "PR-2118"
     director:
       dir:
-      version: "PR-2150"
+      version: "PR-2142"
     gateway:
       dir:
       version: "PR-2126"
@@ -246,6 +246,7 @@ global:
         oauth:
           host: compass-gateway-auth-oauth
     mtls:
+      manageCerts: true
       host: compass-gateway-mtls
       certSecret: compass-gateway-mtls-certs
       external:

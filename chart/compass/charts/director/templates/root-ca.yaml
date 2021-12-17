@@ -1,0 +1,10 @@
+{{ if .Values.global.gateway.mtls.manageCerts }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.global.connector.secrets.rootCA.cacert }}
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+data:
+  "cacert": "LS0tIEZlYXR1cmUgRGlzYWJsZWQgTG9jYWxseSAtLS0g"
+{{end}}
