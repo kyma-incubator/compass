@@ -55,7 +55,6 @@ func TestLoadFromContext(t *testing.T) {
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
-
 		})
 	}
 }
