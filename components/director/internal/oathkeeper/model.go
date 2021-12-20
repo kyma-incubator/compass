@@ -267,7 +267,6 @@ func (d *ReqData) TenantAccessLevels() []tenantEntity.Type {
 	if _, found := d.Body.Extra[cert.AccessLevelsExtraField]; !found {
 		return nil
 	}
-	// TODO prettify
 	accessLevelsRaw, ok := d.Body.Extra[cert.AccessLevelsExtraField].([]interface{})
 	if !ok {
 		return nil
