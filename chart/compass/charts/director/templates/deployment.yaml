@@ -211,6 +211,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.tenantQueryParam }}
             - name: APP_SELF_REGISTER_REQUEST_BODY_PATTERN
               value: {{ .Values.global.director.selfRegister.requestBodyPattern | quote }}
+            - name: APP_SELF_REGISTER_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.director.selfRegister.skipSSLValidation }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY
