@@ -1,4 +1,4 @@
-{{- if .Values.gateway.manageCerts }}
+{{- if .Values.global.gateway.mtls.manageCerts }}
 apiVersion: v1
 kind: Secret
 metadata:

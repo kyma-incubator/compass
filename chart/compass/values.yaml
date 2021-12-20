@@ -103,7 +103,7 @@ global:
       version: "PR-51"
     schema_migrator:
       dir:
-      version: "PR-2128"
+      version: "PR-2150"
     system_broker:
       dir:
       version: "PR-2132"
@@ -117,7 +117,7 @@ global:
       version: "PR-2132"
     console:
       dir:
-      version: "PR-48"
+      version: "PR-49"
     e2e_tests:
       dir:
       version: "PR-2143"
@@ -250,6 +250,7 @@ global:
         oauth:
           host: compass-gateway-auth-oauth
     mtls:
+      manageCerts: true
       host: compass-gateway-mtls
       certSecret: compass-gateway-mtls-certs
       external:
