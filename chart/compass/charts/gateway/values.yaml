@@ -13,7 +13,6 @@ deployment:
 
 gateway:
   enabled: false # ISTIO related resources(istio gateway)
-  manageCerts: true # ISTIO related resources(istio gateway)
   auditlog: # COMPASS related resources(compass gateway)
     enabled: false
     authMode: "basic"
