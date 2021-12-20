@@ -425,7 +425,8 @@ global:
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "" # It's empty because in local setup we use connector CA which didn't have Locality property
-    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=f8075207-1478-4a80-bd26-24a4785a2bfd/L=%s/CN=%s"
+    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
+    ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
     commonName: "compass"
     locality: "local"
     certSvcApiPath: "/cert"
@@ -448,6 +449,7 @@ global:
       schedule: "*/1 * * * *" # Executes every minute
       certValidity: "7"
       clientCertRetryAttempts: "8"
+      containerName: "certificate-rotation"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
@@ -604,6 +606,14 @@ global:
           connectivityAdapter: true
     ordService:
       skipPattern: ""
+      providerAccountID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
+      consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
+      providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
+      consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
+      reuseSvcSubaccountID: "321eaf48-d8fa-4c8d-8c49-4e520a0c04fb" # randomly chosen
+      externalClientCertTestSecretName: "external-client-certificate-test-secret"
+      externalClientCertTestSecretNamespace: "compass-system"
+      subscriptionProviderIdValue: "xsappname-value"
     director:
       skipPattern: ""
     namespace: kyma-system
@@ -614,6 +624,12 @@ global:
     ordServiceFQDN: http://compass-ord-service.compass-system.svc.cluster.local
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
+    externalServicesMock:
+      oauthSecretName: compass-external-services-mock-oauth-credentials-2
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      oauthUrlKey: url
+      oauthTokenPath: "/secured/oauth/token"
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1

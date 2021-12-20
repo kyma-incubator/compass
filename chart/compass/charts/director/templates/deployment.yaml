@@ -144,7 +144,7 @@ spec:
             - name: APP_INFO_API_ENDPOINT
               value: {{ .Values.global.director.info.path }}
             - name: APP_INFO_CERT_SUBJECT
-              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName | trimPrefix "/" | replace "/" ", " | quote }}
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.ouCertSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: APP_INFO_CERT_ISSUER
               value: {{ .Values.global.externalCertConfiguration.issuer }}
             - name: APP_INFO_ROOT_CA
@@ -199,7 +199,7 @@ spec:
             - name: APP_SELF_REGISTER_OAUTH_TOKEN_PATH
               value: {{ .Values.global.director.selfRegister.oauthTokenPath }}
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.director.selfRegister.distinguishLabel }}
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
             - name: APP_SELF_REGISTER_LABEL_KEY_PATTERN

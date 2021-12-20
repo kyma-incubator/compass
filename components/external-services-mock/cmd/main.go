@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/subscription"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/selfreg"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/tenantfetcher"
 
@@ -48,6 +50,9 @@ type config struct {
 	SelfRegConfig selfreg.Config
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
 
+	TenantConfig         subscription.Config
+	TenantProviderConfig subscription.ProviderConfig
+
 	CACert string `envconfig:"APP_CA_CERT"`
 	CAKey  string `envconfig:"APP_CA_KEY"`
 }
@@ -67,6 +72,7 @@ type ORDServers struct {
 type OAuthConfig struct {
 	ClientID     string `envconfig:"APP_CLIENT_ID"`
 	ClientSecret string `envconfig:"APP_CLIENT_SECRET"`
+	TokenPath    string `envconfig:"APP_TOKEN_PATH"`
 
 	Scopes       string `envconfig:"APP_OAUTH_SCOPES"`
 	TenantHeader string `envconfig:"APP_OAUTH_TENANT_HEADER"`
@@ -122,6 +128,18 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
 	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
 	router.HandleFunc(cfg.JWKSPath, jwksHanlder.Handle)
+
+	// Subscription handler
+	subHandler := subscription.NewHandler(cfg.TenantConfig, cfg.TenantProviderConfig, fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.TokenPath, cfg.ClientID, cfg.ClientSecret)
+	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Subscription).Methods(http.MethodPost)
+	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Deprovisioning).Methods(http.MethodDelete)
+
+	// on subscription callback we need to return something, in our case 200 OK should be enough
+	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", subHandler.OnSubscription).Methods(http.MethodPut)
+
+	//
+	router.HandleFunc("/v1/dependencies/configure", subHandler.DependenciesConfigure).Methods(http.MethodGet)
+	router.HandleFunc("/v1/dependencies", subHandler.Dependencies).Methods(http.MethodGet)
 
 	// CA server handlers
 	certHandler := cert.NewHandler(cfg.CACert, cfg.CAKey)

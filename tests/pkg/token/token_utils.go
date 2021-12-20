@@ -81,7 +81,7 @@ func HttpRequestBodyCloser(t *testing.T, resp *http.Response) {
 	require.NoError(t, err)
 }
 
-func FromExternalServicesMock(t *testing.T, externalServicesMockURL string, clientID string, clientSecret string, claims map[string]interface{}) string {
+func FromExternalServicesMock(t *testing.T, externalServicesMockURL, clientID, clientSecret string, claims map[string]interface{}) string {
 	data, err := json.Marshal(claims)
 	require.NoError(t, err)
 

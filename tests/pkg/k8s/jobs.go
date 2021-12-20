@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/api/batch/v1beta1"
+
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -12,10 +14,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+var gracePeriod int64 = 0
+
 func CreateJobByCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, cronJobName, jobName, namespace string) {
-	cronjob, err := k8sClient.BatchV1beta1().CronJobs(namespace).Get(ctx, cronJobName, metav1.GetOptions{})
-	require.NoError(t, err)
-	t.Logf("Got the cronjob %s", cronJobName)
+	cronjob := GetCronJob(t, ctx, k8sClient, cronJobName, namespace)
 
 	job := &v1.Job{
 		Spec: v1.JobSpec{
@@ -32,16 +34,34 @@ func CreateJobByCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes
 			Name: jobName,
 		},
 	}
+
+	CreateJobByGivenJobDefinition(t, ctx, k8sClient, jobName, namespace, job)
+}
+
+func GetCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, cronJobName, namespace string) *v1beta1.CronJob {
+	cronjob, err := k8sClient.BatchV1beta1().CronJobs(namespace).Get(ctx, cronJobName, metav1.GetOptions{})
+	require.NoError(t, err)
+	t.Logf("Got the cronjob \"%s\" from \"%s\" namespace", cronJobName, namespace)
+	return cronjob
+}
+
+func CreateJobByGivenJobDefinition(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string, job *v1.Job) {
 	t.Logf("Creating test job %s", jobName)
-	_, err = k8sClient.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
+	_, err := k8sClient.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 	require.NoError(t, err)
 	t.Logf("Test job created %s", jobName)
+}
+
+func DeleteSecret(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, secretName, namespace string) {
+	t.Logf("Deleting test secret \"%s\" in \"%s\" namespace", secretName, namespace)
+	err := k8sClient.CoreV1().Secrets(namespace).Delete(ctx, secretName, metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod, PropagationPolicy: nil})
+	require.NoError(t, err)
+	t.Logf("Test secret \"%s\" in \"%s\" namespace was successfully deleted", secretName, namespace)
 }
 
 func DeleteJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
 	t.Logf("Deleting test job %s", jobName)
 
-	var gracePeriod int64 = 0
 	propagationPolicy := metav1.DeletePropagationForeground
 	err := k8sClient.BatchV1().Jobs(namespace).Delete(ctx, jobName, metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod, PropagationPolicy: &propagationPolicy})
 

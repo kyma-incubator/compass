@@ -37,7 +37,7 @@ type HandlerConfig struct {
 	SubscriptionProviderLabelKey  string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY,default=subscriptionProviderId"`
 	ConsumerSubaccountIDsLabelKey string `envconfig:"APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY,default=consumer_subaccount_ids"`
 	TenantProviderConfig
-	features.Config
+	features.Config // TODO:: check if this is a letfover from previous tasks?
 }
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
