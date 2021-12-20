@@ -10,7 +10,7 @@ type TokenResponse struct {
 
 type Claims struct {
 	ClientId string `json:"client_id,omitempty"`
-	Scopes string `json:"scopes,omitempty"`
-	Tenant string `json:"x-zid,omitempty"`
+	Scopes   string `json:"scopes,omitempty"`
+	Tenant   string `json:"x-zid,omitempty"`
 	jwt.StandardClaims
 }
