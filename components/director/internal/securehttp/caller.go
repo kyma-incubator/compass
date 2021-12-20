@@ -13,6 +13,7 @@ import (
 	director_http "github.com/kyma-incubator/compass/components/director/pkg/http"
 )
 
+// CallerConfig holds the configuration for Caller
 type CallerConfig struct {
 	Credentials   auth.Credentials
 	ClientTimeout time.Duration

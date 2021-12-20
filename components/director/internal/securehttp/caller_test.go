@@ -3,7 +3,6 @@ package securehttp_test
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -114,7 +113,6 @@ func TestCaller_Call(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			caller := securehttp.NewCaller(testCase.Config)
 			request, err := http.NewRequest(http.MethodGet, testCase.Server.URL, nil)
-			fmt.Println(testCase.Server.URL)
 			require.NoError(t, err)
 
 			_, err = caller.Call(request)
@@ -124,7 +122,6 @@ func TestCaller_Call(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-
 		})
 	}
 }
