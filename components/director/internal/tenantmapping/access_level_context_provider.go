@@ -13,14 +13,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type tenantHeaderContextProvider struct {
+type accessLevelContextProvider struct {
 	tenantRepo TenantRepository
 	tenantKeys KeysExtra
 }
 
-// NewTenantHeaderContextProvider implements the ObjectContextProvider interface by looking tenant header and externally issued certificate.
-func NewTenantHeaderContextProvider(tenantRepo TenantRepository) *tenantHeaderContextProvider {
-	return &tenantHeaderContextProvider{
+// NewAccessLevelContextProvider implements the ObjectContextProvider interface by looking tenant header and access levels defined in the auth session extra.
+func NewAccessLevelContextProvider(tenantRepo TenantRepository) *accessLevelContextProvider {
+	return &accessLevelContextProvider{
 		tenantRepo: tenantRepo,
 		tenantKeys: KeysExtra{
 			TenantKey:         ConsumerTenantKey,
@@ -29,10 +29,9 @@ func NewTenantHeaderContextProvider(tenantRepo TenantRepository) *tenantHeaderCo
 	}
 }
 
-// GetObjectContext is the tenantHeaderContextProvider implementation of the ObjectContextProvider interface.
-// By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
-// There we should only convert the tenant identifier from external to internal.
-func (p *tenantHeaderContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+// GetObjectContext is the accessLevelContextProvider implementation of the ObjectContextProvider interface.
+// It receives the tenant information extracted from the tenant header in this case, and it verifies that the caller has access to this tenant.
+func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	consumerType := reqData.ConsumerType()
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumerType,
@@ -68,17 +67,16 @@ func (p *tenantHeaderContextProvider) GetObjectContext(ctx context.Context, reqD
 	return objCtx, nil
 }
 
-// Match will only match requests coming from
-func (p *tenantHeaderContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
-	// External certificate flow + tenant header
+// Match will only match requests coming from certificate consumers that are able to access only a subset of tenants.
+func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	if len(data.TenantAccessLevels()) == 0 {
+		return false, nil, nil
+	}
+
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
 
 	if idVal == "" || certIssuer != oathkeeper.ExternalIssuer {
-		return false, nil, nil
-	}
-
-	if data.ConsumerType() != model.IntegrationSystemReference {
 		return false, nil, nil
 	}
 
@@ -92,7 +90,7 @@ func (p *tenantHeaderContextProvider) Match(_ context.Context, data oathkeeper.R
 	return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
 }
 
-func (p *tenantHeaderContextProvider) verifyTenantAccessLevels(tenant *model.BusinessTenantMapping, authDetails oathkeeper.AuthDetails, reqData oathkeeper.ReqData) error {
+func (p *accessLevelContextProvider) verifyTenantAccessLevels(tenant *model.BusinessTenantMapping, authDetails oathkeeper.AuthDetails, reqData oathkeeper.ReqData) error {
 	grantedAccessLevels := reqData.TenantAccessLevels()
 	var accessLevelExists bool
 	for _, al := range grantedAccessLevels {

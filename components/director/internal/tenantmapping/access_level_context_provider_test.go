@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTenantHeaderContextProvider(t *testing.T) {
+func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	testError := errors.New("test error")
 	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
 	tenantKeyNotFoundErr := apperrors.NewKeyDoesNotExistError(string(resource.Tenant))
@@ -124,7 +124,7 @@ func TestTenantHeaderContextProvider(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			tenantRepo := testCase.TenantRepoFn()
-			provider := tenantmapping.NewTenantHeaderContextProvider(tenantRepo)
+			provider := tenantmapping.NewAccessLevelContextProvider(tenantRepo)
 			// WHEN
 			objectCtx, err := provider.GetObjectContext(emptyCtx, testCase.ReqDataInput, testCase.AuthDetailsInput)
 
@@ -146,10 +146,11 @@ func TestTenantHeaderContextProvider(t *testing.T) {
 	}
 }
 
-func TestTenantHeaderContextProviderMatch(t *testing.T) {
-	provider := tenantmapping.NewTenantHeaderContextProvider(nil)
+func TestAccessLevelContextProvider_Match(t *testing.T) {
+	provider := tenantmapping.NewAccessLevelContextProvider(nil)
 	clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 	tenantHeader := "123"
+	accessLevels := []interface{}{"account"}
 	t.Run("returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map of request body", func(t *testing.T) {
 		reqData := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
@@ -159,7 +160,7 @@ func TestTenantHeaderContextProviderMatch(t *testing.T) {
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
 				},
 				Extra: map[string]interface{}{
-					cert.ConsumerTypeExtraField: string(model.IntegrationSystemReference),
+					cert.AccessLevelsExtraField: accessLevels,
 				},
 			},
 		}
@@ -197,7 +198,7 @@ func TestTenantHeaderContextProviderMatch(t *testing.T) {
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):   []string{clientID},
 				},
 				Extra: map[string]interface{}{
-					cert.ConsumerTypeExtraField: string(model.IntegrationSystemReference),
+					cert.AccessLevelsExtraField: accessLevels,
 				},
 			},
 		}
@@ -216,7 +217,7 @@ func TestTenantHeaderContextProviderMatch(t *testing.T) {
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
 				},
 				Extra: map[string]interface{}{
-					cert.ConsumerTypeExtraField: string(model.IntegrationSystemReference),
+					cert.ConsumerTypeExtraField: accessLevels,
 				},
 			},
 		}

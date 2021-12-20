@@ -438,7 +438,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 		tenantmapping.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(systemAuthSvc, cfgProvider, tenantRepo),
 		tenantmapping.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(tenantRepo, authenticators),
 		tenantmapping.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(tenantRepo, cfgProvider),
-		tenantmapping.TenantHeaderObjectContextProvider:  tenantmapping.NewTenantHeaderContextProvider(tenantRepo),
+		tenantmapping.TenantHeaderObjectContextProvider:  tenantmapping.NewAccessLevelContextProvider(tenantRepo),
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
