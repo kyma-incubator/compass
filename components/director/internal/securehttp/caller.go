@@ -4,11 +4,22 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	director_http "github.com/kyma-incubator/compass/components/director/pkg/http"
 )
+
+type CallerConfig struct {
+	Credentials   auth.Credentials
+	ClientTimeout time.Duration
+
+	SkipSSLValidation bool
+	Cache             certloader.Cache
+}
 
 // Caller can be used to call secured http endpoints with given credentials
 type Caller struct {
@@ -19,17 +30,28 @@ type Caller struct {
 }
 
 // NewCaller creates a new Caller
-func NewCaller(credentials auth.Credentials, clientTimeout time.Duration) *Caller {
+func NewCaller(config CallerConfig) *Caller {
 	c := &Caller{
-		credentials: credentials,
-		client:      &http.Client{Timeout: clientTimeout},
+		credentials: config.Credentials,
+		client:      &http.Client{Timeout: config.ClientTimeout},
 	}
 
-	switch credentials.Type() {
+	switch config.Credentials.Type() {
 	case auth.BasicCredentialType:
 		c.provider = auth.NewBasicAuthorizationProvider()
 	case auth.OAuthCredentialType:
-		c.provider = auth.NewTokenAuthorizationProvider(&http.Client{Timeout: clientTimeout})
+		// TODO  When the change for fetching xsuaa token
+		// with certificate is merged mtlsTokenAuthorizationProvider should be used so this if has to be removed
+		oAuthCredentials, ok := config.Credentials.Get().(*auth.OAuthCredentials)
+		if ok && oAuthCredentials.ClientSecret == "" {
+			oauthCfg := oauth.Config{
+				TokenRequestTimeout: config.ClientTimeout,
+				SkipSSLValidation:   config.SkipSSLValidation,
+			}
+			c.provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, config.Cache, auth.DefaultMtlsClientCreator)
+		} else {
+			c.provider = auth.NewTokenAuthorizationProvider(&http.Client{Timeout: config.ClientTimeout})
+		}
 	}
 	c.client.Transport = director_http.NewCorrelationIDTransport(director_http.NewSecuredTransport(http.DefaultTransport, c.provider))
 	return c
