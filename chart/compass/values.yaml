@@ -164,7 +164,6 @@ global:
       nameQueryParam: "name"
       tenantQueryParam: "tenant"
       requestBodyPattern: '{"key": "%s"}'
-      skipSSLValidation: true
 
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
