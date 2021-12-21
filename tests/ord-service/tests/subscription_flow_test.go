@@ -28,6 +28,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -39,17 +40,17 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func TestSelfRegisterFlow(t *testing.T) {
+func TestSelfRegisterFlow(stdT *testing.T) {
+	t := testingx.NewT(stdT)
 	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
 		ctx := context.Background()
 		distinguishLblValue := "test-distinguish-value"
 
 		// defaultTenantId is the parent of the subaccountID
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
-		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 		// Build graphql director client configured with certificate
-		clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subaccountID)
+		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
 
 		// Register application
@@ -102,7 +103,8 @@ func TestSelfRegisterFlow(t *testing.T) {
 	})
 }
 
-func TestConsumerProviderFlow(t *testing.T) {
+func TestConsumerProviderFlow(stdT *testing.T) {
+	t := testingx.NewT(stdT)
 	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
 		ctx := context.Background()
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
@@ -112,7 +114,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 		subscriptionConsumerSubaccountID := "1f538f34-30bf-4d3d-aeaa-02e69eef84ae"
 
 		// Build graphql director client configured with certificate
-		clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subscriptionProviderSubaccountID)
+		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
 
 		runtimeInput := graphql.RuntimeInput{
@@ -195,7 +197,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 		defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[1])
 
 		// HTTP client configured with manually signed client certificate
-		extIssuerCertHttpClient := extIssuerCertClient(t, subscriptionProviderSubaccountID)
+		extIssuerCertHttpClient := extIssuerCertClient(clientKey, rawCertChain, true)
 
 		// Create a token with the necessary consumer claims and add it in authorization header
 		claims := map[string]interface{}{

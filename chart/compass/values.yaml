@@ -220,7 +220,7 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_level": "account", "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=p8075207-1478-4a80-bd26-24a4785a2bfp, CN=compass"}]' # TODO:: invalid OU SA to workaround a bug. Change it to f8075207-1478-4a80-bd26-24a4785a2bfd after bug resolution
+    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_level": "account", "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}]'
 
   system_broker:
     enabled: true
@@ -603,8 +603,6 @@ global:
           ordService: false
           connectivityAdapter: true
     ordService:
-      skipPattern: ""
-    director:
       skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local

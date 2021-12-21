@@ -14,7 +14,7 @@ metadata:
 rules:
 - apiGroups: ["*"]
   resources: ["secrets"]
-  resourceNames: ["{{ .Values.global.connector.secrets.ca.name }}","{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"] # TODO:: Remove connector secret after everything is adapted and works with external secret
+  resourceNames: ["{{ .Values.global.connector.secrets.ca.name }}","{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"]
   verbs: ["get"]
 ---
 kind: RoleBinding

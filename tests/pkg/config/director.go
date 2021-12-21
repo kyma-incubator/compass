@@ -13,8 +13,7 @@ type DirectorConfig struct {
 	DefaultNormalizationPrefix     string `envconfig:"default=mp-"`
 	GatewayOauth                   string
 	DirectorExternalCertSecuredURL string
-	SkipSSLValidation              bool   `envconfig:"default=false"`
-	CA                             certs.CAConfig // TODO:: Remove after everything is adapted
+	SkipSSLValidation              bool `envconfig:"default=false"`
 	ExternalCA                     certs.CAConfig
 }
 
