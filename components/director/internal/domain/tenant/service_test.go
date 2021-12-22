@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

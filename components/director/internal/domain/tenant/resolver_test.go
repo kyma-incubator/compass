@@ -2,8 +2,9 @@ package tenant_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
