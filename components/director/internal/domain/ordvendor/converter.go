@@ -22,12 +22,13 @@ func (c *converter) ToEntity(in *model.Vendor) *Entity {
 	}
 
 	output := &Entity{
-		ID:            in.ID,
-		OrdID:         in.OrdID,
-		ApplicationID: in.ApplicationID,
-		Title:         in.Title,
-		Partners:      repo.NewNullableStringFromJSONRawMessage(in.Partners),
-		Labels:        repo.NewNullableStringFromJSONRawMessage(in.Labels),
+		ID:                  in.ID,
+		OrdID:               in.OrdID,
+		ApplicationID:       in.ApplicationID,
+		Title:               in.Title,
+		Partners:            repo.NewNullableStringFromJSONRawMessage(in.Partners),
+		Labels:              repo.NewNullableStringFromJSONRawMessage(in.Labels),
+		DocumentationLabels: repo.NewNullableStringFromJSONRawMessage(in.DocumentationLabels),
 	}
 
 	return output
@@ -40,12 +41,13 @@ func (c *converter) FromEntity(entity *Entity) (*model.Vendor, error) {
 	}
 
 	output := &model.Vendor{
-		ID:            entity.ID,
-		OrdID:         entity.OrdID,
-		ApplicationID: entity.ApplicationID,
-		Title:         entity.Title,
-		Partners:      repo.JSONRawMessageFromNullableString(entity.Partners),
-		Labels:        repo.JSONRawMessageFromNullableString(entity.Labels),
+		ID:                  entity.ID,
+		OrdID:               entity.OrdID,
+		ApplicationID:       entity.ApplicationID,
+		Title:               entity.Title,
+		Partners:            repo.JSONRawMessageFromNullableString(entity.Partners),
+		Labels:              repo.JSONRawMessageFromNullableString(entity.Labels),
+		DocumentationLabels: repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 	}
 
 	return output, nil

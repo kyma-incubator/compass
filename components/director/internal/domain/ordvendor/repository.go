@@ -14,8 +14,8 @@ import (
 const vendorTable string = `public.vendors`
 
 var (
-	vendorColumns    = []string{"ord_id", "app_id", "title", "labels", "partners", "id"}
-	updatableColumns = []string{"title", "labels", "partners"}
+	vendorColumns    = []string{"ord_id", "app_id", "title", "labels", "partners", "id", "documentation_labels"}
+	updatableColumns = []string{"title", "labels", "partners", "documentation_labels"}
 )
 
 // EntityConverter missing godoc
