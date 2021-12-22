@@ -1364,13 +1364,14 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
-			Name: "Missing `shortDescription` field for Bundle",
+			Name: "Valid missing `shortDescription` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].ShortDescription = nil
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Exceeded length of `shortDescription` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
@@ -1381,13 +1382,14 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
-			Name: "Invalid empty `shortDescription` field for Bundle",
+			Name: "Valid empty `shortDescription` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].ShortDescription = str.Ptr("")
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		},
 		{
 			Name: "New lines in `shortDescription` field for Bundle",
@@ -1399,13 +1401,14 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
-			Name: "Missing `description` field for Bundle",
+			Name: "Valid missing `description` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].Description = nil
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		},
 		{
 			Name: "Exceeded length of `description` field for Bundle",
@@ -1417,13 +1420,14 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
-			Name: "Invalid empty `description` field for Bundle",
+			Name: "Valid empty `description` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].Description = str.Ptr("")
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		},
 		{
 			Name: "New lines in `description` field for Bundle",
