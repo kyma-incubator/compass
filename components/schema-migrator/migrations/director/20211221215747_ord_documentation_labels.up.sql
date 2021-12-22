@@ -86,7 +86,7 @@ ALTER TABLE applications ADD COLUMN documentation_labels JSONB;
 
 -- ord documentation labels view
 
-CREATE VIEW ord_documentation_labels AS
+CREATE OR REPLACE VIEW ord_documentation_labels AS
 SELECT *
 FROM (SELECT packages.id    AS package_id,
              NULL::uuid     AS api_definition_id,
