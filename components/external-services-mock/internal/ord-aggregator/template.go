@@ -156,18 +156,18 @@ const ordDocument = `{
          ]
       },
       {
-         "title":"BUNDLE WITHOUT DESCRIPTIONS",
+         "title":"BUNDLE TITLE 2"
          "ordId":"ns:consumptionBundle:BUNDLE_ID:v2",
-         "links":[
+         "credentialExchangeStrategies":[
             {
-               "description":"loremipsumdolornem",
-               "title":"LinkTitle",
-               "url":"https://example.com/2018/04/11/testing/"
+               "callbackUrl":"/credentials/relative",
+               "customType":"ns:credential-exchange:v1",
+               "type":"custom"
             },
             {
-               "description":"loremipsumdolornem",
-               "title":"LinkTitle",
-               "url":"/testing/relative"
+               "callbackUrl":"http://example.com/credentials",
+               "customType":"ns:credential-exchange2:v3",
+               "type":"custom"
             }
          ],
 		 "correlationIds": [
@@ -181,45 +181,8 @@ const ordDocument = `{
             ]
          },
 		 "documentationLabels": {
-			"ConsumptionBundle documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+			"ConsumptionBundle doc labels": ["Markdown Documentation [with links](#)", "With multiple values"]
 		 },
-         "credentialExchangeStrategies":[
-            {
-               "callbackUrl":"/credentials/relative",
-               "customType":"ns:credential-exchange:v1",
-               "type":"custom"
-            },
-            {
-               "callbackUrl":"http://example.com/credentials",
-               "customType":"ns:credential-exchange2:v3",
-               "type":"custom"
-            }
-         ]
-      },
-      {
-         "credentialExchangeStrategies":[
-            {
-               "callbackUrl":"/credentials/relative",
-               "customType":"ns:credential-exchange:v1",
-               "type":"custom"
-            },
-            {
-               "callbackUrl":"http://example.com/credentials",
-               "customType":"ns:credential-exchange2:v3",
-               "type":"custom"
-            }
-         ],
-         "description":"foo bar",
-		 "correlationIds": [
-			"sap.s4:communicationScenario:SAP_COM_0001",
-			"sap.s4:communicationScenario:SAP_COM_0002"
-		 ],
-         "labels":{
-            "label-key-1":[
-               "label-value-1",
-               "label-value-2"
-            ]
-         },
          "links":[
             {
                "description":"loremipsumdolornem",
@@ -231,10 +194,7 @@ const ordDocument = `{
                "title":"LinkTitle",
                "url":"/testing/relative"
             }
-         ],
-         "ordId":"ns:consumptionBundle:BUNDLE_ID:v2",
-         "shortDescription":"foo",
-         "title":"BUNDLE TITLE 2"
+         ]
       }
    ],
    "products":[
