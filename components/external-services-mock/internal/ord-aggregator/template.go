@@ -27,7 +27,7 @@ const ordConfig = `{
 // describedSystemInstance.baseUrl should be the same as the url of external services mock in the cluster
 const ordDocument = `{
    "$schema":"./spec/v1/generated/Document.schema.json",
-   "openResourceDiscovery":"1.0",
+   "openResourceDiscovery":"1.2",
    "description":"Test Document",
    "describedSystemInstance":{
       "ProviderName":null,
@@ -44,7 +44,10 @@ const ordDocument = `{
             "label-value-1",
             "label-value-2"
          ]
-      }
+      },
+	  "documentationLabels": {
+		 "System documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+	  }
    },
    "packages":[
       {
@@ -92,6 +95,9 @@ const ordDocument = `{
                "label-val"
             ]
          },
+		 "documentationLabels": {
+			"Packages documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+		 },
          "policyLevel":"sap:core:v1",
          "customPolicyLevel":null,
          "partOfProducts":[
@@ -136,6 +142,47 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+         "credentialExchangeStrategies":[
+            {
+               "callbackUrl":"/credentials/relative",
+               "customType":"ns:credential-exchange:v1",
+               "type":"custom"
+            },
+            {
+               "callbackUrl":"http://example.com/credentials",
+               "customType":"ns:credential-exchange2:v3",
+               "type":"custom"
+            }
+         ]
+      },
+      {
+         "title":"BUNDLE WITHOUT DESCRIPTIONS",
+         "ordId":"ns:consumptionBundle:BUNDLE_ID:v2",
+         "links":[
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle",
+               "url":"https://example.com/2018/04/11/testing/"
+            },
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle",
+               "url":"/testing/relative"
+            }
+         ],
+		 "correlationIds": [
+			"sap.s4:communicationScenario:SAP_COM_0001",
+			"sap.s4:communicationScenario:SAP_COM_0002"
+		 ],
+         "labels":{
+            "label-key-1":[
+               "label-value-1",
+               "label-value-2"
+            ]
+         },
+		 "documentationLabels": {
+			"ConsumptionBundle documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+		 },
          "credentialExchangeStrategies":[
             {
                "callbackUrl":"/credentials/relative",
@@ -206,7 +253,10 @@ const ordDocument = `{
                "label-value-1",
                "label-value-2"
             ]
-         }
+         },
+		 "documentationLabels": {
+			"Products documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+		 }
       }
    ],
    "apiResources":[
@@ -268,6 +318,9 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+		 "documentationLabels": {
+			"API definition documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+		 },
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
@@ -506,6 +559,9 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+		 "documentationLabels": {
+			"Event documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+		 },
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
@@ -657,7 +713,10 @@ const ordDocument = `{
                "label-value-1",
                "label-value-2"
             ]
-         }
+         },
+		 "documentationLabels": {
+			"Vendors documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+		 }
       },
       {
          "ordId":"partner:vendor:SAP:",
