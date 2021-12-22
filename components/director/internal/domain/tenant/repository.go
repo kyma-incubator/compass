@@ -34,6 +34,7 @@ const (
 
 var (
 	idColumn                  = "id"
+	idColumnCasted            = "id::text"
 	externalNameColumn        = "external_name"
 	externalTenantColumn      = "external_tenant"
 	parentColumn              = "parent"
@@ -45,6 +46,7 @@ var (
 	insertColumns      = []string{idColumn, externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}
 	conflictingColumns = []string{externalTenantColumn}
 	updateColumns      = []string{externalNameColumn}
+	searchColumns      = []string{idColumnCasted, externalNameColumn, externalTenantColumn}
 )
 
 // Converter converts tenants between the model.BusinessTenantMapping service-layer representation of a tenant and the repo-layer representation tenant.Entity.
@@ -55,13 +57,14 @@ type Converter interface {
 }
 
 type pgRepository struct {
-	upserter           repo.UpserterGlobal
-	unsafeCreator      repo.UnsafeCreator
-	existQuerierGlobal repo.ExistQuerierGlobal
-	singleGetterGlobal repo.SingleGetterGlobal
-	listerGlobal       repo.ListerGlobal
-	updaterGlobal      repo.UpdaterGlobal
-	deleterGlobal      repo.DeleterGlobal
+	upserter              repo.UpserterGlobal
+	unsafeCreator         repo.UnsafeCreator
+	existQuerierGlobal    repo.ExistQuerierGlobal
+	singleGetterGlobal    repo.SingleGetterGlobal
+	pageableQuerierGlobal repo.PageableQuerierGlobal
+	listerGlobal          repo.ListerGlobal
+	updaterGlobal         repo.UpdaterGlobal
+	deleterGlobal         repo.DeleterGlobal
 
 	conv Converter
 }
@@ -69,14 +72,15 @@ type pgRepository struct {
 // NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		upserter:           repo.NewUpserterGlobal(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
-		unsafeCreator:      repo.NewUnsafeCreator(resource.Tenant, tableName, insertColumns, conflictingColumns),
-		existQuerierGlobal: repo.NewExistQuerierGlobal(resource.Tenant, tableName),
-		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
-		listerGlobal:       repo.NewListerGlobal(resource.Tenant, tableName, insertColumns),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
-		deleterGlobal:      repo.NewDeleterGlobal(resource.Tenant, tableName),
-		conv:               conv,
+		upserter:              repo.NewUpserterGlobal(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
+		unsafeCreator:         repo.NewUnsafeCreator(resource.Tenant, tableName, insertColumns, conflictingColumns),
+		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.Tenant, tableName),
+		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
+		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.Tenant, tableName, insertColumns),
+		listerGlobal:          repo.NewListerGlobal(resource.Tenant, tableName, insertColumns),
+		updaterGlobal:         repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
+		deleterGlobal:         repo.NewDeleterGlobal(resource.Tenant, tableName),
+		conv:                  conv,
 	}
 }
 
@@ -153,6 +157,51 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 		items = append(items, tmModel)
 	}
 	return items, nil
+}
+
+func (r *pgRepository) buildSearchCondition(fields []string, searchTerm string) string {
+	var stmtBuilder strings.Builder
+
+	lastIdx := len(fields) - 1
+
+	for idx, field := range fields {
+		if idx != lastIdx {
+			stmt := fmt.Sprintf(`%s ILIKE '%%%s%%' OR `, field, searchTerm)
+			stmtBuilder.WriteString(stmt)
+			continue
+		}
+
+		stmt := fmt.Sprintf(`%s ILIKE '%%%s%%'`, field, searchTerm)
+		stmtBuilder.WriteString(stmt)
+	}
+	return stmtBuilder.String()
+}
+
+func (r *pgRepository) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
+	var entityCollection tenant.EntityCollection
+
+	selectColumns := strings.Join(insertColumns, ", ")
+	query := fmt.Sprintf(`SELECT DISTINCT %s
+			FROM %s
+			WHERE %s = $1 AND (%s)`, selectColumns, tableName, statusColumn, r.buildSearchCondition(searchColumns, searchTerm))
+
+	page, totalCount, err := r.pageableQuerierGlobal.ListWithQueryGlobal(ctx, query, []interface{}{tenant.Active}, externalNameColumn, pageSize, cursor, &entityCollection)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing tenants from DB")
+	}
+
+	items := make([]*model.BusinessTenantMapping, 0, len(entityCollection))
+
+	for _, entity := range entityCollection {
+		tmModel := r.conv.FromEntity(&entity)
+		items = append(items, tmModel)
+	}
+
+	return &model.BusinessTenantMappingPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page,
+	}, nil
 }
 
 // Update updates the values of tenant with matching internal, and external IDs.

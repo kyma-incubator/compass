@@ -22,6 +22,7 @@ type PageableQuerier interface {
 // PageableQuerierGlobal is an interface for listing with paging of global entities.
 type PageableQuerierGlobal interface {
 	ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error)
+	ListWithQueryGlobal(ctx context.Context, query string, args []interface{}, orderByColumn string, pageSize int, cursor string, dest Collection) (*pagination.Page, int, error)
 }
 
 type universalPageableQuerier struct {
@@ -90,6 +91,11 @@ func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int,
 	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 
+// ListGlobal lists a page of global entities without tenant isolation.
+func (g *universalPageableQuerier) ListWithQueryGlobal(ctx context.Context, query string, args []interface{}, orderByColumn string, pageSize int, cursor string, dest Collection) (*pagination.Page, int, error) {
+	return g.listWithQuery(ctx, query, args, orderByColumn, g.resourceType, pageSize, cursor, dest)
+}
+
 func (g *universalPageableQuerier) list(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions ...Condition) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -124,17 +130,57 @@ func (g *universalPageableQuerier) list(ctx context.Context, resourceType resour
 		return nil, -1, err
 	}
 
-	hasNextPage := false
-	endCursor := ""
-	if totalCount > offset+dest.Len() {
-		hasNextPage = true
-		endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
-	}
+	hasNextPage, endCursor := g.getNextPageAndCursor(totalCount, offset, pageSize, dest.Len())
 	return &pagination.Page{
 		StartCursor: cursor,
 		EndCursor:   endCursor,
 		HasNextPage: hasNextPage,
 	}, totalCount, nil
+}
+
+func (g *universalPageableQuerier) listWithQuery(ctx context.Context, query string, args []interface{}, orderedColumn string, resourceType resource.Type, pageSize int, cursor string, dest Collection) (*pagination.Page, int, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, -1, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	paginationSQL, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset, orderedColumn)
+	if err != nil {
+		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
+	}
+
+	stmtWithPagination := fmt.Sprintf("%s %s", query, paginationSQL)
+	err = persist.SelectContext(ctx, dest, stmtWithPagination, args...)
+	if err != nil {
+		return nil, -1, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list page of objects from '%s' table", g.tableName)
+	}
+
+	totalCount, err := g.getTotalCount(ctx, resourceType, persist, query, args)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	hasNextPage, endCursor := g.getNextPageAndCursor(totalCount, offset, pageSize, dest.Len())
+	return &pagination.Page{
+		StartCursor: cursor,
+		EndCursor:   endCursor,
+		HasNextPage: hasNextPage,
+	}, totalCount, nil
+}
+
+func (g *universalPageableQuerier) getNextPageAndCursor(totalCount, offset, pageSize, totalLen int) (bool, string) {
+	hasNextPage := false
+	endCursor := ""
+	if totalCount > offset+totalLen {
+		hasNextPage = true
+		endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
+	}
+	return hasNextPage, endCursor
 }
 
 func (g *universalPageableQuerier) getTotalCount(ctx context.Context, resourceType resource.Type, persist persistence.PersistenceOp, query string, args []interface{}) (int, error) {

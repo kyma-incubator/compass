@@ -1,6 +1,9 @@
 package model
 
-import "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+)
 
 // BusinessTenantMapping missing godoc
 type BusinessTenantMapping struct {
@@ -75,4 +78,11 @@ func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *Busines
 func (i BusinessTenantMappingInput) WithExternalTenant(externalTenant string) BusinessTenantMappingInput {
 	i.ExternalTenant = externalTenant
 	return i
+}
+
+// BusinessTenantMappingPage missing godoc
+type BusinessTenantMappingPage struct {
+	Data       []*BusinessTenantMapping
+	PageInfo   *pagination.Page
+	TotalCount int
 }
