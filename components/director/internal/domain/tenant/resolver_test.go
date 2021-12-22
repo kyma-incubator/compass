@@ -2,6 +2,7 @@ package tenant_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"testing"
 
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -27,14 +28,39 @@ func TestResolver_Tenants(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
 	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	first := 2
+	gqlAfter := graphql.PageCursor("test")
+	searchTerm := ""
+
 	modelTenants := []*model.BusinessTenantMapping{
 		newModelBusinessTenantMapping(testID, testName),
 		newModelBusinessTenantMapping("test1", "name1"),
 	}
 
-	graphqlTenants := []*graphql.Tenant{
+	modelTenantsPage := &model.BusinessTenantMappingPage{
+		Data: modelTenants,
+		PageInfo: &pagination.Page{
+			StartCursor: "",
+			EndCursor:   string(gqlAfter),
+			HasNextPage: true,
+		},
+		TotalCount: 3,
+	}
+
+	gqlTenants := []*graphql.Tenant{
 		newGraphQLTenant(testID, "", testName),
 		newGraphQLTenant("test1", "", "name1"),
+	}
+
+	gqlTenantsPage := &graphql.TenantPage{
+		Data:       gqlTenants,
+		TotalCount: modelTenantsPage.TotalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(modelTenantsPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(modelTenantsPage.PageInfo.EndCursor),
+			HasNextPage: modelTenantsPage.PageInfo.HasNextPage,
+		},
 	}
 
 	testCases := []struct {
@@ -42,7 +68,8 @@ func TestResolver_Tenants(t *testing.T) {
 		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		TenantSvcFn    func() *automock.BusinessTenantMappingService
 		TenantConvFn   func() *automock.BusinessTenantMappingConverter
-		ExpectedOutput []*graphql.Tenant
+		first          *int
+		ExpectedOutput *graphql.TenantPage
 		ExpectedError  error
 	}{
 		{
@@ -50,25 +77,27 @@ func TestResolver_Tenants(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(modelTenants, nil).Once()
+				TenantSvc.On("ListPageBySearchTerm", txtest.CtxWithDBMatcher(), searchTerm, first, string(gqlAfter)).Return(modelTenantsPage, nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				TenantConv := &automock.BusinessTenantMappingConverter{}
-				TenantConv.On("MultipleToGraphQL", modelTenants).Return(graphqlTenants).Once()
+				TenantConv.On("MultipleToGraphQL", modelTenants).Return(gqlTenants).Once()
 				return TenantConv
 			},
-			ExpectedOutput: graphqlTenants,
+			first:          &first,
+			ExpectedOutput: gqlTenantsPage,
 		},
 		{
 			Name: "Returns error when getting tenants failed",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, testError).Once()
+				TenantSvc.On("ListPageBySearchTerm", txtest.CtxWithDBMatcher(), searchTerm, first, string(gqlAfter)).Return(nil, testError).Once()
 				return TenantSvc
 			},
 			TenantConvFn:  unusedTenantConverter,
+			first:         &first,
 			ExpectedError: testError,
 		},
 		{
@@ -76,6 +105,7 @@ func TestResolver_Tenants(t *testing.T) {
 			TxFn:          txGen.ThatFailsOnBegin,
 			TenantSvcFn:   unusedTenantService,
 			TenantConvFn:  unusedTenantConverter,
+			first:         &first,
 			ExpectedError: testError,
 		},
 		{
@@ -83,11 +113,24 @@ func TestResolver_Tenants(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(modelTenants, nil).Once()
+				TenantSvc.On("ListPageBySearchTerm", txtest.CtxWithDBMatcher(), searchTerm, first, string(gqlAfter)).Return(modelTenantsPage, nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn:  unusedTenantConverter,
+			first:         &first,
 			ExpectedError: testError,
+		},
+		{
+			Name: "Returns error when 'first' parameter is missing",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.AssertNotCalled(t, "ListPageBySearchTerm")
+				return TenantSvc
+			},
+			TenantConvFn:  unusedTenantConverter,
+			first:         nil,
+			ExpectedError: testFirstParameterMissingError,
 		},
 	}
 
@@ -99,7 +142,7 @@ func TestResolver_Tenants(t *testing.T) {
 			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
 
 			// WHEN
-			result, err := resolver.Tenants(ctx)
+			result, err := resolver.Tenants(ctx, testCase.first, &gqlAfter, &searchTerm)
 
 			// THEN
 			if testCase.ExpectedError != nil {
