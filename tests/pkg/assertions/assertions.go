@@ -516,29 +516,6 @@ func AssertMultipleEntitiesFromORDService(t *testing.T, respBody string, entitie
 	}
 }
 
-type Labels map[string][]string
-
-func AssertLabelsFromORDService(t *testing.T, respBody string, entitiesMap map[string]Labels, expectedNumber int) {
-	numberOfEntities := len(gjson.Get(respBody, "value").Array())
-	require.Equal(t, expectedNumber, numberOfEntities)
-
-	for i := 0; i < numberOfEntities; i++ {
-		entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
-		require.NotEmpty(t, entityTitle)
-
-		expectedEntityLabels, exists := entitiesMap[entityTitle]
-		require.True(t, exists)
-
-		actualEntityLabels := gjson.Get(respBody, fmt.Sprintf("value.%d.labels", i)).Array()
-		actualLabelsAsString := make([]string, 0)
-		for _, label := range actualEntityLabels {
-			labelAsString := gjson.Get(label.String(), "value").String()
-			actualLabelsAsString = append(actualLabelsAsString, labelAsString)
-		}
-		assert.ElementsMatch(t, expectedEntityLabels, actualLabelsAsString)
-	}
-}
-
 func AssertBundleCorrelationIds(t *testing.T, respBody string, entitiesMap map[string][]string, expectedNumber int) {
 	numberOfEntities := len(gjson.Get(respBody, "value").Array())
 	require.Equal(t, expectedNumber, numberOfEntities)

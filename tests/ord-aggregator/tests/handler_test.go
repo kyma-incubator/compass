@@ -122,17 +122,6 @@ func TestORDAggregator(t *testing.T) {
 		systemInstancesMap[expectedFifthSystemInstanceName] = expectedFifthSystemInstanceDescription
 		systemInstancesMap[expectedSixthSystemInstanceName] = expectedSixthSystemInstanceDescription
 
-		systemInstancesLabels := make(map[string]assertions.Labels)
-		labelValues := []string{"label-value-1", "label-value-2"}
-		labelsMap := make(map[string][]string)
-		labelsMap["label-key-1"] = labelValues
-		systemInstancesLabels[expectedSystemInstanceName] = labelsMap
-		systemInstancesLabels[expectedSecondSystemInstanceName] = labelsMap
-		systemInstancesLabels[expectedThirdSystemInstanceName] = labelsMap
-		systemInstancesLabels[expectedFourthSystemInstanceName] = labelsMap
-		systemInstancesLabels[expectedFifthSystemInstanceName] = labelsMap
-		systemInstancesLabels[expectedSixthSystemInstanceName] = labelsMap
-
 		apisDefaultBundleMap := make(map[string]string)
 		apisDefaultBundleMap[firstAPIExpectedTitle] = firstBundleOrdID
 
@@ -238,7 +227,6 @@ func TestORDAggregator(t *testing.T) {
 				return false
 			}
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, systemInstancesMap, expectedNumberOfSystemInstances)
-			assertions.AssertLabelsFromORDService(t, respBody, systemInstancesLabels, expectedNumberOfSystemInstances)
 
 			// Verify packages
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
