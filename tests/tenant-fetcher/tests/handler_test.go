@@ -126,9 +126,9 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(oldTenantState)+2, len(tenants))
-		assertTenantExists(t, tenants, tenantWithCustomer.TenantID)
-		assertTenantExists(t, tenants, tenantWithCustomer.CustomerID)
+		assert.Equal(t, len(oldTenantState.Data)+2, len(tenants.Data))
+		assertTenantExists(t, tenants.Data, tenantWithCustomer.TenantID)
+		assertTenantExists(t, tenants.Data, tenantWithCustomer.CustomerID)
 	})
 
 	t.Run("Should fail when no tenantID is provided", func(t *testing.T) {
@@ -146,7 +146,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(oldTenantState), len(tenants))
+		assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
 	})
 
 	t.Run("Should fail when no subdomain is provided", func(t *testing.T) {
@@ -165,7 +165,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(oldTenantState), len(tenants))
+		assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
 	})
 
 	t.Run("Should fail when no SubscriptionProviderID is provided", func(t *testing.T) {
@@ -184,7 +184,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(oldTenantState), len(tenants))
+		assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
 	})
 
 	t.Run("Should fail with subaccount tenant", func(t *testing.T) {
@@ -231,7 +231,7 @@ func TestDecommissioningHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(oldTenantState), len(newTenantState))
+		assert.Equal(t, len(oldTenantState.Data), len(newTenantState.Data))
 	})
 }
 
@@ -358,7 +358,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 
 			// THEN
 			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
-			assert.Equal(t, len(oldTenantState)+2, len(tenants))
+			assert.Equal(t, len(oldTenantState.Data)+2, len(tenants.Data))
 		})
 
 		t.Run("Should fail when parent tenantID is not provided", func(t *testing.T) {
@@ -378,7 +378,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenants, err := fixtures.GetTenants(dexGraphQLClient)
 			require.NoError(t, err)
-			assert.Equal(t, len(oldTenantState), len(tenants))
+			assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
 		})
 
 		t.Run("Should fail when subdomain is not provided", func(t *testing.T) {
@@ -398,7 +398,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenants, err := fixtures.GetTenants(dexGraphQLClient)
 			require.NoError(t, err)
-			assert.Equal(t, len(oldTenantState), len(tenants))
+			assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
 		})
 
 		t.Run("Should fail when SubscriptionProviderID is not provided", func(t *testing.T) {
@@ -417,7 +417,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenants, err := fixtures.GetTenants(dexGraphQLClient)
 			require.NoError(t, err)
-			assert.Equal(t, len(oldTenantState), len(tenants))
+			assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
 		})
 	})
 }
