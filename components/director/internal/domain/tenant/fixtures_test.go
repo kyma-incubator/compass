@@ -30,9 +30,8 @@ const (
 )
 
 var (
-	testError                      = errors.New("test error")
-	testFirstParameterMissingError = errors.New("Invalid data [reason=missing required parameter 'first']")
-	testTableColumns               = []string{"id", "external_name", "external_tenant", "parent", "type", "provider_name", "status"}
+	testError        = errors.New("test error")
+	testTableColumns = []string{"id", "external_name", "external_tenant", "parent", "type", "provider_name", "status"}
 )
 
 func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping {

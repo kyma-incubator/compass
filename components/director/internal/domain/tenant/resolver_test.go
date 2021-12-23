@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -33,6 +35,7 @@ func TestResolver_Tenants(t *testing.T) {
 	first := 2
 	gqlAfter := graphql.PageCursor("test")
 	searchTerm := ""
+	testFirstParameterMissingError := errors.New("Invalid data [reason=missing required parameter 'first']")
 
 	modelTenants := []*model.BusinessTenantMapping{
 		newModelBusinessTenantMapping(testID, testName),
