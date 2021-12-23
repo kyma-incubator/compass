@@ -32,19 +32,13 @@ func (t *AdapterTransport) RoundTrip(req *http.Request) (resp *http.Response, er
 		return t.RoundTripper.RoundTrip(req)
 	}
 
-	fmt.Println(">>>>>>>>>>>>>>>")
-
 	buf := &bytes.Buffer{}
 	_, err = io.Copy(buf, req.Body)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	requestBody := buf.Bytes()
-	fmt.Println(string(requestBody))
-	if err != nil {
-		return nil, err
-	}
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(requestBody))
 	defer httpcommon.CloseBody(req.Context(), req.Body)
 
@@ -89,7 +83,6 @@ func (t *AdapterTransport) RoundTrip(req *http.Request) (resp *http.Response, er
 	resp.Body = ioutil.NopCloser(bytes.NewReader(responseBody))
 	defer httpcommon.CloseBody(req.Context(), resp.Body)
 
-	fmt.Println(">>>>>>>>>>>>>>>>>> Responce Body: ", string(responseBody))
 	err = t.auditlogSink.Log(req.Context(), AuditlogMessage{
 		CorrelationIDHeaders: correlationHeaders,
 		Request:              string(requestBody),

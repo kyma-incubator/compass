@@ -189,6 +189,7 @@ type ApplicationUpdateInput struct {
 	SystemStatus        *string
 }
 
+// ApplicationWithLabel missing godoc
 type ApplicationWithLabel struct {
 	App      *Application
 	SccLabel *Label

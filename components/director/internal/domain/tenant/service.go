@@ -107,6 +107,7 @@ func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, err
 	return s.tenantMappingRepo.List(ctx)
 }
 
+//ListsByExternalIDs returns all tenants for provided external IDs.
 func (s *service) ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.ListByExternalTenants(ctx, ids)
 }

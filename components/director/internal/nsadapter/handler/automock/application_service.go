@@ -107,13 +107,13 @@ func (_m *ApplicationService) ListBySCC(ctx context.Context, filter *labelfilter
 	return r0, r1
 }
 
-// ListSCCs provides a mock function with given fields: ctx, key
-func (_m *ApplicationService) ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error) {
-	ret := _m.Called(ctx, key)
+// ListSCCs provides a mock function with given fields: ctx
+func (_m *ApplicationService) ListSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
+	ret := _m.Called(ctx)
 
 	var r0 []*model.SccMetadata
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.SccMetadata); ok {
-		r0 = rf(ctx, key)
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.SccMetadata); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.SccMetadata)
@@ -121,8 +121,8 @@ func (_m *ApplicationService) ListSCCs(ctx context.Context, key string) ([]*mode
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, key)
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

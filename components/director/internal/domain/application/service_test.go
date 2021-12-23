@@ -3096,7 +3096,7 @@ func TestService_Get(t *testing.T) {
 
 func TestService_GetSystem(t *testing.T) {
 	// GIVEN
-	testErr := errors.New("Test error")
+	testErr := errors.New("test error")
 
 	tnt := "id"
 	locationID := "loc_id"
@@ -3677,7 +3677,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 
 func TestService_ListBySCC(t *testing.T) {
 	// GIVEN
-	testErr := errors.New("Test error")
+	testErr := errors.New("test error")
 
 	tnt := "tenant"
 
@@ -3780,7 +3780,7 @@ func TestService_ListBySCC(t *testing.T) {
 
 func TestService_ListSCCs(t *testing.T) {
 	// GIVEN
-	testErr := errors.New("Test error")
+	testErr := errors.New("test error")
 
 	tnt := "tenant"
 
@@ -3858,7 +3858,7 @@ func TestService_ListSCCs(t *testing.T) {
 			svc := application.NewService(nil, nil, nil, nil, nil, repo, nil, nil, nil, nil, nil)
 
 			// WHEN
-			app, err := svc.ListSCCs(testCase.Ctx, key)
+			app, err := svc.ListSCCs(testCase.Ctx)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

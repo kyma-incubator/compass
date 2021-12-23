@@ -1,12 +1,10 @@
 package handler
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"io"
 	"net/http"
 	"strings"
 
@@ -31,7 +29,7 @@ type ApplicationService interface {
 	ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
-	ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error) //TODO check what tenant will be used to execute this query
+	ListSCCs(ctx context.Context) ([]*model.SccMetadata, error)
 }
 
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
@@ -62,46 +60,38 @@ type Handler struct {
 	transact       persistence.Transactioner
 }
 
-//Description	Upsert ExposedSystems is a bulk create-or-update operation on exposed on-premise systems. It takes a list of fully described exposed systems, creates the ones CMP isn't aware of and updates the metadata for the ones it is.
-//URL	/api/v1/notifications
-//Path Params
-//Query Params	reportType=full,delta
-//HTTP Method	PUT
-//HTTP Headers
-//Content-Type: application/json
-//HTTP Codes
-//204 No Content
-//200 OK
-//400 Bad Request
-//401 Unauthorized
-//408 Request Timeout
-//500 Internal Server Error
-//502 Bad Gateway
-//Response Formats	json
-//Authentication	TODO
+// Description - Bulk create-or-update operation on exposed on-premise systems. This handler supports two types of reports - full and delta.
+// This handler takes a list of fully described SCCs together with the exposed systems.
+// It creates new application for every exposed system for which CMP isn't aware of, and updates the metadata for the ones it is.
+// - In case of full report: If there is SCC which was not reported, all exposed systems of this SCC are marked as unreachable.
+// - In case of delta report: If there are missing exposed systems for a particular SCC, these systems are marked as unreachable.
+// URL          - /api/v1/notifications
+// Query Params - reportType=[full, delta]
+// HTTP Method  - PUT
+// Content-Type - application/json
+// HTTP Codes:
+// 204 No Content:
+// - In case of delta report: if all systems are processed successfully
+// - In case of full report: if the request was processed
+// 200 OK:
+// - In case of delta report: if update/create failed for some on-premise systems
+// 400 Bad Request:
+// - missing or invalid required report type query parameter
+// - failed to parse request body
+// - validating request body failed
+// 500 Internal Server Error:
+// - In case internal issue occurred. Example: db communication failed
 func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	logger := log.C(ctx)
-	fmt.Println(">>>>>>>>>>>>>>>>>Start")
+
 	defer func() {
 		if err := req.Body.Close(); err != nil {
 			logger.Error("Got error on closing request body", err)
 		}
 	}()
 
-	buf := &bytes.Buffer{}
-	_, err := io.Copy(buf, req.Body)
-	if err != nil {
-		logger.Warnf("Failed to retrieve request body: %v\n", err)
-		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
-			Code:    http.StatusBadRequest,
-			Message: "failed to retrieve request body",
-		})
-		return
-	}
-
 	reportType := req.URL.Query().Get("reportType")
-
 	if reportType != "full" && reportType != "delta" {
 		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
 			Code:    http.StatusBadRequest,
@@ -111,7 +101,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	var reportData nsmodel.Report
-	err = json.Unmarshal(buf.Bytes(), &reportData)
+	err := json.NewDecoder(req.Body).Decode(&reportData)
 	if err != nil {
 		logger.Warnf("Got error on decoding Request Body: %v\n", err)
 		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
@@ -130,13 +120,17 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	externalSubaccountIDToSCC := make(map[string]*nsmodel.SCC, len(reportData.Value))
+	sccs := make([]*nsmodel.SCC, 0, len(reportData.Value))
 	externalIDs := make([]string, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
-		if _, ok := externalSubaccountIDToSCC[scc.ExternalSubaccountID]; !ok {
-			externalIDs = append(externalIDs, scc.ExternalSubaccountID)
-			externalSubaccountIDToSCC[scc.ExternalSubaccountID] = &scc
+		s := &nsmodel.SCC{
+			ExternalSubaccountID: scc.ExternalSubaccountID,
+			InternalSubaccountID: scc.InternalSubaccountID,
+			LocationID:           scc.LocationID,
+			ExposedSystems:       scc.ExposedSystems,
 		}
+		externalIDs = append(externalIDs, scc.ExternalSubaccountID)
+		sccs = append(sccs, s)
 	}
 
 	tenants, err := a.listTenantsByExternalIDs(ctx, externalIDs)
@@ -148,31 +142,13 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-	fmt.Println("-----------------")
 
-	mapExternalToInternal(ctx, tenants, externalSubaccountIDToSCC)
-	fmt.Println("-----------------")
-
+	mapExternalToInternal(ctx, tenants, sccs)
 	details := make([]httputil.Detail, 0, 0)
-	//TODO extract into separate method
-	sccs := make([]*nsmodel.SCC, 0, len(reportData.Value))
-	for _, scc := range reportData.Value {
-		sccWithInternalID, ok := externalSubaccountIDToSCC[scc.ExternalSubaccountID]
-		if !ok || sccWithInternalID.InternalSubaccountID == "" {
-			log.C(ctx).Warnf("Got SCC with subaccount id: %s which is not found", scc.ExternalSubaccountID)
-			addErrorDetailsMsg(&details, &scc, "Subaccount not found")
-		} else if sccWithInternalID.InternalSubaccountID == "not subaccount" {
-			addErrorDetailsMsg(&details, &scc, "Provided id is not subaccount")
-		} else {
-			sccs = append(sccs, sccWithInternalID)
-		}
-	}
+	filteredSccs := filterSccsByInternalId(ctx, sccs, &details)
 
-	for _, scc := range sccs {
-		fmt.Printf(">>>>>>>>>>>>>>>>>> systems: %+v", scc.ExposedSystems)
-	}
 	if reportType == "delta" {
-		a.processDelta(ctx, sccs, &details)
+		a.processDelta(ctx, filteredSccs, &details)
 		if len(details) == 0 {
 			httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 			return
@@ -186,7 +162,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if reportType == "full" {
-		a.processDelta(ctx, sccs, &details)
+		a.processDelta(ctx, filteredSccs, &details)
 		a.handleUnreachableScc(ctx, reportData)
 		httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 		return
@@ -203,8 +179,9 @@ func (a *Handler) listTenantsByExternalIDs(ctx context.Context, ids []string) ([
 		log.C(ctx).Warn(errors.Wrapf(err, "while openning transaction"))
 		return nil, err
 	}
-	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+	defer a.transact.RollbackUnlessCommitted(ctx, tx)
 
+	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 	tenants, err := a.tntSvc.ListsByExternalIDs(ctxWithTransaction, ids)
 	if err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while listing tenants by external ids"))
@@ -226,13 +203,12 @@ func (a *Handler) listSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
 		log.C(ctx).Warn(errors.Wrapf(err, "while openning transaction"))
 		return nil, err
 	}
-	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+	defer a.transact.RollbackUnlessCommitted(ctx, tx)
 
-	sccs, err := a.appSvc.ListSCCs(ctxWithTransaction, "scc")
+	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+	sccs, err := a.appSvc.ListSCCs(ctxWithTransaction)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.C(ctx).Warn(errors.Wrapf(err, "while rolling back transaction"))
-		}
+		log.C(ctx).Warn(errors.Wrapf(err, "while listing all sccs"))
 		return nil, err
 	}
 
@@ -265,11 +241,9 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 
 	sccsToMarkAsUnreachable := difference(sccs, sccsFromNs)
 
-	externalSubaccountToSCC := make(map[string]*model.SccMetadata)
 	externalSubaccounts := make([]string, 0, len(sccsToMarkAsUnreachable))
 	for _, scc := range sccsToMarkAsUnreachable {
 		externalSubaccounts = append(externalSubaccounts, scc.Subaccount)
-		externalSubaccountToSCC[scc.Subaccount] = scc
 	}
 
 	internalSubaccounts, err := a.listTenantsByExternalIDs(ctx, externalSubaccounts)
@@ -278,15 +252,17 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 		return
 	}
 
-	for _, subaccount := range internalSubaccounts {
-		externalSubaccountToSCC[subaccount.ExternalTenant].InternalSubaccountID = subaccount.ID
+	for _, scc := range sccsToMarkAsUnreachable {
+		for _, subaccount := range internalSubaccounts {
+			if scc.Subaccount == subaccount.ExternalTenant {
+				scc.InternalSubaccountID = subaccount.ID
+				break
+			}
+		}
 	}
 
-	fmt.Println("+++++++++++++++")
-
 	for _, scc := range sccsToMarkAsUnreachable {
-		//TODO use internal ID
-		ctxWithSubaccount := tenant.SaveToContext(ctx, scc.InternalSubaccountID, "")
+		ctxWithSubaccount := tenant.SaveToContext(ctx, scc.InternalSubaccountID, scc.Subaccount)
 		appsWithLabels, ok := a.listAppsByScc(ctxWithSubaccount, scc.Subaccount, scc.LocationId)
 		if ok {
 			for _, appWithLabels := range appsWithLabels {
@@ -297,9 +273,8 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 }
 
 func (a *Handler) processDelta(ctx context.Context, sccs []*nsmodel.SCC, details *[]httputil.Detail) {
-	//TODO refactor details
+	//TODO refactor details - return details
 	for _, scc := range sccs {
-		fmt.Println(">>>>>>>> tenant: ", scc.InternalSubaccountID)
 		ctxWithTenant := tenant.SaveToContext(ctx, scc.InternalSubaccountID, scc.ExternalSubaccountID)
 		if ok := a.handleSccSystems(ctxWithTenant, *scc); !ok {
 			addErrorDetails(details, scc)
@@ -314,7 +289,6 @@ func (a *Handler) handleSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 }
 
 func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
-	fmt.Println("<<<<<<<<<<< upsertSystems")
 	success := true
 	for _, system := range scc.ExposedSystems {
 		tx, err := a.transact.Begin()
@@ -357,7 +331,7 @@ func (a *Handler) prepareAppInput(ctx context.Context, scc nsmodel.SCC, system n
 		},
 		{
 			Placeholder: "subaccount",
-			Value:       scc.ExternalSubaccountID, //TODO use internal ID
+			Value:       scc.ExternalSubaccountID,
 		},
 		{
 			Placeholder: "location-id",
@@ -390,13 +364,11 @@ func (a *Handler) prepareAppInput(ctx context.Context, scc nsmodel.SCC, system n
 		return nil, errors.Wrapf(err, "while preparing application create input from template with id:%s", system.TemplateID)
 	}
 
-	fmt.Println("AppInputJson: ", appInputJson)
 	appInput, err := a.appConverter.CreateInputJSONToModel(ctx, appInputJson)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while preparing application create input from json")
 	}
 
-	fmt.Println("AppInputLabels: ", appInput.Labels)
 	return &appInput, nil
 }
 
@@ -416,7 +388,6 @@ func (a *Handler) upsertWithSystemNumber(ctx context.Context, scc nsmodel.SCC, s
 }
 
 func (a *Handler) upsert(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
-	fmt.Println("<<<<<<<<<<< upsert")
 	app, err := a.appSvc.GetSystem(ctx, scc.ExternalSubaccountID, scc.LocationID, system.Host)
 
 	if err != nil && isNotFoundError(err) {
@@ -447,7 +418,6 @@ func (a *Handler) updateSystem(ctx context.Context, system nsmodel.System, app *
 		return false
 	}
 
-	//TODO check if something additional is needed
 	if err := a.appSvc.SetLabel(ctx, &model.LabelInput{
 		Key:        "applicationType",
 		Value:      system.SystemType,
@@ -472,7 +442,6 @@ func (a *Handler) updateSystem(ctx context.Context, system nsmodel.System, app *
 }
 
 func (a *Handler) markAsUnreachable(ctx context.Context, scc nsmodel.SCC) bool {
-	//TODO use internal ID
 	apps, ok := a.listAppsByScc(ctx, scc.ExternalSubaccountID, scc.LocationID)
 	if !ok {
 		return false
@@ -515,14 +484,12 @@ func (a *Handler) listAppsByScc(ctx context.Context, subaccount, locationID stri
 		log.C(ctx).Warn(errors.Wrapf(err, "while openning transaction"))
 		return nil, false
 	}
-	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+	defer a.transact.RollbackUnlessCommitted(ctx, tx)
 
+	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
 	apps, err := a.appSvc.ListBySCC(ctxWithTransaction, labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", locationID, subaccount)))
 	if err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while listing all applications for scc with subaccount %s and location id %s", subaccount, locationID))
-		if err := tx.Rollback(); err != nil {
-			log.C(ctx).Warn(errors.Wrapf(err, "while rolling back transaction"))
-		}
 		return nil, false
 	}
 
@@ -580,17 +547,37 @@ func addErrorDetailsMsg(details *[]httputil.Detail, scc *nsmodel.SCC, message st
 	})
 }
 
-func mapExternalToInternal(ctx context.Context, tenants []*model.BusinessTenantMapping, externalSubbaccountToSCC map[string]*nsmodel.SCC) {
-	for _, t := range tenants {
-		if t.Type == "subaccount" {
-			externalSubbaccountToSCC[t.ExternalTenant].InternalSubaccountID = t.ID
-		} else {
-			log.C(ctx).Warnf("Got tenant with id: %s which is not asubaccount", t.ID)
-			externalSubbaccountToSCC[t.ExternalTenant].InternalSubaccountID = "not subaccount"
+func mapExternalToInternal(ctx context.Context, tenants []*model.BusinessTenantMapping, sccs []*nsmodel.SCC) {
+	for _, scc := range sccs {
+		for _, t := range tenants {
+			if scc.ExternalSubaccountID == t.ExternalTenant {
+				if t.Type == "subaccount" {
+					scc.InternalSubaccountID = t.ID
+				} else {
+					log.C(ctx).Warnf("Got tenant with id: %s which is not asubaccount", t.ID)
+					scc.InternalSubaccountID = "not subaccount"
+				}
+				break
+			}
 		}
 	}
 }
 
 func isNotFoundError(err error) bool {
 	return strings.Contains(err.Error(), "Object not found")
+}
+
+func filterSccsByInternalId(ctx context.Context, sccs []*nsmodel.SCC, details *[]httputil.Detail) []*nsmodel.SCC {
+	filteredSccs := make([]*nsmodel.SCC, 0, len(sccs))
+	for _, scc := range sccs {
+		if scc.InternalSubaccountID == "" {
+			log.C(ctx).Warnf("Got SCC with subaccount id: %s which is not found", scc.ExternalSubaccountID)
+			addErrorDetailsMsg(details, scc, "Subaccount not found")
+		} else if scc.InternalSubaccountID == "not subaccount" {
+			addErrorDetailsMsg(details, scc, "Provided id is not subaccount")
+		} else {
+			filteredSccs = append(filteredSccs, scc)
+		}
+	}
+	return filteredSccs
 }

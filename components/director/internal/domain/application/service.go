@@ -288,9 +288,8 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	return s.genericCreate(ctx, in, creator)
 }
 
-// GetSystem missing godoc
+// GetSystem retrieves an application with label key "scc" and value that matches specified subaccount, location id and virtual host
 func (s *service) GetSystem(ctx context.Context, sccSubaccount, locationID, virtualHost string) (*model.Application, error) {
-	fmt.Println("<<<<<<<<<<< GetSystem")
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -318,6 +317,7 @@ func (s *service) GetSystem(ctx context.Context, sccSubaccount, locationID, virt
 	return app, nil
 }
 
+// ListBySCC retrieves all applications with label matching the specified filter
 func (s *service) ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -343,16 +343,17 @@ func (s *service) ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter
 	return appsWithLabel, nil
 }
 
-func (s *service) ListSCCs(ctx context.Context, key string) ([]*model.SccMetadata, error) {
-	labels, err := s.labelRepo.ListGlobalByKey(ctx, key)
+// ListSCCs retrieves all SCCs
+func (s *service) ListSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
+	labels, err := s.labelRepo.ListGlobalByKey(ctx, "scc")
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting SCCs by key: %s", key)
+		return nil, errors.Wrap(err, "while getting SCCs by label key: scc")
 	}
 
 	sccs := make([]*model.SccMetadata, 0, len(labels))
-	for _, label := range labels {
+	for _, sccLabel := range labels {
 
-		v, ok := label.Value.(string)
+		v, ok := sccLabel.Value.(string)
 		if !ok {
 			return nil, errors.New("Label value is not of type string")
 		}

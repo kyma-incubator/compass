@@ -154,9 +154,8 @@ func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.App
 	return appModel, nil
 }
 
-// GetByFilter missing godoc
+// GetByFilter retrieves Application matching on the given label filters
 func (r *pgRepository) GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error) {
-	fmt.Println("<<<<<<<<<<< GetByFilter")
 	var appEnt Entity
 
 	tenantID, err := uuid.Parse(tenant)
@@ -196,7 +195,7 @@ func (r *pgRepository) ListAll(ctx context.Context, tenantID string) ([]*model.A
 	return r.multipleFromEntities(entities)
 }
 
-// ListAllByFilter missing godoc
+// ListAllByFilter retrieves all applications matching on the given label filters
 func (r *pgRepository) ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error) {
 	var entities EntityCollection
 
@@ -347,13 +346,6 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.A
 		return errors.Wrap(err, "while converting to Application entity")
 	}
 
-	fmt.Println(">>>>>>>>>>>")
-	fmt.Println(">>>>>>>>>>>")
-	fmt.Println(">>>>>>>>>>>")
-	fmt.Println(">>>>>>>>>>>")
-	fmt.Printf("%+v", *appEnt)
-	fmt.Println("Id: ", appEnt.ID)
-	log.C(ctx).Debugf("Upserting Application entity with id %s to db", model.ID)
 	log.C(ctx).Debugf("Persisting Application entity with id %s to db", model.ID)
 	return r.creator.Create(ctx, resource.Application, tenant, appEnt)
 }
@@ -375,12 +367,6 @@ func (r *pgRepository) Upsert(ctx context.Context, tenant string, model *model.A
 		return "", errors.Wrap(err, "while converting to Application entity")
 	}
 
-	fmt.Println(">>>>>>>>>>>")
-	fmt.Println(">>>>>>>>>>>")
-	fmt.Println(">>>>>>>>>>>")
-	fmt.Println(">>>>>>>>>>>")
-	fmt.Printf("%+v", *appEnt)
-	fmt.Println("Id: ", appEnt.ID)
 	log.C(ctx).Debugf("Upserting Application entity with id %s to db", model.ID)
 	return r.upserter.Upsert(ctx, resource.Application, tenant, appEnt)
 }

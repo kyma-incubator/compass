@@ -199,7 +199,7 @@ func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*mode
 	return r.multipleFromEntity(entities)
 }
 
-// ListGlobalByKey missing godoc
+// ListGlobalByKey lists all labels which are labeled with the provided key across tenants (global)
 func (r *repository) ListGlobalByKey(ctx context.Context, key string) ([]*model.Label, error) {
 	var entities Collection
 

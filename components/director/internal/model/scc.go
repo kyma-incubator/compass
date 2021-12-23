@@ -1,7 +1,7 @@
 package model
 
 type SccMetadata struct {
-	Subaccount string
+	Subaccount           string
 	InternalSubaccountID string
-	LocationId string
+	LocationId           string
 }

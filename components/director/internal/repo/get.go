@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -62,7 +61,6 @@ func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selecte
 // If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
 // If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
 func (g *universalSingleGetter) Get(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	fmt.Println("<<<<<<<<<<< Get")
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
 	}
@@ -102,8 +100,6 @@ func (g *universalSingleGetter) get(ctx context.Context, resourceType resource.T
 	}
 
 	log.C(ctx).Debugf("Executing DB query: %s", query)
-	fmt.Printf("Executing DB query: %s", query)
-	fmt.Printf("Executing DB query with args: %s", args)
 	err = persist.GetContext(ctx, dest, query, args...)
 
 	return persistence.MapSQLError(ctx, err, resourceType, resource.Get, "while getting object from '%s' table", g.tableName)

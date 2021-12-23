@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -78,7 +77,7 @@ func main() {
 
 	unsecureTr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: true, //TODO pass as configuration, valid only for local case
 		},
 	}
 	correlationTr := httputil.NewCorrelationIDTransport(unsecureTr)
@@ -115,14 +114,6 @@ func main() {
 	go startServer(ctx, mainServer, "main", wg)
 
 	wg.Wait()
-}
-
-func extractHost(targetOrigin string) (string, error) {
-	targetURL, err := url.Parse(targetOrigin)
-	if err != nil {
-		return "", errors.Wrapf(err, "while parsing URL %s", targetOrigin)
-	}
-	return targetURL.Host, nil
 }
 
 func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path string, targetOrigin string, transport http.RoundTripper, middleware ...mux.MiddlewareFunc) error {

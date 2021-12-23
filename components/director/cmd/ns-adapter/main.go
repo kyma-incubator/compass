@@ -48,6 +48,8 @@ import (
 	"strings"
 )
 
+const appTemplateName = "S4HANA"
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -58,7 +60,7 @@ func main() {
 
 	conf := adapter.Configuration{}
 	err := envconfig.InitWithPrefix(&conf, "APP")
-	exitOnError(err, "while reading Pairing Adapter configuration")
+	exitOnError(err, "while reading ns adapter configuration")
 
 	transact, closeFunc, err := persistence.Configure(ctx, conf.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
@@ -131,12 +133,8 @@ func main() {
 	exitOnError(err, "while calculating template mappings")
 
 	h := handler.NewHandler(appSvc, appConverter, appTemplateSvc, tntSvc, transact)
-	ch := handler.NewChunkedHandler()
 
 	handlerWithTimeout, err := directorHandler.WithTimeoutWithErrorMessage(h, conf.ServerTimeout, httputil.GetTimeoutMessage())
-	exitOnError(err, "Failed configuring timeout on handler")
-
-	chunkedHandlerWithTimeout, err := directorHandler.WithTimeoutWithErrorMessage(ch, conf.ServerTimeout, httputil.GetTimeoutMessage())
 	exitOnError(err, "Failed configuring timeout on handler")
 
 	router := mux.NewRouter()
@@ -146,16 +144,11 @@ func main() {
 		Methods(http.MethodPost).
 		Path("/api/v1/notifications").
 		Handler(handlerWithTimeout)
-	router.NewRoute().
-		Methods(http.MethodPost).
-		Path("/api/v1/chinked").
-		Handler(chunkedHandlerWithTimeout)
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	})
 
-	validation.ErrRequired = validation.ErrRequired.SetMessage("the value is required")
-	validation.ErrNotNilRequired = validation.ErrNotNilRequired.SetMessage("the value can not be nil")
+	setValidationMessages()
 
 	server := &http.Server{
 		Addr:              conf.Address,
@@ -172,13 +165,13 @@ func main() {
 func registerAppTemplate(ctx context.Context, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService) {
 	tx, err := transact.Begin()
 	if err != nil {
-		exitOnError(err, "Error while begining transaction")
+		exitOnError(err, "Error while beginning transaction")
 	}
 	defer transact.RollbackUnlessCommitted(ctx, tx)
 	ctxWithTx := persistence.SaveToContext(ctx, tx)
 
 	appTemplate := model.ApplicationTemplateInput{
-		Name:        "S4HANA", //TODO extract const
+		Name:        appTemplateName,
 		Description: str.Ptr("Template for systems pushed from Notifications Service"),
 		ApplicationInputJSON: `{
 									"name": "on-premise-system",
@@ -225,18 +218,17 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 		AccessLevel: model.GlobalApplicationTemplateAccessLevel, //TODO check proper access level
 	}
 
-	_, err = appTemplateSvc.GetByName(ctxWithTx, "S4HANA")
+	_, err = appTemplateSvc.GetByName(ctxWithTx, appTemplateName)
 	if err != nil {
 		if !strings.Contains(err.Error(), "Object not found") {
-			exitOnError(err, fmt.Sprintf("Error while getting application template with name: %s", "on-premise-systems-template"))
-
+			exitOnError(err, fmt.Sprintf("error while getting application template with name: %s", appTemplateName))
 		}
 
 		templateId, err := appTemplateSvc.Create(ctxWithTx, appTemplate)
 		if err != nil {
-			exitOnError(err, "Error while registering application template")
+			exitOnError(err, fmt.Sprintf("error while registering application template with name: %s", appTemplateName))
 		}
-		fmt.Println(fmt.Sprintf("successfully registered application template with id:%s", templateId))
+		fmt.Println(fmt.Sprintf("successfully registered application template with id: %s", templateId))
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -281,16 +273,13 @@ func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, t
 	defer transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	fmt.Println(">>>>>>>>>> Mappings: ", systemToTemplateMappings)
 	for index, tm := range systemToTemplateMappings {
 		appTemplate, err := appTemplateSvc.GetByName(ctx, tm.Name)
 		if err != nil && !apperrors.IsNotFoundError(err) {
 			return err
 		}
-		fmt.Println(">>>>>>>>>> Id: ", appTemplate.ID)
 		systemToTemplateMappings[index].ID = appTemplate.ID
 	}
-	fmt.Println(">>>>>>>>>> Mappings: ", systemToTemplateMappings)
 
 	err = tx.Commit()
 	if err != nil {
@@ -299,4 +288,9 @@ func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, t
 
 	nsmodel.Mappings = systemToTemplateMappings
 	return nil
+}
+
+func setValidationMessages() {
+	validation.ErrRequired = validation.ErrRequired.SetMessage("the value is required")
+	validation.ErrNotNilRequired = validation.ErrNotNilRequired.SetMessage("the value can not be nil")
 }

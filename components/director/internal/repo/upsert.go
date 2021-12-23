@@ -107,13 +107,8 @@ func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type,
 	}
 
 	preparedQuery = sqlx.Rebind(sqlx.DOLLAR, preparedQuery)
-
-	fmt.Println(">>>>>>>>>>>>")
-	fmt.Printf("Executing DB query: %s", preparedQuery)
-	fmt.Println(">>>>>>>>>>>>")
-	fmt.Printf("Args: %+v", args)
-
 	upsertedID := ""
+
 	log.C(ctx).Debugf("Executing DB query: %s", preparedQuery)
 	err = persist.GetContext(ctx, &upsertedID, preparedQuery, args...)
 	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName); err != nil {

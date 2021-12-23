@@ -7,9 +7,37 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-// ErrorResponse missing godoc
+// ErrorResponse on failed notification service request
 type ErrorResponse struct {
 	Error error `json:"error"`
+}
+
+//Error indicates processing failure of on-premise systems
+type Error struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+func (e Error) Error() string {
+	return e.Message
+}
+
+//DetailedError indicates partial processing failure of on-premise systems
+type DetailedError struct {
+	Code    int      `json:"code"`
+	Message string   `json:"message"`
+	Details []Detail `json:"details"`
+}
+
+func (d DetailedError) Error() string {
+	return d.Message
+}
+
+//Detail contains error details for scc
+type Detail struct {
+	Message    string `json:"message"`
+	Subaccount string `json:"subaccount"`
+	LocationId string `json:"locationId"`
 }
 
 func GetTimeoutMessage() []byte {
@@ -22,31 +50,4 @@ func GetTimeoutMessage() []byte {
 	}
 
 	return marshal
-}
-
-// Error missing godoc
-type Error struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
-func (e Error) Error() string {
-	return e.Message
-}
-
-// Error missing godoc
-type DetailedError struct {
-	Code    int      `json:"code"`
-	Message string   `json:"message"`
-	Details []Detail `json:"details"`
-}
-
-func (d DetailedError) Error() string {
-	return d.Message
-}
-
-type Detail struct {
-	Message    string `json:"message"`
-	Subaccount string `json:"subaccount"`
-	LocationId string `json:"locationId"`
 }
