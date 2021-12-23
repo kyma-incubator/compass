@@ -24,6 +24,12 @@ spec:
       {{- if .Values.metrics.serviceMonitor.scrapeTimeout }}
       scrapeTimeout: {{ .Values.metrics.serviceMonitor.scrapeTimeout }}
       {{- end }}
+      scheme: https
+      tlsConfig:
+        caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+        certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+        keyFile: /etc/prometheus/secrets/istio.default/key.pem
+        insecureSkipVerify: true
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}

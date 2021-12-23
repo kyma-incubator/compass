@@ -111,7 +111,7 @@ func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
 	r := httptest.NewRecorder()
 
 	//WHEN
-	h.GenerateWithoutCredentials(r, req)
+	h.GenerateWithCredentialsFromReqBody(r, req)
 	resp := r.Result()
 
 	//THEN
@@ -133,4 +133,6 @@ func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, "tenant1", claims.Tenant)
+	require.Equal(t, id, claims.ClientId)
+	require.Equal(t, scopes, claims.Scopes)
 }

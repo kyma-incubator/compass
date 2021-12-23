@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -96,16 +98,27 @@ func NewRootResolver(
 	tokenLength int,
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
+	cache certloader.Cache,
 ) *RootResolver {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 	}
-	caller := securehttp.NewCaller(&authpkg.OAuthCredentials{
+
+	oauthCredentials := &authpkg.OAuthCredentials{
 		ClientID:     selfRegConfig.ClientID,
 		ClientSecret: selfRegConfig.ClientSecret,
 		TokenURL:     selfRegConfig.URL + selfRegConfig.OauthTokenPath,
-	}, selfRegConfig.ClientTimeout)
+	}
+
+	config := securehttp.CallerConfig{
+		Credentials:       oauthCredentials,
+		ClientTimeout:     selfRegConfig.ClientTimeout,
+		SkipSSLValidation: selfRegConfig.SkipSSLValidation,
+		Cache:             cache,
+	}
+
+	caller := securehttp.NewCaller(config)
 
 	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)
 	hydra := hydraClient.New(transport, nil)
