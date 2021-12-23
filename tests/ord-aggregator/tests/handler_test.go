@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"testing"
@@ -82,6 +81,10 @@ const (
 
 	firstCorrelationID  = "sap.s4:communicationScenario:SAP_COM_0001"
 	secondCorrelationID = "sap.s4:communicationScenario:SAP_COM_0002"
+
+	documentationLabelKey         = "Documentation label key"
+	documentationLabelFirstValue  = "Markdown Documentation with links"
+	documentationLabelSecondValue = "With multiple values"
 )
 
 func TestORDAggregator(t *testing.T) {
@@ -157,6 +160,8 @@ func TestORDAggregator(t *testing.T) {
 		bundlesCorrelationIDs[expectedBundleTitle] = []string{firstCorrelationID, secondCorrelationID}
 		bundlesCorrelationIDs[secondExpectedBundleTitle] = []string{firstCorrelationID, secondCorrelationID}
 
+		documentationLabelsPossibleValues := []string{documentationLabelFirstValue, documentationLabelSecondValue}
+
 		ctx := context.Background()
 
 		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
@@ -231,25 +236,21 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify packages
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			log.Println("======= PACKAGES =======")
-			log.Println(respBody)
-			log.Println("======= PACKAGES =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfPackages {
 				t.Log("Missing Packages...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfPackages)
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
 			t.Log("Successfully verified packages")
 
 			// Verify bundles
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			log.Println("======= BUNDLES =======")
-			log.Println(respBody)
-			log.Println("======= BUNDLES =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfBundles {
 				t.Log("Missing Bundles...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfBundles)
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles)
 			assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, expectedNumberOfBundles)
 			ordAndInternalIDsMappingForBundles := storeMappingBetweenORDAndInternalBundleID(t, respBody, expectedNumberOfBundles)
@@ -265,25 +266,21 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify products
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			log.Println("======= PRODUCTS =======")
-			log.Println(respBody)
-			log.Println("======= PRODUCTS =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfProducts {
 				t.Log("Missing Products...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfProducts)
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfProducts, expectedProductTitle, expectedProductShortDescription, shortDescriptionField)
 			t.Log("Successfully verified products")
 
 			// Verify apis
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			log.Println("======= APIS =======")
-			log.Println(respBody)
-			log.Println("======= APIS =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAPIs {
 				t.Log("Missing APIs...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfAPIs)
 			// In the document there are actually 2 APIs but there is a tombstone for the second one so in the end there will be only one API
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfAPIs, firstAPIExpectedTitle, firstAPIExpectedDescription, descriptionField)
 			t.Log("Successfully verified apis")
@@ -315,13 +312,11 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify events
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			log.Println("======= EVENTS =======")
-			log.Println(respBody)
-			log.Println("======= EVENTS =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEvents {
 				t.Log("Missing Events...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEvents)
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEvents)
 			t.Log("Successfully verified events")
 
@@ -341,13 +336,11 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify vendors
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-			log.Println("======= VENDORS =======")
-			log.Println(respBody)
-			log.Println("======= VENDORS =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfVendors {
 				t.Log("Missing Vendors...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfVendors)
 			assertions.AssertVendorFromORDService(t, respBody, expectedNumberOfVendors, expectedVendorTitle)
 			t.Log("Successfully verified vendors")
 

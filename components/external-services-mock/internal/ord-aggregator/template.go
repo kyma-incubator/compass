@@ -93,7 +93,7 @@ const ordDocument = `{
             ]
          },
 		 "documentationLabels":{
-			"Packages documentation labels":["Markdown Documentation with links","With multiple values"]
+			"Documentation label key":["Markdown Documentation with links","With multiple values"]
 		 },
          "policyLevel":"sap:core:v1",
          "customPolicyLevel":null,
@@ -139,6 +139,9 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+ 		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links","With multiple values"]
+		 },
          "credentialExchangeStrategies":[
             {
                "callbackUrl":"/credentials/relative",
@@ -178,7 +181,7 @@ const ordDocument = `{
             ]
          },
 		 "documentationLabels":{
-			"ConsumptionBundle doc labels":["Markdown Documentation with links","With multiple values"]
+			"Documentation label key":["Markdown Documentation with links","With multiple values"]
 		 },
          "links":[
             {
@@ -212,7 +215,7 @@ const ordDocument = `{
             ]
          },
 		 "documentationLabels":{
-			"Products documentation labels":["Markdown Documentation with links", "With multiple values"]
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
 		 }
       }
    ],
@@ -276,7 +279,7 @@ const ordDocument = `{
             ]
          },
 		 "documentationLabels":{
-			"API definition documentation labels":["Markdown Documentation with links", "With multiple values"]
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
 		 },
          "visibility":"public",
          "disabled":true,
@@ -412,6 +415,9 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+ 		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links","With multiple values"]
+		 },
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
@@ -517,7 +523,7 @@ const ordDocument = `{
             ]
          },
 		 "documentationLabels":{
-			"Event documentation labels":["Markdown Documentation with links", "With multiple values"]
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
 		 },
          "visibility":"public",
          "disabled":true,
@@ -608,6 +614,9 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+ 		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
+		 },
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
@@ -672,7 +681,7 @@ const ordDocument = `{
             ]
          },
 		 "documentationLabels":{
-			"Vendors documentation labels":["Markdown Documentation with links", "With multiple values"]
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
 		 }
       },
       {
@@ -686,7 +695,10 @@ const ordDocument = `{
                "label-value-1",
                "label-value-2"
             ]
-         }
+         },
+		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
+		 }
       }
    ]
 }`
