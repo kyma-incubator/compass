@@ -213,6 +213,7 @@ export APP_EXTERNAL_CLIENT_CERT_KEY="tls.crt"
 export APP_EXTERNAL_CLIENT_KEY_KEY="tls.key"
 export APP_EXTERNAL_CLIENT_CERT_VALUE="certValue"
 export APP_EXTERNAL_CLIENT_KEY_VALUE="keyValue"
+export APP_INFO_ROOT_CA="--- Feature Disabled Locally ---"
 
 # Tenant Fetcher properties
 export APP_SUBSCRIPTION_CALLBACK_SCOPE=Callback
