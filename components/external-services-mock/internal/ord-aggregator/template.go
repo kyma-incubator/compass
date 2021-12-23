@@ -44,10 +44,7 @@ const ordDocument = `{
             "label-value-1",
             "label-value-2"
          ]
-      },
-	  "documentationLabels": {
-		 "System documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
-	  }
+      }
    },
    "packages":[
       {
@@ -95,8 +92,8 @@ const ordDocument = `{
                "label-val"
             ]
          },
-		 "documentationLabels": {
-			"Packages documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+		 "documentationLabels":{
+			"Packages documentation labels":["Markdown Documentation with links","With multiple values"]
 		 },
          "policyLevel":"sap:core:v1",
          "customPolicyLevel":null,
@@ -156,7 +153,7 @@ const ordDocument = `{
          ]
       },
       {
-         "title":"BUNDLE TITLE 2"
+         "title":"BUNDLE TITLE 2",
          "ordId":"ns:consumptionBundle:BUNDLE_ID:v2",
          "credentialExchangeStrategies":[
             {
@@ -180,8 +177,8 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
-		 "documentationLabels": {
-			"ConsumptionBundle doc labels": ["Markdown Documentation [with links](#)", "With multiple values"]
+		 "documentationLabels":{
+			"ConsumptionBundle doc labels":["Markdown Documentation with links","With multiple values"]
 		 },
          "links":[
             {
@@ -214,8 +211,8 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
-		 "documentationLabels": {
-			"Products documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+		 "documentationLabels":{
+			"Products documentation labels":["Markdown Documentation with links", "With multiple values"]
 		 }
       }
    ],
@@ -278,8 +275,8 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
-		 "documentationLabels": {
-			"API definition documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+		 "documentationLabels":{
+			"API definition documentation labels":["Markdown Documentation with links", "With multiple values"]
 		 },
          "visibility":"public",
          "disabled":true,
@@ -519,8 +516,8 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
-		 "documentationLabels": {
-			"Event documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+		 "documentationLabels":{
+			"Event documentation labels":["Markdown Documentation with links", "With multiple values"]
 		 },
          "visibility":"public",
          "disabled":true,
@@ -674,8 +671,8 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
-		 "documentationLabels": {
-			"Vendors documentation labels": ["Markdown Documentation [with links]", "With multiple values"]
+		 "documentationLabels":{
+			"Vendors documentation labels":["Markdown Documentation with links", "With multiple values"]
 		 }
       },
       {

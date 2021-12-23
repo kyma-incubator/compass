@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"testing"
@@ -230,7 +231,9 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify packages
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-
+			log.Println("======= PACKAGES =======")
+			log.Println(respBody)
+			log.Println("======= PACKAGES =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfPackages {
 				t.Log("Missing Packages...will try again")
 				return false
@@ -240,7 +243,9 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify bundles
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-
+			log.Println("======= BUNDLES =======")
+			log.Println(respBody)
+			log.Println("======= BUNDLES =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfBundles {
 				t.Log("Missing Bundles...will try again")
 				return false
@@ -260,7 +265,9 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify products
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-
+			log.Println("======= PRODUCTS =======")
+			log.Println(respBody)
+			log.Println("======= PRODUCTS =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfProducts {
 				t.Log("Missing Products...will try again")
 				return false
@@ -270,7 +277,9 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify apis
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-
+			log.Println("======= APIS =======")
+			log.Println(respBody)
+			log.Println("======= APIS =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfAPIs {
 				t.Log("Missing APIs...will try again")
 				return false
@@ -306,7 +315,9 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify events
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-
+			log.Println("======= EVENTS =======")
+			log.Println(respBody)
+			log.Println("======= EVENTS =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfEvents {
 				t.Log("Missing Events...will try again")
 				return false
@@ -330,7 +341,9 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify vendors
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-
+			log.Println("======= VENDORS =======")
+			log.Println(respBody)
+			log.Println("======= VENDORS =======")
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfVendors {
 				t.Log("Missing Vendors...will try again")
 				return false
