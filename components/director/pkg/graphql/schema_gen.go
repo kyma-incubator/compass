@@ -4852,7 +4852,6 @@ type Query {
 	**Examples**
 	- [query tenants](examples/query-tenants/query-tenants.graphql)
 	"""
-#	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
 	tenants(first: Int = 500, after: PageCursor, searchTerm: String): TenantPage! @hasScopes(path: "graphql.query.tenants")
 	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
 	"""
