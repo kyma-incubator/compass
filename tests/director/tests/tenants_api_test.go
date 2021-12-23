@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -24,24 +25,70 @@ func TestQueryTenants(t *testing.T) {
 	ctx := context.Background()
 
 	getTenantsRequest := fixtures.FixTenantsRequest()
-	var output []*graphql.Tenant
+	actualTenantPage := graphql.TenantPage{}
 	expectedTenants := expectedTenants()
-
-	t.Log("Initializing one of the tenants")
-	initializedTenantID := tenant.TestTenants.GetIDByName(t, tenant.TenantsQueryInitializedTenantName)
-	// Listing scenarios for LabelDefinition creates a default record if there are no scenarios. This invocation is needed so that we can initialize the tenant.
-	_, err := fixtures.ListLabelDefinitionByKeyWithinTenant(ctx, dexGraphQLClient, "scenarios", initializedTenantID)
-	require.NoError(t, err)
 
 	// WHEN
 	t.Log("List tenants")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &output)
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &actualTenantPage)
 	require.NoError(t, err)
 
 	//THEN
-	t.Log("Check if tenants were received")
+	assertions.AssertTenants(t, expectedTenants, actualTenantPage.Data)
+}
 
-	assertions.AssertTenants(t, expectedTenants, output)
+func TestQueryTenantsPage(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	tenantLen := 5
+	getTenantsRequest := fixtures.FixTenantsPageRequest(tenantLen)
+	actualTenantPage := graphql.TenantPage{}
+
+	// WHEN
+	t.Log("List tenants with page size")
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &actualTenantPage)
+	require.NoError(t, err)
+
+	//THEN
+	assert.Len(t, actualTenantPage.Data, tenantLen)
+	assert.True(t, actualTenantPage.PageInfo.HasNextPage)
+	assert.NotEmpty(t, actualTenantPage.PageInfo.EndCursor)
+}
+
+func TestQueryTenantsSearch(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	tenantSearchTerm := "default"
+	getTenantsRequest := fixtures.FixTenantsSearchRequest(tenantSearchTerm)
+	actualTenantPage := graphql.TenantPage{}
+
+	// WHEN
+	t.Log("List tenants with search term")
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &actualTenantPage)
+	require.NoError(t, err)
+
+	//THEN
+	assert.Len(t, actualTenantPage.Data, 3)
+}
+
+func TestQueryTenantsPageSearch(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	tenantSearchTerm := "test"
+	tenantLen := 3
+	getTenantsRequest := fixtures.FixTenantsPageSearchRequest(tenantSearchTerm, tenantLen)
+	actualTenantPage := graphql.TenantPage{}
+
+	// WHEN
+	t.Log("List tenants with search term and page size")
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &actualTenantPage)
+	require.NoError(t, err)
+
+	//THEN
+	assert.Len(t, actualTenantPage.Data, 3)
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
 }
 
@@ -52,9 +99,8 @@ func expectedTenants() []*graphql.Tenant {
 	for _, tnt := range testTnts {
 		name := tnt.Name
 		expectedTenants = append(expectedTenants, &graphql.Tenant{
-			ID:          tnt.ExternalTenant,
-			Name:        &name,
-			Initialized: expectedInitializedFieldForTenant(name),
+			ID:   tnt.ExternalTenant,
+			Name: &name,
 		})
 	}
 
