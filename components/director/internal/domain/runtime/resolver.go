@@ -44,7 +44,7 @@ type OAuth20Service interface {
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
 	Create(ctx context.Context, in model.RuntimeInput) (string, error)
-	CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, mandatoryLabels map[string]interface{}) (string, error)
+	CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, id string, mandatoryLabels map[string]interface{}) error
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 	Delete(ctx context.Context, id string) error
@@ -92,7 +92,7 @@ type BundleInstanceAuthService interface {
 // SelfRegisterManager missing godoc
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore
 type SelfRegisterManager interface {
-	PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput) (map[string]interface{}, error)
+	PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput, id string) (map[string]interface{}, error)
 	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string) error
 	GetSelfRegDistinguishingLabelKey() string
 }
@@ -109,10 +109,11 @@ type Resolver struct {
 	eventingSvc               EventingService
 	bundleInstanceAuthSvc     BundleInstanceAuthService
 	selfRegManager            SelfRegisterManager
+	uidService                uidService
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager) *Resolver {
+func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager, uidService uidService) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -124,6 +125,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		eventingSvc:               eventingSvc,
 		bundleInstanceAuthSvc:     bundleInstanceAuthSvc,
 		selfRegManager:            selfRegManager,
+		uidService:                uidService,
 	}
 }
 
@@ -200,8 +202,9 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 // RegisterRuntime missing godoc
 func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	convertedIn := r.converter.InputFromGraphQL(in)
+	id := r.uidService.Generate()
 
-	labels, err := r.selfRegManager.PrepareRuntimeForSelfRegistration(ctx, convertedIn)
+	labels, err := r.selfRegManager.PrepareRuntimeForSelfRegistration(ctx, convertedIn, id)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +224,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	id, err := r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, labels)
+	err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, labels)
 	if err != nil {
 		return nil, err
 	}
