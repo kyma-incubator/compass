@@ -242,6 +242,8 @@ kind: ServiceAccount
 metadata:
   name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
   namespace: {{ $.Release.Namespace }}
+  annotations:
+    iam.gke.io/gcp-service-account: "{{ $.Values.global.sqlproxy.proxyUser }}@sap-{{ $.Values.global.sqlproxy.cloudsql.instance.project }}.iam.gserviceaccount.com"
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}
