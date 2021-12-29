@@ -20,10 +20,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/google/uuid"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
