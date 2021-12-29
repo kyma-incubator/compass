@@ -17,8 +17,10 @@
 package tests
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -107,6 +109,8 @@ func TestOnboardingHandler(t *testing.T) {
 	})
 
 	t.Run("Should not add already existing tenants", func(t *testing.T) {
+		ctx := context.Background()
+
 		tenantWithCustomer := tenantfetcher.Tenant{
 			TenantID:               uuid.New().String(),
 			CustomerID:             uuid.New().String(),
@@ -126,9 +130,9 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(oldTenantState.Data)+2, len(tenants.Data))
-		assertTenantExists(t, tenants.Data, tenantWithCustomer.TenantID)
-		assertTenantExists(t, tenants.Data, tenantWithCustomer.CustomerID)
+		assert.Equal(t, oldTenantState.TotalCount+2, tenants.TotalCount)
+		assertTenantExists(ctx, t, tenantWithCustomer.TenantID)
+		assertTenantExists(ctx, t, tenantWithCustomer.CustomerID)
 	})
 
 	t.Run("Should fail when no tenantID is provided", func(t *testing.T) {
@@ -146,7 +150,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
+		assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
 	})
 
 	t.Run("Should fail when no subdomain is provided", func(t *testing.T) {
@@ -165,7 +169,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
+		assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
 	})
 
 	t.Run("Should fail when no SubscriptionProviderID is provided", func(t *testing.T) {
@@ -184,7 +188,7 @@ func TestOnboardingHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
+		assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
 	})
 
 	t.Run("Should fail with subaccount tenant", func(t *testing.T) {
@@ -231,7 +235,7 @@ func TestDecommissioningHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		// THEN
-		assert.Equal(t, len(oldTenantState.Data), len(newTenantState.Data))
+		assert.Equal(t, oldTenantState.TotalCount, newTenantState.TotalCount)
 	})
 }
 
@@ -358,7 +362,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 
 			// THEN
 			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
-			assert.Equal(t, len(oldTenantState.Data)+2, len(tenants.Data))
+			assert.Equal(t, oldTenantState.TotalCount+2, tenants.TotalCount)
 		})
 
 		t.Run("Should fail when parent tenantID is not provided", func(t *testing.T) {
@@ -378,7 +382,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenants, err := fixtures.GetTenants(dexGraphQLClient)
 			require.NoError(t, err)
-			assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
+			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
 		})
 
 		t.Run("Should fail when subdomain is not provided", func(t *testing.T) {
@@ -398,7 +402,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenants, err := fixtures.GetTenants(dexGraphQLClient)
 			require.NoError(t, err)
-			assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
+			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
 		})
 
 		t.Run("Should fail when SubscriptionProviderID is not provided", func(t *testing.T) {
@@ -417,7 +421,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenants, err := fixtures.GetTenants(dexGraphQLClient)
 			require.NoError(t, err)
-			assert.Equal(t, len(oldTenantState.Data), len(tenants.Data))
+			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
 		})
 	})
 }
@@ -476,14 +480,20 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenantIDs tenantfet
 	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
-func assertTenantExists(t *testing.T, tenants []*directorSchema.Tenant, tenantID string) {
-	for _, tenant := range tenants {
-		if tenant.ID == tenantID {
-			return
-		}
+func assertTenantExists(ctx context.Context, t *testing.T, tenantID string) {
+	getTenantsRequest := fixtures.FixTenantsSearchRequest(tenantID)
+	tenantsPage := directorSchema.TenantPage{}
+
+	t.Logf("List tenants with tenantID %s", tenantID)
+
+	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &tenantsPage)
+	require.NoError(t, err)
+
+	if tenantsPage.TotalCount > 0 {
+		return
 	}
 
-	require.Fail(t, fmt.Sprintf("Tenant with ID %q not found in %v", tenantID, tenants))
+	require.Fail(t, fmt.Sprintf("Tenant with ID %q not found", tenantID))
 }
 
 func assertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdomain string) {
