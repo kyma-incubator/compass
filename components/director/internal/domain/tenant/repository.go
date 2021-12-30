@@ -150,13 +150,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}
 
-	items := make([]*model.BusinessTenantMapping, 0, len(entityCollection))
-
-	for _, entity := range entityCollection {
-		tmModel := r.conv.FromEntity(&entity)
-		items = append(items, tmModel)
-	}
-	return items, nil
+	return r.multipleFromEntities(entityCollection), nil
 }
 
 func (r *pgRepository) buildSearchCondition(fields []string, searchTerm string) string {
@@ -190,12 +184,7 @@ func (r *pgRepository) ListPageBySearchTerm(ctx context.Context, searchTerm stri
 		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}
 
-	items := make([]*model.BusinessTenantMapping, 0, len(entityCollection))
-
-	for _, entity := range entityCollection {
-		tmModel := r.conv.FromEntity(&entity)
-		items = append(items, tmModel)
-	}
+	items := r.multipleFromEntities(entityCollection)
 
 	return &model.BusinessTenantMappingPage{
 		Data:       items,
@@ -358,4 +347,15 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	}
 
 	return dest.TenantID, nil
+}
+
+func (r *pgRepository) multipleFromEntities(entities tenant.EntityCollection) []*model.BusinessTenantMapping {
+	items := make([]*model.BusinessTenantMapping, 0, len(entities))
+
+	for _, entity := range entities {
+		tmModel := r.conv.FromEntity(&entity)
+		items = append(items, tmModel)
+	}
+
+	return items
 }
