@@ -192,9 +192,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -235,9 +233,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -279,9 +275,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -320,9 +314,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -359,9 +351,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -391,8 +381,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return &automock.TenantService{}
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -424,8 +413,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -458,8 +446,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -491,9 +478,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return repo
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return("").Once()
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -526,8 +511,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -565,9 +549,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -605,9 +587,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -642,9 +622,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return &automock.TenantService{}
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -683,9 +661,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				return tenantSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
+				return &automock.UidService{}
 			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
@@ -713,10 +689,9 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			svc := runtime.NewService(repo, nil, scenariosSvc, labelSvc, idSvc, engineSvc, tenantSvc, protectedLabelPattern, immutableLabelPattern)
 
 			// WHEN
-			result, err := svc.CreateWithMandatoryLabels(testCase.Context, testCase.Input, mandatoryLabels)
+			err := svc.CreateWithMandatoryLabels(testCase.Context, testCase.Input, runtimeID, mandatoryLabels)
 
 			// then
-			assert.IsType(t, "string", result)
 			if err == nil {
 				require.Nil(t, testCase.ExpectedErr)
 			} else {
@@ -730,12 +705,16 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern)
+		uuidSvc := &automock.UidService{}
+		uuidSvc.On("Generate").Return(testUUID).Once()
+
+		svc := runtime.NewService(nil, nil, nil, nil, uuidSvc, nil, nil, protectedLabelPattern, immutableLabelPattern)
 		// WHEN
 		_, err := svc.Create(context.TODO(), model.RuntimeInput{})
 		// then
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
+		uuidSvc.AssertExpectations(t)
 	})
 }
 
