@@ -91,7 +91,7 @@ func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int,
 	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
 }
 
-// ListGlobal lists a page of global entities without tenant isolation.
+// ListWithQueryGlobal lists a page of global entities with a given sql query but without tenant isolation.
 func (g *universalPageableQuerier) ListWithQueryGlobal(ctx context.Context, query string, args []interface{}, orderByColumn string, pageSize int, cursor string, dest Collection) (*pagination.Page, int, error) {
 	return g.listWithQuery(ctx, query, args, orderByColumn, g.resourceType, pageSize, cursor, dest)
 }

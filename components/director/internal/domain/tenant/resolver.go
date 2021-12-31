@@ -42,7 +42,7 @@ type Resolver struct {
 	conv BusinessTenantMappingConverter
 }
 
-// Tenants transactionally retrieves all tenants present in the Compass storage.
+// Tenants transactionally retrieves a page of tenants present in the Compass storage by a search term. If the search term is missing it will be ignored in the resulting tenant subset.
 func (r *Resolver) Tenants(ctx context.Context, first *int, after *graphql.PageCursor, searchTerm *string) (*graphql.TenantPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

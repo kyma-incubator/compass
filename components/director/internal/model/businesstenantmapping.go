@@ -80,7 +80,7 @@ func (i BusinessTenantMappingInput) WithExternalTenant(externalTenant string) Bu
 	return i
 }
 
-// BusinessTenantMappingPage missing godoc
+// BusinessTenantMappingPage Struct for BusinessTenantMapping data with page info
 type BusinessTenantMappingPage struct {
 	Data       []*BusinessTenantMapping
 	PageInfo   *pagination.Page

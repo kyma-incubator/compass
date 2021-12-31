@@ -171,6 +171,7 @@ func (r *pgRepository) buildSearchCondition(fields []string, searchTerm string) 
 	return stmtBuilder.String()
 }
 
+// ListPageBySearchTerm retrieves a page of tenants from the Compass storage filtered by a search term.
 func (r *pgRepository) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
 	var entityCollection tenant.EntityCollection
 
