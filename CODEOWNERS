@@ -8,7 +8,7 @@
 * @kyma-incubator/cmp_team
 
 # All developers working on this repository are able to edit main values.yaml file.
-/chart/compass/values.yaml @PK85 @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa @kyma-incubator/cmp_team
+/chart/compass/values.yaml @PK85 @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @kyma-incubator/cmp_team
 
 # Director
 /chart/compass/charts/director @PK85 @dbadura @kyma-incubator/cmp_team
