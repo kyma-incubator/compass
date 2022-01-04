@@ -27,6 +27,7 @@ type TenantMappingRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
+	ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error)
 	ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error)
 	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
@@ -104,6 +105,11 @@ func (s *service) GetInternalTenant(ctx context.Context, externalTenant string) 
 // List returns all tenants present in the Compass storage.
 func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.List(ctx)
+}
+
+// List returns all tenants present in the Compass storage.
+func (s *service) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
+	return s.tenantMappingRepo.ListPageBySearchTerm(ctx, searchTerm, pageSize, cursor)
 }
 
 // GetTenantByExternalID returns the tenant with the provided external ID.

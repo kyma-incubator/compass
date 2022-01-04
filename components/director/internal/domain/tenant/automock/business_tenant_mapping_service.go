@@ -97,6 +97,29 @@ func (_m *BusinessTenantMappingService) ListLabels(ctx context.Context, tenantID
 	return r0, r1
 }
 
+// ListPageBySearchTerm provides a mock function with given fields: ctx, searchTerm, pageSize, cursor
+func (_m *BusinessTenantMappingService) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
+	ret := _m.Called(ctx, searchTerm, pageSize, cursor)
+
+	var r0 *model.BusinessTenantMappingPage
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.BusinessTenantMappingPage); ok {
+		r0 = rf(ctx, searchTerm, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.BusinessTenantMappingPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
+		r1 = rf(ctx, searchTerm, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Update provides a mock function with given fields: ctx, id, tenantInput
 func (_m *BusinessTenantMappingService) Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error {
 	ret := _m.Called(ctx, id, tenantInput)
