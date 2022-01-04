@@ -27,7 +27,7 @@ const ordConfig = `{
 // describedSystemInstance.baseUrl should be the same as the url of external services mock in the cluster
 const ordDocument = `{
    "$schema":"./spec/v1/generated/Document.schema.json",
-   "openResourceDiscovery":"1.0",
+   "openResourceDiscovery":"1.2",
    "description":"Test Document",
    "describedSystemInstance":{
       "ProviderName":null,
@@ -92,6 +92,9 @@ const ordDocument = `{
                "label-val"
             ]
          },
+		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links","With multiple values"]
+		 },
          "policyLevel":"sap:core:v1",
          "customPolicyLevel":null,
          "partOfProducts":[
@@ -136,6 +139,9 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+ 		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links","With multiple values"]
+		 },
          "credentialExchangeStrategies":[
             {
                "callbackUrl":"/credentials/relative",
@@ -150,6 +156,8 @@ const ordDocument = `{
          ]
       },
       {
+         "title":"BUNDLE TITLE 2",
+         "ordId":"ns:consumptionBundle:BUNDLE_ID:v2",
          "credentialExchangeStrategies":[
             {
                "callbackUrl":"/credentials/relative",
@@ -162,7 +170,6 @@ const ordDocument = `{
                "type":"custom"
             }
          ],
-         "description":"foo bar",
 		 "correlationIds": [
 			"sap.s4:communicationScenario:SAP_COM_0001",
 			"sap.s4:communicationScenario:SAP_COM_0002"
@@ -173,6 +180,9 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links","With multiple values"]
+		 },
          "links":[
             {
                "description":"loremipsumdolornem",
@@ -184,10 +194,7 @@ const ordDocument = `{
                "title":"LinkTitle",
                "url":"/testing/relative"
             }
-         ],
-         "ordId":"ns:consumptionBundle:BUNDLE_ID:v2",
-         "shortDescription":"foo",
-         "title":"BUNDLE TITLE 2"
+         ]
       }
    ],
    "products":[
@@ -206,7 +213,10 @@ const ordDocument = `{
                "label-value-1",
                "label-value-2"
             ]
-         }
+         },
+		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
+		 }
       }
    ],
    "apiResources":[
@@ -268,6 +278,9 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
+		 },
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
@@ -402,6 +415,9 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+ 		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links","With multiple values"]
+		 },
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
@@ -506,6 +522,9 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
+		 },
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
@@ -595,6 +614,9 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
+ 		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
+		 },
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
@@ -657,7 +679,10 @@ const ordDocument = `{
                "label-value-1",
                "label-value-2"
             ]
-         }
+         },
+		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
+		 }
       },
       {
          "ordId":"partner:vendor:SAP:",
@@ -670,7 +695,10 @@ const ordDocument = `{
                "label-value-1",
                "label-value-2"
             ]
-         }
+         },
+		 "documentationLabels":{
+			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
+		 }
       }
    ]
 }`

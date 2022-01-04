@@ -8,12 +8,13 @@ import (
 
 // Entity is the vendor entity
 type Entity struct {
-	ID            string         `db:"id"`
-	OrdID         string         `db:"ord_id"`
-	ApplicationID string         `db:"app_id"`
-	Title         string         `db:"title"`
-	Partners      sql.NullString `db:"partners"`
-	Labels        sql.NullString `db:"labels"`
+	ID                  string         `db:"id"`
+	OrdID               string         `db:"ord_id"`
+	ApplicationID       string         `db:"app_id"`
+	Title               string         `db:"title"`
+	Partners            sql.NullString `db:"partners"`
+	Labels              sql.NullString `db:"labels"`
+	DocumentationLabels sql.NullString `db:"documentation_labels"`
 }
 
 // GetID returns the ID
