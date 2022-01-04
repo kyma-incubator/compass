@@ -49,6 +49,7 @@ type APIDefinition struct {
 	Version                                 *Version
 	Extensible                              json.RawMessage
 	ResourceHash                            *string
+	DocumentationLabels                     json.RawMessage
 	*BaseEntity
 }
 
@@ -90,6 +91,7 @@ type APIDefinitionInput struct {
 	ResourceDefinitions                     []*APIResourceDefinition      `json:"resourceDefinitions"`
 	PartOfConsumptionBundles                []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 	DefaultConsumptionBundle                *string                       `json:"defaultConsumptionBundle"`
+	DocumentationLabels                     json.RawMessage               `json:"documentationLabels"`
 
 	*VersionInput `hash:"ignore"`
 }
@@ -202,6 +204,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 		Industry:            a.Industry,
 		Extensible:          a.Extensible,
 		Version:             a.VersionInput.ToVersion(),
+		DocumentationLabels: a.DocumentationLabels,
 		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,

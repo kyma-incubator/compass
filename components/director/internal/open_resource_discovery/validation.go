@@ -36,7 +36,6 @@ const (
 	BundleOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(consumptionBundle):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
 	// TombstoneOrdIDRegex represents the valid structure of the ordID of the Tombstone
 	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
-
 	// SystemInstanceBaseURLRegex represents the valid structure of the field
 	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)?$"
 	// ConfigBaseURLRegex represents the valid structure of the field
@@ -53,6 +52,8 @@ const (
 	CorrelationIDsRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 	// LabelsKeyRegex represents the valid structure of the field
 	LabelsKeyRegex = "^[a-zA-Z0-9-_.]*$"
+	// DocumentationLabelsKeyRegex represents the valid structure of the field
+	DocumentationLabelsKeyRegex = "^[^\\n]*$"
 	// CustomImplementationStandardRegex represents the valid structure of the field
 	CustomImplementationStandardRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// VendorPartnersRegex represents the valid structure of the field
@@ -173,8 +174,12 @@ var shortDescriptionRules = []validation.Rule{
 	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
-var descriptionRules = []validation.Rule{
-	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "description should not contain line breaks"),
+var optionalShortDescriptionRules = []validation.Rule{
+	validation.Length(0, 255), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+}
+
+var optionalDescriptionRules = []validation.Rule{
+	validation.Length(0, 255), validation.NewStringRule(noNewLines, "description should not contain line breaks"),
 }
 
 // ValidateSystemInstanceInput validates the given SystemInstance
@@ -185,11 +190,12 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 		})),
 		validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
 		validation.Field(&app.Labels, validation.By(validateORDLabels)),
+		validation.Field(&app.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
 
 func validateDocumentInput(doc *Document) error {
-	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0")))
+	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.Match(regexp.MustCompile("^1.*$"))))
 }
 
 func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
@@ -238,6 +244,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 				return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 			}),
 		),
+		validation.Field(&pkg.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
 
@@ -245,8 +252,8 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 	return validation.ValidateStruct(bndl,
 		validation.Field(&bndl.OrdID, validation.Required, validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
 		validation.Field(&bndl.Name, validation.Required),
-		validation.Field(&bndl.ShortDescription, shortDescriptionRules...),
-		validation.Field(&bndl.Description, descriptionRules...),
+		validation.Field(&bndl.ShortDescription, optionalShortDescriptionRules...),
+		validation.Field(&bndl.Description, optionalDescriptionRules...),
 		validation.Field(&bndl.Links, validation.By(validateORDLinks)),
 		validation.Field(&bndl.Labels, validation.By(validateORDLabels)),
 		validation.Field(&bndl.CredentialExchangeStrategies, validation.By(func(value interface{}) error {
@@ -263,6 +270,7 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 		validation.Field(&bndl.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
+		validation.Field(&bndl.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
 
@@ -332,6 +340,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Extensible, validation.By(func(value interface{}) error {
 			return validateExtensibleField(value, api.OrdPackageID, packagePolicyLevels)
 		})),
+		validation.Field(&api.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
 
@@ -395,6 +404,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.Extensible, validation.By(func(value interface{}) error {
 			return validateExtensibleField(value, event.OrdPackageID, packagePolicyLevels)
 		})),
+		validation.Field(&event.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
 
@@ -414,6 +424,7 @@ func validateProductInput(product *model.ProductInput) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&product.Labels, validation.By(validateORDLabels)),
+		validation.Field(&product.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
 
@@ -425,6 +436,7 @@ func validateVendorInput(vendor *model.VendorInput) error {
 		validation.Field(&vendor.Partners, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(VendorPartnersRegex))
 		})),
+		validation.Field(&vendor.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
 
@@ -435,6 +447,14 @@ func validateTombstoneInput(tombstone *model.TombstoneInput) error {
 }
 
 func validateORDLabels(val interface{}) error {
+	return validateLabels(val, LabelsKeyRegex)
+}
+
+func validateDocumentationLabels(val interface{}) error {
+	return validateLabels(val, DocumentationLabelsKeyRegex)
+}
+
+func validateLabels(val interface{}, regex string) error {
 	if val == nil {
 		return nil
 	}
@@ -459,7 +479,7 @@ func validateORDLabels(val interface{}) error {
 
 	var err error
 	parsedLabels.ForEach(func(key, value gjson.Result) bool {
-		if err = validation.Validate(key.String(), validation.Match(regexp.MustCompile(LabelsKeyRegex))); err != nil {
+		if err = validation.Validate(key.String(), validation.Match(regexp.MustCompile(regex))); err != nil {
 			return false
 		}
 		if !value.IsArray() {
