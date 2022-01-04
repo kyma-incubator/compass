@@ -2,9 +2,10 @@ package log
 
 import (
 	"context"
+	"testing"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/v2/ast"
-	"testing"
 )
 
 const testOperationName = "myOperation"

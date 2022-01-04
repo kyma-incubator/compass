@@ -2,8 +2,9 @@ package log
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
 	"sync"
+
+	"github.com/sirupsen/logrus"
 )
 
 const contextKeyMdc string = "mapped-diagnostic-context"

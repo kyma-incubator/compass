@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	handler2 "github.com/99designs/gqlgen/handler"

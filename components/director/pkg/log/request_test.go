@@ -2,12 +2,13 @@ package log_test
 
 import (
 	"bytes"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/stretchr/testify/require"

@@ -2,9 +2,10 @@ package log
 
 import (
 	"context"
+	"testing"
+
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestContextWithMdc(t *testing.T) {
