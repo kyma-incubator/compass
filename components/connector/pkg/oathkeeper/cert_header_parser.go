@@ -66,13 +66,11 @@ func (hp *headerParser) GetCertificateData(r *http.Request) *CertificateData {
 	}
 
 	certData := &CertificateData{
-		ClientID:        hp.getClientIDFromSubject(certificateInfo.Subject),
-		CertificateHash: certificateInfo.Hash,
+		ClientID:         hp.getClientIDFromSubject(certificateInfo.Subject),
+		CertificateHash:  certificateInfo.Hash,
+		AuthSessionExtra: hp.getAuthSessionExtraFromSubject(r.Context(), certificateInfo.Subject),
 	}
 
-	if hp.getAuthSessionExtraFromSubject != nil {
-		certData.AuthSessionExtra = hp.getAuthSessionExtraFromSubject(r.Context(), certificateInfo.Subject)
-	}
 	return certData
 }
 
