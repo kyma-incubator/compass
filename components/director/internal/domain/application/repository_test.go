@@ -496,8 +496,8 @@ func TestPgRepository_List(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.applications
-												WHERE id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
-												AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $4)) ORDER BY id LIMIT 2 OFFSET 0`),
+												WHERE (id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
+												AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $4))) ORDER BY id LIMIT 2 OFFSET 0`),
 				Args:     []driver.Value{givenTenant(), model.ScenariosKey, "scenario", givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -509,8 +509,8 @@ func TestPgRepository_List(t *testing.T) {
 			},
 			{
 				Query: regexp.QuoteMeta(`SELECT COUNT(*) FROM public.applications
-												WHERE id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
-												AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $4))`),
+												WHERE (id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
+												AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $4)))`),
 				Args:     []driver.Value{givenTenant(), model.ScenariosKey, "scenario", givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -679,7 +679,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.applications
-												WHERE id IN (SELECT "app_id" FROM public.labels
+												WHERE (id IN (SELECT "app_id" FROM public.labels
 													WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3]
 													UNION SELECT "app_id" FROM public.labels
 													WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $4)) AND "key" = $5 AND "value" ?| array[$6]
@@ -687,7 +687,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 													WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $7)) AND "key" = $8 AND "value" ?| array[$9]
 													EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $10)) AND "key" = $11 AND "value" @> $12 
 													EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $13)) AND "key" = $14 AND "value" @> $15)
-												AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $16)) ORDER BY id LIMIT 2 OFFSET 0`),
+												AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $16))) ORDER BY id LIMIT 2 OFFSET 0`),
 				Args:     []driver.Value{givenTenant(), model.ScenariosKey, "Java", givenTenant(), model.ScenariosKey, "Go", givenTenant(), model.ScenariosKey, "Elixir", givenTenant(), "foo", strconv.Quote("bar"), givenTenant(), "foo", strconv.Quote("baz"), givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -699,7 +699,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			},
 			{
 				Query: regexp.QuoteMeta(`SELECT COUNT(*) FROM public.applications
-												WHERE id IN (SELECT "app_id" FROM public.labels
+												WHERE (id IN (SELECT "app_id" FROM public.labels
 													WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3]
 													UNION SELECT "app_id" FROM public.labels
 													WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $4)) AND "key" = $5 AND "value" ?| array[$6]
@@ -707,7 +707,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 													WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $7)) AND "key" = $8 AND "value" ?| array[$9]
 													EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $10)) AND "key" = $11 AND "value" @> $12 
 													EXCEPT SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $13)) AND "key" = $14 AND "value" @> $15)
-												AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $16))`),
+												AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $16)))`),
 				Args:     []driver.Value{givenTenant(), model.ScenariosKey, "Java", givenTenant(), model.ScenariosKey, "Go", givenTenant(), model.ScenariosKey, "Elixir", givenTenant(), "foo", strconv.Quote("bar"), givenTenant(), "foo", strconv.Quote("baz"), givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {

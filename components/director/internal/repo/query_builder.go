@@ -84,6 +84,29 @@ func (b *universalQueryBuilder) BuildQuery(resourceType resource.Type, tenantID 
 	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, isRebindingNeeded)
 }
 
+func buildSelectQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+	var stmtBuilder strings.Builder
+
+	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
+	var allArgs []interface{}
+	if conditions != nil {
+		stmtBuilder.WriteString(" WHERE ")
+		var subquery string
+		subquery, allArgs = conditions.BuildSubquery()
+		stmtBuilder.WriteString(subquery)
+	}
+
+	err := writeOrderByPart(&stmtBuilder, orderByParams)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "while writing order by part")
+	}
+
+	if isRebindingNeeded {
+		return getQueryFromBuilder(stmtBuilder), allArgs, nil
+	}
+	return stmtBuilder.String(), allArgs, nil
+}
+
 // TODO: Refactor builder
 func buildSelectQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder

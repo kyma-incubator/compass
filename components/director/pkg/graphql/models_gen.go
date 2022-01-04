@@ -588,6 +588,14 @@ type TemplateValueInput struct {
 	Value       string `json:"value"`
 }
 
+type TenantPage struct {
+	Data       []*Tenant `json:"data"`
+	PageInfo   *PageInfo `json:"pageInfo"`
+	TotalCount int       `json:"totalCount"`
+}
+
+func (TenantPage) IsPageable() {}
+
 type Version struct {
 	// for example 4.6
 	Value      string `json:"value"`

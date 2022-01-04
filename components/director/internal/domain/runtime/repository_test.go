@@ -220,8 +220,8 @@ func TestPgRepository_List(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes
-												WHERE id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
-												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $4)) ORDER BY name LIMIT 2 OFFSET 0`),
+												WHERE (id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
+												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $4))) ORDER BY name LIMIT 2 OFFSET 0`),
 				Args:     []driver.Value{tenantID, model.ScenariosKey, "scenario", tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -233,8 +233,8 @@ func TestPgRepository_List(t *testing.T) {
 			},
 			{
 				Query: regexp.QuoteMeta(`SELECT COUNT(*) FROM public.runtimes
-												WHERE id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
-												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $4))`),
+												WHERE (id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
+												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $4)))`),
 				Args:     []driver.Value{tenantID, model.ScenariosKey, "scenario", tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
