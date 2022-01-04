@@ -19,9 +19,9 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20211014120217-5f586a97b5de
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20211209092438-97062b59ba50
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20220104122431-99ed924ea212
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220104122431-99ed924ea212
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220104122431-99ed924ea212
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.14
 	github.com/lib/pq v1.10.4
