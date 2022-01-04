@@ -64,21 +64,25 @@ global:
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
-    - name: TestIntegrationSystemSubaccount
+    - name: TestCertificateSubaccount
       id: 123e4567-e89b-12d3-a456-426614174001
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestIntegrationSystemManagedSubaccount
+      id: 3cfcdd62-320d-403b-b66a-4ee3cdd06947
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestIntegrationSystemManagedAccount
       id: 7e8ab2e3-3bb4-42e3-92b2-4e0bf48559d3
       type: account
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
 
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2126"
+      version: "PR-2143"
     connectivity_adapter:
       dir:
       version: "PR-2138"
@@ -116,7 +120,7 @@ global:
       version: "PR-49"
     e2e_tests:
       dir:
-      version: "PR-2123"
+      version: "PR-2143"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -220,7 +224,7 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_level": "account", "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=123e4567-e89b-12d3-a456-426614174001, CN=compass"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=123e4567-e89b-12d3-a456-426614174001, CN=compass"}]'
 
   system_broker:
     enabled: true
