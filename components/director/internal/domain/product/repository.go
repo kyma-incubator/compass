@@ -14,8 +14,8 @@ import (
 const productTable string = `public.products`
 
 var (
-	productColumns   = []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id"}
-	updatableColumns = []string{"title", "short_description", "vendor", "parent", "labels", "correlation_ids"}
+	productColumns   = []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id", "documentation_labels"}
+	updatableColumns = []string{"title", "short_description", "vendor", "parent", "labels", "correlation_ids", "documentation_labels"}
 )
 
 // EntityConverter missing godoc

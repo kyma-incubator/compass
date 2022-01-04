@@ -47,7 +47,7 @@ const (
 	expectedBundleTitle                     = "BUNDLE TITLE"
 	secondExpectedBundleTitle               = "BUNDLE TITLE 2"
 	expectedBundleDescription               = "lorem ipsum dolor nsq sme"
-	secondExpectedBundleDescription         = "foo bar"
+	secondExpectedBundleDescription         = ""
 	firstBundleOrdID                        = "ns:consumptionBundle:BUNDLE_ID:v1"
 	expectedPackageTitle                    = "PACKAGE 1 TITLE"
 	expectedPackageDescription              = "lorem ipsum dolor set"
@@ -81,6 +81,10 @@ const (
 
 	firstCorrelationID  = "sap.s4:communicationScenario:SAP_COM_0001"
 	secondCorrelationID = "sap.s4:communicationScenario:SAP_COM_0002"
+
+	documentationLabelKey         = "Documentation label key"
+	documentationLabelFirstValue  = "Markdown Documentation with links"
+	documentationLabelSecondValue = "With multiple values"
 )
 
 func TestORDAggregator(t *testing.T) {
@@ -155,6 +159,8 @@ func TestORDAggregator(t *testing.T) {
 		bundlesCorrelationIDs := make(map[string][]string)
 		bundlesCorrelationIDs[expectedBundleTitle] = []string{firstCorrelationID, secondCorrelationID}
 		bundlesCorrelationIDs[secondExpectedBundleTitle] = []string{firstCorrelationID, secondCorrelationID}
+
+		documentationLabelsPossibleValues := []string{documentationLabelFirstValue, documentationLabelSecondValue}
 
 		ctx := context.Background()
 
@@ -235,6 +241,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Packages...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfPackages)
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
 			t.Log("Successfully verified packages")
 
@@ -245,6 +252,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Bundles...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfBundles)
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles)
 			assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, expectedNumberOfBundles)
 			ordAndInternalIDsMappingForBundles := storeMappingBetweenORDAndInternalBundleID(t, respBody, expectedNumberOfBundles)
@@ -265,6 +273,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Products...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfProducts)
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfProducts, expectedProductTitle, expectedProductShortDescription, shortDescriptionField)
 			t.Log("Successfully verified products")
 
@@ -275,6 +284,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing APIs...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfAPIs)
 			// In the document there are actually 2 APIs but there is a tombstone for the second one so in the end there will be only one API
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfAPIs, firstAPIExpectedTitle, firstAPIExpectedDescription, descriptionField)
 			t.Log("Successfully verified apis")
@@ -311,6 +321,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Events...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEvents)
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEvents)
 			t.Log("Successfully verified events")
 
@@ -335,6 +346,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Vendors...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfVendors)
 			assertions.AssertVendorFromORDService(t, respBody, expectedNumberOfVendors, expectedVendorTitle)
 			t.Log("Successfully verified vendors")
 

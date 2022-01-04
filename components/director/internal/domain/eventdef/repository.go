@@ -26,12 +26,12 @@ var (
 	eventDefColumns = []string{idColumn, appColumn, "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "documentation_labels"}
 	idColumns        = []string{idColumn}
 	updatableColumns = []string{"package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "documentation_labels"}
 )
 
 // EventAPIDefinitionConverter converts EventDefinitions between the model.EventDefinition service-layer representation and the repo-layer representation Entity.
