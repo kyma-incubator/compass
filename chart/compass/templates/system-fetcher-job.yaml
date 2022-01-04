@@ -189,7 +189,7 @@ metadata:
   name: {{ $.Chart.Name }}-system-fetcher
   namespace: {{ $.Release.Namespace }}
   annotations:
-    iam.gke.io/gcp-service-account: "{{ $.Values.global.sqlproxy.proxyUser }}@sap-{{ $.Values.global.sqlproxy.cloudsql.instance.project }}.iam.gserviceaccount.com"
+    iam.gke.io/gcp-service-account: {{ $.Values.global.sqlProxyServiceAccount | quote }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}

@@ -4,7 +4,7 @@ metadata:
   name: {{ template "fullname" . }}
   namespace: {{ .Release.Namespace }}
   annotations:
-    iam.gke.io/gcp-service-account: "{{ $.Values.global.sqlproxy.proxyUser }}@sap-{{ $.Values.global.sqlproxy.cloudsql.instance.project }}.iam.gserviceaccount.com"
+    iam.gke.io/gcp-service-account: {{ $.Values.global.sqlProxyServiceAccount | quote }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

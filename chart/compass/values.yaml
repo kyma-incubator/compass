@@ -643,8 +643,4 @@ global:
       clientUser: "test-user"
       tenant: "test-tenant"
 
-  sqlproxy:
-    proxyUser: "proxy-user"
-    cloudsql:
-      instance:
-        project: "cmp"
+  sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
