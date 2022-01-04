@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	configTpl = `[{"consumer_type": "%s", "tenant_access_level": "%s", "subject": "%s", "internal_consumer_id": "%s"}]`
+	configTpl = `[{"consumer_type": "%s", "tenant_access_levels": ["%s"], "subject": "%s", "internal_consumer_id": "%s"}]`
 
 	validConsumer           = "Integration System"
 	validAccessLvl          = "account"
@@ -109,7 +109,7 @@ func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
 
 		extra := p.AuthSessionExtraFromSubjectFunc()(ctx, validSubject)
 		require.Equal(t, validConsumer, extra["consumer_type"])
-		require.Equal(t, validAccessLvl, extra["tenant_access_level"])
+		require.Equal(t, []string{validAccessLvl}, extra["tenant_access_levels"])
 		require.Equal(t, validInternalConsumerID, extra["internal_consumer_id"])
 	})
 	t.Run("Returns nil when can't match subjects components", func(t *testing.T) {

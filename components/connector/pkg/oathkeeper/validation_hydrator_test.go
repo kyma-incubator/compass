@@ -30,7 +30,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		AuthSessionExtra: map[string]interface{}{
 			cert.ConsumerTypeExtraField:  "test_consumer_type",
 			cert.InternalConsumerIDField: "test_internal_consumer_id",
-			cert.AccessLevelExtraField:   "test_access_level",
+			cert.AccessLevelsExtraField:  []interface{}{"test_access_level"},
 		},
 	}
 

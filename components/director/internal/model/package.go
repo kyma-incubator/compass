@@ -9,47 +9,49 @@ import (
 
 // Package missing godoc
 type Package struct {
-	ID                string
-	ApplicationID     string
-	OrdID             string
-	Vendor            *string
-	Title             string
-	ShortDescription  string
-	Description       string
-	Version           string
-	PackageLinks      json.RawMessage
-	Links             json.RawMessage
-	LicenseType       *string
-	Tags              json.RawMessage
-	Countries         json.RawMessage
-	Labels            json.RawMessage
-	PolicyLevel       string
-	CustomPolicyLevel *string
-	PartOfProducts    json.RawMessage
-	LineOfBusiness    json.RawMessage
-	Industry          json.RawMessage
-	ResourceHash      *string
+	ID                  string
+	ApplicationID       string
+	OrdID               string
+	Vendor              *string
+	Title               string
+	ShortDescription    string
+	Description         string
+	Version             string
+	PackageLinks        json.RawMessage
+	Links               json.RawMessage
+	LicenseType         *string
+	Tags                json.RawMessage
+	Countries           json.RawMessage
+	Labels              json.RawMessage
+	PolicyLevel         string
+	CustomPolicyLevel   *string
+	PartOfProducts      json.RawMessage
+	LineOfBusiness      json.RawMessage
+	Industry            json.RawMessage
+	ResourceHash        *string
+	DocumentationLabels json.RawMessage
 }
 
 // PackageInput missing godoc
 type PackageInput struct {
-	OrdID             string          `json:"ordId"`
-	Vendor            *string         `json:"vendor"`
-	Title             string          `json:"title"`
-	ShortDescription  string          `json:"shortDescription"`
-	Description       string          `json:"description"`
-	Version           string          `json:"version" hash:"ignore"`
-	PackageLinks      json.RawMessage `json:"packageLinks"`
-	Links             json.RawMessage `json:"links"`
-	LicenseType       *string         `json:"licenseType"`
-	Tags              json.RawMessage `json:"tags"`
-	Countries         json.RawMessage `json:"countries"`
-	Labels            json.RawMessage `json:"labels"`
-	PolicyLevel       string          `json:"policyLevel"`
-	CustomPolicyLevel *string         `json:"customPolicyLevel"`
-	PartOfProducts    json.RawMessage `json:"partOfProducts"`
-	LineOfBusiness    json.RawMessage `json:"lineOfBusiness"`
-	Industry          json.RawMessage `json:"industry"`
+	OrdID               string          `json:"ordId"`
+	Vendor              *string         `json:"vendor"`
+	Title               string          `json:"title"`
+	ShortDescription    string          `json:"shortDescription"`
+	Description         string          `json:"description"`
+	Version             string          `json:"version" hash:"ignore"`
+	PackageLinks        json.RawMessage `json:"packageLinks"`
+	Links               json.RawMessage `json:"links"`
+	LicenseType         *string         `json:"licenseType"`
+	Tags                json.RawMessage `json:"tags"`
+	Countries           json.RawMessage `json:"countries"`
+	Labels              json.RawMessage `json:"labels"`
+	PolicyLevel         string          `json:"policyLevel"`
+	CustomPolicyLevel   *string         `json:"customPolicyLevel"`
+	PartOfProducts      json.RawMessage `json:"partOfProducts"`
+	LineOfBusiness      json.RawMessage `json:"lineOfBusiness"`
+	Industry            json.RawMessage `json:"industry"`
+	DocumentationLabels json.RawMessage `json:"documentationLabels"`
 }
 
 // ToPackage missing godoc
@@ -64,26 +66,27 @@ func (i *PackageInput) ToPackage(id, appID string, pkgHash uint64) *Package {
 	}
 
 	return &Package{
-		ID:                id,
-		ApplicationID:     appID,
-		OrdID:             i.OrdID,
-		Vendor:            i.Vendor,
-		Title:             i.Title,
-		ShortDescription:  i.ShortDescription,
-		Description:       i.Description,
-		Version:           i.Version,
-		PackageLinks:      i.PackageLinks,
-		Links:             i.Links,
-		LicenseType:       i.LicenseType,
-		Tags:              i.Tags,
-		Countries:         i.Countries,
-		Labels:            i.Labels,
-		PolicyLevel:       i.PolicyLevel,
-		CustomPolicyLevel: i.CustomPolicyLevel,
-		PartOfProducts:    i.PartOfProducts,
-		LineOfBusiness:    i.LineOfBusiness,
-		Industry:          i.Industry,
-		ResourceHash:      hash,
+		ID:                  id,
+		ApplicationID:       appID,
+		OrdID:               i.OrdID,
+		Vendor:              i.Vendor,
+		Title:               i.Title,
+		ShortDescription:    i.ShortDescription,
+		Description:         i.Description,
+		Version:             i.Version,
+		PackageLinks:        i.PackageLinks,
+		Links:               i.Links,
+		LicenseType:         i.LicenseType,
+		Tags:                i.Tags,
+		Countries:           i.Countries,
+		Labels:              i.Labels,
+		PolicyLevel:         i.PolicyLevel,
+		CustomPolicyLevel:   i.CustomPolicyLevel,
+		PartOfProducts:      i.PartOfProducts,
+		LineOfBusiness:      i.LineOfBusiness,
+		Industry:            i.Industry,
+		DocumentationLabels: i.DocumentationLabels,
+		ResourceHash:        hash,
 	}
 }
 
@@ -110,5 +113,6 @@ func (p *Package) SetFromUpdateInput(update PackageInput, pkgHash uint64) {
 	p.PartOfProducts = update.PartOfProducts
 	p.LineOfBusiness = update.LineOfBusiness
 	p.Industry = update.Industry
+	p.DocumentationLabels = update.DocumentationLabels
 	p.ResourceHash = hash
 }

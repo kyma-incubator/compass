@@ -16,9 +16,9 @@ const packageTable string = `public.packages`
 var (
 	packageColumns = []string{"id", "app_id", "ord_id", "vendor", "title", "short_description",
 		"description", "version", "package_links", "links", "licence_type", "tags", "countries", "labels", "policy_level",
-		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash"}
+		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels"}
 	updatableColumns = []string{"vendor", "title", "short_description", "description", "version", "package_links", "links",
-		"licence_type", "tags", "countries", "labels", "policy_level", "custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash"}
+		"licence_type", "tags", "countries", "labels", "policy_level", "custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels"}
 )
 
 // EntityConverter missing godoc
