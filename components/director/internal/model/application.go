@@ -23,6 +23,7 @@ type Application struct {
 	Labels                json.RawMessage `json:"labels"`
 	CorrelationIDs        json.RawMessage `json:"correlationIds,omitempty"`
 	Type                  string          `json:"-"`
+	DocumentationLabels   json.RawMessage `json:"documentationLabels"`
 
 	*BaseEntity
 }
@@ -59,6 +60,9 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	}
 	if update.CorrelationIDs != nil {
 		app.CorrelationIDs = update.CorrelationIDs
+	}
+	if update.DocumentationLabels != nil {
+		app.DocumentationLabels = update.DocumentationLabels
 	}
 }
 
@@ -124,6 +128,7 @@ type ApplicationRegisterInput struct {
 	SystemNumber        *string
 	OrdLabels           json.RawMessage
 	CorrelationIDs      json.RawMessage
+	DocumentationLabels json.RawMessage
 }
 
 // ApplicationRegisterInputWithTemplate missing godoc
@@ -148,10 +153,11 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 			Condition: getApplicationStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: timestamp,
 		},
-		BaseURL:        i.BaseURL,
-		Labels:         i.OrdLabels,
-		CorrelationIDs: i.CorrelationIDs,
-		SystemNumber:   i.SystemNumber,
+		BaseURL:             i.BaseURL,
+		Labels:              i.OrdLabels,
+		CorrelationIDs:      i.CorrelationIDs,
+		SystemNumber:        i.SystemNumber,
+		DocumentationLabels: i.DocumentationLabels,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,
@@ -178,4 +184,5 @@ type ApplicationUpdateInput struct {
 	BaseURL             *string
 	Labels              json.RawMessage
 	CorrelationIDs      json.RawMessage
+	DocumentationLabels json.RawMessage
 }

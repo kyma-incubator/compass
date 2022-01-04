@@ -742,6 +742,7 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 		ShortDescription:               in.ShortDescription,
 		Links:                          in.Links,
 		Labels:                         in.Labels,
+		DocumentationLabels:            in.DocumentationLabels,
 		CredentialExchangeStrategies:   in.CredentialExchangeStrategies,
 		CorrelationIDs:                 in.CorrelationIDs,
 	}
