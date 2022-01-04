@@ -153,34 +153,21 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 	return r.multipleFromEntities(entityCollection), nil
 }
 
-func (r *pgRepository) buildSearchCondition(fields []string, searchTerm string) string {
-	var stmtBuilder strings.Builder
-
-	lastIdx := len(fields) - 1
-
-	for idx, field := range fields {
-		if idx != lastIdx {
-			stmt := fmt.Sprintf(`%s ILIKE '%%%s%%' OR `, field, searchTerm)
-			stmtBuilder.WriteString(stmt)
-			continue
-		}
-
-		stmt := fmt.Sprintf(`%s ILIKE '%%%s%%'`, field, searchTerm)
-		stmtBuilder.WriteString(stmt)
-	}
-	return stmtBuilder.String()
-}
-
 // ListPageBySearchTerm retrieves a page of tenants from the Compass storage filtered by a search term.
 func (r *pgRepository) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
+	searchTermRegex := fmt.Sprintf("%%%s%%", searchTerm)
+
 	var entityCollection tenant.EntityCollection
+	likeConditions := make([]repo.Condition, 0, len(searchColumns))
+	for _, searchColumn := range searchColumns {
+		likeConditions = append(likeConditions, repo.NewLikeCondition(searchColumn, searchTermRegex))
+	}
 
-	selectColumns := strings.Join(insertColumns, ", ")
-	query := fmt.Sprintf(`SELECT DISTINCT %s
-			FROM %s
-			WHERE %s = $1 AND (%s)`, selectColumns, tableName, statusColumn, r.buildSearchCondition(searchColumns, searchTerm))
+	conditions := repo.And(
+		&repo.ConditionTree{Operand: repo.NewEqualCondition(statusColumn, tenant.Active)},
+		repo.Or(repo.ConditionTreesFromConditions(likeConditions)...))
 
-	page, totalCount, err := r.pageableQuerierGlobal.ListWithQueryGlobal(ctx, query, []interface{}{tenant.Active}, externalNameColumn, pageSize, cursor, &entityCollection)
+	page, totalCount, err := r.pageableQuerierGlobal.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, externalNameColumn, &entityCollection, conditions)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}

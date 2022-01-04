@@ -440,12 +440,12 @@ func TestPgRepository_ListPageBySearchTerm(t *testing.T) {
 			{sqlRow: sqlRow{id: "id2", name: "name2", externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
 			{sqlRow: sqlRow{id: "id3", name: "name3", externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE status = $1 AND (id::text ILIKE '%name%' OR external_name ILIKE '%name%' OR external_tenant ILIKE '%name%') ORDER BY external_name LIMIT 10 OFFSET 0`)).
-			WithArgs(tenantEntity.Active).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE (status = $1 AND (id::text ILIKE $2 OR external_name ILIKE $3 OR external_tenant ILIKE $4)) ORDER BY external_name LIMIT 10 OFFSET 0`)).
+			WithArgs(tenantEntity.Active, "%name%", "%name%", "%name%").
 			WillReturnRows(rowsToReturn)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT COUNT(*) FROM public.business_tenant_mappings WHERE status = $1 AND (id::text ILIKE '%name%' OR external_name ILIKE '%name%' OR external_tenant ILIKE '%name%')`)).
-			WithArgs(tenantEntity.Active).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT COUNT(*) FROM public.business_tenant_mappings WHERE (status = $1 AND (id::text ILIKE $2 OR external_name ILIKE $3 OR external_tenant ILIKE $4))`)).
+			WithArgs(tenantEntity.Active, "%name%", "%name%", "%name%").
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -470,8 +470,8 @@ func TestPgRepository_ListPageBySearchTerm(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE status = $1 AND (id::text ILIKE '%name%' OR external_name ILIKE '%name%' OR external_tenant ILIKE '%name%') ORDER BY external_name LIMIT 10 OFFSET 0`)).
-			WithArgs(tenantEntity.Active).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE (status = $1 AND (id::text ILIKE $2 OR external_name ILIKE $3 OR external_tenant ILIKE $4)) ORDER BY external_name LIMIT 10 OFFSET 0`)).
+			WithArgs(tenantEntity.Active, "%name%", "%name%", "%name%").
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
