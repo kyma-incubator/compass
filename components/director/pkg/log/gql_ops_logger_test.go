@@ -38,5 +38,4 @@ func TestGraphQlRequestDetailsLogging(t *testing.T) {
 			t.Errorf("The GraphQL operation name is missing or incorrect: %v", opName)
 		}
 	})
-
 }

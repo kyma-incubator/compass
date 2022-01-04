@@ -12,6 +12,7 @@ const (
 	logKeySelectionSet  string = "gql-operation"
 )
 
+// NewGqlLoggingInterceptor creates a new opsInterceptor instance
 func NewGqlLoggingInterceptor() *opsInterceptor {
 	return &opsInterceptor{}
 }

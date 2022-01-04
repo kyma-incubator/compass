@@ -28,8 +28,8 @@ const (
 
 const (
 	logKeyConsumerType  = "consumer-type"
-	logKeyConsumerId    = "consumer-id"
-	logKeyTokenClientId = "token-client-id"
+	logKeyConsumerID    = "consumer-id"
+	logKeyTokenClientID = "token-client-id"
 	logKeyFlow          = "flow"
 )
 
@@ -103,8 +103,8 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			if mdc := log.MdcFromContext(ctx); nil != mdc {
 				mdc.Set(logKeyConsumerType, tokenClaims.ConsumerType)
 				mdc.Set(logKeyFlow, tokenClaims.Flow)
-				mdc.SetIfNotEmpty(logKeyConsumerId, tokenClaims.ConsumerID)
-				mdc.SetIfNotEmpty(logKeyTokenClientId, tokenClaims.TokenClientID)
+				mdc.SetIfNotEmpty(logKeyConsumerID, tokenClaims.ConsumerID)
+				mdc.SetIfNotEmpty(logKeyTokenClientID, tokenClaims.TokenClientID)
 			}
 
 			if err := a.claimsValidator.Validate(ctx, *tokenClaims); err != nil {

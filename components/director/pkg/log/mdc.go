@@ -7,7 +7,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const contextKeyMdc string = "mapped-diagnostic-context"
+type mdcKey string
+
+const contextKeyMdc mdcKey = "mapped-diagnostic-context"
 
 // ContextWithMdc returns a new context with attached MDC
 func ContextWithMdc(ctx context.Context) context.Context {
@@ -27,11 +29,15 @@ func MdcFromContext(ctx context.Context) *MDC {
 	return ptr
 }
 
+// MDC provides a mechanism to enrich the log messages with
+// information, which might not be available at the time/scope
+// where the logging actually occurs.
 type MDC struct {
 	mdc  map[string]interface{}
 	lock sync.Mutex
 }
 
+// NewMappedDiagnosticContext creates a new MDC instance
 func NewMappedDiagnosticContext() *MDC {
 	return &MDC{
 		mdc:  make(map[string]interface{}),
@@ -39,6 +45,7 @@ func NewMappedDiagnosticContext() *MDC {
 	}
 }
 
+// Set adds or overwrites a key-value pair in the MDC
 func (mdc *MDC) Set(key string, value interface{}) {
 	mdc.lock.Lock()
 	defer mdc.lock.Unlock()
@@ -46,6 +53,8 @@ func (mdc *MDC) Set(key string, value interface{}) {
 	mdc.mdc[key] = value
 }
 
+// SetIfNotEmpty adds or overwrites a key-value pair in the MDC
+// but only if the value is not empty
 func (mdc *MDC) SetIfNotEmpty(key string, value string) {
 	if value != "" {
 		mdc.Set(key, value)
