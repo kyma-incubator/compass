@@ -3,7 +3,7 @@ module github.com/kyma-incubator/compass/components/connector
 go 1.17
 
 require (
-	github.com/99designs/gqlgen v0.11.0
+	github.com/99designs/gqlgen v0.11.3
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/gorilla/mux v1.8.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20211207104822-c6754b5f4286
@@ -70,6 +70,9 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
+	github.com/matryer/moq v0.0.0-20200106131100-75d0ddfc0007 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
+	github.com/urfave/cli/v2 v2.1.1 // indirect
+	github.com/vektah/dataloaden v0.2.1-0.20190515034641-a19b9a6e7c9e // indirect
 )

@@ -3,7 +3,7 @@ module github.com/kyma-incubator/compass/components/connectivity-adapter
 go 1.17
 
 require (
-	github.com/99designs/gqlgen v0.11.0 // indirect
+	github.com/99designs/gqlgen v0.11.3 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
