@@ -12,6 +12,12 @@ metadata:
 spec:
   endpoints:
     - port: metrics
+      scheme: https
+      tlsConfig:
+        caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
+        certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
+        keyFile: /etc/prometheus/secrets/istio.default/key.pem
+        insecureSkipVerify: true
   namespaceSelector:
     matchNames:
       - "{{ .Release.Namespace }}"

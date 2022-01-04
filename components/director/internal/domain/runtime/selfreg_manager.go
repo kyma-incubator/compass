@@ -37,6 +37,8 @@ type SelfRegConfig struct {
 	URL            string `envconfig:"APP_SELF_REGISTER_URL,optional"`
 	OauthTokenPath string `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
 
+	SkipSSLValidation bool `envconfig:"APP_SELF_REGISTER_SKIP_SSL_VALIDATION,default=false"`
+
 	ClientTimeout time.Duration `envconfig:"default=30s"`
 }
 
