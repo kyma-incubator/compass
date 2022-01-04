@@ -15,8 +15,8 @@ import (
 const (
 	// ConsumerTypeExtraField is the consumer type json field in the auth session body extra.
 	ConsumerTypeExtraField = "consumer_type"
-	// AccessLevelExtraField is the access level json field in the auth session body extra.
-	AccessLevelExtraField = "tenant_access_level"
+	// AccessLevelsExtraField is the tenant access levels json field in the auth session body extra.
+	AccessLevelsExtraField = "tenant_access_levels"
 	// InternalConsumerIDField is the internal consumer id json field in the auth session body extra.
 	InternalConsumerIDField = "internal_consumer_id"
 )
@@ -93,11 +93,11 @@ func GetCommonName(subject string) string {
 	return getRegexMatch("CN=([^,]+)", subject)
 }
 
-// GetExtra returns an appropriate auth session extra for the given consumerType, accessLevel and internalConsumerID
-func GetExtra(consumerType, accessLevel, internalConsumerID string) map[string]interface{} {
+// GetAuthSessionExtra returns an appropriate auth session extra for the given consumerType, accessLevel and internalConsumerID
+func GetAuthSessionExtra(consumerType, internalConsumerID string, accessLevels []string) map[string]interface{} {
 	return map[string]interface{}{
 		ConsumerTypeExtraField:  consumerType,
-		AccessLevelExtraField:   accessLevel,
+		AccessLevelsExtraField:  accessLevels,
 		InternalConsumerIDField: internalConsumerID,
 	}
 }
