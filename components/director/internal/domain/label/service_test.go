@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label/lbltest"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -324,9 +326,7 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(nil, testErr).Once()
 				return repo
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
-			},
+			UIDServiceFn:       lbltest.UnusedUUIDService(),
 			ExpectedErrMessage: "Test error",
 		},
 		{
@@ -484,9 +484,7 @@ func TestLabelService_CreateLabel(t *testing.T) {
 			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
 				return &automock.LabelDefinitionRepository{}
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
-			},
+			UIDServiceFn:       lbltest.UnusedUUIDService(),
 			ExpectedErrMessage: "",
 		},
 		{
@@ -767,9 +765,7 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 			LabelDefRepoFn: func() *automock.LabelDefinitionRepository {
 				return &automock.LabelDefinitionRepository{}
 			},
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
-			},
+			UIDServiceFn:       lbltest.UnusedUUIDService(),
 			ExpectedErrMessage: "",
 		},
 		{

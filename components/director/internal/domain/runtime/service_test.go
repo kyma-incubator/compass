@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/rtmtest"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -191,11 +193,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctx, tnt).Return(ga, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -234,11 +232,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
@@ -278,11 +272,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
@@ -319,11 +309,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{}, nil)
@@ -358,11 +344,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctx, tnt).Return(ga, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -390,10 +372,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				return &automock.TenantService{}
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -423,10 +402,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(testErr).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -457,10 +433,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(nil, testErr).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -490,11 +463,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo := &automock.ScenariosService{}
 				return repo
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return("").Once()
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -525,10 +494,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: "anotherParent"}, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -564,11 +530,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(nil, testErr).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -604,11 +566,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return(nil, testErr)
@@ -641,11 +599,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				return &automock.TenantService{}
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -682,11 +636,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: func() *automock.UidService {
-				svc := &automock.UidService{}
-				svc.On("Generate").Return(runtimeID)
-				return svc
-			},
+			UIDServiceFn: rtmtest.UnusedUUIDService(),
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctxWithGlobalaccountMatcher, map[string]interface{}{}, runtimeID).Return([]interface{}{"test"}, nil)
@@ -713,10 +663,9 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			svc := runtime.NewService(repo, nil, scenariosSvc, labelSvc, idSvc, engineSvc, tenantSvc, protectedLabelPattern, immutableLabelPattern)
 
 			// WHEN
-			result, err := svc.CreateWithMandatoryLabels(testCase.Context, testCase.Input, mandatoryLabels)
+			err := svc.CreateWithMandatoryLabels(testCase.Context, testCase.Input, runtimeID, mandatoryLabels)
 
 			// then
-			assert.IsType(t, "string", result)
 			if err == nil {
 				require.Nil(t, testCase.ExpectedErr)
 			} else {
@@ -730,12 +679,16 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern)
+		uuidSvc := &automock.UidService{}
+		uuidSvc.On("Generate").Return(testUUID).Once()
+
+		svc := runtime.NewService(nil, nil, nil, nil, uuidSvc, nil, nil, protectedLabelPattern, immutableLabelPattern)
 		// WHEN
 		_, err := svc.Create(context.TODO(), model.RuntimeInput{})
 		// then
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
+		uuidSvc.AssertExpectations(t)
 	})
 }
 
