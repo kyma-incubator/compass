@@ -62,7 +62,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 		ServiceFn        func() *automock.RuntimeService
 		ConverterFn      func() *automock.RuntimeConverter
 		SelfRegManagerFn func() *automock.SelfRegisterManager
-		UuidSvcFn        func() *automock.UidService
+		UUIDSvcFn        func() *automock.UidService
 
 		Input           graphql.RuntimeInput
 		ExpectedRuntime *graphql.Runtime
@@ -88,7 +88,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
-			UuidSvcFn: func() *automock.UidService {
+			UUIDSvcFn: func() *automock.UidService {
 				svc := &automock.UidService{}
 				svc.On("Generate").Return(testUUID).Once()
 				return svc
@@ -115,7 +115,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			UuidSvcFn: func() *automock.UidService {
+			UUIDSvcFn: func() *automock.UidService {
 				svc := &automock.UidService{}
 				svc.On("Generate").Return(testUUID).Once()
 				return svc
@@ -143,7 +143,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			UuidSvcFn: func() *automock.UidService {
+			UUIDSvcFn: func() *automock.UidService {
 				svc := &automock.UidService{}
 				svc.On("Generate").Return(testUUID).Once()
 				return svc
@@ -167,7 +167,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
-			UuidSvcFn: func() *automock.UidService {
+			UUIDSvcFn: func() *automock.UidService {
 				svc := &automock.UidService{}
 				svc.On("Generate").Return(testUUID).Once()
 				return svc
@@ -186,7 +186,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 			selfRegManager := testCase.SelfRegManagerFn()
-			uuidSvc := testCase.UuidSvcFn()
+			uuidSvc := testCase.UUIDSvcFn()
 
 			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc)
 
