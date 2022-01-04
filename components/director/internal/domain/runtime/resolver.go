@@ -224,8 +224,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, labels)
-	if err != nil {
+	if err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, labels); err != nil {
 		return nil, err
 	}
 
