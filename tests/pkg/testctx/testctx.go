@@ -73,7 +73,6 @@ func (o *Operation) WithQueryParams(queryParams map[string]string) *Operation {
 
 func (o *Operation) Run(req *gcli.Request, cli *gcli.Client, resp interface{}) error {
 	m := resultMapperFor(&resp)
-
 	req.Header.Set("Tenant", o.tenant)
 
 	return withRetryOnTemporaryConnectionProblems(func() error {
