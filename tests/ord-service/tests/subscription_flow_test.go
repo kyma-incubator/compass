@@ -82,7 +82,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 		require.NotEmpty(t, runtime.ID)
 		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
-		require.Contains(t, strLbl, distinguishLblValue)
+		require.Contains(t, strLbl, runtime.ID)
 
 		// Verify that the label returned cannot be modified
 		setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
