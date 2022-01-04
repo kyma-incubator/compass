@@ -457,9 +457,9 @@ func (r *queryResolver) IntegrationSystem(ctx context.Context, id string) (*grap
 	return r.intSys.IntegrationSystem(ctx, id)
 }
 
-// Tenants missing godoc
-func (r *queryResolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
-	return r.tenant.Tenants(ctx)
+// Tenants fetches tenants by page and search term
+func (r *queryResolver) Tenants(ctx context.Context, first *int, after *graphql.PageCursor, searchTerm *string) (*graphql.TenantPage, error) {
+	return r.tenant.Tenants(ctx, first, after, searchTerm)
 }
 
 // AutomaticScenarioAssignmentForScenario missing godoc

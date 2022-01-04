@@ -1087,6 +1087,12 @@ type Tenant {
 	labels(key: String): Labels
 }
 
+type TenantPage implements Pageable {
+	data: [Tenant!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type Version {
 	"""
 	for example 4.6
@@ -1203,7 +1209,7 @@ type Query {
 	**Examples**
 	- [query tenants](examples/query-tenants/query-tenants.graphql)
 	"""
-	tenants: [Tenant!]! @hasScopes(path: "graphql.query.tenants")
+	tenants(first: Int = 500, after: PageCursor, searchTerm: String): TenantPage! @hasScopes(path: "graphql.query.tenants")
 	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
 	"""
 	**Examples**
