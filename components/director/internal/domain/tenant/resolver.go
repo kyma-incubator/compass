@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/pkg/errors"
 )
@@ -16,6 +17,7 @@ import (
 //go:generate mockery --name=BusinessTenantMappingService --output=automock --outpkg=automock --case=underscore
 type BusinessTenantMappingService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
+	ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error)
 	ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error)
 	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
 	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
@@ -40,17 +42,27 @@ type Resolver struct {
 	conv BusinessTenantMappingConverter
 }
 
-// Tenants transactionally retrieves all tenants present in the Compass storage.
-func (r *Resolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
+// Tenants transactionally retrieves a page of tenants present in the Compass storage by a search term. If the search term is missing it will be ignored in the resulting tenant subset.
+func (r *Resolver) Tenants(ctx context.Context, first *int, after *graphql.PageCursor, searchTerm *string) (*graphql.TenantPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+	if first == nil {
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+	}
+
+	searchStr := str.PtrStrToStr(searchTerm)
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tenants, err := r.srv.List(ctx)
+	tenantsPage, err := r.srv.ListPageBySearchTerm(ctx, searchStr, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -59,8 +71,17 @@ func (r *Resolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
 		return nil, err
 	}
 
-	gqlTenants := r.conv.MultipleToGraphQL(tenants)
-	return gqlTenants, nil
+	gqlTenants := r.conv.MultipleToGraphQL(tenantsPage.Data)
+
+	return &graphql.TenantPage{
+		Data:       gqlTenants,
+		TotalCount: tenantsPage.TotalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(tenantsPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(tenantsPage.PageInfo.EndCursor),
+			HasNextPage: tenantsPage.PageInfo.HasNextPage,
+		},
+	}, nil
 }
 
 // Tenant retrieves a tenant with the provided external ID from the Compass storage.

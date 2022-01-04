@@ -128,9 +128,9 @@ func TestPgRepository_List(t *testing.T) {
 		Name: "List Runtime Contexts",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1
+				Query: regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE (runtime_id = $1
 												AND id IN (SELECT "runtime_context_id" FROM public.labels WHERE "runtime_context_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4])
-												AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = $5)) ORDER BY id LIMIT 2 OFFSET 0`),
+												AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = $5))) ORDER BY id LIMIT 2 OFFSET 0`),
 				Args:     []driver.Value{runtimeID, tenantID, model.ScenariosKey, "scenario", tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -141,9 +141,9 @@ func TestPgRepository_List(t *testing.T) {
 				},
 			},
 			{
-				Query: regexp.QuoteMeta(`SELECT COUNT(*) FROM public.runtime_contexts WHERE runtime_id = $1
+				Query: regexp.QuoteMeta(`SELECT COUNT(*) FROM public.runtime_contexts WHERE (runtime_id = $1
 												AND id IN (SELECT "runtime_context_id" FROM public.labels WHERE "runtime_context_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4])
-												AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = $5))`),
+												AND (id IN (SELECT id FROM runtime_contexts_tenants WHERE tenant_id = $5)))`),
 				Args:     []driver.Value{runtimeID, tenantID, model.ScenariosKey, "scenario", tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {

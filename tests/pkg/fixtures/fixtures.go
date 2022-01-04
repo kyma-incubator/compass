@@ -117,7 +117,34 @@ func FixTenantsRequest() *gcli.Request {
 				result: tenants {
 						%s
 					}
-				}`, testctx.Tc.GQLFieldsProvider.OmitForTenant([]string{"labels"})))
+				}`, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.OmitForTenant([]string{"labels", "initialized"}))))
+}
+
+func FixTenantsPageRequest(first int) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: tenants(first: %d) {
+						%s
+					}
+				}`, first, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.OmitForTenant([]string{"labels", "initialized"}))))
+}
+
+func FixTenantsSearchRequest(searchTerm string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: tenants(searchTerm: "%s") {
+						%s
+					}
+				}`, searchTerm, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.OmitForTenant([]string{"labels", "initialized"}))))
+}
+
+func FixTenantsPageSearchRequest(searchTerm string, first int) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: tenants(searchTerm: "%s", first: %d) {
+						%s
+					}
+				}`, searchTerm, first, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.OmitForTenant([]string{"labels", "initialized"}))))
 }
 
 func FixTenantRequest(externalID string) *gcli.Request {
