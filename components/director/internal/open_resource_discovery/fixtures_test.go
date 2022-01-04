@@ -218,28 +218,24 @@ func fixSanitizedORDDocument() *ord.Document {
 	sanitizedDoc.APIResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	sanitizedDoc.APIResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.APIResources[0].Labels = json.RawMessage(mergedLabels)
-	sanitizedDoc.APIResources[0].DocumentationLabels = json.RawMessage(documentLabels)
 
 	sanitizedDoc.APIResources[1].Tags = json.RawMessage(`["testTag","ZGWSAMPLE"]`)
 	sanitizedDoc.APIResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
 	sanitizedDoc.APIResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	sanitizedDoc.APIResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.APIResources[1].Labels = json.RawMessage(mergedLabels)
-	sanitizedDoc.APIResources[1].DocumentationLabels = json.RawMessage(documentLabels)
 
 	sanitizedDoc.EventResources[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
 	sanitizedDoc.EventResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
 	sanitizedDoc.EventResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	sanitizedDoc.EventResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.EventResources[0].Labels = json.RawMessage(mergedLabels)
-	sanitizedDoc.EventResources[0].DocumentationLabels = json.RawMessage(documentLabels)
 
 	sanitizedDoc.EventResources[1].Tags = json.RawMessage(`["testTag","eventTestTag2"]`)
 	sanitizedDoc.EventResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
 	sanitizedDoc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	sanitizedDoc.EventResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	sanitizedDoc.EventResources[1].Labels = json.RawMessage(mergedLabels)
-	sanitizedDoc.EventResources[1].DocumentationLabels = json.RawMessage(documentLabels)
 
 	return sanitizedDoc
 }
