@@ -9,7 +9,11 @@ ALTER TABLE bundles ADD COLUMN documentation_labels JSONB;
 -- api resource
 ALTER TABLE api_definitions ADD COLUMN documentation_labels JSONB;
 
-CREATE OR REPLACE VIEW tenants_apis AS
+-- Drop view tenants_specifications since it depends on tenants_apis
+DROP VIEW IF EXISTS tenants_specifications;
+DROP VIEW IF EXISTS tenants_apis;
+-- Add column documentation_labels
+CREATE VIEW tenants_apis AS
 SELECT DISTINCT t_apps.tenant_id AS tenant_id,
                 t_apps.provider_tenant_id  AS provider_tenant_id,
                 apis.id,
@@ -71,6 +75,23 @@ FROM api_definitions apis
                         JOIN consumers_provider_for_runtimes_func() cpr
                              ON cpr.consumer_tenants ? (SELECT external_tenant FROM business_tenant_mappings WHERE id = a_s.tenant_id::uuid)) t_apps ON apis.app_id = t_apps.id
          LEFT JOIN specifications specs ON apis.id = specs.api_def_id;
+
+
+CREATE OR REPLACE VIEW tenants_specifications AS
+SELECT DISTINCT t_api_event_def.tenant_id AS tenant_id,
+                t_api_event_def.provider_tenant_id  AS provider_tenant_id,
+                spec.*
+FROM specifications spec
+         JOIN (SELECT a.id,
+                      a.tenant_id::text,
+                      a.provider_tenant_id::text
+               FROM tenants_apis a
+               UNION ALL
+               SELECT e.id,
+                      e.tenant_id::text,
+                      e.provider_tenant_id::text
+               FROM tenants_events e) t_api_event_def
+              ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
 
 -- event resource
 ALTER TABLE event_api_definitions ADD COLUMN documentation_labels JSONB;
