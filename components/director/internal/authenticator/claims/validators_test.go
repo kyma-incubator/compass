@@ -75,10 +75,11 @@ func TestValidator_Validate(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name            string
-		RuntimeServicFn func() *automock.RuntimeService
-		Claims          claims.Claims
-		ExpectedErr     string
+		Name                       string
+		RuntimeServiceFn           func() *automock.RuntimeService
+		IntegrationSystemServiceFn func() *automock.IntegrationSystemService
+		Claims                     claims.Claims
+		ExpectedErr                string
 	}{
 		{
 			Name:   "Succeeds when all claims properties are present",
@@ -116,8 +117,8 @@ func TestValidator_Validate(t *testing.T) {
 		},
 		{
 			Name:   "Success for consumer - provider flow does not proceed when rt with label is found",
-			Claims: getClaimsForConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-			RuntimeServicFn: func() *automock.RuntimeService {
+			Claims: getClaimsForRuntimeConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
 				rsvc := &automock.RuntimeService{}
 				rsvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtimes, nil).Once()
 				rsvc.On("GetLabel", contextThatHasTenant(providerTenantID), runtimeID, consumerIDsLabelKey).Return(lbl, nil).Once()
@@ -126,8 +127,8 @@ func TestValidator_Validate(t *testing.T) {
 		},
 		{
 			Name:   "Success for consumer - provider flow proceed when rt without label is found",
-			Claims: getClaimsForConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-			RuntimeServicFn: func() *automock.RuntimeService {
+			Claims: getClaimsForRuntimeConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
 				rsvc := &automock.RuntimeService{}
 				rsvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtimes, nil).Once()
 				rsvc.On("GetLabel", contextThatHasTenant(providerTenantID), runtimeID, consumerIDsLabelKey).Return(invalidLabel, nil).Once()
@@ -137,8 +138,8 @@ func TestValidator_Validate(t *testing.T) {
 		},
 		{
 			Name:   "Success for consumer - provider flow proceed when rt label is found",
-			Claims: getClaimsForConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-			RuntimeServicFn: func() *automock.RuntimeService {
+			Claims: getClaimsForRuntimeConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
 				rsvc := &automock.RuntimeService{}
 				rsvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtimes, nil).Once()
 				rsvc.On("GetLabel", contextThatHasTenant(providerTenantID), runtimeID, consumerIDsLabelKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "")).Once()
@@ -148,18 +149,18 @@ func TestValidator_Validate(t *testing.T) {
 		},
 		{
 			Name:        "consumer-provider flow: error when token clientID missing",
-			Claims:      getClaimsForConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, ""),
+			Claims:      getClaimsForRuntimeConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, ""),
 			ExpectedErr: "could not find consumer token client ID",
 		},
 		{
 			Name:        "consumer-provider flow: error when region missing",
-			Claims:      getClaimsForConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, "", clientID),
+			Claims:      getClaimsForRuntimeConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, "", clientID),
 			ExpectedErr: "could not determine token's region",
 		},
 		{
 			Name:   "consumer-provider flow: error while listing runtimes",
-			Claims: getClaimsForConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-			RuntimeServicFn: func() *automock.RuntimeService {
+			Claims: getClaimsForRuntimeConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
 				rsvc := &automock.RuntimeService{}
 				rsvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(nil, testErr).Once()
 				return rsvc
@@ -168,8 +169,8 @@ func TestValidator_Validate(t *testing.T) {
 		},
 		{
 			Name:   "consumer-provider flow: error when runtime does not exists",
-			Claims: getClaimsForConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-			RuntimeServicFn: func() *automock.RuntimeService {
+			Claims: getClaimsForRuntimeConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
 				rsvc := &automock.RuntimeService{}
 				rsvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID)).Once()
 				return rsvc
@@ -178,8 +179,8 @@ func TestValidator_Validate(t *testing.T) {
 		},
 		{
 			Name:   "consumer-provider flow: error while getting labels",
-			Claims: getClaimsForConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-			RuntimeServicFn: func() *automock.RuntimeService {
+			Claims: getClaimsForRuntimeConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
 				rsvc := &automock.RuntimeService{}
 				rsvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtimes, nil).Once()
 				rsvc.On("GetLabel", contextThatHasTenant(providerTenantID), runtimeID, consumerIDsLabelKey).Return(nil, testErr).Once()
@@ -189,8 +190,8 @@ func TestValidator_Validate(t *testing.T) {
 		},
 		{
 			Name:   "consumer-provider flow: error when no rt with the right consumer label is found",
-			Claims: getClaimsForConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-			RuntimeServicFn: func() *automock.RuntimeService {
+			Claims: getClaimsForRuntimeConsumerProviderFlow(tenantID, extTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
 				rsvc := &automock.RuntimeService{}
 				rsvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtimes, nil).Once()
 				rsvc.On("GetLabel", contextThatHasTenant(providerTenantID), runtimeID, consumerIDsLabelKey).Return(invalidLabel, nil).Once()
@@ -199,16 +200,58 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ExpectedErr: fmt.Sprintf("Consumer's external tenant %s was not found in the %s label of any runtime in the provider tenant %s", extTenantID, consumerIDsLabelKey, providerTenantID),
 		},
+		{
+			Name:   "Success for integration system consumer-provider flow: when subaccount tenant ID is provided instead of integration system ID for consumer ID",
+			Claims: getClaimsForIntegrationSystemConsumerProviderFlow(tenantID, extTenantID, providerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+		},
+		{
+			Name: "Success for integration system consumer-provider flow: when integration system with consumer ID exists",
+			IntegrationSystemServiceFn: func() *automock.IntegrationSystemService {
+				intSysSvc := &automock.IntegrationSystemService{}
+				intSysSvc.On("Exists", context.TODO(), consumerID).Return(true, nil)
+				return intSysSvc
+			},
+			Claims: getClaimsForIntegrationSystemConsumerProviderFlow(tenantID, extTenantID, consumerID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+		},
+		{
+			Name: "integration system consumer-provider flow: error when integration system with consumer ID does not exist",
+			IntegrationSystemServiceFn: func() *automock.IntegrationSystemService {
+				intSysSvc := &automock.IntegrationSystemService{}
+				intSysSvc.On("Exists", context.TODO(), consumerID).Return(false, nil)
+				return intSysSvc
+			},
+			Claims:      getClaimsForIntegrationSystemConsumerProviderFlow(tenantID, extTenantID, consumerID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			ExpectedErr: fmt.Sprintf("integration system with ID %s does not exist", consumerID),
+		},
+		{
+			Name: "integration system consumer-provider flow: error when check for integration system existence fails",
+			IntegrationSystemServiceFn: func() *automock.IntegrationSystemService {
+				intSysSvc := &automock.IntegrationSystemService{}
+				intSysSvc.On("Exists", context.TODO(), consumerID).Return(false, testErr)
+				return intSysSvc
+			},
+			Claims:      getClaimsForIntegrationSystemConsumerProviderFlow(tenantID, extTenantID, consumerID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			ExpectedErr: testErr.Error(),
+		},
+		{
+			Name:        "consumer-provider flow: error when consumer type is not supported",
+			Claims:      getClaimsForConsumerProviderFlow(consumer.Application, tenantID, extTenantID, consumerID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			ExpectedErr: fmt.Sprintf("consumer with type %s is not supported", consumer.Application),
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			runtimeSvc := &automock.RuntimeService{}
-			if testCase.RuntimeServicFn != nil {
-				runtimeSvc = testCase.RuntimeServicFn()
+			if testCase.RuntimeServiceFn != nil {
+				runtimeSvc = testCase.RuntimeServiceFn()
+			}
+			intSysSvc := &automock.IntegrationSystemService{}
+			if testCase.IntegrationSystemServiceFn != nil {
+				intSysSvc = testCase.IntegrationSystemServiceFn()
 			}
 
-			validator := claims.NewValidator(runtimeSvc, providerLabelKey, consumerIDsLabelKey)
+			validator := claims.NewValidator(runtimeSvc, intSysSvc, providerLabelKey, consumerIDsLabelKey)
 			err := validator.Validate(context.TODO(), testCase.Claims)
 
 			if len(testCase.ExpectedErr) > 0 {
@@ -218,7 +261,7 @@ func TestValidator_Validate(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			runtimeSvc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, runtimeSvc, intSysSvc)
 		})
 	}
 }
@@ -252,7 +295,15 @@ func TestScopesValidator_Validate(t *testing.T) {
 	})
 }
 
-func getClaimsForConsumerProviderFlow(consumerTenant, consumerExternalTenant, providerTenant, providerExtTenant, scopes, region, clientID string) claims.Claims {
+func getClaimsForRuntimeConsumerProviderFlow(consumerTenant, consumerExternalTenant, providerTenant, providerExtTenant, scopes, region, clientID string) claims.Claims {
+	return getClaimsForConsumerProviderFlow(consumer.Runtime, consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID)
+}
+
+func getClaimsForIntegrationSystemConsumerProviderFlow(consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID string) claims.Claims {
+	return getClaimsForConsumerProviderFlow(consumer.IntegrationSystem, consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID)
+}
+
+func getClaimsForConsumerProviderFlow(consumerType consumer.ConsumerType, consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID string) claims.Claims {
 	return claims.Claims{
 		Tenant: map[string]string{
 			tenantmapping.ConsumerTenantKey:         consumerTenant,
@@ -262,7 +313,7 @@ func getClaimsForConsumerProviderFlow(consumerTenant, consumerExternalTenant, pr
 		},
 		Scopes:        scopes,
 		ConsumerID:    consumerID,
-		ConsumerType:  consumer.Runtime,
+		ConsumerType:  consumerType,
 		OnBehalfOf:    onBehalfOfConsumerID,
 		Region:        region,
 		TokenClientID: clientID,
