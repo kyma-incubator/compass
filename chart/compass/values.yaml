@@ -308,6 +308,7 @@ global:
     domainName: "kyma.local"
 
   database:
+    sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
     manageSecrets: true
     embedded:
       enabled: true
@@ -642,5 +643,3 @@ global:
       appID: "123-test-456"
       clientUser: "test-user"
       tenant: "test-tenant"
-
-  sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"

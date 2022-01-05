@@ -12,6 +12,7 @@ spec:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
+        serviceAccountName: {{ $.Chart.Name }}-migrator-job
         {{- if eq .Values.global.migratorJob.nodeSelectorEnabled true }}
         nodeSelector:
           migrationJobs: "true"
@@ -26,11 +27,7 @@ spec:
               - /bin/sh
             args:
               - -c
-              - "trap 'exit 0' SIGINT; echo 'Waiting for istio-proxy to start...' && sleep 15; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json -term_timeout=2s"
-            volumeMounts:
-              - name: cloudsql-instance-credentials
-                mountPath: /secrets/cloudsql-instance-credentials
-                readOnly: true
+              - "trap 'exit 0' SIGINT; echo 'Waiting for istio-proxy to start...' && sleep 15; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -term_timeout=2s"
           {{ end }}
           - name: migrator
             image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
@@ -78,8 +75,19 @@ spec:
           - name: migrations-storage
             persistentVolumeClaim:
               claimName: {{ .Values.global.migratorJob.pvc.name }}
-          {{- if eq .Values.global.database.embedded.enabled false }}
-          - name: cloudsql-instance-credentials
-            secret:
-              secretName: cloudsql-instance-credentials
-          {{- end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-migrator-job
+  namespace: {{ $.Release.Namespace }}
+  {{- if eq .Values.global.database.embedded.enabled false }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $.Values.global.sqlProxyServiceAccount | quote }}
+  {{- end }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}

@@ -16,7 +16,6 @@ To install Compass with GCP managed Postgres database, set the **database.embedd
 
 | Parameter | Description | Values | Default |
 | --- | --- | --- | --- |
-| `global.database.managedGCP.serviceAccountKey` | Specifies base64 encoded the key for GCP Service Account mentioned in prerequisites. | base64 encoded string | "" |
 | `global.database.managedGCP.instanceConnectionName` | Specifies instance connection name to GCP PostgreSQL database | string | "" |
 | `global.database.managedGCP.director.user` | Specifies the database username in the Director. | string | "" |
 | `global.database.managedGCP.director.password` | Specifies the password to the user's database in the Director. | string | "" |

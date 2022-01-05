@@ -7,24 +7,3 @@ metadata:
   annotations:
     iam.gke.io/gcp-service-account: {{ $.Values.global.sqlProxyServiceAccount | quote }}
   {{- end }}
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: {{ $.Chart.Name }}
-  namespace: {{ $.Release.Namespace }}
-  labels:
-    app: {{ $.Chart.Name }}
-    release: {{ $.Release.Name }}
-    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
-subjects:
-  - kind: ServiceAccount
-    name: {{ $.Chart.Name }}
-    namespace: {{ $.Release.Namespace }}
-roleRef:
-  kind: Role
-  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
-  apiGroup: rbac.authorization.k8s.io
