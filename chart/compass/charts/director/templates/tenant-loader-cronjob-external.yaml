@@ -16,6 +16,7 @@ spec:
                         app: {{ .Chart.Name }}-tenant-loader
                         release: {{ .Release.Name }}
                 spec:
+                    serviceAccountName: {{ template "fullname" . }}
                     restartPolicy: Never
                     shareProcessNamespace: true
                     containers:

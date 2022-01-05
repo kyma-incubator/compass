@@ -26,6 +26,7 @@ spec:
         app: {{ $jobName }}
         release: {{ .Release.Name }}
     spec:
+      serviceAccountName: {{ template "fullname" . }}
       restartPolicy: Never
       shareProcessNamespace: true
       containers:

@@ -188,8 +188,10 @@ kind: ServiceAccount
 metadata:
   name: {{ $.Chart.Name }}-system-fetcher
   namespace: {{ $.Release.Namespace }}
+  {{- if eq .Values.global.database.embedded.enabled false }}
   annotations:
     iam.gke.io/gcp-service-account: {{ $.Values.global.sqlProxyServiceAccount | quote }}
+  {{- end }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}
