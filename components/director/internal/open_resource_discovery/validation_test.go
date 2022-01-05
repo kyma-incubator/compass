@@ -571,6 +571,38 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Invalid JSON `DocumentationLabels` field for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.DocumentationLabels = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `DocumentationLabels` field for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.DocumentationLabels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.DocumentationLabels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array of strings for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.DocumentationLabels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*ord.Document{doc}
+			},
 		},
 	}
 
@@ -622,6 +654,16 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		},
+		{
+			Name: "Only major version is checked for `OpenResourceDiscovery` field for Document",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.OpenResourceDiscovery = "1.4"
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		},
 	}
 
@@ -1111,6 +1153,30 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid JSON object `DocumentationLabels` field for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].DocumentationLabels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array of strings for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid `countries` field element for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1364,13 +1430,14 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
-			Name: "Missing `shortDescription` field for Bundle",
+			Name: "Valid missing `shortDescription` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].ShortDescription = nil
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Exceeded length of `shortDescription` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
@@ -1381,13 +1448,14 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
-			Name: "Invalid empty `shortDescription` field for Bundle",
+			Name: "Valid empty `shortDescription` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].ShortDescription = str.Ptr("")
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		},
 		{
 			Name: "New lines in `shortDescription` field for Bundle",
@@ -1399,13 +1467,14 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
-			Name: "Missing `description` field for Bundle",
+			Name: "Valid missing `description` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].Description = nil
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		},
 		{
 			Name: "Exceeded length of `description` field for Bundle",
@@ -1417,13 +1486,14 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
-			Name: "Invalid empty `description` field for Bundle",
+			Name: "Valid empty `description` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].Description = str.Ptr("")
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		},
 		{
 			Name: "New lines in `description` field for Bundle",
@@ -1529,6 +1599,42 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid JSON `DocumentationLabels` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].DocumentationLabels = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid JSON object `DocumentationLabels` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].DocumentationLabels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "`DocumentationLabels` values are not array for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "`DocumentationLabels` values are not array of strings for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
 
 				return []*ord.Document{doc}
 			},
@@ -2770,6 +2876,38 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid JSON `DocumentationLabels` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].DocumentationLabels = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `DocumentationLabels` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].DocumentationLabels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array of strings for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid `implementationStandard` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -3871,6 +4009,30 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid JSON object `DocumentationLabels` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].DocumentationLabels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array of strings for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid value for `countries` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -4489,6 +4651,38 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Invalid JSON `DocumentationLabels` field for Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Products[0].DocumentationLabels = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `DocumentationLabels` field for Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Products[0].DocumentationLabels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array for Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Products[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array of strings for Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Products[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*ord.Document{doc}
+			},
 		},
 
 		// Test invalid entity relations
@@ -4548,10 +4742,10 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid JSON `Labels` field for Product",
+			Name: "Invalid JSON `Labels` field for Vendor",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Products[0].Labels = json.RawMessage(invalidJSON)
+				doc.Vendors[0].Labels = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -4584,6 +4778,38 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Vendors[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON `DocumentationLabels` field for Vendor",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].DocumentationLabels = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `DocumentationLabels` field for Vendor",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].DocumentationLabels = json.RawMessage(`[]`)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array for Vendor",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`DocumentationLabels` values are not array of strings for Vendor",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].DocumentationLabels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
 
 				return []*ord.Document{doc}
 			},

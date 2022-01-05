@@ -23,6 +23,95 @@ type Condition interface {
 // Conditions is a slice of conditions
 type Conditions []Condition
 
+// Operator represents an SQL operator
+type Operator string
+
+const (
+
+	// OR represents an OR operator
+	OR Operator = "OR"
+
+	// AND represents an AND operator
+	AND Operator = "AND"
+)
+
+// ConditionTree represents a tree of conditions. The tree is constructed bottom to top. Leafs are the actual conditions. Intermediate nodes are operators joining them.
+type ConditionTree struct {
+	// Operator represents an SQL operator used to join the children conditions. This is populated only for non-leaf nodes.
+	Operator Operator
+	// Operand is the actual condition. This is populated only for leaf nodes.
+	Operand Condition
+	// Children is a slice of conditions. This is populated only for non-leaf nodes.
+	Children []*ConditionTree
+}
+
+// IsLeaf returns true if the node is a leaf node
+func (t *ConditionTree) IsLeaf() bool {
+	return len(t.Children) == 0
+}
+
+// BuildSubquery builds SQL subquery for a given condition tree
+func (t *ConditionTree) BuildSubquery() (string, []interface{}) {
+	if t.IsLeaf() {
+		args, ok := t.Operand.GetQueryArgs()
+		if !ok {
+			args = []interface{}{}
+		}
+		return t.Operand.GetQueryPart(), args
+	}
+
+	args := make([]interface{}, 0)
+	queryParts := make([]string, 0, len(t.Children))
+	for _, child := range t.Children {
+		queryPart, childArgs := child.BuildSubquery()
+		queryParts = append(queryParts, queryPart)
+		args = append(args, childArgs...)
+	}
+
+	sql := fmt.Sprintf("(%s)", strings.Join(queryParts, fmt.Sprintf(" %s ", t.Operator)))
+	return sql, args
+}
+
+// ConditionTreesFromConditions builds a tree of conditions from a slice of conditions. The tree is constructed bottom to top.
+func ConditionTreesFromConditions(conditions Conditions) []*ConditionTree {
+	if len(conditions) == 0 {
+		return nil
+	}
+	children := make([]*ConditionTree, 0, len(conditions))
+	for i := range conditions {
+		children = append(children, &ConditionTree{Operand: conditions[i]})
+	}
+	return children
+}
+
+// And joins given conditions with AND operator
+func And(children ...*ConditionTree) *ConditionTree {
+	if len(children) == 0 {
+		return nil
+	}
+	if len(children) == 1 {
+		return children[0]
+	}
+	return &ConditionTree{
+		Operator: AND,
+		Children: children,
+	}
+}
+
+// Or joins given conditions with OR operator
+func Or(children ...*ConditionTree) *ConditionTree {
+	if len(children) == 0 {
+		return nil
+	}
+	if len(children) == 1 {
+		return children[0]
+	}
+	return &ConditionTree{
+		Operator: OR,
+		Children: children,
+	}
+}
+
 // NewEqualCondition represents equal SQL condition (field = val)
 func NewEqualCondition(field string, val interface{}) Condition {
 	return &equalCondition{
@@ -109,6 +198,29 @@ func (c *nullCondition) GetQueryPart() string {
 // GetQueryArgs returns a boolean flag if the condition contain arguments and the actual arguments
 func (c *nullCondition) GetQueryArgs() ([]interface{}, bool) {
 	return nil, false
+}
+
+// NewLikeCondition represents SQL like condition (field like val)
+func NewLikeCondition(field string, val interface{}) Condition {
+	return &likeCondition{
+		field: field,
+		val:   val,
+	}
+}
+
+type likeCondition struct {
+	field string
+	val   interface{}
+}
+
+// GetQueryPart returns formatted string that will be included in the SQL query for a given condition
+func (c *likeCondition) GetQueryPart() string {
+	return fmt.Sprintf("%s ILIKE ?", c.field)
+}
+
+// GetQueryArgs returns a boolean flag if the condition contain arguments and the actual arguments
+func (c *likeCondition) GetQueryArgs() ([]interface{}, bool) {
+	return []interface{}{c.val}, true
 }
 
 // NewInConditionForSubQuery represents SQL IN subquery (field IN (SELECT ...))

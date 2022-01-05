@@ -216,29 +216,29 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 // After successful registration, the ASAs in the parent of the caller tenant are processed to add all matching scenarios for the runtime in the parent tenant.
 func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
 	labels := make(map[string]interface{})
-	return s.CreateWithMandatoryLabels(ctx, in, labels)
+	id := s.uidService.Generate()
+	return id, s.CreateWithMandatoryLabels(ctx, in, id, labels)
 }
 
 // CreateWithMandatoryLabels creates a runtime in a given tenant and also adds mandatory labels to it.
-func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, mandatoryLabels map[string]interface{}) (string, error) {
+func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, id string, mandatoryLabels map[string]interface{}) error {
 	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
 		tnt, err := s.extractTenantFromSubaccountLabel(ctx, saVal)
 		if err != nil {
-			return "", err
+			return err
 		}
 		ctx = tenant.SaveToContext(ctx, tnt.ID, tnt.ExternalTenant)
 	}
 
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return "", errors.Wrapf(err, "while loading tenant from context")
+		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	id := s.uidService.Generate()
 	rtm := in.ToRuntime(id, time.Now(), time.Now())
 
 	if err = s.repo.Create(ctx, rtmTenant, rtm); err != nil {
-		return "", errors.Wrapf(err, "while creating Runtime")
+		return errors.Wrapf(err, "while creating Runtime")
 	}
 
 	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, rtmTenant, &in.Labels)
@@ -252,7 +252,7 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
 	if in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern); err != nil {
-		return "", err
+		return err
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
 
@@ -261,27 +261,27 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 	}
 
 	if err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {
-		return id, errors.Wrapf(err, "while creating multiple labels for Runtime")
+		return errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}
 
 	// The runtime is created successfully, however there can be ASAs in the parent that should be processed.
 	tnt, err := s.tenantSvc.GetTenantByID(ctx, rtmTenant)
 	if err != nil {
-		return "", errors.Wrapf(err, "while getting tenant with id %s", rtmTenant)
+		return errors.Wrapf(err, "while getting tenant with id %s", rtmTenant)
 	}
 
 	if len(tnt.Parent) == 0 {
-		return id, nil
+		return nil
 	}
 
 	ctxWithParentTenant := tenant.SaveToContext(ctx, tnt.Parent, "")
 	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctxWithParentTenant, map[string]interface{}{}, id)
 	if err != nil {
-		return "", errors.Wrap(err, "while merging scenarios from input and assignments")
+		return errors.Wrap(err, "while merging scenarios from input and assignments")
 	}
 
 	if len(scenarios) == 0 { // No ASAs in parent tenant
-		return id, nil
+		return nil
 	}
 
 	scenariosLabels := map[string]interface{}{
@@ -289,10 +289,10 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 	}
 
 	if err = s.labelUpsertService.UpsertMultipleLabels(ctxWithParentTenant, tnt.Parent, model.RuntimeLabelableObject, id, scenariosLabels); err != nil {
-		return id, errors.Wrapf(err, "while creating multiple labels for Runtime")
+		return errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}
 
-	return id, nil
+	return nil
 }
 
 // Update missing godoc

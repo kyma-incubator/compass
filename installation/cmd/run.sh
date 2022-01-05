@@ -9,6 +9,7 @@ NC='\033[0m' # No Color
 CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 source $SCRIPTS_DIR/utils.sh
+source $SCRIPTS_DIR/prom-mtls-patch.sh
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
@@ -183,6 +184,8 @@ if [[ `kubectl get TestDefinition dex-connection -n kyma-system` ]]; then
 fi
 
 mount_minikube_ca_to_oathkeeper
+
+prometheusMTLSPatch
 
 bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh --kyma-installation ${KYMA_INSTALLATION}
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh

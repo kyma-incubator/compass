@@ -193,6 +193,7 @@ func fixBundleModelWithID(id, name, desc string) *model.Bundle {
 		Labels:                         json.RawMessage("[]"),
 		CredentialExchangeStrategies:   json.RawMessage("[]"),
 		CorrelationIDs:                 json.RawMessage(correlationIDs),
+		DocumentationLabels:            json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -400,6 +401,7 @@ func fixEntityBundle(id, name, desc string) *bundle.Entity {
 		Labels:                        repo.NewValidNullableString("[]"),
 		CredentialExchangeStrategies:  repo.NewValidNullableString("[]"),
 		CorrelationIDs:                repo.NewValidNullableString(correlationIDs),
+		DocumentationLabels:           repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -412,19 +414,19 @@ func fixEntityBundle(id, name, desc string) *bundle.Entity {
 }
 
 func fixBundleColumns() []string {
-	return []string{"id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
+	return []string{"id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
 }
 
 func fixBundleRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(correlationIDs)}
+	return []driver.Value{id, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("[]")}
 }
 
 func fixBundleRowWithAppID(id, applicationID string) []driver.Value {
-	return []driver.Value{id, applicationID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(correlationIDs)}
+	return []driver.Value{id, applicationID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("[]")}
 }
 
 func fixBundleCreateArgs(defAuth, schema string, bndl *model.Bundle) []driver.Value {
-	return []driver.Value{bundleID, appID, bndl.Name, bndl.Description, schema, defAuth, ordID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies), bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error, repo.NewNullableStringFromJSONRawMessage(bndl.CorrelationIDs)}
+	return []driver.Value{bundleID, appID, bndl.Name, bndl.Description, schema, defAuth, ordID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies), bndl.Ready, bndl.CreatedAt, bndl.UpdatedAt, bndl.DeletedAt, bndl.Error, repo.NewNullableStringFromJSONRawMessage(bndl.CorrelationIDs), repo.NewNullableStringFromJSONRawMessage(bndl.DocumentationLabels)}
 }
 
 func fixDefaultAuth() string {

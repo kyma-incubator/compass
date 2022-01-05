@@ -656,6 +656,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20211129112311-597f
 github.com/kyma-incubator/compass/components/director v0.0.0-20211129112311-597f8c54e998/go.mod h1:fBnQU42L9G/GTrvUo1evQYaJ1Hqg0oCH4oMwbOwofOg=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211207110550-5c631c8e4f79 h1:k4w9TI2tZD1zDtgGobezFznMtsqcI0urBqo0pvT0ocg=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211207110550-5c631c8e4f79/go.mod h1:fBnQU42L9G/GTrvUo1evQYaJ1Hqg0oCH4oMwbOwofOg=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211222152716-961e74673118 h1:mDPWUganSSYuZgyvkr6xQxLliQlgcMTbR0DMZI2FYwA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20211222152716-961e74673118/go.mod h1:zK2Cvzu8X5bUEIvJAsU4aF+Ahpp3mbJiXiECvxDDBxk=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f h1:FvflJncP+u6Z2KqtZkAuD7wCDgMh8+kZPcE1xp9mQrg=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f/go.mod h1:jD4pOTINIMZlScN8KxgnxJ73PQV3JUKy0E+GwnFf2ww=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36 h1:/BmeBQXQWwsRm6mBmgDYAkukecCd6TPBrYLXrl85H1g=
@@ -679,6 +681,7 @@ github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210823104705
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210831121533-7e4208095db0/go.mod h1:U5T8L3kXmT6db2OAaYS2cBrwK/Lv39WEavF1wD20Yeo=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210922132333-3deb7cf90637/go.mod h1:iUk7ii7WVdp95X6TPjXXkq7i/Qe3zb3pwOfboEZUi+8=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20211020121059-e1767123c58e/go.mod h1:QFC/XVDIk9cMRiMwGnRe55bRAxs4j2tVaBMylHAJ5Ac=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20211209092438-97062b59ba50/go.mod h1:QFC/XVDIk9cMRiMwGnRe55bRAxs4j2tVaBMylHAJ5Ac=
 github.com/lestrrat-go/backoff/v2 v2.0.7/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBBOiM/uP402WwN8Y=
 github.com/lestrrat-go/backoff/v2 v2.0.8/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBBOiM/uP402WwN8Y=
 github.com/lestrrat-go/blackmagic v1.0.0/go.mod h1:TNgH//0vYSs8VXDCfkZLgIrVTTXQELZffUV0tz3MtdQ=

@@ -19,10 +19,10 @@ const (
 )
 
 type subjectConsumerTypeMapping struct {
-	Subject            string `json:"subject"`
-	ConsumerType       string `json:"consumer_type"`
-	InternalConsumerID string `json:"internal_consumer_id"`
-	TenantAccessLevel  string `json:"tenant_access_level"`
+	Subject            string   `json:"subject"`
+	ConsumerType       string   `json:"consumer_type"`
+	InternalConsumerID string   `json:"internal_consumer_id"`
+	TenantAccessLevels []string `json:"tenant_access_levels"`
 }
 
 func (s *subjectConsumerTypeMapping) validate() error {
@@ -32,11 +32,12 @@ func (s *subjectConsumerTypeMapping) validate() error {
 	if s.ConsumerType != RuntimeType && s.ConsumerType != IntegrationSystemType && s.ConsumerType != ApplicationType {
 		return fmt.Errorf("consumer type %s is not valid", s.ConsumerType)
 	}
-	if s.TenantAccessLevel != string(tenantEntity.Account) &&
-		s.TenantAccessLevel != string(tenantEntity.Subaccount) &&
-		s.TenantAccessLevel != string(tenantEntity.Customer) {
-		return fmt.Errorf("tenant access level %s is not valid", s.TenantAccessLevel)
+	for _, al := range s.TenantAccessLevels {
+		if al != string(tenantEntity.Account) && al != string(tenantEntity.Subaccount) && al != string(tenantEntity.Customer) {
+			return fmt.Errorf("tenant access level %s is not valid", al)
+		}
 	}
+
 	return nil
 }
 
@@ -75,6 +76,11 @@ func (p *processor) AuthIDFromSubjectFunc() func(subject string) string {
 	}
 }
 
+// EmptyAuthSessionExtraFunc returns a function which returns an empty auth session body extra.
+func (p *processor) EmptyAuthSessionExtraFunc() func(context.Context, string) map[string]interface{} {
+	return func(ctx context.Context, subject string) map[string]interface{} { return nil }
+}
+
 // AuthSessionExtraFromSubjectFunc returns a function which returns consumer-specific auth session extra body
 // in case the subject matches any of the configured consumers from the mapping.
 func (p *processor) AuthSessionExtraFromSubjectFunc() func(context.Context, string) map[string]interface{} {
@@ -84,7 +90,7 @@ func (p *processor) AuthSessionExtraFromSubjectFunc() func(context.Context, stri
 			log.C(ctx).Infof("trying to match subject pattern %s", m.Subject)
 			if subjectsMatch(subject, m.Subject) {
 				log.C(ctx).Infof("pattern matched subject!")
-				return cert.GetExtra(m.ConsumerType, m.TenantAccessLevel, m.InternalConsumerID)
+				return cert.GetAuthSessionExtra(m.ConsumerType, m.InternalConsumerID, m.TenantAccessLevels)
 			}
 		}
 
