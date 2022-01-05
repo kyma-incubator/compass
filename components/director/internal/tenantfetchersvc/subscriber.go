@@ -120,7 +120,7 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 				return errors.Wrap(err, fmt.Sprintf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, s.ConsumerSubaccountIDsLabelKey))
 			}
 			// if the error is not found, create a label
-			if err := s.createLabelWithRetry(ctx, tnt, runtime, subaccountTenantID); err != nil {
+			if err := s.createLabel(ctx, tnt, runtime, subaccountTenantID); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Failed to create label with key: %s", s.ConsumerSubaccountIDsLabelKey))
 			}
 		} else {
@@ -139,24 +139,13 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 	return nil
 }
 
-func (s *subscriber) createLabelWithRetry(ctx context.Context, tenant string, runtime *model.Runtime, subaccountTenantID string) error {
-	err := retry.Do(func() error {
-		err := s.labelSvc.CreateLabel(ctx, tenant, s.uidSvc.Generate(), &model.LabelInput{
-			Key:        s.ConsumerSubaccountIDsLabelKey,
-			Value:      []string{subaccountTenantID},
-			ObjectType: model.RuntimeLabelableObject,
-			ObjectID:   runtime.ID,
-		})
-		if err != nil {
-			return errors.Wrap(err, "while creating label")
-		}
-		return nil
-	}, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
-
-	if err != nil {
-		return err
-	}
-	return nil
+func (s *subscriber) createLabel(ctx context.Context, tenant string, runtime *model.Runtime, subaccountTenantID string) error {
+	return s.labelSvc.CreateLabel(ctx, tenant, s.uidSvc.Generate(), &model.LabelInput{
+		Key:        s.ConsumerSubaccountIDsLabelKey,
+		Value:      []string{subaccountTenantID},
+		ObjectType: model.RuntimeLabelableObject,
+		ObjectID:   runtime.ID,
+	})
 }
 
 func (s *subscriber) updateLabelWithRetry(ctx context.Context, tenant string, runtime *model.Runtime, label *model.Label, labelNewValue []string) error {
