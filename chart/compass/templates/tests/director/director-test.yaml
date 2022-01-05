@@ -114,10 +114,8 @@ spec:
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName | trimPrefix "/" | replace "/" ", " | quote }}
             - name: APP_INFO_CERT_ISSUER
               value: {{ .Values.global.externalCertConfiguration.issuer }}
-            - name: APP_CA_SECRET_NAME
-              value: "{{ .Values.global.connector.secrets.ca.name }}"
-            - name: APP_CA_SECRET_NAMESPACE
-              value: "{{ .Values.global.connector.secrets.ca.namespace }}"
+            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.distinguishLabel }}
             - name: APP_EXTERNAL_CA_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CA_SECRET_NAMESPACE

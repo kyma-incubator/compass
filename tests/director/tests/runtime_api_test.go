@@ -466,7 +466,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		runtimeInput := graphql.RuntimeInput{
 			Name:        "register-runtime-with-protected-labels",
-			Description: ptr.String("runtime-1-description"),
+			Description: ptr.String("register-runtime-with-protected-labels-description"),
 			Labels:      graphql.Labels{protectedConsumerSubaccountIdsLabel: []string{"subaccountID-1", "subaccountID-2"}},
 		}
 		actualRtm := graphql.RuntimeExt{}
@@ -492,8 +492,8 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		// GIVEN
 		runtimeInput = graphql.RuntimeInput{
 			Name:        "runtime-create-update-delete",
-			Description: ptr.String("runtime-1-description"),
-			Labels:      graphql.Labels{"xsappname": []interface{}{"xs-app-name-value"}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
+			Description: ptr.String("runtime-create-update-delete-description"),
+			Labels:      graphql.Labels{conf.SelfRegisterDistinguishLabelKey: []interface{}{"distinguish-label-value"}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
 		}
 		actualRuntime := graphql.RuntimeExt{}
 
@@ -542,14 +542,14 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, getRuntimeReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		assert.Len(t, actualRuntime.Labels, 4)
+		assert.Len(t, actualRuntime.Labels, 5) // three labels from the different runtime inputs plus two additional during runtime registration - isNormalized and "self register" label
 
 		t.Log("Successfully update runtime and validate the protected labels are excluded")
 		//GIVEN
-		runtimeInput.Name = "updated-name"
-		runtimeInput.Description = ptr.String("updated-description")
+		runtimeInput.Name = "updated-runtime"
+		runtimeInput.Description = ptr.String("updated-runtime-description")
 		runtimeInput.Labels = graphql.Labels{
-			"xsappname": []interface{}{"xs-app-name-value"}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, protectedConsumerSubaccountIdsLabel: []interface{}{"subaccountID-1", "subaccountID-2"},
+			conf.SelfRegisterDistinguishLabelKey: []interface{}{"distinguish-label-value"}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, protectedConsumerSubaccountIdsLabel: []interface{}{"subaccountID-1", "subaccountID-2"},
 		}
 		runtimeStatusCond := graphql.RuntimeStatusConditionConnected
 		runtimeInput.StatusCondition = &runtimeStatusCond
@@ -567,7 +567,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		require.Equal(t, runtimeInput.Name, actualRuntime.Name)
 		require.Equal(t, *runtimeInput.Description, *actualRuntime.Description)
 		require.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
-		require.Equal(t, len(actualRuntime.Labels), 3)
+		require.Equal(t, len(actualRuntime.Labels), 3) // two labels from the runtime input plus one additional label, added during runtime update(isNormalized)
 		labelValues, ok := actualRuntime.Labels[protectedConsumerSubaccountIdsLabel]
 		require.False(t, ok)
 		require.Empty(t, labelValues)

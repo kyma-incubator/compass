@@ -136,6 +136,7 @@ func TestORDService(t *testing.T) {
 
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
 	require.NoError(t, err)
+
 	clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
 	extIssuerCertHttpClient := extIssuerCertClient(clientKey, rawCertChain, testConfig.SkipSSLValidation)
 
