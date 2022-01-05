@@ -381,7 +381,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
 				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, notFoundErr).Once()
-				labelSvc.On("CreateLabel", context.TODO(), tenantID, fixUUID(), &createLabelInput).Return(testError).Once()
+				labelSvc.On("CreateLabel", context.TODO(), tenantID, fixUUID(), &createLabelInput).Return(testError).Twice()
 				return labelSvc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -650,7 +650,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
 				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, notFoundErr).Once()
-				labelSvc.On("CreateLabel", context.TODO(), tenantID, fixUUID(), &createLabelInput).Return(testError).Once()
+				labelSvc.On("CreateLabel", context.TODO(), tenantID, fixUUID(), &createLabelInput).Return(testError).Twice()
 				return labelSvc
 			},
 			UIDServiceFn: func() *automock.UIDService {
