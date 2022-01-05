@@ -8,34 +8,24 @@ metadata:
     iam.gke.io/gcp-service-account: {{ $.Values.global.sqlProxyServiceAccount | quote }}
   {{- end }}
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{ template "fullname" . }}-operations-scheduler-role
-  namespace: {{ .Release.Namespace }}
-rules:
-  - apiGroups:
-      - operations.compass
-    resources:
-      - operations
-    verbs:
-      - create
-      - get
-      - list
-      - patch
-      - update
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "fullname" . }}-operations-scheduler-role-binding
-  namespace: {{ .Release.Namespace }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: {{ template "fullname" . }}-operations-scheduler-role
+  name: {{ $.Chart.Name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
 subjects:
   - kind: ServiceAccount
-    name: {{ template "fullname" . }}
-    namespace: {{ .Release.Namespace }}
+    name: {{ $.Chart.Name }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io
 
