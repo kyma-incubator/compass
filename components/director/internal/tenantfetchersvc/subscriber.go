@@ -130,7 +130,7 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 			}
 			labelNewValue := mutateLabelsFunc(labelOldValue, subaccountTenantID)
 
-			if err := s.updateLabel(ctx, tnt, runtime, label, labelNewValue); err != nil {
+			if err := s.updateLabelWithRetry(ctx, tnt, runtime, label, labelNewValue); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", runtime.ID))
 			}
 		}
@@ -159,14 +159,25 @@ func (s *subscriber) createLabelWithRetry(ctx context.Context, tenant string, ru
 	return nil
 }
 
-func (s *subscriber) updateLabel(ctx context.Context, tenant string, runtime *model.Runtime, label *model.Label, labelNewValue []string) error {
-	return s.labelSvc.UpdateLabel(ctx, tenant, label.ID, &model.LabelInput{
-		Key:        s.ConsumerSubaccountIDsLabelKey,
-		Value:      labelNewValue,
-		ObjectType: model.RuntimeLabelableObject,
-		ObjectID:   runtime.ID,
-		Version:    label.Version,
-	})
+func (s *subscriber) updateLabelWithRetry(ctx context.Context, tenant string, runtime *model.Runtime, label *model.Label, labelNewValue []string) error {
+	err := retry.Do(func() error {
+		err := s.labelSvc.UpdateLabel(ctx, tenant, label.ID, &model.LabelInput{
+			Key:        s.ConsumerSubaccountIDsLabelKey,
+			Value:      labelNewValue,
+			ObjectType: model.RuntimeLabelableObject,
+			ObjectID:   runtime.ID,
+			Version:    label.Version,
+		})
+		if err != nil {
+			return errors.Wrap(err, "while updating label")
+		}
+		return nil
+	}, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
+
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func addElement(slice []string, elem string) []string {
