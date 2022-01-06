@@ -656,10 +656,6 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210831121533-7e42
 github.com/kyma-incubator/compass/components/director v0.0.0-20210922113925-7ff5909fa72b/go.mod h1:V1sc1tdrDM6+pOxYLoUwatFeJXNfVTj1puB8iHrno3c=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a5435ac7a/go.mod h1:C+Vzw+Mc5IiFw2xL5xr7JkRz29HGVeqUa1cRNVoD1XQ=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211129105851-cb4aab1dc8d3/go.mod h1:fBnQU42L9G/GTrvUo1evQYaJ1Hqg0oCH4oMwbOwofOg=
-github.com/kyma-incubator/compass/components/director v0.0.0-20211129112311-597f8c54e998 h1:28Lun60DJzVt+3Fxdij7LDLm2QxXapx4zyhsY0xOrg0=
-github.com/kyma-incubator/compass/components/director v0.0.0-20211129112311-597f8c54e998/go.mod h1:fBnQU42L9G/GTrvUo1evQYaJ1Hqg0oCH4oMwbOwofOg=
-github.com/kyma-incubator/compass/components/director v0.0.0-20211207110550-5c631c8e4f79 h1:k4w9TI2tZD1zDtgGobezFznMtsqcI0urBqo0pvT0ocg=
-github.com/kyma-incubator/compass/components/director v0.0.0-20211207110550-5c631c8e4f79/go.mod h1:fBnQU42L9G/GTrvUo1evQYaJ1Hqg0oCH4oMwbOwofOg=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211222152716-961e74673118 h1:mDPWUganSSYuZgyvkr6xQxLliQlgcMTbR0DMZI2FYwA=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211222152716-961e74673118/go.mod h1:zK2Cvzu8X5bUEIvJAsU4aF+Ahpp3mbJiXiECvxDDBxk=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220104145031-c9120ed20881 h1:X4ntyDT4F+tTPQaS7FzvI30nwP35QSqW1D6VSOYlnec=
