@@ -506,6 +506,34 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 		},
+		{
+			Name: "Succeeds and updates label on second try",
+			TenantProvisionerFn: func() *automock.TenantProvisioner {
+				provisioner := &automock.TenantProvisioner{}
+				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant, tenantRegion).Return(nil).Once()
+				return provisioner
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				return tenantSvc
+			},
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				return provisioner
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelSvc := &automock.LabelService{}
+				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
+				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &updateLabelInput).Return(testError).Once()
+				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &updateLabelInput).Return(nil).Once()
+				return labelSvc
+			},
+			UIDServiceFn:              emptyUIDSvcFn,
+			Region:                    tenantRegion,
+			TenantSubscriptionRequest: regionalTenant,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -761,7 +789,29 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 		},
-	}
+		{
+			Name: "Succeeds and updates label on second try",
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				return provisioner
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				return tenantSvc
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelSvc := &automock.LabelService{}
+				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
+				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &removeLabelInput).Return(testError).Once()
+				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &removeLabelInput).Return(nil).Once()
+				return labelSvc
+			},
+			UIDServiceFn:              emptyUIDSvcFn,
+			Region:                    tenantRegion,
+			TenantSubscriptionRequest: regionalTenant,
+		}}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
