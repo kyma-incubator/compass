@@ -149,7 +149,7 @@ func (s *subscriber) createLabel(ctx context.Context, tenant string, runtime *mo
 }
 
 func (s *subscriber) updateLabelWithRetry(ctx context.Context, tenant string, runtime *model.Runtime, label *model.Label, labelNewValue []string) error {
-	err := retry.Do(func() error {
+	return retry.Do(func() error {
 		err := s.labelSvc.UpdateLabel(ctx, tenant, label.ID, &model.LabelInput{
 			Key:        s.ConsumerSubaccountIDsLabelKey,
 			Value:      labelNewValue,
@@ -162,11 +162,6 @@ func (s *subscriber) updateLabelWithRetry(ctx context.Context, tenant string, ru
 		}
 		return nil
 	}, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
-
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func addElement(slice []string, elem string) []string {
