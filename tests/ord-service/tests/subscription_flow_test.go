@@ -147,7 +147,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 
 		// Register provider runtime with the necessary label
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtimeInput) // TODO:: Change runtime registration to be without tenant header(subscriptionProviderSubaccountID)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime) // TODO:: Change runtime registration to be without tenant header(subscriptionProviderSubaccountID)
+		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime)                                      // TODO:: Change runtime registration to be without tenant header(subscriptionProviderSubaccountID)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 
@@ -294,7 +294,7 @@ func TestNewChanges(t *testing.T) {
 
 		// Register provider runtime with the necessary label
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtimeInput) // TODO:: Change runtime registration to be without tenant header(subscriptionProviderSubaccountID)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime) // TODO:: Change runtime registration to be without tenant header(subscriptionProviderSubaccountID)
+		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime)                                      // TODO:: Change runtime registration to be without tenant header(subscriptionProviderSubaccountID)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 
