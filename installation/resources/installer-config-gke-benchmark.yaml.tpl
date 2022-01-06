@@ -31,3 +31,5 @@ data:
   operations-controller.http.client.skipSSLValidation: "true"
   global.systemFetcher.http.client.skipSSLValidation: "true"
   global.http.client.skipSSLValidation: "true"
+  global.tests.http.client.skipSSLValidation.director: "true"
+  global.tests.http.client.skipSSLValidation.ordService: "true"
