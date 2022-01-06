@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -59,7 +60,7 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}
 
-	if err := documents.Validate(s.config.URL, nil, nil, nil, nil, nil); err != nil {
+	if err := documents.Validate(s.config.URL, nil, nil, nil, nil, map[string]bool{}); err != nil {
 		return nil, errors.Wrap(err, "while validating global registry documents")
 	}
 

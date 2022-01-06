@@ -86,6 +86,8 @@ type ProductService interface {
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Product, error)
 }
 
+// GlobalProductService is responsible for the service-layer operations for Global Product (with NULL app_id) without tenant isolation.
+//go:generate mockery --name=GlobalProductService --output=automock --outpkg=automock --case=underscore
 type GlobalProductService interface {
 	CreateGlobal(ctx context.Context, in model.ProductInput) (string, error)
 	UpdateGlobal(ctx context.Context, id string, in model.ProductInput) error
@@ -102,6 +104,8 @@ type VendorService interface {
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Vendor, error)
 }
 
+// GlobalVendorService is responsible for the service-layer operations for Global Vendors (with NULL app_id) without tenant isolation.
+//go:generate mockery --name=GlobalVendorService --output=automock --outpkg=automock --case=underscore
 type GlobalVendorService interface {
 	CreateGlobal(ctx context.Context, in model.VendorInput) (string, error)
 	UpdateGlobal(ctx context.Context, id string, in model.VendorInput) error

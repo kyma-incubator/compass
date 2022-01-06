@@ -22,6 +22,7 @@ const (
 	customWebhookConfigURL = "http://custom.com/config/endpoint"
 	packageORDID           = "ns:package:PACKAGE_ID:v1"
 	productORDID           = "sap:product:id:"
+	globalProductORDID     = "sap:product:SAPCloudPlatform:"
 	product2ORDID          = "ns:product:id2:"
 	bundleORDID            = "ns:consumptionBundle:BUNDLE_ID:v1"
 	secondBundleORDID      = "ns:consumptionBundle:BUNDLE_ID:v2"
@@ -595,6 +596,16 @@ func fixVendors() []*model.Vendor {
 	}
 }
 
+func fixGlobalVendors() []*model.Vendor {
+	return []*model.Vendor{
+		{
+			ID:    vendorID,
+			OrdID: vendorORDID,
+			Title: "SAP SE",
+		},
+	}
+}
+
 func fixProducts() []*model.Product {
 	return []*model.Product{
 		{
@@ -608,6 +619,18 @@ func fixProducts() []*model.Product {
 			CorrelationIDs:      json.RawMessage(`["foo.bar.baz:123456"]`),
 			Labels:              json.RawMessage(labels),
 			DocumentationLabels: json.RawMessage(documentLabels),
+		},
+	}
+}
+
+func fixGlobalProducts() []*model.Product {
+	return []*model.Product{
+		{
+			ID:               productID,
+			OrdID:            globalProductORDID,
+			Title:            "SAP Business Technology Platform",
+			ShortDescription: "Accelerate business outcomes with integration, data to value, and extensibility.",
+			Vendor:           vendorORDID,
 		},
 	}
 }
@@ -1112,6 +1135,27 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 		DocumentationLabels:            in.DocumentationLabels,
 		CredentialExchangeStrategies:   in.CredentialExchangeStrategies,
 		CorrelationIDs:                 in.CorrelationIDs,
+	}
+}
+
+func fixGlobalRegistryORDDocument() *ord.Document {
+	return &ord.Document{
+		Schema:                "./spec/v1/generated/Document.schema.json",
+		OpenResourceDiscovery: "1.0",
+		Products: []*model.ProductInput{
+			{
+				OrdID:            globalProductORDID,
+				Title:            "SAP Business Technology Platform",
+				ShortDescription: "Accelerate business outcomes with integration, data to value, and extensibility.",
+				Vendor:           vendorORDID,
+			},
+		},
+		Vendors: []*model.VendorInput{
+			{
+				OrdID: vendorORDID,
+				Title: "SAP SE",
+			},
+		},
 	}
 }
 

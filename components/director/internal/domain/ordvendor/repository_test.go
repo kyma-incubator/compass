@@ -311,4 +311,3 @@ func TestPgRepository_ListGlobal(t *testing.T) {
 
 	suite.Run(t)
 }
-
