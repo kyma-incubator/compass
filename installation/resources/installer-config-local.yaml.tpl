@@ -64,6 +64,8 @@ data:
   global.systemFetcher.http.client.skipSSLValidation: "true"
   global.ordAggregator.http.client.skipSSLValidation: "true"
   global.http.client.skipSSLValidation: "true"
+  global.tests.http.client.skipSSLValidation.director: "true"
+  global.tests.http.client.skipSSLValidation.ordService: "true"
 
   global.tenantFetchers.account-fetcher.enabled: "true"
   global.tenantFetchers.account-fetcher.dbPool.maxOpenConnections: "1"

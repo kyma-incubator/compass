@@ -57,7 +57,8 @@ type TenantConfig struct {
 
 type config struct {
 	TenantConfig
-	CA certs.CAConfig
+	CA         certs.CAConfig
+	ExternalCA certs.CAConfig
 
 	DirectorURL                      string
 	DirectorExternalCertSecuredURL   string
@@ -73,6 +74,7 @@ type config struct {
 	ConsumerSubaccountIdsLabelKey    string
 	SelfRegisterDistinguishLabelKey  string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 	SelfRegisterLabelKey             string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
+	SkipSSLValidation                bool   `envconfig:"default=false"`
 }
 
 var testConfig config
@@ -93,13 +95,21 @@ func TestMain(m *testing.M) {
 		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
 	}
 
-	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CA.SecretNamespace).Get(ctx, testConfig.CA.SecretName, metav1.GetOptions{})
+	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CA.SecretNamespace).Get(ctx, testConfig.CA.SecretName, metav1.GetOptions{}) // TODO:: Remove once the consumer-provider test is adapter to run on real environment
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
 	}
 
-	testConfig.CA.Certificate = secret.Data[testConfig.CA.SecretCertificateKey]
-	testConfig.CA.Key = secret.Data[testConfig.CA.SecretKeyKey]
+	testConfig.CA.Certificate = secret.Data[testConfig.CA.SecretCertificateKey] // TODO:: Remove once the consumer-provider test is adapter to run on real environment
+	testConfig.CA.Key = secret.Data[testConfig.CA.SecretKeyKey]                 // TODO:: Remove once the consumer-provider test is adapter to run on real environment
+
+	extCrtSecret, err := k8sClientSet.CoreV1().Secrets(testConfig.ExternalCA.SecretNamespace).Get(ctx, testConfig.ExternalCA.SecretName, metav1.GetOptions{})
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
+	}
+
+	testConfig.ExternalCA.Key = extCrtSecret.Data[testConfig.ExternalCA.SecretKeyKey]
+	testConfig.ExternalCA.Certificate = extCrtSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
 
 	testConfig.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(testConfig.RegionalHandlerEndpoint, testConfig.TenantPathParam, testConfig.RegionPathParam, testConfig.TenantFetcherURL, testConfig.RootAPI)
 
