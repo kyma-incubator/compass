@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -37,6 +37,8 @@ type SelfRegConfig struct {
 	URL            string `envconfig:"APP_SELF_REGISTER_URL,optional"`
 	OauthTokenPath string `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
 
+	SkipSSLValidation bool `envconfig:"APP_SELF_REGISTER_SKIP_SSL_VALIDATION,default=false"`
+
 	ClientTimeout time.Duration `envconfig:"default=30s"`
 }
 
@@ -59,16 +61,14 @@ func NewSelfRegisterManager(cfg SelfRegConfig, caller ExternalSvcCaller) *selfRe
 
 // PrepareRuntimeForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
 // is being self-registered
-func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput) (map[string]interface{}, error) {
+func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput, id string) (map[string]interface{}, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	labels := make(map[string]interface{})
 	if err != nil {
 		return labels, errors.Wrapf(err, "while loading consumer")
 	}
 	if distinguishLabel, exists := in.Labels[s.cfg.SelfRegisterDistinguishLabelKey]; exists && consumerInfo.Flow.IsCertFlow() { // this means that the runtime is being self-registered
-		distinguishLabelVal := str.CastOrEmpty(distinguishLabel)
-
-		request, err := s.createSelfRegPrepRequest(distinguishLabelVal, consumerInfo.ConsumerID)
+		request, err := s.createSelfRegPrepRequest(id, consumerInfo.ConsumerID)
 		if err != nil {
 			return labels, err
 		}
@@ -91,7 +91,7 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
 		labels[s.cfg.SelfRegisterLabelKey] = selfRegLabelVal.Str
 
-		log.C(ctx).Infof("Successfully executed prep for self-registered runtime with distinguishing label value %s", distinguishLabelVal)
+		log.C(ctx).Infof("Successfully executed prep for self-registered runtime with distinguishing label value %s", str.CastOrEmpty(distinguishLabel))
 	}
 	return labels, nil
 }
@@ -125,8 +125,8 @@ func (s *selfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	return s.cfg.SelfRegisterDistinguishLabelKey
 }
 
-func (s *selfRegisterManager) createSelfRegPrepRequest(distinguishingVal, tenant string) (*http.Request, error) {
-	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + distinguishingVal
+func (s *selfRegisterManager) createSelfRegPrepRequest(runtimeID, tenant string) (*http.Request, error) {
+	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + runtimeID
 	url, err := urlpkg.Parse(s.cfg.URL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating url for preparation of self-registered runtime")

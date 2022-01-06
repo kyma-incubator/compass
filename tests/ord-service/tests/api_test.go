@@ -136,6 +136,7 @@ func TestORDService(t *testing.T) {
 
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
 	require.NoError(t, err)
+
 	clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
 	extIssuerCertHttpClient := extIssuerCertClient(clientKey, rawCertChain, testConfig.SkipSSLValidation)
 
@@ -740,8 +741,8 @@ func makeRequestWithStatusExpect(t require.TestingT, httpClient *http.Client, ur
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus, testConfig.ORDServiceDefaultResponseType)
 }
 
-// extIssuerCertClient returns http client configured with client certificate manually signed by connector's CA
-// and a subject matching external issuer's subject contract in local setup. And
+// extIssuerCertClient returns http client configured with provided client certificate and key
+// and a subject matching external issuer's subject contract.
 func extIssuerCertClient(clientKey *rsa.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
 	return &http.Client{
 		Timeout: 20 * time.Second,

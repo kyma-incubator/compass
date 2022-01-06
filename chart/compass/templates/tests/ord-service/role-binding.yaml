@@ -14,7 +14,7 @@ metadata:
 rules:
 - apiGroups: ["*"]
   resources: ["secrets"]
-  resourceNames: ["{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"]
+  resourceNames: ["{{ .Values.global.connector.secrets.ca.name }}","{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"] # TODO:: Check if we need the connector secret
   verbs: ["get"]
 - apiGroups: ["*"]
   resources: ["secrets"]

@@ -422,10 +422,6 @@ func AssertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant)
 			found = true
 
 			assert.Equal(t, inTnt.Name, actTnt.Name)
-
-			if inTnt.Initialized != nil {
-				assert.Equal(t, inTnt.Initialized, actTnt.Initialized)
-			}
 		}
 		assert.True(t, found)
 	}
@@ -513,6 +509,21 @@ func AssertMultipleEntitiesFromORDService(t *testing.T, respBody string, entitie
 		require.True(t, exists)
 
 		require.Equal(t, entityDescription, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
+	}
+}
+
+func AssertDocumentationLabels(t *testing.T, respBody string, expectedLabelKey string, possibleValues []string, expectedNumber int) {
+	numberOfEntities := len(gjson.Get(respBody, "value").Array())
+	require.Equal(t, expectedNumber, numberOfEntities)
+
+	for i := 0; i < numberOfEntities; i++ {
+		documentationLabels := gjson.Get(respBody, fmt.Sprintf("value.%d.documentationLabels", i)).Array()
+		for _, label := range documentationLabels {
+			key := gjson.Get(label.String(), "key").String()
+			value := gjson.Get(label.String(), "value").String()
+			require.Equal(t, expectedLabelKey, key)
+			assert.Contains(t, possibleValues, value)
+		}
 	}
 }
 

@@ -162,6 +162,29 @@ func (_m *TenantMappingRepository) List(ctx context.Context) ([]*model.BusinessT
 	return r0, r1
 }
 
+// ListPageBySearchTerm provides a mock function with given fields: ctx, searchTerm, pageSize, cursor
+func (_m *TenantMappingRepository) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
+	ret := _m.Called(ctx, searchTerm, pageSize, cursor)
+
+	var r0 *model.BusinessTenantMappingPage
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.BusinessTenantMappingPage); ok {
+		r0 = rf(ctx, searchTerm, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.BusinessTenantMappingPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
+		r1 = rf(ctx, searchTerm, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UnsafeCreate provides a mock function with given fields: ctx, item
 func (_m *TenantMappingRepository) UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error {
 	ret := _m.Called(ctx, item)

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -152,7 +154,7 @@ func TestService_List(t *testing.T) {
 			ExpectedOutput: modelTenantMappings,
 		},
 		{
-			Name: "Error when tenants",
+			Name: "Error when listing tenants",
 			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
 				tenantMappingRepo := &automock.TenantMappingRepository{}
 				tenantMappingRepo.On("List", ctx).Return([]*model.BusinessTenantMapping{}, testError).Once()
@@ -170,6 +172,74 @@ func TestService_List(t *testing.T) {
 
 			// WHEN
 			result, err := svc.List(ctx)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			tenantMappingRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListPageBySearchTerm(t *testing.T) {
+	// GIVEN
+	searchTerm := ""
+	first := 100
+	endCursor := ""
+	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
+	modelTenantMappingPage := &model.BusinessTenantMappingPage{
+		Data: []*model.BusinessTenantMapping{
+			newModelBusinessTenantMapping("foo1", "bar1"),
+			newModelBusinessTenantMapping("foo2", "bar2"),
+		},
+		PageInfo: &pagination.Page{
+			StartCursor: "",
+			EndCursor:   "",
+			HasNextPage: false,
+		},
+		TotalCount: 2,
+	}
+
+	testCases := []struct {
+		Name                string
+		TenantMappingRepoFn func() *automock.TenantMappingRepository
+		ExpectedError       error
+		ExpectedOutput      *model.BusinessTenantMappingPage
+	}{
+		{
+			Name: "Success",
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("ListPageBySearchTerm", ctx, searchTerm, first, endCursor).Return(modelTenantMappingPage, nil).Once()
+				return tenantMappingRepo
+			},
+			ExpectedOutput: modelTenantMappingPage,
+		},
+		{
+			Name: "Error when listing tenants",
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("ListPageBySearchTerm", ctx, searchTerm, first, endCursor).Return(&model.BusinessTenantMappingPage{}, testError).Once()
+				return tenantMappingRepo
+			},
+			ExpectedError:  testError,
+			ExpectedOutput: &model.BusinessTenantMappingPage{},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantMappingRepo := testCase.TenantMappingRepoFn()
+			svc := tenant.NewService(tenantMappingRepo, nil)
+
+			// WHEN
+			result, err := svc.ListPageBySearchTerm(ctx, searchTerm, first, endCursor)
 
 			// THEN
 			if testCase.ExpectedError != nil {

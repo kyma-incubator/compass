@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -96,16 +98,27 @@ func NewRootResolver(
 	tokenLength int,
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
+	cache certloader.Cache,
 ) *RootResolver {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 	}
-	caller := securehttp.NewCaller(&authpkg.OAuthCredentials{
+
+	oauthCredentials := &authpkg.OAuthCredentials{
 		ClientID:     selfRegConfig.ClientID,
 		ClientSecret: selfRegConfig.ClientSecret,
 		TokenURL:     selfRegConfig.URL + selfRegConfig.OauthTokenPath,
-	}, selfRegConfig.ClientTimeout)
+	}
+
+	config := securehttp.CallerConfig{
+		Credentials:       oauthCredentials,
+		ClientTimeout:     selfRegConfig.ClientTimeout,
+		SkipSSLValidation: selfRegConfig.SkipSSLValidation,
+		Cache:             cache,
+	}
+
+	caller := securehttp.NewCaller(config)
 
 	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)
 	hydra := hydraClient.New(transport, nil)
@@ -196,7 +209,7 @@ func NewRootResolver(
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		formation:          formation.NewResolver(transact, formationSvc, formationConv),
-		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager),
+		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc),
 		runtimeContext:     runtimectx.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
@@ -444,9 +457,9 @@ func (r *queryResolver) IntegrationSystem(ctx context.Context, id string) (*grap
 	return r.intSys.IntegrationSystem(ctx, id)
 }
 
-// Tenants missing godoc
-func (r *queryResolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
-	return r.tenant.Tenants(ctx)
+// Tenants fetches tenants by page and search term
+func (r *queryResolver) Tenants(ctx context.Context, first *int, after *graphql.PageCursor, searchTerm *string) (*graphql.TenantPage, error) {
+	return r.tenant.Tenants(ctx, first, after, searchTerm)
 }
 
 // AutomaticScenarioAssignmentForScenario missing godoc

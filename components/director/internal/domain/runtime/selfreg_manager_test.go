@@ -21,6 +21,7 @@ import (
 const (
 	selfRegisterDistinguishLabelKey = "test-distinguish-label-key"
 	distinguishLblVal               = "test-value"
+	testUUID                        = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 )
 
 var testConfig = runtime.SelfRegConfig{
@@ -132,7 +133,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			svcCaller := testCase.Caller(t)
 			manager := runtime.NewSelfRegisterManager(testCase.Config, svcCaller)
 
-			output, err := manager.PrepareRuntimeForSelfRegistration(testCase.Context, testCase.Input)
+			output, err := manager.PrepareRuntimeForSelfRegistration(testCase.Context, testCase.Input, testUUID)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())

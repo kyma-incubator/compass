@@ -124,6 +124,10 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	// Oauth server handlers
 	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
 	router.HandleFunc("/secured/oauth/token", tokenHandler.Generate).Methods(http.MethodPost)
+	// TODO The mtls_token_provider sends client id and scopes in url.values form. When the change for fetching xsuaa token
+	// with certificate is merged GenerateWithCredentialsFromReqBody should be used for testing the flows that include fetching
+	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.
+	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
 	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
