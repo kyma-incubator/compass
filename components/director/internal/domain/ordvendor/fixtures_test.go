@@ -3,6 +3,7 @@ package ordvendor_test
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -23,7 +24,7 @@ func fixEntityVendor() *ordvendor.Entity {
 	return &ordvendor.Entity{
 		ID:                  vendorID,
 		OrdID:               ordID,
-		ApplicationID:       appID,
+		ApplicationID:       repo.NewValidNullableString(appID),
 		Title:               "title",
 		Partners:            repo.NewValidNullableString(partners),
 		Labels:              repo.NewValidNullableString("{}"),
@@ -35,7 +36,7 @@ func fixEntityVendorWithTitle(title string) *ordvendor.Entity {
 	return &ordvendor.Entity{
 		ID:                  vendorID,
 		OrdID:               ordID,
-		ApplicationID:       appID,
+		ApplicationID:       repo.NewValidNullableString(appID),
 		Title:               title,
 		Partners:            repo.NewValidNullableString(partners),
 		Labels:              repo.NewValidNullableString("{}"),
@@ -47,7 +48,7 @@ func fixVendorModelWithTitle(title string) *model.Vendor {
 	return &model.Vendor{
 		ID:                  vendorID,
 		OrdID:               ordID,
-		ApplicationID:       appID,
+		ApplicationID:       str.Ptr(appID),
 		Title:               title,
 		Partners:            json.RawMessage(partners),
 		Labels:              json.RawMessage("{}"),
@@ -59,7 +60,18 @@ func fixVendorModel() *model.Vendor {
 	return &model.Vendor{
 		ID:                  vendorID,
 		OrdID:               ordID,
-		ApplicationID:       appID,
+		ApplicationID:       str.Ptr(appID),
+		Title:               "title",
+		Partners:            json.RawMessage(partners),
+		Labels:              json.RawMessage("{}"),
+		DocumentationLabels: json.RawMessage("[]"),
+	}
+}
+
+func fixGlobalVendorModel() *model.Vendor {
+	return &model.Vendor{
+		ID:                  vendorID,
+		OrdID:               ordID,
 		Title:               "title",
 		Partners:            json.RawMessage(partners),
 		Labels:              json.RawMessage("{}"),

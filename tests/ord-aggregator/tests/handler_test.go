@@ -65,12 +65,12 @@ const (
 	expectedNumberOfSystemInstances           = 6
 	expectedNumberOfPackages                  = 6
 	expectedNumberOfBundles                   = 12
-	expectedNumberOfProducts                  = 6
+	expectedNumberOfProducts                  = 7
 	expectedNumberOfAPIs                      = 6
 	expectedNumberOfResourceDefinitionsPerAPI = 3
 	expectedNumberOfEvents                    = 12
 	expectedNumberOfTombstones                = 6
-	expectedNumberOfVendors                   = 12
+	expectedNumberOfVendors                   = 7
 
 	expectedNumberOfAPIsInFirstBundle    = 1
 	expectedNumberOfAPIsInSecondBundle   = 1

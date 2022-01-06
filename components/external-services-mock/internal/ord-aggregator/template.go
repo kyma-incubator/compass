@@ -98,7 +98,8 @@ const ordDocument = `{
          "policyLevel":"sap:core:v1",
          "customPolicyLevel":null,
          "partOfProducts":[
-            "sap:product:id:"
+            "sap:product:id:",
+			"sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -284,7 +285,8 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
-            "sap:product:id:"
+            "sap:product:id:",
+			"sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -421,7 +423,8 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
-            "sap:product:id:"
+            "sap:product:id:",
+			"sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -528,7 +531,8 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
-            "sap:product:id:"
+            "sap:product:id:",
+			"sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -620,7 +624,8 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
-            "sap:product:id:"
+            "sap:product:id:",
+			"sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -668,22 +673,6 @@ const ordDocument = `{
       }
    ],
    "vendors":[
-      {
-         "ordId":"sap:vendor:SAP:",
-         "title":"SAP",
-         "partners":[
-            "microsoft:vendor:Microsoft:"
-         ],
-         "labels":{
-            "label-key-1":[
-               "label-value-1",
-               "label-value-2"
-            ]
-         },
-		 "documentationLabels":{
-			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
-		 }
-      },
       {
          "ordId":"partner:vendor:SAP:",
          "title":"SAP",

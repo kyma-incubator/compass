@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -32,7 +33,7 @@ func fixEntityProductWithTitle(title string) *product.Entity {
 	return &product.Entity{
 		ID:               productID,
 		OrdID:            ordID,
-		ApplicationID:    appID,
+		ApplicationID:    repo.NewValidNullableString(appID),
 		Title:            title,
 		ShortDescription: "short desc",
 		Vendor:           "vendorID",
@@ -58,8 +59,23 @@ func fixProductModelWithTitle(title string) *model.Product {
 	return &model.Product{
 		ID:                  productID,
 		OrdID:               ordID,
-		ApplicationID:       appID,
+		ApplicationID:       str.Ptr(appID),
 		Title:               title,
+		ShortDescription:    "short desc",
+		Vendor:              "vendorID",
+		Parent:              &parent,
+		CorrelationIDs:      json.RawMessage(correlationIDs),
+		Labels:              json.RawMessage("{}"),
+		DocumentationLabels: json.RawMessage("{}"),
+	}
+}
+
+func fixGlobalProductModel() *model.Product {
+	parent := "parent"
+	return &model.Product{
+		ID:                  productID,
+		OrdID:               ordID,
+		Title:               "title",
 		ShortDescription:    "short desc",
 		Vendor:              "vendorID",
 		Parent:              &parent,

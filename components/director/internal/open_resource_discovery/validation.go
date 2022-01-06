@@ -188,7 +188,7 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 		validation.Field(&app.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
-		validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
+		//validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
 		validation.Field(&app.Labels, validation.By(validateORDLabels)),
 		validation.Field(&app.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
@@ -869,7 +869,7 @@ func validateJSONArrayOfStringsMatchPattern(arr interface{}, regexPattern *regex
 	}
 
 	if len(parsedArr.Array()) == 0 {
-		return errors.New("the json array should not be empty")
+		return nil
 	}
 
 	for _, el := range parsedArr.Array() {
@@ -907,7 +907,7 @@ func validateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]
 	}
 
 	if len(parsedArr.Array()) == 0 {
-		return errors.New("the json array should not be empty")
+		return nil
 	}
 
 	for _, el := range parsedArr.Array() {

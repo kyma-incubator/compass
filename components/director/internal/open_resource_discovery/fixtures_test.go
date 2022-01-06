@@ -578,7 +578,7 @@ func fixVendors() []*model.Vendor {
 		{
 			ID:                  vendorID,
 			OrdID:               vendorORDID,
-			ApplicationID:       appID,
+			ApplicationID:       str.Ptr(appID),
 			Title:               "SAP",
 			Partners:            json.RawMessage(partners),
 			Labels:              json.RawMessage(labels),
@@ -600,7 +600,7 @@ func fixProducts() []*model.Product {
 		{
 			ID:                  productID,
 			OrdID:               productORDID,
-			ApplicationID:       appID,
+			ApplicationID:       str.Ptr(appID),
 			Title:               "PRODUCT TITLE",
 			ShortDescription:    "lorem ipsum",
 			Vendor:              vendorORDID,

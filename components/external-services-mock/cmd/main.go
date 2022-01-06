@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
+	ord_global_registry "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator/globalregistry"
 	"log"
 	"net/http"
 	"strings"
@@ -56,10 +57,11 @@ type config struct {
 // This is needed in order to ensure that every call in the context of an application happens in a single server isolated from others.
 // Prior to this separation there were cases when tests succeeded (false positive) due to mistakenly configured baseURL resulting in different flow - different access strategy returned.
 type ORDServers struct {
-	CertPort      int `envconfig:"default=8081"`
-	UnsecuredPort int `envconfig:"default=8082"`
-	BasicPort     int `envconfig:"default=8083"`
-	OauthPort     int `envconfig:"default=8084"`
+	CertPort           int `envconfig:"default=8081"`
+	UnsecuredPort      int `envconfig:"default=8082"`
+	BasicPort          int `envconfig:"default=8083"`
+	OauthPort          int `envconfig:"default=8084"`
+	GlobalRegistryPort int `envconfig:"default=8085"`
 
 	CertSecuredBaseURL string
 }
@@ -215,6 +217,7 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
+	servers = append(servers, initGlobalRegistryORDServer(cfg))
 	return servers
 }
 
@@ -251,6 +254,19 @@ func initUnsecuredORDServer(cfg config) *http.Server {
 
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.UnsecuredPort),
+		Handler: router,
+	}
+}
+
+func initGlobalRegistryORDServer(cfg config) *http.Server {
+	router := mux.NewRouter()
+
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_global_registry.HandleFuncOrdConfig())
+
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_global_registry.HandleFuncOrdDocument())
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.UnsecuredPort),
