@@ -57,6 +57,16 @@ spec:
               value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
             - name: CA_SECRET_KEY_KEY
               value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
+            - name: EXTERNAL_CA_SECRET_NAME
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: EXTERNAL_CA_SECRET_NAMESPACE
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}"
+            - name: EXTERNAL_CA_SECRET_CERTIFICATE_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: EXTERNAL_CA_SECRET_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation.ordService }}"
             - name: EXTERNAL_SERVICES_MOCK_URL
               value: {{ .Values.global.tests.externalServicesMockFQDN }}:8080
             - name: CLIENT_ID
