@@ -5,12 +5,13 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
-	ord_global_registry "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator/globalregistry"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	ord_global_registry "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator/globalregistry"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/selfreg"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/tenantfetcher"
