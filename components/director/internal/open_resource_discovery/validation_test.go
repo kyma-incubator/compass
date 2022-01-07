@@ -4950,3 +4950,50 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 		})
 	}
 }
+
+func TestDocuments_ValidateMultipleErrors(t *testing.T) {
+	var tests = []struct {
+		Name                   string
+		DocumentProvider       func() []*ord.Document
+		ExpectedStringsInError []string
+	}{
+		{
+			Name: "Invalid value for `correlationIds` field for SystemInstance and invalid `baseUrl` for SystemInstance in one document",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
+				doc.DescribedSystemInstance.BaseURL = str.Ptr("http://test.com/test/v1")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedStringsInError: []string{"baseUrl", "correlationIds"},
+		},
+		{
+			Name: "Invalid value for `correlationIds` field for SystemInstance in first doc and invalid `baseUrl` for SystemInstance in second doc",
+			DocumentProvider: func() []*ord.Document {
+				doc1 := fixORDDocument()
+				doc1.DescribedSystemInstance.CorrelationIDs = json.RawMessage(invalidCorrelationIDsElement)
+				doc2 := fixORDDocument()
+				doc2.DescribedSystemInstance.BaseURL = str.Ptr("http://test.com/test/v1")
+
+				return []*ord.Document{doc1, doc2}
+			},
+			ExpectedStringsInError: []string{"baseUrl", "correlationIds"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			docs := ord.Documents(test.DocumentProvider())
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
+			if len(test.ExpectedStringsInError) != 0 {
+				require.Error(t, err)
+				for _, expectedStr := range test.ExpectedStringsInError {
+					require.Contains(t, err.Error(), expectedStr)
+				}
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

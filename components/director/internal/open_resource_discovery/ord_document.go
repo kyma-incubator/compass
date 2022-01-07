@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"regexp"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -92,11 +94,15 @@ type Documents []*Document
 
 // Validate validates all the documents for a system instance
 func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64, globalResourcesOrdIDs map[string]bool) error {
-	baseURL := calculatedBaseURL
-	isBaseURLConfigured := len(calculatedBaseURL) > 0
+	var (
+		errs                *multierror.Error
+		baseURL             = calculatedBaseURL
+		isBaseURLConfigured = len(calculatedBaseURL) > 0
+	)
 	for _, doc := range docs {
 		if !isBaseURLConfigured && (doc.DescribedSystemInstance == nil || doc.DescribedSystemInstance.BaseURL == nil) {
-			return errors.New("no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance")
+			errs = multierror.Append(errs, errors.New("no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance"))
+			continue
 		}
 
 		if len(baseURL) == 0 {
@@ -105,11 +111,11 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 
 		if doc.DescribedSystemInstance != nil {
 			if err := ValidateSystemInstanceInput(doc.DescribedSystemInstance); err != nil {
-				return errors.Wrap(err, "error validating system instance")
+				errs = multierror.Append(errs, errors.Wrap(err, "error validating system instance"))
 			}
 		}
 		if doc.DescribedSystemInstance != nil && doc.DescribedSystemInstance.BaseURL != nil && *doc.DescribedSystemInstance.BaseURL != baseURL {
-			return errors.New("describedSystemInstance should be the same as the one providing the documents")
+			errs = multierror.Append(errs, errors.New("describedSystemInstance should be the same as the one providing the documents"))
 		}
 	}
 
@@ -124,7 +130,8 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
 			if _, ok := packageIDs[pkg.OrdID]; ok {
-				return errors.Errorf("found duplicate package with ord id %q", pkg.OrdID)
+				errs = multierror.Append(errs, errors.Errorf("found duplicate package with ord id %q", pkg.OrdID))
+				continue
 			}
 			packageIDs[pkg.OrdID] = true
 			packagePolicyLevels[pkg.OrdID] = pkg.PolicyLevel
@@ -133,62 +140,68 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 
 	for _, doc := range docs {
 		if err := validateDocumentInput(doc); err != nil {
-			return errors.Wrap(err, "error validating document")
+			errs = multierror.Append(errs, errors.Wrap(err, "error validating document"))
 		}
 
 		for _, pkg := range doc.Packages {
 			if err := validatePackageInput(pkg, packagesFromDB, resourceHashes); err != nil {
-				return errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID)
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
 			}
 		}
 		for _, bndl := range doc.ConsumptionBundles {
 			if err := validateBundleInput(bndl); err != nil {
-				return errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID))
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
 			}
-			if _, ok := bundleIDs[*bndl.OrdID]; ok {
-				return errors.Errorf("found duplicate bundle with ord id %q", *bndl.OrdID)
+			if bndl.OrdID != nil {
+				if _, ok := bundleIDs[*bndl.OrdID]; ok {
+					errs = multierror.Append(errs, errors.Errorf("found duplicate bundle with ord id %q", *bndl.OrdID))
+				}
+				bundleIDs[*bndl.OrdID] = true
 			}
-			bundleIDs[*bndl.OrdID] = true
 		}
 		for _, product := range doc.Products {
 			if err := validateProductInput(product); err != nil {
-				return errors.Wrapf(err, "error validating product with ord id %q", product.OrdID)
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating product with ord id %q", product.OrdID))
 			}
 			if _, ok := productIDs[product.OrdID]; ok {
-				return errors.Errorf("found duplicate product with ord id %q", product.OrdID)
+				errs = multierror.Append(errs, errors.Errorf("found duplicate product with ord id %q", product.OrdID))
 			}
 			productIDs[product.OrdID] = true
 		}
 		for _, api := range doc.APIResources {
 			if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, resourceHashes); err != nil {
-				return errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID))
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
 			}
-			if _, ok := apiIDs[*api.OrdID]; ok {
-				return errors.Errorf("found duplicate api with ord id %q", *api.OrdID)
+			if api.OrdID != nil {
+				if _, ok := apiIDs[*api.OrdID]; ok {
+					errs = multierror.Append(errs, errors.Errorf("found duplicate api with ord id %q", *api.OrdID))
+				}
+				apiIDs[*api.OrdID] = true
 			}
-			apiIDs[*api.OrdID] = true
 		}
 		for _, event := range doc.EventResources {
 			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
-				return errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID))
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
 			}
-			if _, ok := eventIDs[*event.OrdID]; ok {
-				return errors.Errorf("found duplicate event with ord id %q", *event.OrdID)
+			if event.OrdID != nil {
+				if _, ok := eventIDs[*event.OrdID]; ok {
+					errs = multierror.Append(errs, errors.Errorf("found duplicate event with ord id %q", *event.OrdID))
+				}
+				eventIDs[*event.OrdID] = true
 			}
-			eventIDs[*event.OrdID] = true
 		}
 		for _, vendor := range doc.Vendors {
 			if err := validateVendorInput(vendor); err != nil {
-				return errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID)
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))
 			}
 			if _, ok := vendorIDs[vendor.OrdID]; ok {
-				return errors.Errorf("found duplicate vendor with ord id %q", vendor.OrdID)
+				errs = multierror.Append(errs, errors.Errorf("found duplicate vendor with ord id %q", vendor.OrdID))
 			}
 			vendorIDs[vendor.OrdID] = true
 		}
 		for _, tombstone := range doc.Tombstones {
 			if err := validateTombstoneInput(tombstone); err != nil {
-				return errors.Wrapf(err, "error validating tombstone with ord id %q", tombstone.OrdID)
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating tombstone with ord id %q", tombstone.OrdID))
 			}
 		}
 	}
@@ -196,29 +209,29 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 	// Validate entity relations
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
-			if !vendorIDs[*pkg.Vendor] && !globalResourcesOrdIDs[*pkg.Vendor] {
-				return errors.Errorf("package with id %q has a reference to unknown vendor %q", pkg.OrdID, *pkg.Vendor)
+			if pkg.Vendor != nil && !vendorIDs[*pkg.Vendor] && !globalResourcesOrdIDs[*pkg.Vendor] {
+				errs = multierror.Append(errs, errors.Errorf("package with id %q has a reference to unknown vendor %q", pkg.OrdID, *pkg.Vendor))
 			}
 			ordIDs := gjson.ParseBytes(pkg.PartOfProducts).Array()
 			for _, productID := range ordIDs {
-				if !productIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
-					return errors.Errorf("package with id %q has a reference to unknown product %q", pkg.OrdID, productID.String())
+				if !productIDs[productID.String()] {
+					errs = multierror.Append(errs, errors.Errorf("package with id %q has a reference to unknown product %q", pkg.OrdID, productID.String()))
 				}
 			}
 		}
 		for _, product := range doc.Products {
 			if !vendorIDs[product.Vendor] && !globalResourcesOrdIDs[product.Vendor] {
-				return errors.Errorf("product with id %q has a reference to unknown vendor %q", product.OrdID, product.Vendor)
+				errs = multierror.Append(errs, errors.Errorf("product with id %q has a reference to unknown vendor %q", product.OrdID, product.Vendor))
 			}
 		}
 		for _, api := range doc.APIResources {
-			if !packageIDs[*api.OrdPackageID] {
-				return errors.Errorf("api with id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID)
+			if api.OrdPackageID != nil && !packageIDs[*api.OrdPackageID] {
+				errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID))
 			}
 			if api.PartOfConsumptionBundles != nil {
 				for _, apiBndlRef := range api.PartOfConsumptionBundles {
 					if !bundleIDs[apiBndlRef.BundleOrdID] {
-						return errors.Errorf("api with id %q has a reference to unknown bundle %q", *api.OrdID, apiBndlRef.BundleOrdID)
+						errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown bundle %q", *api.OrdID, apiBndlRef.BundleOrdID))
 					}
 				}
 			}
@@ -226,18 +239,18 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			ordIDs := gjson.ParseBytes(api.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !productIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
-					return errors.Errorf("api with id %q has a reference to unknown product %q", *api.OrdID, productID.String())
+					errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown product %q", *api.OrdID, productID.String()))
 				}
 			}
 		}
 		for _, event := range doc.EventResources {
-			if !packageIDs[*event.OrdPackageID] {
-				return errors.Errorf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID)
+			if event.OrdPackageID != nil && !packageIDs[*event.OrdPackageID] {
+				errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID))
 			}
 			if event.PartOfConsumptionBundles != nil {
 				for _, eventBndlRef := range event.PartOfConsumptionBundles {
 					if !bundleIDs[eventBndlRef.BundleOrdID] {
-						return errors.Errorf("event with id %q has a reference to unknown bundle %q", *event.OrdID, eventBndlRef.BundleOrdID)
+						errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown bundle %q", *event.OrdID, eventBndlRef.BundleOrdID))
 					}
 				}
 			}
@@ -245,13 +258,13 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			ordIDs := gjson.ParseBytes(event.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !productIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
-					return errors.Errorf("event with id %q has a reference to unknown product %q", *event.OrdID, productID.String())
+					errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown product %q", *event.OrdID, productID.String()))
 				}
 			}
 		}
 	}
 
-	return nil
+	return errs.ErrorOrNil()
 }
 
 // Sanitize performs all the merging and rewriting rules defined in ORD. This method should be invoked after Documents are validated with the Validate method.
