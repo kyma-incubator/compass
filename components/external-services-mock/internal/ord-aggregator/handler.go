@@ -3,12 +3,13 @@ package ord_aggregator
 import (
 	"bytes"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
-	"github.com/pkg/errors"
 	"math/rand"
 	"net/http"
 	"text/template"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
+	"github.com/pkg/errors"
 )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
