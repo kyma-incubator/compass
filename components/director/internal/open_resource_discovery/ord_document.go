@@ -214,7 +214,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 			ordIDs := gjson.ParseBytes(pkg.PartOfProducts).Array()
 			for _, productID := range ordIDs {
-				if !productIDs[productID.String()] {
+				if !productIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
 					errs = multierror.Append(errs, errors.Errorf("package with id %q has a reference to unknown product %q", pkg.OrdID, productID.String()))
 				}
 			}
