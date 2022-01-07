@@ -258,10 +258,9 @@ func TestORDService(t *testing.T) {
 	})
 
 	for _, resource := range []string{"vendors", "tombstones", "products"} { // This tests assert integrity between ORD Service JPA model and our Database model
-		t.Run(fmt.Sprintf("Requesting %s returns empty", resource), func(t *testing.T) {
+		t.Run(fmt.Sprintf("Requesting %s", resource), func(t *testing.T) {
 			respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/%s?$format=json", testConfig.ORDServiceURL, resource), map[string][]string{tenantHeader: {defaultTestTenant}})
 			require.True(t, gjson.Get(respBody, "value").Exists())
-			require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 		})
 	}
 
