@@ -32,7 +32,7 @@ spec:
     - port: {{ .Values.global.externalServicesMock.ordGlobalRegistryPort }}
       targetPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryPort }}
       protocol: TCP
-      name: http-ord-global-registry
+      name: http-ord-gr
     selector:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
