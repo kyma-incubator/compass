@@ -4985,7 +4985,7 @@ func TestDocuments_ValidateMultipleErrors(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents(test.DocumentProvider())
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, map[string]bool{})
 			if len(test.ExpectedStringsInError) != 0 {
 				require.Error(t, err)
 				for _, expectedStr := range test.ExpectedStringsInError {
