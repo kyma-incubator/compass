@@ -27,6 +27,7 @@ type TenantMappingRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
+	ListSubaccounts(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error)
 	ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error)
 	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
@@ -105,6 +106,11 @@ func (s *service) GetInternalTenant(ctx context.Context, externalTenant string) 
 // List returns all tenants present in the Compass storage.
 func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.List(ctx)
+}
+
+// ListSubaccounts returns all tenants present in the Compass storage.
+func (s *service) ListSubaccounts(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.ListSubaccounts(ctx)
 }
 
 // List returns all tenants present in the Compass storage.

@@ -26,6 +26,7 @@ RUN go build -v -o director ./cmd/director/main.go \
   && go build -v -o tenantloader ./cmd/tenantloader/main.go \
   && go build -v -o ordaggregator ./cmd/ordaggregator/main.go \
   && go build -v -o scopessynchronizer ./cmd/scopessynchronizer/main.go \
+  && go build -v -o directorycleaner ./cmd/directorycleaner/main.go \
   && go build -v -o systemfetcher ./cmd/systemfetcher/main.go
 RUN mkdir /app && mv ./director /app/director \
   && mv ./tenantfetcher-job /app/tenantfetcher-job \
@@ -33,6 +34,7 @@ RUN mkdir /app && mv ./director /app/director \
   && mv ./tenantloader /app/tenantloader \
   && mv ./ordaggregator /app/ordaggregator \
   && mv ./scopessynchronizer /app/scopessynchronizer \
+  && mv ./directorycleaner /app/directorycleaner \
   && mv ./systemfetcher /app/systemfetcher \
   && mv ./licenses /app/licenses
 

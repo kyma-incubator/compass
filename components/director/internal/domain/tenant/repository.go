@@ -153,6 +153,28 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 	return r.multipleFromEntities(entityCollection), nil
 }
 
+// ListSubaccounts all subaacounts from the Compass storage.
+func (r *pgRepository) ListSubaccounts(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
+	var entityCollection tenant.EntityCollection
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching persistence from context")
+	}
+
+	// TODO get only from event-service
+	prefixedFields := strings.Join(str.PrefixStrings(insertColumns, "btm."), ", ")
+	query := fmt.Sprintf(`SELECT %s FROM %s btm WHERE btm.%s = $1 AND btm.%s = $2`,
+		prefixedFields, tableName, statusColumn, providerNameColumn)
+
+	err = persist.SelectContext(ctx, &entityCollection, query, tenant.Active, tenant.Subaccount)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing subaccount tenants from DB")
+	}
+
+	return r.multipleFromEntities(entityCollection), nil
+}
+
 // ListPageBySearchTerm retrieves a page of tenants from the Compass storage filtered by a search term.
 func (r *pgRepository) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
 	searchTermRegex := fmt.Sprintf("%%%s%%", searchTerm)
