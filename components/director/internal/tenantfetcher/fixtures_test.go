@@ -22,15 +22,32 @@ func fixTenantEventsResponse(events []byte, total, pages int) tenantfetcher.Tena
 	}`, string(events), total, pages))
 }
 
-func fixEvent(t require.TestingT, eventType string, fields map[string]string) []byte {
+func fixEvent(t require.TestingT, eventType, ga string, fields map[string]string) []byte {
 	eventData, err := json.Marshal(fields)
 	if err != nil {
 		require.NoError(t, err)
 	}
-	return wrapIntoEventPageJSON(string(eventData), eventType)
+	return wrapIntoEventPageJSON(string(eventData), eventType, ga)
 }
 
-func wrapIntoEventPageJSON(eventData, eventType string) []byte {
+func fixEventWithoutGA(t require.TestingT, eventType string, fields map[string]string) []byte {
+	eventData, err := json.Marshal(fields)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	return wrapIntoEventPageJSONWithoutGA(string(eventData), eventType)
+}
+
+func wrapIntoEventPageJSON(eventData, eventType, ga string) []byte {
+	return []byte(fmt.Sprintf(`{
+		"id":        "%s",
+		"type" "%s",
+        "globalAccountGUID": "%s",
+		"eventData": %s,
+	}`, fixID(), eventType, ga, eventData))
+}
+
+func wrapIntoEventPageJSONWithoutGA(eventData, eventType string) []byte {
 	return []byte(fmt.Sprintf(`{
 		"id":        "%s",
 		"type" "%s",

@@ -75,11 +75,11 @@ const (
 		"guid": "%s",
 		"displayName": "%s",
 		"subdomain": "%s",
-		"parentGuid": "%s",
 		"sourceGlobalAccountGUID": "%s",
 		"targetGlobalAccountGUID": "%s",
 		"region": "%s"
 	},
+	"globalAccountGUID": "%s",
 	"type": "Subaccount"
 }`
 )
@@ -413,7 +413,7 @@ func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain string) 
 }
 
 func genMockSubaccountMoveEvent(guid, displayName, subdomain, parentGuid, sourceGlobalAccountGuid, targetGlobalAccountGuid, region string) string {
-	return fmt.Sprintf(mockSubaccountEventPattern, guid, displayName, subdomain, parentGuid, sourceGlobalAccountGuid, targetGlobalAccountGuid, region)
+	return fmt.Sprintf(mockSubaccountEventPattern, guid, displayName, subdomain, sourceGlobalAccountGuid, targetGlobalAccountGuid, region, parentGuid)
 }
 
 func genMockPage(events string, numEvents int) string {
