@@ -91,7 +91,7 @@ global:
       version: "PR-2163"
     director:
       dir:
-      version: "PR-2167"
+      version: "PR-2170"
     gateway:
       dir:
       version: "PR-2163"
@@ -120,7 +120,7 @@ global:
       version: "PR-51"
     e2e_tests:
       dir:
-      version: "PR-2156"
+      version: "PR-2170"
   isLocalEnv: false
   oauth2:
     host: oauth2
