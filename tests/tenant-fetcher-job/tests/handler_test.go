@@ -372,7 +372,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	assert.Equal(t, subaccountNames[1], *subaccount2.Name)
 	parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountParent)
 	assert.NoError(t, err)
-	assert.Equal(t, parent.ID, subaccount2.ParentID)
+	assert.Equal(t, parent.InternalID, subaccount2.ParentID)
 }
 
 func TestMoveMissingSubaccounts(t *testing.T) {
