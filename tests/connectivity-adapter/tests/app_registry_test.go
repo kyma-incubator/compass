@@ -68,7 +68,7 @@ func TestAppRegistry(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("App Registry Service flow for Application", func(t *testing.T) {
-		client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSslVerify)
+		client := clients.NewConnectorClient(directorClient, appID, testConfig.Tenant, testConfig.SkipSSLValidation)
 		clientKey := certs.CreateKey(t)
 
 		crtResponse, infoResponse := createCertificateChain(t, client, clientKey)
@@ -77,7 +77,7 @@ func TestAppRegistry(t *testing.T) {
 		require.NotEmpty(t, infoResponse.Certificate)
 
 		crtChainBytes := certs.DecodeBase64Cert(t, crtResponse.CRTChain)
-		adapterClient, err := clients.NewSecuredClient(testConfig.SkipSslVerify, clientKey, crtChainBytes, testConfig.Tenant)
+		adapterClient, err := clients.NewSecuredClient(testConfig.SkipSSLValidation, clientKey, crtChainBytes, testConfig.Tenant)
 		require.NoError(t, err)
 
 		mgmInfoResponse, errorResponse := adapterClient.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)

@@ -712,7 +712,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &actualApp)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
@@ -741,7 +741,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, delReq, &deletedLabel)
 		require.NoError(t, err)
 		assert.Equal(t, expectedLabel, deletedLabel)
-		actualApp = fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
+		actualApp = fixtures.GetApplication(t, ctx, dexGraphQLClient, tenantId, actualApp.ID)
 		assert.Nil(t, actualApp.Labels[expectedLabel.Key])
 
 	})
@@ -856,7 +856,7 @@ func TestQueryApplicationsPageable(t *testing.T) {
 	apps := make(map[string]*graphql.ApplicationExt)
 	for i := 0; i < appAmount; i++ {
 		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, fmt.Sprintf("app-%d", i), tenantId)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &app)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 		apps[app.ID] = &app
@@ -909,7 +909,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	err = testctx.Tc.RunOperation(context.Background(), dexGraphQLClient, request, &actualApp)
-	defer fixtures.CleanupApplication(t, context.Background(), dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	defer fixtures.CleanupApplication(t, context.Background(), dexGraphQLClient, tenantId, &actualApp)
 
 	require.NotEmpty(t, actualApp.ID)
 	appID := actualApp.ID
@@ -952,8 +952,8 @@ func TestQuerySpecificApplication(t *testing.T) {
 	scenarios := []string{"test-scenario", "test-scenario-2"}
 	defaultScenarios := []string{conf.DefaultScenario}
 	// update label definitions
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), append([]string{conf.DefaultScenario}, scenarios...))
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), defaultScenarios)
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, append([]string{conf.DefaultScenario}, scenarios...))
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, defaultScenarios)
 
 	runtimeConsumer := testctx.Tc.NewOperation(ctx)
 
@@ -1382,6 +1382,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 func TestDeleteApplicationWithNoScenarios(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	in := graphql.ApplicationRegisterInput{
 		Name:           "wordpress",
@@ -1395,11 +1396,11 @@ func TestDeleteApplicationWithNoScenarios(t *testing.T) {
 
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	actualApp := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &actualApp)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, request, &actualApp)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &actualApp)
 	require.NoError(t, err)
 
-	app := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID)
+	app := fixtures.GetApplication(t, ctx, dexGraphQLClient, tenantId, actualApp.ID)
 
 	fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, actualApp.ID, "integrationSystemID")
 	fixtures.DeleteApplicationLabel(t, ctx, dexGraphQLClient, actualApp.ID, "name")
@@ -1411,6 +1412,7 @@ func TestDeleteApplicationWithNoScenarios(t *testing.T) {
 func TestApplicationDeletionInScenario(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	scenarios := []string{conf.DefaultScenario, "test"}
 
@@ -1433,7 +1435,7 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 
 	updateLabelDefinitionReq := fixtures.FixUpdateLabelDefinitionRequest(ldInputGql)
 
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), updateLabelDefinitionReq, nil)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, updateLabelDefinitionReq, nil)
 	require.NoError(t, err)
 
 	in := graphql.ApplicationRegisterInput{
@@ -1451,8 +1453,8 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	actualApp := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &actualApp)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, request, &actualApp)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &actualApp)
 	require.NoError(t, err)
 
 	inRuntime := graphql.RuntimeInput{
@@ -1465,20 +1467,20 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	require.NoError(t, err)
 	request = fixtures.FixRegisterRuntimeRequest(runtimeInputGQL)
 	runtime := graphql.RuntimeExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &runtime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &runtime)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, request, &runtime)
+	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 
 	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, nil)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, request, nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "The operation is not allowed [reason=System wordpress is still used and cannot be deleted. Unassign the system from the following formations first: test. Then, unassign the system from the following runtimes, too: test-runtime")
 
 	request = fixtures.FixDeleteRuntimeLabel(runtime.ID, "scenarios")
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, nil)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, request, nil)
 	require.NoError(t, err)
 
 	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, nil)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantId, request, nil)
 	require.NoError(t, err)
 }

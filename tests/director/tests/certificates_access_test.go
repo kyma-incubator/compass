@@ -11,13 +11,10 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/stretchr/testify/require"
 )
 
-func TestIntegrationSystemAccess(stdT *testing.T) {
-	t := testingx.NewT(stdT)
-
+func TestIntegrationSystemAccess(t *testing.T) {
 	testCases := []struct {
 		name           string
 		tenant         string
@@ -47,7 +44,7 @@ func TestIntegrationSystemAccess(stdT *testing.T) {
 
 			// Build graphql director client configured with certificate
 			clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
-			directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain)
+			directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain, conf.SkipSSLValidation)
 
 			t.Log(fmt.Sprintf("Trying to create application in account tenant %s", test.tenant))
 			app, err := fixtures.RegisterApplication(t, ctx, directorCertSecuredClient, fmt.Sprintf("app-%s", test.resourceSuffix), test.tenant)
