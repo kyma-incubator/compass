@@ -162,10 +162,9 @@ func (r *pgRepository) ListSubaccounts(ctx context.Context) ([]*model.BusinessTe
 		return nil, errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	// TODO get only from event-service
 	prefixedFields := strings.Join(str.PrefixStrings(insertColumns, "btm."), ", ")
-	query := fmt.Sprintf(`SELECT %s FROM %s btm WHERE btm.%s = $1 AND btm.%s = $2`,
-		prefixedFields, tableName, statusColumn, providerNameColumn)
+	query := fmt.Sprintf(`SELECT %s FROM %s btm WHERE btm.%s = $1 AND btm.%s = $2 AND btm.%s='event-service'`,
+		prefixedFields, tableName, statusColumn, typeColumn, providerNameColumn)
 
 	err = persist.SelectContext(ctx, &entityCollection, query, tenant.Active, tenant.Subaccount)
 	if err != nil {

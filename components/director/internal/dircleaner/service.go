@@ -2,6 +2,7 @@ package dircleaner
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
@@ -42,11 +43,12 @@ func NewCleaner(transact persistence.Transactioner, tenantSvc TenantService, cis
 
 // Clean missing godoc
 func (s *service) Clean(ctx context.Context) error {
+	log.C(ctx).Info("Listing all subaccounts provided by the event-service")
 	allSubaccounts, err := s.tenantSvc.ListSubaccounts(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while getting all subaccounts")
 	}
-
+	log.C(ctx).Info("Done listing subaccounts")
 	for _, subaccount := range allSubaccounts {
 		globalAccountGUIDFromCis, err := s.cisSvc.GetGlobalAccount(ctx, subaccount.ID)
 		if err != nil {
@@ -65,6 +67,7 @@ func (s *service) Clean(ctx context.Context) error {
 				return err
 			}
 			if parentFromDB.ExternalTenant != globalAccountGUIDFromCis { // the record is directory and not GA
+				log.C(ctx).Infof("Updating record with id %s", parentFromDB.ID)
 				update := model.BusinessTenantMappingInput{
 					Name:           globalAccountGUIDFromCis, // set new name
 					ExternalTenant: globalAccountGUIDFromCis, // set new external tenant
@@ -75,6 +78,7 @@ func (s *service) Clean(ctx context.Context) error {
 				if err := s.tenantSvc.Update(ctx, parentFromDB.ID, update); err != nil {
 					return err
 				}
+				log.C(ctx).Info("Record updated")
 			}
 
 			return nil
