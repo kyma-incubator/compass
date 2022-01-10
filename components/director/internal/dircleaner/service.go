@@ -83,8 +83,8 @@ func (s *service) Clean(ctx context.Context) error {
 
 				if conflictingGA != nil && err == nil { // there is a record which conflicts by external tenant id
 					updateSubaccount := model.BusinessTenantMappingInput{
-						Name:           subaccount.Name,           // set new name
-						ExternalTenant: subaccount.ExternalTenant, // set new external tenant
+						Name:           subaccount.Name,
+						ExternalTenant: subaccount.ExternalTenant,
 						Parent:         conflictingGA.ID,
 						Type:           tenant.TypeToStr(subaccount.Type),
 						Provider:       subaccount.Provider,
