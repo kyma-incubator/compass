@@ -120,7 +120,7 @@ global:
       version: "PR-51"
     e2e_tests:
       dir:
-      version: "PR-2156"
+      version: "PR-2170"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -567,7 +567,7 @@ global:
         discriminatorValue: ""
         detailsField: "details"
         entityTypeField: "entityType"
-        parentIDField: "parentGuid"
+        globalAccountID: "gaID"
         regionField: "region"
         movedSubaccountTargetField: "targetGlobalAccountGUID"
         movedSubaccountSourceField: "sourceGlobalAccountGUID"

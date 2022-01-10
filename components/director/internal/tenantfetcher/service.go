@@ -45,7 +45,9 @@ type TenantFieldMapping struct {
 
 	RegionField     string `envconfig:"APP_MAPPING_FIELD_REGION"`
 	EntityTypeField string `envconfig:"default=entityType,APP_MAPPING_FIELD_ENTITY_TYPE"`
-	ParentIDField   string `envconfig:"APP_MAPPING_FIELD_PARENT_ID"`
+
+	// This is not a value from the actual event but the key under which the GlobalAccountGUIDField will be stored to avoid collisions
+	GlobalAccountKey string `envconfig:"default=gaID,APP_GLOBAL_ACCOUNT_KEY"`
 }
 
 // MovedSubaccountsFieldMapping missing godoc
