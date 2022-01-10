@@ -54,6 +54,7 @@ data:
   global.systemFetcher.oauth.tenantHeaderName: "x-zid"
   global.oathkeeper.mutators.authenticationMappingServices.tenant-fetcher.authenticator.enabled: "true"
   global.oathkeeper.mutators.authenticationMappingServices.subscriber.authenticator.enabled: "true"
+  global.oathkeeper.mutators.authenticationMappingServices.nsadapter.authenticator.enabled: "true"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
   system-broker.http.client.skipSSLValidation: "true"
