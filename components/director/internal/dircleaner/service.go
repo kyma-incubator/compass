@@ -62,7 +62,7 @@ func (s *service) Clean(ctx context.Context) error {
 
 	for _, subaccount := range allSubaccounts {
 		log.C(ctx).Infof("Processing subaccount with ID %s", subaccount.ID)
-		globalAccountGUIDFromCis, err := s.cisSvc.GetGlobalAccount(ctx, subaccount.ID)
+		globalAccountGUIDFromCis, err := s.cisSvc.GetGlobalAccount(ctx, subaccount.ExternalTenant)
 		if err != nil {
 			return errors.Wrapf(err, "while getting global account guid for subaacount with ID %s", subaccount.ID)
 		}
