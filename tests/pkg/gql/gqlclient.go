@@ -20,8 +20,8 @@ func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Clie
 	return gcli.NewClient(url, gcli.WithHTTPClient(authorizedClient))
 }
 
-func NewCertAuthorizedGraphQLClientWithCustomURL(url string, key *rsa.PrivateKey, rawCertChain [][]byte) *gcli.Client {
-	certAuthorizedClient := NewCertAuthorizedHTTPClient(key, rawCertChain)
+func NewCertAuthorizedGraphQLClientWithCustomURL(url string, key *rsa.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *gcli.Client {
+	certAuthorizedClient := NewCertAuthorizedHTTPClient(key, rawCertChain, skipSSLValidation)
 	return gcli.NewClient(url, gcli.WithHTTPClient(certAuthorizedClient))
 }
 
@@ -61,7 +61,7 @@ func (t *authenticatedTransport) RoundTrip(req *http.Request) (*http.Response, e
 	return t.Transport.RoundTrip(req)
 }
 
-func NewCertAuthorizedHTTPClient(key *rsa.PrivateKey, rawCertChain [][]byte) *http.Client {
+func NewCertAuthorizedHTTPClient(key *rsa.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
 	tlsCert := tls.Certificate{
 		Certificate: rawCertChain,
 		PrivateKey:  key,
@@ -69,7 +69,7 @@ func NewCertAuthorizedHTTPClient(key *rsa.PrivateKey, rawCertChain [][]byte) *ht
 
 	tlsConfig := &tls.Config{
 		Certificates:       []tls.Certificate{tlsCert},
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: skipSSLValidation,
 	}
 
 	httpClient := &http.Client{

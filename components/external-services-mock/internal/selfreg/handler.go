@@ -15,7 +15,7 @@ import (
 
 const (
 	NamePath       = "name"
-	responseFormat = `{"%s": "test-preifx-%s"}`
+	responseFormat = `{"%s": "test-prefix-%s"}`
 )
 
 type Config struct {

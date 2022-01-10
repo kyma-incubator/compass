@@ -188,7 +188,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	}
 
 	if err := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes); err != nil {
-		return errors.Wrap(err, "invalid documents")
+		return err
 	}
 
 	if err := documents.Sanitize(baseURL); err != nil {
