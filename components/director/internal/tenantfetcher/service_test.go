@@ -110,9 +110,9 @@ func TestService_SyncAccountTenants(t *testing.T) {
 		tenantFieldMapping.EntityTypeField: "GlobalAccount",
 	}
 
-	event1 := fixEventWithoutGA(t, "GlobalAccount", event1Fields)
-	event2 := fixEventWithoutGA(t, "GlobalAccount", event2Fields)
-	event3 := fixEventWithoutGA(t, "GlobalAccount", event3Fields)
+	event1 := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, event1Fields)
+	event2 := fixEvent(t, "GlobalAccount", busTenant2.ExternalTenant, event2Fields)
+	event3 := fixEvent(t, "GlobalAccount", busTenant3.ExternalTenant, event3Fields)
 
 	eventsToJSONArray := func(events ...[]byte) []byte {
 		return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
@@ -313,7 +313,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 					tenantFieldMapping.EntityTypeField: busTenant1.Type,
 				}
 
-				updatedTenant := fixEventWithoutGA(t, busTenant1.Type, updatedEventFields)
+				updatedTenant := fixEvent(t, busTenant1.Type, busTenant1.ExternalTenant, updatedEventFields)
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(updatedTenant), 1, 1), nil).Once()
 
@@ -736,7 +736,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 					wrongFieldMapping.NameField: "qux",
 				}
 
-				wrongTenantEvents := eventsToJSONArray(fixEventWithoutGA(t, "GlobalAccount", wrongTenantEventFields))
+				wrongTenantEvents := eventsToJSONArray(fixEvent(t, "GlobalAccount", "", wrongTenantEventFields))
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
 				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedAccountType, tenantfetcher.DeletedAccountType)
 				return client

@@ -30,14 +30,6 @@ func fixEvent(t require.TestingT, eventType, ga string, fields map[string]string
 	return wrapIntoEventPageJSON(string(eventData), eventType, ga)
 }
 
-func fixEventWithoutGA(t require.TestingT, eventType string, fields map[string]string) []byte {
-	eventData, err := json.Marshal(fields)
-	if err != nil {
-		require.NoError(t, err)
-	}
-	return wrapIntoEventPageJSONWithoutGA(string(eventData), eventType)
-}
-
 func wrapIntoEventPageJSON(eventData, eventType, ga string) []byte {
 	return []byte(fmt.Sprintf(`{
 		"id":        "%s",
@@ -45,14 +37,6 @@ func wrapIntoEventPageJSON(eventData, eventType, ga string) []byte {
         "globalAccountGUID": "%s",
 		"eventData": %s,
 	}`, fixID(), eventType, ga, eventData))
-}
-
-func wrapIntoEventPageJSONWithoutGA(eventData, eventType string) []byte {
-	return []byte(fmt.Sprintf(`{
-		"id":        "%s",
-		"type" "%s",
-		"eventData": %s,
-	}`, fixID(), eventType, eventData))
 }
 
 func fixBusinessTenantMappingInput(name, externalTenant, provider, subdomain, region, parent string, tenantType tenant.Type) model.BusinessTenantMappingInput {
