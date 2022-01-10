@@ -264,6 +264,15 @@ func (s *service) DeleteMany(ctx context.Context, externalTenantIDs []string) er
 	return nil
 }
 
+// DeleteMany removes all tenants with the provided external tenant ids from the Compass storage.
+func (s *service) DeleteByExternalTenant(ctx context.Context, externalTenantID string) error {
+	if err := s.tenantMappingRepo.DeleteByExternalTenant(ctx, externalTenantID); err != nil {
+		return errors.Wrap(err, "while deleting tenant")
+	}
+
+	return nil
+}
+
 // ListLabels returns all labels directly linked to the given tenant, like subdomain or region.
 // That excludes labels of other resource types in the context of the given tenant, for example labels of an application in the given tenant - those labels are not returned.
 func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error) {
