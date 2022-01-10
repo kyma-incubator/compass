@@ -20,6 +20,14 @@ spec:
   http:
     - match:
       - uri:
+          prefix: /nsadapter
+      route:
+        - destination:
+            host: {{ $.Values.global.gateway.tls.host }}
+            port:
+              number: {{ $.Values.global.gateway.port }}
+    - match:
+      - uri:
           regex: '{{ $config.authenticator.path }}'
       route:
         - destination:

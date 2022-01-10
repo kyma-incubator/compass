@@ -82,7 +82,8 @@ spec:
   authorizer:
     handler: allow
   mutators:
-    - handler: noop
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.authenticationMappingServices.nsadapter.cfg | indent 4 }}
 ---
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
