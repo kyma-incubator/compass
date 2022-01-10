@@ -87,7 +87,7 @@ global:
       version: "PR-2118"
     director:
       dir:
-      version: "PR-2142"
+      version: "PR-2172"
     gateway:
       dir:
       version: "PR-2126"
@@ -116,7 +116,7 @@ global:
       version: "PR-49"
     e2e_tests:
       dir:
-      version: "PR-2123"
+      version: "PR-2172"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -563,7 +563,7 @@ global:
         discriminatorValue: ""
         detailsField: "details"
         entityTypeField: "entityType"
-        parentIDField: "parentGuid"
+        globalAccountID: "gaID"
         regionField: "region"
         movedSubaccountTargetField: "targetGlobalAccountGUID"
         movedSubaccountSourceField: "sourceGlobalAccountGUID"

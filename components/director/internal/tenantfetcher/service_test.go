@@ -110,9 +110,9 @@ func TestService_SyncAccountTenants(t *testing.T) {
 		tenantFieldMapping.EntityTypeField: "GlobalAccount",
 	}
 
-	event1 := fixEvent(t, "GlobalAccount", event1Fields)
-	event2 := fixEvent(t, "GlobalAccount", event2Fields)
-	event3 := fixEvent(t, "GlobalAccount", event3Fields)
+	event1 := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, event1Fields)
+	event2 := fixEvent(t, "GlobalAccount", busTenant2.ExternalTenant, event2Fields)
+	event3 := fixEvent(t, "GlobalAccount", busTenant3.ExternalTenant, event3Fields)
 
 	eventsToJSONArray := func(events ...[]byte) []byte {
 		return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
@@ -313,7 +313,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 					tenantFieldMapping.EntityTypeField: busTenant1.Type,
 				}
 
-				updatedTenant := fixEvent(t, busTenant1.Type, updatedEventFields)
+				updatedTenant := fixEvent(t, busTenant1.Type, busTenant1.ExternalTenant, updatedEventFields)
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(updatedTenant), 1, 1), nil).Once()
 
@@ -736,7 +736,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 					wrongFieldMapping.NameField: "qux",
 				}
 
-				wrongTenantEvents := eventsToJSONArray(fixEvent(t, "GlobalAccount", wrongTenantEventFields))
+				wrongTenantEvents := eventsToJSONArray(fixEvent(t, "GlobalAccount", "", wrongTenantEventFields))
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
 				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedAccountType, tenantfetcher.DeletedAccountType)
 				return client
@@ -772,6 +772,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				DiscriminatorValue: "",
 				EventsField:        "events",
 				IDField:            "id",
+				GlobalAccountKey:   "gaID",
 				NameField:          "name",
 				CustomerIDField:    "customerId",
 				SubdomainField:     "subdomain",
@@ -941,7 +942,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			SubdomainField:  "subdomain",
 			EntityTypeField: "type",
 			RegionField:     "region",
-			ParentIDField:   "parentId",
 		}
 
 		busTenant1GUID = "d1f08f02-2fda-4511-962a-17fd1f1aa477"
@@ -976,7 +976,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		subaccountEvent1Fields = map[string]string{
 			tenantFieldMapping.IDField:         "S1",
 			tenantFieldMapping.NameField:       "foo",
-			tenantFieldMapping.ParentIDField:   busTenant1GUID,
 			tenantFieldMapping.RegionField:     "test-region",
 			tenantFieldMapping.SubdomainField:  "subdomain-1",
 			tenantFieldMapping.EntityTypeField: "Subaccount",
@@ -984,7 +983,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		subaccountEvent2Fields = map[string]string{
 			tenantFieldMapping.IDField:         "S2",
 			tenantFieldMapping.NameField:       "bar",
-			tenantFieldMapping.ParentIDField:   busTenant2GUID,
 			tenantFieldMapping.RegionField:     "test-region",
 			tenantFieldMapping.SubdomainField:  "subdomain-2",
 			tenantFieldMapping.EntityTypeField: "Subaccount",
@@ -992,7 +990,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		subaccountEvent3Fields = map[string]string{
 			tenantFieldMapping.IDField:         "S3",
 			tenantFieldMapping.NameField:       "baz",
-			tenantFieldMapping.ParentIDField:   busTenant3GUID,
 			tenantFieldMapping.RegionField:     "test-region",
 			tenantFieldMapping.SubdomainField:  "subdomain-3",
 			tenantFieldMapping.EntityTypeField: "Subaccount",
@@ -1000,7 +997,6 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		subaccountEvent4Fields = map[string]string{
 			tenantFieldMapping.IDField:         "S4",
 			tenantFieldMapping.NameField:       "bsk",
-			tenantFieldMapping.ParentIDField:   busTenant4GUID,
 			tenantFieldMapping.RegionField:     "test-region",
 			tenantFieldMapping.SubdomainField:  "subdomain-4",
 			tenantFieldMapping.EntityTypeField: "Subaccount",
@@ -1008,11 +1004,10 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			"target_tenant":                    "target",
 		}
 
-		subaccountEvent1 = fixEvent(t, "Subaccount", subaccountEvent1Fields)
-		subaccountEvent2 = fixEvent(t, "Subaccount", subaccountEvent2Fields)
-		subaccountEvent3 = fixEvent(t, "Subaccount", subaccountEvent3Fields)
-		subaccountEvent4 = fixEvent(t, "Subaccount", subaccountEvent4Fields)
-
+		subaccountEvent1 = fixEvent(t, "Subaccount", busTenant1GUID, subaccountEvent1Fields)
+		subaccountEvent2 = fixEvent(t, "Subaccount", busTenant2GUID, subaccountEvent2Fields)
+		subaccountEvent3 = fixEvent(t, "Subaccount", busTenant3GUID, subaccountEvent3Fields)
+		subaccountEvent4 = fixEvent(t, "Subaccount", busTenant4GUID, subaccountEvent4Fields)
 		subaccountEvents = eventsToJSONArray(subaccountEvent1, subaccountEvent2, subaccountEvent3, subaccountEvent4)
 	}
 
@@ -1194,13 +1189,12 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				updatedEventFields := map[string]string{
 					tenantFieldMapping.IDField:         "S1",
 					tenantFieldMapping.NameField:       "updated-name",
-					tenantFieldMapping.ParentIDField:   busTenant1GUID,
 					tenantFieldMapping.RegionField:     "test-region",
 					tenantFieldMapping.SubdomainField:  "subdomain-1",
 					tenantFieldMapping.EntityTypeField: "Subaccount",
 				}
 
-				updatedTenant := fixEvent(t, parentTenant1.Type, updatedEventFields)
+				updatedTenant := fixEvent(t, parentTenant1.Type, busTenant1GUID, updatedEventFields)
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
 				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(updatedTenant), 1, 1), nil).Once()
 
@@ -2094,7 +2088,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 					wrongFieldMapping.NameField: "qux",
 				}
 
-				wrongTenantEvents := eventsToJSONArray(fixEvent(t, "Subaccount", wrongTenantEventFields))
+				wrongTenantEvents := eventsToJSONArray(fixEvent(t, "Subaccount", "id992", wrongTenantEventFields))
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
 				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType, tenantfetcher.MovedSubaccountType)
 				return client
@@ -2200,19 +2194,19 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				PageSizeValue:  "1",
 				PageStartValue: "1",
 			}, transact, kubeClient, tenantfetcher.TenantFieldMapping{
-				DetailsField:       "eventData",
-				DiscriminatorField: "",
-				DiscriminatorValue: "",
-				EventsField:        "events",
-				IDField:            "id",
-				NameField:          "name",
-				CustomerIDField:    "customerId",
-				SubdomainField:     "subdomain",
-				TotalPagesField:    "pages",
-				TotalResultsField:  "total",
-				EntityTypeField:    "type",
-				ParentIDField:      "parentId",
-				RegionField:        "region",
+				DetailsField:           "eventData",
+				DiscriminatorField:     "",
+				DiscriminatorValue:     "",
+				EventsField:            "events",
+				IDField:                "id",
+				NameField:              "name",
+				CustomerIDField:        "customerId",
+				SubdomainField:         "subdomain",
+				TotalPagesField:        "pages",
+				TotalResultsField:      "total",
+				EntityTypeField:        "type",
+				GlobalAccountGUIDField: "globalAccountGUID",
+				RegionField:            "region",
 			}, tenantfetcher.MovedSubaccountsFieldMapping{
 				LabelValue:   "id",
 				SourceTenant: "source_tenant",
@@ -2266,19 +2260,19 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			PageSizeValue:  "1",
 			PageStartValue: "1",
 		}, transact, kubeClient, tenantfetcher.TenantFieldMapping{
-			DetailsField:       "eventData",
-			DiscriminatorField: "",
-			DiscriminatorValue: "",
-			EventsField:        "events",
-			IDField:            "id",
-			NameField:          "name",
-			CustomerIDField:    "customerId",
-			SubdomainField:     "subdomain",
-			TotalPagesField:    "pages",
-			TotalResultsField:  "total",
-			EntityTypeField:    "type",
-			ParentIDField:      "parentId",
-			RegionField:        "region",
+			DetailsField:           "eventData",
+			DiscriminatorField:     "",
+			DiscriminatorValue:     "",
+			EventsField:            "events",
+			IDField:                "id",
+			NameField:              "name",
+			CustomerIDField:        "customerId",
+			SubdomainField:         "subdomain",
+			TotalPagesField:        "pages",
+			TotalResultsField:      "total",
+			EntityTypeField:        "type",
+			GlobalAccountGUIDField: "globalAccountGUID",
+			RegionField:            "region",
 		}, tenantfetcher.MovedSubaccountsFieldMapping{
 			LabelValue:   "id",
 			SourceTenant: "source_tenant",
