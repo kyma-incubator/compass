@@ -59,12 +59,13 @@ func (s *service) Clean(ctx context.Context) error {
 		return errors.Wrap(err, "while getting all subaccounts")
 	}
 	log.C(ctx).Infof("Total number of listed subaccounts: %d", len(allSubaccounts))
-
+	succsessfullyProcessed := 0
 	for _, subaccount := range allSubaccounts {
 		log.C(ctx).Infof("Processing subaccount with ID %s", subaccount.ID)
 		globalAccountGUIDFromCis, err := s.cisSvc.GetGlobalAccount(ctx, subaccount.ExternalTenant)
 		if err != nil {
-			return errors.Wrapf(err, "while getting global account guid for subaacount with ID %s", subaccount.ID)
+			log.C(ctx).Errorf("Could not get globalAccountGuid for subaacount with ID %s from CIS", subaccount.ID)
+			continue
 		}
 		err = func() error {
 			tx, err := s.transact.Begin()
@@ -90,12 +91,19 @@ func (s *service) Clean(ctx context.Context) error {
 						Provider:       subaccount.Provider,
 					}
 					log.C(ctx).Infof("Updating subaccount with id %s to point to existing GA with id %s", subaccount.ID, conflictingGA.ID)
-					if err := s.tenantSvc.Update(ctx, subaccount.ID, updateSubaccount); err != nil {
+					if err = s.tenantSvc.Update(ctx, subaccount.ID, updateSubaccount); err != nil {
 						log.C(ctx).Error(err)
 					}
-					// now delete the directory
-					if err = s.tenantSvc.DeleteByExternalTenant(ctx, parentFromDB.ExternalTenant); err != nil {
-						log.C(ctx).Error(err)
+					if err == nil { // the update was successful
+						// now delete the directory
+						log.C(ctx).Infof("Deleting directory with external tenant id %s", parentFromDB.ExternalTenant)
+						if err = s.tenantSvc.DeleteByExternalTenant(ctx, parentFromDB.ExternalTenant); err != nil {
+							log.C(ctx).Error(err)
+						}
+					}
+
+					if err == nil {
+						succsessfullyProcessed++
 					}
 				} else if err != nil && !apperrors.IsNotFoundError(err) {
 					log.C(ctx).Error(err)
@@ -110,16 +118,21 @@ func (s *service) Clean(ctx context.Context) error {
 					log.C(ctx).Infof("Updating directory with id %s with new external id %s", parentFromDB.ID, globalAccountGUIDFromCis)
 					if err := s.tenantSvc.Update(ctx, parentFromDB.ID, update); err != nil {
 						log.C(ctx).Error(err)
+					} else {
+						succsessfullyProcessed++
 					}
 				}
+			} else { // Nothing to do with this subaccount
+				succsessfullyProcessed++
 			}
 
 			return nil
 		}()
 		if err != nil {
-			return err
+			log.C(ctx).Error(err)
 		}
 	}
 
+	log.C(ctx).Infof("Successfully processed %d records from %d", succsessfullyProcessed, len(allSubaccounts))
 	return nil
 }

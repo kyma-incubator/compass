@@ -13,7 +13,7 @@ import (
 
 // CISResponse response from the context enrichment api
 type CISResponse struct {
-	GlobalAccountID string `json:"global_account_id"`
+	GlobalAccountID string `json:"globalAccountId"`
 	SubaccountID    string `json:"subaccountId"`
 	TenantID        string `json:"tenantId"`
 	Subdomain       string `json:"subdomain"`
