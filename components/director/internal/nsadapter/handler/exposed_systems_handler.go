@@ -17,7 +17,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
-	"github.com/tidwall/gjson"
 )
 
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
@@ -123,6 +122,8 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	sccs := make([]*nsmodel.SCC, 0, len(reportData.Value))
 	externalIDs := make([]string, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
+		//New object with the same data is created and added to the sccs slice instead of adding &scc to the slice
+		//because otherwise the slice is populated with copies of the last scc`s address
 		s := &nsmodel.SCC{
 			ExternalSubaccountID: scc.ExternalSubaccountID,
 			InternalSubaccountID: scc.InternalSubaccountID,
@@ -142,7 +143,6 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-
 	mapExternalToInternal(ctx, tenants, sccs)
 	details := make([]httputil.Detail, 0, 0)
 	filteredSccs := filterSccsByInternalId(ctx, sccs, &details)
@@ -369,6 +369,10 @@ func (a *Handler) prepareAppInput(ctx context.Context, scc nsmodel.SCC, system n
 		return nil, errors.Wrapf(err, "while preparing application create input from json")
 	}
 
+	if appInput.SystemNumber != nil && *appInput.SystemNumber == "" {
+		appInput.SystemNumber = nil
+	}
+
 	return &appInput, nil
 }
 
@@ -487,7 +491,7 @@ func (a *Handler) listAppsByScc(ctx context.Context, subaccount, locationID stri
 	defer a.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
-	apps, err := a.appSvc.ListBySCC(ctxWithTransaction, labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", locationID, subaccount)))
+	apps, err := a.appSvc.ListBySCC(ctxWithTransaction, labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"LocationId\":\"%s\", \"Subaccount\":\"%s\"}", locationID, subaccount)))
 	if err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while listing all applications for scc with subaccount %s and location id %s", subaccount, locationID))
 		return nil, false
@@ -507,12 +511,13 @@ func filterUnreachable(apps []*model.ApplicationWithLabel, systems []nsmodel.Sys
 	for _, s := range systems {
 		hostToSystem[s.Host] = struct{}{}
 	}
-
+	fmt.Println("Check")
 	unreachable := make([]*model.Application, 0, 0)
 
 	for _, a := range apps {
-		result := gjson.Get(a.SccLabel.Value.(string), "Host")
-		_, ok := hostToSystem[result.Value().(string)]
+		result := a.SccLabel.Value.(map[string]interface{})["Host"]
+		fmt.Println("Check")
+		_, ok := hostToSystem[result.(string)]
 		if !ok {
 			unreachable = append(unreachable, a.App)
 		}

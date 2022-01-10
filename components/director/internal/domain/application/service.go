@@ -66,6 +66,7 @@ type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	ListGlobalByKey(ctx context.Context, key string) ([]*model.Label, error)
+	ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
@@ -329,13 +330,30 @@ func (s *service) ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter
 		return nil, errors.Wrapf(err, "while getting Applications by filters: %v", filter)
 	}
 
+	if len(apps) == 0 {
+		return []*model.ApplicationWithLabel{}, nil
+	}
+
+	appIDs := make([]string, 0, len(apps))
+	for _, app := range apps {
+		appIDs = append(appIDs, app.ID)
+	}
+
+	labels, err := s.labelRepo.ListGlobalByKeyAndObjects(ctx, model.ApplicationLabelableObject, appIDs, "scc")
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting labels with key scc for applications with IDs: %v", appIDs)
+	}
+
+	appIDToLabel := make(map[string]*model.Label, 0)
+	for _, l := range labels {
+		appIDToLabel[l.ObjectID] = l
+	}
+
 	appsWithLabel := make([]*model.ApplicationWithLabel, 0, len(apps))
 	for _, app := range apps {
 		appWithLabel := &model.ApplicationWithLabel{
-			App: app,
-			SccLabel: &model.Label{
-				Value: filter.Query,
-			},
+			App:      app,
+			SccLabel: appIDToLabel[app.ID],
 		}
 		appsWithLabel = append(appsWithLabel, appWithLabel)
 	}
@@ -680,17 +698,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	}
 	log.C(ctx).Debugf("Loaded Application Tenant %s from context", appTenant)
 
-	applications, err := s.appRepo.ListAll(ctx, appTenant)
-	if err != nil {
-		return "", err
-	}
-
 	normalizedName := s.appNameNormalizer.Normalize(in.Name)
-	for _, app := range applications {
-		if normalizedName == s.appNameNormalizer.Normalize(app.Name) && in.SystemNumber == app.SystemNumber {
-			return "", apperrors.NewNotUniqueNameError(resource.Application)
-		}
-	}
 
 	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
