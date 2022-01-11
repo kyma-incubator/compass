@@ -93,7 +93,6 @@ func (s *service) Clean(ctx context.Context) error {
 						dirsToDelete[parentFromDB.ExternalTenant] = true
 						succsessfullyProcessed++
 					}
-
 				} else if err != nil && !apperrors.IsNotFoundError(err) {
 					log.C(ctx).Error(err)
 				} else {
@@ -140,9 +139,9 @@ func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool) e
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.C(ctx).Info("%d directories are to be deleted", len(dirs))
+	log.C(ctx).Infof("%d directories are to be deleted", len(dirs))
 	successfullyDeleted := 0
-	for extTenant, _ := range dirs {
+	for extTenant := range dirs {
 		if err = s.tenantSvc.DeleteByExternalTenant(ctx, extTenant); err != nil {
 			log.C(ctx).Error(err)
 		} else {
