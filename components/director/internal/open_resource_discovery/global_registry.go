@@ -13,6 +13,7 @@ import (
 //go:generate mockery --name=GlobalRegistryService --output=automock --outpkg=automock --case=underscore
 type GlobalRegistryService interface {
 	SyncGlobalResources(ctx context.Context) (map[string]bool, error)
+	ListGlobalResources(ctx context.Context) (map[string]bool, error)
 }
 
 // GlobalRegistryConfig contains configuration for GlobalRegistryService.
@@ -100,6 +101,34 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 	productsFromDB, err := s.processProducts(ctx, productsInput)
 	if err != nil {
 		return nil, err
+	}
+
+	globalResourceOrdIDs := make(map[string]bool, len(vendorsFromDB)+len(productsFromDB))
+	for _, vendor := range vendorsFromDB {
+		globalResourceOrdIDs[vendor.OrdID] = true
+	}
+	for _, product := range productsFromDB {
+		globalResourceOrdIDs[product.OrdID] = true
+	}
+
+	return globalResourceOrdIDs, tx.Commit()
+}
+
+func (s *globalRegistryService) ListGlobalResources(ctx context.Context) (map[string]bool, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	vendorsFromDB, err := s.vendorService.ListGlobal(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error while listing global vendors")
+	}
+	productsFromDB, err := s.productService.ListGlobal(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error while listing global products")
 	}
 
 	globalResourceOrdIDs := make(map[string]bool, len(vendorsFromDB)+len(productsFromDB))

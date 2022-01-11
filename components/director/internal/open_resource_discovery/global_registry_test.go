@@ -332,3 +332,97 @@ func TestService_SyncGlobalResources(t *testing.T) {
 		})
 	}
 }
+
+func TestService_ListGlobalResources(t *testing.T) {
+	testErr := errors.New("Test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	successfulVendorList := func() *automock.GlobalVendorService {
+		vendorSvc := &automock.GlobalVendorService{}
+		vendorSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(fixGlobalVendors(), nil).Once()
+		return vendorSvc
+	}
+
+	successfulProductList := func() *automock.GlobalProductService {
+		productSvc := &automock.GlobalProductService{}
+		productSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(fixGlobalProducts(), nil).Once()
+		return productSvc
+	}
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		productSvcFn    func() *automock.GlobalProductService
+		vendorSvcFn     func() *automock.GlobalVendorService
+		ExpectedErr     error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			productSvcFn:    successfulProductList,
+			vendorSvcFn:     successfulVendorList,
+		},
+		{
+			Name:            "Error when vendor list fails",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			vendorSvcFn: func() *automock.GlobalVendorService {
+				vendorSvc := &automock.GlobalVendorService{}
+				vendorSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(nil, testErr).Once()
+				return vendorSvc
+			},
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Error when product list fails",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			vendorSvcFn:     successfulVendorList,
+			productSvcFn: func() *automock.GlobalProductService {
+				productSvc := &automock.GlobalProductService{}
+				productSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(nil, testErr).Once()
+				return productSvc
+			},
+			ExpectedErr: testErr,
+		},
+		{
+			Name:            "Error when transaction commit fails",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			productSvcFn:    successfulProductList,
+			vendorSvcFn:     successfulVendorList,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Error when transaction begin fails",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ExpectedErr:     testErr,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.Name, func(t *testing.T) {
+			_, tx := test.TransactionerFn()
+			productSvc := &automock.GlobalProductService{}
+			if test.productSvcFn != nil {
+				productSvc = test.productSvcFn()
+			}
+			vendorSvc := &automock.GlobalVendorService{}
+			if test.vendorSvcFn != nil {
+				vendorSvc = test.vendorSvcFn()
+			}
+			client := &automock.Client{}
+
+			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client)
+			globalIDs, err := svc.ListGlobalResources(context.TODO())
+			if test.ExpectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), test.ExpectedErr.Error())
+			} else {
+				require.NoError(t, err)
+				require.Len(t, globalIDs, 2)
+				require.True(t, globalIDs[vendorORDID])
+				require.True(t, globalIDs[globalProductORDID])
+			}
+
+			mock.AssertExpectationsForObjects(t, tx, productSvc, vendorSvc, client)
+		})
+	}
+}

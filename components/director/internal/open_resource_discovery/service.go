@@ -67,7 +67,11 @@ func NewAggregatorService(transact persistence.Transactioner, labelRepo labelRep
 func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Error while synchronizing global resources: %s. Validation of Documents relying on global resources might fail.", err)
+		log.C(ctx).WithError(err).Errorf("Error while synchronizing global resources: %s. Proceeding with already existing global resources...", err)
+		globalResourcesOrdIDs, err = s.globalRegistrySvc.ListGlobalResources(ctx)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("Error while listing existing global resource: %s. Proceeding with empty globalResourceOrdIDs... Validation of Documents relying on global resources might fail.", err)
+		}
 	}
 
 	if globalResourcesOrdIDs == nil {

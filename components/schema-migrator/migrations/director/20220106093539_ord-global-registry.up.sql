@@ -26,9 +26,9 @@ FROM api_definitions,
      jsonb_array_elements_text(api_definitions.part_of_products) AS elements
          JOIN products p ON elements.value = p.ord_id WHERE p.app_id = api_definitions.app_id OR p.app_id IS NULL;
 
-DROP VIEW event_product;
-
 ------
+
+DROP VIEW event_product;
 
 CREATE VIEW event_product AS
 SELECT event_api_definitions.id     AS event_definition_id,
@@ -37,9 +37,9 @@ FROM event_api_definitions,
      jsonb_array_elements_text(event_api_definitions.part_of_products) AS elements
          JOIN products p ON elements.value = p.ord_id WHERE p.app_id = event_api_definitions.app_id OR p.app_id IS NULL;
 
-DROP VIEW package_product;
-
 ------
+
+DROP VIEW package_product;
 
 CREATE VIEW package_product AS
 SELECT packages.id     AS package_id,
