@@ -82,7 +82,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2163"
+      version: "PR-2164"
     connectivity_adapter:
       dir:
       version: "PR-2163"
@@ -568,7 +568,7 @@ global:
         discriminatorValue: ""
         detailsField: "details"
         entityTypeField: "entityType"
-        parentIDField: "parentGuid"
+        globalAccountID: "gaID"
         regionField: "region"
         movedSubaccountTargetField: "targetGlobalAccountGUID"
         movedSubaccountSourceField: "sourceGlobalAccountGUID"
