@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
+	"io"
+	"net/http"
 )
 
 // CISResponse response from the context enrichment api
@@ -43,7 +41,7 @@ func (s *service) GetGlobalAccount(ctx context.Context, subaccountID string) (st
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Authorization", "Bearer "+strings.TrimSuffix(s.token, "\n"))
+	req.Header.Set("Authorization", "Bearer "+s.token)
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
