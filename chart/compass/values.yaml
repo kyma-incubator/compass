@@ -567,7 +567,7 @@ global:
         discriminatorValue: ""
         detailsField: "details"
         entityTypeField: "entityType"
-        parentIDField: "parentGuid"
+        globalAccountID: "gaID"
         regionField: "region"
         movedSubaccountTargetField: "targetGlobalAccountGUID"
         movedSubaccountSourceField: "sourceGlobalAccountGUID"

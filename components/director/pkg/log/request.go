@@ -33,6 +33,7 @@ func RequestLogger() func(next http.Handler) http.Handler {
 			entry := LoggerWithCorrelationID(r)
 
 			ctx = ContextWithLogger(ctx, entry)
+			ctx = ContextWithMdc(ctx)
 			r = r.WithContext(ctx)
 
 			start := time.Now()
@@ -59,6 +60,10 @@ func RequestLogger() func(next http.Handler) http.Handler {
 				"status_code": lrw.statusCode,
 				"took":        duration,
 			})
+
+			if mdc := MdcFromContext(ctx); nil != mdc {
+				afterLogger = mdc.appendFields(afterLogger)
+			}
 
 			afterLogger.Info("Finished handling request...")
 		})
