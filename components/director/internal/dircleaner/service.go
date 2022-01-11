@@ -52,6 +52,8 @@ func (s *service) Clean(ctx context.Context) error {
 	}
 	log.C(ctx).Infof("Total number of listed subaccounts: %d", len(allSubaccounts))
 	succsessfullyProcessed := 0
+	dirsToDelete := make(map[string]bool)
+
 	for _, subaccount := range allSubaccounts {
 		log.C(ctx).Infof("Processing subaccount with ID %s", subaccount.ID)
 		globalAccountGUIDFromCis, err := s.cisSvc.GetGlobalAccount(ctx, subaccount.ExternalTenant)
@@ -69,7 +71,7 @@ func (s *service) Clean(ctx context.Context) error {
 
 			parentFromDB, err := s.tenantSvc.GetTenantByID(ctx, subaccount.Parent)
 			if err != nil {
-				log.C(ctx).Errorf("Could not take parent for subaccout with id %s", subaccount.ID)
+				log.C(ctx).Errorf("Could not take parent for subaccout with id %s %v", subaccount.ID, err)
 				return err
 			}
 			if parentFromDB.ExternalTenant != globalAccountGUIDFromCis { // the record is directory and not GA
@@ -86,18 +88,12 @@ func (s *service) Clean(ctx context.Context) error {
 					log.C(ctx).Infof("Updating subaccount with id %s to point to existing GA with id %s", subaccount.ID, conflictingGA.ID)
 					if err = s.tenantSvc.Update(ctx, subaccount.ID, updateSubaccount); err != nil {
 						log.C(ctx).Error(err)
-					}
-					if err == nil { // the update was successful
-						// now delete the directory
-						log.C(ctx).Infof("Deleting directory with external tenant id %s", parentFromDB.ExternalTenant)
-						if err = s.tenantSvc.DeleteByExternalTenant(ctx, parentFromDB.ExternalTenant); err != nil {
-							log.C(ctx).Error(err)
-						}
-					}
-
-					if err == nil {
+					} else { // the update was successful
+						// mark the directory for deletion later because it still may have other child subaccounts which will be deleted by the cascade
+						dirsToDelete[parentFromDB.ExternalTenant] = true
 						succsessfullyProcessed++
 					}
+
 				} else if err != nil && !apperrors.IsNotFoundError(err) {
 					log.C(ctx).Error(err)
 				} else {
@@ -129,7 +125,36 @@ func (s *service) Clean(ctx context.Context) error {
 		}
 	}
 
+	if err = s.deleteDirectories(ctx, dirsToDelete); err != nil {
+		log.C(ctx).Error(err)
+	}
 	log.C(ctx).Infof("Successfully processed %d records from %d", succsessfullyProcessed, len(allSubaccounts))
+	return nil
+}
+
+func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Info("%d directories are to be deleted", len(dirs))
+	successfullyDeleted := 0
+	for extTenant, _ := range dirs {
+		if err = s.tenantSvc.DeleteByExternalTenant(ctx, extTenant); err != nil {
+			log.C(ctx).Error(err)
+		} else {
+			successfullyDeleted++
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	log.C(ctx).Infof("%d from %d directories were deleted", successfullyDeleted, len(dirs))
+
 	return nil
 }
 
