@@ -69,7 +69,8 @@ func (s *service) Clean(ctx context.Context) error {
 
 			parentFromDB, err := s.tenantSvc.GetTenantByID(ctx, subaccount.Parent)
 			if err != nil {
-				log.C(ctx).Error(err)
+				log.C(ctx).Errorf("Could not take parent for subaccout with id %s", subaccount.ID)
+				return err
 			}
 			if parentFromDB.ExternalTenant != globalAccountGUIDFromCis { // the record is directory and not GA
 				conflictingGA, err := s.tenantSvc.GetTenantByExternalID(ctx, globalAccountGUIDFromCis)
