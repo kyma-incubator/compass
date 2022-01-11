@@ -150,8 +150,8 @@ spec:
                 value: {{ $config.fieldMapping.discriminatorValue }}
               - name: APP_MAPPING_FIELD_DETAILS
                 value: {{ $config.fieldMapping.detailsField }}
-              - name: APP_MAPPING_FIELD_PARENT_ID
-                value: {{ default "parentGuid" $config.fieldMapping.parentIDField }}
+              - name: APP_GLOBAL_ACCOUNT_KEY
+                value: {{ default "gaID" $config.fieldMapping.globalAccountID }}
               - name: APP_SYNC_SUBACCOUNTS
                 value: {{ $config.shouldSyncSubaccounts | quote }}
               - name: APP_TENANT_TOTAL_PAGES_FIELD

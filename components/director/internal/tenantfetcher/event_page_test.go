@@ -18,7 +18,8 @@ func Test_getMovedSubaccounts(t *testing.T) {
 	nameField := "name"
 	subdomainField := "subdomain"
 	regionField := "region"
-	parentIDField := "parent"
+	parentID := "parent"
+	globalAccountKey := "gaID"
 	labelFieldMappingValue := "moved-label"
 	sourceTenantField := "source-tenant"
 	targetTenantField := "target-tenant"
@@ -37,14 +38,14 @@ func Test_getMovedSubaccounts(t *testing.T) {
 		},
 	}
 	fieldMapping := TenantFieldMapping{
-		IDField:         idField,
-		NameField:       nameField,
-		SubdomainField:  subdomainField,
-		EntityTypeField: entityTypeField,
-		RegionField:     regionField,
-		ParentIDField:   parentIDField,
-		EventsField:     "events",
-		DetailsField:    "details",
+		IDField:          idField,
+		NameField:        nameField,
+		SubdomainField:   subdomainField,
+		EntityTypeField:  entityTypeField,
+		RegionField:      regionField,
+		GlobalAccountKey: globalAccountKey,
+		EventsField:      "events",
+		DetailsField:     "details",
 	}
 	tests := []struct {
 		name               string
@@ -62,7 +63,6 @@ func Test_getMovedSubaccounts(t *testing.T) {
 					{nameField, "subaccount-name"},
 					{subdomainField, "subdomain"},
 					{regionField, "region"},
-					{parentIDField, "parent"},
 				},
 			},
 			assertRuntimesFunc: func(t *testing.T, runtimes []model.MovedSubaccountMappingInput) {
@@ -106,7 +106,7 @@ func Test_getMovedSubaccounts(t *testing.T) {
 			},
 		},
 		{
-			name: "empty mappings for get MovedSubaccountMappingInput when sourceTenant field is invalid",
+			name: "empty mappings for get MovedSubaccountMappingInput when targetTenant field is invalid",
 			detailsPairs: [][]Pair{
 				{
 					{labelFieldMappingValue, "label-value"},
@@ -129,7 +129,6 @@ func Test_getMovedSubaccounts(t *testing.T) {
 					{sourceTenantField, "123"},
 					{nameField, "name"},
 					{regionField, "region"},
-					{parentIDField, "parent"},
 					{"wrong", "456"},
 				},
 				{
@@ -138,7 +137,6 @@ func Test_getMovedSubaccounts(t *testing.T) {
 					{targetTenantField, "456"},
 					{nameField, "name"},
 					{regionField, "region"},
-					{parentIDField, "parent"},
 				},
 			},
 			errorFunc: func(t *testing.T, err error) {
@@ -154,7 +152,7 @@ func Test_getMovedSubaccounts(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			events := make([][]byte, 0, len(test.detailsPairs))
 			for i, detailPair := range test.detailsPairs {
-				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", constructJSONObject(detailPair...), fieldMapping))
+				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", parentID, constructJSONObject(detailPair...), fieldMapping))
 			}
 			page := eventsPage{
 				fieldMapping: fieldMapping,
@@ -174,6 +172,8 @@ func Test_getMovedSubaccounts(t *testing.T) {
 
 func Test_getTenantMappings(t *testing.T) {
 	idField := "id"
+	globalAccountGUIDField := "globalAccountGUID"
+	globalAccountKey := "gaID"
 	id := "1"
 	nameField := "name"
 	name := "test-name"
@@ -202,12 +202,14 @@ func Test_getTenantMappings(t *testing.T) {
 		{
 			name: "successfully gets businessTenantMappingInputs for correct eventPage format",
 			fieldMapping: TenantFieldMapping{
-				NameField:       nameField,
-				IDField:         idField,
-				SubdomainField:  subdomainField,
-				EventsField:     "events",
-				DetailsField:    "details",
-				EntityTypeField: entityTypeField,
+				NameField:              nameField,
+				IDField:                idField,
+				SubdomainField:         subdomainField,
+				EventsField:            "events",
+				DetailsField:           "details",
+				EntityTypeField:        entityTypeField,
+				GlobalAccountGUIDField: globalAccountGUIDField,
+				GlobalAccountKey:       globalAccountKey,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
@@ -227,14 +229,16 @@ func Test_getTenantMappings(t *testing.T) {
 		{
 			name: "successfully gets businessTenantMappingInputs for correct eventPage format with discriminator field",
 			fieldMapping: TenantFieldMapping{
-				NameField:          nameField,
-				IDField:            idField,
-				EventsField:        "events",
-				DetailsField:       "details",
-				SubdomainField:     "subdomain",
-				DiscriminatorField: discriminatorField,
-				DiscriminatorValue: "discriminator-value",
-				EntityTypeField:    entityTypeField,
+				NameField:              nameField,
+				IDField:                idField,
+				EventsField:            "events",
+				DetailsField:           "details",
+				SubdomainField:         "subdomain",
+				DiscriminatorField:     discriminatorField,
+				DiscriminatorValue:     "discriminator-value",
+				EntityTypeField:        entityTypeField,
+				GlobalAccountGUIDField: globalAccountGUIDField,
+				GlobalAccountKey:       globalAccountKey,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
@@ -263,6 +267,7 @@ func Test_getTenantMappings(t *testing.T) {
 				DiscriminatorField: discriminatorField,
 				DiscriminatorValue: "discriminator-value",
 				EntityTypeField:    entityTypeField,
+				GlobalAccountKey:   globalAccountKey,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
@@ -332,7 +337,7 @@ func Test_getTenantMappings(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			events := make([][]byte, 0, len(test.detailsPairs))
 			for i, detailPair := range test.detailsPairs {
-				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", constructJSONObject(detailPair...), test.fieldMapping))
+				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", fmt.Sprintf("gaID%d", i), constructJSONObject(detailPair...), test.fieldMapping))
 			}
 			page := eventsPage{
 				fieldMapping: test.fieldMapping,
@@ -372,8 +377,8 @@ func constructJSONObject(pairs ...Pair) string {
 	return buffer.String()
 }
 
-func fixEventWithDetails(id, name, entityType, details string, fieldMapping TenantFieldMapping) []byte {
-	return []byte(fmt.Sprintf(`{"%s":"%s", "%s":"%s", "%s":"%s","%s":%s}`, fieldMapping.IDField, id, fieldMapping.NameField, name, fieldMapping.EntityTypeField, entityType, fieldMapping.DetailsField, details))
+func fixEventWithDetails(id, name, entityType, globalAccountGUID, details string, fieldMapping TenantFieldMapping) []byte {
+	return []byte(fmt.Sprintf(`{"%s":"%s", "%s":"%s", "%s":"%s","%s":"%s","%s":%s}`, fieldMapping.IDField, id, fieldMapping.NameField, name, fieldMapping.EntityTypeField, entityType, fieldMapping.GlobalAccountGUIDField, globalAccountGUID, fieldMapping.DetailsField, details))
 }
 
 func fixTenantEventsResponse(events []byte, total, pages int) TenantEventsResponse {
