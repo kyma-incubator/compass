@@ -46,17 +46,9 @@ func NewCleaner(transact persistence.Transactioner, tenantSvc TenantService, cis
 
 // Clean missing godoc
 func (s *service) Clean(ctx context.Context) error {
-	tx, err := s.transact.Begin()
+	allSubaccounts, err := s.getSubaccounts(ctx)
 	if err != nil {
 		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	log.C(ctx).Info("Listing all subaccounts provided by the event-service")
-	allSubaccounts, err := s.tenantSvc.ListSubaccounts(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while getting all subaccounts")
 	}
 	log.C(ctx).Infof("Total number of listed subaccounts: %d", len(allSubaccounts))
 	succsessfullyProcessed := 0
@@ -126,6 +118,9 @@ func (s *service) Clean(ctx context.Context) error {
 				succsessfullyProcessed++
 			}
 
+			if err = tx.Commit(); err != nil {
+				log.C(ctx).Error(err)
+			}
 			return nil
 		}()
 		if err != nil {
@@ -135,4 +130,23 @@ func (s *service) Clean(ctx context.Context) error {
 
 	log.C(ctx).Infof("Successfully processed %d records from %d", succsessfullyProcessed, len(allSubaccounts))
 	return nil
+}
+
+func (s *service) getSubaccounts(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Info("Listing all subaccounts provided by the event-service")
+	allSubaccounts, err := s.tenantSvc.ListSubaccounts(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting all subaccounts")
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	return allSubaccounts, nil
 }
