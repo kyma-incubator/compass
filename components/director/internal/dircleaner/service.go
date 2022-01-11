@@ -64,7 +64,7 @@ func (s *service) Clean(ctx context.Context) error {
 		log.C(ctx).Infof("Processing subaccount with ID %s", subaccount.ID)
 		globalAccountGUIDFromCis, err := s.cisSvc.GetGlobalAccount(ctx, subaccount.ExternalTenant)
 		if err != nil {
-			log.C(ctx).Errorf("Could not get globalAccountGuid for subaacount with ID %s from CIS", subaccount.ID)
+			log.C(ctx).Errorf("Could not get globalAccountGuid for subaacount with ID %s from CIS %v", subaccount.ID, err)
 			continue
 		}
 		err = func() error {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -42,8 +43,7 @@ func (s *service) GetGlobalAccount(ctx context.Context, subaccountID string) (st
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Authorization", "Bearer "+s.token)
-	req.Header.Add("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+strings.TrimSuffix(s.token, "\n"))
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
