@@ -23,6 +23,7 @@ spec:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.nsAdapter.e2eTests.gatewayHost }}.{{ .Values.global.ingress.domainName }}"
             - "dex.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-ns-adapter
@@ -82,14 +83,18 @@ spec:
                   key: password
             - name: DEFAULT_TEST_TENANT
               value: "{{ .Values.global.defaultTenant}}"
-            - name: CA_SECRET_NAME
-              value: "{{ .Values.global.connector.secrets.ca.name }}"
-            - name: CA_SECRET_NAMESPACE
-              value: "{{ .Values.global.connector.secrets.ca.namespace }}"
-            - name: CA_SECRET_CERTIFICATE_KEY
-              value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
-            - name: CA_SECRET_KEY_KEY
-              value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
+            - name: EXTERNAL_SERVICES_MOCK_URL
+              value: {{ .Values.global.tests.externalServicesMockFQDN }}:8080
+            - name: CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
+                  key: client-id
+            - name: CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
+                  key: client-secret
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine

@@ -143,6 +143,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		IntegrationSystemID: &intSysID,
 		ProviderName:        str.Ptr("provider name"),
 		BaseURL:             str.Ptr("base_url"),
+		SystemStatus:        str.Ptr("reachable"),
 		BaseEntity: &graphql.BaseEntity{
 			ID:        id,
 			Ready:     true,

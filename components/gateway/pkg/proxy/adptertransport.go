@@ -3,7 +3,7 @@ package proxy
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 type AdapterTransport struct {
@@ -46,18 +47,9 @@ func (t *AdapterTransport) RoundTrip(req *http.Request) (resp *http.Response, er
 
 	preAuditLogger := t.auditlogSvc
 
-	//claims, err := t.getClaims(req.Header)
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "while parsing JWT")
-	//}
-	//TODO fix claims
-	claims := Claims{
-		Tenant:         "",
-		ConsumerTenant: "",
-		Scopes:         "",
-		ConsumerID:     "",
-		ConsumerType:   "",
-		OnBehalfOf:     "",
+	claims, err := t.getClaims(req.Header)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing JWT")
 	}
 
 	ctx := context.WithValue(req.Context(), correlation.RequestIDHeaderKey, correlationHeaders)
@@ -94,4 +86,36 @@ func (t *AdapterTransport) RoundTrip(req *http.Request) (resp *http.Response, er
 	}
 
 	return resp, nil
+}
+
+type AdapterTokenClaims struct {
+ExtraAttributes map[string]interface{} `json:"ext_attr"`
+Scopes          []string               `json:"scope"`
+ConsumerID      string                 `json:"client_id"`
+jwt.StandardClaims
+}
+
+func (t *AdapterTransport) getClaims(headers http.Header) (Claims, error) {
+	tokenClaims := AdapterTokenClaims{}
+	token := headers.Get("Authorization")
+	if token == "" {
+		return Claims{}, errors.New("no bearer token")
+	}
+	token = strings.TrimPrefix(token, "Bearer ")
+
+	parser := jwt.Parser{SkipClaimsValidation: true}
+
+	_, _, err := parser.ParseUnverified(token, &tokenClaims)
+
+	if err != nil {
+		return Claims{}, errors.Wrap(err, "while parsing bearer token")
+	}
+
+	claims := Claims{
+		Tenant:     tokenClaims.ExtraAttributes["subaccountid"].(string),
+		Scopes:     strings.Join(tokenClaims.Scopes, ", "),
+		ConsumerID: tokenClaims.ConsumerID,
+	}
+
+	return claims, nil
 }

@@ -372,7 +372,7 @@ func handleResponseError(ctx context.Context, response *http.Response) error {
 }
 
 func getResponseStatusCode(authenticator, msg string) int {
-	if authenticator != "ns-adapter" {
+	if authenticator != "nsadapter" {
 		return http.StatusOK
 	}
 	return statusCodes[msg]

@@ -273,7 +273,6 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 }
 
 func (a *Handler) processDelta(ctx context.Context, sccs []*nsmodel.SCC, details *[]httputil.Detail) {
-	//TODO refactor details - return details
 	for _, scc := range sccs {
 		ctxWithTenant := tenant.SaveToContext(ctx, scc.InternalSubaccountID, scc.ExternalSubaccountID)
 		if ok := a.handleSccSystems(ctxWithTenant, *scc); !ok {

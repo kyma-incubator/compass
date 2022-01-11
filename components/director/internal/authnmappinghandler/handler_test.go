@@ -600,6 +600,30 @@ func TestHandler(t *testing.T) {
 		require.Contains(t, logsBuffer.String(), "unexpected or empty authorization header with length")
 	})
 
+	t.Run("error when missing authenticator", func(t *testing.T) {
+		logsBuffer := &bytes.Buffer{}
+		entry := log.DefaultLogger()
+		entry.Logger.SetOutput(logsBuffer)
+
+		ctx := log.ContextWithLogger(context.Background(), entry)
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		req = req.WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		mockErr := errors.New("some-error")
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, mockErr).Once()
+
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, nil, nil, nil)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		require.Contains(t, logsBuffer.String(), "An error has occurred while extracting authenticator name")
+	})
+
 	t.Run("error when fails to parse request data", func(t *testing.T) {
 		logsBuffer := &bytes.Buffer{}
 		entry := log.DefaultLogger()
@@ -616,6 +640,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, mockErr).Once()
 
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, nil, nil, nil)
+		req = mux.SetURLVars(req, map[string]string{"authenticator":"auth"})
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()

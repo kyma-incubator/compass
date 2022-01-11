@@ -216,17 +216,15 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("failed while listing tenants", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
-		defer tx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil)
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return(nil, errors.New("test"))
-		defer tntSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, &transact, &tntSvc)
 
 		endpoint := handler.NewHandler(nil, nil, nil, &tntSvc, &transact)
 
@@ -248,17 +246,15 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("got error details when provided id is not a subaccount", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil)
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ExternalTenant: testSubaccount, Type: "customer"}}, nil)
-		defer tntSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, &transact, &tntSvc)
 
 		endpoint := handler.NewHandler(nil, nil, nil, &tntSvc, &transact)
 
@@ -287,17 +283,15 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("got error details when subaccount is not found", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil)
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true)
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{}, nil)
-		defer tntSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, &transact, &tntSvc)
 
 		endpoint := handler.NewHandler(nil, nil, nil, &tntSvc, &transact)
 
@@ -327,11 +321,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("got error while upserting application", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -362,7 +354,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("Upsert", mock.Anything, input).Return(errors.New("error"))
 
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		defer mock.AssertExpectationsForObjects(t, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
 
@@ -391,11 +383,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("successfully upsert application", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -426,7 +416,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("Upsert", mock.Anything, input).Return(nil)
 
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		defer mock.AssertExpectationsForObjects(t, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
 
@@ -442,11 +432,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("failed to get application by subaccount, location ID and virtual host", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -454,31 +442,18 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Twice()
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Once()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		setMappings()
 		defer clearMappings()
 
-		appInputJson := "app-input-json"
-		applicationTemplate := &model.ApplicationTemplate{}
-
-		appTemplateSvc := automock.ApplicationTemplateService{}
-		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
-		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
-
-		input := model.ApplicationRegisterInput{}
-		appConverterSvc := automock.ApplicationConverter{}
-		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
-
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -507,11 +482,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("failed to register application from template", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -519,12 +492,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Twice()
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Once()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		setMappings()
 		defer clearMappings()
@@ -546,7 +517,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("", errors.New("error"))
 
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
 
@@ -575,11 +546,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("successfully create application", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -587,12 +556,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Twice()
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Once()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		setMappings()
 		defer clearMappings()
@@ -614,7 +581,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("success", nil)
 
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
 
@@ -630,11 +597,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("failed to update application", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -643,12 +608,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Once()
 
-		defer transact.AssertExpectations(t)
-
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		input := nsmodel.ToAppUpdateInput(nsmodel.System{
 			SystemBase: nsmodel.SystemBase{
@@ -666,7 +628,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -696,11 +658,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("failed to set label applicationType", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -708,12 +668,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Twice()
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Once()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		input := nsmodel.ToAppUpdateInput(system)
 
@@ -722,7 +680,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -752,11 +710,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("failed to set label systemProtocol", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -764,12 +720,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Twice()
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Once()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		input := nsmodel.ToAppUpdateInput(system)
 		protocolLabel := &model.LabelInput{
@@ -785,7 +739,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(errors.New("error")).Once()
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -814,11 +768,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("successfully update system", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -827,12 +779,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Once()
 
-		defer transact.AssertExpectations(t)
-
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		input := nsmodel.ToAppUpdateInput(system)
 		protocolLabel := &model.LabelInput{
@@ -848,7 +797,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(nil).Once()
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -862,29 +811,24 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("failed to list by SCC", func(t *testing.T) {
-
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Once()
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Once()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -913,11 +857,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("fail to mark system as unreachable", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
@@ -925,19 +867,17 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Twice()
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Once()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact,  &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -966,11 +906,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("successfully mark system as unreachable", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
@@ -978,19 +916,17 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Twice()
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Once()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -1008,11 +944,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
@@ -1022,12 +956,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Times(3)
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount, testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
 
@@ -1036,7 +968,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter2).Return([]*model.ApplicationWithLabel{&appWithLabel2}, nil)
 		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
 		appSvc.Mock.On("Update", mock.Anything, appWithLabel2.App.ID, unreachableInput).Return(nil)
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -1067,11 +999,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("got error while upserting application", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -1080,12 +1010,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		setMappings()
 		defer clearMappings()
@@ -1106,7 +1034,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
 
@@ -1122,11 +1050,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("successfully upsert application", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -1135,12 +1061,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		setMappings()
 		defer clearMappings()
@@ -1161,7 +1085,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
 
@@ -1177,11 +1101,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("failed to get application by subaccount, location ID and virtual host", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -1190,34 +1112,21 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		setMappings()
 		defer clearMappings()
-
-		appInputJson := "app-input-json"
-		applicationTemplate := &model.ApplicationTemplate{}
-
-		appTemplateSvc := automock.ApplicationTemplateService{}
-		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
-		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
-
-		input := model.ApplicationRegisterInput{}
-		appConverterSvc := automock.ApplicationConverter{}
-		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
-		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
+		endpoint := handler.NewHandler(&appSvc,nil,nil, &tntSvc, &transact)
 
 		req := createReportSystemsRequest(strings.NewReader(body), fullReportType)
 		rec := httptest.NewRecorder()
@@ -1231,11 +1140,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("failed to register application from template", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -1244,12 +1151,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		setMappings()
 		defer clearMappings()
@@ -1271,7 +1176,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("", errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
 
@@ -1287,11 +1192,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("successfully create application", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -1300,12 +1203,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
 			Name:        "",
@@ -1335,7 +1236,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("success", nil)
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, &appConverterSvc, &appTemplateSvc, &tntSvc, &transact)
 
@@ -1351,11 +1252,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("failed to update application", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -1364,12 +1263,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		input := nsmodel.ToAppUpdateInput(nsmodel.System{
 			SystemBase: nsmodel.SystemBase{
@@ -1388,7 +1285,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -1404,11 +1301,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("failed to set label applicationType", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -1417,12 +1312,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		input := nsmodel.ToAppUpdateInput(system)
 
@@ -1432,7 +1325,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -1448,11 +1341,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("failed to set label systemProtocol", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -1461,12 +1352,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		input := nsmodel.ToAppUpdateInput(system)
 
@@ -1477,7 +1366,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(errors.New("error")).Once()
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -1493,11 +1382,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("successfully update system", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -1506,12 +1393,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		input := nsmodel.ToAppUpdateInput(system)
 
@@ -1522,7 +1407,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(nil).Once()
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -1538,10 +1423,8 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("failed to list by SCC", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once() // used for list tenants
@@ -1549,17 +1432,15 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //list for mark unreachable
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -1575,11 +1456,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("fail to mark system as unreachable", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
@@ -1588,14 +1467,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Twice()
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
-
-
 
 		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
 
@@ -1603,7 +1478,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(errors.New("error"))
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -1619,11 +1494,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("successfully mark system as unreachable", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
@@ -1632,14 +1505,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Twice()
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
-
-
 
 		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
 
@@ -1647,7 +1516,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -1665,11 +1534,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
@@ -1680,12 +1547,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for mark as unreachable
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Times(3)
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Times(3)
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount, testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
 
@@ -1695,8 +1560,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
 		appSvc.Mock.On("Update", mock.Anything, appWithLabel2.App.ID, unreachableInput).Return(nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
-
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -1712,11 +1576,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("success when there no unreachable SCCs", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once()         // used for list tenants
@@ -1724,12 +1586,10 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(listSccsTx, nil).Once() //used in listSCCs
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Once()
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Twice()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
-		defer tntSvc.AssertExpectations(t)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
@@ -1737,7 +1597,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			Subaccount: testSubaccount,
 			LocationId: "loc-id",
 		}}, nil)
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -1753,11 +1613,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	t.Run("success when there no unreachable SCCs", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
-		defer tx.AssertExpectations(t)
 
 		listSccsTx := &txautomock.PersistenceTx{}
 		listSccsTx.Mock.On("Commit").Return(nil)
-		defer listSccsTx.AssertExpectations(t)
 
 		transact := txautomock.Transactioner{}
 		transact.Mock.On("Begin").Return(tx, nil).Once()                                     //used for list tenants
@@ -1768,14 +1626,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		transact.Mock.On("Begin").Return(tx, nil).Once()                                     //used in markAsUnreachable for unknown SCC
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, tx).Return(true).Times(5) //used in markAsUnreachable for unknown SCC
 		transact.Mock.On("RollbackUnlessCommitted", mock.Anything, listSccsTx).Return(true).Once()
-		defer transact.AssertExpectations(t)
 
 		ids := []string{testSubaccount}
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil).Once()
 		ids = []string{"marked-as-unreachable"}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: "marked-as-unreachable", Type: "subaccount"}}, nil).Once()
-		defer tntSvc.AssertExpectations(t)
 
 		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
 
@@ -1795,7 +1651,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}, nil)
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter2).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil).Once()
 		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(nil)
-		defer appSvc.AssertExpectations(t)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 

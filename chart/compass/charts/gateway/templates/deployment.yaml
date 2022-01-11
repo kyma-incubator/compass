@@ -5,7 +5,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
-    reqlimit: big
     release: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.deployment.minReplicas }}
@@ -19,7 +18,7 @@ spec:
     metadata:
       labels:
         app: {{ .Chart.Name }}
-        reqlimit: big
+        reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit5MBLabel }}
         release: {{ .Release.Name }}
     spec:
       {{ if .Values.global.isLocalEnv }}
@@ -139,7 +138,11 @@ spec:
                   name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-channel-timeout
                   optional: true
-{{ end }}
+            {{ end }}
+            {{ if .Values.global.isLocalEnv }}
+            - name: APP_INSECURE_SKIP_VERIFY
+              value: "true"
+            {{ end }}
 {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tidwall/gjson"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
@@ -367,23 +365,20 @@ func (s *service) ListSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting SCCs by label key: scc")
 	}
-
 	sccs := make([]*model.SccMetadata, 0, len(labels))
 	for _, sccLabel := range labels {
-
-		v, ok := sccLabel.Value.(string)
+		v, ok := sccLabel.Value.(map[string]interface{})
 		if !ok {
-			return nil, errors.New("Label value is not of type string")
+			return nil, errors.New("Label value is not of type map[string]interface{}")
 		}
 
 		scc := &model.SccMetadata{
-			Subaccount: gjson.Get(v, "subaccount").String(),
-			LocationId: gjson.Get(v, "locationId").Str,
+			Subaccount: v["Subaccount"].(string),
+			LocationId: v["LocationId"].(string),
 		}
 
 		sccs = append(sccs, scc)
 	}
-
 	return sccs, nil
 }
 

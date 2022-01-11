@@ -75,25 +75,35 @@ func TestCallingCompassGateways(t *testing.T) {
 		positiveDescription string
 		client              *http.Client
 		url                 string
+		requestSize int
 	}{
 		{
-			negativeDescription: "fails when request is too big and passes through gateway",
+			negativeDescription: "fails when request is over 5MB and passes through gateway",
 			positiveDescription: "succeeds for a regular applications request passing through gateway",
 			url:                 conf.CompassGatewayURL + directorPath,
 			client:              authorizedClient,
+			requestSize: conf.RequestPayloadLimit,
 		},
 		{
-			negativeDescription: "fails when request is too big and passes through MTLS gateway",
+			negativeDescription: "fails when request is over 2MB and reaches director",
+			positiveDescription: "succeeds for a regular applications request reaching director",
+			url:                 conf.CompassGatewayURL + directorPath,
+			client:              authorizedClient,
+			requestSize: 2097152,
+		},
+		{
+			negativeDescription: "fails when request is over 5MB and passes through MTLS gateway",
 			positiveDescription: "succeeds for a regular applications request passing through MTLS gateway",
 			url:                 conf.CompassMTLSGatewayURL + directorPath,
 			client:              certSecuredClient,
+			requestSize: conf.RequestPayloadLimit,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.negativeDescription, func(t *testing.T) {
 			t.Log("Creating a request with big payload...")
-			bigBodyPOSTRequest := getHTTPBigBodyPOSTRequest(t, test.url, tenant, conf.RequestPayloadLimit)
+			bigBodyPOSTRequest := getHTTPBigBodyPOSTRequest(t, test.url, tenant, test.requestSize)
 
 			t.Log("Executing request with big payload...")
 			resp, err := test.client.Do(bigBodyPOSTRequest)

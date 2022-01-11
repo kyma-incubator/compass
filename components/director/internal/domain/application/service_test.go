@@ -3692,12 +3692,12 @@ func TestService_ListBySCC(t *testing.T) {
 
 	label1 := &model.Label{
 		ObjectID: app1ID,
-		Value: labelValue,
+		Value:    labelValue,
 	}
 
 	label2 := &model.Label{
 		ObjectID: app2ID,
-		Value: labelValue,
+		Value:    labelValue,
 	}
 
 	applicationsWitLabel := []*model.ApplicationWithLabel{
@@ -3844,8 +3844,8 @@ func TestService_ListSCCs(t *testing.T) {
 	subaccount1 := "subaccount1"
 	subaccount2 := "subaccount2"
 
-	labelValue1 := fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", locationId1, subaccount1)
-	labelValue2 := fmt.Sprintf("{\"locationId\":\"%s\", \"subaccount\":\"%s\"}", locationId2, subaccount2)
+	labelValue1 := map[string]interface{}{"LocationId": locationId1, "Subaccount": subaccount1}
+	labelValue2 := map[string]interface{}{"LocationId": locationId2, "Subaccount": subaccount2}
 
 	labels := []*model.Label{
 		{Value: labelValue1},

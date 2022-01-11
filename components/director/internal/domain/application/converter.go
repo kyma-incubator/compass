@@ -110,6 +110,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		ApplicationTemplateID: in.ApplicationTemplateID,
 		ProviderName:          in.ProviderName,
 		SystemNumber:          in.SystemNumber,
+		SystemStatus:          in.SystemStatus,
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,

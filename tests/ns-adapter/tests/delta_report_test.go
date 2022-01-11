@@ -3,16 +3,19 @@ package tests
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"net/http"
+	"sort"
 	"testing"
+	"time"
 )
 
 type System struct {
@@ -54,6 +57,19 @@ func TestDeltaReport(stdT *testing.T) {
 		Key: "scc",
 	}
 
+	claims := map[string]interface{}{
+		"ns-adapter-test": "ns-adapter-flow",
+		"ext_attr" : map[string]interface{}{
+			"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+		},
+		"scope":           []string{},
+		"tenant":          testConfig.DefaultTestTenant,
+		"identity":        "nsadapter-flow-identity",
+		"iss":             testConfig.ExternalServicesMockURL,
+		"exp":             time.Now().Unix() + int64(time.Minute.Seconds()*10),
+	}
+	token := token.FromExternalServicesMock(stdT, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret, claims)
+
 	t.Run("Delta report - create system", func(t *testing.T) {
 		ctx := context.Background()
 
@@ -81,7 +97,7 @@ func TestDeltaReport(stdT *testing.T) {
 		body, err := json.Marshal(report)
 		require.NoError(t, err)
 
-		resp := sendRequest(t, body, "delta")
+		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		apps, err = retrieveApps(t, ctx, sccLabelFilter)
@@ -91,7 +107,7 @@ func TestDeltaReport(stdT *testing.T) {
 		app := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 
-		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel)
+		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
 	})
 
 	t.Run("Delta report - create systems from two sccs connected to one subaccount", func(t *testing.T) {
@@ -134,22 +150,122 @@ func TestDeltaReport(stdT *testing.T) {
 		body, err := json.Marshal(report)
 		require.NoError(t, err)
 
-		resp := sendRequest(t, body, "delta")
+		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		apps, err = retrieveApps(t, ctx, sccLabelFilter)
 		require.NoError(t, err)
 		require.Equal(t, 2, len(apps))
 
+		sort.Slice(apps, func(i, j int) bool {
+			return *apps[i].Description < *apps[j].Description
+		})
 		appOne := apps[0]
 		appTwo := apps[1]
 
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
 
-		validateApplication(t, appOne, "nonSAPsys", "http", "systemOne", expectedLabel)
-		validateApplication(t, appTwo, "nonSAPsys", "http", "systemTwo", expectedLabelWithLocId)
-	}) //TODO add more tests if this one pass
+		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
+		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
+	})
+
+	t.Run("Delta report - delete system when there are two sccs connected to one subaccount", func(t *testing.T) {
+		ctx := context.Background()
+
+		//WHEN
+		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		require.NoError(t, err)
+		require.Empty(t, apps)
+
+		report := Report{
+			ReportType: "notification service",
+			Value: []SCC{
+				{
+					Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+					LocationID: "",
+					ExposedSystems: []System{{
+						Protocol:     "http",
+						Host:         "127.0.0.1:3000",
+						SystemType:   "nonSAPsys",
+						Description:  "system_one",
+						Status:       "reachable",
+						SystemNumber: "",
+					}},
+				},
+				{
+					Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+					LocationID: "loc-id",
+					ExposedSystems: []System{{
+						Protocol:     "http",
+						Host:         "127.0.0.1:3000",
+						SystemType:   "nonSAPsys",
+						Description:  "system_two",
+						Status:       "reachable",
+						SystemNumber: "",
+					}},
+				}},
+		}
+
+		body, err := json.Marshal(report)
+		require.NoError(t, err)
+
+		resp := sendRequest(t, body, "delta", token)
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(apps))
+
+		sort.Slice(apps, func(i, j int) bool {
+			return *apps[i].Description < *apps[j].Description
+		})
+		appOne := apps[0]
+		appTwo := apps[1]
+
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
+
+		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
+		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
+
+		report = Report{
+			ReportType: "notification service",
+			Value: []SCC{
+				{
+					Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+					LocationID: "",
+					ExposedSystems: []System{{
+						Protocol:     "http",
+						Host:         "127.0.0.1:3000",
+						SystemType:   "nonSAPsys",
+						Description:  "system_updated",
+						Status:       "reachable",
+						SystemNumber: "",
+					}},
+				},
+				{
+					Subaccount:     "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+					LocationID:     "loc-id",
+					ExposedSystems: []System{},
+				}},
+		}
+
+		body, err = json.Marshal(report)
+		require.NoError(t, err)
+
+		resp = sendRequest(t, body, "delta", token)
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(apps))
+		sort.Slice(apps, func(i, j int) bool {
+			return *apps[i].Description < *apps[j].Description
+		})
+		validateApplication(t, apps[1], "nonSAPsys", "http", "system_updated", expectedLabel, "reachable")
+		validateApplication(t, apps[0], "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "unreachable")
+	})
 
 	t.Run("Delta report - update system", func(t *testing.T) {
 		ctx := context.Background()
@@ -189,7 +305,7 @@ func TestDeltaReport(stdT *testing.T) {
 		body, err := json.Marshal(report)
 		require.NoError(t, err)
 
-		resp := sendRequest(t, body, "delta")
+		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		apps, err := retrieveApps(t, ctx, sccLabelFilter)
@@ -197,7 +313,7 @@ func TestDeltaReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 		app := apps[0]
 
-		validateApplication(t, app, "nonSAPsys", "mail", "edited", expectedLabel)
+		validateApplication(t, app, "nonSAPsys", "mail", "edited", expectedLabel, "reachable")
 	})
 
 	t.Run("Delta report - delete system", func(t *testing.T) {
@@ -230,13 +346,13 @@ func TestDeltaReport(stdT *testing.T) {
 		body, err := json.Marshal(report)
 		require.NoError(t, err)
 
-		resp := sendRequest(t, body, "delta")
+		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		apps, err := retrieveApps(t, ctx, sccLabelFilter)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
-		//TODO expose status - require.Equal(t, "unreachable", applicationPage.Data[0].SystemStatus)
+		validateApplication(t, apps[0], "nonSAPsys", "mail", "description of the system", expectedLabel, "unreachable")
 	})
 
 	t.Run("Delta report - create system with systemNumber", func(t *testing.T) {
@@ -266,7 +382,7 @@ func TestDeltaReport(stdT *testing.T) {
 		body, err := json.Marshal(report)
 		require.NoError(t, err)
 
-		resp := sendRequest(t, body, "delta")
+		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		apps, err = retrieveApps(t, ctx, sccLabelFilter)
@@ -275,7 +391,7 @@ func TestDeltaReport(stdT *testing.T) {
 		app := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 
-		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel)
+		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
 	})
 
 	t.Run("Delta report - update system with systemNumber", func(t *testing.T) {
@@ -301,7 +417,7 @@ func TestDeltaReport(stdT *testing.T) {
 		body, err := json.Marshal(report)
 		require.NoError(t, err)
 
-		resp := sendRequest(t, body, "delta")
+		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		apps, err := retrieveApps(t, ctx, sccLabelFilter)
@@ -329,7 +445,7 @@ func TestDeltaReport(stdT *testing.T) {
 		body, err = json.Marshal(report)
 		require.NoError(t, err)
 
-		resp = sendRequest(t, body, "delta")
+		resp = sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		apps, err = retrieveApps(t, ctx, sccLabelFilter)
@@ -337,7 +453,7 @@ func TestDeltaReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app = apps[0]
-		validateApplication(t, app, "nonSAPsys", "mail", "edited", expectedLabel)
+		validateApplication(t, app, "nonSAPsys", "mail", "edited", expectedLabel, "reachable")
 	})
 
 	t.Run("Delta report - no systems", func(t *testing.T) {
@@ -360,7 +476,7 @@ func TestDeltaReport(stdT *testing.T) {
 		body, err := json.Marshal(report)
 		require.NoError(t, err)
 
-		resp := sendRequest(t, body, "delta")
+		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		apps, err = retrieveApps(t, ctx, sccLabelFilter)
@@ -369,23 +485,27 @@ func TestDeltaReport(stdT *testing.T) {
 	})
 }
 
-func sendRequest(t *testing.T, body []byte, reportType string) *http.Response {
+func sendRequest(t *testing.T, body []byte, reportType string, token string) *http.Response {
 	buffer := bytes.NewBuffer(body)
-	req, err := http.NewRequest(http.MethodPost, "https://compass-gateway-sap-mtls.kyma.local/nsadapter/api/v1/notifications", buffer)
+	req, err := http.NewRequest(http.MethodPost, "https://compass-gateway-xsuaa.kyma.local/nsadapter/api/v1/notifications", buffer)
 	if err != nil {
 		panic(err)
 	}
 	q := req.URL.Query()
 	q.Add("reportType", reportType)
 	req.URL.RawQuery = q.Encode()
+	header := fmt.Sprintf("Bearer %s", token)
+	req.Header.Add("Authorization", header)
 
-	clientKey, rawCertChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, "08b6da37-e911-48fb-a0cb-fa635a6c5678")
-	client := gql.NewCertAuthorizedHTTPClient(clientKey, rawCertChain)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
+	//client := gql.NewAuthorizedHTTPClient(token)
+	client := &http.Client{
+		Timeout: 15 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
 	}
+	resp, err := client.Do(req)
+	require.NoError(t, err)
 
 	return resp
 }
@@ -427,11 +547,12 @@ func createApplicationFromTemplateInput(templateName, description, subaccount, l
 	}}
 }
 
-func validateApplication(t *testing.T, app *graphql.ApplicationExt, appType, systemProtocol, description string, label map[string]interface{}) {
+func validateApplication(t *testing.T, app *graphql.ApplicationExt, appType, systemProtocol, description string, label map[string]interface{}, systemStatus string) {
 	require.Equal(t, appType, app.Labels["applicationType"])
 	require.Equal(t, systemProtocol, app.Labels["systemProtocol"])
 	require.Equal(t, description, *app.Description)
 	require.Equal(t, label, app.Labels["scc"])
+	require.Equal(t, systemStatus, *app.SystemStatus)
 }
 
 func retrieveApps(t *testing.T, ctx context.Context, labelFilter graphql.LabelFilter) ([]*graphql.ApplicationExt, error) {

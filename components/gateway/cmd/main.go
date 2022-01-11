@@ -41,6 +41,7 @@ type config struct {
 	NsadapterOrigin string `envconfig:"default=http://127.0.0.1:3005"`
 	MetricsAddress  string `envconfig:"default=127.0.0.1:3003"`
 	AuditlogEnabled bool   `envconfig:"default=false"`
+	InsecureSkipVerify bool `envconfig:"default=false"`
 }
 
 func main() {
@@ -77,7 +78,7 @@ func main() {
 
 	unsecureTr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true, //TODO pass as configuration, valid only for local case
+			InsecureSkipVerify: cfg.InsecureSkipVerify,
 		},
 	}
 	correlationTr := httputil.NewCorrelationIDTransport(unsecureTr)

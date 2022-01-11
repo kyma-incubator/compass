@@ -140,6 +140,8 @@ global:
   agentPreconfiguration: false
 
   nsAdapter:
+    e2eTests:
+      gatewayHost: "compass-gateway-xsuaa"
     prefix: /nsadapter
     systemToTemplateMappings: '[{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
 
@@ -304,7 +306,10 @@ global:
     namespace: istio-system
     ingressgateway:
       workloadLabel: istio-ingressgateway
-      requestPayloadSizeLimit: 2097152 # 2 MB
+      requestPayloadSizeLimit2MB: 2097152
+      requestPayloadSizeLimit2MBLabel: "2MB"
+      requestPayloadSizeLimit5MB: 5097152
+      requestPayloadSizeLimit5MBLabel: "5MB"
       correlationHeaderRewriteFilter:
         expectedHeaders:
         - "x-request-id"
@@ -363,7 +368,7 @@ global:
           cfg:
             config:
               api:
-                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/ns-adapter
+                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/nsadapter
                 retry:
                   give_up_after: 6s
                   max_delay: 2000ms

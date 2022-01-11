@@ -6,8 +6,8 @@ metadata:
     meta.helm.sh/release-namespace: compass-system
   labels:
     app.kubernetes.io/managed-by: Helm
-  name: compass-limit-request-payload-size-small
-  namespace: istio-system
+  name: {{ .Chart.Name }}-limit-request-payload-5mb
+  namespace: {{ .Values.global.istio.namespace }}
 spec:
   configPatches:
     - applyTo: HTTP_FILTER
@@ -24,7 +24,7 @@ spec:
           typed_config:
             '@type': type.googleapis.com/udpa.type.v1.TypedStruct
             value:
-              maxRequestBytes: 297152
+              maxRequestBytes: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit5MB }}
   workloadSelector:
     labels:
-      reqlimit: small
+      reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit5MBLabel }}
