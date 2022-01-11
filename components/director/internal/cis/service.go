@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 )
 
 // CISResponse response from the context enrichment api
