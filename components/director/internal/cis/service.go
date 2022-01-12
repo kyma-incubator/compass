@@ -35,20 +35,14 @@ func NewCisService(client http.Client, kubeClient KubeClient) *service {
 
 // GetGlobalAccount missing godoc
 func (s *service) GetGlobalAccount(ctx context.Context, region string, subaccountID string) (string, error) {
-	url, err := s.k8sClient.GetRegionURL(ctx, region)
-	if err != nil {
-		return "", err
-	}
+	url := s.k8sClient.GetRegionURL(region)
 	endpoint := fmt.Sprintf("%s/%s", url, subaccountID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return "", err
 	}
 
-	token, err := s.k8sClient.GetRegionToken(ctx, region)
-	if err != nil {
-		return "", err // check once again
-	}
+	token := s.k8sClient.GetRegionToken(region)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := s.httpClient.Do(req)
