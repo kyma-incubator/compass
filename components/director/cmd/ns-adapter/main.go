@@ -215,7 +215,7 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 				Description: str.Ptr("describes whether the system is reachable or not"),
 			},
 		},
-		AccessLevel: model.GlobalApplicationTemplateAccessLevel, //TODO check proper access level
+		AccessLevel: model.GlobalApplicationTemplateAccessLevel,
 	}
 
 	_, err = appTemplateSvc.GetByName(ctxWithTx, appTemplateName)

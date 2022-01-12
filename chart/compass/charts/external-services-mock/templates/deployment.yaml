@@ -15,7 +15,6 @@ spec:
         metadata:
             labels:
                 app: {{ .Chart.Name }}
-                reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MBLabel }}
                 release: {{ .Release.Name }}
         spec:
             containers:

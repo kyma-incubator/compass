@@ -141,12 +141,25 @@ func getHTTPBigBodyPOSTRequest(t *testing.T, url, tenant string, bodySize int) *
 		b.WriteByte('a')
 	}
 	s := b.String()
-	applicationRequest := fixtures.FixGetApplicationRequest(s)
-	reader := strings.NewReader(applicationRequest.Query())
-	req, err := http.NewRequest(http.MethodPost, url, reader)
+	applicationsGQLRequest := fixtures.FixGetApplicationRequest(s)
+	requestBodyObj := struct {
+		Query     string                 `json:"query"`
+		Variables map[string]interface{} `json:"variables"`
+	}{
+		Query:     applicationsGQLRequest.Query(),
+		Variables: applicationsGQLRequest.Vars(),
+	}
+
+	var requestBuffer bytes.Buffer
+	err := json.NewEncoder(&requestBuffer).Encode(requestBodyObj)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest(http.MethodPost, url, &requestBuffer)
 	require.NoError(t, err)
 
 	req.Header.Set("Tenant", tenant)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	req.Header.Set("Accept", "application/json; charset=utf-8")
 	req = req.WithContext(context.TODO())
 	return req
 }
