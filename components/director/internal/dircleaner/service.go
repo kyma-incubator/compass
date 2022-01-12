@@ -59,6 +59,7 @@ func (s *service) Clean(ctx context.Context) error {
 	}
 	log.C(ctx).Infof("Total number of listed subaccounts: %d", len(allSubaccounts))
 	succsessfullyProcessed := 0
+	correctSubaccounts := 0
 	dirsToDelete := make(map[string]bool)
 
 	for _, subaccount := range allSubaccounts {
@@ -124,6 +125,7 @@ func (s *service) Clean(ctx context.Context) error {
 				}
 			} else { // Nothing to do with this subaccount
 				succsessfullyProcessed++
+				correctSubaccounts++
 			}
 
 			if err = tx.Commit(); err != nil {
@@ -140,6 +142,7 @@ func (s *service) Clean(ctx context.Context) error {
 		log.C(ctx).Error(err)
 	}
 	log.C(ctx).Infof("Successfully processed %d records from %d", succsessfullyProcessed, len(allSubaccounts))
+	log.C(ctx).Infof("%d subaccounts were correct and were not modified out of total  %d", correctSubaccounts, len(allSubaccounts))
 	return nil
 }
 
@@ -154,6 +157,7 @@ func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool) e
 	log.C(ctx).Infof("%d directories are to be deleted", len(dirs))
 	successfullyDeleted := 0
 	for extTenant := range dirs {
+		log.C(ctx).Infof("Deleting directory with external ID %s", extTenant)
 		if err = s.tenantSvc.DeleteByExternalTenant(ctx, extTenant); err != nil {
 			log.C(ctx).Error(err)
 		} else {

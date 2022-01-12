@@ -27,8 +27,8 @@ const envPrefix = "APP"
 type config struct {
 	Database          persistence.DatabaseConfig
 	Log               log.Config
-	kubeConfig        cis.KubeConfig
-	kubeClientConfig  kube.Config
+	KubeConfig        cis.KubeConfig
+	KubeClientConfig  kube.Config
 	ClientTimeout     time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 }
@@ -77,7 +77,7 @@ func createDirCleanerSvc(ctx context.Context, cfg config, transact persistence.T
 			},
 		}}
 
-	kubeClient, err := cis.NewKubernetesClient(ctx, cfg.kubeConfig, cfg.kubeClientConfig)
+	kubeClient, err := cis.NewKubernetesClient(ctx, cfg.KubeConfig, cfg.KubeClientConfig)
 	exitOnError(err, "Failed to initialize Kubernetes client")
 
 	cisService := cis.NewCisService(client, kubeClient)
