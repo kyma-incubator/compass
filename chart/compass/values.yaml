@@ -601,7 +601,6 @@ global:
     certSecuredHost: compass-external-services-mock-sap-mtls
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
-    oauthSecretName: compass-external-services-mock-oauth-credentials
 
   tests:
     http:
@@ -629,11 +628,15 @@ global:
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
     externalServicesMock:
-      oauthSecretName: compass-external-services-mock-oauth-credentials-2
-      clientIdKey: client-id
-      clientSecretKey: client-secret
-      oauthUrlKey: url
-      oauthTokenPath: "/secured/oauth/token"
+      oauthSecret:
+        managed: true
+        name: compass-external-services-mock-oauth-credentials
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
+        oauthTokenPath: "/secured/oauth/token"
+    tokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+    subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1

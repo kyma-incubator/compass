@@ -66,11 +66,12 @@ type config struct {
 	ORDServiceStaticPrefix                string
 	ORDServiceDefaultResponseType         string
 	DefaultScenarioEnabled                bool `envconfig:"default=true"`
-	ExternalServicesMockURL               string
+	TokenURL                              string
+	SubscriptionURL                       string
 	ClientID                              string
 	ClientSecret                          string
 	SubscriptionProviderLabelKey          string
-	SelfRegisterDistinguishLabelKey       string
+	SelfRegisterDistinguishLabelKey       string // TODO:: Remove after consumer-provider test adaptation
 	SelfRegisterLabelKey                  string
 	SkipSSLValidation                     bool
 	TestExternalCertSubject               string

@@ -16,11 +16,28 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	contentTypeHeader                = "Content-Type"
+	contentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
+	contentTypeApplicationJson       = "application/json"
+
+	grantTypeFieldName   = "grant_type"
+	credentialsGrantType = "client_credentials"
+	scopesFieldName      = "scopes"
+	claimsKey            = "claims_key"
+
+	clientIDKey     = "client_id"
+	clientSecretKey = "client_secret"
+)
+
+type ClaimsGetterFunc func() map[string]interface{}
+
 type handler struct {
-	expectedSecret   string
-	expectedID       string
-	tenantHeaderName string
-	signingKey       *rsa.PrivateKey
+	expectedSecret      string
+	expectedID          string
+	tenantHeaderName    string
+	signingKey          *rsa.PrivateKey
+	staticMappingClaims map[string]ClaimsGetterFunc
 }
 
 func NewHandler(expectedSecret, expectedID string) *handler {
@@ -30,12 +47,13 @@ func NewHandler(expectedSecret, expectedID string) *handler {
 	}
 }
 
-func NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeaderName string, signingKey *rsa.PrivateKey) *handler {
+func NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeaderName string, signingKey *rsa.PrivateKey, staticMappingClaims map[string]ClaimsGetterFunc) *handler {
 	return &handler{
-		expectedSecret:   expectedSecret,
-		expectedID:       expectedID,
-		tenantHeaderName: tenantHeaderName,
-		signingKey:       signingKey,
+		expectedSecret:      expectedSecret,
+		expectedID:          expectedID,
+		tenantHeaderName:    tenantHeaderName,
+		signingKey:          signingKey,
+		staticMappingClaims: staticMappingClaims,
 	}
 }
 
@@ -76,37 +94,49 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 		}
 	}
 
-	var output string
-	if h.signingKey != nil {
-		token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims(claims))
-		output, err = token.SignedString(h.signingKey)
-	} else {
-		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims(claims))
-		output, err = token.SigningString()
-	}
+	h.respond(writer, r, claims)
+}
 
-	if err != nil {
-		log.C(r.Context()).Errorf("while creating oauth token: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while creating oauth token"), http.StatusInternalServerError)
+func (h *handler) GenerateWithBasicCredentials(writer http.ResponseWriter, r *http.Request) { // TODO: Rename function
+	ctx := r.Context()
+
+	if r.Header.Get(contentTypeHeader) != contentTypeApplicationURLEncoded {
+		log.C(ctx).Errorf("Unsupported media type, expected: application/x-www-form-urlencodedgot: %q", r.Header.Get("Content-Type"))
+		writer.WriteHeader(http.StatusUnsupportedMediaType)
 		return
 	}
 
-	response := createResponse(output)
-	payload, err := json.Marshal(response)
-	if err != nil {
-		log.C(r.Context()).Errorf("while marshalling response: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
+	if err := r.ParseForm(); err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while parsing query")
+		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusInternalServerError)
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-	_, err = writer.Write(payload)
-	if err != nil {
-		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
+	if r.FormValue(grantTypeFieldName) != credentialsGrantType {
+		log.C(ctx).Errorf("The grant_type is not the expected one, expected: %q, got: %q", credentialsGrantType, r.FormValue(grantTypeFieldName))
+		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusBadRequest)
 		return
 	}
+
+	if r.FormValue(clientIDKey) != h.expectedID || r.FormValue(clientSecretKey) != h.expectedSecret {
+		log.C(ctx).Error("client secret or client id doesn't match expected")
+		httphelpers.WriteError(writer, errors.New("client secret or client id doesn't match expected"), http.StatusBadRequest)
+		return
+	}
+
+	claimsFunc, ok := h.staticMappingClaims[r.FormValue(claimsKey)]
+	if !ok {
+		log.C(ctx).Errorf("An error occurred while getting static claims function")
+		httphelpers.WriteError(writer, errors.New("An error occurred while getting static claims function"), http.StatusInternalServerError)
+		return
+	}
+
+	claims := claimsFunc()
+
+	tenant := r.Header.Get(h.tenantHeaderName)
+	claims["x-zid"] = tenant
+
+	h.respond(writer, r, claims)
 }
 
 func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter, r *http.Request) {
@@ -122,15 +152,22 @@ func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter,
 	if form, err := url.ParseQuery(string(body)); err != nil {
 		log.C(r.Context()).Errorf("Cannot parse form. Error: %s", err)
 	} else {
-		client := form.Get("client_id")
-		scopes := form.Get("scopes")
+		client := form.Get(clientIDKey)
+		scopes := form.Get(scopesFieldName)
 		tenant := r.Header.Get(h.tenantHeaderName)
-		claims["client_id"] = client
-		claims["scopes"] = scopes
+		claims[clientIDKey] = client
+		claims[scopesFieldName] = scopes
 		claims["x-zid"] = tenant
 	}
 
-	var output string
+	h.respond(writer, r, claims)
+}
+
+func (h *handler) respond(writer http.ResponseWriter, r *http.Request, claims map[string]interface{}) {
+	var (
+		output string
+		err    error
+	)
 	if h.signingKey != nil {
 		token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims(claims))
 		output, err = token.SignedString(h.signingKey)
@@ -152,10 +189,9 @@ func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter,
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
-	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set(contentTypeHeader, contentTypeApplicationJson)
 	writer.WriteHeader(http.StatusOK)
-	_, err = writer.Write(payload)
-	if err != nil {
+	if _, err := writer.Write(payload); err != nil {
 		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
 		return

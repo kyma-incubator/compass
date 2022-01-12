@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -21,50 +24,60 @@ import (
 const compassURL = "https://github.com/kyma-incubator/compass"
 
 type handler struct {
-	tenantConfig       Config
-	providerConfig     ProviderConfig
-	externalSvcMockURL string
-	oauthTokenPath     string
-	clientID           string
-	clientSecret       string
-	xsappnameClone     string
+	tenantConfig        Config
+	providerConfig      ProviderConfig
+	externalSvcMockURL  string
+	oauthTokenPath      string
+	clientID            string
+	clientSecret        string
+	xsappnameClone      string
+	staticMappingClaims map[string]oauth.ClaimsGetterFunc
 }
 
-func NewHandler(tenantConfig Config, providerConfig ProviderConfig, externalSvcMockURL, oauthTokenPath, clientID, clientSecret string) *handler {
+func NewHandler(tenantConfig Config, providerConfig ProviderConfig, externalSvcMockURL, oauthTokenPath, clientID, clientSecret string, staticMappingClaims map[string]oauth.ClaimsGetterFunc) *handler {
 	return &handler{
-		tenantConfig:       tenantConfig,
-		providerConfig:     providerConfig,
-		externalSvcMockURL: externalSvcMockURL,
-		oauthTokenPath:     oauthTokenPath,
-		clientID:           clientID,
-		clientSecret:       clientSecret,
+		tenantConfig:        tenantConfig,
+		providerConfig:      providerConfig,
+		externalSvcMockURL:  externalSvcMockURL,
+		oauthTokenPath:      oauthTokenPath,
+		clientID:            clientID,
+		clientSecret:        clientSecret,
+		staticMappingClaims: staticMappingClaims,
 	}
 }
 
 func (h *handler) Subscription(writer http.ResponseWriter, r *http.Request) {
-	err, statusCode := h.executeSubscriptionRequest(r, http.MethodPut)
-	if err != nil {
-		log.C(r.Context()).WithError(err).Errorf("while executing subscription request: %v", err)
+	if err, statusCode := h.executeSubscriptionRequest(r, http.MethodPut); err != nil {
+		log.C(r.Context()).Errorf("while executing subscription request: %v", err)
 		httphelpers.WriteError(writer, errors.Wrap(err, "while executing subscription request"), statusCode)
 		return
 	}
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *handler) Deprovisioning(writer http.ResponseWriter, r *http.Request) {
-	err, statusCode := h.executeSubscriptionRequest(r, http.MethodDelete)
-	if err != nil {
+	if err, statusCode := h.executeSubscriptionRequest(r, http.MethodDelete); err != nil {
 		log.C(r.Context()).WithError(err).Errorf("while executing unsubscription request: %v", err)
 		httphelpers.WriteError(writer, errors.Wrap(err, "while executing unsubscription request"), statusCode)
 		return
 	}
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string) (error, int) {
 	ctx := r.Context()
 	authorization := r.Header.Get("Authorization")
-	if len(authorization) == 0 || !strings.HasPrefix(authorization, "Bearer ") {
+
+	if len(authorization) == 0 {
 		return errors.New("authorization header is required"), http.StatusBadRequest
 	}
+
+	token := strings.TrimPrefix(authorization, "Bearer ")
+
+	if !strings.HasPrefix(authorization, "Bearer ") || len(token) == 0 {
+		return errors.New("token value is required"), http.StatusBadRequest
+	}
+
 	consumerSubaccountID := mux.Vars(r)["tenant_id"]
 	if consumerSubaccountID == "" {
 		log.C(ctx).Error("parameter [tenant_id] not provided")
@@ -73,7 +86,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 
 	// Build a request for consumer subscription/unsubscription
 	BuildTenantFetcherRegionalURL(&h.tenantConfig)
-	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, consumerSubaccountID, h.externalSvcMockURL, h.oauthTokenPath, h.clientID, h.clientSecret)
+	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token)
 	if err != nil {
 		log.C(ctx).Errorf("while creating subscription request: %s", err.Error())
 		return errors.Wrap(err, "while creating subscription request"), http.StatusInternalServerError
@@ -90,7 +103,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	resp, err := httpClient.Do(request)
 	if err != nil {
 		log.C(ctx).Errorf("while executing subscription request: %s", err.Error())
-		return errors.Wrap(err, "while creating subscription request"), http.StatusInternalServerError
+		return err, http.StatusInternalServerError
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -104,6 +117,68 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	}
 
 	return nil, http.StatusOK
+}
+
+// TODO:: Consider deleting this
+func (h *handler) GetToken(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log.C(ctx).Info("Issuing token...")
+
+	data := url.Values{}
+	data.Add("grant_type", "client_credentials")
+	data.Add("client_id", h.clientID)
+
+	//req, err := http.NewRequest(http.MethodPost, h.externalSvcMockURL+h.oauthTokenPath, strings.NewReader(data.Encode()))
+	req, err := http.NewRequest(http.MethodPost, h.externalSvcMockURL+h.oauthTokenPath, bytes.NewBuffer([]byte(data.Encode())))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	req.SetBasicAuth(h.clientID, h.clientSecret)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		log.C(ctx).Errorf("while executing request for token: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while executing request for token"), http.StatusInternalServerError)
+		return
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error has occurred while closing response body: %v", err)
+		}
+	}()
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error has occurred while reading response body: %v", err)
+		httphelpers.WriteError(writer, errors.Wrap(err, "An error has occurred while reading response body"), http.StatusInternalServerError)
+		return
+	}
+
+	token := gjson.GetBytes(b, "access_token")
+	if !token.Exists() {
+		log.C(ctx).WithError(err).Errorf("An error has occurred while reading response body: %v", err)
+		httphelpers.WriteError(writer, errors.Wrap(err, "An error has occurred while reading response body"), http.StatusInternalServerError)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	_, err = writer.Write([]byte(token.String()))
+	if err != nil {
+		log.C(ctx).Errorf("while writing response: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
+		return
+	}
+	writer.WriteHeader(http.StatusOK)
+	log.C(ctx).Info("Successfully issued token")
 }
 
 func (h *handler) OnSubscription(writer http.ResponseWriter, r *http.Request) {
@@ -146,26 +221,20 @@ func (h *handler) Dependencies(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
-func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, consumerSubaccoutID, externalServicesMockURL, oauthTokenPath, clientID, clientSecret string) (*http.Request, error) {
+func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token string) (*http.Request, error) {
 	var (
 		body = "{}"
 		err  error
 	)
 
-	if len(h.tenantConfig.TenantID) > 0 {
-		body, err = sjson.Set(body, h.providerConfig.TenantIDProperty, h.tenantConfig.TenantID)
+	if len(h.tenantConfig.TestConsumerAccountID) > 0 {
+		body, err = sjson.Set(body, h.providerConfig.TenantIDProperty, h.tenantConfig.TestConsumerAccountID)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 		}
 	}
-	if len(consumerSubaccoutID) > 0 {
-		body, err = sjson.Set(body, h.providerConfig.SubaccountTenantIDProperty, consumerSubaccoutID)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
-		}
-	}
-	if len(h.tenantConfig.CustomerID) > 0 {
-		body, err = sjson.Set(body, h.providerConfig.CustomerIDProperty, h.tenantConfig.CustomerID)
+	if len(h.tenantConfig.TestConsumerSubaccountID) > 0 {
+		body, err = sjson.Set(body, h.providerConfig.SubaccountTenantIDProperty, h.tenantConfig.TestConsumerSubaccountID)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 		}
@@ -188,28 +257,13 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, consumerSuba
 		return nil, err
 	}
 
-	defaultClaims := map[string]interface{}{
-		"test": "tenant-fetcher",
-		"scope": []string{
-			"prefix.Callback",
-		},
-		"tenant":   "tenant",
-		"identity": "tenant-fetcher-tests",
-		"iss":      externalServicesMockURL,
-		"exp":      time.Now().Unix() + int64(time.Minute.Seconds()),
-	}
-
-	//request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, externalServicesMockURL, oauthTokenPath, clientID, clientSecret, DefaultClaims(externalServicesMockURL)))) // TODO:: Remove
-	tkn, err := tokenFromExternalSvcMock(externalServicesMockURL, oauthTokenPath, clientID, clientSecret, defaultClaims)
-	if err != nil {
-		return nil, err
-	}
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	return request, nil
 }
 
-func tokenFromExternalSvcMock(externalSvcMockUrl, oauthTokenPath, clientID, clientSecret string, claims map[string]interface{}) (string, error) {
+// TODO:: Consider deleting this
+func tokenFromExternalSvcMockWithClaims(externalSvcMockUrl, oauthTokenPath, clientID, clientSecret string, claims map[string]interface{}) (string, error) {
 	data, err := json.Marshal(claims)
 	if err != nil {
 		return "", err

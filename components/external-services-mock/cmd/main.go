@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/subscription"
 	ord_global_registry "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator/globalregistry"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/subscription"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/selfreg"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/tenantfetcher"
@@ -85,6 +85,19 @@ type BasicCredentialsConfig struct {
 	Password string `envconfig:"BASIC_PASSWORD"`
 }
 
+func claimsFunc(uniqueAttrKey, uniqueAttrValue, tenantID, identity, iss string, scopes []string) oauth.ClaimsGetterFunc {
+	return func() map[string]interface{} {
+		return map[string]interface{}{
+			uniqueAttrKey: uniqueAttrValue,
+			"scope":       scopes,
+			"tenant":      tenantID,
+			"identity":    identity,
+			"iss":         iss,
+			"exp":         time.Now().Unix() + int64(time.Minute.Seconds()),
+		}
+	}
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -92,15 +105,21 @@ func main() {
 	err := envconfig.InitWithOptions(&cfg, envconfig.Options{Prefix: "APP", AllOptional: true})
 	exitOnError(err, "while loading configuration")
 
+	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
+	staticMappingClaims := map[string]oauth.ClaimsGetterFunc{
+		"tenantFetcherFlow": claimsFunc("test", "tenant-fetcher", "tenantID", "tenant-fetcher-test-identity", extSvcMockURL, []string{"prefix.Callback"}),
+		"subscriptionFlow":  claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", extSvcMockURL, []string{}),
+	}
+
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	exitOnError(err, "while generating rsa key")
 
-	ordServers := initORDServers(cfg, key)
+	ordServers := initORDServers(cfg, key, staticMappingClaims)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
-	go startServer(ctx, initDefaultServer(cfg, key), wg)
+	go startServer(ctx, initDefaultServer(cfg, key, staticMappingClaims), wg)
 
 	for _, server := range ordServers {
 		wg.Add(1)
@@ -117,34 +136,36 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
+func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc) *http.Server {
 	logger := logrus.New()
 	router := mux.NewRouter()
 
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
 
 	// Oauth server handlers
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key, staticMappingClaims)
 	router.HandleFunc("/secured/oauth/token", tokenHandler.Generate).Methods(http.MethodPost)
 	// TODO The mtls_token_provider sends client id and scopes in url.values form. When the change for fetching xsuaa token
 	// with certificate is merged GenerateWithCredentialsFromReqBody should be used for testing the flows that include fetching
 	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.
 	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
+	router.HandleFunc("/test/oauth/token", tokenHandler.GenerateWithBasicCredentials).Methods(http.MethodPost)
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
 	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
 	router.HandleFunc(cfg.JWKSPath, jwksHanlder.Handle)
 
 	// Subscription handler
-	subHandler := subscription.NewHandler(cfg.TenantConfig, cfg.TenantProviderConfig, fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.TokenPath, cfg.ClientID, cfg.ClientSecret)
+	subHandler := subscription.NewHandler(cfg.TenantConfig, cfg.TenantProviderConfig, fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.TokenPath, cfg.ClientID, cfg.ClientSecret, staticMappingClaims)
 	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Subscription).Methods(http.MethodPost)
 	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Deprovisioning).Methods(http.MethodDelete)
+	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions/token", subHandler.GetToken).Methods(http.MethodGet)
 
 	// on subscription callback we need to return something, in our case 200 OK should be enough
 	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", subHandler.OnSubscription).Methods(http.MethodPut)
 
 	//
-	router.HandleFunc("/v1/dependencies/configure", subHandler.DependenciesConfigure).Methods(http.MethodGet)
+	router.HandleFunc("/v1/dependencies/configure", subHandler.DependenciesConfigure).Methods(http.MethodPost)
 	router.HandleFunc("/v1/dependencies", subHandler.Dependencies).Methods(http.MethodGet)
 
 	// CA server handlers
@@ -163,7 +184,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
 	systemsRouter := router.PathPrefix("/systemfetcher/systems").Subrouter()
-	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator(cfg.DefaultTenant, cfg.ClientID, cfg.Scopes)))
+	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator(cfg.DefaultTenant)))
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
@@ -229,9 +250,9 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	}
 }
 
-func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
+func initORDServers(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc) []*http.Server {
 	servers := make([]*http.Server, 0, 0)
-	servers = append(servers, initCertSecuredServer(cfg, key))
+	servers = append(servers, initCertSecuredServer(cfg, key, staticMappingClaims))
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
@@ -239,7 +260,7 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	return servers
 }
 
-func initCertSecuredServer(cfg config, key *rsa.PrivateKey) *http.Server {
+func initCertSecuredServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc) *http.Server {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
@@ -250,7 +271,7 @@ func initCertSecuredServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key, staticMappingClaims)
 	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
 
 	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
@@ -421,7 +442,7 @@ func stopServer(server *http.Server) {
 func noopClaimsValidator(_ *oauth.Claims) bool {
 	return true
 }
-func getClaimsValidator(expectedTenant, expectedClient, expectedScopes string) func(*oauth.Claims) bool {
+func getClaimsValidator(expectedTenant string) func(*oauth.Claims) bool {
 	return func(claims *oauth.Claims) bool {
 		return claims.Tenant == expectedTenant
 	}

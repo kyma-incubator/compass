@@ -19,8 +19,8 @@ type Config struct {
 	RegionPathParam              string
 	SubscriptionProviderID       string
 	TenantFetcherFullRegionalURL string `envconfig:"-"`
-	TenantID                     string
-	CustomerID                   string
+	TestConsumerAccountID        string
+	TestConsumerSubaccountID     string
 }
 
 // ProviderConfig includes the configuration for tenant providers - the tenant ID json property names - account, subaccount, customer. The subdomain property name and subscription provider ID property.
@@ -34,6 +34,6 @@ type ProviderConfig struct {
 
 func BuildTenantFetcherRegionalURL(tenantConfig *Config) {
 	regionalEndpoint := strings.Replace(tenantConfig.RegionalHandlerEndpoint, fmt.Sprintf("{%s}", tenantConfig.TenantPathParam), TenantPathParamValue, 1)
-	regionalEndpoint = strings.Replace(tenantConfig.RegionalHandlerEndpoint, fmt.Sprintf("{%s}", tenantConfig.RegionPathParam), RegionPathParamValue, 1)
+	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", tenantConfig.RegionPathParam), RegionPathParamValue, 1)
 	tenantConfig.TenantFetcherFullRegionalURL = tenantConfig.TenantFetcherURL + tenantConfig.RootAPI + regionalEndpoint
 }

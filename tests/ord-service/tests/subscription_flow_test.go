@@ -21,9 +21,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
@@ -123,7 +127,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 		// Prepare provider external client certificate and secret
 		k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 		require.NoError(t, err)
-		createExtCertJob(t, ctx, k8sClient, testConfig, testConfig.ExternalClientCertTestSecretNamespace, jobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
+		createExtCertJob(t, ctx, k8sClient, testConfig, jobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
 		defer func() {
 			k8s.DeleteJob(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
 			k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
@@ -206,7 +210,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 		// TODO:: In cluster setup: 1. get token from xsuaa and 2. call saas-registry for subscription
 
 		// Build a request for consumer subscription
-		subscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret)
+		subscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
 
 		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
 		subscribeResp, err := httpClient.Do(subscribeReq)
@@ -214,7 +218,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 		require.Equal(t, http.StatusOK, subscribeResp.StatusCode)
 
 		defer func() {
-			unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret)
+			unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
 
 			t.Log(fmt.Sprintf("Deleting a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
 			unsubscribeResp, err := httpClient.Do(unsubscribeReq)
@@ -231,10 +235,10 @@ func TestConsumerProviderFlow(t *testing.T) {
 			"scope":          []string{},
 			"tenant":         subscriptionConsumerSubaccountID,
 			"identity":       "subscription-flow-identity",
-			"iss":            testConfig.ExternalServicesMockURL,
+			"iss":            testConfig.TokenURL,
 			"exp":            time.Now().Unix() + int64(time.Minute.Seconds()),
 		}
-		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret, claims))}}
+		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret, claims))}}
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
@@ -243,7 +247,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 
 		// Build unsubscribe request
-		unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret)
+		unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
 
 		t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
 		unsubscribeResp, err := httpClient.Do(unsubscribeReq)
@@ -259,18 +263,18 @@ func TestConsumerProviderFlow(t *testing.T) {
 func TestNewChanges(t *testing.T) {
 	t.Run("TestNewChanges", func(t *testing.T) {
 		ctx := context.Background()
-		//defaultTenantId := testConfig.TestProviderAccountID
-		secondaryTenant := testConfig.TestConsumerAccountID
+		//defaultTenantId := testConfig.TestProviderAccountID // TODO:: In dev env this should be our CMP GA in correct feature set(B)
+		secondaryTenant := testConfig.TestConsumerAccountID // TODO:: In real env can be also our CMP GA in correct feature set
 		subscriptionProviderID := "xsappname-value"
-		//reuseServiceSubaccountID := testConfig.TestReuseSvcSubaccountID
-		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
-		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
+		//reuseServiceSubaccountID := testConfig.TestReuseSvcSubaccountID // TODO:: "reuse svc subaacount" var name or something similar, that is our current CMP SA in CMP GA. Check correct Feature Set.
+		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID // TODO:: TestProviderSubaccount on local setup and new SA (multi tenant app), that is BAS representative. I need to create xsuaa instance of application plan(check describe json properties in local files). Also, create saas-registry instance(plan application) with xsappname to MTA(multitenant application or something similar), onSubscription: callback (maybe it's mandatory) with external svc mock address that return empty body. And getDependency(check what is the correct property) on which we need to attached also external svc mock that return xsappnameClone label value. The third instance should be cert-svc instance, maybe nothing special here, just standard instance.
+		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID // TODO:: make it configurable with different values for local and dev setup. On dev create new "consumer" SA(in correct feature set) that will be used to subscribe to provider SA
 		jobName := "external-certificate-rotation-test-job"
 
 		// Prepare provider external client certificate and secret
 		k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 		require.NoError(t, err)
-		createExtCertJob(t, ctx, k8sClient, testConfig, testConfig.ExternalClientCertTestSecretNamespace, jobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
+		createExtCertJob(t, ctx, k8sClient, testConfig, jobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
 		defer func() {
 			k8s.DeleteJob(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
 			k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
@@ -280,7 +284,9 @@ func TestNewChanges(t *testing.T) {
 		providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(testConfig.ExternalClientCertTestSecretNamespace).Get(ctx, testConfig.ExternalClientCertTestSecretName, metav1.GetOptions{})
 		require.NoError(t, err)
 		providerKeyBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretKeyKey]
+		require.NotEmpty(t, providerKeyBytes)
 		providerCertChainBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
+		require.NotEmpty(t, providerCertChainBytes)
 
 		// Build graphql director client configured with certificate
 		providerClientKey, providerRawCertChain := certs.ClientCertPair(t, providerCertChainBytes, providerKeyBytes)
@@ -328,29 +334,30 @@ func TestNewChanges(t *testing.T) {
 
 		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
-		response, err := http.DefaultClient.Post(testConfig.ExternalServicesMockURL+"/v1/dependencies/configure", "application/json", bytes.NewBuffer([]byte(strLbl)))
+		response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", "application/json", bytes.NewBuffer([]byte(strLbl)))
 		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
-		require.Equal(t, response.StatusCode, http.StatusOK)
-
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerSubaccountID)
-		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.ExternalServicesMockURL+apiPath, bytes.NewBuffer([]byte{}))
-		// TODO:: In cluster setup call with xsuaa instance creds
-		tkn := token.FromExternalServicesMock(t, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret, tenantfetcher.DefaultClaims(testConfig.ExternalServicesMockURL))
-		subscribeReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
+		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,
 			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: testConfig.SkipSSLValidation},
 			},
 		}
 
-		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerSubaccountID)
+		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
+		require.NoError(t, err)
+
+		tenantFetcherToken := getToken(t, ctx, testConfig, "tenantFetcherFlow")
+		subscribeReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tenantFetcherToken))
+
+		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 		resp, err := httpClient.Do(subscribeReq)
 		require.NoError(t, err)
 		defer func() {
@@ -360,19 +367,21 @@ func TestNewChanges(t *testing.T) {
 		}()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
+		defer func() {
+			unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
+			unsubscribeReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tenantFetcherToken))
+
+			t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+			unsubscribeResp, err := httpClient.Do(unsubscribeReq)
+			require.NoError(t, err)
+			require.Equal(t, http.StatusOK, unsubscribeResp.StatusCode)
+		}()
+
 		// HTTP client configured with manually signed client certificate
 		extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
-		// Create a token with the necessary consumer claims and add it in authorization header
-		claims := map[string]interface{}{
-			"subsc-key-test": "subscription-flow",
-			"scope":          []string{},
-			"tenant":         subscriptionConsumerSubaccountID,
-			"identity":       "subscription-flow-identity",
-			"iss":            testConfig.ExternalServicesMockURL,
-			"exp":            time.Now().Unix() + int64(time.Minute.Seconds()),
-		}
-		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret, claims))}}
+		subscriptionToken := getToken(t, ctx, testConfig, "subscriptionFlow")
+		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", subscriptionToken)}}
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
@@ -381,8 +390,8 @@ func TestNewChanges(t *testing.T) {
 		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 
 		// Build unsubscribe request
-		unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.ExternalServicesMockURL+apiPath, bytes.NewBuffer([]byte{}))
-		subscribeReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
+		unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
+		unsubscribeReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tenantFetcherToken))
 
 		t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 		unsubscribeResp, err := httpClient.Do(unsubscribeReq)
@@ -395,11 +404,11 @@ func TestNewChanges(t *testing.T) {
 }
 
 // createExtCertJob will schedule a temporary kubernetes job from director-external-certificate-rotation-job cronjob
-// with replaced certificate subject and secret name so this test can be executed on real environment with the correct values.
-func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, testConfig config, namespace, jobName string) {
+// with replaced certificate subject and secret name so the tests can be executed on real environment with the correct values.
+func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, testConfig config, jobName string) {
 	cronjobName := "director-external-certificate-rotation-job"
 
-	cronjob := k8s.GetCronJob(t, ctx, k8sClient, cronjobName, namespace)
+	cronjob := k8s.GetCronJob(t, ctx, k8sClient, cronjobName, testConfig.ExternalClientCertTestSecretNamespace)
 
 	// change the secret name and certificate subject
 	podContainers := &cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers
@@ -435,5 +444,50 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 		},
 	}
 
-	k8s.CreateJobByGivenJobDefinition(t, ctx, k8sClient, jobName, namespace, jobDef)
+	k8s.CreateJobByGivenJobDefinition(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace, jobDef)
+}
+
+func getToken(t *testing.T, ctx context.Context, testConfig config, claimsKey string) string {
+	log.C(ctx).Info("Issuing token...")
+
+	data := url.Values{}
+	data.Add("grant_type", "client_credentials")
+	data.Add("client_id", testConfig.ClientID)
+	data.Add("client_secret", testConfig.ClientSecret)
+	data.Add("claims_key", claimsKey)
+
+	req, err := http.NewRequest(http.MethodPost, testConfig.TokenURL+"/test/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
+	resp, err := httpClient.Do(req)
+	require.NoError(t, err)
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error has occurred while closing response body: %v", err)
+		}
+	}()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.NotEmpty(t, resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	tkn := gjson.GetBytes(body, "access_token")
+	require.True(t, tkn.Exists())
+	require.NotEmpty(t, tkn)
+
+	log.C(ctx).Info("Successfully issued token")
+
+	return tkn.String()
 }

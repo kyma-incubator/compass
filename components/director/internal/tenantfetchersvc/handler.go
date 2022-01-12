@@ -37,7 +37,7 @@ type HandlerConfig struct {
 	SubscriptionProviderLabelKey  string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY,default=subscriptionProviderId"`
 	ConsumerSubaccountIDsLabelKey string `envconfig:"APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY,default=consumer_subaccount_ids"`
 	TenantProviderConfig
-	features.Config // TODO:: check if this is a letfover from previous tasks?
+	features.Config
 }
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
@@ -75,7 +75,7 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 	h.applySubscriptionChange(writer, request, h.subscriber.Subscribe, true)
 }
 
-// SubscribeTenant handles subscription for tenant. If tenant does not exist, will create it first.
+// UnSubscribeTenant handles unsubscription for tenant which will remove the tenant id label from the runtime
 func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Request) {
 	h.applySubscriptionChange(writer, request, h.subscriber.Unsubscribe, true)
 }

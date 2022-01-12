@@ -63,7 +63,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 
-	h := oauth2.NewHandlerWithSigningKey(secret, id, tenantHeader, key)
+	h := oauth2.NewHandlerWithSigningKey(secret, id, tenantHeader, key, map[string]oauth2.ClaimsGetterFunc{})
 	r := httptest.NewRecorder()
 
 	//WHEN
@@ -107,11 +107,11 @@ func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 
-	h := oauth2.NewHandlerWithSigningKey("", id, tenantHeader, key)
+	h := oauth2.NewHandlerWithSigningKey("", id, tenantHeader, key, map[string]oauth2.ClaimsGetterFunc{})
 	r := httptest.NewRecorder()
 
 	//WHEN
-	h.GenerateWithCredentialsFromReqBody(r, req)
+	h.GenerateWithoutCredentials(r, req)
 	resp := r.Result()
 
 	//THEN

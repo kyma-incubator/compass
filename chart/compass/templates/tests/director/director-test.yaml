@@ -115,7 +115,7 @@ spec:
             - name: APP_INFO_CERT_ISSUER
               value: {{ .Values.global.externalCertConfiguration.issuer }}
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.director.selfRegister.distinguishLabel }}
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_EXTERNAL_CA_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CA_SECRET_NAMESPACE
