@@ -93,7 +93,7 @@ func (c WellKnownConfig) Validate(baseURL string) error {
 type Documents []*Document
 
 // Validate validates all the documents for a system instance
-func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
+func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64, globalResourcesOrdIDs map[string]bool) error {
 	var (
 		errs                *multierror.Error
 		baseURL             = calculatedBaseURL
@@ -209,18 +209,18 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 	// Validate entity relations
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
-			if pkg.Vendor != nil && !vendorIDs[*pkg.Vendor] {
+			if pkg.Vendor != nil && !vendorIDs[*pkg.Vendor] && !globalResourcesOrdIDs[*pkg.Vendor] {
 				errs = multierror.Append(errs, errors.Errorf("package with id %q has a reference to unknown vendor %q", pkg.OrdID, *pkg.Vendor))
 			}
 			ordIDs := gjson.ParseBytes(pkg.PartOfProducts).Array()
 			for _, productID := range ordIDs {
-				if !productIDs[productID.String()] {
+				if !productIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
 					errs = multierror.Append(errs, errors.Errorf("package with id %q has a reference to unknown product %q", pkg.OrdID, productID.String()))
 				}
 			}
 		}
 		for _, product := range doc.Products {
-			if !vendorIDs[product.Vendor] {
+			if !vendorIDs[product.Vendor] && !globalResourcesOrdIDs[product.Vendor] {
 				errs = multierror.Append(errs, errors.Errorf("product with id %q has a reference to unknown vendor %q", product.OrdID, product.Vendor))
 			}
 		}
@@ -238,7 +238,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 
 			ordIDs := gjson.ParseBytes(api.PartOfProducts).Array()
 			for _, productID := range ordIDs {
-				if !productIDs[productID.String()] {
+				if !productIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
 					errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown product %q", *api.OrdID, productID.String()))
 				}
 			}
@@ -257,7 +257,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 
 			ordIDs := gjson.ParseBytes(event.PartOfProducts).Array()
 			for _, productID := range ordIDs {
-				if !productIDs[productID.String()] {
+				if !productIDs[productID.String()] && !globalResourcesOrdIDs[productID.String()] {
 					errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown product %q", *event.OrdID, productID.String()))
 				}
 			}

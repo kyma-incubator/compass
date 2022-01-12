@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// RepoUpdateTestSuite represents a generic test suite for repository Update and UpdateWithVersion methods of any entity that has externally managed tenants in m2m table/view.
-// This test suite is not suitable for global entities or entities with embedded tenant in them.
+// RepoUpdateTestSuite represents a generic test suite for repository Update and UpdateWithVersion methods of any global entity or entity that has externally managed tenants in m2m table/view.
+// This test suite is not suitable for entities with embedded tenant in them.
 type RepoUpdateTestSuite struct {
 	Name                      string
 	SQLQueryDetails           []SQLQueryDetails
@@ -26,6 +26,7 @@ type RepoUpdateTestSuite struct {
 	TenantID                  string
 	DisableConverterErrorTest bool
 	UpdateMethodName          string
+	IsGlobal                  bool
 }
 
 // Run runs the generic repo update test suite
@@ -133,6 +134,9 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 			if suite.UpdateMethodName == "UpdateWithVersion" {
 				require.Equal(t, apperrors.ConcurrentUpdate, apperrors.ErrorCode(err))
 				require.Contains(t, err.Error(), apperrors.ConcurrentUpdateMsg)
+			} else if suite.IsGlobal {
+				require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
+				require.Contains(t, err.Error(), fmt.Sprintf(apperrors.ShouldUpdateSingleRowButUpdatedMsgF, 0))
 			} else {
 				require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
 				require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
@@ -157,7 +161,12 @@ func (suite *RepoUpdateTestSuite) Run(t *testing.T) bool {
 }
 
 func callUpdate(repo interface{}, ctx context.Context, tenant string, modelEntity interface{}, methodName string) error {
-	results := reflect.ValueOf(repo).MethodByName(methodName).Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(tenant), reflect.ValueOf(modelEntity)})
+	args := []reflect.Value{reflect.ValueOf(ctx)}
+	if len(tenant) > 0 {
+		args = append(args, reflect.ValueOf(tenant))
+	}
+	args = append(args, reflect.ValueOf(modelEntity))
+	results := reflect.ValueOf(repo).MethodByName(methodName).Call(args)
 	if len(results) != 1 {
 		panic("Update should return one argument")
 	}

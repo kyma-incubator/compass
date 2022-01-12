@@ -24,7 +24,7 @@ func (c *converter) ToEntity(in *model.Product) *Entity {
 	output := &Entity{
 		ID:                  in.ID,
 		OrdID:               in.OrdID,
-		ApplicationID:       in.ApplicationID,
+		ApplicationID:       repo.NewNullableString(in.ApplicationID),
 		Title:               in.Title,
 		ShortDescription:    in.ShortDescription,
 		Vendor:              in.Vendor,
@@ -46,7 +46,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Product, error) {
 	output := &model.Product{
 		ID:                  entity.ID,
 		OrdID:               entity.OrdID,
-		ApplicationID:       entity.ApplicationID,
+		ApplicationID:       repo.StringPtrFromNullableString(entity.ApplicationID),
 		Title:               entity.Title,
 		ShortDescription:    entity.ShortDescription,
 		Vendor:              entity.Vendor,

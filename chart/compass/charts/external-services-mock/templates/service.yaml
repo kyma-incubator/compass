@@ -29,6 +29,10 @@ spec:
       targetPort: {{ .Values.global.externalServicesMock.oauthSecuredPort }}
       protocol: TCP
       name: http-oauth
+    - port: {{ .Values.global.externalServicesMock.ordGlobalRegistryPort }}
+      targetPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryPort }}
+      protocol: TCP
+      name: http-ord-gr
     selector:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}

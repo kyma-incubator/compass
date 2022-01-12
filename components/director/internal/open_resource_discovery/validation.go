@@ -869,7 +869,7 @@ func validateJSONArrayOfStringsMatchPattern(arr interface{}, regexPattern *regex
 	}
 
 	if len(parsedArr.Array()) == 0 {
-		return errors.New("the json array should not be empty")
+		return nil
 	}
 
 	for _, el := range parsedArr.Array() {
@@ -907,7 +907,7 @@ func validateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]
 	}
 
 	if len(parsedArr.Array()) == 0 {
-		return errors.New("the json array should not be empty")
+		return nil
 	}
 
 	for _, el := range parsedArr.Array() {

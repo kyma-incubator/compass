@@ -8,7 +8,7 @@ import (
 type Product struct {
 	ID                  string
 	OrdID               string
-	ApplicationID       string
+	ApplicationID       *string
 	Title               string
 	ShortDescription    string
 	Vendor              string
@@ -31,7 +31,7 @@ type ProductInput struct {
 }
 
 // ToProduct missing godoc
-func (i *ProductInput) ToProduct(id, appID string) *Product {
+func (i *ProductInput) ToProduct(id string, appID *string) *Product {
 	if i == nil {
 		return nil
 	}
