@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	ord_global_registry "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator/globalregistry"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/selfreg"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/tenantfetcher"
 
@@ -56,10 +58,11 @@ type config struct {
 // This is needed in order to ensure that every call in the context of an application happens in a single server isolated from others.
 // Prior to this separation there were cases when tests succeeded (false positive) due to mistakenly configured baseURL resulting in different flow - different access strategy returned.
 type ORDServers struct {
-	CertPort      int `envconfig:"default=8081"`
-	UnsecuredPort int `envconfig:"default=8082"`
-	BasicPort     int `envconfig:"default=8083"`
-	OauthPort     int `envconfig:"default=8084"`
+	CertPort           int `envconfig:"default=8081"`
+	UnsecuredPort      int `envconfig:"default=8082"`
+	BasicPort          int `envconfig:"default=8083"`
+	OauthPort          int `envconfig:"default=8084"`
+	GlobalRegistryPort int `envconfig:"default=8085"`
 
 	CertSecuredBaseURL string
 }
@@ -195,7 +198,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 
 	// non-isolated and unsecured ORD handlers. NOTE: Do not host document endpoints on this default server in order to ensure tests separation.
 	// Unsecured config pointing to cert secured document
-	router.HandleFunc("/cert", ord_aggregator.HandleFuncOrdConfig(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
+	router.HandleFunc("/cert", ord_aggregator.HandleFuncOrdConfigWithDocPath(cfg.ORDServers.CertSecuredBaseURL, "/open-resource-discovery/v1/documents/example2", "sap:cmp-mtls:v1"))
 
 	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.SelfRegConfig)
 	selfRegRouter := router.PathPrefix(cfg.SelfRegConfig.Path).Subrouter()
@@ -215,6 +218,7 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
+	servers = append(servers, initGlobalRegistryORDServer(cfg))
 	return servers
 }
 
@@ -224,6 +228,7 @@ func initCertSecuredServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
 
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
@@ -245,15 +250,29 @@ func initUnsecuredORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
-	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfig(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "open"))
+	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "/open-resource-discovery/v1/documents/example2", "open"))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "open"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "open"))
 
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.UnsecuredPort),
+		Handler: router,
+	}
+}
+
+func initGlobalRegistryORDServer(cfg config) *http.Server {
+	router := mux.NewRouter()
+
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_global_registry.HandleFuncOrdConfig())
+
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_global_registry.HandleFuncOrdDocument())
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.GlobalRegistryPort),
 		Handler: router,
 	}
 }
