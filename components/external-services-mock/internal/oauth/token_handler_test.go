@@ -111,7 +111,7 @@ func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
 	r := httptest.NewRecorder()
 
 	//WHEN
-	h.GenerateWithoutCredentials(r, req)
+	h.GenerateWithCredentialsFromReqBody(r, req)
 	resp := r.Result()
 
 	//THEN
