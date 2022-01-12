@@ -1,6 +1,6 @@
 BEGIN;
 
 ALTER TABLE applications
-    DROP COLUMN system_status;
+DROP COLUMN system_status;
 
 COMMIT;
