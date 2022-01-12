@@ -21,28 +21,35 @@ type CISResponse struct {
 }
 
 type service struct {
-	httpClient           http.Client
-	contextEnrichmentURL string
-	token                string
+	httpClient http.Client
+	k8sClient  KubeClient
 }
 
 // NewCisService missing godoc
-func NewCisService(client http.Client, contextEnrichmentURL string, token string) *service {
+func NewCisService(client http.Client, kubeClient KubeClient) *service {
 	return &service{
-		httpClient:           client,
-		contextEnrichmentURL: contextEnrichmentURL,
-		token:                token,
+		httpClient: client,
+		k8sClient:  kubeClient,
 	}
 }
 
 // GetGlobalAccount missing godoc
-func (s *service) GetGlobalAccount(ctx context.Context, subaccountID string) (string, error) {
-	endpoint := fmt.Sprintf("%s/%s", s.contextEnrichmentURL, subaccountID)
+func (s *service) GetGlobalAccount(ctx context.Context, region string, subaccountID string) (string, error) {
+	url, err := s.k8sClient.GetRegionURL(ctx, region)
+	if err != nil {
+		return "", err
+	}
+	endpoint := fmt.Sprintf("%s/%s", url, subaccountID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Authorization", "Bearer "+s.token)
+
+	token, err := s.k8sClient.GetRegionToken(ctx, region)
+	if err != nil {
+		return "", err // check once again
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {

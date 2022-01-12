@@ -3,8 +3,12 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 
 	"github.com/kyma-incubator/compass/components/director/internal/cis"
 	"github.com/kyma-incubator/compass/components/director/internal/dircleaner"
@@ -20,13 +24,12 @@ import (
 const envPrefix = "APP"
 
 type config struct {
-	Database persistence.DatabaseConfig
-	Log      log.Config
-
-	ContextEnrichmentURL string        `envconfig:"APP_CONTEXT_ENRICHMENT_ENDPOINT"`
-	RequestToken         string        `envconfig:"APP_REQUEST_TOKEN"`
-	ClientTimeout        time.Duration `envconfig:"default=60s"`
-	SkipSSLValidation    bool          `envconfig:"default=false"`
+	Database          persistence.DatabaseConfig
+	Log               log.Config
+	kubeConfig        cis.KubeConfig
+	kubeClientConfig  kube.Config
+	ClientTimeout     time.Duration `envconfig:"default=60s"`
+	SkipSSLValidation bool          `envconfig:"default=false"`
 }
 
 func main() {
@@ -45,7 +48,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	tenantFetcherSvc := createDirCleanerSvc(cfg, transact)
+	tenantFetcherSvc := createDirCleanerSvc(ctx, cfg, transact)
 	err = tenantFetcherSvc.Clean(ctx)
 
 	exitOnError(err, "Error while cleaning directories from the database")
@@ -53,11 +56,17 @@ func main() {
 	log.C(ctx).Info("Successfully cleaned directories")
 }
 
-func createDirCleanerSvc(cfg config, transact persistence.Transactioner) dircleaner.CleanerService {
+func createDirCleanerSvc(ctx context.Context, cfg config, transact persistence.Transactioner) dircleaner.CleanerService {
 	uidSvc := uid.NewService()
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+
+	labelConv := label.NewConverter()
+	labelRepo := label.NewRepository(labelConv)
+	labelDefConv := labeldef.NewConverter()
+	labelDefRepo := labeldef.NewRepository(labelDefConv)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 
 	client := http.Client{
 		Timeout: cfg.ClientTimeout,
@@ -66,8 +75,12 @@ func createDirCleanerSvc(cfg config, transact persistence.Transactioner) dirclea
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
 		}}
-	cisService := cis.NewCisService(client, cfg.ContextEnrichmentURL, cfg.RequestToken)
-	return dircleaner.NewCleaner(transact, tenantSvc, cisService)
+
+	kubeClient, err := cis.NewKubernetesClient(ctx, cfg.kubeConfig, cfg.kubeClientConfig)
+	exitOnError(err, "Failed to initialize Kubernetes client")
+
+	cisService := cis.NewCisService(client, kubeClient)
+	return dircleaner.NewCleaner(transact, tenantSvc, labelSvc, cisService)
 }
 
 func exitOnError(err error, context string) {

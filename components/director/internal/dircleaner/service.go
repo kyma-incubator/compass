@@ -24,22 +24,29 @@ type TenantService interface {
 	DeleteByExternalTenant(ctx context.Context, externalTenantID string) error
 }
 
+// LabelService missing godoc
+type LabelService interface {
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+}
+
 // CisService missing godoc
 type CisService interface {
-	GetGlobalAccount(ctx context.Context, subaccountID string) (string, error)
+	GetGlobalAccount(ctx context.Context, region string, subaccountID string) (string, error)
 }
 
 type service struct {
 	transact  persistence.Transactioner
 	tenantSvc TenantService
+	labelSvc  LabelService
 	cisSvc    CisService
 }
 
 // NewCleaner missing godoc
-func NewCleaner(transact persistence.Transactioner, tenantSvc TenantService, cisSvc CisService) CleanerService {
+func NewCleaner(transact persistence.Transactioner, tenantSvc TenantService, labelSvc LabelService, cisSvc CisService) CleanerService {
 	return &service{
 		transact:  transact,
 		tenantSvc: tenantSvc,
+		labelSvc:  labelSvc,
 		cisSvc:    cisSvc,
 	}
 }
@@ -55,8 +62,13 @@ func (s *service) Clean(ctx context.Context) error {
 	dirsToDelete := make(map[string]bool)
 
 	for _, subaccount := range allSubaccounts {
+		region, err := s.getRegionLabel(ctx, subaccount.ID)
+		if err != nil {
+			log.C(ctx).Error(err) // check once again
+			continue
+		}
 		log.C(ctx).Infof("Processing subaccount with ID %s", subaccount.ID)
-		globalAccountGUIDFromCis, err := s.cisSvc.GetGlobalAccount(ctx, subaccount.ExternalTenant)
+		globalAccountGUIDFromCis, err := s.cisSvc.GetGlobalAccount(ctx, region, subaccount.ExternalTenant)
 		if err != nil {
 			log.C(ctx).Errorf("Could not get globalAccountGuid for subaacount with ID %s from CIS %v", subaccount.ID, err)
 			continue
@@ -174,4 +186,23 @@ func (s *service) getSubaccounts(ctx context.Context) ([]*model.BusinessTenantMa
 		return nil, err
 	}
 	return allSubaccounts, nil
+}
+
+func (s *service) getRegionLabel(ctx context.Context, id string) (string, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return "", err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Info("Getting region label")
+	regionLabel, err := s.labelSvc.GetByKey(ctx, id, model.TenantLabelableObject, id, "region") // check once again
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting region label for subaccount with id %s", id)
+	}
+	if err = tx.Commit(); err != nil {
+		return "", err
+	}
+	return regionLabel.Value.(string), nil // check once again
 }
