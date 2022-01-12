@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/product"
@@ -32,7 +34,7 @@ func fixEntityProductWithTitle(title string) *product.Entity {
 	return &product.Entity{
 		ID:               productID,
 		OrdID:            ordID,
-		ApplicationID:    appID,
+		ApplicationID:    repo.NewValidNullableString(appID),
 		Title:            title,
 		ShortDescription: "short desc",
 		Vendor:           "vendorID",
@@ -44,7 +46,8 @@ func fixEntityProductWithTitle(title string) *product.Entity {
 			String: correlationIDs,
 			Valid:  true,
 		},
-		Labels: repo.NewValidNullableString("{}"),
+		Labels:              repo.NewValidNullableString("{}"),
+		DocumentationLabels: repo.NewValidNullableString("{}"),
 	}
 }
 
@@ -55,33 +58,50 @@ func fixProductModel() *model.Product {
 func fixProductModelWithTitle(title string) *model.Product {
 	parent := "parent"
 	return &model.Product{
-		ID:               productID,
-		OrdID:            ordID,
-		ApplicationID:    appID,
-		Title:            title,
-		ShortDescription: "short desc",
-		Vendor:           "vendorID",
-		Parent:           &parent,
-		CorrelationIDs:   json.RawMessage(correlationIDs),
-		Labels:           json.RawMessage("{}"),
+		ID:                  productID,
+		OrdID:               ordID,
+		ApplicationID:       str.Ptr(appID),
+		Title:               title,
+		ShortDescription:    "short desc",
+		Vendor:              "vendorID",
+		Parent:              &parent,
+		CorrelationIDs:      json.RawMessage(correlationIDs),
+		Labels:              json.RawMessage("{}"),
+		DocumentationLabels: json.RawMessage("{}"),
+	}
+}
+
+func fixGlobalProductModel() *model.Product {
+	parent := "parent"
+	return &model.Product{
+		ID:                  productID,
+		OrdID:               ordID,
+		Title:               "title",
+		ShortDescription:    "short desc",
+		Vendor:              "vendorID",
+		Parent:              &parent,
+		CorrelationIDs:      json.RawMessage(correlationIDs),
+		Labels:              json.RawMessage("{}"),
+		DocumentationLabels: json.RawMessage("{}"),
 	}
 }
 
 func fixProductModelInput() *model.ProductInput {
 	parent := "parent"
 	return &model.ProductInput{
-		OrdID:            ordID,
-		Title:            "title",
-		ShortDescription: "short desc",
-		Vendor:           "vendorID",
-		Parent:           &parent,
-		CorrelationIDs:   json.RawMessage(correlationIDs),
-		Labels:           json.RawMessage("{}"),
+		OrdID:               ordID,
+		Title:               "title",
+		ShortDescription:    "short desc",
+		Vendor:              "vendorID",
+		Parent:              &parent,
+		CorrelationIDs:      json.RawMessage(correlationIDs),
+		Labels:              json.RawMessage("{}"),
+		DocumentationLabels: json.RawMessage("{}"),
 	}
 }
 
 func fixProductColumns() []string {
-	return []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id"}
+	return []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id", "documentation_labels"}
 }
 
 func fixProductRow() []driver.Value {
@@ -90,9 +110,9 @@ func fixProductRow() []driver.Value {
 
 func fixProductRowWithTitle(title string) []driver.Value {
 	return []driver.Value{ordID, appID, title, "short desc", "vendorID", "parent",
-		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), productID}
+		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), productID, repo.NewValidNullableString("{}")}
 }
 
 func fixProductUpdateArgs() []driver.Value {
-	return []driver.Value{"title", "short desc", "vendorID", "parent", repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs)}
+	return []driver.Value{"title", "short desc", "vendorID", "parent", repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("{}")}
 }

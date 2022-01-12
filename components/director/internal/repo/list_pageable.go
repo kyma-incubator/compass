@@ -21,7 +21,8 @@ type PageableQuerier interface {
 
 // PageableQuerierGlobal is an interface for listing with paging of global entities.
 type PageableQuerierGlobal interface {
-	ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error)
+	ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection) (*pagination.Page, int, error)
+	ListGlobalWithAdditionalConditions(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error)
 }
 
 type universalPageableQuerier struct {
@@ -72,7 +73,7 @@ func (g *universalPageableQuerier) List(ctx context.Context, resourceType resour
 
 	if g.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, additionalConditions...)
-		return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+		return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, And(ConditionTreesFromConditions(additionalConditions)...))
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -82,15 +83,20 @@ func (g *universalPageableQuerier) List(ctx context.Context, resourceType resour
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+	return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, And(ConditionTreesFromConditions(additionalConditions)...))
 }
 
 // ListGlobal lists a page of global entities without tenant isolation.
-func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
-	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, additionalConditions...)
+func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection) (*pagination.Page, int, error) {
+	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, nil)
 }
 
-func (g *universalPageableQuerier) list(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions ...Condition) (*pagination.Page, int, error) {
+// ListGlobalWithAdditionalConditions lists a page of global entities without tenant isolation.
+func (g *universalPageableQuerier) ListGlobalWithAdditionalConditions(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
+	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, conditions)
+}
+
+func (g *universalPageableQuerier) list(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, -1, err
@@ -106,7 +112,7 @@ func (g *universalPageableQuerier) list(ctx context.Context, resourceType resour
 		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
 	}
 
-	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, OrderByParams{}, true)
+	query, args, err := buildSelectQueryFromTree(g.tableName, g.selectedColumns, conditions, OrderByParams{}, true)
 	if err != nil {
 		return nil, -1, errors.Wrap(err, "while building list query")
 	}
@@ -124,17 +130,22 @@ func (g *universalPageableQuerier) list(ctx context.Context, resourceType resour
 		return nil, -1, err
 	}
 
-	hasNextPage := false
-	endCursor := ""
-	if totalCount > offset+dest.Len() {
-		hasNextPage = true
-		endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
-	}
+	hasNextPage, endCursor := g.getNextPageAndCursor(totalCount, offset, pageSize, dest.Len())
 	return &pagination.Page{
 		StartCursor: cursor,
 		EndCursor:   endCursor,
 		HasNextPage: hasNextPage,
 	}, totalCount, nil
+}
+
+func (g *universalPageableQuerier) getNextPageAndCursor(totalCount, offset, pageSize, totalLen int) (bool, string) {
+	hasNextPage := false
+	endCursor := ""
+	if totalCount > offset+totalLen {
+		hasNextPage = true
+		endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
+	}
+	return hasNextPage, endCursor
 }
 
 func (g *universalPageableQuerier) getTotalCount(ctx context.Context, resourceType resource.Type, persist persistence.PersistenceOp, query string, args []interface{}) (int, error) {

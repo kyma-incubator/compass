@@ -25,6 +25,7 @@ type Application struct {
 	Type                  string          `json:"-"`
 	// SystemStatus shows whether the on-premise system is reachable or unreachable
 	SystemStatus *string
+	DocumentationLabels   json.RawMessage `json:"documentationLabels"`
 
 	*BaseEntity
 }
@@ -65,6 +66,9 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	}
 	if update.SystemStatus != nil {
 		app.SystemStatus = update.SystemStatus
+	}
+	if update.DocumentationLabels != nil {
+		app.DocumentationLabels = update.DocumentationLabels
 	}
 }
 
@@ -131,6 +135,7 @@ type ApplicationRegisterInput struct {
 	OrdLabels           json.RawMessage
 	CorrelationIDs      json.RawMessage
 	SystemStatus        *string
+	DocumentationLabels json.RawMessage
 }
 
 // ApplicationRegisterInputWithTemplate missing godoc
@@ -155,11 +160,12 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 			Condition: getApplicationStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: timestamp,
 		},
-		BaseURL:        i.BaseURL,
-		Labels:         i.OrdLabels,
-		CorrelationIDs: i.CorrelationIDs,
-		SystemNumber:   i.SystemNumber,
+		BaseURL:             i.BaseURL,
+		Labels:              i.OrdLabels,
+		CorrelationIDs:      i.CorrelationIDs,
+		SystemNumber:        i.SystemNumber,
 		SystemStatus:   i.SystemStatus,
+		DocumentationLabels: i.DocumentationLabels,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,
@@ -187,6 +193,7 @@ type ApplicationUpdateInput struct {
 	Labels              json.RawMessage
 	CorrelationIDs      json.RawMessage
 	SystemStatus        *string
+	DocumentationLabels json.RawMessage
 }
 
 // ApplicationWithLabel missing godoc

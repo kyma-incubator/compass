@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -394,6 +396,112 @@ func TestPgRepository_List(t *testing.T) {
 	})
 }
 
+func TestPgRepository_ListPageBySearchTerm(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		searchTerm := "name"
+		first := 10
+		endCursor := ""
+		initializedVal := true
+		notInitializedVal := false
+
+		tenantModels := []*model.BusinessTenantMapping{
+			newModelBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal),
+			newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal),
+			newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal),
+		}
+
+		tenantEntities := []*tenantEntity.Entity{
+			newEntityBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal),
+			newEntityBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal),
+			newEntityBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal),
+		}
+
+		tenantPage := &model.BusinessTenantMappingPage{
+			Data: tenantModels,
+			PageInfo: &pagination.Page{
+				StartCursor: "",
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+			TotalCount: len(tenantModels),
+		}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", tenantEntities[0]).Return(tenantModels[0]).Once()
+		mockConverter.On("FromEntity", tenantEntities[1]).Return(tenantModels[1]).Once()
+		mockConverter.On("FromEntity", tenantEntities[2]).Return(tenantModels[2]).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
+			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &initializedVal},
+			{sqlRow: sqlRow{id: "id2", name: "name2", externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
+			{sqlRow: sqlRow{id: "id3", name: "name3", externalTenant: testExternal, parent: sql.NullString{}, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: &notInitializedVal},
+		})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE (status = $1 AND (id::text ILIKE $2 OR external_name ILIKE $3 OR external_tenant ILIKE $4)) ORDER BY external_name LIMIT 10 OFFSET 0`)).
+			WithArgs(tenantEntity.Active, "%name%", "%name%", "%name%").
+			WillReturnRows(rowsToReturn)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT COUNT(*) FROM public.business_tenant_mappings WHERE (status = $1 AND (id::text ILIKE $2 OR external_name ILIKE $3 OR external_tenant ILIKE $4))`)).
+			WithArgs(tenantEntity.Active, "%name%", "%name%", "%name%").
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		result, err := tenantMappingRepo.ListPageBySearchTerm(ctx, searchTerm, first, endCursor)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, tenantPage, result)
+	})
+
+	t.Run("Error when listing", func(t *testing.T) {
+		// GIVEN
+		searchTerm := "name"
+		first := 10
+		endCursor := ""
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE (status = $1 AND (id::text ILIKE $2 OR external_name ILIKE $3 OR external_tenant ILIKE $4)) ORDER BY external_name LIMIT 10 OFFSET 0`)).
+			WithArgs(tenantEntity.Active, "%name%", "%name%", "%name%").
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		result, err := tenantMappingRepo.ListPageBySearchTerm(ctx, searchTerm, first, endCursor)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+		require.Nil(t, result)
+	})
+
+	t.Run("Error when missing persistence context", func(t *testing.T) {
+		// GIVEN
+		searchTerm := "name"
+		first := 10
+		endCursor := ""
+		repo := tenant.NewRepository(nil)
+		ctx := context.TODO()
+
+		// WHEN
+		_, err := repo.ListPageBySearchTerm(ctx, searchTerm, first, endCursor)
+
+		// THEN
+		require.EqualError(t, err, "while listing tenants from DB: Internal Server Error: unable to fetch database from context")
+	})
+}
+
 func TestPgRepository_Update(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
@@ -509,25 +617,18 @@ func TestPgRepository_Update(t *testing.T) {
 			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		appTenantAccesses := fixTenantAccessesForApplication()
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
-			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
+		for range resource.TopLevelEntities {
+			tenantAccesses := fixTenantAccesses()
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
-			WithArgs(testParentID2, appTenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
+			dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
+				WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_applications WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
-			WithArgs(testParentID, appTenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+			dbMock.ExpectExec(`WITH RECURSIVE parents AS \(SELECT t1\.id, t1\.parent FROM business_tenant_mappings t1 WHERE id = \? UNION ALL SELECT t2\.id, t2\.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2\.id = t\.parent\) INSERT INTO (.+) \( tenant_id, id, owner \) \(SELECT parents\.id AS tenant_id, \? as id, \? AS owner FROM parents\)`).
+				WithArgs(testParentID2, tenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		runtimeTenantAccesses := fixTenantAccessesForRuntime()
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_runtimes WHERE tenant_id = $1 AND owner = $2`)).
-			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForRuntimeRow()...))
-
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_runtimes ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
-			WithArgs(testParentID2, runtimeTenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
-
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_runtimes WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
-			WithArgs(testParentID, runtimeTenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+			dbMock.ExpectExec(`WITH RECURSIVE parents AS \(SELECT t1\.id, t1\.parent FROM business_tenant_mappings t1 WHERE id = \$1 UNION ALL SELECT t2\.id, t2\.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2\.id = t\.parent\) DELETE FROM (.+) WHERE id IN \(\$2\) AND owner = true AND tenant_id IN \(SELECT id FROM parents\)`).
+				WithArgs(testParentID, tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+		}
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
@@ -565,7 +666,7 @@ func TestPgRepository_Update(t *testing.T) {
 			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
+		dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
 			WithArgs(testID, true).WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -605,11 +706,11 @@ func TestPgRepository_Update(t *testing.T) {
 			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		appTenantAccesses := fixTenantAccessesForApplication()
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
-			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
+		appTenantAccesses := fixTenantAccesses()
+		dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
+			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
+		dbMock.ExpectExec(`WITH RECURSIVE parents AS \(SELECT t1\.id, t1\.parent FROM business_tenant_mappings t1 WHERE id = \? UNION ALL SELECT t2\.id, t2\.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2\.id = t\.parent\) INSERT INTO (.+) \( tenant_id, id, owner \) \(SELECT parents\.id AS tenant_id, \? as id, \? AS owner FROM parents\)`).
 			WithArgs(testParentID2, appTenantAccesses[0].ResourceID, true).WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -649,14 +750,14 @@ func TestPgRepository_Update(t *testing.T) {
 			WithArgs(testName, testExternal, testParentID2, "account", "Compass", tenantEntity.Active, testID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		appTenantAccesses := fixTenantAccessesForApplication()
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
-			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
+		appTenantAccesses := fixTenantAccesses()
+		dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
+			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
+		dbMock.ExpectExec(`WITH RECURSIVE parents AS \(SELECT t1\.id, t1\.parent FROM business_tenant_mappings t1 WHERE id = \? UNION ALL SELECT t2\.id, t2\.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2\.id = t\.parent\) INSERT INTO (.+) \( tenant_id, id, owner \) \(SELECT parents\.id AS tenant_id, \? as id, \? AS owner FROM parents\)`).
 			WithArgs(testParentID2, appTenantAccesses[0].ResourceID, true).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_applications WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
+		dbMock.ExpectExec(`WITH RECURSIVE parents AS \(SELECT t1\.id, t1\.parent FROM business_tenant_mappings t1 WHERE id = \$1 UNION ALL SELECT t2\.id, t2\.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2\.id = t\.parent\) DELETE FROM (.+) WHERE id IN \(\$2\) AND owner = true AND tenant_id IN \(SELECT id FROM parents\)`).
 			WithArgs(testParentID, appTenantAccesses[0].ResourceID).WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -692,19 +793,15 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		appTenantAccesses := fixTenantAccessesForApplication()
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
-			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
+		for range resource.TopLevelEntities {
+			tenantAccesses := fixTenantAccesses()
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_applications WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
-			WithArgs(testID, appTenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+			dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
+				WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
-		runtimeTenantAccesses := fixTenantAccessesForRuntime()
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_runtimes WHERE tenant_id = $1 AND owner = $2`)).
-			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForRuntimeRow()...))
-
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_runtimes WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
-			WithArgs(testID, runtimeTenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+			dbMock.ExpectExec(`DELETE FROM (.+) WHERE id IN \(\$1\)`).
+				WithArgs(tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+		}
 
 		dbMock.ExpectExec(deleteStatement).
 			WithArgs(testExternal).
@@ -775,7 +872,7 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
+		dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
 			WithArgs(testID, true).WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -807,12 +904,12 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		appTenantAccesses := fixTenantAccessesForApplication()
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
-			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
+		appTenantAccesses := fixTenantAccesses()
+		dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
+			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_applications WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
-			WithArgs(testID, appTenantAccesses[0].ResourceID).WillReturnError(testError)
+		dbMock.ExpectExec(`DELETE FROM (.+) WHERE id IN \(\$1\)`).
+			WithArgs(appTenantAccesses[0].ResourceID).WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := tenant.NewRepository(mockConverter)
@@ -843,19 +940,15 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 			WithArgs(testExternal, tenantEntity.Inactive).
 			WillReturnRows(rowsToReturn)
 
-		appTenantAccesses := fixTenantAccessesForApplication()
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND owner = $2`)).
-			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForApplicationRow()...))
+		for range resource.TopLevelEntities {
+			tenantAccesses := fixTenantAccesses()
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_applications WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
-			WithArgs(testID, appTenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+			dbMock.ExpectQuery(`SELECT tenant_id, id, owner FROM (.+) WHERE tenant_id = \$1 AND owner = \$2`).
+				WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
 
-		runtimeTenantAccesses := fixTenantAccessesForRuntime()
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_runtimes WHERE tenant_id = $1 AND owner = $2`)).
-			WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesForRuntimeRow()...))
-
-		dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_runtimes WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
-			WithArgs(testID, runtimeTenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+			dbMock.ExpectExec(`DELETE FROM (.+) WHERE id IN \(\$1\)`).
+				WithArgs(tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+		}
 
 		dbMock.ExpectExec(deleteStatement).
 			WithArgs(testExternal).WillReturnError(testError)

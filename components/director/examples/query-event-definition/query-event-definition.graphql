@@ -33,6 +33,7 @@ query {
                 expiresAt
               }
               certCommonName
+              accessStrategy
               additionalHeaders
               additionalQueryParams
               requestAuth {

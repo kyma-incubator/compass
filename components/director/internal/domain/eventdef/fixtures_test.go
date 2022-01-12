@@ -95,6 +95,7 @@ func fixFullEventDefinitionModelWithID(id, placeholder string) (model.EventDefin
 		Industry:            json.RawMessage("[]"),
 		Extensible:          json.RawMessage(extensible),
 		Version:             v,
+		DocumentationLabels: json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -242,7 +243,8 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 			DeprecatedSince: repo.NewNullableString(str.Ptr("v1.0")),
 			ForRemoval:      repo.NewValidNullableBool(false),
 		},
-		ResourceHash: repo.NewValidNullableString(resourceHash),
+		ResourceHash:        repo.NewValidNullableString(resourceHash),
+		DocumentationLabels: repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        eventID,
 			Ready:     true,
@@ -258,14 +260,14 @@ func fixEventDefinitionColumns() []string {
 	return []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "documentation_labels"}
 }
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
 	return []driver.Value{id, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, "shortDescription", &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), "visibility", &boolVar,
-		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash)}
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
 }
 
 func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value {
@@ -274,7 +276,7 @@ func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value 
 		repo.NewNullableStringFromJSONRawMessage(event.Tags), repo.NewNullableStringFromJSONRawMessage(event.Countries), event.ReleaseStatus, event.SunsetDate,
 		repo.NewNullableStringFromJSONRawMessage(event.Labels), event.Visibility,
 		event.Disabled, repo.NewNullableStringFromJSONRawMessage(event.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(event.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(event.Industry),
-		event.Version.Value, event.Version.Deprecated, event.Version.DeprecatedSince, event.Version.ForRemoval, event.Ready, event.CreatedAt, event.UpdatedAt, event.DeletedAt, event.Error, repo.NewNullableStringFromJSONRawMessage(event.Extensible), repo.NewNullableStringFromJSONRawMessage(event.Successors), resourceHash}
+		event.Version.Value, event.Version.Deprecated, event.Version.DeprecatedSince, event.Version.ForRemoval, event.Ready, event.CreatedAt, event.UpdatedAt, event.DeletedAt, event.Error, repo.NewNullableStringFromJSONRawMessage(event.Extensible), repo.NewNullableStringFromJSONRawMessage(event.Successors), resourceHash, repo.NewNullableStringFromJSONRawMessage(event.Labels)}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {

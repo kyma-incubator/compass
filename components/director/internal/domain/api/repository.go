@@ -21,15 +21,15 @@ var (
 	apiDefColumns = []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
-		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash"}
+		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "documentation_labels"}
 	idColumns        = []string{"id"}
 	updatableColumns = []string{"package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
-		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash"}
+		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "documentation_labels"}
 )
 
-// APIDefinitionConverter missing godoc
+// APIDefinitionConverter converts APIDefinitions between the model.APIDefinition service-layer representation and the repo-layer representation Entity.
 //go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type APIDefinitionConverter interface {
 	FromEntity(entity *Entity) *model.APIDefinition
@@ -48,7 +48,7 @@ type pgRepository struct {
 	conv                  APIDefinitionConverter
 }
 
-// NewRepository missing godoc
+// NewRepository returns a new entity responsible for repo-layer APIDefinitions operations.
 func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:          repo.NewSingleGetter(apiDefTable, apiDefColumns),
@@ -63,15 +63,15 @@ func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	}
 }
 
-// APIDefCollection missing godoc
+// APIDefCollection is an array of Entities
 type APIDefCollection []Entity
 
-// Len missing godoc
+// Len returns the length of the collection
 func (r APIDefCollection) Len() int {
 	return len(r)
 }
 
-// ListByBundleIDs missing godoc
+// ListByBundleIDs retrieves all APIDefinitions for a Bundle in pages. Each Bundle is extracted from the input array of bundleIDs. The input bundleReferences array is used for getting the appropriate APIDefinition IDs.
 func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error) {
 	apiDefIDs := make([]string, 0, len(bundleRefs))
 	for _, ref := range bundleRefs {
@@ -122,7 +122,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	return apiDefPages, nil
 }
 
-// ListByApplicationID missing godoc
+// ListByApplicationID lists all APIDefinitions for a given application ID.
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error) {
 	apiCollection := APIDefCollection{}
 	if err := r.lister.List(ctx, resource.API, tenantID, &apiCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
@@ -136,7 +136,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 	return apis, nil
 }
 
-// GetByID missing godoc
+// GetByID retrieves the APIDefinition with matching ID from the Compass storage.
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
 	var apiDefEntity Entity
 	err := r.singleGetter.Get(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
@@ -149,13 +149,13 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return apiDefModel, nil
 }
 
-// GetForBundle missing godoc
+// GetForBundle gets an APIDefinition by its id.
 // the bundleID remains for backwards compatibility above in the layers; we are sure that the correct API will be fetched because there can't be two records with the same ID
 func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error) {
 	return r.GetByID(ctx, tenant, id)
 }
 
-// Create missing godoc
+// Create creates an APIDefinition.
 func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.APIDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -170,7 +170,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.AP
 	return nil
 }
 
-// CreateMany missing godoc
+// CreateMany creates many APIDefinitions.
 func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*model.APIDefinition) error {
 	for index, item := range items {
 		entity := r.conv.ToEntity(item)
@@ -184,7 +184,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*m
 	return nil
 }
 
-// Update missing godoc
+// Update updates an APIDefinition.
 func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.APIDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -195,17 +195,17 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.AP
 	return r.updater.UpdateSingle(ctx, resource.API, tenant, entity)
 }
 
-// Exists missing godoc
+// Exists checks if an APIDefinition with a given ID exists.
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// Delete missing godoc
+// Delete deletes an APIDefinition by its ID.
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// DeleteAllByBundleID missing godoc
+// DeleteAllByBundleID deletes all APIDefinitions for a given bundle ID.
 func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
 	subqueryConditions := repo.Conditions{
 		repo.NewEqualCondition(bundleColumn, bundleID),

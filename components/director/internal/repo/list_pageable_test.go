@@ -134,10 +134,10 @@ func TestListPageable(t *testing.T) {
 
 		rows := sqlmock.NewRows(appColumns).
 			AddRow(appID, appName, appDescription)
-		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE name = $1 AND description != $2 AND %s ORDER BY id LIMIT 2 OFFSET 0", appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$3")))).
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE (name = $1 AND description != $2 AND %s) ORDER BY id LIMIT 2 OFFSET 0", appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$3")))).
 			WithArgs(appName, appDescription2, tenantID).
 			WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE name = $1 AND description != $2 AND %s", appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$3")))).
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE (name = $1 AND description != $2 AND %s)", appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$3")))).
 			WithArgs(appName, appDescription2, tenantID).
 			WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -338,10 +338,10 @@ func TestListPageableWithEmbeddedTenant(t *testing.T) {
 
 		rows := sqlmock.NewRows([]string{"id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name = $2 AND age != $3 ORDER BY id LIMIT 2 OFFSET 0")).
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id, first_name, last_name, age FROM users WHERE (tenant_id = $1 AND first_name = $2 AND age != $3) ORDER BY id LIMIT 2 OFFSET 0")).
 			WithArgs(tenantID, "Peter", 18).
 			WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND first_name = $2 AND age != $3")).
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE (tenant_id = $1 AND first_name = $2 AND age != $3)")).
 			WithArgs(tenantID, "Peter", 18).
 			WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -548,10 +548,10 @@ func TestListPageableGlobal(t *testing.T) {
 
 		rows := sqlmock.NewRows([]string{"id", "first_name", "last_name", "age"}).
 			AddRow(peterRow...)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT id, first_name, last_name, age FROM users WHERE first_name = $1 AND age != $2 ORDER BY id LIMIT 2 OFFSET 0")).
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id, first_name, last_name, age FROM users WHERE (first_name = $1 AND age != $2) ORDER BY id LIMIT 2 OFFSET 0")).
 			WithArgs("Peter", 18).
 			WillReturnRows(rows)
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE first_name = $1 AND age != $2")).
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM users WHERE (first_name = $1 AND age != $2)")).
 			WithArgs("Peter", 18).
 			WillReturnRows(sqlmock.NewRows([]string{""}).AddRow(100))
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -562,7 +562,7 @@ func TestListPageableGlobal(t *testing.T) {
 			repo.NewNotEqualCondition("age", 18),
 		}
 
-		actualPage, actualTotal, err := sut.ListGlobal(ctx, 2, "", "id", &dest, conditions...)
+		actualPage, actualTotal, err := sut.ListGlobalWithAdditionalConditions(ctx, 2, "", "id", &dest, repo.And(repo.ConditionTreesFromConditions(conditions)...))
 		require.NoError(t, err)
 		assert.Equal(t, 100, actualTotal)
 		assert.Len(t, dest, 1)

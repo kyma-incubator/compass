@@ -40,6 +40,7 @@ type Entity struct {
 	CustomImplementationStandardDescription sql.NullString `db:"custom_implementation_standard_description"`
 	Extensible                              sql.NullString `db:"extensible"`
 	ResourceHash                            sql.NullString `db:"resource_hash"`
+	DocumentationLabels                     sql.NullString `db:"documentation_labels"`
 
 	*repo.BaseEntity
 	version.Version

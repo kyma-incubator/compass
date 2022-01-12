@@ -1,7 +1,9 @@
 deployment:
   minReplicas: 1
   maxReplicas: 1
-  targetCPUUtilizationPercentage: 80
+  autoscaling:
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 75
   image:
     pullPolicy: IfNotPresent
   resources: {}
@@ -13,7 +15,6 @@ deployment:
 
 gateway:
   enabled: false # ISTIO related resources(istio gateway)
-  manageCerts: true # ISTIO related resources(istio gateway)
   auditlog: # COMPASS related resources(compass gateway)
     enabled: false
     authMode: "basic"

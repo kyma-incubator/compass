@@ -64,7 +64,7 @@ global:
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
-    - name: TestIntegrationSystemSubaccount
+    - name: TestCertificateSubaccount
       id: 123e4567-e89b-12d3-a456-426614174001
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
@@ -76,41 +76,45 @@ global:
       id: 08b6da37-e911-48fb-a0cb-fa635a6c4321
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestIntegrationSystemManagedSubaccount
+      id: 3cfcdd62-320d-403b-b66a-4ee3cdd06947
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestIntegrationSystemManagedAccount
       id: 7e8ab2e3-3bb4-42e3-92b2-4e0bf48559d3
       type: account
-      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
 
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2125"
+      version: "PR-2164"
     connectivity_adapter:
       dir:
-      version: "PR-2082"
+      version: "PR-2163"
     pairing_adapter:
       dir:
-      version: "PR-2118"
+      version: "PR-2163"
     director:
       dir:
-      version: "PR-2117"
+      version: "PR-2169"
     gateway:
       dir:
-      version: "PR-2077"
+      version: "PR-2163"
     operations_controller:
       dir:
-      version: "PR-2118"
+      version: "PR-2163"
     ord_service:
       dir:
-      version: "PR-48"
+      version: "PR-56"
     schema_migrator:
       dir:
-      version: "PR-2117"
+      version: "PR-2169"
     system_broker:
       dir:
-      version: "PR-2084"
+      version: "PR-2163"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -118,13 +122,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2118"
+      version: "PR-2169"
     console:
       dir:
-      version: "PR-47"
+      version: "PR-51"
     e2e_tests:
       dir:
-      version: "PR-2125"
+      version: "PR-2169"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -235,7 +239,7 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_level": "account", "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=123e4567-e89b-12d3-a456-426614174001, CN=compass"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}]'
 
   system_broker:
     enabled: true
@@ -262,6 +266,7 @@ global:
         oauth:
           host: compass-gateway-auth-oauth
     mtls:
+      manageCerts: true
       host: compass-gateway-mtls
       certSecret: compass-gateway-mtls-certs
       external:
@@ -458,7 +463,7 @@ global:
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "" # It's empty because in local setup we use connector CA which didn't have Locality property
-    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=123e4567-e89b-12d3-a456-426614174001/L=%s/CN=%s"
+    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=f8075207-1478-4a80-bd26-24a4785a2bfd/L=%s/CN=%s"
     commonName: "compass"
     locality: "local"
     certSvcApiPath: "/cert"
@@ -474,8 +479,8 @@ global:
       externalClientCertSecret:
         name: "external-client-certificate"
         namespace: compass-system
+        certKey: tls.crt
         keyKey: tls.key
-        crtKey: tls.crt
     rotationCronjob:
       name: "external-certificate-rotation"
       schedule: "*/1 * * * *" # Executes every minute
@@ -500,6 +505,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
+    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8085/.well-known/open-resource-discovery
 
   systemFetcher:
     enabled: false
@@ -534,13 +540,15 @@ global:
       client:
         skipSSLValidation: false
     oauth:
-      client: ""
+      client: "client_id"
       secret: ""
-      tokenEndpointProtocol: ""
-      tokenBaseUrl: ""
-      tokenPath: ""
-      scopesClaim: ""
-      tenantHeaderName: ""
+      tokenEndpointProtocol: "https"
+      tokenBaseUrl: "compass-external-services-mock-sap-mtls"
+      tokenPath: "/cert/token"
+      scopesClaim: "scopes"
+      tenantHeaderName: "x-zid"
+      tokenRequestTimeout: 10s
+      skipSSLValidation: true
     secret:
       name: "compass-system-fetcher-secret"
       clientIdKey: client-id
@@ -594,7 +602,7 @@ global:
         discriminatorValue: ""
         detailsField: "details"
         entityTypeField: "entityType"
-        parentIDField: "parentGuid"
+        globalAccountID: "gaID"
         regionField: "region"
         movedSubaccountTargetField: "targetGlobalAccountGUID"
         movedSubaccountSourceField: "sourceGlobalAccountGUID"
@@ -621,14 +629,20 @@ global:
     unsecuredPort: 8082
     basicSecuredPort: 8083
     oauthSecuredPort: 8084
+    ordGlobalRegistryPort: 8085
     certSecuredHost: compass-external-services-mock-sap-mtls
+    unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials
 
   tests:
+    http:
+      client:
+        skipSSLValidation:
+          director: false
+          ordService: false
+          connectivityAdapter: true
     ordService:
-      skipPattern: ""
-    director:
       skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
@@ -641,8 +655,6 @@ global:
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1
-    skipTLSVerify: true
-
     token:
       server:
         enabled: false

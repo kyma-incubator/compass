@@ -18,6 +18,7 @@ package tests
 
 import (
 	"context"
+	"crypto/rsa"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -34,7 +35,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
@@ -49,9 +49,7 @@ const (
 	odataV2APIProtocol = "odata-v2"
 )
 
-func TestORDService(stdT *testing.T) {
-	t := testingx.NewT(stdT)
-
+func TestORDService(t *testing.T) {
 	ctx := context.Background()
 
 	defaultTestTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
@@ -138,7 +136,9 @@ func TestORDService(stdT *testing.T) {
 
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
 	require.NoError(t, err)
-	extIssuerCertHttpClient := extIssuerCertClient(t, subTenantID)
+
+	clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
+	extIssuerCertHttpClient := extIssuerCertClient(clientKey, rawCertChain, testConfig.SkipSSLValidation)
 
 	t.Run("401 when requests to ORD Service are unsecured", func(t *testing.T) {
 		makeRequestWithStatusExpect(t, unsecuredHttpClient, testConfig.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
@@ -258,10 +258,9 @@ func TestORDService(stdT *testing.T) {
 	})
 
 	for _, resource := range []string{"vendors", "tombstones", "products"} { // This tests assert integrity between ORD Service JPA model and our Database model
-		t.Run(fmt.Sprintf("Requesting %s returns empty", resource), func(t *testing.T) {
+		t.Run(fmt.Sprintf("Requesting %s", resource), func(t *testing.T) {
 			respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/%s?$format=json", testConfig.ORDServiceURL, resource), map[string][]string{tenantHeader: {defaultTestTenant}})
 			require.True(t, gjson.Get(respBody, "value").Exists())
-			require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 		})
 	}
 
@@ -741,23 +740,21 @@ func makeRequestWithStatusExpect(t require.TestingT, httpClient *http.Client, ur
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus, testConfig.ORDServiceDefaultResponseType)
 }
 
-// extIssuerCertClient returns http client configured with client certificate manually signed by connector's CA
+// extIssuerCertClient returns http client configured with provided client certificate and key
 // and a subject matching external issuer's subject contract.
-func extIssuerCertClient(t require.TestingT, subTenantID string) *http.Client {
-	clientKey, certChain := certs.IssueExternalIssuerCertificate(t, testConfig.CA.Certificate, testConfig.CA.Key, subTenantID)
-
+func extIssuerCertClient(clientKey *rsa.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
 	return &http.Client{
 		Timeout: 20 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				Certificates: []tls.Certificate{
 					{
-						Certificate: certChain,
+						Certificate: rawCertChain,
 						PrivateKey:  clientKey,
 					},
 				},
 				ClientAuth:         tls.RequireAndVerifyClientCert,
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: skipSSLValidation,
 			},
 		},
 	}

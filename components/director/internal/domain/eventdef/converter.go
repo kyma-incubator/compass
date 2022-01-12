@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// VersionConverter missing godoc
+// VersionConverter converts Version between model.Version, graphql.Version and repo-layer version.Version
 //go:generate mockery --name=VersionConverter --output=automock --outpkg=automock --case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
@@ -19,7 +19,7 @@ type VersionConverter interface {
 	ToEntity(version model.Version) version.Version
 }
 
-// SpecConverter missing godoc
+// SpecConverter converts Specifications between the model.Spec service-layer representation and the graphql-layer representation graphql.EventSpec.
 //go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore
 type SpecConverter interface {
 	ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec, error)
@@ -31,12 +31,12 @@ type converter struct {
 	sc SpecConverter
 }
 
-// NewConverter missing godoc
+// NewConverter returns a new Converter that can later be used to make the conversions between the GraphQL, service, and repository layer representations of a Compass EventDefinition.
 func NewConverter(vc VersionConverter, sc SpecConverter) *converter {
 	return &converter{vc: vc, sc: sc}
 }
 
-// ToGraphQL missing godoc
+// ToGraphQL converts the provided service-layer representation of an EventDefinition to the graphql-layer one.
 func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.EventDefinition, error) {
 	if in == nil {
 		return nil, nil
@@ -70,7 +70,7 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundl
 	}, nil
 }
 
-// MultipleToGraphQL missing godoc
+// MultipleToGraphQL converts the provided service-layer representations of an EventDefinition to the graphql-layer ones.
 func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.EventDefinition, error) {
 	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
 		return nil, errors.New("different events, specs and bundleRefs count provided")
@@ -93,7 +93,7 @@ func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*mode
 	return events, nil
 }
 
-// MultipleInputFromGraphQL missing godoc
+// MultipleInputFromGraphQL converts the provided graphql-layer representations of an EventDefinition to the service-layer ones.
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error) {
 	eventDefs := make([]*model.EventDefinitionInput, 0, len(in))
 	specs := make([]*model.SpecInput, 0, len(in))
@@ -111,7 +111,7 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput)
 	return eventDefs, specs, nil
 }
 
-// InputFromGraphQL missing godoc
+// InputFromGraphQL converts the provided graphql-layer representation of an EventDefinition to the service-layer one.
 func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, *model.SpecInput, error) {
 	if in == nil {
 		return nil, nil, nil
@@ -130,7 +130,7 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 	}, spec, nil
 }
 
-// FromEntity missing godoc
+// FromEntity converts the provided Entity repo-layer representation of an EventDefinition to the service-layer representation model.EventDefinition.
 func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 	return &model.EventDefinition{
 		ApplicationID:       entity.ApplicationID,
@@ -157,6 +157,7 @@ func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 		Version:             c.vc.FromEntity(entity.Version),
 		Extensible:          repo.JSONRawMessageFromNullableString(entity.Extensible),
 		ResourceHash:        repo.StringPtrFromNullableString(entity.ResourceHash),
+		DocumentationLabels: repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -168,7 +169,7 @@ func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 	}
 }
 
-// ToEntity missing godoc
+// ToEntity converts the provided service-layer representation of an EventDefinition to the repository-layer one.
 func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 	return &Entity{
 		ApplicationID:       eventModel.ApplicationID,
@@ -195,6 +196,7 @@ func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 		Version:             c.convertVersionToEntity(eventModel.Version),
 		Extensible:          repo.NewNullableStringFromJSONRawMessage(eventModel.Extensible),
 		ResourceHash:        repo.NewNullableString(eventModel.ResourceHash),
+		DocumentationLabels: repo.NewNullableStringFromJSONRawMessage(eventModel.DocumentationLabels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        eventModel.ID,
 			Ready:     eventModel.Ready,

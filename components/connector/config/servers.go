@@ -3,7 +3,10 @@ package config
 import (
 	"net/http"
 
-	"github.com/99designs/gqlgen/handler"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	handler2 "github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
@@ -22,10 +25,12 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 	}
 
 	externalExecutableSchema := externalschema.NewExecutableSchema(gqlInternalCfg)
+	gqlServer := handler.NewDefaultServer(externalExecutableSchema)
+	gqlServer.Use(log.NewGqlLoggingInterceptor())
 
 	externalRouter := mux.NewRouter()
-	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
+	externalRouter.HandleFunc("/", handler2.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
+	externalRouter.HandleFunc(cfg.APIEndpoint, gqlServer.ServeHTTP)
 	externalRouter.HandleFunc("/healthz", healthz.NewHTTPHandler())
 
 	externalRouter.Use(middlewares...)
@@ -51,7 +56,7 @@ func PrepareHydratorServer(cfg Config, CSRSubjectConsts certificates.CSRSubjectC
 	externalCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer,
 		oathkeeper.ExternalCertIssuerSubjectMatcher(externalSubjectConsts), subjectProcessor.AuthIDFromSubjectFunc(), subjectProcessor.AuthSessionExtraFromSubjectFunc())
 	connectorCertHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
-		oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), cert.GetCommonName, nil)
+		oathkeeper.ConnectorCertificateSubjectMatcher(CSRSubjectConsts), cert.GetCommonName, subjectProcessor.EmptyAuthSessionExtraFunc())
 
 	validationHydrator := oathkeeper.NewValidationHydrator(revokedCertsRepository, connectorCertHeaderParser, externalCertHeaderParser)
 

@@ -17,6 +17,7 @@ spec:
   template:
     metadata:
       annotations:
+        restartOnNewInstallationMarker: {{ randAlphaNum 5 | quote }} # Restarts the deployment on a new Helm installation. (https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments)
         {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
         sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
         {{ end }}
@@ -147,6 +148,11 @@ spec:
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName | trimPrefix "/" | replace "/" ", " | quote }}
             - name: APP_INFO_CERT_ISSUER
               value: {{ .Values.global.externalCertConfiguration.issuer }}
+            - name: APP_INFO_ROOT_CA
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.gateway.mtls.external.certSecret }}-cacert
+                  key: cacert
             {{- if .Values.deployment.pairingAdapterConfigMap }}
             - name: APP_PAIRING_ADAPTER_SRC
               value: /pairing-adapters/config.json
@@ -197,6 +203,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.distinguishLabel }}
             - name: APP_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
+            - name: APP_SELF_REGISTER_LABEL_KEY_PATTERN
+              value: "^{{ .Values.global.director.selfRegister.label }}$"
             - name: APP_SELF_REGISTER_LABEL_VALUE_PREFIX
               value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
             - name: APP_SELF_REGISTER_RESPONSE_KEY
@@ -209,8 +217,14 @@ spec:
               value: {{ .Values.global.director.selfRegister.tenantQueryParam }}
             - name: APP_SELF_REGISTER_REQUEST_BODY_PATTERN
               value: {{ .Values.global.director.selfRegister.requestBodyPattern | quote }}
+            - name: APP_SELF_REGISTER_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.http.client.skipSSLValidation }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

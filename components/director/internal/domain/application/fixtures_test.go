@@ -116,6 +116,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		Labels:              json.RawMessage("[]"),
 		CorrelationIDs:      json.RawMessage("[]"),
 		SystemStatus:        str.Ptr("reachable"),
+		DocumentationLabels: json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -172,6 +173,7 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		Labels:              repo.NewValidNullableString("[]"),
 		CorrelationIDs:      repo.NewValidNullableString("[]"),
 		SystemStatus:        repo.NewValidNullableString("reachable"),
+		DocumentationLabels: repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -498,5 +500,5 @@ func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 }
 
 func fixAppColumns() []string {
-	return []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids"}
+	return []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
 }

@@ -41,6 +41,7 @@ type EventDefinition struct {
 	Extensible          json.RawMessage
 	ResourceHash        *string
 	Version             *Version
+	DocumentationLabels json.RawMessage
 	*BaseEntity
 }
 
@@ -84,6 +85,8 @@ type EventDefinitionInput struct {
 	Extensible               json.RawMessage               `json:"extensible"`
 	ResourceDefinitions      []*EventResourceDefinition    `json:"resourceDefinitions"`
 	PartOfConsumptionBundles []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
+	DefaultConsumptionBundle *string                       `json:"defaultConsumptionBundle"`
+	DocumentationLabels      json.RawMessage               `json:"documentationLabels"`
 
 	*VersionInput `hash:"ignore"`
 }
@@ -171,6 +174,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 		Industry:            e.Industry,
 		Version:             e.VersionInput.ToVersion(),
 		Extensible:          e.Extensible,
+		DocumentationLabels: e.DocumentationLabels,
 		ResourceHash:        hash,
 		BaseEntity: &BaseEntity{
 			ID:    id,

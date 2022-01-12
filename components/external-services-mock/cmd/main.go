@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	ord_global_registry "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator/globalregistry"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/selfreg"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/tenantfetcher"
 
@@ -56,10 +58,11 @@ type config struct {
 // This is needed in order to ensure that every call in the context of an application happens in a single server isolated from others.
 // Prior to this separation there were cases when tests succeeded (false positive) due to mistakenly configured baseURL resulting in different flow - different access strategy returned.
 type ORDServers struct {
-	CertPort      int `envconfig:"default=8081"`
-	UnsecuredPort int `envconfig:"default=8082"`
-	BasicPort     int `envconfig:"default=8083"`
-	OauthPort     int `envconfig:"default=8084"`
+	CertPort           int `envconfig:"default=8081"`
+	UnsecuredPort      int `envconfig:"default=8082"`
+	BasicPort          int `envconfig:"default=8083"`
+	OauthPort          int `envconfig:"default=8084"`
+	GlobalRegistryPort int `envconfig:"default=8085"`
 
 	CertSecuredBaseURL string
 }
@@ -67,6 +70,9 @@ type ORDServers struct {
 type OAuthConfig struct {
 	ClientID     string `envconfig:"APP_CLIENT_ID"`
 	ClientSecret string `envconfig:"APP_CLIENT_SECRET"`
+
+	Scopes       string `envconfig:"APP_OAUTH_SCOPES"`
+	TenantHeader string `envconfig:"APP_OAUTH_TENANT_HEADER"`
 }
 
 type BasicCredentialsConfig struct {
@@ -113,8 +119,12 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
 
 	// Oauth server handlers
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, key)
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
 	router.HandleFunc("/secured/oauth/token", tokenHandler.Generate).Methods(http.MethodPost)
+	// TODO The mtls_token_provider sends client id and scopes in url.values form. When the change for fetching xsuaa token
+	// with certificate is merged GenerateWithCredentialsFromReqBody should be used for testing the flows that include fetching
+	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.
+	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
 	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
@@ -128,14 +138,16 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	configChangeSvc := configurationchange.NewService()
 	configChangeHandler := configurationchange.NewConfigurationHandler(configChangeSvc, logger)
 	configChangeRouter := router.PathPrefix("/audit-log/v2/configuration-changes").Subrouter()
-	configChangeRouter.Use(oauthMiddleware(&key.PublicKey))
+	configChangeRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
 
 	// System fetcher handlers
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
-	router.HandleFunc("/systemfetcher/systems", systemFetcherHandler.HandleFunc)
+	systemsRouter := router.PathPrefix("/systemfetcher/systems").Subrouter()
+	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator(cfg.DefaultTenant, cfg.ClientID, cfg.Scopes)))
+	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
 	tenantFetcherHandler := tenantfetcher.NewHandler()
@@ -172,7 +184,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 
 	oauthRouter := router.PathPrefix("/external-api/secured/oauth").Subrouter()
-	oauthRouter.Use(oauthMiddleware(&key.PublicKey))
+	oauthRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	oauthRouter.HandleFunc("/spec", apispec.HandleFunc)
 
 	basicAuthRouter := router.PathPrefix("/external-api/secured/basic").Subrouter()
@@ -186,11 +198,11 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 
 	// non-isolated and unsecured ORD handlers. NOTE: Do not host document endpoints on this default server in order to ensure tests separation.
 	// Unsecured config pointing to cert secured document
-	router.HandleFunc("/cert", ord_aggregator.HandleFuncOrdConfig(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
+	router.HandleFunc("/cert", ord_aggregator.HandleFuncOrdConfigWithDocPath(cfg.ORDServers.CertSecuredBaseURL, "/open-resource-discovery/v1/documents/example2", "sap:cmp-mtls:v1"))
 
 	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.SelfRegConfig)
 	selfRegRouter := router.PathPrefix(cfg.SelfRegConfig.Path).Subrouter()
-	selfRegRouter.Use(oauthMiddleware(&key.PublicKey))
+	selfRegRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	selfRegRouter.HandleFunc("", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
 	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
 
@@ -206,6 +218,7 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
+	servers = append(servers, initGlobalRegistryORDServer(cfg))
 	return servers
 }
 
@@ -215,11 +228,12 @@ func initCertSecuredServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
 
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, key)
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
 	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
 
 	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
@@ -236,15 +250,29 @@ func initUnsecuredORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
-	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfig(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "open"))
+	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "/open-resource-discovery/v1/documents/example2", "open"))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "open"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "open"))
 
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.UnsecuredPort),
+		Handler: router,
+	}
+}
+
+func initGlobalRegistryORDServer(cfg config) *http.Server {
+	router := mux.NewRouter()
+
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_global_registry.HandleFuncOrdConfig())
+
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_global_registry.HandleFuncOrdDocument())
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.GlobalRegistryPort),
 		Handler: router,
 	}
 }
@@ -271,7 +299,7 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	router := mux.NewRouter()
 
 	configRouter := router.PathPrefix("/.well-known").Subrouter()
-	configRouter.Use(oauthMiddleware(&key.PublicKey))
+	configRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	configRouter.HandleFunc("/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.OauthPort), "open"))
@@ -285,7 +313,7 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	}
 }
 
-func oauthMiddleware(key *rsa.PublicKey) func(next http.Handler) http.Handler {
+func oauthMiddleware(key *rsa.PublicKey, validateClaims func(claims *oauth.Claims) bool) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -299,10 +327,16 @@ func oauthMiddleware(key *rsa.PublicKey) func(next http.Handler) http.Handler {
 			}
 
 			token := strings.TrimPrefix(authHeader, "Bearer ")
-			if _, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) {
+			parsed := &oauth.Claims{}
+
+			if _, err := jwt.ParseWithClaims(token, parsed, func(_ *jwt.Token) (interface{}, error) {
 				return key, nil
 			}); err != nil {
 				httphelpers.WriteError(w, errors.Wrap(err, "Invalid Bearer token"), http.StatusUnauthorized)
+				return
+			}
+			if !validateClaims(parsed) {
+				httphelpers.WriteError(w, errors.New("Could not validate claims"), http.StatusUnauthorized)
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -364,5 +398,14 @@ func stopServer(server *http.Server) {
 
 	if err := server.Shutdown(ctx); err != nil {
 		log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
+	}
+}
+
+func noopClaimsValidator(_ *oauth.Claims) bool {
+	return true
+}
+func getClaimsValidator(expectedTenant, expectedClient, expectedScopes string) func(*oauth.Claims) bool {
+	return func(claims *oauth.Claims) bool {
+		return claims.Tenant == expectedTenant
 	}
 }

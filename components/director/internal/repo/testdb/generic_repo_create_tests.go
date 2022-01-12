@@ -33,8 +33,8 @@ type SQLQueryDetails struct {
 	InvalidRowsProvider func() []*sqlmock.Rows
 }
 
-// RepoCreateTestSuite represents a generic test suite for repository Create method of any entity that has externally managed tenants in m2m table/view.
-// This test suite is not suitable for global entities or entities with embedded tenant in them.
+// RepoCreateTestSuite represents a generic test suite for repository Create method of any global entity or entity that has externally managed tenants in m2m table/view.
+// This test suite is not suitable for entities with embedded tenant in them.
 type RepoCreateTestSuite struct {
 	Name                      string
 	SQLQueryDetails           []SQLQueryDetails
@@ -45,11 +45,17 @@ type RepoCreateTestSuite struct {
 	NilModelEntity            interface{}
 	TenantID                  string
 	DisableConverterErrorTest bool
+	MethodName                string
 	IsTopLevelEntity          bool
+	IsGlobal                  bool
 }
 
 // Run runs the generic repo create test suite
 func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
+	if len(suite.MethodName) == 0 {
+		suite.MethodName = "Create"
+	}
+
 	return t.Run(suite.Name, func(t *testing.T) {
 		testErr := errors.New("test error")
 
@@ -64,7 +70,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 
 			// WHEN
-			err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
+			err := callCreate(pgRepository, suite.MethodName, ctx, suite.TenantID, suite.ModelEntity)
 
 			// THEN
 			require.NoError(t, err)
@@ -72,7 +78,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 			convMock.AssertExpectations(t)
 		})
 
-		if !suite.IsTopLevelEntity {
+		if !suite.IsTopLevelEntity && !suite.IsGlobal {
 			t.Run("error when parent access is missing", func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -83,7 +89,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 				// WHEN
-				err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
+				err := callCreate(pgRepository, suite.MethodName, ctx, suite.TenantID, suite.ModelEntity)
 				// THEN
 				require.Error(t, err)
 				require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
@@ -105,7 +111,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 				convMock.On("ToEntity", suite.ModelEntity).Return(suite.DBEntity, nil).Once()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 				// WHEN
-				err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
+				err := callCreate(pgRepository, suite.MethodName, ctx, suite.TenantID, suite.ModelEntity)
 				// THEN
 				require.Error(t, err)
 				if suite.SQLQueryDetails[i].IsSelect {
@@ -129,7 +135,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 				convMock.On("ToEntity", suite.ModelEntity).Return(nil, testErr).Once()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 				// WHEN
-				err := callCreate(pgRepository, ctx, suite.TenantID, suite.ModelEntity)
+				err := callCreate(pgRepository, suite.MethodName, ctx, suite.TenantID, suite.ModelEntity)
 				// THEN
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testErr.Error())
@@ -144,7 +150,7 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 			convMock := suite.ConverterMockProvider()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 			// WHEN
-			err := callCreate(pgRepository, ctx, suite.TenantID, suite.NilModelEntity)
+			err := callCreate(pgRepository, suite.MethodName, ctx, suite.TenantID, suite.NilModelEntity)
 			// THEN
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), "Internal Server Error")
@@ -155,8 +161,13 @@ func (suite *RepoCreateTestSuite) Run(t *testing.T) bool {
 
 // callCreate calls the Create method of the given repository.
 // In order to do this for all the different repository implementations we need to do it via reflection.
-func callCreate(repo interface{}, ctx context.Context, tenant string, modelEntity interface{}) error {
-	results := reflect.ValueOf(repo).MethodByName("Create").Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(tenant), reflect.ValueOf(modelEntity)})
+func callCreate(repo interface{}, methodName string, ctx context.Context, tenant string, modelEntity interface{}) error {
+	args := []reflect.Value{reflect.ValueOf(ctx)}
+	if len(tenant) > 0 {
+		args = append(args, reflect.ValueOf(tenant))
+	}
+	args = append(args, reflect.ValueOf(modelEntity))
+	results := reflect.ValueOf(repo).MethodByName(methodName).Call(args)
 	if len(results) != 1 {
 		panic("Create should return one argument")
 	}

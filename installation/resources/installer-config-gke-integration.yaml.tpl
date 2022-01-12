@@ -18,10 +18,9 @@ data:
   global.systemFetcher.systemsAPIFilterTenantCriteriaPattern: "tenant=%s"
   global.systemFetcher.systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] },{"Name": "temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
   global.systemFetcher.oauth.client: "client_id"
-  global.systemFetcher.oauth.secret: "client_secret"
-  global.systemFetcher.oauth.tokenBaseUrl: "compass-external-services-mock.compass-system.svc.cluster.local:8080"
-  global.systemFetcher.oauth.tokenPath: "/secured/oauth/token"
-  global.systemFetcher.oauth.tokenEndpointProtocol: "http"
+  global.systemFetcher.oauth.tokenBaseUrl: "compass-external-services-mock-sap-mtls"
+  global.systemFetcher.oauth.tokenPath: "/cert/token"
+  global.systemFetcher.oauth.tokenEndpointProtocol: "https"
   global.systemFetcher.oauth.scopesClaim: "scopes"
   global.systemFetcher.oauth.tenantHeaderName: "x-zid"
   global.migratorJob.nodeSelectorEnabled: "true"
@@ -34,6 +33,8 @@ data:
   global.systemFetcher.http.client.skipSSLValidation: "true"
   global.ordAggregator.http.client.skipSSLValidation: "true"
   global.http.client.skipSSLValidation: "true"
+  global.tests.http.client.skipSSLValidation.director: "true"
+  global.tests.http.client.skipSSLValidation.ordService: "true"
 
   global.tenantFetchers.account-fetcher.enabled: "true"
   global.tenantFetchers.account-fetcher.dbPool.maxOpenConnections: "1"

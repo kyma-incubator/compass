@@ -6,44 +6,47 @@ import (
 
 // Product missing godoc
 type Product struct {
-	ID               string
-	OrdID            string
-	ApplicationID    string
-	Title            string
-	ShortDescription string
-	Vendor           string
-	Parent           *string
-	CorrelationIDs   json.RawMessage
-	Labels           json.RawMessage
+	ID                  string
+	OrdID               string
+	ApplicationID       *string
+	Title               string
+	ShortDescription    string
+	Vendor              string
+	Parent              *string
+	CorrelationIDs      json.RawMessage
+	Labels              json.RawMessage
+	DocumentationLabels json.RawMessage
 }
 
 // ProductInput missing godoc
 type ProductInput struct {
-	OrdID            string          `json:"ordId"`
-	Title            string          `json:"title"`
-	ShortDescription string          `json:"shortDescription"`
-	Vendor           string          `json:"vendor"`
-	Parent           *string         `json:"parent"`
-	CorrelationIDs   json.RawMessage `json:"correlationIds"`
-	Labels           json.RawMessage `json:"labels"`
+	OrdID               string          `json:"ordId"`
+	Title               string          `json:"title"`
+	ShortDescription    string          `json:"shortDescription"`
+	Vendor              string          `json:"vendor"`
+	Parent              *string         `json:"parent"`
+	CorrelationIDs      json.RawMessage `json:"correlationIds"`
+	Labels              json.RawMessage `json:"labels"`
+	DocumentationLabels json.RawMessage `json:"documentationLabels"`
 }
 
 // ToProduct missing godoc
-func (i *ProductInput) ToProduct(id, appID string) *Product {
+func (i *ProductInput) ToProduct(id string, appID *string) *Product {
 	if i == nil {
 		return nil
 	}
 
 	return &Product{
-		ID:               id,
-		OrdID:            i.OrdID,
-		ApplicationID:    appID,
-		Title:            i.Title,
-		ShortDescription: i.ShortDescription,
-		Vendor:           i.Vendor,
-		Parent:           i.Parent,
-		CorrelationIDs:   i.CorrelationIDs,
-		Labels:           i.Labels,
+		ID:                  id,
+		OrdID:               i.OrdID,
+		ApplicationID:       appID,
+		Title:               i.Title,
+		ShortDescription:    i.ShortDescription,
+		Vendor:              i.Vendor,
+		Parent:              i.Parent,
+		CorrelationIDs:      i.CorrelationIDs,
+		Labels:              i.Labels,
+		DocumentationLabels: i.DocumentationLabels,
 	}
 }
 
@@ -55,4 +58,5 @@ func (p *Product) SetFromUpdateInput(update ProductInput) {
 	p.Parent = update.Parent
 	p.CorrelationIDs = update.CorrelationIDs
 	p.Labels = update.Labels
+	p.DocumentationLabels = update.DocumentationLabels
 }

@@ -105,7 +105,7 @@ type ReqData struct {
 type ExtraData struct {
 	InternalConsumerID string
 	ConsumerType       model.SystemAuthReferenceObjectType
-	AccessLevel        tenantEntity.Type
+	AccessLevels       []tenantEntity.Type
 }
 
 // NewReqData missing godoc
@@ -141,7 +141,7 @@ func (d *ReqData) GetExternalTenantID() (string, error) {
 		return tenantVal, nil
 	}
 
-	if tenantVal, ok := d.Body.Extra[ExternalTenantKey]; ok {
+	if tenantVal, ok := d.Body.Extra[ExternalTenantKey]; ok && tenantVal != "" {
 		tenant, err := str.Cast(tenantVal)
 		if err != nil {
 			return "", errors.Wrapf(err, "while parsing the value for key=%s", ExternalTenantKey)
@@ -248,31 +248,51 @@ func (d *ReqData) ExtractCoordinates() (authenticator.Coordinates, bool, error) 
 	return coords, true, nil
 }
 
-// GetAccessLevelFromExtra gets access level from body extra if it exists.
-func (d *ReqData) GetAccessLevelFromExtra() tenantEntity.Type {
-	if d.Body.Extra == nil {
-		return ""
+// IsIntegrationSystemFlow returns true if a tenant header is missing or is provided, but it differs from
+// the client ID found in the certificate
+func (d *ReqData) IsIntegrationSystemFlow() bool {
+	clientIDFromCert := d.Body.Header.Get(ClientIDCertKey)
+	tenant, err := d.GetExternalTenantID()
+	if err != nil {
+		return false
 	}
-	if _, found := d.Body.Extra[cert.AccessLevelExtraField]; !found {
-		return ""
-	}
-	return tenantEntity.Type(fmt.Sprint(d.Body.Extra[cert.AccessLevelExtraField]))
+	return clientIDFromCert != tenant && d.ConsumerType() == model.IntegrationSystemReference
 }
 
-// GetConsumerTypeFromExtra gets consumer type from body extra if it exists.
-func (d *ReqData) GetConsumerTypeFromExtra() model.SystemAuthReferenceObjectType {
+// TenantAccessLevels gets the granted tenant access levels from body extra if they exist.
+func (d *ReqData) TenantAccessLevels() []tenantEntity.Type {
 	if d.Body.Extra == nil {
-		return ""
+		return nil
+	}
+	if _, found := d.Body.Extra[cert.AccessLevelsExtraField]; !found {
+		return nil
+	}
+	accessLevelsRaw, ok := d.Body.Extra[cert.AccessLevelsExtraField].([]interface{})
+	if !ok {
+		return nil
+	}
+	accessLevels := make([]tenantEntity.Type, 0)
+	for _, al := range accessLevelsRaw {
+		accessLevels = append(accessLevels, tenantEntity.Type(fmt.Sprintf("%s", al)))
+	}
+	return accessLevels
+}
+
+// ConsumerType gets consumer type from body extra if it exists.
+func (d *ReqData) ConsumerType() model.SystemAuthReferenceObjectType {
+	defaultConsumerType := model.RuntimeReference
+	if d.Body.Extra == nil {
+		return defaultConsumerType
 	}
 	consumerType, found := d.Body.Extra[cert.ConsumerTypeExtraField]
 	if !found {
-		return ""
+		return defaultConsumerType
 	}
 	return model.SystemAuthReferenceObjectType(fmt.Sprint(consumerType))
 }
 
-// GetInternalConsumerIDFromExtra gets internal consumer id from body extra if it exists.
-func (d *ReqData) GetInternalConsumerIDFromExtra() string {
+// InternalConsumerID gets internal consumer id from body extra if it exists.
+func (d *ReqData) InternalConsumerID() string {
 	if d.Body.Extra == nil {
 		return ""
 	}
@@ -284,13 +304,9 @@ func (d *ReqData) GetInternalConsumerIDFromExtra() string {
 
 // GetExtraDataWithDefaults gets body extra.
 func (d *ReqData) GetExtraDataWithDefaults() ExtraData {
-	consumerType := d.GetConsumerTypeFromExtra()
-	if consumerType == "" {
-		consumerType = model.RuntimeReference
-	}
 	return ExtraData{
-		InternalConsumerID: d.GetInternalConsumerIDFromExtra(),
-		ConsumerType:       consumerType,
-		AccessLevel:        d.GetAccessLevelFromExtra(),
+		InternalConsumerID: d.InternalConsumerID(),
+		ConsumerType:       d.ConsumerType(),
+		AccessLevels:       d.TenantAccessLevels(),
 	}
 }

@@ -25,8 +25,10 @@ func (ep eventsPage) getEventsDetails() [][]byte {
 	tenantDetails := make([][]byte, 0)
 	gjson.GetBytes(ep.payload, ep.fieldMapping.EventsField).ForEach(func(key gjson.Result, event gjson.Result) bool {
 		entityType := event.Get(ep.fieldMapping.EntityTypeField)
+		globalAccountGUID := event.Get(ep.fieldMapping.GlobalAccountGUIDField)
 		details := event.Get(ep.fieldMapping.DetailsField).Map()
 		details[ep.fieldMapping.EntityTypeField] = entityType
+		details[ep.fieldMapping.GlobalAccountKey] = globalAccountGUID
 		allDetails := make(map[string]interface{})
 		for key, result := range details {
 			switch result.Type {
@@ -198,9 +200,9 @@ func constructSubaccountTenant(jsonPayload, name, subdomain, externalTenant stri
 		return nil, invalidFieldFormatError(ep.fieldMapping.RegionField)
 	}
 	region := regionField.String()
-	parentIDField := gjson.Get(jsonPayload, ep.fieldMapping.ParentIDField)
+	parentIDField := gjson.Get(jsonPayload, ep.fieldMapping.GlobalAccountKey)
 	if !parentIDField.Exists() {
-		return nil, invalidFieldFormatError(ep.fieldMapping.ParentIDField)
+		return nil, invalidFieldFormatError(ep.fieldMapping.GlobalAccountKey)
 	}
 	parentID := parentIDField.String()
 	return &model.BusinessTenantMappingInput{

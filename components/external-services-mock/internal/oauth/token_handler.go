@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -16,9 +17,10 @@ import (
 )
 
 type handler struct {
-	expectedSecret string
-	expectedID     string
-	signingKey     *rsa.PrivateKey
+	expectedSecret   string
+	expectedID       string
+	tenantHeaderName string
+	signingKey       *rsa.PrivateKey
 }
 
 func NewHandler(expectedSecret, expectedID string) *handler {
@@ -28,11 +30,12 @@ func NewHandler(expectedSecret, expectedID string) *handler {
 	}
 }
 
-func NewHandlerWithSigningKey(expectedSecret, expectedID string, signingKey *rsa.PrivateKey) *handler {
+func NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeaderName string, signingKey *rsa.PrivateKey) *handler {
 	return &handler{
-		expectedSecret: expectedSecret,
-		expectedID:     expectedID,
-		signingKey:     signingKey,
+		expectedSecret:   expectedSecret,
+		expectedID:       expectedID,
+		tenantHeaderName: tenantHeaderName,
+		signingKey:       signingKey,
 	}
 }
 
@@ -40,23 +43,28 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	authorization := r.Header.Get("authorization")
 	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
+		log.C(r.Context()).Errorf("client secret not found in header: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "client secret not found in header"), http.StatusBadRequest)
 		return
 	}
 
 	if h.expectedID != id || h.expectedSecret != secret {
+		log.C(r.Context()).Error("client secret or client id doesn't match expected")
 		httphelpers.WriteError(writer, errors.New("client secret or client id doesn't match expected"), http.StatusBadRequest)
 		return
 	}
-
 	h.GenerateWithoutCredentials(writer, r)
 }
 
 func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http.Request) {
 	claims := map[string]interface{}{}
 
+	tenant := r.Header.Get(h.tenantHeaderName)
+	claims["x-zid"] = tenant
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
 		return
 	}
@@ -78,6 +86,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	}
 
 	if err != nil {
+		log.C(r.Context()).Errorf("while creating oauth token: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while creating oauth token"), http.StatusInternalServerError)
 		return
 	}
@@ -85,6 +94,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	response := createResponse(output)
 	payload, err := json.Marshal(response)
 	if err != nil {
+		log.C(r.Context()).Errorf("while marshalling response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
@@ -93,6 +103,60 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write(payload)
 	if err != nil {
+		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter, r *http.Request) {
+	claims := map[string]interface{}{}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
+		return
+	}
+
+	if form, err := url.ParseQuery(string(body)); err != nil {
+		log.C(r.Context()).Errorf("Cannot parse form. Error: %s", err)
+	} else {
+		client := form.Get("client_id")
+		scopes := form.Get("scopes")
+		tenant := r.Header.Get(h.tenantHeaderName)
+		claims["client_id"] = client
+		claims["scopes"] = scopes
+		claims["x-zid"] = tenant
+	}
+
+	var output string
+	if h.signingKey != nil {
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims(claims))
+		output, err = token.SignedString(h.signingKey)
+	} else {
+		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims(claims))
+		output, err = token.SigningString()
+	}
+
+	if err != nil {
+		log.C(r.Context()).Errorf("while creating oauth token: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while creating oauth token"), http.StatusInternalServerError)
+		return
+	}
+
+	response := createResponse(output)
+	payload, err := json.Marshal(response)
+	if err != nil {
+		log.C(r.Context()).Errorf("while marshalling response: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
+		return
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+	_, err = writer.Write(payload)
+	if err != nil {
+		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
 		return
 	}

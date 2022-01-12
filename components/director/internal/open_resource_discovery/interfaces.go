@@ -43,8 +43,8 @@ type BundleReferenceService interface {
 // APIService is responsible for the service-layer API operations.
 //go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
 type APIService interface {
-	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64) (string, error)
-	UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64) error
+	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput, targetURLsPerBundle map[string]string, apiHash uint64, defaultBundleID string) (string, error)
+	UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundle map[string]string, defaultTargetURLPerBundleToBeCreated map[string]string, bundleIDsToBeDeleted []string, apiHash uint64, defaultBundleID string) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error)
 }
@@ -52,8 +52,8 @@ type APIService interface {
 // EventService is responsible for the service-layer Event operations.
 //go:generate mockery --name=EventService --output=automock --outpkg=automock --case=underscore
 type EventService interface {
-	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64) (string, error)
-	UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsForCreation []string, bundleIDsForDeletion []string, eventHash uint64) error
+	Create(ctx context.Context, appID string, bundleID, packageID *string, in model.EventDefinitionInput, specs []*model.SpecInput, bundleIDs []string, eventHash uint64, defaultBundleID string) (string, error)
+	UpdateInManyBundles(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, eventHash uint64, defaultBundleID string) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error)
 }
@@ -86,6 +86,15 @@ type ProductService interface {
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Product, error)
 }
 
+// GlobalProductService is responsible for the service-layer operations for Global Product (with NULL app_id) without tenant isolation.
+//go:generate mockery --name=GlobalProductService --output=automock --outpkg=automock --case=underscore
+type GlobalProductService interface {
+	CreateGlobal(ctx context.Context, in model.ProductInput) (string, error)
+	UpdateGlobal(ctx context.Context, id string, in model.ProductInput) error
+	DeleteGlobal(ctx context.Context, id string) error
+	ListGlobal(ctx context.Context) ([]*model.Product, error)
+}
+
 // VendorService is responsible for the service-layer Vendor operations.
 //go:generate mockery --name=VendorService --output=automock --outpkg=automock --case=underscore
 type VendorService interface {
@@ -93,6 +102,15 @@ type VendorService interface {
 	Update(ctx context.Context, id string, in model.VendorInput) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Vendor, error)
+}
+
+// GlobalVendorService is responsible for the service-layer operations for Global Vendors (with NULL app_id) without tenant isolation.
+//go:generate mockery --name=GlobalVendorService --output=automock --outpkg=automock --case=underscore
+type GlobalVendorService interface {
+	CreateGlobal(ctx context.Context, in model.VendorInput) (string, error)
+	UpdateGlobal(ctx context.Context, id string, in model.VendorInput) error
+	DeleteGlobal(ctx context.Context, id string) error
+	ListGlobal(ctx context.Context) ([]*model.Vendor, error)
 }
 
 // TombstoneService is responsible for the service-layer Tombstone operations.

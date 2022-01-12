@@ -6,31 +6,23 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-
-	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
-
-	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	httptransport "github.com/go-openapi/runtime/client"
-	hydraClient "github.com/ory/hydra-client-go/client"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
-
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/healthcheck"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -40,6 +32,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
@@ -48,15 +41,18 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/time"
+	hydraClient "github.com/ory/hydra-client-go/client"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
@@ -102,16 +98,27 @@ func NewRootResolver(
 	tokenLength int,
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
+	cache certloader.Cache,
 ) *RootResolver {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 	}
-	caller := securehttp.NewCaller(&graphql.OAuthCredentialData{
+
+	oauthCredentials := &authpkg.OAuthCredentials{
 		ClientID:     selfRegConfig.ClientID,
 		ClientSecret: selfRegConfig.ClientSecret,
-		URL:          selfRegConfig.URL + selfRegConfig.OauthTokenPath,
-	}, selfRegConfig.ClientTimeout)
+		TokenURL:     selfRegConfig.URL + selfRegConfig.OauthTokenPath,
+	}
+
+	config := securehttp.CallerConfig{
+		Credentials:       oauthCredentials,
+		ClientTimeout:     selfRegConfig.ClientTimeout,
+		SkipSSLValidation: selfRegConfig.SkipSSLValidation,
+		Cache:             cache,
+	}
+
+	caller := securehttp.NewCaller(config)
 
 	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)
 	hydra := hydraClient.New(transport, nil)
@@ -182,7 +189,7 @@ func NewRootResolver(
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, featuresConfig.ProtectedLabelPattern, tenantSvc)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern)
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.Admin)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
@@ -202,7 +209,7 @@ func NewRootResolver(
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		formation:          formation.NewResolver(transact, formationSvc, formationConv),
-		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager),
+		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc),
 		runtimeContext:     runtimectx.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
@@ -450,9 +457,9 @@ func (r *queryResolver) IntegrationSystem(ctx context.Context, id string) (*grap
 	return r.intSys.IntegrationSystem(ctx, id)
 }
 
-// Tenants missing godoc
-func (r *queryResolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
-	return r.tenant.Tenants(ctx)
+// Tenants fetches tenants by page and search term
+func (r *queryResolver) Tenants(ctx context.Context, first *int, after *graphql.PageCursor, searchTerm *string) (*graphql.TenantPage, error) {
+	return r.tenant.Tenants(ctx, first, after, searchTerm)
 }
 
 // AutomaticScenarioAssignmentForScenario missing godoc

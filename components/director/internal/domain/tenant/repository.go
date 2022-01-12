@@ -34,6 +34,7 @@ const (
 
 var (
 	idColumn                  = "id"
+	idColumnCasted            = "id::text"
 	externalNameColumn        = "external_name"
 	externalTenantColumn      = "external_tenant"
 	parentColumn              = "parent"
@@ -45,6 +46,7 @@ var (
 	insertColumns      = []string{idColumn, externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}
 	conflictingColumns = []string{externalTenantColumn}
 	updateColumns      = []string{externalNameColumn}
+	searchColumns      = []string{idColumnCasted, externalNameColumn, externalTenantColumn}
 )
 
 // Converter converts tenants between the model.BusinessTenantMapping service-layer representation of a tenant and the repo-layer representation tenant.Entity.
@@ -55,13 +57,14 @@ type Converter interface {
 }
 
 type pgRepository struct {
-	upserter           repo.UpserterGlobal
-	unsafeCreator      repo.UnsafeCreator
-	existQuerierGlobal repo.ExistQuerierGlobal
-	singleGetterGlobal repo.SingleGetterGlobal
-	listerGlobal       repo.ListerGlobal
-	updaterGlobal      repo.UpdaterGlobal
-	deleterGlobal      repo.DeleterGlobal
+	upserter              repo.UpserterGlobal
+	unsafeCreator         repo.UnsafeCreator
+	existQuerierGlobal    repo.ExistQuerierGlobal
+	singleGetterGlobal    repo.SingleGetterGlobal
+	pageableQuerierGlobal repo.PageableQuerierGlobal
+	listerGlobal          repo.ListerGlobal
+	updaterGlobal         repo.UpdaterGlobal
+	deleterGlobal         repo.DeleterGlobal
 
 	conv Converter
 }
@@ -69,14 +72,15 @@ type pgRepository struct {
 // NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		upserter:           repo.NewUpserterGlobal(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
-		unsafeCreator:      repo.NewUnsafeCreator(resource.Tenant, tableName, insertColumns, conflictingColumns),
-		existQuerierGlobal: repo.NewExistQuerierGlobal(resource.Tenant, tableName),
-		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
-		listerGlobal:       repo.NewListerGlobal(resource.Tenant, tableName, insertColumns),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
-		deleterGlobal:      repo.NewDeleterGlobal(resource.Tenant, tableName),
-		conv:               conv,
+		upserter:              repo.NewUpserterGlobal(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
+		unsafeCreator:         repo.NewUnsafeCreator(resource.Tenant, tableName, insertColumns, conflictingColumns),
+		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.Tenant, tableName),
+		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
+		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.Tenant, tableName, insertColumns),
+		listerGlobal:          repo.NewListerGlobal(resource.Tenant, tableName, insertColumns),
+		updaterGlobal:         repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, parentColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
+		deleterGlobal:         repo.NewDeleterGlobal(resource.Tenant, tableName),
+		conv:                  conv,
 	}
 }
 
@@ -146,13 +150,35 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}
 
-	items := make([]*model.BusinessTenantMapping, 0, len(entityCollection))
+	return r.multipleFromEntities(entityCollection), nil
+}
 
-	for _, entity := range entityCollection {
-		tmModel := r.conv.FromEntity(&entity)
-		items = append(items, tmModel)
+// ListPageBySearchTerm retrieves a page of tenants from the Compass storage filtered by a search term.
+func (r *pgRepository) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
+	searchTermRegex := fmt.Sprintf("%%%s%%", searchTerm)
+
+	var entityCollection tenant.EntityCollection
+	likeConditions := make([]repo.Condition, 0, len(searchColumns))
+	for _, searchColumn := range searchColumns {
+		likeConditions = append(likeConditions, repo.NewLikeCondition(searchColumn, searchTermRegex))
 	}
-	return items, nil
+
+	conditions := repo.And(
+		&repo.ConditionTree{Operand: repo.NewEqualCondition(statusColumn, tenant.Active)},
+		repo.Or(repo.ConditionTreesFromConditions(likeConditions)...))
+
+	page, totalCount, err := r.pageableQuerierGlobal.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, externalNameColumn, &entityCollection, conditions)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing tenants from DB")
+	}
+
+	items := r.multipleFromEntities(entityCollection)
+
+	return &model.BusinessTenantMappingPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page,
+	}, nil
 }
 
 // ListByExternalTenants retrieves all tenants with matching external ID from the Compass storage.
@@ -192,7 +218,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 	}
 
 	if tntFromDB.Parent != model.Parent {
-		for _, topLevelEntity := range resource.TopLevelEntities {
+		for topLevelEntity := range resource.TopLevelEntities {
 			m2mTable, ok := topLevelEntity.TenantAccessTable()
 			if !ok {
 				return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
@@ -243,7 +269,7 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 		return err
 	}
 
-	for _, topLevelEntity := range resource.TopLevelEntities {
+	for topLevelEntity, topLevelEntityTable := range resource.TopLevelEntities {
 		m2mTable, ok := topLevelEntity.TenantAccessTable()
 		if !ok {
 			return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
@@ -262,8 +288,9 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 				resourceIDs = append(resourceIDs, ta.ResourceID)
 			}
 
-			if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, tnt.ID, resourceIDs); err != nil {
-				return errors.Wrapf(err, "while deleting tenant accesses for the tenant %s", tnt.ID)
+			deleter := repo.NewDeleterGlobal(topLevelEntity, topLevelEntityTable)
+			if err := deleter.DeleteManyGlobal(ctx, repo.Conditions{repo.NewInConditionForStringValues("id", resourceIDs)}); err != nil {
+				return errors.Wrapf(err, "while deleting resources owned by tenant %s", tnt.ID)
 			}
 		}
 	}
@@ -327,4 +354,15 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	}
 
 	return dest.TenantID, nil
+}
+
+func (r *pgRepository) multipleFromEntities(entities tenant.EntityCollection) []*model.BusinessTenantMapping {
+	items := make([]*model.BusinessTenantMapping, 0, len(entities))
+
+	for _, entity := range entities {
+		tmModel := r.conv.FromEntity(&entity)
+		items = append(items, tmModel)
+	}
+
+	return items
 }

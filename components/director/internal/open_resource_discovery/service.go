@@ -37,11 +37,12 @@ type Service struct {
 	tombstoneSvc       TombstoneService
 	tenantSvc          TenantService
 
-	ordClient Client
+	globalRegistrySvc GlobalRegistryService
+	ordClient         Client
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, client Client) *Service {
+func NewAggregatorService(transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
 	return &Service{
 		transact:           transact,
 		appSvc:             appSvc,
@@ -57,12 +58,26 @@ func NewAggregatorService(transact persistence.Transactioner, labelRepo labelRep
 		vendorSvc:          vendorSvc,
 		tombstoneSvc:       tombstoneSvc,
 		tenantSvc:          tenantSvc,
+		globalRegistrySvc:  globalRegistrySvc,
 		ordClient:          client,
 	}
 }
 
 // SyncORDDocuments performs resync of ORD information provided via ORD documents for each application
 func (s *Service) SyncORDDocuments(ctx context.Context) error {
+	globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while synchronizing global resources: %s. Proceeding with already existing global resources...", err)
+		globalResourcesOrdIDs, err = s.globalRegistrySvc.ListGlobalResources(ctx)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("Error while listing existing global resource: %s. Proceeding with empty globalResourceOrdIDs... Validation of Documents relying on global resources might fail.", err)
+		}
+	}
+
+	if globalResourcesOrdIDs == nil {
+		globalResourcesOrdIDs = make(map[string]bool)
+	}
+
 	pageCount := 1
 	pageSize := 200
 
@@ -75,7 +90,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 			return errors.Wrapf(err, "error while fetching application page number %d", pageCount)
 		}
 		for _, app := range page.Data {
-			if err := s.processApp(ctx, app); err != nil {
+			if err := s.processApp(ctx, app, globalResourcesOrdIDs); err != nil {
 				return errors.Wrapf(err, "error while processing app %q", app.ID)
 			}
 		}
@@ -125,7 +140,7 @@ func (s *Service) listAppPage(ctx context.Context, pageSize int, cursor string) 
 	return page, tx.Commit()
 }
 
-func (s *Service) processApp(ctx context.Context, app *model.Application) error {
+func (s *Service) processApp(ctx context.Context, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -160,7 +175,7 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 	}
 	if len(documents) > 0 {
 		log.C(ctx).Info("Processing ORD documents")
-		if err := s.processDocuments(ctx, app.ID, baseURL, documents); err != nil {
+		if err := s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs); err != nil {
 			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
 		} else {
 			log.C(ctx).Info("Successfully processed ORD documents")
@@ -170,13 +185,7 @@ func (s *Service) processApp(ctx context.Context, app *model.Application) error 
 	return nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents) error {
-	// TODO: Currently it isn't mandatory Vendor resources to be declared in the Documents because there is a concept of a central registry from where Vendors will be fetched once.
-	// However, until this registry concept is production ready, we should make sure that if no SAP Vendor resource is explicitly declared across all Documents of a System Instance to
-	// assign it once for it so that all resources referencing that SAP Vendor will not fail.
-	// NOTE: to be deleted once the concept of central registry for Vendors fetching is productive
-	assignSAPVendor(documents)
-
+func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool) error {
 	apiDataFromDB, eventDataFromDB, packageDataFromDB, err := s.fetchResources(ctx, appID)
 	if err != nil {
 		return err
@@ -187,7 +196,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	if err := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes); err != nil {
+	if err := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes, globalResourcesOrdIDs); err != nil {
 		return errors.Wrap(err, "invalid documents")
 	}
 
@@ -452,6 +461,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 		return equalStrings(apisFromDB[i].OrdID, api.OrdID)
 	})
 
+	defaultConsumptionBundleID := extractDefaultConsumptionBundle(bundlesFromDB, api.DefaultConsumptionBundle)
 	defaultTargetURLPerBundle := extractAllBundleReferencesForAPI(bundlesFromDB, api)
 
 	var packageID *string
@@ -467,7 +477,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 	}
 
 	if !isAPIFound {
-		_, err := s.apiSvc.Create(ctx, appID, nil, packageID, api, specs, defaultTargetURLPerBundle, apiHash)
+		_, err := s.apiSvc.Create(ctx, appID, nil, packageID, api, specs, defaultTargetURLPerBundle, apiHash, defaultConsumptionBundleID)
 		return err
 	}
 
@@ -482,7 +492,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 	// in case of API update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
 	defaultTargetURLPerBundleForCreation := extractAllBundleReferencesForCreation(defaultTargetURLPerBundle, allBundleIDsForAPI)
 
-	if err := s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash); err != nil {
+	if err := s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID); err != nil {
 		return err
 	}
 	if api.VersionInput.Value != apisFromDB[i].Version.Value {
@@ -502,6 +512,8 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 	i, isEventFound := searchInSlice(len(eventsFromDB), func(i int) bool {
 		return equalStrings(eventsFromDB[i].OrdID, event.OrdID)
 	})
+
+	defaultConsumptionBundleID := extractDefaultConsumptionBundle(bundlesFromDB, event.DefaultConsumptionBundle)
 
 	bundleIDsFromBundleReference := make([]string, 0)
 	for _, br := range event.PartOfConsumptionBundles {
@@ -525,7 +537,7 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 	}
 
 	if !isEventFound {
-		_, err := s.eventSvc.Create(ctx, appID, nil, packageID, event, specs, bundleIDsFromBundleReference, eventHash)
+		_, err := s.eventSvc.Create(ctx, appID, nil, packageID, event, specs, bundleIDsFromBundleReference, eventHash, defaultConsumptionBundleID)
 		return err
 	}
 
@@ -554,7 +566,7 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 		}
 	}
 
-	if err := s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsForCreation, bundleIDsForDeletion, eventHash); err != nil {
+	if err := s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultConsumptionBundleID); err != nil {
 		return err
 	}
 	if event.VersionInput.Value != eventsFromDB[i].Version.Value {
@@ -739,9 +751,26 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 		ShortDescription:               in.ShortDescription,
 		Links:                          in.Links,
 		Labels:                         in.Labels,
+		DocumentationLabels:            in.DocumentationLabels,
 		CredentialExchangeStrategies:   in.CredentialExchangeStrategies,
 		CorrelationIDs:                 in.CorrelationIDs,
 	}
+}
+
+// extractDefaultConsumptionBundle converts the defaultConsumptionBundle which is bundle ORD_ID into internal bundle_id
+func extractDefaultConsumptionBundle(bundlesFromDB []*model.Bundle, defaultConsumptionBundle *string) string {
+	var bundleID string
+	if defaultConsumptionBundle == nil {
+		return bundleID
+	}
+
+	for _, bndl := range bundlesFromDB {
+		if equalStrings(bndl.OrdID, defaultConsumptionBundle) {
+			bundleID = bndl.ID
+			break
+		}
+	}
+	return bundleID
 }
 
 func extractAllBundleReferencesForAPI(bundlesFromDB []*model.Bundle, api model.APIDefinitionInput) map[string]string {
@@ -784,22 +813,6 @@ func extractBundleReferencesForDeletion(allBundleIDsForAPI []string, defaultTarg
 	}
 
 	return bundleIDsToBeDeleted
-}
-
-func assignSAPVendor(documents Documents) {
-	for _, doc := range documents {
-		for _, vendor := range doc.Vendors {
-			if vendor.OrdID == SapVendor {
-				return
-			}
-		}
-	}
-
-	sapVendor := model.VendorInput{
-		OrdID: SapVendor,
-		Title: SapTitle,
-	}
-	documents[0].Vendors = append(documents[0].Vendors, &sapVendor)
 }
 
 func equalStrings(first, second *string) bool {

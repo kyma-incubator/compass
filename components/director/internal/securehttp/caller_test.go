@@ -3,23 +3,27 @@ package securehttp_test
 import (
 	"encoding/base64"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"golang.org/x/oauth2"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 const (
 	testClientID        = "client-id"
+	testClientIDKey     = "client_id"
+	testGrantType       = "client_credentials"
+	testGrantTypeKey    = "grant_type"
 	testClientSecret    = "client-secret"
 	testUser            = "user"
 	testPassword        = "pass"
@@ -27,16 +31,27 @@ const (
 	basicPrefix         = "Basic "
 	oauthPrefix         = "Bearer "
 	authorizationHeader = "Authorization"
+	testScopes          = "scopes"
+	testScopesKey       = "scope"
 )
 
 func TestCaller_Call(t *testing.T) {
-	oauthServer := httptest.NewServer(getTestOauthServer(t))
-	oauthCredentials := &graphql.OAuthCredentialData{
+	oauthServerExpectingCredentialsFromHeader := httptest.NewServer(getTestOauthServer(t, requireClientCredentialsFromHeader))
+	oauthCredentialsWithSecret := &auth.OAuthCredentials{
 		ClientID:     testClientID,
 		ClientSecret: testClientSecret,
-		URL:          oauthServer.URL,
+		TokenURL:     oauthServerExpectingCredentialsFromHeader.URL,
+		Scopes:       testScopes,
 	}
-	basicCredentials := &graphql.BasicCredentialData{
+
+	oauthServerExpectingCredentialsFromBody := httptest.NewServer(getTestOauthServer(t, requireClientCredentialsFromBody))
+	oauthCredentialsWithoutSecret := &auth.OAuthCredentials{
+		ClientID: testClientID,
+		TokenURL: oauthServerExpectingCredentialsFromBody.URL,
+		Scopes:   testScopes,
+	}
+
+	basicCredentials := &auth.BasicCredentials{
 		Username: testUser,
 		Password: testPassword,
 	}
@@ -44,12 +59,16 @@ func TestCaller_Call(t *testing.T) {
 	testCases := []struct {
 		Name        string
 		Server      *httptest.Server
-		Credentials graphql.CredentialData
+		Config      securehttp.CallerConfig
 		ExpectedErr error
 	}{
 		{
-			Name:        "Success for oauth credentials",
-			Credentials: oauthCredentials,
+			Name: "Success for oauth credentials with secret",
+			Config: securehttp.CallerConfig{
+				Credentials:       oauthCredentialsWithSecret,
+				ClientTimeout:     time.Second,
+				SkipSSLValidation: true,
+			},
 			ExpectedErr: nil,
 			Server: httptest.NewServer(http.HandlerFunc(
 				func(w http.ResponseWriter, req *http.Request) {
@@ -60,8 +79,27 @@ func TestCaller_Call(t *testing.T) {
 			),
 		},
 		{
-			Name:        "Success for basic credentials",
-			Credentials: basicCredentials,
+			Name: "Success for oauth credentials without secret",
+			Config: securehttp.CallerConfig{
+				Credentials:       oauthCredentialsWithoutSecret,
+				ClientTimeout:     time.Second,
+				SkipSSLValidation: true,
+			},
+			ExpectedErr: nil,
+			Server: httptest.NewServer(http.HandlerFunc(
+				func(w http.ResponseWriter, req *http.Request) {
+					token := req.Header.Get(authorizationHeader)
+					token = strings.TrimPrefix(token, oauthPrefix)
+					require.Equal(t, testToken, token)
+				}),
+			),
+		},
+		{
+			Name: "Success for basic credentials",
+			Config: securehttp.CallerConfig{
+				Credentials:   basicCredentials,
+				ClientTimeout: time.Second,
+			},
 			ExpectedErr: nil,
 			Server: httptest.NewServer(http.HandlerFunc(
 				func(w http.ResponseWriter, req *http.Request) {
@@ -73,7 +111,7 @@ func TestCaller_Call(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			caller := securehttp.NewCaller(testCase.Credentials, time.Second)
+			caller := securehttp.NewCaller(testCase.Config)
 			request, err := http.NewRequest(http.MethodGet, testCase.Server.URL, nil)
 			require.NoError(t, err)
 
@@ -88,10 +126,9 @@ func TestCaller_Call(t *testing.T) {
 	}
 }
 
-func getTestOauthServer(t *testing.T) http.HandlerFunc {
+func getTestOauthServer(t *testing.T, assertCredentials func(t *testing.T, r *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		credsStr := getBase64EncodedCredentials(t, req, basicPrefix)
-		require.Equal(t, testClientID+":"+testClientSecret, credsStr)
+		assertCredentials(t, req)
 
 		err := json.NewEncoder(w).Encode(oauth2.Token{
 			AccessToken: testToken,
@@ -99,6 +136,17 @@ func getTestOauthServer(t *testing.T) http.HandlerFunc {
 		})
 		require.NoError(t, err)
 	}
+}
+
+func requireClientCredentialsFromHeader(t *testing.T, req *http.Request) {
+	credsStr := getBase64EncodedCredentials(t, req, basicPrefix)
+	require.Equal(t, testClientID+":"+testClientSecret, credsStr)
+}
+
+func requireClientCredentialsFromBody(t *testing.T, req *http.Request) {
+	requestBody, err := ioutil.ReadAll(req.Body)
+	require.NoError(t, err)
+	require.Equal(t, testClientIDKey+"="+testClientID+"&"+testGrantTypeKey+"="+testGrantType+"&"+testScopesKey+"="+testScopes, string(requestBody))
 }
 
 func getBase64EncodedCredentials(t *testing.T, r *http.Request, prefix string) string {

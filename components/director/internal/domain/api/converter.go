@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-// VersionConverter missing godoc
+// VersionConverter converts Version between model.Version, graphql.Version and repo-layer version.Version
 //go:generate mockery --name=VersionConverter --output=automock --outpkg=automock --case=underscore
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
@@ -24,7 +24,7 @@ type VersionConverter interface {
 	ToEntity(version model.Version) version.Version
 }
 
-// SpecConverter missing godoc
+// SpecConverter converts Specifications between the model.Spec service-layer representation and the graphql-layer representation graphql.APISpec.
 //go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore
 type SpecConverter interface {
 	ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error)
@@ -36,12 +36,12 @@ type converter struct {
 	specConverter SpecConverter
 }
 
-// NewConverter missing godoc
+// NewConverter returns a new Converter that can later be used to make the conversions between the GraphQL, service, and repository layer representations of a Compass APIDefinition.
 func NewConverter(version VersionConverter, specConverter SpecConverter) *converter {
 	return &converter{version: version, specConverter: specConverter}
 }
 
-// ToGraphQL missing godoc
+// ToGraphQL converts the provided service-layer representation of an APIDefinition to the graphql-layer one.
 func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error) {
 	if in == nil {
 		return nil, nil
@@ -76,7 +76,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 	}, nil
 }
 
-// MultipleToGraphQL missing godoc
+// MultipleToGraphQL converts the provided service-layer representations of an APIDefinition to the graphql-layer ones.
 func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
 	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
 		return nil, errors.New("different apis, specs and bundleRefs count provided")
@@ -99,7 +99,7 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.
 	return apis, nil
 }
 
-// MultipleInputFromGraphQL missing godoc
+// MultipleInputFromGraphQL converts the provided graphql-layer representations of an APIDefinition to the service-layer ones.
 func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error) {
 	apiDefs := make([]*model.APIDefinitionInput, 0, len(in))
 	specs := make([]*model.SpecInput, 0, len(in))
@@ -117,7 +117,7 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) (
 	return apiDefs, specs, nil
 }
 
-// InputFromGraphQL missing godoc
+// InputFromGraphQL converts the provided graphql-layer representation of an APIDefinition to the service-layer one.
 func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, *model.SpecInput, error) {
 	if in == nil {
 		return nil, nil, nil
@@ -137,7 +137,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 	}, spec, nil
 }
 
-// FromEntity missing godoc
+// FromEntity converts the provided Entity repo-layer representation of an APIDefinition to the service-layer representation model.APIDefinition.
 func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 	return &model.APIDefinition{
 		ApplicationID:                           entity.ApplicationID,
@@ -170,6 +170,7 @@ func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 		Version:                                 c.version.FromEntity(entity.Version),
 		Extensible:                              repo.JSONRawMessageFromNullableString(entity.Extensible),
 		ResourceHash:                            repo.StringPtrFromNullableString(entity.ResourceHash),
+		DocumentationLabels:                     repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -181,7 +182,7 @@ func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 	}
 }
 
-// ToEntity missing godoc
+// ToEntity converts the provided service-layer representation of an APIDefinition to the repository-layer one.
 func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 	return &Entity{
 		ApplicationID:                           apiModel.ApplicationID,
@@ -214,6 +215,7 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 		Version:                                 c.convertVersionToEntity(apiModel.Version),
 		Extensible:                              repo.NewNullableStringFromJSONRawMessage(apiModel.Extensible),
 		ResourceHash:                            repo.NewNullableString(apiModel.ResourceHash),
+		DocumentationLabels:                     repo.NewNullableStringFromJSONRawMessage(apiModel.DocumentationLabels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiModel.ID,
 			Ready:     apiModel.Ready,
@@ -242,7 +244,7 @@ func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
 	return &t
 }
 
-// ExtractTargetURLFromJSONArray missing godoc
+// ExtractTargetURLFromJSONArray extracts targetURL into a string from a JSON array representation.
 func ExtractTargetURLFromJSONArray(jsonTargetURL json.RawMessage) string {
 	strTargetURL := string(jsonTargetURL)
 	strTargetURL = strings.TrimPrefix(strTargetURL, `["`)
@@ -251,7 +253,7 @@ func ExtractTargetURLFromJSONArray(jsonTargetURL json.RawMessage) string {
 	return strTargetURL
 }
 
-// ConvertTargetURLToJSONArray missing godoc
+// ConvertTargetURLToJSONArray converts targetURL string value to a JSON array.
 func ConvertTargetURLToJSONArray(targetURL string) json.RawMessage {
 	if targetURL == "" {
 		return nil

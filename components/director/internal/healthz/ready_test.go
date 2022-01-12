@@ -36,7 +36,7 @@ func TestNewReadinessHandler(t *testing.T) {
 		defer transactioner.AssertExpectations(t)
 
 		repository := &automock.Repository{}
-		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", nil)
+		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", false, nil)
 		defer repository.AssertExpectations(t)
 
 		ready := healthz.NewReady(transactioner, cfg, repository)
@@ -58,7 +58,7 @@ func TestNewReadinessHandler(t *testing.T) {
 		defer transactioner.AssertExpectations(t)
 
 		repository := &automock.Repository{}
-		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", nil)
+		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", false, nil)
 		defer repository.AssertExpectations(t)
 
 		ready := healthz.NewReady(transactioner, cfg, repository)
@@ -81,7 +81,7 @@ func TestNewReadinessHandler(t *testing.T) {
 		defer transactioner.AssertExpectations(t)
 
 		repository := &automock.Repository{}
-		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", nil)
+		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", false, nil)
 		defer repository.AssertExpectations(t)
 
 		ready := healthz.NewReady(transactioner, cfg, repository)
@@ -101,7 +101,27 @@ func TestNewReadinessHandler(t *testing.T) {
 		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
 
 		repository := &automock.Repository{}
-		repository.On("GetVersion", ctxWithTransaction).Once().Return("YYYYYYYYYYYYY", nil)
+		repository.On("GetVersion", ctxWithTransaction).Once().Return("YYYYYYYYYYYYY", false, nil)
+		defer repository.AssertExpectations(t)
+
+		ready := healthz.NewReady(transactioner, cfg, repository)
+
+		// THEN
+		AssertHandlerStatusCodeForReadiness(t, ready, 500, "")
+	})
+
+	t.Run("fail when schema dirty flag is set", func(t *testing.T) {
+		ctx := context.TODO()
+		tx := &persistautomock.PersistenceTx{}
+		tx.On("Commit").Once().Return(nil)
+
+		ctxWithTransaction := persistence.SaveToContext(ctx, tx)
+		transactioner := &persistautomock.Transactioner{}
+		transactioner.On("Begin").Once().Return(tx, nil)
+		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
+
+		repository := &automock.Repository{}
+		repository.On("GetVersion", ctxWithTransaction).Once().Return("XXXXXXXXXXXXXX", true, nil)
 		defer repository.AssertExpectations(t)
 
 		ready := healthz.NewReady(transactioner, cfg, repository)
@@ -121,7 +141,7 @@ func TestNewReadinessHandler(t *testing.T) {
 		transactioner.On("RollbackUnlessCommitted", ctx, tx).Once().Return(true)
 
 		repository := &automock.Repository{}
-		repository.On("GetVersion", ctxWithTransaction).Once().Return("", errors.New("db error"))
+		repository.On("GetVersion", ctxWithTransaction).Once().Return("", false, errors.New("db error"))
 		defer repository.AssertExpectations(t)
 
 		ready := healthz.NewReady(transactioner, cfg, repository)

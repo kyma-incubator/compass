@@ -65,7 +65,7 @@ func main() {
 	transact, closeFunc, err := persistence.Configure(ctx, conf.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
-	certCache, err := certloader.StartCertLoader(ctx, conf.ExternalClientCertSecret)
+	certCache, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	uidSvc := uid.NewService()

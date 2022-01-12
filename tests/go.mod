@@ -27,12 +27,12 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20210922143733-cb93bcfd3cd6
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20210922140315-d2f37c2e160d
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220104145031-c9120ed20881
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20220104145031-c9120ed20881
 	github.com/kyma-incubator/compass/components/director v0.0.0-20220111160051-41a7ae392afc
-	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20210922144742-89f134add94f
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20210922142032-ccf81fabdd36
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20211129112311-597f8c54e998
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220104145031-c9120ed20881
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20220104145031-c9120ed20881
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220104145031-c9120ed20881
 	github.com/lib/pq v1.10.3 // indirect
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/copystructure v1.1.2 // indirect
@@ -50,18 +50,18 @@ require (
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/gjson v1.9.4
+	github.com/tidwall/gjson v1.12.1
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
-	github.com/tidwall/sjson v1.2.2
+	github.com/tidwall/sjson v1.2.4
 	github.com/vektah/gqlparser/v2 v2.1.0 // indirect
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
-	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1
+	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f
+	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.6 // indirect

@@ -26,15 +26,15 @@ var (
 	eventDefColumns = []string{idColumn, appColumn, "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "documentation_labels"}
 	idColumns        = []string{idColumn}
 	updatableColumns = []string{"package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "extensible", "successors", "resource_hash", "documentation_labels"}
 )
 
-// EventAPIDefinitionConverter missing godoc
+// EventAPIDefinitionConverter converts EventDefinitions between the model.EventDefinition service-layer representation and the repo-layer representation Entity.
 //go:generate mockery --name=EventAPIDefinitionConverter --output=automock --outpkg=automock --case=underscore
 type EventAPIDefinitionConverter interface {
 	FromEntity(entity *Entity) *model.EventDefinition
@@ -52,7 +52,7 @@ type pgRepository struct {
 	conv                  EventAPIDefinitionConverter
 }
 
-// NewRepository missing godoc
+// NewRepository returns a new entity responsible for repo-layer EventDefinitions operations.
 func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:          repo.NewSingleGetter(eventAPIDefTable, eventDefColumns),
@@ -66,15 +66,15 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	}
 }
 
-// EventAPIDefCollection missing godoc
+// EventAPIDefCollection is an array of Entities
 type EventAPIDefCollection []Entity
 
-// Len missing godoc
+// Len returns the length of the collection
 func (r EventAPIDefCollection) Len() int {
 	return len(r)
 }
 
-// GetByID missing godoc
+// GetByID retrieves the EventDefinition with matching ID from the Compass storage.
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
 	var eventAPIDefEntity Entity
 	err := r.singleGetter.Get(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
@@ -86,13 +86,13 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return eventAPIDefModel, nil
 }
 
-// GetForBundle missing godoc
+// GetForBundle gets an EventDefinition by its id.
 // the bundleID remains for backwards compatibility above in the layers; we are sure that the correct Event will be fetched because there can't be two records with the same ID
 func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error) {
 	return r.GetByID(ctx, tenant, id)
 }
 
-// ListByBundleIDs missing godoc
+// ListByBundleIDs retrieves all EventDefinitions for a Bundle in pages. Each Bundle is extracted from the input array of bundleIDs. The input bundleReferences array is used for getting the appropriate EventDefinition IDs.
 func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, totalCounts map[string]int, pageSize int, cursor string) ([]*model.EventDefinitionPage, error) {
 	eventDefIDs := make([]string, 0, len(bundleRefs))
 	for _, ref := range bundleRefs {
@@ -142,7 +142,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 	return eventDefPages, nil
 }
 
-// ListByApplicationID missing godoc
+// ListByApplicationID lists all EventDefinitions for a given application ID.
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error) {
 	eventCollection := EventAPIDefCollection{}
 	if err := r.lister.List(ctx, resource.EventDefinition, tenantID, &eventCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
@@ -156,7 +156,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 	return events, nil
 }
 
-// Create missing godoc
+// Create creates an EventDefinition.
 func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.EventDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -173,7 +173,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ev
 	return nil
 }
 
-// CreateMany missing godoc
+// CreateMany creates many EventDefinitions.
 func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*model.EventDefinition) error {
 	for index, item := range items {
 		entity := r.conv.ToEntity(item)
@@ -186,7 +186,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, tenant string, items []*m
 	return nil
 }
 
-// Update missing godoc
+// Update updates an EventDefinition.
 func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.EventDefinition) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
@@ -197,17 +197,17 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Ev
 	return r.updater.UpdateSingle(ctx, resource.EventDefinition, tenant, entity)
 }
 
-// Exists missing godoc
+// Exists checks if an EventDefinition with a given ID exists.
 func (r *pgRepository) Exists(ctx context.Context, tenantID, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
-// Delete missing godoc
+// Delete deletes an EventDefinition by its ID.
 func (r *pgRepository) Delete(ctx context.Context, tenantID string, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.EventDefinition, tenantID, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
-// DeleteAllByBundleID missing godoc
+// DeleteAllByBundleID deletes all EventDefinitions for a given bundle ID.
 func (r *pgRepository) DeleteAllByBundleID(ctx context.Context, tenantID, bundleID string) error {
 	subqueryConditions := repo.Conditions{
 		repo.NewEqualCondition(bundleColumn, bundleID),

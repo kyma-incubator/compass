@@ -3,8 +3,6 @@ package rtmtest
 import (
 	"errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/stretchr/testify/mock"
 )
@@ -22,10 +20,10 @@ func NoopSelfRegManager() *automock.SelfRegisterManager {
 }
 
 // SelfRegManagerThatDoesPrepWithNoErrors missing godoc
-func SelfRegManagerThatDoesPrepWithNoErrors(res model.RuntimeInput) func() *automock.SelfRegisterManager {
+func SelfRegManagerThatDoesPrepWithNoErrors(res map[string]interface{}) func() *automock.SelfRegisterManager {
 	return func() *automock.SelfRegisterManager {
 		srm := &automock.SelfRegisterManager{}
-		srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything).Return(res, nil).Once()
+		srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything, mock.AnythingOfType("string")).Return(res, nil).Once()
 		return srm
 	}
 }
@@ -33,7 +31,8 @@ func SelfRegManagerThatDoesPrepWithNoErrors(res model.RuntimeInput) func() *auto
 // SelfRegManagerThatReturnsErrorOnPrep missing godoc
 func SelfRegManagerThatReturnsErrorOnPrep() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
-	srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything).Return(model.RuntimeInput{}, errors.New(SelfRegErrorMsg)).Once()
+	labels := make(map[string]interface{})
+	srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything, mock.AnythingOfType("string")).Return(labels, errors.New(SelfRegErrorMsg)).Once()
 	return srm
 }
 
@@ -61,7 +60,7 @@ func SelfRegManagerReturnsDistinguishingLabel() *automock.SelfRegisterManager {
 }
 
 // SelfRegManagerThatReturnsNoErrors missing godoc
-func SelfRegManagerThatReturnsNoErrors(res model.RuntimeInput) func() *automock.SelfRegisterManager {
+func SelfRegManagerThatReturnsNoErrors(res map[string]interface{}) func() *automock.SelfRegisterManager {
 	return func() *automock.SelfRegisterManager {
 		srm := SelfRegManagerThatDoesPrepWithNoErrors(res)()
 		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()

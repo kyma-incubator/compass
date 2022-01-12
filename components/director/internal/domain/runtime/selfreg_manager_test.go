@@ -21,6 +21,7 @@ import (
 const (
 	selfRegisterDistinguishLabelKey = "test-distinguish-label-key"
 	distinguishLblVal               = "test-value"
+	testUUID                        = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 )
 
 var testConfig = runtime.SelfRegConfig{
@@ -50,10 +51,10 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 	lblInput := model.RuntimeInput{
 		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal},
 	}
-	lblInputAfterPrep := model.RuntimeInput{
-		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal,
-			testConfig.SelfRegisterLabelKey: rtmtest.ResponseLabelValue},
+	lblInputAfterPrep := map[string]interface{}{
+		testConfig.SelfRegisterLabelKey: rtmtest.ResponseLabelValue,
 	}
+	emptyLabels := make(map[string]interface{})
 	lblInvalidInput := model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value"}}
 
 	fakeConfig := testConfig
@@ -69,7 +70,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		Input          model.RuntimeInput
 		Context        context.Context
 		ExpectedErr    error
-		ExpectedOutput model.RuntimeInput
+		ExpectedOutput map[string]interface{}
 	}{
 		{
 			Name:           "Success",
@@ -87,7 +88,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Input:          model.RuntimeInput{},
 			Context:        ctxWithTokenConsumer,
 			ExpectedErr:    nil,
-			ExpectedOutput: model.RuntimeInput{},
+			ExpectedOutput: emptyLabels,
 		},
 		{
 			Name:           "Error when context does not contain consumer",
@@ -96,7 +97,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Input:          model.RuntimeInput{},
 			Context:        context.TODO(),
 			ExpectedErr:    consumer.NoConsumerError,
-			ExpectedOutput: model.RuntimeInput{},
+			ExpectedOutput: emptyLabels,
 		},
 		{
 			Name:           "Error when can't create URL for preparation of self-registered runtime",
@@ -105,7 +106,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Input:          lblInvalidInput,
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    errors.New("while creating url for preparation of self-registered runtime"),
-			ExpectedOutput: model.RuntimeInput{},
+			ExpectedOutput: emptyLabels,
 		},
 		{
 			Name:           "Error when Call doesn't succeed",
@@ -114,7 +115,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Input:          lblInput,
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    rtmtest.TestError,
-			ExpectedOutput: model.RuntimeInput{},
+			ExpectedOutput: emptyLabels,
 		},
 		{
 			Name:           "Error when status code is unexpected",
@@ -123,7 +124,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Input:          lblInput,
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    errors.New("received unexpected status"),
-			ExpectedOutput: model.RuntimeInput{},
+			ExpectedOutput: emptyLabels,
 		},
 	}
 
@@ -132,7 +133,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			svcCaller := testCase.Caller(t)
 			manager := runtime.NewSelfRegisterManager(testCase.Config, svcCaller)
 
-			output, err := manager.PrepareRuntimeForSelfRegistration(testCase.Context, testCase.Input)
+			output, err := manager.PrepareRuntimeForSelfRegistration(testCase.Context, testCase.Input, testUUID)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
