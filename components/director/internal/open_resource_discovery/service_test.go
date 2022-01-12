@@ -136,53 +136,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return vendorSvc
 	}
 
-	successfulSAPVendorUpdate := func() *automock.VendorService {
-		vendorSvc := &automock.VendorService{}
-		sapVendor := model.VendorInput{
-			OrdID: ord.SapVendor,
-			Title: ord.SapTitle,
-		}
-
-		modelVendor := []*model.Vendor{
-			{
-				ID:            vendorID,
-				OrdID:         ord.SapVendor,
-				ApplicationID: appID,
-				Title:         ord.SapTitle,
-			}}
-
-		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(modelVendor, nil).Once()
-		vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendorID, sapVendor).Return(nil).Once()
-		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(modelVendor, nil).Once()
-		return vendorSvc
-	}
-
 	successfulVendorCreate := func() *automock.VendorService {
 		vendorSvc := &automock.VendorService{}
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		vendorSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Vendors[0]).Return("", nil).Once()
 		vendorSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Vendors[1]).Return("", nil).Once()
 		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
-		return vendorSvc
-	}
-
-	successfulSAPVendorCreate := func() *automock.VendorService {
-		vendorSvc := &automock.VendorService{}
-		sapVendor := model.VendorInput{
-			OrdID: ord.SapVendor,
-			Title: ord.SapTitle,
-		}
-
-		modelVendor := []*model.Vendor{
-			{
-				OrdID:         ord.SapVendor,
-				ApplicationID: appID,
-				Title:         ord.SapTitle,
-			}}
-
-		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-		vendorSvc.On("Create", txtest.CtxWithDBMatcher(), appID, sapVendor).Return("", nil).Once()
-		vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(modelVendor, nil).Once()
 		return vendorSvc
 	}
 
@@ -239,6 +198,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		pkgService.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 
 		return pkgService
+	}
+
+	successfulEmptyVendorList := func() *automock.VendorService {
+		vendorService := &automock.VendorService{}
+		vendorService.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Twice()
+
+		return vendorService
 	}
 
 	successfulSpecUpdate := func() *automock.SpecService {
@@ -340,6 +306,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return eventSvc
 	}
 
+	successfulGlobalRegistrySvc := func() *automock.GlobalRegistryService {
+		globalRegistrySvc := &automock.GlobalRegistryService{}
+		globalRegistrySvc.On("SyncGlobalResources", context.TODO()).Return(map[string]bool{ord.SapVendor: true}, nil).Once()
+		return globalRegistrySvc
+	}
+
 	successfulClientFetch := func() *automock.Client {
 		client := &automock.Client{}
 		client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{fixORDDocument()}, baseURL, nil)
@@ -347,23 +319,24 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		labelRepoFn     func() *automock.LabelRepository
-		appSvcFn        func() *automock.ApplicationService
-		webhookSvcFn    func() *automock.WebhookService
-		bundleSvcFn     func() *automock.BundleService
-		bundleRefSvcFn  func() *automock.BundleReferenceService
-		apiSvcFn        func() *automock.APIService
-		eventSvcFn      func() *automock.EventService
-		specSvcFn       func() *automock.SpecService
-		packageSvcFn    func() *automock.PackageService
-		productSvcFn    func() *automock.ProductService
-		vendorSvcFn     func() *automock.VendorService
-		tombstoneSvcFn  func() *automock.TombstoneService
-		tenantSvcFn     func() *automock.TenantService
-		clientFn        func() *automock.Client
-		ExpectedErr     error
+		Name              string
+		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		labelRepoFn       func() *automock.LabelRepository
+		appSvcFn          func() *automock.ApplicationService
+		webhookSvcFn      func() *automock.WebhookService
+		bundleSvcFn       func() *automock.BundleService
+		bundleRefSvcFn    func() *automock.BundleReferenceService
+		apiSvcFn          func() *automock.APIService
+		eventSvcFn        func() *automock.EventService
+		specSvcFn         func() *automock.SpecService
+		packageSvcFn      func() *automock.PackageService
+		productSvcFn      func() *automock.ProductService
+		vendorSvcFn       func() *automock.VendorService
+		tombstoneSvcFn    func() *automock.TombstoneService
+		tenantSvcFn       func() *automock.TenantService
+		globalRegistrySvc func() *automock.GlobalRegistryService
+		clientFn          func() *automock.Client
+		ExpectedErr       error
 	}{
 		{
 			Name: "Success when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
@@ -397,7 +370,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
 				return tombstoneSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name: "Success when resources are already in db and APIs/Events versions are NOT incremented should Update them and refetch only failed API/Event specs",
@@ -438,7 +412,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
 				return tombstoneSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name: "Success when resources are not in db should Create them",
@@ -471,12 +446,92 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
 				return tombstoneSvc
 			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
+		},
+		{
+			Name: "Error when synchronizing global resources from global registry should get them from DB and proceed with the rest of the sync",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(2)
+			},
+			labelRepoFn:  successfulLabelRepo,
+			appSvcFn:     successfulAppList,
+			tenantSvcFn:  successfulTenantSvc,
+			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulBundleCreate,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], fixAPI1SpecInputs(), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], fixAPI2SpecInputs(), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
+				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
+				return apiSvc
+			},
+			eventSvcFn:   successfulEventCreate,
+			packageSvcFn: successfulPackageCreate,
+			productSvcFn: successfulProductCreate,
+			vendorSvcFn:  successfulVendorCreate,
+			tombstoneSvcFn: func() *automock.TombstoneService {
+				tombstoneSvc := &automock.TombstoneService{}
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
+				return tombstoneSvc
+			},
+			globalRegistrySvc: func() *automock.GlobalRegistryService {
+				globalRegistrySvc := &automock.GlobalRegistryService{}
+				globalRegistrySvc.On("SyncGlobalResources", context.TODO()).Return(nil, errors.New("error")).Once()
+				globalRegistrySvc.On("ListGlobalResources", context.TODO()).Return(map[string]bool{ord.SapVendor: true}, nil).Once()
+				return globalRegistrySvc
+			},
 			clientFn: successfulClientFetch,
 		},
 		{
-			Name:            "Returns error when transaction opening fails",
-			TransactionerFn: txGen.ThatFailsOnBegin,
-			ExpectedErr:     testErr,
+			Name: "Error when synchronizing global resources from global registry and get them from DB should proceed with the rest of the sync",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(2)
+			},
+			labelRepoFn:  successfulLabelRepo,
+			appSvcFn:     successfulAppList,
+			tenantSvcFn:  successfulTenantSvc,
+			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulBundleCreate,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], fixAPI1SpecInputs(), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], fixAPI2SpecInputs(), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
+				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
+				return apiSvc
+			},
+			eventSvcFn:   successfulEventCreate,
+			packageSvcFn: successfulPackageCreate,
+			productSvcFn: successfulProductCreate,
+			vendorSvcFn:  successfulVendorCreate,
+			tombstoneSvcFn: func() *automock.TombstoneService {
+				tombstoneSvc := &automock.TombstoneService{}
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
+				return tombstoneSvc
+			},
+			globalRegistrySvc: func() *automock.GlobalRegistryService {
+				globalRegistrySvc := &automock.GlobalRegistryService{}
+				globalRegistrySvc.On("SyncGlobalResources", context.TODO()).Return(nil, errors.New("error")).Once()
+				globalRegistrySvc.On("ListGlobalResources", context.TODO()).Return(nil, errors.New("error")).Once()
+				return globalRegistrySvc
+			},
+			clientFn: successfulClientFetch,
+		},
+		{
+			Name:              "Returns error when transaction opening fails",
+			TransactionerFn:   txGen.ThatFailsOnBegin,
+			ExpectedErr:       testErr,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Returns error when app list fails",
@@ -486,7 +541,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(nil, testErr).Once()
 				return appSvc
 			},
-			ExpectedErr: testErr,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			ExpectedErr:       testErr,
 		},
 		{
 			Name:            "Returns error when labels list fails",
@@ -496,8 +552,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				labelRepo.On("ListGlobalByKeyAndObjects", txtest.CtxWithDBMatcher(), model.ApplicationLabelableObject, mock.Anything, applicationTypeLabel).Return(nil, testErr).Once()
 				return labelRepo
 			},
-			appSvcFn:    successfulAppList,
-			ExpectedErr: testErr,
+			appSvcFn:          successfulAppList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			ExpectedErr:       testErr,
 		},
 		{
 			Name:            "Returns error when get tenant fails",
@@ -509,7 +566,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return("", testErr).Once()
 				return tenantSvc
 			},
-			ExpectedErr: testErr,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			ExpectedErr:       testErr,
 		},
 		{
 			Name:            "Does not resync resources when event list fails",
@@ -529,6 +587,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources when api list fails",
@@ -543,6 +602,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name: "Returns error when webhook list fails",
@@ -563,7 +623,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				whSvc.On("ListForApplication", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return whSvc
 			},
-			ExpectedErr: testErr,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			ExpectedErr:       testErr,
 		},
 		{
 			Name:            "Skips app when ORD documents fetch fails",
@@ -577,6 +638,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(nil, "", testErr)
 				return client
 			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources for invalid ORD documents",
@@ -592,9 +654,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			apiSvcFn:     successfulEmptyAPIList,
-			eventSvcFn:   successfulEmptyEventList,
-			packageSvcFn: successfulEmptyPackageList,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			packageSvcFn:      successfulEmptyPackageList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if vendor list fails",
@@ -608,10 +671,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return vendorSvc
 			},
-			clientFn:     successfulClientFetch,
-			apiSvcFn:     successfulEmptyAPIList,
-			eventSvcFn:   successfulEmptyEventList,
-			packageSvcFn: successfulEmptyPackageList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			packageSvcFn:      successfulEmptyPackageList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if vendor update fails",
@@ -626,10 +690,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendorID, *sanitizedDoc.Vendors[0]).Return(testErr).Once()
 				return vendorSvc
 			},
-			clientFn:     successfulClientFetch,
-			apiSvcFn:     successfulEmptyAPIList,
-			eventSvcFn:   successfulEmptyEventList,
-			packageSvcFn: successfulEmptyPackageList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			packageSvcFn:      successfulEmptyPackageList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if vendor create fails",
@@ -644,10 +709,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				vendorSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Vendors[0]).Return("", testErr).Once()
 				return vendorSvc
 			},
-			clientFn:     successfulClientFetch,
-			apiSvcFn:     successfulEmptyAPIList,
-			eventSvcFn:   successfulEmptyEventList,
-			packageSvcFn: successfulEmptyPackageList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			packageSvcFn:      successfulEmptyPackageList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if product list fails",
@@ -662,10 +728,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return productSvc
 			},
-			clientFn:     successfulClientFetch,
-			apiSvcFn:     successfulEmptyAPIList,
-			eventSvcFn:   successfulEmptyEventList,
-			packageSvcFn: successfulEmptyPackageList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			packageSvcFn:      successfulEmptyPackageList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if product update fails",
@@ -681,10 +748,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				productSvc.On("Update", txtest.CtxWithDBMatcher(), productID, *sanitizedDoc.Products[0]).Return(testErr).Once()
 				return productSvc
 			},
-			clientFn:     successfulClientFetch,
-			apiSvcFn:     successfulEmptyAPIList,
-			eventSvcFn:   successfulEmptyEventList,
-			packageSvcFn: successfulEmptyPackageList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			packageSvcFn:      successfulEmptyPackageList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if product create fails",
@@ -700,10 +768,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				productSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Products[0]).Return("", testErr).Once()
 				return productSvc
 			},
-			clientFn:     successfulClientFetch,
-			apiSvcFn:     successfulEmptyAPIList,
-			eventSvcFn:   successfulEmptyEventList,
-			packageSvcFn: successfulEmptyPackageList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			packageSvcFn:      successfulEmptyPackageList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if package list fails",
@@ -720,9 +789,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return packagesSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if package update fails",
@@ -740,9 +810,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				packagesSvc.On("Update", txtest.CtxWithDBMatcher(), packageID, *sanitizedDoc.Packages[0], packagePreSanitizedHash).Return(testErr).Once()
 				return packagesSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if package create fails",
@@ -760,9 +831,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				packagesSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Packages[0], mock.Anything).Return("", testErr).Once()
 				return packagesSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if bundle list fails",
@@ -779,9 +851,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return bundlesSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if bundle update fails",
@@ -799,9 +872,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				bundlesSvc.On("Update", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0])).Return(testErr).Once()
 				return bundlesSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if bundle create fails",
@@ -819,9 +893,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				bundlesSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.ConsumptionBundles[0]).Return("", testErr).Once()
 				return bundlesSvc
 			},
-			clientFn:   successfulClientFetch,
-			apiSvcFn:   successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if api list fails",
@@ -840,8 +915,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
-			clientFn:   successfulClientFetch,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Does not resync resources if fetching bundle ids for api fails",
@@ -867,8 +943,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 				return apiSvc
 			},
-			eventSvcFn: successfulEmptyEventList,
-			clientFn:   successfulClientFetch,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if api update fails",
@@ -889,8 +966,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(testErr).Once()
 				return apiSvc
 			},
-			eventSvcFn: successfulEmptyEventList,
-			clientFn:   successfulClientFetch,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if api create fails",
@@ -910,8 +988,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], fixAPI1SpecInputs(), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", testErr).Once()
 				return apiSvc
 			},
-			eventSvcFn: successfulEmptyEventList,
-			clientFn:   successfulClientFetch,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if api spec delete fails",
@@ -937,8 +1016,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(testErr).Once()
 				return specSvc
 			},
-			clientFn:   successfulClientFetch,
-			eventSvcFn: successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
+			eventSvcFn:        successfulEmptyEventList,
 		},
 		{
 			Name:            "Does not resync resources if api spec create fails",
@@ -965,8 +1045,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", testErr).Once()
 				return specSvc
 			},
-			clientFn:   successfulClientFetch,
-			eventSvcFn: successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
+			eventSvcFn:        successfulEmptyEventList,
 		},
 		{
 			Name:            "Does not resync resources if api spec list fails",
@@ -991,8 +1072,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil, testErr).Once()
 				return specSvc
 			},
-			eventSvcFn: successfulEmptyEventList,
-			clientFn:   successfulClientFetch,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if api spec get fetch request fails",
@@ -1018,8 +1100,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec1ID, model.APISpecReference).Return(nil, testErr).Once()
 				return specSvc
 			},
-			eventSvcFn: successfulEmptyEventList,
-			clientFn:   successfulClientFetch,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if api spec refetch fails",
@@ -1046,8 +1129,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api1spec1ID, model.APISpecReference).Return(nil, testErr).Once()
 				return specSvc
 			},
-			eventSvcFn: successfulEmptyEventList,
-			clientFn:   successfulClientFetch,
+			eventSvcFn:        successfulEmptyEventList,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if event list fails",
@@ -1069,7 +1153,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if fetching bundle ids for event fails",
@@ -1100,7 +1185,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				return eventSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if event update fails",
@@ -1123,7 +1209,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(testErr).Once()
 				return eventSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if event create fails",
@@ -1145,7 +1232,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[0], fixEvent1SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", testErr).Once()
 				return eventSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if event spec delete fails",
@@ -1180,7 +1268,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
 				return eventSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if event spec create fails",
@@ -1218,7 +1307,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
 				return eventSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if event spec list fails",
@@ -1253,7 +1343,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
 				return eventSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if event spec get fetch request fails",
@@ -1289,7 +1380,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
 				return eventSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if event spec refetch fails",
@@ -1327,7 +1419,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
 				return eventSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if tombstone list fails",
@@ -1349,7 +1442,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return tombstoneSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if tombstone update fails",
@@ -1372,7 +1466,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("Update", txtest.CtxWithDBMatcher(), tombstoneID, *sanitizedDoc.Tombstones[0]).Return(testErr).Once()
 				return tombstoneSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if tombstone create fails",
@@ -1393,7 +1488,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Tombstones[0]).Return("", testErr).Once()
 				return tombstoneSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if api resource deletion due to tombstone fails",
@@ -1424,7 +1520,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
 				return tombstoneSvc
 			},
-			clientFn: successfulClientFetch,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
 		},
 		{
 			Name:            "Does not resync resources if package resource deletion due to tombstone fails",
@@ -1458,6 +1555,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(tombstones, nil).Once()
 				return tombstoneSvc
 			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -1499,6 +1597,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(tombstones, nil).Once()
 				return tombstoneSvc
 			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -1539,6 +1638,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(tombstones, nil).Once()
 				return tombstoneSvc
 			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -1578,6 +1678,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(tombstones, nil).Once()
 				return tombstoneSvc
 			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -1617,6 +1718,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(tombstones, nil).Once()
 				return tombstoneSvc
 			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -1625,9 +1727,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return client
 			},
 		},
-		// TODO: Delete the two tests below after the concept of central registry for Vendors fetching is productive
 		{
-			Name: "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them",
+			Name: "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them as SAP Vendor is coming from the Global Registry",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(2)
 			},
@@ -1649,7 +1750,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:   successfulEventCreate,
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
-			vendorSvcFn:  successfulSAPVendorCreate,
+			vendorSvcFn:  successfulEmptyVendorList,
 			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1657,6 +1758,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
 				return tombstoneSvc
 			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -1666,7 +1768,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name: "Success when resources are already in db and no SAP Vendor is declared in Documents should Update them",
+			Name: "Success when resources are already in db and no SAP Vendor is declared in Documents should Update them as SAP Vendor is coming from the Global Registry",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(2)
 			},
@@ -1690,7 +1792,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			specSvcFn:    successfulSpecUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			productSvcFn: successfulProductUpdate,
-			vendorSvcFn:  successfulSAPVendorUpdate,
+			vendorSvcFn:  successfulEmptyVendorList,
 			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
@@ -1698,6 +1800,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
 				return tombstoneSvc
 			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -1763,12 +1866,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			if test.tenantSvcFn != nil {
 				tenantSvc = test.tenantSvcFn()
 			}
+			globalRegistrySvc := &automock.GlobalRegistryService{}
+			if test.globalRegistrySvc != nil {
+				globalRegistrySvc = test.globalRegistrySvc()
+			}
 			client := &automock.Client{}
 			if test.clientFn != nil {
 				client = test.clientFn()
 			}
 
-			svc := ord.NewAggregatorService(tx, labelRepo, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, client)
+			svc := ord.NewAggregatorService(tx, labelRepo, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
 			err := svc.SyncORDDocuments(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -1777,7 +1884,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, tx, labelRepo, appSvc, whSvc, bndlSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, client)
+			mock.AssertExpectationsForObjects(t, tx, labelRepo, appSvc, whSvc, bndlSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
 		})
 	}
 }

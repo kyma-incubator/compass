@@ -1,14 +1,28 @@
 package ord_aggregator
 
 import (
+	"bytes"
 	"fmt"
+	"math/rand"
 	"net/http"
+	"text/template"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
 )
 
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 func HandleFuncOrdConfig(baseURLOverride, accessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
+	return HandleFuncOrdConfigWithDocPath(baseURLOverride, "/open-resource-discovery/v1/documents/example1", accessStrategy)
+}
+
+func HandleFuncOrdConfigWithDocPath(baseURLOverride, docPath, accessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		var baseURLFormat string
 		if len(baseURLOverride) > 0 {
@@ -16,7 +30,7 @@ func HandleFuncOrdConfig(baseURLOverride, accessStrategy string) func(rw http.Re
 		}
 
 		rw.WriteHeader(http.StatusOK)
-		_, err := rw.Write([]byte(fmt.Sprintf(ordConfig, baseURLFormat, accessStrategy)))
+		_, err := rw.Write([]byte(fmt.Sprintf(ordConfig, baseURLFormat, docPath, accessStrategy)))
 		if err != nil {
 			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 		}
@@ -24,11 +38,36 @@ func HandleFuncOrdConfig(baseURLOverride, accessStrategy string) func(rw http.Re
 }
 
 func HandleFuncOrdDocument(expectedBaseURL string, specsAccessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
+	randomSuffix := fmt.Sprintf("-%s", randSeq(10))
 	return func(rw http.ResponseWriter, req *http.Request) {
+		t, err := template.New("").Parse(ordDocument)
+		if err != nil {
+			httphelpers.WriteError(rw, errors.Wrap(err, "error while creating template"), http.StatusInternalServerError)
+		}
+
+		data := map[string]string{
+			"randomSuffix":        randomSuffix,
+			"baseURL":             expectedBaseURL,
+			"specsAccessStrategy": specsAccessStrategy,
+		}
+
+		res := new(bytes.Buffer)
+		if err = t.Execute(res, data); err != nil {
+			httphelpers.WriteError(rw, errors.Wrap(err, "error while executing template"), http.StatusInternalServerError)
+		}
+
 		rw.WriteHeader(http.StatusOK)
-		_, err := rw.Write([]byte(fmt.Sprintf(ordDocument, expectedBaseURL, specsAccessStrategy)))
+		_, err = rw.Write(res.Bytes())
 		if err != nil {
 			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 		}
 	}
+}
+
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }

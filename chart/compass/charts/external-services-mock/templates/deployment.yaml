@@ -132,6 +132,9 @@ spec:
               - name: http-oauth
                 containerPort: {{ .Values.global.externalServicesMock.oauthSecuredPort }}
                 protocol: TCP
+              - name: http-ord-gr
+                containerPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryPort }}
+                protocol: TCP
               resources:
                 {{- toYaml .Values.deployment.resources | nindent 16 }}
               {{- with .Values.deployment.securityContext }}

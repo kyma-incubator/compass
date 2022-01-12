@@ -82,7 +82,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2163"
+      version: "PR-2164"
     connectivity_adapter:
       dir:
       version: "PR-2163"
@@ -100,10 +100,10 @@ global:
       version: "PR-2163"
     ord_service:
       dir:
-      version: "PR-54"
+      version: "PR-56"
     schema_migrator:
       dir:
-      version: "PR-2157"
+      version: "PR-2169"
     system_broker:
       dir:
       version: "PR-2163"
@@ -473,6 +473,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
+    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8085/.well-known/open-resource-discovery
 
   systemFetcher:
     enabled: false
@@ -569,7 +570,7 @@ global:
         discriminatorValue: ""
         detailsField: "details"
         entityTypeField: "entityType"
-        parentIDField: "parentGuid"
+        globalAccountID: "gaID"
         regionField: "region"
         movedSubaccountTargetField: "targetGlobalAccountGUID"
         movedSubaccountSourceField: "sourceGlobalAccountGUID"
@@ -596,6 +597,7 @@ global:
     unsecuredPort: 8082
     basicSecuredPort: 8083
     oauthSecuredPort: 8084
+    ordGlobalRegistryPort: 8085
     certSecuredHost: compass-external-services-mock-sap-mtls
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
