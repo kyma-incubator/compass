@@ -11,9 +11,9 @@ import (
 // KubeConfig missing godoc
 type KubeConfig struct {
 	SecretNamespace    string `envconfig:"default=compass-system,APP_SECRET_NAMESPACE"`
-	SecretName         string `envconfig:"default=cis-tokens,APP_SECRET_NAMESPACE"`
+	SecretName         string `envconfig:"default=cis-tokens,APP_SECRET_NAME"`
 	ConfigMapNamespace string `envconfig:"default=compass-system,APP_CONFIGMAP_NAMESPACE"`
-	ConfigMapName      string `envconfig:"default=cis-config,APP_CONFIGMAP_NAME"`
+	ConfigMapName      string `envconfig:"default=cis-endpoints,APP_CONFIGMAP_NAME"`
 }
 
 // KubeClient missing godoc
