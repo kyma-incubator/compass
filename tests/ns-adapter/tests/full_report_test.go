@@ -95,13 +95,13 @@ func TestFullReport(stdT *testing.T) {
 	expectedLabel := map[string]interface{}{
 		"Host":       "127.0.0.1:3000",
 		"Subaccount": "08b6da37-e911-48fb-a0cb-fa635a6c4321",
-		"LocationId": "",
+		"LocationID": "",
 	}
 
 	expectedLabelWithLocId := map[string]interface{}{
 		"Host":       "127.0.0.1:3000",
 		"Subaccount": "08b6da37-e911-48fb-a0cb-fa635a6c4321",
-		"LocationId": "loc-id",
+		"LocationID": "loc-id",
 	}
 
 	sccLabelFilter := graphql.LabelFilter{
