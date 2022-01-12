@@ -297,7 +297,7 @@ func (s *service) GetSystem(ctx context.Context, sccSubaccount, locationID, virt
 	sccLabel := struct {
 		Host       string `json:"Host"`
 		Subaccount string `json:"Subaccount"`
-		LocationId string `json:"LocationId"`
+		LocationID string `json:"LocationID"`
 	}{
 		virtualHost, sccSubaccount, locationID,
 	}
@@ -342,7 +342,7 @@ func (s *service) ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter
 		return nil, errors.Wrapf(err, "while getting labels with key scc for applications with IDs: %v", appIDs)
 	}
 
-	appIDToLabel := make(map[string]*model.Label, 0)
+	appIDToLabel := make(map[string]*model.Label, len(labels))
 	for _, l := range labels {
 		appIDToLabel[l.ObjectID] = l
 	}
@@ -374,7 +374,7 @@ func (s *service) ListSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
 
 		scc := &model.SccMetadata{
 			Subaccount: v["Subaccount"].(string),
-			LocationId: v["LocationId"].(string),
+			LocationID: v["LocationID"].(string),
 		}
 
 		sccs = append(sccs, scc)

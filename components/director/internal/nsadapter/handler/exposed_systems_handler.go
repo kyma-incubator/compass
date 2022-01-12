@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"net/http"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -19,8 +20,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
-type ApplicationService interface {
+//go:generate mockery --exported --name=applicationService --output=automock --outpkg=automock --case=underscore
+type applicationService interface {
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
 	Upsert(ctx context.Context, in model.ApplicationRegisterInput) error
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
@@ -31,31 +32,33 @@ type ApplicationService interface {
 	ListSCCs(ctx context.Context) ([]*model.SccMetadata, error)
 }
 
-//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
-type ApplicationConverter interface {
+//go:generate mockery --exported --name=applicationConverter --output=automock --outpkg=automock --case=underscore
+type applicationConverter interface {
 	CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error)
 }
 
-//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore
-type ApplicationTemplateService interface {
+//go:generate mockery --exported --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore
+type applicationTemplateService interface {
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
 
-//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
-type TenantService interface {
+//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore
+type tenantService interface {
 	ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
 }
 
-func NewHandler(appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, tntSvc TenantService, transact persistence.Transactioner) *Handler {
+// NewHandler returns new ns-adapter handler
+func NewHandler(appSvc applicationService, appConverter applicationConverter, appTemplateSvc applicationTemplateService, tntSvc tenantService, transact persistence.Transactioner) *Handler {
 	return &Handler{appSvc: appSvc, appConverter: appConverter, appTemplateSvc: appTemplateSvc, tntSvc: tntSvc, transact: transact}
 }
 
+// Handler implements handler interface
 type Handler struct {
-	appSvc         ApplicationService
-	appConverter   ApplicationConverter
-	appTemplateSvc ApplicationTemplateService
-	tntSvc         TenantService
+	appSvc         applicationService
+	appConverter   applicationConverter
+	appTemplateSvc applicationTemplateService
+	tntSvc         tenantService
 	transact       persistence.Transactioner
 }
 
@@ -122,8 +125,8 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	sccs := make([]*nsmodel.SCC, 0, len(reportData.Value))
 	externalIDs := make([]string, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
-		//New object with the same data is created and added to the sccs slice instead of adding &scc to the slice
-		//because otherwise the slice is populated with copies of the last scc`s address
+		// New object with the same data is created and added to the sccs slice instead of adding &scc to the slice
+		// because otherwise the slice is populated with copies of the last scc`s address
 		s := &nsmodel.SCC{
 			ExternalSubaccountID: scc.ExternalSubaccountID,
 			InternalSubaccountID: scc.InternalSubaccountID,
@@ -144,8 +147,8 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	mapExternalToInternal(ctx, tenants, sccs)
-	details := make([]httputil.Detail, 0, 0)
-	filteredSccs := filterSccsByInternalId(ctx, sccs, &details)
+	details := make([]httputil.Detail, 0)
+	filteredSccs := filterSccsByInternalID(ctx, sccs, &details)
 
 	if reportType == "delta" {
 		a.processDelta(ctx, filteredSccs, &details)
@@ -171,7 +174,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 func (a *Handler) listTenantsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
 	if len(ids) == 0 {
-		return make([]*model.BusinessTenantMapping, 0, 0), nil
+		return make([]*model.BusinessTenantMapping, 0), nil
 	}
 
 	tx, err := a.transact.Begin()
@@ -189,12 +192,11 @@ func (a *Handler) listTenantsByExternalIDs(ctx context.Context, ids []string) ([
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
+		log.C(ctx).Warn(errors.Wrapf(err, "while committing transaction"))
 		return nil, err
 	}
 
 	return tenants, nil
-
 }
 
 func (a *Handler) listSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
@@ -213,7 +215,7 @@ func (a *Handler) listSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
+		log.C(ctx).Warn(errors.Wrapf(err, "while committing transaction"))
 		return nil, err
 	}
 
@@ -235,7 +237,7 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 	for _, scc := range reportData.Value {
 		sccsFromNs = append(sccsFromNs, &model.SccMetadata{
 			Subaccount: scc.ExternalSubaccountID,
-			LocationId: scc.LocationID,
+			LocationID: scc.LocationID,
 		})
 	}
 
@@ -263,7 +265,7 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 
 	for _, scc := range sccsToMarkAsUnreachable {
 		ctxWithSubaccount := tenant.SaveToContext(ctx, scc.InternalSubaccountID, scc.Subaccount)
-		appsWithLabels, ok := a.listAppsByScc(ctxWithSubaccount, scc.Subaccount, scc.LocationId)
+		appsWithLabels, ok := a.listAppsByScc(ctxWithSubaccount, scc.Subaccount, scc.LocationID)
 		if ok {
 			for _, appWithLabels := range appsWithLabels {
 				a.markSystemAsUnreachable(ctxWithSubaccount, appWithLabels.App)
@@ -307,7 +309,7 @@ func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 		if txSucceeded {
 			if err := tx.Commit(); err != nil {
 				txSucceeded = false
-				log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
+				log.C(ctx).Warn(errors.Wrapf(err, "while committing transaction"))
 			}
 		}
 
@@ -358,12 +360,12 @@ func (a *Handler) prepareAppInput(ctx context.Context, scc nsmodel.SCC, system n
 		},
 	}
 
-	appInputJson, err := a.appTemplateSvc.PrepareApplicationCreateInputJSON(template, values)
+	appInputJSON, err := a.appTemplateSvc.PrepareApplicationCreateInputJSON(template, values)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while preparing application create input from template with id:%s", system.TemplateID)
 	}
 
-	appInput, err := a.appConverter.CreateInputJSONToModel(ctx, appInputJson)
+	appInput, err := a.appConverter.CreateInputJSONToModel(ctx, appInputJSON)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while preparing application create input from json")
 	}
@@ -474,7 +476,7 @@ func (a *Handler) markSystemAsUnreachable(ctx context.Context, system *model.App
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
+		log.C(ctx).Warn(errors.Wrapf(err, "while committing transaction"))
 		return false
 	}
 
@@ -490,14 +492,14 @@ func (a *Handler) listAppsByScc(ctx context.Context, subaccount, locationID stri
 	defer a.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctxWithTransaction := persistence.SaveToContext(ctx, tx)
-	apps, err := a.appSvc.ListBySCC(ctxWithTransaction, labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"LocationId\":\"%s\", \"Subaccount\":\"%s\"}", locationID, subaccount)))
+	apps, err := a.appSvc.ListBySCC(ctxWithTransaction, labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", locationID, subaccount)))
 	if err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while listing all applications for scc with subaccount %s and location id %s", subaccount, locationID))
 		return nil, false
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.C(ctx).Warn(errors.Wrapf(err, "while commiting transaction"))
+		log.C(ctx).Warn(errors.Wrapf(err, "while committing transaction"))
 		return nil, false
 	}
 
@@ -510,12 +512,10 @@ func filterUnreachable(apps []*model.ApplicationWithLabel, systems []nsmodel.Sys
 	for _, s := range systems {
 		hostToSystem[s.Host] = struct{}{}
 	}
-	fmt.Println("Check")
-	unreachable := make([]*model.Application, 0, 0)
+	unreachable := make([]*model.Application, 0, len(apps))
 
 	for _, a := range apps {
 		result := a.SccLabel.Value.(map[string]interface{})["Host"]
-		fmt.Println("Check")
 		_, ok := hostToSystem[result.(string)]
 		if !ok {
 			unreachable = append(unreachable, a.App)
@@ -547,7 +547,7 @@ func addErrorDetailsMsg(details *[]httputil.Detail, scc *nsmodel.SCC, message st
 	*details = append(*details, httputil.Detail{
 		Message:    message,
 		Subaccount: scc.ExternalSubaccountID,
-		LocationId: scc.LocationID,
+		LocationID: scc.LocationID,
 	})
 }
 
@@ -571,7 +571,7 @@ func isNotFoundError(err error) bool {
 	return strings.Contains(err.Error(), "Object not found")
 }
 
-func filterSccsByInternalId(ctx context.Context, sccs []*nsmodel.SCC, details *[]httputil.Detail) []*nsmodel.SCC {
+func filterSccsByInternalID(ctx context.Context, sccs []*nsmodel.SCC, details *[]httputil.Detail) []*nsmodel.SCC {
 	filteredSccs := make([]*nsmodel.SCC, 0, len(sccs))
 	for _, scc := range sccs {
 		if scc.InternalSubaccountID == "" {

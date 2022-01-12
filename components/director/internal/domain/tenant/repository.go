@@ -188,7 +188,7 @@ func (r *pgRepository) ListByExternalTenants(ctx context.Context, externalTenant
 	conditions := repo.Conditions{
 		repo.NewInConditionForStringValues(externalTenantColumn, externalTenant)}
 
-	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil{
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
 		return nil, err
 	}
 

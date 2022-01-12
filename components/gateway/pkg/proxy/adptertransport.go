@@ -3,15 +3,16 @@ package proxy
 import (
 	"bytes"
 	"context"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"strings"
+
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
 	"github.com/pkg/errors"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"strings"
 )
 
 type AdapterTransport struct {
@@ -89,10 +90,10 @@ func (t *AdapterTransport) RoundTrip(req *http.Request) (resp *http.Response, er
 }
 
 type AdapterTokenClaims struct {
-ExtraAttributes map[string]interface{} `json:"ext_attr"`
-Scopes          []string               `json:"scope"`
-ConsumerID      string                 `json:"client_id"`
-jwt.StandardClaims
+	ExtraAttributes map[string]interface{} `json:"ext_attr"`
+	Scopes          []string               `json:"scope"`
+	ConsumerID      string                 `json:"client_id"`
+	jwt.StandardClaims
 }
 
 func (t *AdapterTransport) getClaims(headers http.Header) (Claims, error) {

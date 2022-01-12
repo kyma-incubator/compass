@@ -3101,7 +3101,7 @@ func TestService_GetSystem(t *testing.T) {
 	tnt := "id"
 	locationID := "loc_id"
 	virtualHost := "vhost"
-	filter := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"Host\":\"%s\",\"Subaccount\":\"%s\",\"LocationId\":\"%s\"}", virtualHost, tnt, locationID))
+	filter := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"Host\":\"%s\",\"Subaccount\":\"%s\",\"LocationID\":\"%s\"}", virtualHost, tnt, locationID))
 
 	desc := "Lorem ipsum"
 
@@ -3839,13 +3839,13 @@ func TestService_ListSCCs(t *testing.T) {
 
 	key := "scc"
 
-	locationId1 := "locationId1"
-	locationId2 := "locationId2"
+	locationID1 := "locationID1"
+	locationID2 := "locationID2"
 	subaccount1 := "subaccount1"
 	subaccount2 := "subaccount2"
 
-	labelValue1 := map[string]interface{}{"LocationId": locationId1, "Subaccount": subaccount1}
-	labelValue2 := map[string]interface{}{"LocationId": locationId2, "Subaccount": subaccount2}
+	labelValue1 := map[string]interface{}{"LocationID": locationID1, "Subaccount": subaccount1}
+	labelValue2 := map[string]interface{}{"LocationID": locationID2, "Subaccount": subaccount2}
 
 	labels := []*model.Label{
 		{Value: labelValue1},
@@ -3855,11 +3855,11 @@ func TestService_ListSCCs(t *testing.T) {
 	sccs := []*model.SccMetadata{
 		{
 			Subaccount: subaccount1,
-			LocationId: locationId1,
+			LocationID: locationID1,
 		},
 		{
 			Subaccount: subaccount2,
-			LocationId: locationId2,
+			LocationID: locationID2,
 		},
 	}
 

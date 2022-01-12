@@ -24,8 +24,8 @@ type Application struct {
 	CorrelationIDs        json.RawMessage `json:"correlationIds,omitempty"`
 	Type                  string          `json:"-"`
 	// SystemStatus shows whether the on-premise system is reachable or unreachable
-	SystemStatus *string
-	DocumentationLabels   json.RawMessage `json:"documentationLabels"`
+	SystemStatus        *string
+	DocumentationLabels json.RawMessage `json:"documentationLabels"`
 
 	*BaseEntity
 }
@@ -164,7 +164,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 		Labels:              i.OrdLabels,
 		CorrelationIDs:      i.CorrelationIDs,
 		SystemNumber:        i.SystemNumber,
-		SystemStatus:   i.SystemStatus,
+		SystemStatus:        i.SystemStatus,
 		DocumentationLabels: i.DocumentationLabels,
 		BaseEntity: &BaseEntity{
 			ID:    id,

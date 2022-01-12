@@ -412,7 +412,6 @@ func TestSystem_Validate(t *testing.T) {
 	}
 
 	checkCases(cases, t)
-
 }
 
 func TestSystem_UnmarshalJSON(t *testing.T) {
@@ -424,7 +423,6 @@ func TestSystem_UnmarshalJSON(t *testing.T) {
 		err := s.UnmarshalJSON(nil)
 
 		require.Error(t, err)
-
 	})
 
 	t.Run("success when template is matched", func(t *testing.T) {

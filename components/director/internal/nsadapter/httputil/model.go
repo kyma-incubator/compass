@@ -12,7 +12,7 @@ type ErrorResponse struct {
 	Error error `json:"error"`
 }
 
-//Error indicates processing failure of on-premise systems
+// Error indicates processing failure of on-premise systems
 type Error struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -22,7 +22,7 @@ func (e Error) Error() string {
 	return e.Message
 }
 
-//DetailedError indicates partial processing failure of on-premise systems
+// DetailedError indicates partial processing failure of on-premise systems
 type DetailedError struct {
 	Code    int      `json:"code"`
 	Message string   `json:"message"`
@@ -33,13 +33,14 @@ func (d DetailedError) Error() string {
 	return d.Message
 }
 
-//Detail contains error details for scc
+// Detail contains error details for scc
 type Detail struct {
 	Message    string `json:"message"`
 	Subaccount string `json:"subaccount"`
-	LocationId string `json:"locationId"`
+	LocationID string `json:"locationId"`
 }
 
+// GetTimeoutMessage returns ErrorResponse with status code 408 and message "timeout"
 func GetTimeoutMessage() []byte {
 	marshal, err := json.Marshal(ErrorResponse{Error: Error{
 		Code:    http.StatusRequestTimeout,

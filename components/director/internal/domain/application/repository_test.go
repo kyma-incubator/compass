@@ -759,7 +759,7 @@ func TestPgRepository_GetByFilter(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.applications WHERE id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" @> $3) AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $4))`),
-				Args:     []driver.Value{givenTenantAsUUID(), "SCC", "{\"Subaccount\":\"subacc\", \"LocationId\":\"LocationId\", \"Host\":\"Host\"}", givenTenant()},
+				Args:     []driver.Value{givenTenantAsUUID(), "SCC", "{\"Subaccount\":\"subacc\", \"LocationID\":\"LocationID\", \"Host\":\"Host\"}", givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{
@@ -781,7 +781,7 @@ func TestPgRepository_GetByFilter(t *testing.T) {
 		ExpectedModelEntity:       fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description"),
 		ExpectedDBEntity:          entity,
 		MethodName:                "GetByFilter",
-		MethodArgs:                []interface{}{givenTenant(), []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("SCC", fmt.Sprintf("{\"Subaccount\":\"subacc\", \"LocationId\":\"LocationId\", \"Host\":\"Host\"}"))}},
+		MethodArgs:                []interface{}{givenTenant(), []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("SCC", "{\"Subaccount\":\"subacc\", \"LocationID\":\"LocationID\", \"Host\":\"Host\"}")}},
 		DisableConverterErrorTest: true,
 	}
 
@@ -821,7 +821,7 @@ func TestPgRepository_ListAllByFilter(t *testing.T) {
 		RepoConstructorFunc:       application.NewRepository,
 		ExpectedModelEntities:     []interface{}{appModel1, appModel2},
 		ExpectedDBEntities:        []interface{}{appEntity1, appEntity2},
-		MethodArgs:                []interface{}{givenTenant(), []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"locationId\":\"locationId\"}"))}},
+		MethodArgs:                []interface{}{givenTenant(), []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("scc", "{\"locationId\":\"locationId\"}")}},
 		MethodName:                "ListAllByFilter",
 		DisableConverterErrorTest: true,
 	}

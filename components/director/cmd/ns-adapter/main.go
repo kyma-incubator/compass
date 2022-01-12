@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -43,9 +47,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
-	"net/http"
-	"os"
-	"strings"
 )
 
 const appTemplateName = "S4HANA"
@@ -177,7 +178,7 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 									"name": "on-premise-system",
 									"description": "{{description}}",
 									"providerName": "SAP",
-									"labels": {"scc": {"Subaccount":"{{subaccount}}", "LocationId":"{{location-id}}", "Host":"{{host}}"}, "applicationType":"{{system-type}}", "systemProtocol": "{{protocol}}" },
+									"labels": {"scc": {"Subaccount":"{{subaccount}}", "LocationID":"{{location-id}}", "Host":"{{host}}"}, "applicationType":"{{system-type}}", "systemProtocol": "{{protocol}}" },
 									"systemNumber": "{{system-number}}",
 									"systemStatus": "{{system-status}}"
 								}`,
@@ -224,11 +225,11 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 			exitOnError(err, fmt.Sprintf("error while getting application template with name: %s", appTemplateName))
 		}
 
-		templateId, err := appTemplateSvc.Create(ctxWithTx, appTemplate)
+		templateID, err := appTemplateSvc.Create(ctxWithTx, appTemplate)
 		if err != nil {
 			exitOnError(err, fmt.Sprintf("error while registering application template with name: %s", appTemplateName))
 		}
-		fmt.Println(fmt.Sprintf("successfully registered application template with id: %s", templateId))
+		log.C(ctx).Infof(fmt.Sprintf("Successfully registered application template with id: %s", templateID))
 	}
 
 	if err := tx.Commit(); err != nil {

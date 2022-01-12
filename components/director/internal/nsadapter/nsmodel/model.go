@@ -10,8 +10,10 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// Mappings stores mappings between system values and ApplicationTemplates
 var Mappings []systemfetcher.TemplateMapping
 
+// SystemBase represents on-premise system
 type SystemBase struct {
 	Protocol     string `json:"protocol"`
 	Host         string `json:"host"`
@@ -21,11 +23,13 @@ type SystemBase struct {
 	SystemNumber string `json:"systemNumber"`
 }
 
+// System represents on-premise system with ApplicationTemplate ID
 type System struct {
 	SystemBase
 	TemplateID string `json:"-"`
 }
 
+// Validate validates System fields
 func (s System) Validate() error {
 	return validation.ValidateStruct(&s,
 		validation.Field(&s.Protocol, validation.Required),
@@ -37,6 +41,7 @@ func (s System) Validate() error {
 	)
 }
 
+// UnmarshalJSON unmarshal the provided data into System
 func (s *System) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &s.SystemBase); err != nil {
 		return err
@@ -62,6 +67,7 @@ func matchProps(data []byte, tm systemfetcher.TemplateMapping) bool {
 	return true
 }
 
+// SCC represents SAP Cloud Connector
 type SCC struct {
 	ExternalSubaccountID string   `json:"subaccount"`
 	InternalSubaccountID string   `json:"-"`
@@ -69,6 +75,7 @@ type SCC struct {
 	ExposedSystems       []System `json:"exposedSystems"`
 }
 
+// Validate validates SCC fields
 func (s SCC) Validate() error {
 	return validation.ValidateStruct(&s,
 		validation.Field(&s.ExternalSubaccountID, validation.Required),
@@ -88,11 +95,13 @@ func validateSystems(value interface{}) error {
 	return nil
 }
 
+// Report represents Notification Service reports to CMP
 type Report struct {
 	ReportType string `json:"type"`
 	Value      []SCC  `json:"value"`
 }
 
+// Validate validates Report fields
 func (r Report) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.ReportType, validation.Required),
@@ -111,6 +120,7 @@ func validateSCCs(value interface{}) error {
 	return nil
 }
 
+// ToAppUpdateInput converts System to model.ApplicationUpdateInput
 func ToAppUpdateInput(system System) model.ApplicationUpdateInput {
 	return model.ApplicationUpdateInput{
 		Description:  str.Ptr(system.Description),

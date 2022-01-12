@@ -186,9 +186,9 @@ func fixNsAdapterTokenClaims() proxy.AdapterTokenClaims {
 }
 func fixNsAdapterClaims() proxy.Claims {
 	return proxy.Claims{
-		Tenant:         "e36c520b-caa2-4677-b289-8a171184192b",
-		Scopes:         "scopes",
-		ConsumerID:     ConsumerId,
+		Tenant:     "e36c520b-caa2-4677-b289-8a171184192b",
+		Scopes:     "scopes",
+		ConsumerID: ConsumerId,
 	}
 }
 

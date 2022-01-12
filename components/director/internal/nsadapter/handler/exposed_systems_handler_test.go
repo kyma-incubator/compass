@@ -4,6 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/handler/automock"
@@ -11,12 +20,6 @@ import (
 	txautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/handler"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
@@ -36,7 +39,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			BaseEntity: &model.BaseEntity{ID: "id"},
 		},
 		SccLabel: &model.Label{
-			Value: map[string]interface{}{"LocationId":"loc-id","Host":"127.0.0.1:8080"},
+			Value: map[string]interface{}{"LocationID": "loc-id", "Host": "127.0.0.1:8080"},
 		},
 	}
 
@@ -45,7 +48,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			BaseEntity: &model.BaseEntity{ID: "id"},
 		},
 		SccLabel: &model.Label{
-			Value: map[string]interface{}{"LocationId":"loc-id-2","Host":"127.0.0.1:8080"},
+			Value: map[string]interface{}{"LocationID": "loc-id-2", "Host": "127.0.0.1:8080"},
 		},
 	}
 
@@ -72,8 +75,8 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		ObjectType: model.ApplicationLabelableObject,
 	}
 
-	labelFilter := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"LocationId\":\"%s\", \"Subaccount\":\"%s\"}", "loc-id", testSubaccount))
-	labelFilter2 := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"LocationId\":\"%s\", \"Subaccount\":\"%s\"}", "loc-id-2", testSubaccount))
+	labelFilter := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", "loc-id", testSubaccount))
+	labelFilter2 := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", "loc-id-2", testSubaccount))
 
 	protocolLabel := &model.LabelInput{
 		Key:        "systemProtocol",
@@ -126,12 +129,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.Error{
 				Code:    http.StatusBadRequest,
 				Message: "failed to parse request body",
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusBadRequest, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -144,12 +148,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.Error{
 				Code:    http.StatusBadRequest,
 				Message: "missing or invalid required report type query parameter",
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusBadRequest, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -162,12 +167,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.Error{
 				Code:    http.StatusBadRequest,
 				Message: "missing or invalid required report type query parameter",
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusBadRequest, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -182,12 +188,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.Error{
 				Code:    http.StatusBadRequest,
 				Message: "value: (subaccount: cannot be blank.).",
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusBadRequest, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -205,12 +212,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		resp := rec.Result()
 
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.Error{
 				Code:    http.StatusInternalServerError,
 				Message: "Update failed",
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusInternalServerError, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -234,12 +242,13 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.Error{
 				Code:    http.StatusInternalServerError,
 				Message: "Update failed",
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusInternalServerError, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -264,7 +273,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.DetailedError{
 				Code:    http.StatusOK,
 				Message: "Update/create failed for some on-premise systems",
@@ -272,11 +281,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					{
 						Message:    "Provided id is not subaccount",
 						Subaccount: testSubaccount,
-						LocationId: "loc-id",
+						LocationID: "loc-id",
 					},
 				},
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -301,7 +311,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.DetailedError{
 				Code:    http.StatusOK,
 				Message: "Update/create failed for some on-premise systems",
@@ -309,11 +319,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					{
 						Message:    "Subaccount not found",
 						Subaccount: testSubaccount,
-						LocationId: "loc-id",
+						LocationID: "loc-id",
 					},
 				},
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -339,16 +350,16 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		setMappings()
 		defer clearMappings()
 
-		appInputJson := "app-input-json"
+		appInputJSON := "app-input-json"
 		applicationTemplate := &model.ApplicationTemplate{}
 
 		appTemplateSvc := automock.ApplicationTemplateService{}
 		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
-		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJSON, nil)
 
 		input := model.ApplicationRegisterInput{}
 		appConverterSvc := automock.ApplicationConverter{}
-		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("Upsert", mock.Anything, input).Return(errors.New("error"))
@@ -364,7 +375,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.DetailedError{
 				Code:    http.StatusOK,
 				Message: "Update/create failed for some on-premise systems",
@@ -372,11 +383,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					{
 						Message:    "Creation failed",
 						Subaccount: testSubaccount,
-						LocationId: "loc-id",
+						LocationID: "loc-id",
 					},
 				},
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -401,16 +413,16 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		setMappings()
 		defer clearMappings()
 
-		appInputJson := "app-input-json"
+		appInputJSON := "app-input-json"
 		applicationTemplate := &model.ApplicationTemplate{}
 
 		appTemplateSvc := automock.ApplicationTemplateService{}
 		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
-		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJSON, nil)
 
 		input := model.ApplicationRegisterInput{}
 		appConverterSvc := automock.ApplicationConverter{}
-		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("Upsert", mock.Anything, input).Return(nil)
@@ -463,7 +475,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.DetailedError{
 				Code:    http.StatusOK,
 				Message: "Update/create failed for some on-premise systems",
@@ -471,11 +483,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					{
 						Message:    "Creation failed",
 						Subaccount: testSubaccount,
-						LocationId: "loc-id",
+						LocationID: "loc-id",
 					},
 				},
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -500,16 +513,16 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		setMappings()
 		defer clearMappings()
 
-		appInputJson := "app-input-json"
+		appInputJSON := "app-input-json"
 		applicationTemplate := &model.ApplicationTemplate{}
 
 		appTemplateSvc := automock.ApplicationTemplateService{}
 		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
-		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJSON, nil)
 
 		input := model.ApplicationRegisterInput{}
 		appConverterSvc := automock.ApplicationConverter{}
-		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
@@ -527,7 +540,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.DetailedError{
 				Code:    http.StatusOK,
 				Message: "Update/create failed for some on-premise systems",
@@ -535,11 +548,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					{
 						Message:    "Creation failed",
 						Subaccount: testSubaccount,
-						LocationId: "loc-id",
+						LocationID: "loc-id",
 					},
 				},
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -564,16 +578,16 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		setMappings()
 		defer clearMappings()
 
-		appInputJson := "app-input-json"
+		appInputJSON := "app-input-json"
 		applicationTemplate := &model.ApplicationTemplate{}
 
 		appTemplateSvc := automock.ApplicationTemplateService{}
 		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
-		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJSON, nil)
 
 		input := model.ApplicationRegisterInput{}
 		appConverterSvc := automock.ApplicationConverter{}
-		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
@@ -639,7 +653,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		resp := rec.Result()
 
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.DetailedError{
 				Code:    http.StatusOK,
 				Message: "Update/create failed for some on-premise systems",
@@ -647,11 +661,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					{
 						Message:    "Creation failed",
 						Subaccount: testSubaccount,
-						LocationId: "loc-id",
+						LocationID: "loc-id",
 					},
 				},
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -691,7 +706,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		resp := rec.Result()
 
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.DetailedError{
 				Code:    http.StatusOK,
 				Message: "Update/create failed for some on-premise systems",
@@ -699,11 +714,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					{
 						Message:    "Creation failed",
 						Subaccount: testSubaccount,
-						LocationId: "loc-id",
+						LocationID: "loc-id",
 					},
 				},
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -749,7 +765,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.DetailedError{
 				Code:    http.StatusOK,
 				Message: "Update/create failed for some on-premise systems",
@@ -757,11 +773,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					{
 						Message:    "Creation failed",
 						Subaccount: testSubaccount,
-						LocationId: "loc-id",
+						LocationID: "loc-id",
 					},
 				},
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -838,7 +855,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.DetailedError{
 				Code:    http.StatusOK,
 				Message: "Update/create failed for some on-premise systems",
@@ -846,11 +863,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					{
 						Message:    "Creation failed",
 						Subaccount: testSubaccount,
-						LocationId: "loc-id",
+						LocationID: "loc-id",
 					},
 				},
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -877,7 +895,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("Update", mock.Anything, appWithLabel.App.ID, unreachableInput).Return(errors.New("error"))
-		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact,  &appSvc, &tntSvc)
+		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
 		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
@@ -887,7 +905,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		endpoint.ServeHTTP(rec, req)
 
 		resp := rec.Result()
-		expectedBody, _ := json.Marshal(httputil.ErrorResponse{
+		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.DetailedError{
 				Code:    http.StatusOK,
 				Message: "Update/create failed for some on-premise systems",
@@ -895,11 +913,12 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					{
 						Message:    "Creation failed",
 						Subaccount: testSubaccount,
-						LocationId: "loc-id",
+						LocationID: "loc-id",
 					},
 				},
 			},
 		})
+		require.NoError(t, err)
 		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
@@ -1018,16 +1037,16 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		setMappings()
 		defer clearMappings()
 
-		appInputJson := "app-input-json"
+		appInputJSON := "app-input-json"
 		applicationTemplate := &model.ApplicationTemplate{}
 
 		appTemplateSvc := automock.ApplicationTemplateService{}
 		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
-		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJSON, nil)
 
 		input := model.ApplicationRegisterInput{}
 		appConverterSvc := automock.ApplicationConverter{}
-		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("Upsert", mock.Anything, input).Return(errors.New("error"))
@@ -1069,16 +1088,16 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		setMappings()
 		defer clearMappings()
 
-		appInputJson := "app-input-json"
+		appInputJSON := "app-input-json"
 		applicationTemplate := &model.ApplicationTemplate{}
 
 		appTemplateSvc := automock.ApplicationTemplateService{}
 		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
-		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJSON, nil)
 
 		input := model.ApplicationRegisterInput{}
 		appConverterSvc := automock.ApplicationConverter{}
-		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("Upsert", mock.Anything, input).Return(nil)
@@ -1126,7 +1145,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
 		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
-		endpoint := handler.NewHandler(&appSvc,nil,nil, &tntSvc, &transact)
+		endpoint := handler.NewHandler(&appSvc, nil, nil, &tntSvc, &transact)
 
 		req := createReportSystemsRequest(strings.NewReader(body), fullReportType)
 		rec := httptest.NewRecorder()
@@ -1159,16 +1178,16 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		setMappings()
 		defer clearMappings()
 
-		appInputJson := "app-input-json"
+		appInputJSON := "app-input-json"
 		applicationTemplate := &model.ApplicationTemplate{}
 
 		appTemplateSvc := automock.ApplicationTemplateService{}
 		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
-		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJSON, nil)
 
 		input := model.ApplicationRegisterInput{}
 		appConverterSvc := automock.ApplicationConverter{}
-		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
@@ -1219,16 +1238,16 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		setMappings()
 		defer clearMappings()
 
-		appInputJson := "app-input-json"
+		appInputJSON := "app-input-json"
 		applicationTemplate := &model.ApplicationTemplate{}
 
 		appTemplateSvc := automock.ApplicationTemplateService{}
 		appTemplateSvc.Mock.On("Get", mock.Anything, "ss").Return(applicationTemplate, nil)
-		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJson, nil)
+		appTemplateSvc.Mock.On("PrepareApplicationCreateInputJSON", applicationTemplate, mock.Anything).Return(appInputJSON, nil)
 
 		input := model.ApplicationRegisterInput{}
 		appConverterSvc := automock.ApplicationConverter{}
-		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJson).Return(input, nil)
+		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
@@ -1595,7 +1614,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error"))
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return([]*model.SccMetadata{&model.SccMetadata{
 			Subaccount: testSubaccount,
-			LocationId: "loc-id",
+			LocationID: "loc-id",
 		}}, nil)
 		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
@@ -1635,18 +1654,18 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 		unreachableInput := model.ApplicationUpdateInput{SystemStatus: str.Ptr("unreachable")}
 
-		labelFilter2 := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"LocationId\":\"%s\", \"Subaccount\":\"%s\"}", "other-loc-id", "marked-as-unreachable"))
+		labelFilter2 := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", "other-loc-id", "marked-as-unreachable"))
 
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return(nil, errors.New("error")).Once()
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return([]*model.SccMetadata{
 			{
 				Subaccount: testSubaccount,
-				LocationId: "loc-id",
+				LocationID: "loc-id",
 			},
 			{
 				Subaccount: "marked-as-unreachable",
-				LocationId: "other-loc-id",
+				LocationID: "other-loc-id",
 			},
 		}, nil)
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter2).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil).Once()
@@ -1665,9 +1684,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	})
 }
 
-func Verify(t *testing.T, resp *http.Response,
-	expectedStatusCode int, expectedContentType string, expectedBody string) {
-
+func Verify(t *testing.T, resp *http.Response, expectedStatusCode int, expectedContentType string, expectedBody string) {
 	body, err := ioutil.ReadAll(resp.Body)
 	respBody := strings.TrimSuffix(string(body), "\n")
 	if nil != err {

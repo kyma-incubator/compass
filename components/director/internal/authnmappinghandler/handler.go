@@ -152,14 +152,13 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		h.logError(ctx, err, "An error has occurred while parsing the request.")
 		h.respond(ctx, writer, oathkeeper.ReqBody{
 			Subject: "",
-			Extra:   map[string]interface{}{"error":errors.New("Unable to parse request data")}},
+			Extra:   map[string]interface{}{"error": errors.New("Unable to parse request data")}},
 			getResponseStatusCode(matchedAuthenticator, badRequest))
 		return
 	}
 
 	claims, authCoordinates, err := h.verifyToken(ctx, reqData, matchedAuthenticator)
 	if err != nil {
-		fmt.Println(matchedAuthenticator)
 		h.logError(ctx, err, "An error has occurred while processing the request.")
 		reqData.Body.Extra["error"] = authenticationError{Message: "Token validation failed"}
 		h.respond(ctx, writer, reqData.Body, getResponseStatusCode(matchedAuthenticator, forbidden))

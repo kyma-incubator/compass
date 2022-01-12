@@ -3,8 +3,9 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"strings"
+
+	"github.com/jmoiron/sqlx"
 
 	"github.com/pkg/errors"
 
@@ -95,7 +96,7 @@ func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type,
 	if err != nil {
 		return "", err
 	}
-	queryWithTenantIsolation = queryWithTenantIsolation + " RETURNING id;"
+	queryWithTenantIsolation += " RETURNING id;"
 
 	if entityWithExternalTenant, ok := dbEntity.(EntityWithExternalTenant); ok {
 		dbEntity = entityWithExternalTenant.DecorateWithTenantID(tenant)
@@ -228,15 +229,4 @@ func buildQuery(tableName string, insertColumns []string, conflictingColumns []s
 
 	stmtBuilder.WriteString(stmtWithUpsert)
 	return stmtBuilder.String()
-}
-
-func assertSingleRowAffectedWhenUpserting(affected int64, isTenantScopedUpsert bool) error {
-	if affected == 0 && isTenantScopedUpsert {
-		return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
-	}
-
-	if affected != 1 {
-		return apperrors.NewInternalError(apperrors.ShouldUpsertSingleRowButUpsertedMsgF, affected)
-	}
-	return nil
 }

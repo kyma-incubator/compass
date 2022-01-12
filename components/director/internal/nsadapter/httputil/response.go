@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
+// RespondWithError sends error response with the provided status code and error message
 func RespondWithError(ctx context.Context, w http.ResponseWriter, status int, err error) {
 	log.C(ctx).WithError(err).Errorf("Responding with error: %v", err)
 	w.Header().Add(httputils.HeaderContentType, httputils.ContentTypeApplicationJSON)
