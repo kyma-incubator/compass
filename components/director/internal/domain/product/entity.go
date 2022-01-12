@@ -10,7 +10,7 @@ import (
 type Entity struct {
 	ID                  string         `db:"id"`
 	OrdID               string         `db:"ord_id"`
-	ApplicationID       string         `db:"app_id"`
+	ApplicationID       sql.NullString `db:"app_id"`
 	Title               string         `db:"title"`
 	ShortDescription    string         `db:"short_description"`
 	Vendor              string         `db:"vendor"`
@@ -27,7 +27,7 @@ func (e *Entity) GetID() string {
 
 // GetParent returns the parent type and the parent ID of the entity.
 func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
-	return resource.Application, e.ApplicationID
+	return resource.Application, e.ApplicationID.String
 }
 
 // DecorateWithTenantID decorates the entity with the given tenant ID.

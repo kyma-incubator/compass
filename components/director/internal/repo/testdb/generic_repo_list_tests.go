@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// RepoListTestSuite represents a generic test suite for repository List without paging method of any entity that has externally managed tenants in m2m table/view.
-// This test suite is not suitable for global entities or entities with embedded tenant in them.
+// RepoListTestSuite represents a generic test suite for repository List without paging method of any global entity or entity that has externally managed tenants in m2m table/view.
+// This test suite is not suitable for entities with embedded tenant in them.
 type RepoListTestSuite struct {
 	Name                      string
 	SQLQueryDetails           []SQLQueryDetails
@@ -137,7 +137,7 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 }
 
 func callList(repo interface{}, ctx context.Context, methodName string, args []interface{}) (interface{}, error) {
-	argsVals := make([]reflect.Value, 1, len(args))
+	argsVals := make([]reflect.Value, 1, len(args)+1)
 	argsVals[0] = reflect.ValueOf(ctx)
 	for _, arg := range args {
 		argsVals = append(argsVals, reflect.ValueOf(arg))

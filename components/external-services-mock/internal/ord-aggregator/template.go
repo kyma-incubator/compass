@@ -8,7 +8,7 @@ const ordConfig = `{
 	"openResourceDiscoveryV1": {
         "documents": [
             {
-                "url": "/open-resource-discovery/v1/documents/example1",
+                "url": "%s",
                 "systemInstanceAware": true,
                 "accessStrategies": [
                     {
@@ -38,7 +38,7 @@ const ordDocument = `{
       "HealthCheckURL":null,
       "IntegrationSystemID":null,
       "ApplicationTemplateID":null,
-      "baseUrl":"%s",
+      "baseUrl":"{{ .baseURL }}",
       "labels":{
          "label-key-1":[
             "label-value-1",
@@ -48,7 +48,7 @@ const ordDocument = `{
    },
    "packages":[
       {
-         "ordId":"ns:package:PACKAGE_ID:v1",
+         "ordId":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
          "vendor":"sap:vendor:SAP:",
          "title":"PACKAGE 1 TITLE",
          "shortDescription":"lorem ipsum",
@@ -98,7 +98,8 @@ const ordDocument = `{
          "policyLevel":"sap:core:v1",
          "customPolicyLevel":null,
          "partOfProducts":[
-            "sap:product:id:"
+            "sap:product:id{{ .randomSuffix }}:",
+			"sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -115,7 +116,7 @@ const ordDocument = `{
       {
          "title":"BUNDLE TITLE",
          "description":"lorem ipsum dolor nsq sme",
-         "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
+         "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "shortDescription":"lorem ipsum",
          "links":[
             {
@@ -157,7 +158,7 @@ const ordDocument = `{
       },
       {
          "title":"BUNDLE TITLE 2",
-         "ordId":"ns:consumptionBundle:BUNDLE_ID:v2",
+         "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2",
          "credentialExchangeStrategies":[
             {
                "callbackUrl":"/credentials/relative",
@@ -199,7 +200,7 @@ const ordDocument = `{
    ],
    "products":[
       {
-         "ordId":"sap:product:id:",
+         "ordId":"sap:product:id{{ .randomSuffix }}:",
          "title":"PRODUCT TITLE",
          "shortDescription":"lorem ipsum",
          "vendor":"sap:vendor:SAP:",
@@ -221,14 +222,14 @@ const ordDocument = `{
    ],
    "apiResources":[
       {
-         "partOfPackage":"ns:package:PACKAGE_ID:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
          "title":"API TITLE",
          "description":"lorem ipsum dolor sit amet",
          "entryPoints":[
             "https://exmaple.com/test/v1",
             "https://exmaple.com/test/v2"
          ],
-         "ordId":"ns:apiResource:API_ID:v2",
+         "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v2",
          "shortDescription":"lorem ipsum",
          "systemInstanceAware":true,
          "apiProtocol":"odata-v2",
@@ -284,7 +285,8 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
-            "sap:product:id:"
+            "sap:product:id{{ .randomSuffix }}:",
+			"sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -310,7 +312,7 @@ const ordDocument = `{
                "url":"/external-api/spec/flapping",
                "accessStrategies":[
                   {
-                     "type":"%[2]s",
+                     "type":"{{ .specsAccessStrategy }}",
                      "customType":"",
                      "customDescription":""
                   }
@@ -323,7 +325,7 @@ const ordDocument = `{
                "url":"https://test.com/odata/1.0/catalog",
                "accessStrategies":[
                   {
-                     "type":"%[2]s",
+                     "type":"{{ .specsAccessStrategy }}",
                      "customType":"",
                      "customDescription":""
                   }
@@ -336,7 +338,7 @@ const ordDocument = `{
                "url":"https://TEST:443//odata/$metadata",
                "accessStrategies":[
                   {
-                     "type":"%[2]s",
+                     "type":"{{ .specsAccessStrategy }}",
                      "customType":"",
                      "customDescription":""
                   }
@@ -345,25 +347,25 @@ const ordDocument = `{
          ],
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
                "defaultEntryPoint":"https://exmaple.com/test/v1"
             },
             {
                "defaultEntryPoint":"https://exmaple.com/test/v1",
-               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
             }
          ],
-         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID:v1",
+         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "version":"2.1.2"
       },
       {
-         "partOfPackage":"ns:package:PACKAGE_ID:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
          "title":"Gateway Sample Service",
          "description":"lorem ipsum dolor sit amet",
          "entryPoints":[
             "http://localhost:8080/some-api/v1"
          ],
-         "ordId":"ns:apiResource:API_ID2:v1",
+         "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",
          "shortDescription":"lorem ipsum",
          "systemInstanceAware":true,
          "apiProtocol":"odata-v2",
@@ -421,7 +423,8 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
-            "sap:product:id:"
+            "sap:product:id{{ .randomSuffix }}:",
+			"sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -447,7 +450,7 @@ const ordDocument = `{
                "url":"https://TEST:443//odata/$metadata",
                "accessStrategies":[
                   {
-                     "type":"%[2]s",
+                     "type":"{{ .specsAccessStrategy }}",
                      "customType":"",
                      "customDescription":""
                   }
@@ -460,7 +463,7 @@ const ordDocument = `{
                "url":"/odata/1.0/catalog.svc/$value?type=json",
                "accessStrategies":[
                   {
-                     "type":"%[2]s",
+                     "type":"{{ .specsAccessStrategy }}",
                      "customType":"",
                      "customDescription":""
                   }
@@ -469,10 +472,10 @@ const ordDocument = `{
          ],
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
             },
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
             }
          ],
          "version":"1.1.0"
@@ -480,10 +483,10 @@ const ordDocument = `{
    ],
    "eventResources":[
       {
-         "partOfPackage":"ns:package:PACKAGE_ID:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
          "title":"EVENT TITLE",
          "description":"lorem ipsum dolor sit amet",
-         "ordId":"ns:eventResource:EVENT_ID:v1",
+         "ordId":"ns:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
          "shortDescription":"lorem ipsum",
          "systemInstanceAware":true,
          "changelogEntries":[
@@ -528,7 +531,8 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
-            "sap:product:id:"
+            "sap:product:id{{ .randomSuffix }}:",
+			"sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -551,7 +555,7 @@ const ordDocument = `{
                "url":"http://localhost:8080/asyncApi2.json",
                "accessStrategies":[
                   {
-                     "type":"%[2]s",
+                     "type":"{{ .specsAccessStrategy }}",
                      "customType":"",
                      "customDescription":""
                   }
@@ -560,20 +564,20 @@ const ordDocument = `{
          ],
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
             },
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
             }
          ],
-         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID:v1",
+         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "version":"2.1.2"
       },
       {
-         "partOfPackage":"ns:package:PACKAGE_ID:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
          "title":"EVENT TITLE 2",
          "description":"lorem ipsum dolor sit amet",
-         "ordId":"ns2:eventResource:EVENT_ID:v1",
+         "ordId":"ns2:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
          "shortDescription":"lorem ipsum",
          "systemInstanceAware":true,
          "changelogEntries":[
@@ -620,7 +624,8 @@ const ordDocument = `{
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
-            "sap:product:id:"
+            "sap:product:id{{ .randomSuffix }}:",
+			"sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -643,7 +648,7 @@ const ordDocument = `{
                "url":"/api/eventCatalog.json",
                "accessStrategies":[
                   {
-                     "type":"%[2]s",
+                     "type":"{{ .specsAccessStrategy }}",
                      "customType":"",
                      "customDescription":""
                   }
@@ -652,10 +657,10 @@ const ordDocument = `{
          ],
          "partOfConsumptionBundles":[
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
             },
             {
-               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
             }
          ],
          "version":"1.1.0"
@@ -663,30 +668,14 @@ const ordDocument = `{
    ],
    "tombstones":[
       {
-         "ordId":"ns:apiResource:API_ID2:v1",
+         "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",
          "removalDate":"2020-12-02T14:12:59Z"
       }
    ],
    "vendors":[
       {
-         "ordId":"sap:vendor:SAP:",
-         "title":"SAP",
-         "partners":[
-            "microsoft:vendor:Microsoft:"
-         ],
-         "labels":{
-            "label-key-1":[
-               "label-value-1",
-               "label-value-2"
-            ]
-         },
-		 "documentationLabels":{
-			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
-		 }
-      },
-      {
-         "ordId":"partner:vendor:SAP:",
-         "title":"SAP",
+         "ordId":"partner:vendor:SAP{{ .randomSuffix }}:",
+         "title":"SAP SE",
          "partners":[
             "microsoft:vendor:Microsoft:"
          ],

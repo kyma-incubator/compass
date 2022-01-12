@@ -95,10 +95,50 @@ FROM specifications spec
 ALTER TABLE event_api_definitions DROP COLUMN documentation_labels;
 
 -- product
+DROP VIEW IF EXISTS tenants_products;
+
 ALTER TABLE products DROP COLUMN documentation_labels;
 
+CREATE OR REPLACE VIEW tenants_products AS
+SELECT DISTINCT t_apps.tenant_id AS tenant_id,
+                t_apps.provider_tenant_id AS provider_tenant_id,
+                p.*
+FROM products p
+         JOIN (SELECT a1.id,
+                      a1.tenant_id::text,
+                      a1.tenant_id::text AS provider_tenant_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT *
+               FROM apps_subaccounts_func()
+               UNION ALL
+               SELECT a_s.id, a_s.tenant_id, (SELECT id::text FROM business_tenant_mappings WHERE external_tenant = cpr.provider_tenant) AS provider_tenant_id
+               FROM apps_subaccounts_func() a_s
+                        JOIN consumers_provider_for_runtimes_func() cpr
+                             ON cpr.consumer_tenants ? (SELECT external_tenant FROM business_tenant_mappings WHERE id = a_s.tenant_id::uuid)) t_apps ON p.app_id = t_apps.id;
+
 -- vendor
+DROP VIEW IF EXISTS tenants_vendors;
+
 ALTER TABLE vendors DROP COLUMN documentation_labels;
+
+CREATE OR REPLACE VIEW tenants_vendors AS
+SELECT DISTINCT t_apps.tenant_id AS tenant_id,
+                t_apps.provider_tenant_id AS provider_tenant_id,
+                v.*
+FROM vendors v
+         JOIN (SELECT a1.id,
+                      a1.tenant_id::text,
+                      a1.tenant_id::text AS provider_tenant_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT *
+               FROM apps_subaccounts_func()
+               UNION ALL
+               SELECT a_s.id, a_s.tenant_id, (SELECT id::text FROM business_tenant_mappings WHERE external_tenant = cpr.provider_tenant) AS provider_tenant_id
+               FROM apps_subaccounts_func() a_s
+                        JOIN consumers_provider_for_runtimes_func() cpr
+                             ON cpr.consumer_tenants ? (SELECT external_tenant FROM business_tenant_mappings WHERE id = a_s.tenant_id::uuid)) t_apps ON v.app_id = t_apps.id;
 
 -- system instance
 ALTER TABLE applications DROP COLUMN documentation_labels;
