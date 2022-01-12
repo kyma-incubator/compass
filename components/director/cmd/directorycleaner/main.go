@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"net/http"
 	"time"
+
+	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
