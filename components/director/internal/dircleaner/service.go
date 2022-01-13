@@ -201,12 +201,12 @@ func (s *service) getRegionLabel(ctx context.Context, id string) (string, error)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	log.C(ctx).Info("Getting region label")
-	regionLabel, err := s.labelSvc.GetByKey(ctx, id, model.TenantLabelableObject, id, "region") // check once again
+	regionLabel, err := s.labelSvc.GetByKey(ctx, id, model.TenantLabelableObject, id, "region")
 	if err != nil {
 		return "", errors.Wrapf(err, "while getting region label for subaccount with id %s", id)
 	}
 	if err = tx.Commit(); err != nil {
 		return "", err
 	}
-	return regionLabel.Value.(string), nil // check once again
+	return regionLabel.Value.(string), nil
 }
