@@ -21,7 +21,7 @@ type ConfigChangeService interface {
 	Save(change model.ConfigurationChange) (string, error)
 	Get(id string) *model.ConfigurationChange
 	List() []model.ConfigurationChange
-	SearchByString(searchString string) []model.ConfigurationChange
+	SearchByTimestamp(timeFrom, timeTo time.Time) []model.ConfigurationChange
 	Delete(id string)
 }
 
@@ -111,20 +111,46 @@ func (h *ConfigChangeHandler) Delete(writer http.ResponseWriter, req *http.Reque
 	h.service.Delete(id)
 }
 
-func (h *ConfigChangeHandler) SearchByString(writer http.ResponseWriter, req *http.Request) {
-	searchString := req.URL.Query().Get("query")
-	if searchString == "" {
-		httphelpers.WriteError(writer, errors.New("parameter [query] not provided"), http.StatusBadRequest)
+func (h *ConfigChangeHandler) SearchByTimestamp(writer http.ResponseWriter, req *http.Request) {
+	timeFromString := req.URL.Query().Get("time_from")
+	if timeFromString == "" {
+		httphelpers.WriteError(writer, errors.New("parameter [time_from] not provided"), http.StatusBadRequest)
 		return
 	}
 
-	values := h.service.SearchByString(searchString)
+	timeToString := req.URL.Query().Get("time_to")
+	if timeFromString == "" {
+		httphelpers.WriteError(writer, errors.New("parameter [time_to] not provided"), http.StatusBadRequest)
+		return
+	}
+
+	if !strings.HasSuffix(timeFromString, "Z") {
+		timeFromString += "Z"
+	}
+
+	if !strings.HasSuffix(timeToString, "Z") {
+		timeToString += "Z"
+	}
+
+	from, err := time.Parse(time.RFC3339Nano, timeFromString)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.New("parameter [time_from] is not in proper format"), http.StatusBadRequest)
+		return
+	}
+
+	to, err := time.Parse(time.RFC3339Nano, timeToString)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.New("parameter [time_to] is not in proper format"), http.StatusBadRequest)
+		return
+	}
+
+	values := h.service.SearchByTimestamp(from, to)
 	if len(values) == 0 {
 		http.Error(writer, "", http.StatusNotFound)
 		return
 	}
 
-	err := json.NewEncoder(writer).Encode(&values)
+	err = json.NewEncoder(writer).Encode(&values)
 	if err != nil {
 		httphelpers.WriteError(writer, errors.New("error while encoding response"), http.StatusInternalServerError)
 		return

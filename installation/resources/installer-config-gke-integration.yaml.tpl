@@ -9,7 +9,7 @@ metadata:
     kyma-project.io/installation: ""
 data:
   global.externalServicesMock.enabled: "true"
-  global.externalServicesMock.auditlog: "true"
+  global.externalServicesMock.auditlog.enabled: "true"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
   global.systemFetcher.enabled: "true"

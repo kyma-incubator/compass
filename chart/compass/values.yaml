@@ -114,13 +114,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2169"
+      version: "PR-2174"
     console:
       dir:
       version: "PR-51"
     e2e_tests:
       dir:
-      version: "PR-2169"
+      version: "PR-2174"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -590,7 +590,6 @@ global:
 
   externalServicesMock:
     enabled: false
-    auditlog: false
     certSecuredPort: 8081
     unsecuredPort: 8082
     basicSecuredPort: 8083
@@ -600,6 +599,12 @@ global:
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials
+    auditlog:
+      enabled: false
+      tokenUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8080/secured/oauth/token
+      clientId: client_id
+      clientSecret: client_secret
+      managementUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8080/audit-log/v2/configuration-changes/search
 
   tests:
     http:

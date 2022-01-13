@@ -40,25 +40,24 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	t.Log("Register Application through Gateway with Dex id Token")
 	app := graphql.ApplicationExt{}
+
+	timeFrom := time.Now()
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
 	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
 	require.NoError(t, err)
+	timeTo := timeFrom.Add(1 * time.Minute)
 
 	t.Log("Get auditlog service Token")
-	auditlogToken := fixtures.GetAuditlogMockToken(t, &httpClient, testConfig.ExternalServicesMockBaseURL)
+	auditlogToken := fixtures.GetAuditlogToken(t, &httpClient, testConfig.Auditlog)
 
 	t.Log("Get auditlog from external services mock")
-	auditlogs := fixtures.SearchForAuditlogByString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName)
+	auditlogs := fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog.ManagementURL, auditlogToken, appName, timeFrom, timeTo)
 
 	assert.Eventually(t, func() bool {
-		auditlogs = fixtures.SearchForAuditlogByString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName)
+		auditlogs = fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName, timeFrom, timeTo)
 		t.Logf("Waiting for auditlog items to be %d, but currently are: %d", 2, len(auditlogs))
 		return len(auditlogs) == 2
 	}, time.Minute, time.Millisecond*500)
-
-	for _, auditlog := range auditlogs {
-		defer fixtures.DeleteAuditlogByID(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, auditlog.UUID)
-	}
 
 	t.Log("Compare request to director with auditlog")
 	requestBody := prepareRegisterAppRequestBody(t, registerRequest)

@@ -17,9 +17,9 @@ metadata:
   namespace: compass-installer
 data:
   global.externalServicesMock.enabled: "true"
-  global.externalServicesMock.auditlog: "false"
+  global.externalServicesMock.auditlog.enabled: "false"
 ```
-Since we want to disable the auditlog configurations around the external services mock, as it will not be tested in real environment, it is requred to set  `global.externalServicesMock.auditlog: "false"`.  
+Since we want to disable the auditlog configurations around the external services mock, as it will not be tested in real environment, it is requred to set  `global.externalServicesMock.auditlog.enabled: "false"`.  
 When, you start the Compass installer again on an already existing Compass installation, it only installs the external services mock as an addition to the existing installation.
 
 2. After the tests are carried out, you must delete the `ConfigMap` resource with the overrides.
