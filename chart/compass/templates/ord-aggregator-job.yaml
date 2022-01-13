@@ -84,6 +84,8 @@ spec:
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
                 - name: APP_EXTERNAL_CLIENT_KEY_KEY
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+                - name: APP_GLOBAL_REGISTRY_URL
+                  value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
               command:
                 - "/bin/sh"
               args:

@@ -28,6 +28,20 @@ func (_m *VendorRepository) Create(ctx context.Context, tenant string, item *mod
 	return r0
 }
 
+// CreateGlobal provides a mock function with given fields: ctx, _a1
+func (_m *VendorRepository) CreateGlobal(ctx context.Context, _a1 *model.Vendor) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Vendor) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Delete provides a mock function with given fields: ctx, tenant, id
 func (_m *VendorRepository) Delete(ctx context.Context, tenant string, id string) error {
 	ret := _m.Called(ctx, tenant, id)
@@ -35,6 +49,20 @@ func (_m *VendorRepository) Delete(ctx context.Context, tenant string, id string
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, tenant, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteGlobal provides a mock function with given fields: ctx, id
+func (_m *VendorRepository) DeleteGlobal(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -86,6 +114,29 @@ func (_m *VendorRepository) GetByID(ctx context.Context, tenant string, id strin
 	return r0, r1
 }
 
+// GetByIDGlobal provides a mock function with given fields: ctx, id
+func (_m *VendorRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Vendor, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Vendor
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Vendor); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Vendor)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByApplicationID provides a mock function with given fields: ctx, tenantID, appID
 func (_m *VendorRepository) ListByApplicationID(ctx context.Context, tenantID string, appID string) ([]*model.Vendor, error) {
 	ret := _m.Called(ctx, tenantID, appID)
@@ -109,6 +160,29 @@ func (_m *VendorRepository) ListByApplicationID(ctx context.Context, tenantID st
 	return r0, r1
 }
 
+// ListGlobal provides a mock function with given fields: ctx
+func (_m *VendorRepository) ListGlobal(ctx context.Context) ([]*model.Vendor, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []*model.Vendor
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.Vendor); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Vendor)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Update provides a mock function with given fields: ctx, tenant, item
 func (_m *VendorRepository) Update(ctx context.Context, tenant string, item *model.Vendor) error {
 	ret := _m.Called(ctx, tenant, item)
@@ -116,6 +190,20 @@ func (_m *VendorRepository) Update(ctx context.Context, tenant string, item *mod
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Vendor) error); ok {
 		r0 = rf(ctx, tenant, item)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateGlobal provides a mock function with given fields: ctx, _a1
+func (_m *VendorRepository) UpdateGlobal(ctx context.Context, _a1 *model.Vendor) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Vendor) error); ok {
+		r0 = rf(ctx, _a1)
 	} else {
 		r0 = ret.Error(0)
 	}

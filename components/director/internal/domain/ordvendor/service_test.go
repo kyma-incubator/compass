@@ -95,6 +95,78 @@ func TestService_Create(t *testing.T) {
 	})
 }
 
+func TestService_CreateGlobal(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	ctx := context.TODO()
+
+	modelVendor := fixGlobalVendorModel()
+	modelInput := *fixVendorModelInput()
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.VendorRepository
+		UIDServiceFn func() *automock.UIDService
+		Input        model.VendorInput
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("CreateGlobal", ctx, modelVendor).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(vendorID)
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Error - Vendor creation",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("CreateGlobal", ctx, modelVendor).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(vendorID)
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+			uidSvc := testCase.UIDServiceFn()
+
+			svc := ordvendor.NewService(repo, uidSvc)
+
+			// WHEN
+			result, err := svc.CreateGlobal(ctx, testCase.Input)
+
+			// then
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.IsType(t, "string", result)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
 func TestService_Update(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
@@ -184,6 +256,86 @@ func TestService_Update(t *testing.T) {
 	})
 }
 
+func TestService_UpdateGlobal(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	modelVendor := fixGlobalVendorModel()
+	modelInput := *fixVendorModelInput()
+
+	inputVendorModel := mock.MatchedBy(func(vendor *model.Vendor) bool {
+		return vendor.Title == modelInput.Title
+	})
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.VendorRepository
+		Input        model.VendorInput
+		InputID      string
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("GetByIDGlobal", ctx, vendorID).Return(modelVendor, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputVendorModel).Return(nil).Once()
+				return repo
+			},
+			InputID:     vendorID,
+			Input:       modelInput,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "UpdateGlobal Error",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("GetByIDGlobal", ctx, vendorID).Return(modelVendor, nil).Once()
+				repo.On("UpdateGlobal", ctx, inputVendorModel).Return(testErr).Once()
+				return repo
+			},
+			InputID:     vendorID,
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name: "Get Error",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("GetByIDGlobal", ctx, vendorID).Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:     vendorID,
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := ordvendor.NewService(repo, nil)
+
+			// WHEN
+			err := svc.UpdateGlobal(ctx, testCase.InputID, testCase.Input)
+
+			// then
+			if testCase.ExpectedErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_Delete(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
@@ -249,6 +401,64 @@ func TestService_Delete(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
+}
+
+func TestService_DeleteGlobal(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.VendorRepository
+		Input        model.VendorInput
+		InputID      string
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("DeleteGlobal", ctx, vendorID).Return(nil).Once()
+				return repo
+			},
+			InputID:     vendorID,
+			ExpectedErr: nil,
+		},
+		{
+			Name: "DeleteGlobal Error",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("DeleteGlobal", ctx, vendorID).Return(testErr).Once()
+				return repo
+			},
+			InputID:     vendorID,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := ordvendor.NewService(repo, nil)
+
+			// WHEN
+			err := svc.DeleteGlobal(ctx, testCase.InputID)
+
+			// then
+			if testCase.ExpectedErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
 }
 
 func TestService_Exist(t *testing.T) {
@@ -458,4 +668,70 @@ func TestService_ListByApplicationID(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
+}
+
+func TestService_ListGlobal(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	vendors := []*model.Vendor{
+		fixGlobalVendorModel(),
+		fixGlobalVendorModel(),
+		fixGlobalVendorModel(),
+	}
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.VendorRepository
+		ExpectedResult     []*model.Vendor
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("ListGlobal", ctx).Return(vendors, nil).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     vendors,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when Vendor listing failed",
+			RepositoryFn: func() *automock.VendorRepository {
+				repo := &automock.VendorRepository{}
+				repo.On("ListGlobal", ctx).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := ordvendor.NewService(repo, nil)
+
+			// WHEN
+			docs, err := svc.ListGlobal(ctx)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
 }

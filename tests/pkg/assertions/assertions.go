@@ -3,6 +3,7 @@ package assertions
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -497,7 +498,7 @@ func AssertSingleEntityFromORDService(t *testing.T, respBody string, expectedNum
 	}
 }
 
-func AssertMultipleEntitiesFromORDService(t *testing.T, respBody string, entitiesMap map[string]string, expectedNumber int) {
+func AssertMultipleEntitiesFromORDService(t *testing.T, respBody string, entitiesMap map[string]string, expectedNumber int, descriptionField string) {
 	numberOfEntities := len(gjson.Get(respBody, "value").Array())
 	require.Equal(t, expectedNumber, numberOfEntities)
 
@@ -508,7 +509,7 @@ func AssertMultipleEntitiesFromORDService(t *testing.T, respBody string, entitie
 		entityDescription, exists := entitiesMap[entityTitle]
 		require.True(t, exists)
 
-		require.Equal(t, entityDescription, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
+		require.Equal(t, entityDescription, gjson.Get(respBody, fmt.Sprintf("value.%d.%s", i, descriptionField)).String())
 	}
 }
 
@@ -555,8 +556,8 @@ func AssertDefaultBundleID(t *testing.T, respBody string, numberOfEntities int, 
 			internalBundleID := gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles.%d.bundleID", i, j)).String()
 			ordID := ordAndInternalIDsMappingForBundles[internalBundleID]
 
-			expectedDefaultBundleOrdID, ok := entityDefaultBundleMap[entityTitle]
-			if ok && expectedDefaultBundleOrdID == ordID {
+			expectedDefaultBundleOrdIDRegex, ok := entityDefaultBundleMap[entityTitle]
+			if ok && regexp.MustCompile(expectedDefaultBundleOrdIDRegex).MatchString(ordID) {
 				require.True(t, gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles.%d.isDefaultBundle", i, j)).Bool())
 			} else {
 				require.False(t, gjson.Get(respBody, fmt.Sprintf("value.%d.partOfConsumptionBundles.%d.isDefaultBundle", i, j)).Bool())
@@ -582,12 +583,12 @@ func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody s
 	}
 }
 
-func AssertTombstoneFromORDService(t *testing.T, respBody string, expectedNumber int, expectedID string) {
+func AssertTombstoneFromORDService(t *testing.T, respBody string, expectedNumber int, expectedIDRegex string) {
 	numberOfEntities := len(gjson.Get(respBody, "value").Array())
 	require.Equal(t, expectedNumber, numberOfEntities)
 
 	for i := 0; i < numberOfEntities; i++ {
-		require.Equal(t, expectedID, gjson.Get(respBody, fmt.Sprintf("value.%d.ordId", i)).String())
+		require.Regexp(t, expectedIDRegex, gjson.Get(respBody, fmt.Sprintf("value.%d.ordId", i)).String())
 	}
 }
 

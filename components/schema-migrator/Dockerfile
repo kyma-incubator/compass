@@ -1,14 +1,15 @@
-FROM alpine:3.14.2
+FROM alpine:3.15.0
 
-ARG MIGRATE_VER=4.14.1
+ARG MIGRATE_VER=4.15.1
 
 WORKDIR /migrate
 
 RUN apk --no-cache add bash postgresql-client curl jq
 RUN wget https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VER}/migrate.linux-amd64.tar.gz -O - | tar -xz
-RUN mv migrate.linux-amd64 /usr/local/bin/migrate
+RUN mv migrate /usr/local/bin/migrate
 
-ENV CLUSTER_VERSION=1.19.8
+# kubectl is supported within one minor version (older or newer) of kube-apiserver
+ENV CLUSTER_VERSION=1.20.14
 
 RUN apk add --update ca-certificates \
  && apk add -t deps \

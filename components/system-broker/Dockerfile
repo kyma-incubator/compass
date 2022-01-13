@@ -1,4 +1,4 @@
-FROM golang:1.17.4-alpine3.14 as builder
+FROM golang:1.17.6-alpine3.15 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/system-broker
 WORKDIR ${BASE_APP_DIR}
@@ -10,7 +10,7 @@ COPY . ${BASE_APP_DIR}
 
 RUN go build -v -o /app/system-broker ./cmd/main.go
 
-FROM alpine:3.14.2
+FROM alpine:3.15.0
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
