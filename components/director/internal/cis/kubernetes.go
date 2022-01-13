@@ -2,6 +2,7 @@ package cis
 
 import (
 	"context"
+
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -32,7 +33,6 @@ type KubeClient interface {
 	GetClientSecretForRegion(region string) string
 	GetTokenURLForRegion(region string) string
 }
-
 
 type kubernetesClient struct {
 	client    *kubernetes.Clientset
