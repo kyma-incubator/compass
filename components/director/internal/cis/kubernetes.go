@@ -2,10 +2,6 @@ package cis
 
 import (
 	"context"
-	"encoding/json"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -18,8 +14,12 @@ type KubeConfig struct {
 	ConfigMapNamespace string `envconfig:"default=compass-system,APP_CONFIGMAP_NAMESPACE"`
 	ConfigMapName      string `envconfig:"default=cis-endpoints,APP_CONFIGMAP_NAME"`
 	// for prod only
-	ClientCredentialsName      string `envconfig:"default=cis-client-creds,APP_CIS_CLIENT_CREDS_MAP_NAME"`
-	ClientCredentialsNamespace string `envconfig:"default=compass-system"`
+	ClientIDsNamespace     string `envconfig:"default=compass-system,APP_CLIENT_IDS_NAMESPACE"`
+	ClientIDsMapName       string `envconfig:"default=client-ids,APP_CLIENT_IDS_MAP_NAME"`
+	ClientSecretsNamespace string `envconfig:"default=compass-system,APP_CLIENT_SECRETS_NAMESPACE"`
+	ClientSecretsMapName   string `envconfig:"default=client-secrets,APP_CLIENT_SECRETS_MAP_NAME"`
+	TokenURLsNamespace     string `envconfig:"default=compass-system,APP_TOKEN_URLS_NAMESPACE"`
+	TokenURLsMapName       string `envconfig:"default=token-urls,APP_TOKEN_URLS_MAP_NAME"`
 }
 
 // KubeClient missing godoc
@@ -33,11 +33,6 @@ type KubeClient interface {
 	GetTokenURLForRegion(region string) string
 }
 
-type oAuthDetails struct {
-	ClientID     string // jsonTag
-	ClientSecret string // jsonTag
-	TokenURL     string // jsonTag
-}
 
 type kubernetesClient struct {
 	client    *kubernetes.Clientset
@@ -45,7 +40,9 @@ type kubernetesClient struct {
 	secret    map[string][]byte
 	cfg       KubeConfig
 	// for prod only
-	clientCreds map[string]oAuthDetails
+	clientIDs     map[string]string
+	clientSecrets map[string]string
+	tokenURLs     map[string]string
 }
 
 // NewKubernetesClient missing godoc
@@ -66,27 +63,29 @@ func NewKubernetesClient(ctx context.Context, cfg KubeConfig, kubeClientConfig k
 	}
 
 	// for prod
-	clientCreds := make(map[string]oAuthDetails)
-	clientIdsMap, err := kubeClientSet.CoreV1().ConfigMaps(cfg.ClientCredentialsNamespace).Get(ctx, cfg.ClientCredentialsName, metav1.GetOptions{})
+	clientIDs, err := kubeClientSet.CoreV1().ConfigMaps(cfg.ClientIDsNamespace).Get(ctx, cfg.ClientIDsMapName, metav1.GetOptions{})
 	if err != nil {
-		log.C(ctx).Warn("Could not find configmap with client ids")
-	} else {
-		for region, data := range clientIdsMap.Data {
-			var details oAuthDetails
-			if err := json.Unmarshal([]byte(data), &details); err != nil {
-				log.C(ctx).Error(err)
-			} else {
-				clientCreds[region] = details
-			}
-		}
+		return nil, err
+	}
+
+	clientSecrets, err := kubeClientSet.CoreV1().ConfigMaps(cfg.ClientSecretsNamespace).Get(ctx, cfg.ClientSecretsMapName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	tokenURLs, err := kubeClientSet.CoreV1().ConfigMaps(cfg.TokenURLsNamespace).Get(ctx, cfg.TokenURLsMapName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
 	}
 
 	return &kubernetesClient{
-		client:      kubeClientSet,
-		secret:      secret.Data,
-		configmap:   configMap.Data,
-		cfg:         cfg,
-		clientCreds: clientCreds,
+		client:        kubeClientSet,
+		secret:        secret.Data,
+		configmap:     configMap.Data,
+		cfg:           cfg,
+		clientIDs:     clientIDs.Data,
+		clientSecrets: clientSecrets.Data,
+		tokenURLs:     tokenURLs.Data,
 	}, nil
 }
 
@@ -104,13 +103,13 @@ func (k *kubernetesClient) GetRegionURL(region string) string {
 }
 
 func (k *kubernetesClient) GetClientIDForRegion(region string) string {
-	return k.clientCreds[region].ClientID
+	return k.clientIDs[region]
 }
 
 func (k *kubernetesClient) GetClientSecretForRegion(region string) string {
-	return k.clientCreds[region].ClientSecret
+	return k.clientSecrets[region]
 }
 
 func (k *kubernetesClient) GetTokenURLForRegion(region string) string {
-	return k.clientCreds[region].TokenURL
+	return k.tokenURLs[region]
 }
