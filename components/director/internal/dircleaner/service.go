@@ -61,6 +61,14 @@ func (s *service) Clean(ctx context.Context) error {
 	succsessfullyProcessed := 0
 	correctSubaccounts := 0
 	dirsToDelete := make(map[string]bool)
+	dirsNotToDelete := make(map[string]bool) // in case a SA can't be found, there may be another valid SA that shares the same parent Dir and the Dir will be marked for deletion by the correct SA which will result in deletion of the not found SA due to cascade
+	var notFoundSAs []string
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return err
+	}
+	query := `"select 1 from (select tenant_id as tnt from tenant_applications union all select tenant_id from tenant_runtimes) t where tnt = $1"`
 
 	for _, subaccount := range allSubaccounts {
 		region, err := s.getRegionLabel(ctx, subaccount.ID)
@@ -69,9 +77,18 @@ func (s *service) Clean(ctx context.Context) error {
 			continue
 		}
 		log.C(ctx).Infof("Processing subaccount with ID %s", subaccount.ID)
+
+		parentFromDB, err := s.tenantSvc.GetTenantByID(ctx, subaccount.Parent)
+		if err != nil {
+			log.C(ctx).Errorf("Could not take parent for subaccout with id %s %v", subaccount.ID, err)
+			continue
+		}
+
 		globalAccountGUIDFromCis, err := s.cisSvc.GetGlobalAccount(ctx, region, subaccount.ExternalTenant)
 		if err != nil {
-			log.C(ctx).Errorf("Could not get globalAccountGuid for subaacount with ID %s from CIS %v", subaccount.ID, err)
+			log.C(ctx).Errorf("Could not get globalAccountGuid for subacount with ID %s from CIS %v", subaccount.ID, err)
+			dirsNotToDelete[parentFromDB.ExternalTenant] = true
+			notFoundSAs = append(notFoundSAs, subaccount.ExternalTenant)
 			continue
 		}
 		err = func() error {
@@ -82,12 +99,11 @@ func (s *service) Clean(ctx context.Context) error {
 			ctx = persistence.SaveToContext(ctx, tx)
 			defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
-			parentFromDB, err := s.tenantSvc.GetTenantByID(ctx, subaccount.Parent)
-			if err != nil {
-				log.C(ctx).Errorf("Could not take parent for subaccout with id %s %v", subaccount.ID, err)
-				return err
-			}
 			if parentFromDB.ExternalTenant != globalAccountGUIDFromCis { // the record is directory and not GA
+				if ok, err := hasSubaccountTenantAccessRecords(ctx, persist, query, subaccount.ID); err != nil || ok {
+					return err
+				}
+
 				conflictingGA, err := s.tenantSvc.GetTenantByExternalID(ctx, globalAccountGUIDFromCis)
 
 				if conflictingGA != nil && err == nil { // there is a record which conflicts by external tenant id
@@ -100,14 +116,14 @@ func (s *service) Clean(ctx context.Context) error {
 					}
 					log.C(ctx).Infof("Updating subaccount with id %s to point to existing GA with id %s", subaccount.ID, conflictingGA.ID)
 					if err = s.tenantSvc.Update(ctx, subaccount.ID, updateSubaccount); err != nil {
-						log.C(ctx).Error(err)
+						return err
 					} else { // the update was successful
 						// mark the directory for deletion later because it still may have other child subaccounts which will be deleted by the cascade
 						dirsToDelete[parentFromDB.ExternalTenant] = true
 						succsessfullyProcessed++
 					}
 				} else if err != nil && !apperrors.IsNotFoundError(err) {
-					log.C(ctx).Error(err)
+					return err
 				} else {
 					update := model.BusinessTenantMappingInput{
 						Name:           globalAccountGUIDFromCis, // set new name
@@ -118,7 +134,7 @@ func (s *service) Clean(ctx context.Context) error {
 					}
 					log.C(ctx).Infof("Updating directory with id %s with new external id %s", parentFromDB.ID, globalAccountGUIDFromCis)
 					if err := s.tenantSvc.Update(ctx, parentFromDB.ID, update); err != nil {
-						log.C(ctx).Error(err)
+						return err
 					} else {
 						succsessfullyProcessed++
 					}
@@ -129,7 +145,7 @@ func (s *service) Clean(ctx context.Context) error {
 			}
 
 			if err = tx.Commit(); err != nil {
-				log.C(ctx).Error(err)
+				return err
 			}
 			return nil
 		}()
@@ -138,15 +154,16 @@ func (s *service) Clean(ctx context.Context) error {
 		}
 	}
 
-	if err = s.deleteDirectories(ctx, dirsToDelete); err != nil {
+	if err = s.deleteDirectories(ctx, dirsToDelete, dirsNotToDelete); err != nil {
 		log.C(ctx).Error(err)
 	}
 	log.C(ctx).Infof("Successfully processed %d records from %d", succsessfullyProcessed, len(allSubaccounts))
 	log.C(ctx).Infof("%d subaccounts were correct and were not modified out of total  %d", correctSubaccounts, len(allSubaccounts))
+	log.C(ctx).Errorf("Could not get globalAccountGuid for %d subacounts with external IDs %v from CIS", len(notFoundSAs), notFoundSAs)
 	return nil
 }
 
-func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool) error {
+func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool, dirsNotToDelete map[string]bool) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -157,6 +174,9 @@ func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool) e
 	log.C(ctx).Infof("%d directories are to be deleted", len(dirs))
 	successfullyDeleted := 0
 	for extTenant := range dirs {
+		if dirsNotToDelete[extTenant] {
+			continue
+		}
 		log.C(ctx).Infof("Deleting directory with external ID %s", extTenant)
 		if err = s.tenantSvc.DeleteByExternalTenant(ctx, extTenant); err != nil {
 			log.C(ctx).Error(err)
@@ -209,4 +229,24 @@ func (s *service) getRegionLabel(ctx context.Context, id string) (string, error)
 		return "", err
 	}
 	return regionLabel.Value.(string), nil
+}
+
+func hasSubaccountTenantAccessRecords(ctx context.Context, persist persistence.PersistenceOp, query, subacccountID string) (bool, error) {
+	res, err := persist.ExecContext(ctx, query, subacccountID)
+	if err != nil {
+		log.C(ctx).Errorf("error while executing query for checking tenant_applications/runtimes records  %v", err)
+		return false, err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		log.C(ctx).Errorf("while checking affected rows  %v", err)
+		return false, err
+	}
+
+	if affected != 0 {
+		log.C(ctx).Errorf("Records in tenant_applications/runtimes exist for tenant with id %s", subacccountID)
+		return true, nil
+	}
+	return false, nil
 }

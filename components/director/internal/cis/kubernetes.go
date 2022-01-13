@@ -34,9 +34,9 @@ type KubeClient interface {
 }
 
 type oAuthDetails struct {
-	ClientID     string
-	ClientSecret string
-	TokenURL     string
+	ClientID     string // jsonTag
+	ClientSecret string // jsonTag
+	TokenURL     string // jsonTag
 }
 
 type kubernetesClient struct {
