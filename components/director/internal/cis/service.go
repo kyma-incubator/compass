@@ -66,28 +66,28 @@ func (s *service) GetGlobalAccount(ctx context.Context, region string, subaccoun
 			s.k8sClient.SetRegionToken(region, newToken)
 			req.Header.Set("Authorization", "Bearer "+newToken)
 
-			resp, err := s.httpClient.Do(req)
+			response, err := s.httpClient.Do(req)
 			if err != nil {
 				return "", errors.Wrap(err, "while getting details for tenant")
 			}
 			defer func() {
-				if err := resp.Body.Close(); err != nil {
+				if err := response.Body.Close(); err != nil {
 					log.C(ctx).Error(err, "Failed to close HTTP response body")
 				}
 			}()
 			if resp.StatusCode != http.StatusOK {
 				return "", errors.Errorf("Received status code %d from CIS after retrying with new token", resp.StatusCode)
 			}
-			var response CISResponse
+			var parsedResponse CISResponse
 			bodyBytes, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return "", errors.Wrap(err, "while reading response body")
 			}
-			if err := json.Unmarshal(bodyBytes, &response); err != nil {
+			if err := json.Unmarshal(bodyBytes, &parsedResponse); err != nil {
 				return "", errors.Wrap(err, fmt.Sprintf("failed to unmarshall HTTP response with body %s", string(bodyBytes)))
 			}
 
-			return response.GlobalAccountID, nil
+			return parsedResponse.GlobalAccountID, nil
 		} else {
 			return "", errors.Errorf("Received status code %d from CIS", resp.StatusCode)
 		}
