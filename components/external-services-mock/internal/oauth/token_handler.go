@@ -23,11 +23,15 @@ const (
 
 	grantTypeFieldName   = "grant_type"
 	credentialsGrantType = "client_credentials"
+	passwordGrantType    = "password"
 	scopesFieldName      = "scopes"
 	claimsKey            = "claims_key"
 
 	clientIDKey     = "client_id"
 	clientSecretKey = "client_secret"
+	userNameKey     = "username"
+	passwordKey     = "password"
+	zidKey          = "x-zid"
 )
 
 type ClaimsGetterFunc func() map[string]interface{}
@@ -36,6 +40,8 @@ type handler struct {
 	expectedSecret      string
 	expectedID          string
 	tenantHeaderName    string
+	expectedUsername    string
+	expectedPassword    string
 	signingKey          *rsa.PrivateKey
 	staticMappingClaims map[string]ClaimsGetterFunc
 }
@@ -47,38 +53,70 @@ func NewHandler(expectedSecret, expectedID string) *handler {
 	}
 }
 
-func NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeaderName string, signingKey *rsa.PrivateKey, staticMappingClaims map[string]ClaimsGetterFunc) *handler {
+func NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeaderName, expectedUsername, expectedPassword string, signingKey *rsa.PrivateKey, staticMappingClaims map[string]ClaimsGetterFunc) *handler {
 	return &handler{
 		expectedSecret:      expectedSecret,
 		expectedID:          expectedID,
 		tenantHeaderName:    tenantHeaderName,
+		expectedUsername:    expectedUsername,
+		expectedPassword:    expectedPassword,
 		signingKey:          signingKey,
 		staticMappingClaims: staticMappingClaims,
 	}
 }
 
 func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
-	authorization := r.Header.Get("authorization")
-	id, secret, err := getBasicCredentials(authorization)
-	if err != nil {
-		log.C(r.Context()).Errorf("client secret not found in header: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "client secret not found in header"), http.StatusBadRequest)
+	ctx := r.Context()
+
+	if r.Header.Get(contentTypeHeader) != contentTypeApplicationURLEncoded {
+		log.C(ctx).Errorf("Unsupported media type, expected: application/x-www-form-urlencodedgot: %s", r.Header.Get(contentTypeHeader))
+		writer.WriteHeader(http.StatusUnsupportedMediaType)
 		return
 	}
 
-	if h.expectedID != id || h.expectedSecret != secret {
-		log.C(r.Context()).Error("client secret or client id doesn't match expected")
-		httphelpers.WriteError(writer, errors.New("client secret or client id doesn't match expected"), http.StatusBadRequest)
+	if r.FormValue(grantTypeFieldName) != credentialsGrantType && r.FormValue(grantTypeFieldName) != passwordGrantType {
+		log.C(ctx).Errorf("The grant_type should be %s or %s but we got: %s", credentialsGrantType, passwordGrantType, r.FormValue(grantTypeFieldName))
+		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusBadRequest)
 		return
 	}
-	h.GenerateWithoutCredentials(writer, r)
+
+	if err := r.ParseForm(); err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while parsing query")
+		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusInternalServerError)
+		return
+	}
+
+	if r.FormValue(grantTypeFieldName) == credentialsGrantType {
+		if err := h.handleClientCredentialsRequest(r); err != nil {
+			log.C(ctx).Error(err)
+			httphelpers.WriteError(writer, err, http.StatusBadRequest)
+			return
+		}
+	} else { // Assume it's a password flow because currently we support only client_credentials and password
+		if err := h.handlePasswordCredentialsRequest(r); err != nil {
+			log.C(ctx).Error(err)
+			httphelpers.WriteError(writer, err, http.StatusBadRequest)
+			return
+		}
+	}
+
+	var claims map[string]interface{}
+	claimsFunc, ok := h.staticMappingClaims[r.FormValue(claimsKey)]
+	if ok { // If the request contains claims key, use the corresponding claims in the static mapping for that key
+		claims = claimsFunc()
+		claims[zidKey] = r.Header.Get(h.tenantHeaderName)
+		respond(writer, r, claims, h.signingKey)
+	} else { // If there is no claims key provided use empty claims
+		log.C(ctx).Info("Did not find claims key in the request. Proceeding with empty claims...")
+		respond(writer, r, claims, h.signingKey)
+	}
 }
 
 func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http.Request) {
 	claims := map[string]interface{}{}
 
 	tenant := r.Header.Get(h.tenantHeaderName)
-	claims["x-zid"] = tenant
+	claims[zidKey] = tenant
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -94,49 +132,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 		}
 	}
 
-	h.respond(writer, r, claims)
-}
-
-func (h *handler) GenerateWithBasicCredentials(writer http.ResponseWriter, r *http.Request) { // TODO: Rename function
-	ctx := r.Context()
-
-	if r.Header.Get(contentTypeHeader) != contentTypeApplicationURLEncoded {
-		log.C(ctx).Errorf("Unsupported media type, expected: application/x-www-form-urlencodedgot: %q", r.Header.Get("Content-Type"))
-		writer.WriteHeader(http.StatusUnsupportedMediaType)
-		return
-	}
-
-	if err := r.ParseForm(); err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while parsing query")
-		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusInternalServerError)
-		return
-	}
-
-	if r.FormValue(grantTypeFieldName) != credentialsGrantType {
-		log.C(ctx).Errorf("The grant_type is not the expected one, expected: %q, got: %q", credentialsGrantType, r.FormValue(grantTypeFieldName))
-		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusBadRequest)
-		return
-	}
-
-	if r.FormValue(clientIDKey) != h.expectedID || r.FormValue(clientSecretKey) != h.expectedSecret {
-		log.C(ctx).Error("client secret or client id doesn't match expected")
-		httphelpers.WriteError(writer, errors.New("client secret or client id doesn't match expected"), http.StatusBadRequest)
-		return
-	}
-
-	claimsFunc, ok := h.staticMappingClaims[r.FormValue(claimsKey)]
-	if !ok {
-		log.C(ctx).Errorf("An error occurred while getting static claims function")
-		httphelpers.WriteError(writer, errors.New("An error occurred while getting static claims function"), http.StatusInternalServerError)
-		return
-	}
-
-	claims := claimsFunc()
-
-	tenant := r.Header.Get(h.tenantHeaderName)
-	claims["x-zid"] = tenant
-
-	h.respond(writer, r, claims)
+	respond(writer, r, claims, h.signingKey)
 }
 
 func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter, r *http.Request) {
@@ -157,20 +153,59 @@ func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter,
 		tenant := r.Header.Get(h.tenantHeaderName)
 		claims[clientIDKey] = client
 		claims[scopesFieldName] = scopes
-		claims["x-zid"] = tenant
+		claims[zidKey] = tenant
 	}
 
-	h.respond(writer, r, claims)
+	respond(writer, r, claims, h.signingKey)
 }
 
-func (h *handler) respond(writer http.ResponseWriter, r *http.Request, claims map[string]interface{}) {
+func (h *handler) handleClientCredentialsRequest(r *http.Request) error {
+	log.C(r.Context()).Info("Validating client credentials token request...")
+
+	authorization := r.Header.Get("authorization")
+	if id, secret, err := getBasicCredentials(authorization); err != nil {
+		log.C(r.Context()).Info("Did not find client id or client secret in authorization header. Checking the request body...")
+		if r.FormValue(clientIDKey) != h.expectedID || r.FormValue(clientSecretKey) != h.expectedSecret {
+			return errors.New("client id or client secret from request body doesn't match the expected one")
+		}
+	} else if h.expectedID != id || h.expectedSecret != secret {
+		return errors.New("client id or client secret from authorization header doesn't match the expected one")
+	}
+
+	log.C(r.Context()).Info("Successfully validated client credentials token request")
+
+	return nil
+}
+
+func (h *handler) handlePasswordCredentialsRequest(r *http.Request) error {
+	log.C(r.Context()).Info("Validating password grant type token request...")
+	authorization := r.Header.Get("authorization")
+	id, secret, err := getBasicCredentials(authorization)
+	if err != nil {
+		return errors.Wrap(err, "client secret or client id doesn't match the expected one")
+	}
+
+	if id != h.expectedID || secret != h.expectedSecret {
+		return errors.New("client secret or client id doesn't match the expected one")
+	}
+
+	if r.FormValue(userNameKey) != h.expectedUsername || r.FormValue(passwordKey) != h.expectedPassword {
+		return errors.New("username or password doesn't match the expected one")
+	}
+
+	log.C(r.Context()).Info("Successfully validated password grant type token request")
+
+	return nil
+}
+
+func respond(writer http.ResponseWriter, r *http.Request, claims map[string]interface{}, signingKey *rsa.PrivateKey) {
 	var (
 		output string
 		err    error
 	)
-	if h.signingKey != nil {
+	if signingKey != nil {
 		token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims(claims))
-		output, err = token.SignedString(h.signingKey)
+		output, err = token.SignedString(signingKey)
 	} else {
 		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims(claims))
 		output, err = token.SigningString()

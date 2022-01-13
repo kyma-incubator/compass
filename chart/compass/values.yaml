@@ -184,9 +184,6 @@ global:
   log:
     format: "kibana"
 
-  testCredentials:
-    secretName: "test-credentials-secret"
-
   enableCompassDefaultScenarioAssignment: true
 
   tenantConfig:
@@ -437,7 +434,7 @@ global:
     tokenPath: "/secured/oauth/token"
     secrets:
       externalCertSvcSecret:
-        manage: true
+        manage: false
         name: "cert-svc-secret"
         clientIdKey: client-id
         clientSecretKey: client-secret
@@ -629,7 +626,7 @@ global:
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
     externalServicesMock:
       oauthSecret:
-        managed: true
+        manage: false
         name: compass-external-services-mock-oauth-credentials
         clientIdKey: client-id
         clientSecretKey: client-secret
@@ -637,6 +634,9 @@ global:
         oauthTokenPath: "/secured/oauth/token"
     tokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
     subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+    basicCredentials:
+      manage: false
+      secretName: "test-basic-credentials-secret"
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1

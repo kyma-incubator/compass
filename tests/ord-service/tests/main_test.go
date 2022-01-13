@@ -67,6 +67,7 @@ type config struct {
 	ORDServiceDefaultResponseType         string
 	DefaultScenarioEnabled                bool `envconfig:"default=true"`
 	TokenURL                              string
+	TokenPath                             string
 	SubscriptionURL                       string
 	ClientID                              string
 	ClientSecret                          string
@@ -78,6 +79,8 @@ type config struct {
 	ExternalClientCertTestSecretName      string
 	ExternalClientCertTestSecretNamespace string
 	ExternalCertCronjobContainerName      string
+	BasicUsername                         string
+	BasicPassword                         string
 	TestProviderAccountID                 string
 	TestConsumerAccountID                 string
 	TestProviderSubaccountID              string

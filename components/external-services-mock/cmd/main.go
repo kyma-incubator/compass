@@ -106,20 +106,20 @@ func main() {
 	exitOnError(err, "while loading configuration")
 
 	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
-	staticMappingClaims := map[string]oauth.ClaimsGetterFunc{
-		"tenantFetcherFlow": claimsFunc("test", "tenant-fetcher", "tenantID", "tenant-fetcher-test-identity", extSvcMockURL, []string{"prefix.Callback"}),
-		"subscriptionFlow":  claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", extSvcMockURL, []string{}),
+	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
+		"tenantFetcherClaims": claimsFunc("test", "tenant-fetcher", "tenantID", "tenant-fetcher-test-identity", extSvcMockURL, []string{"prefix.Callback"}),
+		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", extSvcMockURL, []string{}),
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	exitOnError(err, "while generating rsa key")
 
-	ordServers := initORDServers(cfg, key, staticMappingClaims)
+	ordServers := initORDServers(cfg, key, staticClaimsMapping)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
-	go startServer(ctx, initDefaultServer(cfg, key, staticMappingClaims), wg)
+	go startServer(ctx, initDefaultServer(cfg, key, staticClaimsMapping), wg)
 
 	for _, server := range ordServers {
 		wg.Add(1)
@@ -143,28 +143,26 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
 
 	// Oauth server handlers
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key, staticMappingClaims)
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, cfg.Username, cfg.Password, key, staticMappingClaims)
 	router.HandleFunc("/secured/oauth/token", tokenHandler.Generate).Methods(http.MethodPost)
 	// TODO The mtls_token_provider sends client id and scopes in url.values form. When the change for fetching xsuaa token
 	// with certificate is merged GenerateWithCredentialsFromReqBody should be used for testing the flows that include fetching
 	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.
 	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
-	router.HandleFunc("/test/oauth/token", tokenHandler.GenerateWithBasicCredentials).Methods(http.MethodPost)
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
 	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
 	router.HandleFunc(cfg.JWKSPath, jwksHanlder.Handle)
 
-	// Subscription handler
+	// Subscription handlers
 	subHandler := subscription.NewHandler(cfg.TenantConfig, cfg.TenantProviderConfig, fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.TokenPath, cfg.ClientID, cfg.ClientSecret, staticMappingClaims)
 	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Subscription).Methods(http.MethodPost)
 	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Deprovisioning).Methods(http.MethodDelete)
-	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions/token", subHandler.GetToken).Methods(http.MethodGet)
 
 	// on subscription callback we need to return something, in our case 200 OK should be enough
 	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", subHandler.OnSubscription).Methods(http.MethodPut)
 
-	//
+	// TODO:: Add comment
 	router.HandleFunc("/v1/dependencies/configure", subHandler.DependenciesConfigure).Methods(http.MethodPost)
 	router.HandleFunc("/v1/dependencies", subHandler.Dependencies).Methods(http.MethodGet)
 
@@ -271,7 +269,7 @@ func initCertSecuredServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
 
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key, staticMappingClaims)
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, cfg.Username, cfg.Password, key, staticMappingClaims)
 	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
 
 	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)

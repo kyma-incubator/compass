@@ -21,13 +21,9 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"net/url"
 	"testing"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
@@ -48,6 +44,20 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
+)
+
+const (
+	contentTypeHeader                = "Content-Type"
+	contentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
+	contentTypeApplicationJson       = "application/json"
+
+	grantTypeFieldName = "grant_type"
+	passwordGrantType  = "password"
+	claimsKey          = "claims_key"
+
+	clientIDKey = "client_id"
+	userNameKey = "username"
+	passwordKey = "password"
 )
 
 func TestSelfRegisterFlow(t *testing.T) {
@@ -205,10 +215,6 @@ func TestConsumerProviderFlow(t *testing.T) {
 			},
 		}
 
-		// TODO:: https://saas-manager.cfapps.sap.hana.ondemand.com/saas-manager/v1/application/tenants/b8b92ad4-318f-4285-a200-235821a051b5/subscriptions
-		// TODO:: In local setup: call ext svc mock api for: 1. get token from ext svc mock and 2. make tenant fetcher subscription call
-		// TODO:: In cluster setup: 1. get token from xsuaa and 2. call saas-registry for subscription
-
 		// Build a request for consumer subscription
 		subscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
 
@@ -230,15 +236,8 @@ func TestConsumerProviderFlow(t *testing.T) {
 		extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
 		// Create a token with the necessary consumer claims and add it in authorization header
-		claims := map[string]interface{}{
-			"subsc-key-test": "subscription-flow",
-			"scope":          []string{},
-			"tenant":         subscriptionConsumerSubaccountID,
-			"identity":       "subscription-flow-identity",
-			"iss":            testConfig.TokenURL,
-			"exp":            time.Now().Unix() + int64(time.Minute.Seconds()),
-		}
-		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret, claims))}}
+		tkn := token.GetClientCredentialsToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "subscriptionClaims")
+		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", tkn)}}
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
@@ -334,7 +333,7 @@ func TestNewChanges(t *testing.T) {
 
 		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
-		response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", "application/json", bytes.NewBuffer([]byte(strLbl)))
+		response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", contentTypeApplicationJson, bytes.NewBuffer([]byte(strLbl)))
 		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
@@ -353,8 +352,7 @@ func TestNewChanges(t *testing.T) {
 		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerSubaccountID)
 		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
 		require.NoError(t, err)
-
-		tenantFetcherToken := getToken(t, ctx, testConfig, "tenantFetcherFlow")
+		tenantFetcherToken := token.GetClientCredentialsToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "tenantFetcherClaims")
 		subscribeReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tenantFetcherToken))
 
 		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
@@ -380,12 +378,11 @@ func TestNewChanges(t *testing.T) {
 		// HTTP client configured with manually signed client certificate
 		extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
-		subscriptionToken := getToken(t, ctx, testConfig, "subscriptionFlow")
+		subscriptionToken := token.GetUserToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, testConfig.BasicUsername, testConfig.BasicPassword, "subscriptionClaims")
 		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", subscriptionToken)}}
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 
@@ -445,49 +442,4 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 	}
 
 	k8s.CreateJobByGivenJobDefinition(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace, jobDef)
-}
-
-func getToken(t *testing.T, ctx context.Context, testConfig config, claimsKey string) string {
-	log.C(ctx).Info("Issuing token...")
-
-	data := url.Values{}
-	data.Add("grant_type", "client_credentials")
-	data.Add("client_id", testConfig.ClientID)
-	data.Add("client_secret", testConfig.ClientSecret)
-	data.Add("claims_key", claimsKey)
-
-	req, err := http.NewRequest(http.MethodPost, testConfig.TokenURL+"/test/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-
-	resp, err := httpClient.Do(req)
-	require.NoError(t, err)
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.C(ctx).WithError(err).Errorf("An error has occurred while closing response body: %v", err)
-		}
-	}()
-
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-	require.NotEmpty(t, resp.Body)
-	body, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-
-	tkn := gjson.GetBytes(body, "access_token")
-	require.True(t, tkn.Exists())
-	require.NotEmpty(t, tkn)
-
-	log.C(ctx).Info("Successfully issued token")
-
-	return tkn.String()
 }

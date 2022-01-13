@@ -51,11 +51,24 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		"test-claim": "test-value",
 		"x-zid":      "",
 	}
-	claimsBody, err := json.Marshal(expectedClaims)
-	require.NoError(t, err)
+
+	staticClaimsMapping := map[string]oauth2.ClaimsGetterFunc{
+		"tenantFetcherClaims": func() map[string]interface{} {
+			return expectedClaims
+		},
+	}
+
+	data := url.Values{}
+	data.Add("grant_type", "client_credentials")
 
 	secret, id, tenantHeader := "secret", "id", "x-zid"
-	req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer(claimsBody))
+	req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	// We can add the key-value pair in the body but
+	q := req.URL.Query()
+	q.Add("claims_key", "tenantFetcherClaims")
+	req.URL.RawQuery = q.Encode()
 
 	encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
 	req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
@@ -63,7 +76,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 
-	h := oauth2.NewHandlerWithSigningKey(secret, id, tenantHeader, key, map[string]oauth2.ClaimsGetterFunc{})
+	h := oauth2.NewHandlerWithSigningKey(secret, id, tenantHeader, "", "", key, staticClaimsMapping)
 	r := httptest.NewRecorder()
 
 	//WHEN
@@ -107,7 +120,7 @@ func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 
-	h := oauth2.NewHandlerWithSigningKey("", id, tenantHeader, key, map[string]oauth2.ClaimsGetterFunc{})
+	h := oauth2.NewHandlerWithSigningKey("", id, tenantHeader, "", "", key, map[string]oauth2.ClaimsGetterFunc{})
 	r := httptest.NewRecorder()
 
 	//WHEN

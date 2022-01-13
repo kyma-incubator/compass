@@ -18,6 +18,7 @@ package tenantfetcher
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -84,7 +85,8 @@ func CreateTenantRequest(t *testing.T, tenants Tenant, tenantProperties TenantID
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
 	require.NoError(t, err)
 
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, externalServicesMockURL, clientID, clientSecret, DefaultClaims(externalServicesMockURL))))
+	tkn := token.GetClientCredentialsToken(t, context.Background(), externalServicesMockURL+"/secured/oauth/token", clientID, clientSecret, "tenantFetcherClaims")
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
 
 	return request
 }

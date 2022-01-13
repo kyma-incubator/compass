@@ -55,12 +55,12 @@ spec:
             - name: BASIC_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.testCredentials.secretName }}
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
                   key: username
             - name: BASIC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.testCredentials.secretName }}
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
                   key: password
             - name: CLIENT_ID
               valueFrom:

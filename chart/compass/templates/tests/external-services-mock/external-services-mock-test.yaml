@@ -63,12 +63,12 @@ spec:
             - name: BASIC_CREDENTIALS_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.testCredentials.secretName }}
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
                   key: username
             - name: BASIC_CREDENTIALS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.testCredentials.secretName }}
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
                   key: password
             - name: DEFAULT_TEST_TENANT
               value: "{{ (index .Values.global.tenants 9).id }}"
