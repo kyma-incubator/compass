@@ -75,28 +75,28 @@ func TestCallingCompassGateways(t *testing.T) {
 		positiveDescription string
 		client              *http.Client
 		url                 string
-		requestSize int
+		requestSize         int
 	}{
 		{
 			negativeDescription: "fails when request is over 5MB and passes through gateway",
 			positiveDescription: "succeeds for a regular applications request passing through gateway",
 			url:                 conf.CompassGatewayURL + directorPath,
 			client:              authorizedClient,
-			requestSize: conf.RequestPayloadLimit,
+			requestSize:         conf.RequestPayloadLimit,
 		},
 		{
 			negativeDescription: "fails when request is over 2MB and reaches director",
 			positiveDescription: "succeeds for a regular applications request reaching director",
 			url:                 conf.CompassGatewayURL + directorPath,
 			client:              authorizedClient,
-			requestSize: 2097152,
+			requestSize:         2097152,
 		},
 		{
 			negativeDescription: "fails when request is over 5MB and passes through MTLS gateway",
 			positiveDescription: "succeeds for a regular applications request passing through MTLS gateway",
 			url:                 conf.CompassMTLSGatewayURL + directorPath,
 			client:              certSecuredClient,
-			requestSize: conf.RequestPayloadLimit,
+			requestSize:         conf.RequestPayloadLimit,
 		},
 	}
 

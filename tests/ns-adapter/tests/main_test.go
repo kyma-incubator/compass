@@ -2,13 +2,14 @@ package tests
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/machinebox/graphql"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"testing"
 
 	"github.com/pkg/errors"
 
