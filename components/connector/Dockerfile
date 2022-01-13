@@ -1,4 +1,4 @@
-FROM golang:1.17.4-alpine3.14 as builder
+FROM golang:1.17.6-alpine3.15 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/connector
 WORKDIR ${BASE_APP_DIR}
@@ -13,7 +13,7 @@ RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
 
 
-FROM alpine:3.14.2
+FROM alpine:3.15.0
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
