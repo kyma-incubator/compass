@@ -3,6 +3,7 @@ package cis
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
@@ -33,9 +34,9 @@ type KubeClient interface {
 }
 
 type oAuthDetails struct {
-	clientID     string
-	clientSecret string
-	tokenURL     string
+	ClientID     string
+	ClientSecret string
+	TokenURL     string
 }
 
 type kubernetesClient struct {
@@ -43,7 +44,7 @@ type kubernetesClient struct {
 	configmap map[string]string
 	secret    map[string][]byte
 	cfg       KubeConfig
-	//for prod only
+	// for prod only
 	clientCreds map[string]oAuthDetails
 }
 
@@ -103,13 +104,13 @@ func (k *kubernetesClient) GetRegionURL(region string) string {
 }
 
 func (k *kubernetesClient) GetClientIDForRegion(region string) string {
-	return k.clientCreds[region].clientID
+	return k.clientCreds[region].ClientID
 }
 
 func (k *kubernetesClient) GetClientSecretForRegion(region string) string {
-	return k.clientCreds[region].clientSecret
+	return k.clientCreds[region].ClientSecret
 }
 
 func (k *kubernetesClient) GetTokenURLForRegion(region string) string {
-	return k.clientCreds[region].tokenURL
+	return k.clientCreds[region].TokenURL
 }
