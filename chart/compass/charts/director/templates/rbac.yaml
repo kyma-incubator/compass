@@ -3,6 +3,10 @@ kind: ServiceAccount
 metadata:
   name: {{ template "fullname" . }}
   namespace: {{ .Release.Namespace }}
+  {{- if eq .Values.global.database.embedded.enabled false }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
+  {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
