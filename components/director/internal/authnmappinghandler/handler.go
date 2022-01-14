@@ -59,18 +59,6 @@ type TokenVerifier interface {
 	Verify(ctx context.Context, token string) (TokenData, error)
 }
 
-const (
-	badRequest       = "Bad Request"
-	methodNotAllowed = "Method Not Allowed"
-	forbidden        = "Forbidden"
-)
-
-var statusCodes = map[string]int{
-	badRequest:       http.StatusBadRequest,
-	forbidden:        http.StatusForbidden,
-	methodNotAllowed: http.StatusMethodNotAllowed,
-}
-
 // TokenVerifierProvider defines different ways by which one can provide a TokenVerifier
 type TokenVerifierProvider func(ctx context.Context, metadata OpenIDMetadata) TokenVerifier
 
@@ -128,52 +116,48 @@ type authenticationError struct {
 
 // ServeHTTP missing godoc
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusOK)
+		return
+	}
+
 	ctx := req.Context()
+
+	reqData, err := h.reqDataParser.Parse(req)
+	if err != nil {
+		h.logError(ctx, err, "An error has occurred while parsing the request.")
+		http.Error(writer, "Unable to parse request data", http.StatusOK)
+		return
+	}
 
 	vars := mux.Vars(req)
 	matchedAuthenticator, ok := vars["authenticator"]
 	if !ok {
 		h.logError(ctx, errors.New("authenticator not found in path"), "An error has occurred while extracting authenticator name.")
-		httputils.RespondWithBody(ctx, writer, http.StatusOK, authenticationError{Message: "Missing authenticator"})
+		reqData.Body.Extra["error"] = authenticationError{Message: "Missing authenticator"}
+		h.respond(ctx, writer, reqData.Body)
 		return
 	}
+
 	log.C(ctx).Infof("Matched authenticator is %s", matchedAuthenticator)
-
-	if req.Method != http.MethodPost {
-		h.respond(ctx, writer, oathkeeper.ReqBody{
-			Subject: "",
-			Extra:   map[string]interface{}{"error": errors.New(fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method))}},
-			getResponseStatusCode(matchedAuthenticator, methodNotAllowed))
-		return
-	}
-
-	reqData, err := h.reqDataParser.Parse(req)
-	if err != nil {
-		h.logError(ctx, err, "An error has occurred while parsing the request.")
-		h.respond(ctx, writer, oathkeeper.ReqBody{
-			Subject: "",
-			Extra:   map[string]interface{}{"error": errors.New("Unable to parse request data")}},
-			getResponseStatusCode(matchedAuthenticator, badRequest))
-		return
-	}
 
 	claims, authCoordinates, err := h.verifyToken(ctx, reqData, matchedAuthenticator)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while processing the request.")
 		reqData.Body.Extra["error"] = authenticationError{Message: "Token validation failed"}
-		h.respond(ctx, writer, reqData.Body, getResponseStatusCode(matchedAuthenticator, forbidden))
+		h.respond(ctx, writer, reqData.Body)
 		return
 	}
 
 	if err := claims.Claims(&reqData.Body.Extra); err != nil {
 		h.logError(ctx, err, "An error has occurred while extracting claims to request body.extra")
 		reqData.Body.Extra["error"] = authenticationError{Message: "Token claims extraction failed"}
-		h.respond(ctx, writer, reqData.Body, getResponseStatusCode(matchedAuthenticator, forbidden))
+		h.respond(ctx, writer, reqData.Body)
 		return
 	}
 	reqData.Body.Extra[authenticator.CoordinatesKey] = authCoordinates
 
-	h.respond(ctx, writer, reqData.Body, http.StatusOK)
+	h.respond(ctx, writer, reqData.Body)
 }
 
 func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, authenticatorName string) (TokenData, authenticator.Coordinates, error) {
@@ -269,9 +253,8 @@ func (h *Handler) logError(ctx context.Context, err error, message string) {
 	log.C(ctx).WithError(err).Error(message)
 }
 
-func (h *Handler) respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody, statusCode int) {
+func (h *Handler) respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {
 	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(statusCode)
 	err := json.NewEncoder(writer).Encode(body)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while encoding data.")
@@ -368,11 +351,4 @@ func handleResponseError(ctx context.Context, response *http.Response) error {
 		return fmt.Errorf("request %s %s failed: %s", response.Request.Method, response.Request.URL, err)
 	}
 	return fmt.Errorf("request failed: %s", err)
-}
-
-func getResponseStatusCode(authenticator, msg string) int {
-	if authenticator != "nsadapter" {
-		return http.StatusOK
-	}
-	return statusCodes[msg]
 }
