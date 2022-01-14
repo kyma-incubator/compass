@@ -331,9 +331,10 @@ func TestNewChanges(t *testing.T) {
 		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
 		defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[1])
 
-		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
+		selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
-		response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", contentTypeApplicationJson, bytes.NewBuffer([]byte(strLbl)))
+		require.Contains(t, selfRegLabelValue, testConfig.SelfRegisterLabelValuePrefix+runtime.ID)
+		response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", contentTypeApplicationJson, bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {

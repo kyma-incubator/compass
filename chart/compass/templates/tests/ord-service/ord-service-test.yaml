@@ -162,6 +162,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
+            - name: SELF_REGISTER_LABEL_VALUE_PREFIX
+              value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.ordService.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -45,7 +47,7 @@ func TestAuditlogIntegration(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Log("Get auditlog service Token")
-	auditlogToken := fixtures.GetAuditlogMockToken(t, &httpClient, testConfig.ExternalServicesMockBaseURL)
+	auditlogToken := token.GetClientCredentialsToken(t, context.Background(), testConfig.ExternalServicesMockBaseURL+fixtures.AuditlogTokenEndpoint, "client_id", "client_secret", "")
 
 	t.Log("Get auditlog from external services mock")
 	auditlogs := fixtures.SearchForAuditlogByString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName)

@@ -69,7 +69,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if r.Header.Get(contentTypeHeader) != contentTypeApplicationURLEncoded {
-		log.C(ctx).Errorf("Unsupported media type, expected: application/x-www-form-urlencodedgot: %s", r.Header.Get(contentTypeHeader))
+		log.C(ctx).Errorf("Unsupported media type, expected: application/x-www-form-urlencoded got: %s", r.Header.Get(contentTypeHeader))
 		writer.WriteHeader(http.StatusUnsupportedMediaType)
 		return
 	}
@@ -105,11 +105,11 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	if ok { // If the request contains claims key, use the corresponding claims in the static mapping for that key
 		claims = claimsFunc()
 		claims[zidKey] = r.Header.Get(h.tenantHeaderName)
-		respond(writer, r, claims, h.signingKey)
 	} else { // If there is no claims key provided use empty claims
 		log.C(ctx).Info("Did not find claims key in the request. Proceeding with empty claims...")
-		respond(writer, r, claims, h.signingKey)
 	}
+
+	respond(writer, r, claims, h.signingKey)
 }
 
 func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http.Request) {

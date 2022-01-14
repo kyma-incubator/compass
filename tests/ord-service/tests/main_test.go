@@ -74,6 +74,7 @@ type config struct {
 	SubscriptionProviderLabelKey          string
 	SelfRegisterDistinguishLabelKey       string // TODO:: Remove after consumer-provider test adaptation
 	SelfRegisterLabelKey                  string
+	SelfRegisterLabelValuePrefix          string
 	SkipSSLValidation                     bool
 	TestExternalCertSubject               string
 	ExternalClientCertTestSecretName      string
