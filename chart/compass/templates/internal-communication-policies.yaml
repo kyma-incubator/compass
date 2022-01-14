@@ -28,11 +28,6 @@ spec:
               - /healthz*
         - operation:
             methods:
-              - POST
-            paths:
-              - /nsadapter*
-        - operation:
-            methods:
               - GET
             paths:
               - /readyz*

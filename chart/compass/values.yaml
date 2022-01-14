@@ -144,6 +144,8 @@ global:
   agentPreconfiguration: false
 
   nsAdapter:
+    external:
+      port: 3005
     e2eTests:
       gatewayHost: "compass-gateway-xsuaa"
     prefix: /nsadapter
@@ -379,11 +381,12 @@ global:
                   max_delay: 2000ms
           authenticator:
             enabled: false
-            createRule: false
+            createRule: true
             gatewayHost: "compass-gateway-xsuaa"
             trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
             attributes: '{"uniqueAttribute": { "key": "ns-adapter-test", "value": "ns-adapter-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
-            path: /api/v1/notifications
+            path: /nsadapter/api/v1/notifications
+            upstreamComponent: "compass-gateway"
         tenant-fetcher:
           cfg:
             config:

@@ -52,7 +52,7 @@ spec:
             - name: APP_DIRECTOR_ORIGIN
               value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
             - name: APP_NSADAPTER_ORIGIN
-              value: "https://compass-ns-adapter.kyma.local"
+              value: "http://compass-ns-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.nsAdapter.external.port }}"
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_CONNECTOR_ORIGIN

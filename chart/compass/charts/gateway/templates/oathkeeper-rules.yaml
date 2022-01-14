@@ -69,25 +69,6 @@ spec:
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
 metadata:
-  name: compass-gateway-nsadapter
-spec:
-  # Configuration of oathkeeper for secure endpoint of compass gateway
-  upstream:
-    url: http://compass-ns-adapter.compass-system.svc.cluster.local:3005
-  match:
-    methods: ["GET", "POST", "OPTIONS"]
-    url: <http|https>://compass-ns-adapter.kyma.local<(:(80|443))?>/<.*>
-  authenticators:
-    - handler: noop
-  authorizer:
-    handler: allow
-  mutators:
-  - handler: hydrator
-{{ toYaml .Values.global.oathkeeper.mutators.authenticationMappingServices.nsadapter.cfg | indent 4 }}
----
-apiVersion: oathkeeper.ory.sh/v1alpha1
-kind: Rule
-metadata:
   name: compass-gateway-jwt-runtime
 spec:
   # Configuration of oathkeeper for secure endpoint of compass gateway for runtime access

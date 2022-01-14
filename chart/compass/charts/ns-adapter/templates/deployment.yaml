@@ -49,7 +49,7 @@ spec:
               - "./ns-adapter; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
           ports:
             - name: http
-              containerPort: {{ .Values.deployment.external.port }}
+              containerPort: {{ .Values.global.nsAdapter.external.port }}
               protocol: TCP
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
@@ -59,7 +59,7 @@ spec:
           {{- end }}
           env:
             - name: APP_ADDRESS
-              value: "0.0.0.0:{{ .Values.deployment.external.port }}"
+              value: "0.0.0.0:{{ .Values.global.nsAdapter.external.port }}"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -115,7 +115,7 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
           livenessProbe:
             httpGet:
-              port: {{ .Values.deployment.external.port }}
+              port: {{ .Values.global.nsAdapter.external.port }}
               path: "/healthz"
             initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
