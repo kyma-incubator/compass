@@ -145,27 +145,34 @@ func (s *service) Clean(ctx context.Context) error {
 		}
 	}
 
-	if err = s.deleteDirectories(ctx, dirsToDelete, dirsNotToDelete); err != nil {
+	notDeletedDirs, err := s.deleteDirectories(ctx, dirsToDelete, dirsNotToDelete)
+	if err != nil {
 		log.C(ctx).Error(err)
 	}
+	log.C(ctx).Infof("%d directories were not deleted due to not found child SA. External IDs of the Directories: %v", len(notDeletedDirs), notDeletedDirs)
+
+
 	log.C(ctx).Infof("Successfully processed %d records from %d", succsessfullyProcessed, len(allSubaccounts))
 	log.C(ctx).Infof("%d subaccounts were correct and were not modified out of total  %d", correctSubaccounts, len(allSubaccounts))
 	log.C(ctx).Errorf("Could not get globalAccountGuid for %d subacounts with external IDs %v from CIS", len(notFoundSAs), notFoundSAs)
 	return nil
 }
 
-func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool, dirsNotToDelete map[string]bool) error {
+func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool, dirsNotToDelete map[string]bool) ([]string, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	var notDeletedDirs []string
 
 	log.C(ctx).Infof("%d directories are to be deleted", len(dirs))
 	successfullyDeleted := 0
 	for extTenant := range dirs {
 		if dirsNotToDelete[extTenant] {
+			notDeletedDirs = append(notDeletedDirs, extTenant)
 			continue
 		}
 		log.C(ctx).Infof("Deleting directory with external ID %s", extTenant)
@@ -177,11 +184,11 @@ func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool, d
 	}
 
 	if err = tx.Commit(); err != nil {
-		return err
+		return nil, err
 	}
 	log.C(ctx).Infof("%d from %d directories were deleted", successfullyDeleted, len(dirs))
 
-	return nil
+	return notDeletedDirs, nil
 }
 
 func (s *service) getSubaccounts(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
