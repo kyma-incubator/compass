@@ -65,6 +65,10 @@ func main() {
 
 	transact, closeFunc, err := persistence.Configure(ctx, conf.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
 
 	certCache, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
@@ -123,12 +127,8 @@ func main() {
 
 	tntSvc := tenant.NewService(tenantRepo, uidSvc)
 
-	defer func() {
-		err := closeFunc()
-		exitOnError(err, "Error while closing the connection to the database")
-	}()
-
-	registerAppTemplate(ctx, transact, appTemplateSvc)
+	err = registerAppTemplate(ctx, transact, appTemplateSvc)
+	exitOnError(err, "while registering application template")
 
 	err = calculateTemplateMappings(ctx, conf, transact)
 	exitOnError(err, "while calculating template mappings")
@@ -163,10 +163,10 @@ func main() {
 	exitOnError(server.ListenAndServe(), "on starting HTTP server")
 }
 
-func registerAppTemplate(ctx context.Context, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService) {
+func registerAppTemplate(ctx context.Context, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService) error {
 	tx, err := transact.Begin()
 	if err != nil {
-		exitOnError(err, "Error while beginning transaction")
+		return errors.Wrap(err, "Error while beginning transaction")
 	}
 	defer transact.RollbackUnlessCommitted(ctx, tx)
 	ctxWithTx := persistence.SaveToContext(ctx, tx)
@@ -222,19 +222,21 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 	_, err = appTemplateSvc.GetByName(ctxWithTx, appTemplateName)
 	if err != nil {
 		if !strings.Contains(err.Error(), "Object not found") {
-			exitOnError(err, fmt.Sprintf("error while getting application template with name: %s", appTemplateName))
+			return errors.Wrap(err, fmt.Sprintf("error while getting application template with name: %s", appTemplateName))
 		}
 
 		templateID, err := appTemplateSvc.Create(ctxWithTx, appTemplate)
 		if err != nil {
-			exitOnError(err, fmt.Sprintf("error while registering application template with name: %s", appTemplateName))
+			return errors.Wrap(err, fmt.Sprintf("error while registering application template with name: %s", appTemplateName))
 		}
 		log.C(ctx).Infof(fmt.Sprintf("Successfully registered application template with id: %s", templateID))
 	}
 
 	if err := tx.Commit(); err != nil {
-		exitOnError(err, "while committing transaction")
+		return errors.Wrap(err, "while committing transaction")
 	}
+
+	return nil
 }
 
 func exitOnError(err error, context string) {
