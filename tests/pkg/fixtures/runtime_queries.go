@@ -22,6 +22,18 @@ func RegisterRuntimeFromInputWithinTenant(t require.TestingT, ctx context.Contex
 	return runtime, err
 }
 
+func RegisterRuntimeFromInputWithoutTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, input *graphql.RuntimeInput) graphql.RuntimeExt {
+	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(*input)
+	require.NoError(t, err)
+
+	registerRuntimeRequest := FixRegisterRuntimeRequest(inputGQL)
+	var runtime graphql.RuntimeExt
+
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, registerRuntimeRequest, &runtime)
+	require.NoError(t, err)
+	return runtime
+}
+
 func RequestClientCredentialsForRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.RuntimeSystemAuth {
 	req := FixRequestClientCredentialsForRuntime(id)
 	systemAuth := graphql.RuntimeSystemAuth{}

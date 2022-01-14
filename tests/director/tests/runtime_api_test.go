@@ -456,6 +456,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 	t.Run("Test runtime operations(CUD) with externally issued certificate", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
+		distinguishLabelValue := "distinguish-label-value!t1234"
 		subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 		// Build graphql director client configured with certificate
@@ -464,25 +465,17 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		protectedConsumerSubaccountIdsLabel := "consumer_subaccount_ids"
 
-		runtimeInput := graphql.RuntimeInput{
+		runtimeInput := &graphql.RuntimeInput{
 			Name:        "register-runtime-with-protected-labels",
 			Description: ptr.String("register-runtime-with-protected-labels-description"),
 			Labels:      graphql.Labels{protectedConsumerSubaccountIdsLabel: []string{"subaccountID-1", "subaccountID-2"}},
 		}
-		actualRtm := graphql.RuntimeExt{}
 
 		t.Log("Successfully register runtime using certificate with protected labels and validate that they are excluded")
-		// GIVEN
-		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
-		require.NoError(t, err)
-
-		// WHEN
-		registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, registerReq, &actualRtm)
+		actualRtm := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, runtimeInput)
 		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &actualRtm)
 
 		//THEN
-		require.NoError(t, err)
 		require.NotEmpty(t, actualRtm.ID)
 		require.Equal(t, runtimeInput.Name, actualRtm.Name)
 		require.Equal(t, runtimeInput.Description, actualRtm.Description)
@@ -490,25 +483,18 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		t.Log("Successfully register runtime with certificate")
 		// GIVEN
-		runtimeInput = graphql.RuntimeInput{
+		runtimeInput = &graphql.RuntimeInput{
 			Name:        "runtime-create-update-delete",
 			Description: ptr.String("runtime-create-update-delete-description"),
-			Labels:      graphql.Labels{conf.SelfRegisterDistinguishLabelKey: []interface{}{"distinguish-label-value"}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
+			Labels:      graphql.Labels{conf.SelfRegisterDistinguishLabelKey: []interface{}{distinguishLabelValue}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
 		}
-		actualRuntime := graphql.RuntimeExt{}
 
-		runtimeInGQL, err = testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
-		require.NoError(t, err)
-
-		// WHEN
-		registerReq = fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, registerReq, &actualRuntime)
+		actualRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, runtimeInput)
 		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &actualRuntime)
 
 		//THEN
-		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		assertions.AssertRuntime(t, runtimeInput, actualRuntime, conf.DefaultScenarioEnabled, true)
+		assertions.AssertRuntime(t, *runtimeInput, actualRuntime, conf.DefaultScenarioEnabled, true)
 
 		t.Log("Successfully set regular runtime label using certificate")
 		// GIVEN
@@ -516,7 +502,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		// WHEN
 		addLabelReq := fixtures.FixSetRuntimeLabelRequest(actualRuntime.ID, "regular_label", []string{"labelValue"})
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, addLabelReq, &actualLabel)
+		err := testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, addLabelReq, &actualLabel)
 
 		//THEN
 		require.NoError(t, err)
@@ -549,12 +535,12 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		runtimeInput.Name = "updated-runtime"
 		runtimeInput.Description = ptr.String("updated-runtime-description")
 		runtimeInput.Labels = graphql.Labels{
-			conf.SelfRegisterDistinguishLabelKey: []interface{}{"distinguish-label-value"}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, protectedConsumerSubaccountIdsLabel: []interface{}{"subaccountID-1", "subaccountID-2"},
+			conf.SelfRegisterDistinguishLabelKey: []interface{}{distinguishLabelValue}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, protectedConsumerSubaccountIdsLabel: []interface{}{"subaccountID-1", "subaccountID-2"},
 		}
 		runtimeStatusCond := graphql.RuntimeStatusConditionConnected
 		runtimeInput.StatusCondition = &runtimeStatusCond
 
-		runtimeInGQL, err = testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
+		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(*runtimeInput)
 		require.NoError(t, err)
 		updateRuntimeReq := fixtures.FixUpdateRuntimeRequest(actualRuntime.ID, runtimeInGQL)
 

@@ -63,7 +63,7 @@ const (
 func TestSelfRegisterFlow(t *testing.T) {
 	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
 		ctx := context.Background()
-		distinguishLblValue := "test-distinguish-value"
+		distinguishLblValue := "test-distinguish-value!t1234"
 
 		// defaultTenantId is the parent of the subaccountID
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
@@ -95,9 +95,8 @@ func TestSelfRegisterFlow(t *testing.T) {
 			Description: ptr.String("selfRegisterRuntime-description"),
 			Labels:      graphql.Labels{testConfig.SelfRegisterDistinguishLabelKey: distinguishLblValue},
 		}
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, subaccountID, &runtimeInput)
+		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
 		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subaccountID, &runtime)
-		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
@@ -106,7 +105,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 		// Verify that the label returned cannot be modified
 		setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
 		label := graphql.Label{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, subaccountID, setLabelRequest, &label)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, setLabelRequest, &label)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
 
@@ -126,7 +125,6 @@ func TestSelfRegisterFlow(t *testing.T) {
 func TestConsumerProviderFlow(t *testing.T) {
 	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
 		ctx := context.Background()
-		//defaultTenantId := testConfig.TestProviderAccountID TODO::: Check why it's not used anymore
 		secondaryTenant := testConfig.TestConsumerAccountID
 		subscriptionProviderID := "xsappname-value"
 		//reuseServiceSubaccountID := testConfig.TestReuseSvcSubaccountID
@@ -159,10 +157,8 @@ func TestConsumerProviderFlow(t *testing.T) {
 			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: subscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, selectorKey: subscriptionProviderSubaccountID},
 		}
 
-		// Register provider runtime with the necessary label
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtimeInput) // TODO:: Change runtime registration to be without tenant header(subscriptionProviderSubaccountID)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime)                                      // TODO:: Change runtime registration to be without tenant header(subscriptionProviderSubaccountID)
-		require.NoError(t, err)
+		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime)
 		require.NotEmpty(t, runtime.ID)
 
 		// Register application
@@ -262,12 +258,11 @@ func TestConsumerProviderFlow(t *testing.T) {
 func TestNewChanges(t *testing.T) {
 	t.Run("TestNewChanges", func(t *testing.T) {
 		ctx := context.Background()
-		//defaultTenantId := testConfig.TestProviderAccountID // TODO:: In dev env this should be our CMP GA in correct feature set(B)
-		secondaryTenant := testConfig.TestConsumerAccountID // TODO:: In real env can be also our CMP GA in correct feature set
-		subscriptionProviderID := "xsappname-value"
-		//reuseServiceSubaccountID := testConfig.TestReuseSvcSubaccountID // TODO:: "reuse svc subaacount" var name or something similar, that is our current CMP SA in CMP GA. Check correct Feature Set.
-		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID // TODO:: TestProviderSubaccount on local setup and new SA (multi tenant app), that is BAS representative. I need to create xsuaa instance of application plan(check describe json properties in local files). Also, create saas-registry instance(plan application) with xsappname to MTA(multitenant application or something similar), onSubscription: callback (maybe it's mandatory) with external svc mock address that return empty body. And getDependency(check what is the correct property) on which we need to attached also external svc mock that return xsappnameClone label value. The third instance should be cert-svc instance, maybe nothing special here, just standard instance.
-		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID // TODO:: make it configurable with different values for local and dev setup. On dev create new "consumer" SA(in correct feature set) that will be used to subscribe to provider SA
+		secondaryTenant := testConfig.TestConsumerAccountID
+		subscriptionProviderID := "name-value!t12345"
+		//reuseServiceSubaccountID := testConfig.TestReuseSvcSubaccountID
+		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
+		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
 		jobName := "external-certificate-rotation-test-job"
 
 		// Prepare provider external client certificate and secret
@@ -297,10 +292,8 @@ func TestNewChanges(t *testing.T) {
 			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: subscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, selectorKey: subscriptionProviderSubaccountID},
 		}
 
-		// Register provider runtime with the necessary label
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtimeInput) // TODO:: Change runtime registration to be without tenant header(subscriptionProviderSubaccountID)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime)                                      // TODO:: Change runtime registration to be without tenant header(subscriptionProviderSubaccountID)
-		require.NoError(t, err)
+		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime)
 		require.NotEmpty(t, runtime.ID)
 
 		// Register application
