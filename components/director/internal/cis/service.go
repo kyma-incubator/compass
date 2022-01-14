@@ -21,17 +21,17 @@ type CISResponse struct {
 }
 
 type service struct {
-	httpClient      http.Client
-	k8sClient       KubeClient
-	iExecutedOnProd bool
+	httpClient       http.Client
+	k8sClient        KubeClient
+	isExecutedOnProd bool
 }
 
 // NewCisService missing godoc
-func NewCisService(client http.Client, kubeClient KubeClient, iExecutedOnProd bool) *service {
+func NewCisService(client http.Client, kubeClient KubeClient, isExecutedOnProd bool) *service {
 	return &service{
-		httpClient:      client,
-		k8sClient:       kubeClient,
-		iExecutedOnProd: iExecutedOnProd,
+		httpClient:       client,
+		k8sClient:        kubeClient,
+		isExecutedOnProd: isExecutedOnProd,
 	}
 }
 
@@ -58,7 +58,7 @@ func (s *service) GetGlobalAccount(ctx context.Context, region string, subaccoun
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		if s.iExecutedOnProd && resp.StatusCode == http.StatusUnauthorized {
+		if s.isExecutedOnProd && resp.StatusCode == http.StatusUnauthorized {
 			newToken, err := FetchToken(ctx, s.k8sClient.GetClientIDForRegion(region), s.k8sClient.GetClientSecretForRegion(region), s.k8sClient.GetTokenURLForRegion(region))
 			if err != nil {
 				return "", err

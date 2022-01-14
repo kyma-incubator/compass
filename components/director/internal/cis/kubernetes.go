@@ -3,6 +3,8 @@ package cis
 import (
 	"context"
 
+	v1 "k8s.io/api/core/v1"
+
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -46,7 +48,7 @@ type kubernetesClient struct {
 }
 
 // NewKubernetesClient missing godoc
-func NewKubernetesClient(ctx context.Context, cfg KubeConfig, kubeClientConfig kube.Config) (KubeClient, error) {
+func NewKubernetesClient(ctx context.Context, cfg KubeConfig, kubeClientConfig kube.Config, isExecutedOnProd bool) (KubeClient, error) {
 	kubeClientSet, err := kube.NewKubernetesClientSet(ctx, kubeClientConfig.PollInterval, kubeClientConfig.PollTimeout, kubeClientConfig.Timeout)
 	if err != nil {
 		return nil, err
@@ -62,22 +64,27 @@ func NewKubernetesClient(ctx context.Context, cfg KubeConfig, kubeClientConfig k
 		return nil, err
 	}
 
-	// for prod
-	clientIDs, err := kubeClientSet.CoreV1().ConfigMaps(cfg.ClientIDsNamespace).Get(ctx, cfg.ClientIDsMapName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
+	var clientIDs *v1.ConfigMap
+	var clientSecrets *v1.ConfigMap
+	var tokenURLs *v1.ConfigMap
 
-	clientSecrets, err := kubeClientSet.CoreV1().ConfigMaps(cfg.ClientSecretsNamespace).Get(ctx, cfg.ClientSecretsMapName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
+	// executing on prod
+	if isExecutedOnProd {
+		clientIDs, err = kubeClientSet.CoreV1().ConfigMaps(cfg.ClientIDsNamespace).Get(ctx, cfg.ClientIDsMapName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
 
-	tokenURLs, err := kubeClientSet.CoreV1().ConfigMaps(cfg.TokenURLsNamespace).Get(ctx, cfg.TokenURLsMapName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
+		clientSecrets, err = kubeClientSet.CoreV1().ConfigMaps(cfg.ClientSecretsNamespace).Get(ctx, cfg.ClientSecretsMapName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
 
+		tokenURLs, err = kubeClientSet.CoreV1().ConfigMaps(cfg.TokenURLsNamespace).Get(ctx, cfg.TokenURLsMapName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &kubernetesClient{
 		client:        kubeClientSet,
 		secret:        secret.Data,

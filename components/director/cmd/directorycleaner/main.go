@@ -78,7 +78,7 @@ func createDirCleanerSvc(ctx context.Context, cfg config, transact persistence.T
 			},
 		}}
 
-	kubeClient, err := cis.NewKubernetesClient(ctx, cfg.KubeConfig, cfg.KubeClientConfig)
+	kubeClient, err := cis.NewKubernetesClient(ctx, cfg.KubeConfig, cfg.KubeClientConfig, cfg.IsExecutedOnProd)
 	exitOnError(err, "Failed to initialize Kubernetes client")
 
 	cisService := cis.NewCisService(client, kubeClient, cfg.IsExecutedOnProd)

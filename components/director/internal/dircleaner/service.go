@@ -64,12 +64,6 @@ func (s *service) Clean(ctx context.Context) error {
 	dirsNotToDelete := make(map[string]bool) // in case a SA can't be found, there may be another valid SA that shares the same parent Dir and the Dir will be marked for deletion by the correct SA which will result in deletion of the not found SA due to cascade
 	var notFoundSAs []string
 
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return err
-	}
-	query := `"select 1 from (select tenant_id as tnt from tenant_applications union all select tenant_id from tenant_runtimes) t where tnt = $1"`
-
 	for _, subaccount := range allSubaccounts {
 		region, err := s.getRegionLabel(ctx, subaccount.ID)
 		if err != nil {
@@ -100,9 +94,6 @@ func (s *service) Clean(ctx context.Context) error {
 			defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 			if parentFromDB.ExternalTenant != globalAccountGUIDFromCis { // the record is directory and not GA
-				if ok, err := hasSubaccountTenantAccessRecords(ctx, persist, query, subaccount.ID); err != nil || ok {
-					return err
-				}
 
 				conflictingGA, err := s.tenantSvc.GetTenantByExternalID(ctx, globalAccountGUIDFromCis)
 
@@ -229,24 +220,4 @@ func (s *service) getRegionLabel(ctx context.Context, id string) (string, error)
 		return "", err
 	}
 	return regionLabel.Value.(string), nil
-}
-
-func hasSubaccountTenantAccessRecords(ctx context.Context, persist persistence.PersistenceOp, query, subacccountID string) (bool, error) {
-	res, err := persist.ExecContext(ctx, query, subacccountID)
-	if err != nil {
-		log.C(ctx).Errorf("error while executing query for checking tenant_applications/runtimes records  %v", err)
-		return false, err
-	}
-
-	affected, err := res.RowsAffected()
-	if err != nil {
-		log.C(ctx).Errorf("while checking affected rows  %v", err)
-		return false, err
-	}
-
-	if affected != 0 {
-		log.C(ctx).Errorf("Records in tenant_applications/runtimes exist for tenant with id %s", subacccountID)
-		return true, nil
-	}
-	return false, nil
 }
