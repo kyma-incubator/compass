@@ -94,7 +94,6 @@ func (s *service) Clean(ctx context.Context) error {
 			defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 			if parentFromDB.ExternalTenant != globalAccountGUIDFromCis { // the record is directory and not GA
-
 				conflictingGA, err := s.tenantSvc.GetTenantByExternalID(ctx, globalAccountGUIDFromCis)
 
 				if conflictingGA != nil && err == nil { // there is a record which conflicts by external tenant id
