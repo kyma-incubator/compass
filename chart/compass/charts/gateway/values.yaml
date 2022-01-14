@@ -19,5 +19,11 @@ gateway:
     enabled: false
     authMode: "basic"
 
+rateLimit:
+  headerValue: "{{ print .Extra.consumerType }}"
+  maxTokens: 5000
+  tokensPerFill: 500
+  fillInterval: "60s"
+
 metrics:
   port: 3001
