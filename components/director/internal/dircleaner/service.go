@@ -151,7 +151,6 @@ func (s *service) Clean(ctx context.Context) error {
 	}
 	log.C(ctx).Infof("%d directories were not deleted due to not found child SA. External IDs of the Directories: %v", len(notDeletedDirs), notDeletedDirs)
 
-
 	log.C(ctx).Infof("Successfully processed %d records from %d", succsessfullyProcessed, len(allSubaccounts))
 	log.C(ctx).Infof("%d subaccounts were correct and were not modified out of total  %d", correctSubaccounts, len(allSubaccounts))
 	log.C(ctx).Errorf("Could not get globalAccountGuid for %d subacounts with external IDs %v from CIS", len(notFoundSAs), notFoundSAs)
