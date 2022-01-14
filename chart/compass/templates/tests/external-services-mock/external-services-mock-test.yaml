@@ -88,6 +88,8 @@ spec:
               value: "{{.Values.global.tests.token.server.enabled}}"
             - name: APP_ADDRESS
               value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.externalServicesMock.skipPattern }}
             - name: AUDITLOG_MANAGEMENT_API_PATH
               value: "{{ .Values.global.externalServicesMock.auditlog.managementApiPath }}"
             - name: AUDITLOG_MANAGEMENT_URL

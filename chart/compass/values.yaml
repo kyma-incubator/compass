@@ -619,6 +619,8 @@ global:
           connectivityAdapter: true
     ordService:
       skipPattern: ""
+    externalServicesMock:
+      skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     directorFQDN: http://compass-director.compass-system.svc.cluster.local
