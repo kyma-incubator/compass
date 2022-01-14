@@ -3,8 +3,6 @@ package cis
 import (
 	"context"
 
-	v1 "k8s.io/api/core/v1"
-
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -64,35 +62,42 @@ func NewKubernetesClient(ctx context.Context, cfg KubeConfig, kubeClientConfig k
 		return nil, err
 	}
 
-	var clientIDs *v1.ConfigMap
-	var clientSecrets *v1.ConfigMap
-	var tokenURLs *v1.ConfigMap
-
 	// executing on prod
 	if isExecutedOnProd {
-		clientIDs, err = kubeClientSet.CoreV1().ConfigMaps(cfg.ClientIDsNamespace).Get(ctx, cfg.ClientIDsMapName, metav1.GetOptions{})
+		clientIDs, err := kubeClientSet.CoreV1().ConfigMaps(cfg.ClientIDsNamespace).Get(ctx, cfg.ClientIDsMapName, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 
-		clientSecrets, err = kubeClientSet.CoreV1().ConfigMaps(cfg.ClientSecretsNamespace).Get(ctx, cfg.ClientSecretsMapName, metav1.GetOptions{})
+		clientSecrets, err := kubeClientSet.CoreV1().ConfigMaps(cfg.ClientSecretsNamespace).Get(ctx, cfg.ClientSecretsMapName, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 
-		tokenURLs, err = kubeClientSet.CoreV1().ConfigMaps(cfg.TokenURLsNamespace).Get(ctx, cfg.TokenURLsMapName, metav1.GetOptions{})
+		tokenURLs, err := kubeClientSet.CoreV1().ConfigMaps(cfg.TokenURLsNamespace).Get(ctx, cfg.TokenURLsMapName, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
+
+		return &kubernetesClient{
+			client:        kubeClientSet,
+			secret:        secret.Data,
+			configmap:     configMap.Data,
+			cfg:           cfg,
+			clientIDs:     clientIDs.Data,
+			clientSecrets: clientSecrets.Data,
+			tokenURLs:     tokenURLs.Data,
+		}, nil
 	}
+
 	return &kubernetesClient{
 		client:        kubeClientSet,
 		secret:        secret.Data,
 		configmap:     configMap.Data,
 		cfg:           cfg,
-		clientIDs:     clientIDs.Data,
-		clientSecrets: clientSecrets.Data,
-		tokenURLs:     tokenURLs.Data,
+		clientIDs:     nil,
+		clientSecrets: nil,
+		tokenURLs:     nil,
 	}, nil
 }
 
