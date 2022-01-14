@@ -23,11 +23,15 @@ import (
 
 func TestHandler_Generate(t *testing.T) {
 	//GIVEN
+	data := url.Values{}
+	data.Add("grant_type", "client_credentials")
+
 	secret, id := "secret", "id"
-	req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", strings.NewReader(""))
+	req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", strings.NewReader(data.Encode()))
 
 	encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
 	req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	h := oauth2.NewHandler(secret, id)
 	r := httptest.NewRecorder()
