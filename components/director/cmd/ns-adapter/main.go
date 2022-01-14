@@ -63,10 +63,10 @@ func main() {
 	err := envconfig.InitWithPrefix(&conf, "APP")
 	exitOnError(err, "while reading ns adapter configuration")
 
-	transact, closeFunc, err := persistence.Configure(ctx, conf.Database)
+	transact, closeDbConn, err := persistence.Configure(ctx, conf.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 	defer func() {
-		err := closeFunc()
+		err := closeDbConn()
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 

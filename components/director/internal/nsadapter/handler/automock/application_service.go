@@ -61,8 +61,8 @@ func (_m *ApplicationService) GetLabel(ctx context.Context, applicationID string
 	return r0, r1
 }
 
-// GetSystem provides a mock function with given fields: ctx, sccSubaccount, locationID, virtualHost
-func (_m *ApplicationService) GetSystem(ctx context.Context, sccSubaccount string, locationID string, virtualHost string) (*model.Application, error) {
+// GetSccSystem provides a mock function with given fields: ctx, sccSubaccount, locationID, virtualHost
+func (_m *ApplicationService) GetSccSystem(ctx context.Context, sccSubaccount string, locationID string, virtualHost string) (*model.Application, error) {
 	ret := _m.Called(ctx, sccSubaccount, locationID, virtualHost)
 
 	var r0 *model.Application

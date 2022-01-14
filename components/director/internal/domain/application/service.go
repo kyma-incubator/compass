@@ -30,8 +30,11 @@ import (
 )
 
 const (
-	intSysKey = "integrationSystemID"
-	nameKey   = "name"
+	intSysKey     = "integrationSystemID"
+	nameKey       = "name"
+	sccLabelKey   = "scc"
+	subaccountKey = "Subaccount"
+	locationIDKey = "LocationID"
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
@@ -287,8 +290,8 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	return s.genericCreate(ctx, in, creator)
 }
 
-// GetSystem retrieves an application with label key "scc" and value that matches specified subaccount, location id and virtual host
-func (s *service) GetSystem(ctx context.Context, sccSubaccount, locationID, virtualHost string) (*model.Application, error) {
+// GetSccSystem retrieves an application with label key "scc" and value that matches specified subaccount, location id and virtual host
+func (s *service) GetSccSystem(ctx context.Context, sccSubaccount, locationID, virtualHost string) (*model.Application, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -306,7 +309,7 @@ func (s *service) GetSystem(ctx context.Context, sccSubaccount, locationID, virt
 		return nil, errors.Wrapf(err, "while marshaling sccLabel with subaccount: %s, locationId: %s and virtualHost: %s", appTenant, locationID, virtualHost)
 	}
 
-	filter := labelfilter.NewForKeyWithQuery("scc", string(marshal))
+	filter := labelfilter.NewForKeyWithQuery(sccLabelKey, string(marshal))
 
 	app, err := s.appRepo.GetByFilter(ctx, appTenant, []*labelfilter.LabelFilter{filter})
 	if err != nil {
@@ -337,7 +340,7 @@ func (s *service) ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter
 		appIDs = append(appIDs, app.ID)
 	}
 
-	labels, err := s.labelRepo.ListGlobalByKeyAndObjects(ctx, model.ApplicationLabelableObject, appIDs, "scc")
+	labels, err := s.labelRepo.ListGlobalByKeyAndObjects(ctx, model.ApplicationLabelableObject, appIDs, sccLabelKey)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting labels with key scc for applications with IDs: %v", appIDs)
 	}
@@ -361,7 +364,7 @@ func (s *service) ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter
 
 // ListSCCs retrieves all SCCs
 func (s *service) ListSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
-	labels, err := s.labelRepo.ListGlobalByKey(ctx, "scc")
+	labels, err := s.labelRepo.ListGlobalByKey(ctx, sccLabelKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting SCCs by label key: scc")
 	}
@@ -373,8 +376,8 @@ func (s *service) ListSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
 		}
 
 		scc := &model.SccMetadata{
-			Subaccount: v["Subaccount"].(string),
-			LocationID: v["LocationID"].(string),
+			Subaccount: v[subaccountKey].(string),
+			LocationID: v[locationIDKey].(string),
 		}
 
 		sccs = append(sccs, scc)

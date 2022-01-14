@@ -20,12 +20,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	deltaReportType      = "delta"
+	fullReportType       = "full"
+	reportTypeQueryParam = "reportType"
+	notSubaccountMarker  = "not subaccount"
+)
+
 //go:generate mockery --exported --name=applicationService --output=automock --outpkg=automock --case=underscore
 type applicationService interface {
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
 	Upsert(ctx context.Context, in model.ApplicationRegisterInput) error
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
-	GetSystem(ctx context.Context, sccSubaccount, locationID, virtualHost string) (*model.Application, error)
+	GetSccSystem(ctx context.Context, sccSubaccount, locationID, virtualHost string) (*model.Application, error)
 	ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
@@ -93,11 +100,17 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
-	reportType := req.URL.Query().Get("reportType")
-	if reportType != "full" && reportType != "delta" {
+	reportHandlers := map[string]func(context.Context, []*nsmodel.SCC, []httputil.Detail, nsmodel.Report, http.ResponseWriter){
+		fullReportType:  a.fullReportHandler,
+		deltaReportType: a.deltaReportHandler,
+	}
+
+	reportType := req.URL.Query().Get(reportTypeQueryParam)
+	reportHandler, found := reportHandlers[reportType]
+	if !found {
 		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
 			Code:    http.StatusBadRequest,
-			Message: "missing or invalid required report type query parameter",
+			Message: "the query parameter 'reportType' is missing or invalid",
 		})
 		return
 	}
@@ -105,7 +118,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	var reportData nsmodel.Report
 	err := json.NewDecoder(req.Body).Decode(&reportData)
 	if err != nil {
-		logger.Warnf("Got error on decoding Request Body: %v\n", err)
+		logger.Warnf("Got error on parsing Request Body: %v\n", err)
 		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
 			Code:    http.StatusBadRequest,
 			Message: "failed to parse request body",
@@ -150,26 +163,28 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	details := make([]httputil.Detail, 0)
 	filteredSccs := filterSccsByInternalID(ctx, sccs, &details)
 
-	if reportType == "delta" {
-		a.processDelta(ctx, filteredSccs, &details)
-		if len(details) == 0 {
-			httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
-			return
-		}
-		httputil.RespondWithError(ctx, rw, http.StatusOK, httputil.DetailedError{
-			Code:    http.StatusOK,
-			Message: "Update/create failed for some on-premise systems",
-			Details: details,
-		})
-		return
-	}
+	reportHandler(ctx, filteredSccs, details, reportData, rw)
+}
 
-	if reportType == "full" {
-		a.processDelta(ctx, filteredSccs, &details)
-		a.handleUnreachableScc(ctx, reportData)
+func (a *Handler) deltaReportHandler(ctx context.Context, filteredSccs []*nsmodel.SCC, details []httputil.Detail, _ nsmodel.Report, rw http.ResponseWriter) {
+	a.processDelta(ctx, filteredSccs, &details)
+	if len(details) == 0 {
 		httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 		return
 	}
+	httputil.RespondWithError(ctx, rw, http.StatusOK, httputil.DetailedError{
+		Code:    http.StatusOK,
+		Message: "Update/create failed for some on-premise systems",
+		Details: details,
+	})
+	return
+}
+
+func (a *Handler) fullReportHandler(ctx context.Context, filteredSccs []*nsmodel.SCC, details []httputil.Detail, reportData nsmodel.Report, rw http.ResponseWriter) {
+	a.processDelta(ctx, filteredSccs, &details)
+	a.handleUnreachableScc(ctx, reportData)
+	httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
+	return
 }
 
 func (a *Handler) listTenantsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
@@ -254,13 +269,13 @@ func (a *Handler) handleUnreachableScc(ctx context.Context, reportData nsmodel.R
 		return
 	}
 
+	externalToInternalSub := make(map[string]string, len(internalSubaccounts))
+	for _, subaccount := range internalSubaccounts {
+		externalToInternalSub[subaccount.ExternalTenant] = subaccount.ID
+	}
+
 	for _, scc := range sccsToMarkAsUnreachable {
-		for _, subaccount := range internalSubaccounts {
-			if scc.Subaccount == subaccount.ExternalTenant {
-				scc.InternalSubaccountID = subaccount.ID
-				break
-			}
-		}
+		scc.InternalSubaccountID = externalToInternalSub[scc.Subaccount]
 	}
 
 	for _, scc := range sccsToMarkAsUnreachable {
@@ -278,7 +293,7 @@ func (a *Handler) processDelta(ctx context.Context, sccs []*nsmodel.SCC, details
 	for _, scc := range sccs {
 		ctxWithTenant := tenant.SaveToContext(ctx, scc.InternalSubaccountID, scc.ExternalSubaccountID)
 		if ok := a.handleSccSystems(ctxWithTenant, *scc); !ok {
-			addErrorDetails(details, scc)
+			addErrorDetailsMsg(details, scc, "Creation failed")
 		}
 	}
 }
@@ -393,20 +408,10 @@ func (a *Handler) upsertWithSystemNumber(ctx context.Context, scc nsmodel.SCC, s
 }
 
 func (a *Handler) upsert(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
-	app, err := a.appSvc.GetSystem(ctx, scc.ExternalSubaccountID, scc.LocationID, system.Host)
+	app, err := a.appSvc.GetSccSystem(ctx, scc.ExternalSubaccountID, scc.LocationID, system.Host)
 
 	if err != nil && isNotFoundError(err) {
-		appInput, err := a.prepareAppInput(ctx, scc, system)
-		if err != nil {
-			log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
-			return false
-		}
-
-		if _, err := a.appSvc.CreateFromTemplate(ctx, *appInput, str.Ptr(system.TemplateID)); err != nil {
-			log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
-			return false
-		}
-		return true
+		return a.createAppFromTemplate(ctx, scc, system)
 	}
 
 	if err != nil {
@@ -415,6 +420,20 @@ func (a *Handler) upsert(ctx context.Context, scc nsmodel.SCC, system nsmodel.Sy
 	}
 
 	return a.updateSystem(ctx, system, app)
+}
+
+func (a *Handler) createAppFromTemplate(ctx context.Context, scc nsmodel.SCC, system nsmodel.System) bool {
+	appInput, err := a.prepareAppInput(ctx, scc, system)
+	if err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
+		return false
+	}
+
+	if _, err := a.appSvc.CreateFromTemplate(ctx, *appInput, str.Ptr(system.TemplateID)); err != nil {
+		log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
+		return false
+	}
+	return true
 }
 
 func (a *Handler) updateSystem(ctx context.Context, system nsmodel.System, app *model.Application) bool {
@@ -539,10 +558,6 @@ func difference(a, b []*model.SccMetadata) (diff []*model.SccMetadata) {
 	return
 }
 
-func addErrorDetails(details *[]httputil.Detail, scc *nsmodel.SCC) {
-	addErrorDetailsMsg(details, scc, "Creation failed")
-}
-
 func addErrorDetailsMsg(details *[]httputil.Detail, scc *nsmodel.SCC, message string) {
 	*details = append(*details, httputil.Detail{
 		Message:    message,
@@ -552,17 +567,21 @@ func addErrorDetailsMsg(details *[]httputil.Detail, scc *nsmodel.SCC, message st
 }
 
 func mapExternalToInternal(ctx context.Context, tenants []*model.BusinessTenantMapping, sccs []*nsmodel.SCC) {
+	externalToInternalTenants := make(map[string]*model.BusinessTenantMapping, len(tenants))
+	for _, t := range tenants {
+		externalToInternalTenants[t.ExternalTenant] = t
+	}
+
 	for _, scc := range sccs {
-		for _, t := range tenants {
-			if scc.ExternalSubaccountID == t.ExternalTenant {
-				if t.Type == "subaccount" {
-					scc.InternalSubaccountID = t.ID
-				} else {
-					log.C(ctx).Warnf("Got tenant with id: %s which is not asubaccount", t.ID)
-					scc.InternalSubaccountID = "not subaccount"
-				}
-				break
-			}
+		t, exist := externalToInternalTenants[scc.ExternalSubaccountID]
+		if !exist {
+			continue
+		}
+		if t.Type == "subaccount" {
+			scc.InternalSubaccountID = t.ID
+		} else {
+			log.C(ctx).Warnf("Got tenant with id: %s which is not a subaccount", t.ID)
+			scc.InternalSubaccountID = notSubaccountMarker
 		}
 	}
 }
@@ -575,9 +594,9 @@ func filterSccsByInternalID(ctx context.Context, sccs []*nsmodel.SCC, details *[
 	filteredSccs := make([]*nsmodel.SCC, 0, len(sccs))
 	for _, scc := range sccs {
 		if scc.InternalSubaccountID == "" {
-			log.C(ctx).Warnf("Got SCC with subaccount id: %s which is not found", scc.ExternalSubaccountID)
+			log.C(ctx).Warnf("Got SCC with external subaccount id: %s which has not associated internal tenant id", scc.ExternalSubaccountID)
 			addErrorDetailsMsg(details, scc, "Subaccount not found")
-		} else if scc.InternalSubaccountID == "not subaccount" {
+		} else if scc.InternalSubaccountID == notSubaccountMarker {
 			addErrorDetailsMsg(details, scc, "Provided id is not subaccount")
 		} else {
 			filteredSccs = append(filteredSccs, scc)

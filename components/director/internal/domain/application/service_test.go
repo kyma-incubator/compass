@@ -3161,7 +3161,7 @@ func TestService_GetSystem(t *testing.T) {
 			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
-			app, err := svc.GetSystem(testCase.Ctx, "id", locationID, virtualHost)
+			app, err := svc.GetSccSystem(testCase.Ctx, "id", locationID, virtualHost)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

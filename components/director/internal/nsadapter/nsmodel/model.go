@@ -47,9 +47,9 @@ func (s *System) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	for _, tm := range Mappings {
-		if matchProps(data, tm) {
-			s.TemplateID = tm.ID
+	for _, mapping := range Mappings {
+		if matchProps(data, mapping) {
+			s.TemplateID = mapping.ID
 			return nil
 		}
 	}

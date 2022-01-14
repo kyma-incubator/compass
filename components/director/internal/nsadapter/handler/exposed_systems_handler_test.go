@@ -151,7 +151,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.Error{
 				Code:    http.StatusBadRequest,
-				Message: "missing or invalid required report type query parameter",
+				Message: "the query parameter 'reportType' is missing or invalid",
 			},
 		})
 		require.NoError(t, err)
@@ -170,7 +170,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		expectedBody, err := json.Marshal(httputil.ErrorResponse{
 			Error: httputil.Error{
 				Code:    http.StatusBadRequest,
-				Message: "missing or invalid required report type query parameter",
+				Message: "the query parameter 'reportType' is missing or invalid",
 			},
 		})
 		require.NoError(t, err)
@@ -463,7 +463,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		defer clearMappings()
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
 
@@ -525,7 +525,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
 			Return(nil, errors.New("Object not found"))
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("", errors.New("error"))
 
@@ -590,7 +590,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
 			Return(nil, errors.New("Object not found"))
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("success", nil)
 
@@ -639,7 +639,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		})
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
@@ -691,7 +691,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		input := nsmodel.ToAppUpdateInput(system)
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
@@ -750,7 +750,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(errors.New("error")).Once()
@@ -809,7 +809,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		}
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(nil).Once()
@@ -1140,7 +1140,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		defer clearMappings()
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(nil, errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
 		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appSvc, &tntSvc)
@@ -1190,7 +1190,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
 			Return(nil, errors.New("Object not found"))
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("", errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
@@ -1250,7 +1250,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appConverterSvc.Mock.On("CreateInputJSONToModel", mock.Anything, appInputJSON).Return(input, nil)
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
 			Return(nil, errors.New("Object not found"))
 		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("success", nil)
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
@@ -1300,7 +1300,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		})
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
@@ -1339,7 +1339,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		input := nsmodel.ToAppUpdateInput(system)
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
@@ -1379,7 +1379,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		input := nsmodel.ToAppUpdateInput(system)
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(errors.New("error")).Once()
@@ -1420,7 +1420,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		input := nsmodel.ToAppUpdateInput(system)
 
 		appSvc := automock.ApplicationService{}
-		appSvc.Mock.On("GetSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
+		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").Return(&application, nil)
 		appSvc.Mock.On("Update", mock.Anything, application.ID, input).Return(nil)
 		appSvc.Mock.On("SetLabel", mock.Anything, label).Return(nil).Once()
 		appSvc.Mock.On("SetLabel", mock.Anything, protocolLabel).Return(nil).Once()
