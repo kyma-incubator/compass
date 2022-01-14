@@ -23,12 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	auditlogTokenEndpoint        = "secured/oauth/token"
-	auditlogSearchEndpoint       = "audit-log/v2/configuration-changes/search"
-	auditlogDeleteEndpointFormat = "audit-log/v2/configuration-changes/%s"
-)
-
 type Token struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`

@@ -94,7 +94,7 @@ spec:
               value: "{{ .Values.global.externalServicesMock.auditlog.clientId }}"
             - name: AUDITLOG_CLIENT_SECRET
               value: "{{ .Values.global.externalServicesMock.auditlog.clientSecret }}"
-            - name: AUDITLOG_TOKEN_URL
+            - name: AUDITLOG_MANAGEMENT_URL
               value: "{{ .Values.global.externalServicesMock.auditlog.managementUrl }}"
       restartPolicy: Never
       serviceAccountName: {{ .Chart.Name }}-operations-tests-service-account
