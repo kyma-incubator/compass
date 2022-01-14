@@ -46,7 +46,7 @@ func GetAuditlogToken(t require.TestingT, client *http.Client, auditlogConfig co
 	form := url.Values{}
 	form.Add("grant_type", "client_credentials")
 	reqBody := strings.NewReader(form.Encode())
-	req, err := http.NewRequest(http.MethodPost, auditlogConfig.TokenURL, reqBody)
+	req, err := http.NewRequest(http.MethodPost, auditlogConfig.TokenURL+"/oauth/token", reqBody)
 	require.NoError(t, err)
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -64,8 +64,8 @@ func GetAuditlogToken(t require.TestingT, client *http.Client, auditlogConfig co
 	return auditlogToken
 }
 
-func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Client, auditlogManagementURL string, auditlogToken Token, search string, timeFrom, timeTo time.Time) []model.ConfigurationChange {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(auditlogManagementURL), nil)
+func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Client, auditlogConfig config.AuditlogConfig, auditlogToken Token, search string, timeFrom, timeTo time.Time) []model.ConfigurationChange {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", auditlogConfig.ManagementURL, auditlogConfig.ManagementAPIPath), nil)
 	require.NoError(t, err)
 
 	timeFromStr := timeFrom.Format(time.RFC3339Nano)

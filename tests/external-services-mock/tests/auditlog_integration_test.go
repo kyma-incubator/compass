@@ -51,10 +51,10 @@ func TestAuditlogIntegration(t *testing.T) {
 	auditlogToken := fixtures.GetAuditlogToken(t, &httpClient, testConfig.Auditlog)
 
 	t.Log("Get auditlog from external services mock")
-	auditlogs := fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog.ManagementURL, auditlogToken, appName, timeFrom, timeTo)
+	auditlogs := fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog, auditlogToken, appName, timeFrom, timeTo)
 
 	assert.Eventually(t, func() bool {
-		auditlogs = fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog.ManagementURL, auditlogToken, appName, timeFrom, timeTo)
+		auditlogs = fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog, auditlogToken, appName, timeFrom, timeTo)
 		t.Logf("Waiting for auditlog items to be %d, but currently are: %d", 2, len(auditlogs))
 		return len(auditlogs) == 2
 	}, time.Minute, time.Millisecond*500)

@@ -602,10 +602,13 @@ global:
     oauthSecretName: compass-external-services-mock-oauth-credentials
     auditlog:
       enabled: false
-      tokenUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8080/secured/oauth/token
-      clientId: client_id
-      clientSecret: client_secret
-      managementUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8080/audit-log/v2/configuration-changes/search
+      managementApiPath: /audit-log/v2/configuration-changes/search
+      secret:
+        name: "auditlog-instance-management-mocked"
+        urlKey: url
+        tokenUrlKey: token-url
+        clientIdKey: client-id
+        clientSecretKey: client-secret
 
   tests:
     http:

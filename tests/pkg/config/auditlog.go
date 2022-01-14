@@ -1,8 +1,9 @@
 package config
 
 type AuditlogConfig struct {
-	TokenURL      string
-	ClientID      string
-	ClientSecret  string
-	ManagementURL string
+	TokenURL          string
+	ClientID          string
+	ClientSecret      string
+	ManagementURL     string
+	ManagementAPIPath string
 }
