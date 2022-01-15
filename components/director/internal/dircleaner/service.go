@@ -57,7 +57,9 @@ func (s *service) Clean(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	log.C(ctx).Infof("Total number of listed subaccounts: %d", len(allSubaccounts))
+
 	succsessfullyProcessed := 0
 	correctSubaccounts := 0
 	dirsToDelete := make(map[string]bool)
@@ -72,16 +74,10 @@ func (s *service) Clean(ctx context.Context) error {
 		}
 		log.C(ctx).Infof("Processing subaccount with ID %s", subaccount.ID)
 
-		parentFromDB, err := s.tenantSvc.GetTenantByID(ctx, subaccount.Parent)
-		if err != nil {
-			log.C(ctx).Errorf("Could not take parent for subaccout with id %s %v", subaccount.ID, err)
-			continue
-		}
-
 		globalAccountGUIDFromCis, err := s.cisSvc.GetGlobalAccount(ctx, region, subaccount.ExternalTenant)
 		if err != nil {
 			log.C(ctx).Errorf("Could not get globalAccountGuid for subacount with ID %s from CIS %v", subaccount.ID, err)
-			dirsNotToDelete[parentFromDB.ExternalTenant] = true
+			dirsNotToDelete[subaccount.Parent] = true
 			notFoundSAs = append(notFoundSAs, subaccount.ExternalTenant)
 			continue
 		}
@@ -92,6 +88,12 @@ func (s *service) Clean(ctx context.Context) error {
 			}
 			ctx = persistence.SaveToContext(ctx, tx)
 			defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+			parentFromDB, err := s.tenantSvc.GetTenantByID(ctx, subaccount.Parent)
+			if err != nil {
+				log.C(ctx).Errorf("Could not take parent for subaccout with id %s %v", subaccount.ID, err)
+				return err
+			}
 
 			if parentFromDB.ExternalTenant != globalAccountGUIDFromCis { // the record is directory and not GA
 				conflictingGA, err := s.tenantSvc.GetTenantByExternalID(ctx, globalAccountGUIDFromCis)
@@ -109,7 +111,7 @@ func (s *service) Clean(ctx context.Context) error {
 						return err
 					} else { // the update was successful
 						// mark the directory for deletion later because it still may have other child subaccounts which will be deleted by the cascade
-						dirsToDelete[parentFromDB.ExternalTenant] = true
+						dirsToDelete[parentFromDB.ID] = true
 						succsessfullyProcessed++
 					}
 				} else if err != nil && !apperrors.IsNotFoundError(err) {
@@ -148,7 +150,7 @@ func (s *service) Clean(ctx context.Context) error {
 	if err != nil {
 		log.C(ctx).Error(err)
 	}
-	log.C(ctx).Infof("%d directories were not deleted due to not found child SA. External IDs of the Directories: %v", len(notDeletedDirs), notDeletedDirs)
+	log.C(ctx).Infof("%d directories were not deleted due to not found child SA. IDs of the Directories: %v", len(notDeletedDirs), notDeletedDirs)
 
 	log.C(ctx).Infof("Successfully processed %d records from %d", succsessfullyProcessed, len(allSubaccounts))
 	log.C(ctx).Infof("%d subaccounts were correct and were not modified out of total  %d", correctSubaccounts, len(allSubaccounts))
@@ -168,13 +170,13 @@ func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool, d
 
 	log.C(ctx).Infof("%d directories are to be deleted", len(dirs))
 	successfullyDeleted := 0
-	for extTenant := range dirs {
-		if dirsNotToDelete[extTenant] {
-			notDeletedDirs = append(notDeletedDirs, extTenant)
+	for tenant := range dirs {
+		if dirsNotToDelete[tenant] {
+			notDeletedDirs = append(notDeletedDirs, tenant)
 			continue
 		}
-		log.C(ctx).Infof("Deleting directory with external ID %s", extTenant)
-		if err = s.tenantSvc.DeleteByExternalTenant(ctx, extTenant); err != nil {
+		log.C(ctx).Infof("Deleting directory with ID %s", tenant)
+		if err = s.tenantSvc.DeleteByExternalTenant(ctx, tenant); err != nil {
 			log.C(ctx).Error(err)
 		} else {
 			successfullyDeleted++
