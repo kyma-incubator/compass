@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	pkgConfig "github.com/kyma-incubator/compass/tests/pkg/config"
+
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/machinebox/graphql"
@@ -15,6 +17,7 @@ import (
 )
 
 type config struct {
+	Auditlog                           pkgConfig.AuditlogConfig
 	DefaultTestTenant                  string
 	DirectorURL                        string
 	ExternalServicesMockBaseURL        string
