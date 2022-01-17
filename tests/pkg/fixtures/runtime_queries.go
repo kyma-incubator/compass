@@ -81,7 +81,6 @@ func CleanupRuntimeWithoutTenant(t require.TestingT, ctx context.Context, gqlCli
 
 	err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, delReq, nil)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
-	require.NoError(t, err)
 }
 
 func GetRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.RuntimeExt {
