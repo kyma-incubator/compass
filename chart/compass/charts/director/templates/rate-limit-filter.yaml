@@ -1,7 +1,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
-  name: {{ template "fullname" . }}-rate-limit
+  name: {{ template "fullname" . }}-rate-limit-filter
   namespace: {{ .Release.Namespace }}
 spec:
   workloadSelector:
