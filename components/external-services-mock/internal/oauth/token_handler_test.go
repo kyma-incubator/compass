@@ -7,13 +7,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/tidwall/gjson"
 
 	"github.com/form3tech-oss/jwt-go"
 	oauth2 "github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
@@ -208,7 +209,6 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		data.Add(grantTypeFieldName, credentialsGrantType)
 		data.Add(clientIDKey, id)
 		data.Add(clientSecretKey, secret)
-
 
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
 		req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
