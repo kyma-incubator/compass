@@ -348,7 +348,7 @@ func TestNewChanges(t *testing.T) {
 			t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 			unsubscribeResp, err := httpClient.Do(unsubscribeReq)
 			require.NoError(t, err)
-			require.Equal(t, http.StatusOK, unsubscribeResp.StatusCode)
+			require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode)
 		}()
 
 		// HTTP client configured with manually signed client certificate
