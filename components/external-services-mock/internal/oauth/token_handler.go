@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -74,15 +75,15 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.FormValue(grantTypeFieldName) != credentialsGrantType && r.FormValue(grantTypeFieldName) != passwordGrantType {
-		log.C(ctx).Errorf("The grant_type should be %s or %s but we got: %s", credentialsGrantType, passwordGrantType, r.FormValue(grantTypeFieldName))
-		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusBadRequest)
-		return
-	}
-
 	if err := r.ParseForm(); err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while parsing query")
 		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusInternalServerError)
+		return
+	}
+
+	if r.FormValue(grantTypeFieldName) != credentialsGrantType && r.FormValue(grantTypeFieldName) != passwordGrantType {
+		log.C(ctx).Errorf("The grant_type should be %s or %s but we got: %s", credentialsGrantType, passwordGrantType, r.FormValue(grantTypeFieldName))
+		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusBadRequest)
 		return
 	}
 
@@ -164,12 +165,14 @@ func (h *handler) handleClientCredentialsRequest(r *http.Request) error {
 
 	authorization := r.Header.Get("authorization")
 	if id, secret, err := getBasicCredentials(authorization); err != nil {
-		log.C(r.Context()).Info("Did not find client id or client secret in authorization header. Checking the request body...")
-		if r.FormValue(clientIDKey) != h.expectedID || r.FormValue(clientSecretKey) != h.expectedSecret {
-			return errors.New("client id or client secret from request body doesn't match the expected one")
+		log.C(r.Context()).Info("Did not find client_id or client_secret in the authorization header. Checking the request body...")
+		id = r.FormValue(clientIDKey)
+		secret = r.FormValue(clientSecretKey)
+		if id != h.expectedID || secret != h.expectedSecret {
+			return errors.New(fmt.Sprintf("client_id or client_secret from request body doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedID, h.expectedSecret, id, secret))
 		}
-	} else if h.expectedID != id || h.expectedSecret != secret {
-		return errors.New("client id or client secret from authorization header doesn't match the expected one")
+	} else if id != h.expectedID || secret != h.expectedSecret {
+		return errors.New(fmt.Sprintf("client_id or client_secret from authorization header doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedID, h.expectedSecret, id, secret))
 	}
 
 	log.C(r.Context()).Info("Successfully validated client credentials token request")
@@ -182,15 +185,17 @@ func (h *handler) handlePasswordCredentialsRequest(r *http.Request) error {
 	authorization := r.Header.Get("authorization")
 	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
-		return errors.Wrap(err, "client secret or client id doesn't match the expected one")
+		return errors.Wrap(err, fmt.Sprintf("client_id or client_secret doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedID, h.expectedSecret, id, secret))
 	}
 
 	if id != h.expectedID || secret != h.expectedSecret {
-		return errors.New("client secret or client id doesn't match the expected one")
+		return errors.New(fmt.Sprintf("client_id or client_secret doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedID, h.expectedSecret, id, secret))
 	}
 
-	if r.FormValue(userNameKey) != h.expectedUsername || r.FormValue(passwordKey) != h.expectedPassword {
-		return errors.New("username or password doesn't match the expected one")
+	username := r.FormValue(userNameKey)
+	password := r.FormValue(passwordKey)
+	if username != h.expectedUsername || password != h.expectedPassword {
+		return errors.New(fmt.Sprintf("username or password doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedUsername, h.expectedPassword, username, password))
 	}
 
 	log.C(r.Context()).Info("Successfully validated password grant type token request")
@@ -242,7 +247,15 @@ func createResponse(token string) TokenResponse {
 }
 
 func getBasicCredentials(rawData string) (id string, secret string, err error) {
+	if len(rawData) == 0 {
+		return "", "", errors.New("missing authorization header")
+	}
+
 	encodedCredentials := strings.TrimPrefix(rawData, "Basic ")
+	if len(encodedCredentials) == 0 {
+		return "", "", errors.New("the credentials cannot be empty")
+	}
+
 	output, err := base64.URLEncoding.DecodeString(encodedCredentials)
 	if err != nil {
 		return "", "", errors.Wrap(err, "while decoding basic credentials")
