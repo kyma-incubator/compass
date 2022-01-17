@@ -19,7 +19,6 @@ import (
 	"github.com/form3tech-oss/jwt-go"
 	oauth2 "github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,12 +58,12 @@ func TestHandler_Generate(t *testing.T) {
 	resp := r.Result()
 
 	//THEN
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
 	var response oauth2.TokenResponse
 	err = json.Unmarshal(body, &response)
 	require.NoError(t, err)
-	assert.NotEmpty(t, response.AccessToken)
+	require.NotEmpty(t, response.AccessToken)
 }
 
 func TestHandler_GenerateWithSigningKey(t *testing.T) {
@@ -123,14 +122,14 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		resp := r.Result()
 
 		//THEN
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 
 		var response oauth2.TokenResponse
 		err = json.Unmarshal(body, &response)
 
 		require.NoError(t, err)
-		assert.NotEmpty(t, response.AccessToken)
+		require.NotEmpty(t, response.AccessToken)
 	})
 
 	t.Run("Failed issuing client_credentials token if the client_id or client_secret as part of authorization header does not match the expected one", func(t *testing.T) {
@@ -158,7 +157,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		resp := r.Result()
 
 		//THEN
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.NotEmpty(t, body)
@@ -191,14 +190,14 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		resp := r.Result()
 
 		//THEN
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
 		var response oauth2.TokenResponse
 		err = json.Unmarshal(body, &response)
 		require.NoError(t, err)
-		assert.NotEmpty(t, response.AccessToken)
+		require.NotEmpty(t, response.AccessToken)
 	})
 
 	t.Run("Failed issuing client_credentials token if the client_id or client_secret as part of the request body does not match the expected one", func(t *testing.T) {
@@ -226,7 +225,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		resp := r.Result()
 
 		//THEN
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.NotEmpty(t, body)
@@ -262,14 +261,14 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		resp := r.Result()
 
 		//THEN
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
 		var response oauth2.TokenResponse
 		err = json.Unmarshal(body, &response)
 		require.NoError(t, err)
-		assert.NotEmpty(t, response.AccessToken)
+		require.NotEmpty(t, response.AccessToken)
 	})
 
 	t.Run("Failed issuing user token if authorization header is missing", func(t *testing.T) {
@@ -296,7 +295,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		resp := r.Result()
 
 		//THEN
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.NotEmpty(t, body)
@@ -334,7 +333,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		resp := r.Result()
 
 		//THEN
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.NotEmpty(t, body)
@@ -372,7 +371,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		resp := r.Result()
 
 		//THEN
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.NotEmpty(t, body)
@@ -418,14 +417,14 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		resp := r.Result()
 
 		//THEN
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
 		var response oauth2.TokenResponse
 		err = json.Unmarshal(body, &response)
 		require.NoError(t, err)
-		assert.NotEmpty(t, response.AccessToken)
+		require.NotEmpty(t, response.AccessToken)
 
 		claims := map[string]interface{}{}
 		_, err = jwt.ParseWithClaims(response.AccessToken, jwt.MapClaims(claims), func(token *jwt.Token) (interface{}, error) {
@@ -461,7 +460,7 @@ func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
 	resp := r.Result()
 
 	//THEN
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 	respBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
@@ -469,7 +468,7 @@ func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
 	err = json.Unmarshal(respBody, &response)
 
 	require.NoError(t, err)
-	assert.NotEmpty(t, response.AccessToken)
+	require.NotEmpty(t, response.AccessToken)
 
 	claims := &oauth2.Claims{}
 
