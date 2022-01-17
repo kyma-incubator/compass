@@ -72,7 +72,7 @@ type config struct {
 	ClientID                              string
 	ClientSecret                          string
 	SubscriptionProviderLabelKey          string
-	SelfRegisterDistinguishLabelKey       string // TODO:: Remove after consumer-provider test adaptation
+	SubscriptionProviderID                string
 	SelfRegisterLabelKey                  string
 	SelfRegisterLabelValuePrefix          string
 	SkipSSLValidation                     bool

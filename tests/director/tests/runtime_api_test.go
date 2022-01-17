@@ -456,7 +456,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 	t.Run("Test runtime operations(CUD) with externally issued certificate", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
-		distinguishLabelValue := "distinguish-label-value!t1234"
+		distinguishLabelValue := conf.SelfRegDistinguishLabelValue
 		subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 		// Build graphql director client configured with certificate
@@ -486,7 +486,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		runtimeInput = &graphql.RuntimeInput{
 			Name:        "runtime-create-update-delete",
 			Description: ptr.String("runtime-create-update-delete-description"),
-			Labels:      graphql.Labels{conf.SelfRegisterDistinguishLabelKey: []interface{}{distinguishLabelValue}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
+			Labels:      graphql.Labels{conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
 		}
 
 		actualRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, runtimeInput)
@@ -535,7 +535,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		runtimeInput.Name = "updated-runtime"
 		runtimeInput.Description = ptr.String("updated-runtime-description")
 		runtimeInput.Labels = graphql.Labels{
-			conf.SelfRegisterDistinguishLabelKey: []interface{}{distinguishLabelValue}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, protectedConsumerSubaccountIdsLabel: []interface{}{"subaccountID-1", "subaccountID-2"},
+			conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, protectedConsumerSubaccountIdsLabel: []interface{}{"subaccountID-1", "subaccountID-2"},
 		}
 		runtimeStatusCond := graphql.RuntimeStatusConditionConnected
 		runtimeInput.StatusCondition = &runtimeStatusCond

@@ -88,6 +88,8 @@ spec:
                   key: {{ .Values.global.tests.externalServicesMock.oauthSecret.clientSecretKey }}
             - name: SUBSCRIPTION_PROVIDER_LABEL_KEY
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: SUBSCRIPTION_PROVIDER_ID
+              value: "{{ .Values.global.tests.subscriptionProviderIdValue }}"
             - name: TENANT_CONFIG_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: TENANT_CONFIG_SUBACCOUNT_TENANT_ID_PROPERTY
@@ -158,8 +160,6 @@ spec:
               value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.ordService.skipPattern }}
-            - name: SELF_REGISTER_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
             - name: SELF_REGISTER_LABEL_VALUE_PREFIX

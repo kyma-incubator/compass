@@ -109,7 +109,7 @@ spec:
               - name: APP_TENANT_CONFIG_REGION_PATH_PARAM
                 value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
               - name: APP_TENANT_CONFIG_SUBSCRIPTION_PROVIDER_ID
-                value: "{{ .Values.global.tests.ordService.subscriptionProviderIdValue }}"
+                value: "{{ .Values.global.tests.subscriptionProviderIdValue }}"
               - name: APP_TENANT_CONFIG_TEST_PROVIDER_ACCOUNT_ID # TODO:: May not be used anywhere?
                 value: {{ .Values.global.tests.ordService.providerAccountID }} # TODO:: May not be used anywhere?
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID

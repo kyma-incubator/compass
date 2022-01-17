@@ -46,25 +46,9 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const (
-	contentTypeHeader                = "Content-Type"
-	contentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
-	contentTypeApplicationJson       = "application/json"
-
-	grantTypeFieldName = "grant_type"
-	passwordGrantType  = "password"
-	claimsKey          = "claims_key"
-
-	clientIDKey = "client_id"
-	userNameKey = "username"
-	passwordKey = "password"
-)
-
 func TestSelfRegisterFlow(t *testing.T) {
 	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
 		ctx := context.Background()
-		distinguishLblValue := "test-distinguish-value!t1234"
-
 		// defaultTenantId is the parent of the subaccountID
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
 		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
@@ -93,7 +77,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 		runtimeInput := graphql.RuntimeInput{
 			Name:        "selfRegisterRuntime",
 			Description: ptr.String("selfRegisterRuntime-description"),
-			Labels:      graphql.Labels{testConfig.SelfRegisterDistinguishLabelKey: distinguishLblValue},
+			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID},
 		}
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
 		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subaccountID, &runtime)
@@ -126,7 +110,6 @@ func TestConsumerProviderFlow(t *testing.T) {
 	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
 		ctx := context.Background()
 		secondaryTenant := testConfig.TestConsumerAccountID
-		subscriptionProviderID := "xsappname-value"
 		//reuseServiceSubaccountID := testConfig.TestReuseSvcSubaccountID
 		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
 		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
@@ -154,7 +137,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 		runtimeInput := graphql.RuntimeInput{
 			Name:        "providerRuntime",
 			Description: ptr.String("providerRuntime-description"),
-			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: subscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, selectorKey: subscriptionProviderSubaccountID},
+			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, selectorKey: subscriptionProviderSubaccountID},
 		}
 
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
@@ -193,7 +176,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 			TenantID:               secondaryTenant,
 			SubaccountID:           subscriptionConsumerSubaccountID,
 			Subdomain:              tenantfetcher.DefaultSubdomain,
-			SubscriptionProviderID: subscriptionProviderID,
+			SubscriptionProviderID: testConfig.SubscriptionProviderID,
 		}
 
 		tenantProperties := tenantfetcher.TenantIDProperties{
@@ -259,7 +242,6 @@ func TestNewChanges(t *testing.T) {
 	t.Run("TestNewChanges", func(t *testing.T) {
 		ctx := context.Background()
 		secondaryTenant := testConfig.TestConsumerAccountID
-		subscriptionProviderID := "name-value!t12345"
 		//reuseServiceSubaccountID := testConfig.TestReuseSvcSubaccountID
 		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
 		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
@@ -289,7 +271,7 @@ func TestNewChanges(t *testing.T) {
 		runtimeInput := graphql.RuntimeInput{
 			Name:        "providerRuntime",
 			Description: ptr.String("providerRuntime-description"),
-			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: subscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, selectorKey: subscriptionProviderSubaccountID},
+			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, selectorKey: subscriptionProviderSubaccountID},
 		}
 
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
@@ -327,7 +309,7 @@ func TestNewChanges(t *testing.T) {
 		selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
 		require.Contains(t, selfRegLabelValue, testConfig.SelfRegisterLabelValuePrefix+runtime.ID)
-		response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", contentTypeApplicationJson, bytes.NewBuffer([]byte(selfRegLabelValue)))
+		response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", "application/json", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {

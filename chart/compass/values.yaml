@@ -414,7 +414,7 @@ global:
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       name: "provider"
-      subscriptionProviderIdProperty: "subscriptionProviderId"
+      subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
@@ -616,7 +616,6 @@ global:
       reuseSvcSubaccountID: "321eaf48-d8fa-4c8d-8c49-4e520a0c04fb" # randomly chosen
       externalClientCertTestSecretName: "external-client-certificate-test-secret"
       externalClientCertTestSecretNamespace: "compass-system"
-      subscriptionProviderIdValue: "xsappname-value"
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     directorFQDN: http://compass-director.compass-system.svc.cluster.local
@@ -633,11 +632,12 @@ global:
         clientSecretKey: client-secret
         oauthUrlKey: url
         oauthTokenPath: "/secured/oauth/token"
-    tokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
-    subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
     basicCredentials:
       manage: false
       secretName: "test-basic-credentials-secret"
+    tokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+    subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+    subscriptionProviderIdValue: "id-value!t12345"
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1
