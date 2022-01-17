@@ -25,7 +25,7 @@ To install Compass with GCP managed Postgres database, set the **database.embedd
 | `global.database.managedGCP.hostPort` | Specifies cloudsql-proxy port | string | "5432" |
 | `global.database.managedGCP.sslMode` | Specifies SSL connection mode | string | "" |
 
-The access to the database is possible using workload Identity.
+The access to the database is possible using [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/concepts/workload-identity).
 It allows a Kubernetes service account to act as an IAM service account.
 Pods that use the configured Kubernetes service account automatically authenticate as the GCP service account when accessing Google Cloud APIs. 
 All kubernetes service accounts which are used by workloads accessing the database have annotation "iam.gke.io/gcp-service-account" pointing to the `sqlProxyServiceAccount`.
