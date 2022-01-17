@@ -457,7 +457,6 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		distinguishLabelValue := conf.SelfRegDistinguishLabelValue
-		subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
@@ -473,7 +472,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		t.Log("Successfully register runtime using certificate with protected labels and validate that they are excluded")
 		actualRtm := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &actualRtm)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &actualRtm)
 
 		//THEN
 		require.NotEmpty(t, actualRtm.ID)
@@ -490,7 +489,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		}
 
 		actualRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &actualRuntime)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &actualRuntime)
 
 		//THEN
 		require.NotEmpty(t, actualRuntime.ID)
@@ -572,7 +571,6 @@ func TestQueryRuntimesWithCertificate(t *testing.T) {
 	t.Run("Query runtime with externally issued certificate", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
-		subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
@@ -582,7 +580,7 @@ func TestQueryRuntimesWithCertificate(t *testing.T) {
 		defer func() {
 			for _, id := range idsToRemove {
 				if id != "" {
-					fixtures.UnregisterRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, id)
+					fixtures.UnregisterRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, id)
 				}
 			}
 		}()
@@ -638,7 +636,6 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 	t.Run("Query specific runtime with externally issued certificate", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
-		subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
@@ -652,7 +649,7 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 		registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 		createdRuntime := graphql.RuntimeExt{}
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, registerReq, &createdRuntime)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &createdRuntime)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &createdRuntime)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, createdRuntime.ID)

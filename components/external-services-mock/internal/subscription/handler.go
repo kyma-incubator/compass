@@ -49,7 +49,7 @@ func (h *handler) Subscription(writer http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while executing subscription request"), statusCode)
 		return
 	}
-	writer.WriteHeader(http.StatusOK)
+	writer.WriteHeader(http.StatusAccepted)
 }
 
 func (h *handler) Deprovisioning(writer http.ResponseWriter, r *http.Request) {
@@ -58,7 +58,7 @@ func (h *handler) Deprovisioning(writer http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while executing unsubscription request"), statusCode)
 		return
 	}
-	writer.WriteHeader(http.StatusOK)
+	writer.WriteHeader(http.StatusAccepted)
 }
 
 func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string) (error, int) {

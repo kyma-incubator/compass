@@ -51,7 +51,6 @@ func TestSelfRegisterFlow(t *testing.T) {
 		ctx := context.Background()
 		// defaultTenantId is the parent of the subaccountID
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
-		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
@@ -80,7 +79,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID},
 		}
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subaccountID, &runtime)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(t, runtime.ID)
 		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
@@ -141,7 +140,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 		}
 
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(t, runtime.ID)
 
 		// Register application
@@ -275,7 +274,7 @@ func TestNewChanges(t *testing.T) {
 		}
 
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(t, runtime.ID)
 
 		// Register application
@@ -326,10 +325,11 @@ func TestNewChanges(t *testing.T) {
 		}
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerSubaccountID)
-		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
+		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		tenantFetcherToken := token.GetClientCredentialsToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "tenantFetcherClaims")
 		subscribeReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tenantFetcherToken))
+		subscribeReq.Header.Add("Content-Type", "application/json")
 
 		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 		resp, err := httpClient.Do(subscribeReq)
@@ -339,7 +339,7 @@ func TestNewChanges(t *testing.T) {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusAccepted, resp.StatusCode)
 
 		defer func() {
 			unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
@@ -369,7 +369,7 @@ func TestNewChanges(t *testing.T) {
 		t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 		unsubscribeResp, err := httpClient.Do(unsubscribeReq)
 		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, unsubscribeResp.StatusCode)
+		require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode)
 
 		respBody = makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))

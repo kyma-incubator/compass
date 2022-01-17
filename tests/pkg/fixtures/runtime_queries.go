@@ -53,6 +53,16 @@ func UnregisterRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.
 	require.NoError(t, err)
 }
 
+func UnregisterRuntimeWithoutTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) {
+	if id == "" {
+		return
+	}
+	delReq := FixUnregisterRuntimeRequest(id)
+
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, delReq, nil)
+	require.NoError(t, err)
+}
+
 func CleanupRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, rtm *graphql.RuntimeExt) {
 	if rtm == nil || rtm.ID == "" {
 		return
@@ -60,6 +70,16 @@ func CleanupRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Cli
 	delReq := FixUnregisterRuntimeRequest(rtm.ID)
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+}
+
+func CleanupRuntimeWithoutTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, rtm *graphql.RuntimeExt) {
+	if rtm == nil || rtm.ID == "" {
+		return
+	}
+	delReq := FixUnregisterRuntimeRequest(rtm.ID)
+
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, delReq, nil)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }
 
