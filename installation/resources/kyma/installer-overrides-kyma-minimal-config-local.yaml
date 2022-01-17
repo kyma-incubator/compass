@@ -27,10 +27,10 @@ data:
             resources:
               requests:
                 cpu: 20m
-                memory: 32Mi
+                memory: 128Mi
               limits:
                 cpu: 100m
-                memory: 128Mi
+                memory: 256Mi
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -43,6 +43,32 @@ metadata:
     kyma-project.io/installation: ""
 data:
   test.external_solution.event_mesh.enabled: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-essentials-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: cluster-essentials
+    kyma-project.io/installation: ""
+data:
+  limitRange.default.memory: 256Mi
+  limitRange.defaultRequest.memory: 64Mi
+  pod-preset.webhook.resources.limits.memory: 128Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: testing-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: testing
+data:
+  octopus.resources.limits.cpu: 200m
+  octopus.resources.limits.memory: 256Mi
 ---
 apiVersion: v1
 kind: ConfigMap
