@@ -272,7 +272,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 
 func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers := make([]*http.Server, 0, 0)
-	servers = append(servers, initCertSecuredServer(cfg))
+	servers = append(servers, initCertSecuredORDServer(cfg))
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
@@ -280,7 +280,7 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	return servers
 }
 
-func initCertSecuredServer(cfg config) *http.Server {
+func initCertSecuredORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
