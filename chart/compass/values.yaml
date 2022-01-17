@@ -601,10 +601,10 @@ global:
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials
     auditlog:
-      enabled: false
+      applyMockConfiguration: false
       managementApiPath: /audit-log/v2/configuration-changes/search
       secret:
-        name: "auditlog-instance-management-mocked"
+        name: "auditlog-instance-management"
         urlKey: url
         tokenUrlKey: token-url
         clientIdKey: client-id
