@@ -5,7 +5,7 @@
 To set up the database, create the following:
 
 * Cloud SQL Postgres instance on Google Cloud Platform with public IP assigned
-* GCP Service Account with at least one of the following roles ([click here for more information](https://cloud.google.com/sql/docs/postgres/connect-external-app#4_if_required_by_your_authentication_method_create_a_service_account)):
+* GCP Service Account with at least one of the following roles. For more information, see: ([Overview to connecting](https://cloud.google.com/sql/docs/postgres/connect-external-app#4_if_required_by_your_authentication_method_create_a_service_account)):
   - Cloud SQL Client
   - Cloud SQL Editor
   - Cloud SQL Admin
@@ -16,7 +16,7 @@ To install Compass with GCP managed Postgres database, set the **database.embedd
 
 | Parameter | Description | Values | Default |
 | --- | --- | --- | --- |
-| `global.database.sqlProxyServiceAccount` | Specifies the name of a GCP service account which will be used to access the database | string | "proxy-user@gcp-cmp.iam.gserviceaccount.com" |
+| `global.database.sqlProxyServiceAccount` | Specifies the name of a GCP service account, which is used to access the database | string | "proxy-user@gcp-cmp.iam.gserviceaccount.com" |
 | `global.database.managedGCP.instanceConnectionName` | Specifies instance connection name to GCP PostgreSQL database | string | "" |
 | `global.database.managedGCP.director.user` | Specifies the database username in the Director. | string | "" |
 | `global.database.managedGCP.director.password` | Specifies the password to the user's database in the Director. | string | "" |
@@ -28,14 +28,14 @@ To install Compass with GCP managed Postgres database, set the **database.embedd
 The access to the database is possible using [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/concepts/workload-identity).
 It allows a Kubernetes service account to act as an IAM service account.
 Pods that use the configured Kubernetes service account automatically authenticate as the GCP service account when accessing Google Cloud APIs. 
-All kubernetes service accounts which are used by workloads accessing the database have annotation "iam.gke.io/gcp-service-account" pointing to the `sqlProxyServiceAccount`.
+All kubernetes service accounts, which are used by workloads to access the database, have annotation "iam.gke.io/gcp-service-account" pointing to the `sqlProxyServiceAccount`.
 
 To connect to managed database, we use [cloudsql-proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy) provided by Google, which consumes `instanceConnectionName` value.
 
 To find `Instance connection name`, go to the [SQL Instances page](https://console.cloud.google.com/sql/instances) and open desired database overview.
 ![Instance connection String](./assets/sql-instances-list.png)
 
-Than look for `Instance connection name` box inside `Connect to this instance` section.
+Then, look for `Instance connection name` box inside `Connect to this instance` section.
 
 ![Instance connection String](./assets/instance-connection-string.png)
 
