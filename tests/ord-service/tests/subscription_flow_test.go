@@ -48,7 +48,6 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 
 		// defaultTenantId is the parent of the subaccountID
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
-		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
@@ -76,9 +75,8 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 			Description: ptr.String("selfRegisterRuntime-description"),
 			Labels:      graphql.Labels{testConfig.SelfRegisterDistinguishLabelKey: distinguishLblValue},
 		}
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, subaccountID, &runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subaccountID, &runtime)
-		require.NoError(t, err)
+		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(t, runtime.ID)
 		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
@@ -87,7 +85,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 		// Verify that the label returned cannot be modified
 		setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
 		label := graphql.Label{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, subaccountID, setLabelRequest, &label)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, setLabelRequest, &label)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
 
@@ -124,9 +122,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		}
 
 		// Register provider runtime with the necessary label
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, &runtime)
-		require.NoError(t, err)
+		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(t, runtime.ID)
 
 		// Register application
