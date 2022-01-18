@@ -316,7 +316,7 @@ func TestFullReport(stdT *testing.T) {
 
 		// Register application
 		appFromTmpl := createApplicationFromTemplateInput(
-			"S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
+			"on-promise-system-1", "S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
 			"nonSAPsys", "127.0.0.1:3000", "mail", "", "reachable")
 
 		appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
@@ -364,7 +364,7 @@ func TestFullReport(stdT *testing.T) {
 
 		// Register application
 		appFromTmpl := createApplicationFromTemplateInput(
-			"S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
+			"on-promise-system-1", "S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
 			"nonSAPsys", "127.0.0.1:3000", "mail", "", "reachable")
 
 		appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)

@@ -273,7 +273,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 		// Register application
 		appFromTmpl := createApplicationFromTemplateInput(
-			"S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
+			"on-promise-system-1", "S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
 			"nonSAPsys", "127.0.0.1:3000", "mail", "", "reachable")
 		appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 		require.NoError(t, err)
@@ -322,7 +322,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 		// Register application
 		appFromTmpl := createApplicationFromTemplateInput(
-			"S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
+			"on-promise-system-1", "S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
 			"nonSAPsys", "127.0.0.1:3000", "mail", "", "reachable")
 		appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 		require.NoError(t, err)
@@ -488,7 +488,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 func sendRequest(t *testing.T, body []byte, reportType string, token string) *http.Response {
 	buffer := bytes.NewBuffer(body)
-	req, err := http.NewRequest(http.MethodPost, "https://compass-gateway-xsuaa.kyma.local/nsadapter/api/v1/notifications", buffer)
+	req, err := http.NewRequest(http.MethodPut, "https://compass-gateway-xsuaa.kyma.local/nsadapter/api/v1/notifications", buffer)
 	if err != nil {
 		panic(err)
 	}
@@ -511,8 +511,12 @@ func sendRequest(t *testing.T, body []byte, reportType string, token string) *ht
 	return resp
 }
 
-func createApplicationFromTemplateInput(templateName, description, subaccount, locId, systemType, host, protocol, systemNumber, systemStatus string) graphql.ApplicationFromTemplateInput {
+func createApplicationFromTemplateInput(name, templateName, description, subaccount, locId, systemType, host, protocol, systemNumber, systemStatus string) graphql.ApplicationFromTemplateInput {
 	return graphql.ApplicationFromTemplateInput{TemplateName: templateName, Values: []*graphql.TemplateValueInput{
+		{
+			Placeholder: "name",
+			Value:       name,
+		},
 		{
 			Placeholder: "description",
 			Value:       description,
