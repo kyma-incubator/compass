@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"os"
@@ -41,7 +40,6 @@ type config struct {
 	NsadapterOrigin    string `envconfig:"default=http://127.0.0.1:3005"`
 	MetricsAddress     string `envconfig:"default=127.0.0.1:3003"`
 	AuditlogEnabled    bool   `envconfig:"default=false"`
-	InsecureSkipVerify bool   `envconfig:"default=false"`
 }
 
 func main() {
@@ -76,12 +74,7 @@ func main() {
 		auditlogSvc = &auditlog.NoOpService{}
 	}
 
-	unsecureTr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: cfg.InsecureSkipVerify,
-		},
-	}
-	correlationTr := httputil.NewCorrelationIDTransport(unsecureTr)
+	correlationTr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
 	tr := proxy.NewTransport(auditlogSink, auditlogSvc, correlationTr)
 	adapterTr := proxy.NewAdapterTransport(auditlogSink, auditlogSvc, correlationTr)
 

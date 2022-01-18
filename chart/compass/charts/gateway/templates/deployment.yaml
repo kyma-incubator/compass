@@ -141,10 +141,6 @@ spec:
                   key: auditlog-channel-timeout
                   optional: true
             {{ end }}
-            {{ if .Values.global.isLocalEnv }}
-            - name: APP_INSECURE_SKIP_VERIFY
-              value: "true"
-            {{ end }}
 {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}
