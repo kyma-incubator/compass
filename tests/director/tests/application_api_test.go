@@ -120,6 +120,94 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 // 	assert.Equal(t, operation.OperationStatusSucceeded, opResponse.Status)
 // }
 
+func TestRegisterApplicationNormalizationValidation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	firstAppName := "app@wordpress"
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	actualApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, firstAppName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &actualApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+
+	//THEN
+	require.NotEmpty(t, actualApp.ID)
+	require.Equal(t, actualApp.Name, firstAppName)
+
+	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
+
+	// SECOND APP WITH SAME APP NAME WHEN NORMALIZED
+	inSecond := graphql.ApplicationRegisterInput{
+		Name:           "app!wordpress",
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("my first wordpress application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+		Labels: graphql.Labels{
+			"group":     []interface{}{"production", "experimental"},
+			"scenarios": []interface{}{"DEFAULT"},
+		},
+	}
+	appSecondInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(inSecond)
+	require.NoError(t, err)
+	actualSecondApp := graphql.ApplicationExt{}
+
+	// WHEN
+
+	request := fixtures.FixRegisterApplicationRequest(appSecondInputGQL)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualSecondApp)
+
+	//THEN
+	require.EqualError(t, err, "graphql: Object name is not unique [object=application]")
+	require.Empty(t, actualSecondApp.BaseEntity)
+
+	// THIRD APP WITH DIFFERENT APP NAME WHEN NORMALIZED
+	actualThirdApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "appwordpress", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &actualThirdApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualThirdApp.ID)
+
+	//THEN
+	require.NotEmpty(t, actualThirdApp.ID)
+
+	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualThirdApp.Status.Condition)
+
+	// FOURTH APP WITH DIFFERENT ALREADY NORMALIZED NAME WHICH MATCHES EXISTING APP WHEN NORMALIZED
+	inFourth := graphql.ApplicationRegisterInput{
+		Name:           "mp-appwordpress",
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("my first wordpress application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+		Labels: graphql.Labels{
+			"group":     []interface{}{"production", "experimental"},
+			"scenarios": []interface{}{"DEFAULT"},
+		},
+	}
+	appFourthInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(inFourth)
+	require.NoError(t, err)
+	actualFourthApp := graphql.ApplicationExt{}
+	// WHEN
+	request = fixtures.FixRegisterApplicationRequest(appFourthInputGQL)
+	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualFourthApp)
+	//THEN
+	require.EqualError(t, err, "graphql: Object name is not unique [object=application]")
+	require.Empty(t, actualFourthApp.BaseEntity)
+
+	// FIFTH APP WITH DIFFERENT ALREADY NORMALIZED NAME WHICH DOES NOT MATCH ANY EXISTING APP WHEN NORMALIZED
+	fifthAppName := "mp-application"
+	actualFifthApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, fifthAppName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &actualFifthApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualFifthApp.ID)
+
+	//THEN
+	require.NotEmpty(t, actualFifthApp.ID)
+	require.Equal(t, actualFifthApp.Name, fifthAppName)
+
+	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualFifthApp.Status.Condition)
+}
+
 func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()

@@ -161,7 +161,7 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -210,7 +210,7 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -259,7 +259,7 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name + "-test"}}, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name + "-test"}}, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -303,47 +303,47 @@ func TestService_Create(t *testing.T) {
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
-		//{
-		//	Name:              "Returns error when listing existing applications returns application with same name",
-		//	AppNameNormalizer: &normalizer.DefaultNormalizator{},
-		//	AppRepoFn: func() *automock.ApplicationRepository {
-		//		repo := &automock.ApplicationRepository{}
-		//		//repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name}}, nil).Once()
-		//		return repo
-		//	},
-		//	WebhookRepoFn: func() *automock.WebhookRepository {
-		//		repo := &automock.WebhookRepository{}
-		//		return repo
-		//	},
-		//	IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-		//		repo := &automock.IntegrationSystemRepository{}
-		//		return repo
-		//	},
-		//	ScenariosServiceFn: func() *automock.ScenariosService {
-		//		repo := &automock.ScenariosService{}
-		//		return repo
-		//	},
-		//	LabelServiceFn: func() *automock.LabelUpsertService {
-		//		svc := &automock.LabelUpsertService{}
-		//		return svc
-		//	},
-		//	BundleServiceFn: func() *automock.BundleService {
-		//		svc := &automock.BundleService{}
-		//		return svc
-		//	},
-		//	UIDServiceFn: func() *automock.UIDService {
-		//		svc := &automock.UIDService{}
-		//		return svc
-		//	},
-		//	Input:       modelInput,
-		//	ExpectedErr: apperrors.NewNotUniqueNameError(resource.Application),
-		//},
+		{
+			Name:              "Returns error when listing existing applications returns application with same name",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name}}, nil).Once()
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: apperrors.NewNotUniqueNameError(resource.Application),
+		},
 		{
 			Name:              "Returns success when listing existing applications returns application with different name and incoming name is already normalized",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name + "-test"}}, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name + "-test"}}, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -387,47 +387,47 @@ func TestService_Create(t *testing.T) {
 			Input:       normalizedModelInput,
 			ExpectedErr: nil,
 		},
-		//{
-		//	Name:              "Returns error when listing existing applications returns application with same name and incoming name is already normalized",
-		//	AppNameNormalizer: &normalizer.DefaultNormalizator{},
-		//	AppRepoFn: func() *automock.ApplicationRepository {
-		//		repo := &automock.ApplicationRepository{}
-		//		//repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name}}, nil).Once()
-		//		return repo
-		//	},
-		//	WebhookRepoFn: func() *automock.WebhookRepository {
-		//		repo := &automock.WebhookRepository{}
-		//		return repo
-		//	},
-		//	IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-		//		repo := &automock.IntegrationSystemRepository{}
-		//		return repo
-		//	},
-		//	ScenariosServiceFn: func() *automock.ScenariosService {
-		//		repo := &automock.ScenariosService{}
-		//		return repo
-		//	},
-		//	LabelServiceFn: func() *automock.LabelUpsertService {
-		//		svc := &automock.LabelUpsertService{}
-		//		return svc
-		//	},
-		//	BundleServiceFn: func() *automock.BundleService {
-		//		svc := &automock.BundleService{}
-		//		return svc
-		//	},
-		//	UIDServiceFn: func() *automock.UIDService {
-		//		svc := &automock.UIDService{}
-		//		return svc
-		//	},
-		//	Input:       normalizedModelInput,
-		//	ExpectedErr: apperrors.NewNotUniqueNameError(resource.Application),
-		//},
+		{
+			Name:              "Returns error when listing existing applications returns application with same name and incoming name is already normalized",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name}}, nil).Once()
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       normalizedModelInput,
+			ExpectedErr: apperrors.NewNotUniqueNameError(resource.Application),
+		},
 		{
 			Name:              "Success when no labels provided and default scenario assignment disabled",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
@@ -468,7 +468,7 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
@@ -515,7 +515,7 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
@@ -559,7 +559,7 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(testErr).Once()
 				return repo
 			},
@@ -593,47 +593,47 @@ func TestService_Create(t *testing.T) {
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
-		//{
-		//	Name:              "Returns error when listing existing applications fails",
-		//	AppNameNormalizer: &normalizer.DefaultNormalizator{},
-		//	AppRepoFn: func() *automock.ApplicationRepository {
-		//		repo := &automock.ApplicationRepository{}
-		//		//repo.On("ListAll", ctx, mock.Anything).Return(nil, testErr).Once()
-		//		return repo
-		//	},
-		//	WebhookRepoFn: func() *automock.WebhookRepository {
-		//		repo := &automock.WebhookRepository{}
-		//		return repo
-		//	},
-		//	IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-		//		repo := &automock.IntegrationSystemRepository{}
-		//		return repo
-		//	},
-		//	ScenariosServiceFn: func() *automock.ScenariosService {
-		//		repo := &automock.ScenariosService{}
-		//		return repo
-		//	},
-		//	LabelServiceFn: func() *automock.LabelUpsertService {
-		//		svc := &automock.LabelUpsertService{}
-		//		return svc
-		//	},
-		//	BundleServiceFn: func() *automock.BundleService {
-		//		svc := &automock.BundleService{}
-		//		return svc
-		//	},
-		//	UIDServiceFn: func() *automock.UIDService {
-		//		svc := &automock.UIDService{}
-		//		return svc
-		//	},
-		//	Input:       modelInput,
-		//	ExpectedErr: testErr,
-		//},
+		{
+			Name:              "Returns error when listing existing applications fails",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, testErr).Once()
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
 		{
 			Name:              "Returns error when integration system doesn't exist",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -669,7 +669,7 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -705,7 +705,7 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -923,7 +923,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -972,7 +972,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -1021,7 +1021,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name + "-test"}}, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name + "-test"}}, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -1065,47 +1065,47 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
-		//{
-		//	Name:              "Returns error when listing existing applications returns application with same name",
-		//	AppNameNormalizer: &normalizer.DefaultNormalizator{},
-		//	AppRepoFn: func() *automock.ApplicationRepository {
-		//		repo := &automock.ApplicationRepository{}
-		//		//repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name}}, nil).Once()
-		//		return repo
-		//	},
-		//	WebhookRepoFn: func() *automock.WebhookRepository {
-		//		repo := &automock.WebhookRepository{}
-		//		return repo
-		//	},
-		//	IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-		//		repo := &automock.IntegrationSystemRepository{}
-		//		return repo
-		//	},
-		//	ScenariosServiceFn: func() *automock.ScenariosService {
-		//		repo := &automock.ScenariosService{}
-		//		return repo
-		//	},
-		//	LabelServiceFn: func() *automock.LabelUpsertService {
-		//		svc := &automock.LabelUpsertService{}
-		//		return svc
-		//	},
-		//	BundleServiceFn: func() *automock.BundleService {
-		//		svc := &automock.BundleService{}
-		//		return svc
-		//	},
-		//	UIDServiceFn: func() *automock.UIDService {
-		//		svc := &automock.UIDService{}
-		//		return svc
-		//	},
-		//	Input:       modelInput,
-		//	ExpectedErr: apperrors.NewNotUniqueNameError(resource.Application),
-		//},
+		{
+			Name:              "Returns error when listing existing applications returns application with same name",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name}}, nil).Once()
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: apperrors.NewNotUniqueNameError(resource.Application),
+		},
 		{
 			Name:              "Returns success when listing existing applications returns application with different name and incoming name is already normalized",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name + "-test"}}, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name + "-test"}}, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -1149,47 +1149,47 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			Input:       normalizedModelInput,
 			ExpectedErr: nil,
 		},
-		//{
-		//	Name:              "Returns error when listing existing applications returns application with same name and incoming name is already normalized",
-		//	AppNameNormalizer: &normalizer.DefaultNormalizator{},
-		//	AppRepoFn: func() *automock.ApplicationRepository {
-		//		repo := &automock.ApplicationRepository{}
-		//		//repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name}}, nil).Once()
-		//		return repo
-		//	},
-		//	WebhookRepoFn: func() *automock.WebhookRepository {
-		//		repo := &automock.WebhookRepository{}
-		//		return repo
-		//	},
-		//	IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-		//		repo := &automock.IntegrationSystemRepository{}
-		//		return repo
-		//	},
-		//	ScenariosServiceFn: func() *automock.ScenariosService {
-		//		repo := &automock.ScenariosService{}
-		//		return repo
-		//	},
-		//	LabelServiceFn: func() *automock.LabelUpsertService {
-		//		svc := &automock.LabelUpsertService{}
-		//		return svc
-		//	},
-		//	BundleServiceFn: func() *automock.BundleService {
-		//		svc := &automock.BundleService{}
-		//		return svc
-		//	},
-		//	UIDServiceFn: func() *automock.UIDService {
-		//		svc := &automock.UIDService{}
-		//		return svc
-		//	},
-		//	Input:       normalizedModelInput,
-		//	ExpectedErr: apperrors.NewNotUniqueNameError(resource.Application),
-		//},
+		{
+			Name:              "Returns error when listing existing applications returns application with same name and incoming name is already normalized",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name}}, nil).Once()
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       normalizedModelInput,
+			ExpectedErr: apperrors.NewNotUniqueNameError(resource.Application),
+		},
 		{
 			Name:              "Success when no labels provided and default scenario assignment disabled",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
@@ -1230,7 +1230,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
@@ -1277,7 +1277,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
@@ -1321,7 +1321,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(testErr).Once()
 				return repo
 			},
@@ -1355,47 +1355,47 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
-		//{
-		//	Name:              "Returns error when listing existing applications fails",
-		//	AppNameNormalizer: &normalizer.DefaultNormalizator{},
-		//	AppRepoFn: func() *automock.ApplicationRepository {
-		//		repo := &automock.ApplicationRepository{}
-		//		//repo.On("ListAll", ctx, mock.Anything).Return(nil, testErr).Once()
-		//		return repo
-		//	},
-		//	WebhookRepoFn: func() *automock.WebhookRepository {
-		//		repo := &automock.WebhookRepository{}
-		//		return repo
-		//	},
-		//	IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-		//		repo := &automock.IntegrationSystemRepository{}
-		//		return repo
-		//	},
-		//	ScenariosServiceFn: func() *automock.ScenariosService {
-		//		repo := &automock.ScenariosService{}
-		//		return repo
-		//	},
-		//	LabelServiceFn: func() *automock.LabelUpsertService {
-		//		svc := &automock.LabelUpsertService{}
-		//		return svc
-		//	},
-		//	BundleServiceFn: func() *automock.BundleService {
-		//		svc := &automock.BundleService{}
-		//		return svc
-		//	},
-		//	UIDServiceFn: func() *automock.UIDService {
-		//		svc := &automock.UIDService{}
-		//		return svc
-		//	},
-		//	Input:       modelInput,
-		//	ExpectedErr: testErr,
-		//},
+		{
+			Name:              "Returns error when listing existing applications fails",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, testErr).Once()
+				return repo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				return svc
+			},
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
 		{
 			Name:              "Returns error when integration system doesn't exist",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -1431,7 +1431,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -1467,7 +1467,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				//repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
+				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -177,14 +179,12 @@ func (a *Handler) deltaReportHandler(ctx context.Context, filteredSccs []*nsmode
 		Message: "Update/create failed for some on-premise systems",
 		Details: details,
 	})
-	return
 }
 
 func (a *Handler) fullReportHandler(ctx context.Context, filteredSccs []*nsmodel.SCC, details []httputil.Detail, reportData nsmodel.Report, rw http.ResponseWriter) {
 	a.processDelta(ctx, filteredSccs, &details)
 	a.handleUnreachableScc(ctx, reportData)
 	httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
-	return
 }
 
 func (a *Handler) listTenantsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
@@ -341,6 +341,10 @@ func (a *Handler) prepareAppInput(ctx context.Context, scc nsmodel.SCC, system n
 	}
 
 	values := model.ApplicationFromTemplateInputValues{
+		{
+			Placeholder: "name",
+			Value:       "on-premise-system" + uuid.New().String(),
+		},
 		{
 			Placeholder: "description",
 			Value:       system.Description,

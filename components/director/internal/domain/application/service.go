@@ -696,7 +696,17 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	}
 	log.C(ctx).Debugf("Loaded Application Tenant %s from context", appTenant)
 
+	applications, err := s.appRepo.ListAll(ctx, appTenant)
+	if err != nil {
+		return "", err
+	}
+
 	normalizedName := s.appNameNormalizer.Normalize(in.Name)
+	for _, app := range applications {
+		if normalizedName == s.appNameNormalizer.Normalize(app.Name) && in.SystemNumber == app.SystemNumber {
+			return "", apperrors.NewNotUniqueNameError(resource.Application)
+		}
+	}
 
 	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
