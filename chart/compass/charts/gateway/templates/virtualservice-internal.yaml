@@ -27,7 +27,7 @@ spec:
       {{- end }}
       corsPolicy:
         allowOrigins:
-          - regex: "*.{{ .Values.global.ingress.domainName }}"
+          - regex: ".*"
         allowHeaders:
           - "authorization"
           - "content-type"
