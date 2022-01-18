@@ -91,7 +91,7 @@ data:
   grafana.sidecar.resources.limits.memory: 256Mi
   grafana.sidecar.resources.limits.cpu: 200m
   grafana.sidecar.resources.requests.memory: 64Mi
-  grafana.sidecar.resources.requests.cpu: 100m
+  grafana.sidecar.resources.requests.cpu: 50m
   prometheusOperator.configReloaderMemory: 256Mi
   prometheus-istio.server.resources.limits.memory: 1Gi
 ---
@@ -136,7 +136,7 @@ data:
   hydra.hydra.autoMigrate: "false"
   hydra.deployment.autoscaling.minReplicas: "1"
   hydra.deployment.autoscaling.maxReplicas: "1"
-  hydra.deployment.resources.requests.cpu: "100m"
+  hydra.deployment.resources.requests.cpu: "50m"
   hydra.deployment.resources.requests.memory: "128Mi"
   hydra.deployment.resources.limits.cpu: "250m"
   hydra.deployment.resources.limits.memory: "400Mi"
@@ -147,7 +147,7 @@ data:
   oathkeeper.deployment.resources.limits.memory: "512Mi"
   oathkeeper.deployment.resources.limits.cpu: "250m"
   oathkeeper.deployment.resources.requests.memory: "128Mi"
-  oathkeeper.deployment.resources.requests.cpu: "100m"
+  oathkeeper.deployment.resources.requests.cpu: "50m"
   oathkeeper.oathkeeper-maester.deployment.resources.requests.cpu: "50m"
   oathkeeper.oathkeeper-maester.deployment.resources.requests.memory: "64Mi"
   oathkeeper.oathkeeper-maester.deployment.resources.limits.cpu: "100m"

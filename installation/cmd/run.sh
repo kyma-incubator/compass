@@ -15,7 +15,7 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
 UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml)
 
-MINIKUBE_MEMORY=10240
+MINIKUBE_MEMORY=8192
 MINIKUBE_TIMEOUT=25m
 MINIKUBE_CPUS=5
 APISERVER_VERSION=1.19.16
