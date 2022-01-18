@@ -75,7 +75,8 @@ spec:
             {{- end }}
       corsPolicy:
         allowOrigins:
-          - regex: "compass.{{ .Values.global.ingress.domainName }}"
+          - exact: "compass.{{ .Values.global.ingress.domainName }}"
+          - exact: "compass-dev.{{ .Values.global.ingress.domainName }}"
         allowHeaders:
           - "authorization"
           - "content-type"
