@@ -76,7 +76,7 @@ spec:
       corsPolicy:
         allowOrigins:
           - exact: "compass.{{ .Values.global.ingress.domainName }}"
-          - exact: "compass-dev.{{ .Values.global.ingress.domainName }}"
+          - exact: "compass-dev.kyma.local"
         allowHeaders:
           - "authorization"
           - "content-type"
