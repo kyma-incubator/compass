@@ -38,15 +38,14 @@ func TestAdapterTransport(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Succeeds on HTTP POST request", func(t *testing.T) {
+	t.Run("Succeeds on HTTP PUT request", func(t *testing.T) {
 		//GIVEN
 		gqlResp := fixGraphQLResponse()
 		gqlPayload, err := json.Marshal(&gqlResp)
 		require.NoError(t, err)
 
-		claims := fixNsAdapterTokenClaims()
-		token := fixBearerHeaderWithTokenClaims(t, claims)
-		req := httptest.NewRequest("POST", "http://localhost", bytes.NewBuffer(gqlPayload))
+		token := fixBearerHeader(t)
+		req := httptest.NewRequest("PUT", "http://localhost", bytes.NewBuffer(gqlPayload))
 		req.Header = http.Header{
 			"Authorization": []string{token},
 		}
@@ -60,10 +59,10 @@ func TestAdapterTransport(t *testing.T) {
 		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
 
 		preAuditlogSvc := &automock.PreAuditlogService{}
-		preAuditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixNsAdapterClaims() })).Return(nil).Once()
+		preAuditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil).Once()
 
 		postAuditlogSvc := &automock.AuditlogService{}
-		postAuditlogSvc.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixNsAdapterClaims() })).Return(nil).Once()
+		postAuditlogSvc.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil).Once()
 
 		transport := proxy.NewAdapterTransport(postAuditlogSvc, preAuditlogSvc, roundTripper)
 
@@ -88,9 +87,8 @@ func TestAdapterTransport(t *testing.T) {
 		gqlRespPayload, err := json.Marshal(&gqlResp)
 		require.NoError(t, err)
 
-		claims := fixNsAdapterTokenClaims()
-		token := fixBearerHeaderWithTokenClaims(t, claims)
-		req := httptest.NewRequest("POST", "http://localhost", bytes.NewBuffer(gqlReqPayload))
+		token := fixBearerHeader(t)
+		req := httptest.NewRequest("PUT", "http://localhost", bytes.NewBuffer(gqlReqPayload))
 		req.Header = http.Header{
 			"Authorization": []string{token},
 		}
@@ -104,10 +102,10 @@ func TestAdapterTransport(t *testing.T) {
 		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
 
 		preAuditlogSvc := &automock.PreAuditlogService{}
-		preAuditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixNsAdapterClaims() })).Return(nil).Once()
+		preAuditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil).Once()
 
 		postAuditlogSvc := &automock.AuditlogService{}
-		postAuditlogSvc.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixNsAdapterClaims() })).Return(errors.New("auditlog issue")).Once()
+		postAuditlogSvc.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(errors.New("auditlog issue")).Once()
 
 		transport := proxy.NewAdapterTransport(postAuditlogSvc, preAuditlogSvc, roundTripper)
 
@@ -128,9 +126,8 @@ func TestAdapterTransport(t *testing.T) {
 		gqlReqPayload, err := json.Marshal(&gqlReq)
 		require.NoError(t, err)
 
-		claims := fixNsAdapterTokenClaims()
-		token := fixBearerHeaderWithTokenClaims(t, claims)
-		req := httptest.NewRequest("POST", "http://localhost", bytes.NewBuffer(gqlReqPayload))
+		token := fixBearerHeader(t)
+		req := httptest.NewRequest("PUT", "http://localhost", bytes.NewBuffer(gqlReqPayload))
 		req.Header = http.Header{
 			"Authorization": []string{token},
 		}
@@ -139,7 +136,7 @@ func TestAdapterTransport(t *testing.T) {
 		postAuditlogSvc := &automock.AuditlogService{}
 
 		preAuditlogSvc := &automock.PreAuditlogService{}
-		preAuditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixNsAdapterClaims() })).Return(errors.New("auditlog issue"))
+		preAuditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(errors.New("auditlog issue"))
 
 		transport := proxy.NewAdapterTransport(postAuditlogSvc, preAuditlogSvc, roundTripper)
 
@@ -159,7 +156,7 @@ func TestAdapterTransport(t *testing.T) {
 		gqlPayload, err := json.Marshal(&gqlResp)
 		require.NoError(t, err)
 
-		req := httptest.NewRequest("POST", "http://localhost", bytes.NewBuffer(gqlPayload))
+		req := httptest.NewRequest("PUT", "http://localhost", bytes.NewBuffer(gqlPayload))
 		req.Header = http.Header{
 			"Authorization": []string{},
 		}
@@ -180,7 +177,7 @@ func TestAdapterTransport(t *testing.T) {
 		gqlPayload, err := json.Marshal(&gqlResp)
 		require.NoError(t, err)
 
-		req := httptest.NewRequest("POST", "http://localhost", bytes.NewBuffer(gqlPayload))
+		req := httptest.NewRequest("PUT", "http://localhost", bytes.NewBuffer(gqlPayload))
 		req.Header = http.Header{
 			"Authorization": []string{"token"},
 		}

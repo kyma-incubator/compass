@@ -177,21 +177,6 @@ func fixClaims() proxy.Claims {
 	}
 }
 
-func fixNsAdapterTokenClaims() proxy.AdapterTokenClaims {
-	return proxy.AdapterTokenClaims{
-		ExtraAttributes: map[string]interface{}{"subaccountid": "e36c520b-caa2-4677-b289-8a171184192b"},
-		Scopes:          []string{"scopes"},
-		ConsumerID:      ConsumerId,
-	}
-}
-func fixNsAdapterClaims() proxy.Claims {
-	return proxy.Claims{
-		Tenant:     "e36c520b-caa2-4677-b289-8a171184192b",
-		Scopes:     "scopes",
-		ConsumerID: ConsumerId,
-	}
-}
-
 func fixBearerHeaderWithTokenClaims(t *testing.T, claims interface{}) string {
 	marshalledClaims, err := json.Marshal(&claims)
 	require.NoError(t, err)

@@ -85,7 +85,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 
 	preAuditLogger := t.auditlogSvc
 
-	claims, err := getClaims(req.Context(),req.Header)
+	claims, err := getClaims(req.Context(), req.Header)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing JWT")
 	}

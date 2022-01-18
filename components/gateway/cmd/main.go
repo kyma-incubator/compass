@@ -35,11 +35,11 @@ type config struct {
 
 	Log log.Config
 
-	DirectorOrigin     string `envconfig:"default=http://127.0.0.1:3001"`
-	ConnectorOrigin    string `envconfig:"default=http://127.0.0.1:3002"`
-	NsadapterOrigin    string `envconfig:"default=http://127.0.0.1:3005"`
-	MetricsAddress     string `envconfig:"default=127.0.0.1:3003"`
-	AuditlogEnabled    bool   `envconfig:"default=false"`
+	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3001"`
+	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3002"`
+	NsadapterOrigin string `envconfig:"default=http://127.0.0.1:3005"`
+	MetricsAddress  string `envconfig:"default=127.0.0.1:3003"`
+	AuditlogEnabled bool   `envconfig:"default=false"`
 }
 
 func main() {
