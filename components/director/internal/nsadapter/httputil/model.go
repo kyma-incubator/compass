@@ -4,12 +4,34 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 // ErrorResponse on failed notification service request
 type ErrorResponse struct {
 	Error error `json:"error"`
+}
+
+// UnmarshalJSON implements Unmarshaler interface. The method unmarshal the data from b into ErrorResponse structure.
+func (e *ErrorResponse) UnmarshalJSON(b []byte) error {
+	code, success := gjson.Get(string(b), "error.code").Value().(float64)
+	if !success {
+		return errors.New("failed to parse code")
+	}
+
+	msg, success := gjson.Get(string(b), "error.message").Value().(string)
+	if !success {
+		return errors.New("failed to parse message")
+	}
+
+	e.Error = Error{
+		Code:    int(code),
+		Message: msg,
+	}
+	return nil
 }
 
 // Error indicates processing failure of on-premise systems

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
+
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
@@ -123,6 +125,46 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			if clientUser := r.Header.Get(a.clientIDHeaderKey); clientUser != "" {
 				log.C(ctx).Infof("Found %s header in request with value: %s", a.clientIDHeaderKey, clientUser)
 				ctx = client.SaveToContext(ctx, clientUser)
+			}
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// NSAdapterHandler performs authorization checks on requests to the Notifications Service Adapter
+func (a *Authenticator) NSAdapterHandler() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			bearerToken, err := a.getBearerToken(r)
+			if err != nil {
+				log.C(ctx).WithError(err).Errorf("An error has occurred while getting token from header. Error code: %d: %v", http.StatusBadRequest, err)
+				httputil.RespondWithError(ctx, w, http.StatusUnauthorized, httputil.Error{
+					Code:    http.StatusUnauthorized,
+					Message: "missing or invalid authorization token",
+				})
+				return
+			}
+
+			tokenClaims, err := a.parseClaimsWithRetry(ctx, bearerToken)
+			if err != nil {
+				log.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims: %v", err)
+				httputil.RespondWithError(ctx, w, http.StatusUnauthorized, httputil.Error{
+					Code:    http.StatusUnauthorized,
+					Message: "missing or invalid authorization token",
+				})
+				return
+			}
+
+			if err := a.claimsValidator.Validate(ctx, *tokenClaims); err != nil {
+				log.C(ctx).WithError(err).Errorf("An error has occurred while validating claims: %v", err)
+				httputil.RespondWithError(ctx, w, http.StatusUnauthorized, httputil.Error{
+					Code:    http.StatusUnauthorized,
+					Message: "missing or invalid authorization token",
+				})
+				return
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))

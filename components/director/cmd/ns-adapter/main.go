@@ -8,6 +8,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/internal/methodnotallowed"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -63,10 +67,10 @@ func main() {
 	err := envconfig.InitWithPrefix(&conf, "APP")
 	exitOnError(err, "while reading ns adapter configuration")
 
-	transact, closeDbConn, err := persistence.Configure(ctx, conf.Database)
+	transact, closeDBConn, err := persistence.Configure(ctx, conf.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 	defer func() {
-		err := closeDbConn()
+		err := closeDBConn()
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
@@ -141,13 +145,16 @@ func main() {
 	router := mux.NewRouter()
 
 	router.Use(correlation.AttachCorrelationIDToContext())
-	router.NewRoute().
-		Methods(http.MethodPost).
-		Path("/api/v1/notifications").
-		Handler(handlerWithTimeout)
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	})
+
+	subrouter := router.PathPrefix("/api").Subrouter()
+	subrouter.Use(authenticator.New(conf.JwksEndpoint, conf.AllowJWTSigningNone, "", claims.NewClaimsValidator()).NSAdapterHandler())
+	subrouter.MethodNotAllowedHandler = methodnotallowed.CreateMethodNotAllowedHandler()
+	subrouter.Methods(http.MethodPut).
+		Path("/v1/notifications").
+		Handler(handlerWithTimeout)
 
 	setValidationMessages()
 
@@ -175,7 +182,7 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 		Name:        appTemplateName,
 		Description: str.Ptr("Template for systems pushed from Notifications Service"),
 		ApplicationInputJSON: `{
-									"name": "on-premise-system",
+									"name": "{{name}}",
 									"description": "{{description}}",
 									"providerName": "SAP",
 									"labels": {"scc": {"Subaccount":"{{subaccount}}", "LocationID":"{{location-id}}", "Host":"{{host}}"}, "applicationType":"{{system-type}}", "systemProtocol": "{{protocol}}" },
@@ -183,6 +190,10 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 									"systemStatus": "{{system-status}}"
 								}`,
 		Placeholders: []model.ApplicationTemplatePlaceholder{
+			{
+				Name:        "name",
+				Description: str.Ptr("name of the system"),
+			},
 			{
 				Name:        "description",
 				Description: str.Ptr("description of the system"),

@@ -22,4 +22,6 @@ type Configuration struct {
 	Database               persistence.DatabaseConfig
 
 	SystemToTemplateMappings string `envconfig:"APP_SYSTEM_TO_TEMPLATE_MAPPINGS,default='{}'"`
+	AllowJWTSigningNone      bool   `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
+	JwksEndpoint             string `envconfig:"APP_JWKS_ENDPOINT"`
 }
