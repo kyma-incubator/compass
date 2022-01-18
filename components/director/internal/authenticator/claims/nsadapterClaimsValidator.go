@@ -27,4 +27,3 @@ func (v *claimsValidator) Validate(_ context.Context, claims Claims) error {
 
 	return nil
 }
-//TODO change method to PUT
