@@ -5,8 +5,8 @@ manager:
       cpu: 256m
       memory: 256Mi
     requests:
-      cpu: 256m
-      memory: 256Mi
+      cpu: 128m
+      memory: 128Mi
 
 metrics:
   port: 3001
