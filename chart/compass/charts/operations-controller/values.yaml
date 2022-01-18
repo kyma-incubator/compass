@@ -2,11 +2,11 @@ manager:
   replicaCount: 1
   resources:
     limits:
-      cpu: 100m
-      memory: 30Mi
+      cpu: 256m
+      memory: 256Mi
     requests:
-      cpu: 100m
-      memory: 20Mi
+      cpu: 256m
+      memory: 256Mi
 
 metrics:
   port: 3001

@@ -14,6 +14,40 @@ data:
     metadata:
       namespace: istio-system
     spec:
+      hub: docker.io/querycapistio
+      profile: demo    
+      components:
+        pilot:
+          k8s: # each components have to set this
+            affinity: &affinity
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                - preference:
+                    matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                      - arm64
+                      - amd64
+                  weight: 2
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                      - arm64
+                      - amd64
+        egressGateways:
+        - name: istio-egressgateway
+          k8s:
+            affinity: *affinity
+          enabled: true
+        ingressGateways:
+        - name: istio-ingressgateway
+          k8s:
+            affinity: *affinity
+          enabled: true    
       values:
         pilot:
           jwksResolverExtraRootCA: "__CERT__"
@@ -26,10 +60,10 @@ data:
             holdApplicationUntilProxyStarts: true
             resources:
               requests:
-                cpu: 20m
-                memory: 128Mi
+                cpu: 80m
+                memory: 256Mi
               limits:
-                cpu: 100m
+                cpu: 150m
                 memory: 256Mi
 ---
 apiVersion: v1
@@ -47,6 +81,21 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: monitoring-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: monitoring
+    kyma-project.io/installation: ""
+data:
+  grafana.resources.limits.memory: 256Mi
+  grafana.resources.limits.cpu: 200m
+  grafana.resources.requests.memory: 256Mi
+  grafana.resources.requests.cpu: 200m
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: cluster-essentials-overrides
   namespace: kyma-installer
   labels:
@@ -56,7 +105,7 @@ metadata:
 data:
   limitRange.default.memory: 256Mi
   limitRange.defaultRequest.memory: 64Mi
-  pod-preset.webhook.resources.limits.memory: 128Mi
+  pod-preset.webhook.resources.limits.memory: 256Mi
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -85,13 +134,22 @@ data:
   hydra.hydra.autoMigrate: "false"
   hydra.deployment.autoscaling.minReplicas: "1"
   hydra.deployment.autoscaling.maxReplicas: "1"
-  hydra.deployment.resources.requests.cpu: "50m"
-  hydra.deployment.resources.limits.cpu: "150m"
+  hydra.deployment.resources.requests.cpu: "100m"
+  hydra.deployment.resources.requests.memory: "256Mi"
+  hydra.deployment.resources.limits.cpu: "250m"
+  hydra.deployment.resources.limits.memory: "256Mi"
   oathkeeper.oathkeeper.config.serve.api.timeout.read: "120s"
   oathkeeper.oathkeeper.config.serve.api.timeout.write: "120s"
   oathkeeper.oathkeeper.config.serve.api.timeout.idle: "120s"
   oathkeeper.oathkeeper.config.mutators.id_token.config.ttl: "1h"
-  oathkeeper.deployment.resources.limits.memory: "256Mi"
+  oathkeeper.deployment.resources.limits.memory: "512Mi"
+  oathkeeper.deployment.resources.limits.cpu: "250m"
+  oathkeeper.deployment.resources.requests.memory: "512Mi"
+  oathkeeper.deployment.resources.requests.cpu: "250m"
+  oathkeeper.oathkeeper-maester.deployment.resources.requests.cpu: "100m"
+  oathkeeper.oathkeeper-maester.deployment.resources.requests.memory: "256Mi"
+  oathkeeper.oathkeeper-maester.deployment.resources.limits.cpu: "100m"
+  oathkeeper.oathkeeper-maester.deployment.resources.limits.memory: "256Mi"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -104,8 +162,8 @@ metadata:
     kyma-project.io/installation: ""
 data:
   global.tracing.enabled: "true"
-  kcproxy.resources.limits.memory: 40Mi
-  kcproxy.resources.requests.memory: 10Mi
+  kcproxy.resources.limits.memory: 256Mi
+  kcproxy.resources.requests.memory: 64Mi
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -117,8 +175,8 @@ metadata:
     component: kiali
     kyma-project.io/installation: ""
 data:
-  kcproxy.resources.limits.memory: 40Mi
-  kcproxy.resources.requests.memory: 10Mi
+  kcproxy.resources.limits.memory: 256Mi
+  kcproxy.resources.requests.memory: 64Mi
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -130,8 +188,8 @@ metadata:
     component: logging
     kyma-project.io/installation: ""
 data:
-  logui.resources.limits.cpu: 80m
-  logui.resources.limits.memory: 32Mi
+  logui.resources.limits.cpu: 160m
+  logui.resources.limits.memory: 128Mi
 ---
 apiVersion: v1
 kind: ConfigMap
