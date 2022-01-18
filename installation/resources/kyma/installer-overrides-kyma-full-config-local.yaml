@@ -169,7 +169,7 @@ data:
   jaeger.spec.strategy: "allInOne"
   jaeger.spec.storage.type: "memory"
   jaeger.spec.storage.options.memory.max-traces: "10000"
-  jaeger.spec.resources.limits.memory: "256Mi"
+  jaeger.spec.resources.limits.memory: "150Mi"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -181,15 +181,15 @@ metadata:
     component: monitoring
     kyma-project.io/installation: ""
 data:
-  alertmanager.alertmanagerSpec.resources.limits.cpu: "100m"
-  alertmanager.alertmanagerSpec.resources.limits.memory: "256Mi"
-  alertmanager.alertmanagerSpec.resources.requests.cpu: "40m"
-  alertmanager.alertmanagerSpec.resources.requests.memory: "100Mi"
+  alertmanager.alertmanagerSpec.resources.limits.cpu: "50m"
+  alertmanager.alertmanagerSpec.resources.limits.memory: "100Mi"
+  alertmanager.alertmanagerSpec.resources.requests.cpu: "20m"
+  alertmanager.alertmanagerSpec.resources.requests.memory: "50Mi"
   alertmanager.alertmanagerSpec.retention: "1h"
-  prometheus.prometheusSpec.resources.limits.cpu: "300m"
-  prometheus.prometheusSpec.resources.limits.memory: "1200Mi"
-  prometheus.prometheusSpec.resources.requests.cpu: "200m"
-  prometheus.prometheusSpec.resources.requests.memory: "300Mi"
+  prometheus.prometheusSpec.resources.limits.cpu: "150m"
+  prometheus.prometheusSpec.resources.limits.memory: "800Mi"
+  prometheus.prometheusSpec.resources.requests.cpu: "100m"
+  prometheus.prometheusSpec.resources.requests.memory: "200Mi"
   prometheus.prometheusSpec.retention: "2h"
   prometheus.prometheusSpec.retentionSize: "500MB"
   prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage: "1Gi"
