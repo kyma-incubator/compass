@@ -100,12 +100,7 @@ spec:
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
           command: ["/cloud_sql_proxy",
-                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
-                    "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
-          volumeMounts:
-            - name: cloudsql-instance-credentials
-              mountPath: /secrets/cloudsql-instance-credentials
-              readOnly: true
+                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432"]
       {{end}}
       {{- with .Values.extraContainers }}
 {{ tpl . $ | indent 8 }}
@@ -129,11 +124,6 @@ spec:
           defaultMode: 420
           name: {{ template "prometheus-postgres-exporter.fullname" . }}
         name: queries
-      {{if eq .Values.global.database.embedded.enabled false}}
-      - name: cloudsql-instance-credentials
-        secret:
-          secretName: cloudsql-instance-credentials
-      {{end}}
 {{- with .Values.extraVolumes }}
 {{ tpl . $ | indent 6 }}
 {{- end }}

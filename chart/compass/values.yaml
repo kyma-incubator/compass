@@ -128,7 +128,7 @@ global:
       version: "PR-52"
     e2e_tests:
       dir:
-      version: "PR-2166"
+      version: "PR-2179"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -333,6 +333,7 @@ global:
     domainName: "kyma.local"
 
   database:
+    sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
     manageSecrets: true
     embedded:
       enabled: true
