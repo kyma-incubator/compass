@@ -136,7 +136,7 @@ data:
   hydra.hydra.autoMigrate: "false"
   hydra.deployment.autoscaling.minReplicas: "1"
   hydra.deployment.autoscaling.maxReplicas: "1"
-  hydra.deployment.resources.requests.cpu: "50m"
+  hydra.deployment.resources.requests.cpu: "100m"
   hydra.deployment.resources.requests.memory: "128Mi"
   hydra.deployment.resources.limits.cpu: "250m"
   hydra.deployment.resources.limits.memory: "400Mi"
