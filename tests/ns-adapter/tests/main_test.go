@@ -23,6 +23,7 @@ type config struct {
 	DefaultTestTenant       string
 	Domain                  string
 	DirectorURL             string
+	AdapterURL              string
 }
 
 var (

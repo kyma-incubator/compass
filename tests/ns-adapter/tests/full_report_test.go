@@ -2,8 +2,8 @@ package tests
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"sort"
 	"testing"
 	"time"
 
@@ -76,7 +76,7 @@ func TestFullReport(stdT *testing.T) {
 			Host:         sccLabel["Host"].(string),
 			SystemType:   systemType,
 			Description:  *app.Description,
-			Status:       "", //*app.SystemStatus,
+			Status:       *app.SystemStatus,
 			SystemNumber: *app.SystemNumber,
 		}
 
@@ -105,8 +105,17 @@ func TestFullReport(stdT *testing.T) {
 		"LocationID": "loc-id",
 	}
 
-	sccLabelFilter := graphql.LabelFilter{
-		Key: "scc",
+	//&LabelFilter{key, &query}
+	filterQueryWithLocationID := fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", "loc-id", "08b6da37-e911-48fb-a0cb-fa635a6c4321")
+	sccLabelFilterWithLocationID := graphql.LabelFilter{
+		Key:   "scc",
+		Query: &filterQueryWithLocationID,
+	}
+
+	filterQueryWithoutLocationID := fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", "", "08b6da37-e911-48fb-a0cb-fa635a6c4321")
+	sccLabelFilterWithoutLocationID := graphql.LabelFilter{
+		Key:   "scc",
+		Query: &filterQueryWithoutLocationID,
 	}
 
 	claims := map[string]interface{}{
@@ -126,7 +135,7 @@ func TestFullReport(stdT *testing.T) {
 		ctx := context.Background()
 
 		//WHEN
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 
@@ -151,7 +160,7 @@ func TestFullReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 
@@ -161,11 +170,15 @@ func TestFullReport(stdT *testing.T) {
 		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
 	})
 
-	t.Run("Full report - create system from two sccs connected to one subaccount", func(t *testing.T) {
+	t.Run("Full report - create systems for two sccs connected to one subaccount", func(t *testing.T) {
 		ctx := context.Background()
 
 		//WHEN
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
+		require.NoError(t, err)
+		require.Empty(t, apps)
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 
@@ -202,16 +215,16 @@ func TestFullReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
-		require.Equal(t, 2, len(apps))
-
-		sort.Slice(apps, func(i, j int) bool {
-			return *apps[i].Description < *apps[j].Description
-		})
+		require.Equal(t, 1, len(apps))
 		appOne := apps[0]
-		appTwo := apps[1]
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(apps))
+		appTwo := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
 
 		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
@@ -222,7 +235,11 @@ func TestFullReport(stdT *testing.T) {
 		ctx := context.Background()
 
 		//WHEN
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
+		require.NoError(t, err)
+		require.Empty(t, apps)
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 
@@ -259,17 +276,16 @@ func TestFullReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
-		require.Equal(t, 2, len(apps))
-
-		sort.Slice(apps, func(i, j int) bool {
-			return *apps[i].Description < *apps[j].Description
-		})
+		require.Equal(t, 1, len(apps))
 		appOne := apps[0]
-		appTwo := apps[1]
-
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(apps))
+		appTwo := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
 
 		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
@@ -301,14 +317,18 @@ func TestFullReport(stdT *testing.T) {
 		resp = sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
-		require.Equal(t, 2, len(apps))
-		sort.Slice(apps, func(i, j int) bool {
-			return *apps[i].Description < *apps[j].Description
-		})
-		validateApplication(t, apps[0], "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "unreachable")
-		validateApplication(t, apps[1], "nonSAPsys", "http", "system_updated", expectedLabel, "reachable")
+		require.Equal(t, 1, len(apps))
+		appOne = apps[0]
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(apps))
+		appTwo = apps[0]
+
+		validateApplication(t, appOne, "nonSAPsys", "http", "system_updated", expectedLabel, "reachable")
+		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "unreachable")
 	})
 
 	t.Run("Full report - update system", func(t *testing.T) {
@@ -351,7 +371,7 @@ func TestFullReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 
@@ -392,7 +412,7 @@ func TestFullReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		validateApplication(t, apps[0], "nonSAPsys", "mail", "description of the system", expectedLabel, "unreachable")
@@ -402,7 +422,7 @@ func TestFullReport(stdT *testing.T) {
 		ctx := context.Background()
 
 		//WHEN
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 
@@ -427,7 +447,7 @@ func TestFullReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 
@@ -462,7 +482,7 @@ func TestFullReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 
@@ -490,7 +510,7 @@ func TestFullReport(stdT *testing.T) {
 		resp = sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 
@@ -522,7 +542,7 @@ func TestFullReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 
@@ -537,7 +557,7 @@ func TestFullReport(stdT *testing.T) {
 		resp = sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		validateApplication(t, apps[0], "nonSAPsys", "mail", "initial description", expectedLabel, "unreachable")
@@ -547,7 +567,7 @@ func TestFullReport(stdT *testing.T) {
 		ctx := context.Background()
 
 		//WHEN
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 
@@ -565,7 +585,7 @@ func TestFullReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "full", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 	})

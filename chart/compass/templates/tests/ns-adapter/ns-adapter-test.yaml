@@ -39,6 +39,8 @@ spec:
           env:
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: ADAPTER_URL
+              value: "https://{{ .Values.global.nsAdapter.e2eTests.gatewayHost }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.nsAdapter.path }}"
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_DB_USER

@@ -149,6 +149,7 @@ global:
     e2eTests:
       gatewayHost: "compass-gateway-xsuaa"
     prefix: /nsadapter
+    path: /nsadapter/api/v1/notifications
     systemToTemplateMappings: '[{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
 
 

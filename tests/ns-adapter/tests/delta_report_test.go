@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"testing"
 	"time"
 
@@ -54,8 +53,16 @@ func TestDeltaReport(stdT *testing.T) {
 		"LocationID": "loc-id",
 	}
 
-	sccLabelFilter := graphql.LabelFilter{
-		Key: "scc",
+	filterQueryWithLocationID := fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", "loc-id", "08b6da37-e911-48fb-a0cb-fa635a6c4321")
+	sccLabelFilterWithLocationID := graphql.LabelFilter{
+		Key:   "scc",
+		Query: &filterQueryWithLocationID,
+	}
+
+	filterQueryWithoutLocationID := fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", "", "08b6da37-e911-48fb-a0cb-fa635a6c4321")
+	sccLabelFilterWithoutLocationID := graphql.LabelFilter{
+		Key:   "scc",
+		Query: &filterQueryWithoutLocationID,
 	}
 
 	claims := map[string]interface{}{
@@ -75,7 +82,7 @@ func TestDeltaReport(stdT *testing.T) {
 		ctx := context.Background()
 
 		//WHEN
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 
@@ -101,7 +108,7 @@ func TestDeltaReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 
@@ -111,11 +118,15 @@ func TestDeltaReport(stdT *testing.T) {
 		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
 	})
 
-	t.Run("Delta report - create systems from two sccs connected to one subaccount", func(t *testing.T) {
+	t.Run("Delta report - create systems for two sccs connected to one subaccount", func(t *testing.T) {
 		ctx := context.Background()
 
 		//WHEN
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
+		require.NoError(t, err)
+		require.Empty(t, apps)
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 
@@ -154,17 +165,16 @@ func TestDeltaReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
-		require.Equal(t, 2, len(apps))
-
-		sort.Slice(apps, func(i, j int) bool {
-			return *apps[i].Description < *apps[j].Description
-		})
+		require.Equal(t, 1, len(apps))
 		appOne := apps[0]
-		appTwo := apps[1]
-
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(apps))
+		appTwo := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
 
 		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
@@ -175,7 +185,11 @@ func TestDeltaReport(stdT *testing.T) {
 		ctx := context.Background()
 
 		//WHEN
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
+		require.NoError(t, err)
+		require.Empty(t, apps)
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 
@@ -214,17 +228,16 @@ func TestDeltaReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
-		require.Equal(t, 2, len(apps))
-
-		sort.Slice(apps, func(i, j int) bool {
-			return *apps[i].Description < *apps[j].Description
-		})
+		require.Equal(t, 1, len(apps))
 		appOne := apps[0]
-		appTwo := apps[1]
-
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(apps))
+		appTwo := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
 
 		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
@@ -258,14 +271,18 @@ func TestDeltaReport(stdT *testing.T) {
 		resp = sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
-		require.Equal(t, 2, len(apps))
-		sort.Slice(apps, func(i, j int) bool {
-			return *apps[i].Description < *apps[j].Description
-		})
-		validateApplication(t, apps[1], "nonSAPsys", "http", "system_updated", expectedLabel, "reachable")
-		validateApplication(t, apps[0], "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "unreachable")
+		require.Equal(t, 1, len(apps))
+		appOne = apps[0]
+
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(apps))
+		appTwo = apps[0]
+
+		validateApplication(t, appOne, "nonSAPsys", "http", "system_updated", expectedLabel, "reachable")
+		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "unreachable")
 	})
 
 	t.Run("Delta report - update system", func(t *testing.T) {
@@ -309,7 +326,7 @@ func TestDeltaReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		app := apps[0]
@@ -350,7 +367,7 @@ func TestDeltaReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		validateApplication(t, apps[0], "nonSAPsys", "mail", "description of the system", expectedLabel, "unreachable")
@@ -360,7 +377,7 @@ func TestDeltaReport(stdT *testing.T) {
 		ctx := context.Background()
 
 		//WHEN
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 
@@ -386,7 +403,7 @@ func TestDeltaReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		app := apps[0]
@@ -421,7 +438,7 @@ func TestDeltaReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		app := apps[0]
@@ -449,7 +466,7 @@ func TestDeltaReport(stdT *testing.T) {
 		resp = sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 
@@ -461,7 +478,7 @@ func TestDeltaReport(stdT *testing.T) {
 		ctx := context.Background()
 
 		//WHEN
-		apps, err := retrieveApps(t, ctx, sccLabelFilter)
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 
@@ -480,7 +497,7 @@ func TestDeltaReport(stdT *testing.T) {
 		resp := sendRequest(t, body, "delta", token)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		apps, err = retrieveApps(t, ctx, sccLabelFilter)
+		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
 	})
@@ -488,7 +505,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 func sendRequest(t *testing.T, body []byte, reportType string, token string) *http.Response {
 	buffer := bytes.NewBuffer(body)
-	req, err := http.NewRequest(http.MethodPut, "https://compass-gateway-xsuaa.kyma.local/nsadapter/api/v1/notifications", buffer)
+	req, err := http.NewRequest(http.MethodPut, testConfig.AdapterURL, buffer)
 	if err != nil {
 		panic(err)
 	}
@@ -562,6 +579,7 @@ func validateApplication(t *testing.T, app *graphql.ApplicationExt, appType, sys
 
 func retrieveApps(t *testing.T, ctx context.Context, labelFilter graphql.LabelFilter) ([]*graphql.ApplicationExt, error) {
 	labelFilterGQL, err := testctx.Tc.Graphqlizer.LabelFilterToGQL(labelFilter)
+	fmt.Println("<<<<<<<<<<<<", labelFilterGQL)
 	require.NoError(t, err)
 
 	query := fixtures.FixApplicationsFilteredPageableRequest(labelFilterGQL, 100, "")
