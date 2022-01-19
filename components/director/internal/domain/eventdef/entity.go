@@ -34,6 +34,7 @@ type Entity struct {
 	Industry            sql.NullString `db:"industry"`
 	Extensible          sql.NullString `db:"extensible"`
 	ResourceHash        sql.NullString `db:"resource_hash"`
+	DocumentationLabels sql.NullString `db:"documentation_labels"`
 	version.Version
 
 	*repo.BaseEntity

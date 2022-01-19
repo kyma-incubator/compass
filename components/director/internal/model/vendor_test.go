@@ -32,7 +32,7 @@ func TestVendorInput_ToVendor(t *testing.T) {
 			Expected: &model.Vendor{
 				ID:            id,
 				OrdID:         ordID,
-				ApplicationID: appID,
+				ApplicationID: &appID,
 				Title:         name,
 				Partners:      partners,
 				Labels:        labels,
@@ -48,7 +48,7 @@ func TestVendorInput_ToVendor(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
-			result := testCase.Input.ToVendor(id, appID)
+			result := testCase.Input.ToVendor(id, &appID)
 
 			// THEN
 			assert.Equal(t, testCase.Expected, result)

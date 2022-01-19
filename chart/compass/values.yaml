@@ -82,31 +82,31 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2143"
+      version: "PR-2166"
     connectivity_adapter:
       dir:
-      version: "PR-2138"
+      version: "PR-2166"
     pairing_adapter:
       dir:
-      version: "PR-2118"
+      version: "PR-2166"
     director:
       dir:
-      version: "PR-2143"
+      version: "PR-2166"
     gateway:
       dir:
-      version: "PR-2126"
+      version: "PR-2166"
     operations_controller:
       dir:
-      version: "PR-2132"
+      version: "PR-2166"
     ord_service:
       dir:
-      version: "PR-51"
+      version: "PR-58"
     schema_migrator:
       dir:
-      version: "PR-2150"
+      version: "PR-2166"
     system_broker:
       dir:
-      version: "PR-2132"
+      version: "PR-2166"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -114,13 +114,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2155"
+      version: "PR-2166"
     console:
       dir:
-      version: "PR-49"
+      version: "PR-52"
     e2e_tests:
       dir:
-      version: "PR-2143"
+      version: "PR-2179"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -224,7 +224,7 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=123e4567-e89b-12d3-a456-426614174001, CN=compass"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}]'
 
   system_broker:
     enabled: true
@@ -312,6 +312,7 @@ global:
     domainName: "kyma.local"
 
   database:
+    sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
     manageSecrets: true
     embedded:
       enabled: true
@@ -429,7 +430,7 @@ global:
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "" # It's empty because in local setup we use connector CA which didn't have Locality property
-    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=123e4567-e89b-12d3-a456-426614174001/L=%s/CN=%s"
+    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=f8075207-1478-4a80-bd26-24a4785a2bfd/L=%s/CN=%s"
     commonName: "compass"
     locality: "local"
     certSvcApiPath: "/cert"
@@ -471,6 +472,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
+    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8085/.well-known/open-resource-discovery
 
   systemFetcher:
     enabled: false
@@ -567,7 +569,7 @@ global:
         discriminatorValue: ""
         detailsField: "details"
         entityTypeField: "entityType"
-        parentIDField: "parentGuid"
+        globalAccountID: "gaID"
         regionField: "region"
         movedSubaccountTargetField: "targetGlobalAccountGUID"
         movedSubaccountSourceField: "sourceGlobalAccountGUID"
@@ -594,15 +596,20 @@ global:
     unsecuredPort: 8082
     basicSecuredPort: 8083
     oauthSecuredPort: 8084
+    ordGlobalRegistryPort: 8085
     certSecuredHost: compass-external-services-mock-sap-mtls
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials
 
   tests:
+    http:
+      client:
+        skipSSLValidation:
+          director: false
+          ordService: false
+          connectivityAdapter: true
     ordService:
-      skipPattern: ""
-    director:
       skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
@@ -615,8 +622,6 @@ global:
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1
-    skipTLSVerify: true
-
     token:
       server:
         enabled: false

@@ -47,30 +47,32 @@ const (
 	expectedBundleTitle                     = "BUNDLE TITLE"
 	secondExpectedBundleTitle               = "BUNDLE TITLE 2"
 	expectedBundleDescription               = "lorem ipsum dolor nsq sme"
-	secondExpectedBundleDescription         = "foo bar"
-	firstBundleOrdID                        = "ns:consumptionBundle:BUNDLE_ID:v1"
+	secondExpectedBundleDescription         = ""
+	firstBundleOrdIDRegex                   = "ns:consumptionBundle:BUNDLE_ID(.+):v1"
 	expectedPackageTitle                    = "PACKAGE 1 TITLE"
 	expectedPackageDescription              = "lorem ipsum dolor set"
-	expectedProductTitle                    = "PRODUCT TITLE"
-	expectedProductShortDescription         = "lorem ipsum"
+	firstProductTitle                       = "PRODUCT TITLE"
+	firstProductShortDescription            = "lorem ipsum"
+	secondProductTitle                      = "SAP Business Technology Platform"
+	secondProductShortDescription           = "Accelerate business outcomes with integration, data to value, and extensibility."
 	firstAPIExpectedTitle                   = "API TITLE"
 	firstAPIExpectedDescription             = "lorem ipsum dolor sit amet"
 	firstEventTitle                         = "EVENT TITLE"
 	firstEventDescription                   = "lorem ipsum dolor sit amet"
 	secondEventTitle                        = "EVENT TITLE 2"
 	secondEventDescription                  = "lorem ipsum dolor sit amet"
-	expectedTombstoneOrdID                  = "ns:apiResource:API_ID2:v1"
-	expectedVendorTitle                     = "SAP"
+	expectedTombstoneOrdIDRegex             = "ns:apiResource:API_ID2(.+):v1"
+	expectedVendorTitle                     = "SAP SE"
 
 	expectedNumberOfSystemInstances           = 6
 	expectedNumberOfPackages                  = 6
 	expectedNumberOfBundles                   = 12
-	expectedNumberOfProducts                  = 6
+	expectedNumberOfProducts                  = 7
 	expectedNumberOfAPIs                      = 6
 	expectedNumberOfResourceDefinitionsPerAPI = 3
 	expectedNumberOfEvents                    = 12
 	expectedNumberOfTombstones                = 6
-	expectedNumberOfVendors                   = 12
+	expectedNumberOfVendors                   = 7
 
 	expectedNumberOfAPIsInFirstBundle    = 1
 	expectedNumberOfAPIsInSecondBundle   = 1
@@ -81,6 +83,10 @@ const (
 
 	firstCorrelationID  = "sap.s4:communicationScenario:SAP_COM_0001"
 	secondCorrelationID = "sap.s4:communicationScenario:SAP_COM_0002"
+
+	documentationLabelKey         = "Documentation label key"
+	documentationLabelFirstValue  = "Markdown Documentation with links"
+	documentationLabelSecondValue = "With multiple values"
 )
 
 func TestORDAggregator(t *testing.T) {
@@ -123,14 +129,14 @@ func TestORDAggregator(t *testing.T) {
 		systemInstancesMap[expectedSixthSystemInstanceName] = expectedSixthSystemInstanceDescription
 
 		apisDefaultBundleMap := make(map[string]string)
-		apisDefaultBundleMap[firstAPIExpectedTitle] = firstBundleOrdID
+		apisDefaultBundleMap[firstAPIExpectedTitle] = firstBundleOrdIDRegex
 
 		eventsMap := make(map[string]string)
 		eventsMap[firstEventTitle] = firstEventDescription
 		eventsMap[secondEventTitle] = secondEventDescription
 
 		eventsDefaultBundleMap := make(map[string]string)
-		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdID
+		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdIDRegex
 
 		bundlesMap := make(map[string]string)
 		bundlesMap[expectedBundleTitle] = expectedBundleDescription
@@ -155,6 +161,12 @@ func TestORDAggregator(t *testing.T) {
 		bundlesCorrelationIDs := make(map[string][]string)
 		bundlesCorrelationIDs[expectedBundleTitle] = []string{firstCorrelationID, secondCorrelationID}
 		bundlesCorrelationIDs[secondExpectedBundleTitle] = []string{firstCorrelationID, secondCorrelationID}
+
+		documentationLabelsPossibleValues := []string{documentationLabelFirstValue, documentationLabelSecondValue}
+
+		productsMap := make(map[string]string)
+		productsMap[firstProductTitle] = firstProductShortDescription
+		productsMap[secondProductTitle] = secondProductShortDescription
 
 		ctx := context.Background()
 
@@ -226,7 +238,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing System Instances...will try again")
 				return false
 			}
-			assertions.AssertMultipleEntitiesFromORDService(t, respBody, systemInstancesMap, expectedNumberOfSystemInstances)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, systemInstancesMap, expectedNumberOfSystemInstances, descriptionField)
 
 			// Verify packages
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
@@ -235,6 +247,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Packages...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfPackages)
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
 			t.Log("Successfully verified packages")
 
@@ -245,7 +258,8 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Bundles...will try again")
 				return false
 			}
-			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles)
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfBundles)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles, descriptionField)
 			assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, expectedNumberOfBundles)
 			ordAndInternalIDsMappingForBundles := storeMappingBetweenORDAndInternalBundleID(t, respBody, expectedNumberOfBundles)
 			t.Log("Successfully verified bundles")
@@ -265,7 +279,8 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Products...will try again")
 				return false
 			}
-			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfProducts, expectedProductTitle, expectedProductShortDescription, shortDescriptionField)
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfProducts)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, productsMap, expectedNumberOfProducts, shortDescriptionField)
 			t.Log("Successfully verified products")
 
 			// Verify apis
@@ -275,6 +290,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing APIs...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfAPIs)
 			// In the document there are actually 2 APIs but there is a tombstone for the second one so in the end there will be only one API
 			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfAPIs, firstAPIExpectedTitle, firstAPIExpectedDescription, descriptionField)
 			t.Log("Successfully verified apis")
@@ -311,7 +327,8 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Events...will try again")
 				return false
 			}
-			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEvents)
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEvents)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEvents, descriptionField)
 			t.Log("Successfully verified events")
 
 			// Verify defaultBundle for events
@@ -325,7 +342,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Tombstones...will try again")
 				return false
 			}
-			assertions.AssertTombstoneFromORDService(t, respBody, expectedNumberOfTombstones, expectedTombstoneOrdID)
+			assertions.AssertTombstoneFromORDService(t, respBody, expectedNumberOfTombstones, expectedTombstoneOrdIDRegex)
 			t.Log("Successfully verified tombstones")
 
 			// Verify vendors
@@ -335,6 +352,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Vendors...will try again")
 				return false
 			}
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfVendors)
 			assertions.AssertVendorFromORDService(t, respBody, expectedNumberOfVendors, expectedVendorTitle)
 			t.Log("Successfully verified vendors")
 

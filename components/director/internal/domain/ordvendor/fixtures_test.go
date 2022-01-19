@@ -4,6 +4,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/ordvendor"
@@ -21,45 +23,60 @@ const (
 
 func fixEntityVendor() *ordvendor.Entity {
 	return &ordvendor.Entity{
-		ID:            vendorID,
-		OrdID:         ordID,
-		ApplicationID: appID,
-		Title:         "title",
-		Partners:      repo.NewValidNullableString(partners),
-		Labels:        repo.NewValidNullableString("{}"),
+		ID:                  vendorID,
+		OrdID:               ordID,
+		ApplicationID:       repo.NewValidNullableString(appID),
+		Title:               "title",
+		Partners:            repo.NewValidNullableString(partners),
+		Labels:              repo.NewValidNullableString("{}"),
+		DocumentationLabels: repo.NewValidNullableString("[]"),
 	}
 }
 
 func fixEntityVendorWithTitle(title string) *ordvendor.Entity {
 	return &ordvendor.Entity{
-		ID:            vendorID,
-		OrdID:         ordID,
-		ApplicationID: appID,
-		Title:         title,
-		Partners:      repo.NewValidNullableString(partners),
-		Labels:        repo.NewValidNullableString("{}"),
+		ID:                  vendorID,
+		OrdID:               ordID,
+		ApplicationID:       repo.NewValidNullableString(appID),
+		Title:               title,
+		Partners:            repo.NewValidNullableString(partners),
+		Labels:              repo.NewValidNullableString("{}"),
+		DocumentationLabels: repo.NewValidNullableString("[]"),
 	}
 }
 
 func fixVendorModelWithTitle(title string) *model.Vendor {
 	return &model.Vendor{
-		ID:            vendorID,
-		OrdID:         ordID,
-		ApplicationID: appID,
-		Title:         title,
-		Partners:      json.RawMessage(partners),
-		Labels:        json.RawMessage("{}"),
+		ID:                  vendorID,
+		OrdID:               ordID,
+		ApplicationID:       str.Ptr(appID),
+		Title:               title,
+		Partners:            json.RawMessage(partners),
+		Labels:              json.RawMessage("{}"),
+		DocumentationLabels: json.RawMessage("[]"),
 	}
 }
 
 func fixVendorModel() *model.Vendor {
 	return &model.Vendor{
-		ID:            vendorID,
-		OrdID:         ordID,
-		ApplicationID: appID,
-		Title:         "title",
-		Partners:      json.RawMessage(partners),
-		Labels:        json.RawMessage("{}"),
+		ID:                  vendorID,
+		OrdID:               ordID,
+		ApplicationID:       str.Ptr(appID),
+		Title:               "title",
+		Partners:            json.RawMessage(partners),
+		Labels:              json.RawMessage("{}"),
+		DocumentationLabels: json.RawMessage("[]"),
+	}
+}
+
+func fixGlobalVendorModel() *model.Vendor {
+	return &model.Vendor{
+		ID:                  vendorID,
+		OrdID:               ordID,
+		Title:               "title",
+		Partners:            json.RawMessage(partners),
+		Labels:              json.RawMessage("{}"),
+		DocumentationLabels: json.RawMessage("[]"),
 	}
 }
 
@@ -69,25 +86,26 @@ func fixNilModelVendor() *model.Vendor {
 
 func fixVendorModelInput() *model.VendorInput {
 	return &model.VendorInput{
-		OrdID:    ordID,
-		Title:    "title",
-		Partners: json.RawMessage(partners),
-		Labels:   json.RawMessage("{}"),
+		OrdID:               ordID,
+		Title:               "title",
+		Partners:            json.RawMessage(partners),
+		Labels:              json.RawMessage("{}"),
+		DocumentationLabels: json.RawMessage("[]"),
 	}
 }
 
 func fixVendorColumns() []string {
-	return []string{"ord_id", "app_id", "title", "labels", "partners", "id"}
+	return []string{"ord_id", "app_id", "title", "labels", "partners", "id", "documentation_labels"}
 }
 
 func fixVendorRow() []driver.Value {
-	return []driver.Value{ordID, appID, "title", repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners), vendorID}
+	return []driver.Value{ordID, appID, "title", repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners), vendorID, repo.NewValidNullableString("[]")}
 }
 
 func fixVendorRowWithTitle(title string) []driver.Value {
-	return []driver.Value{ordID, appID, title, repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners), vendorID}
+	return []driver.Value{ordID, appID, title, repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners), vendorID, repo.NewValidNullableString("[]")}
 }
 
 func fixVendorUpdateArgs() []driver.Value {
-	return []driver.Value{"title", repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners)}
+	return []driver.Value{"title", repo.NewValidNullableString("{}"), repo.NewValidNullableString(partners), repo.NewValidNullableString("[]")}
 }

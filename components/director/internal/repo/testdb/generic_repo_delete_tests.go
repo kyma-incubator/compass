@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// RepoDeleteTestSuite represents a generic test suite for repository Delete method of any entity that has externally managed tenants in m2m table/view.
-// This test suite is not suitable for global entities or entities with embedded tenant in them.
+// RepoDeleteTestSuite represents a generic test suite for repository Delete method of any global entity or entity that has externally managed tenants in m2m table/view.
+// This test suite is not suitable for entities with embedded tenant in them.
 type RepoDeleteTestSuite struct {
 	Name                  string
 	SQLQueryDetails       []SQLQueryDetails
@@ -24,6 +24,7 @@ type RepoDeleteTestSuite struct {
 	MethodName            string
 	MethodArgs            []interface{}
 	IsDeleteMany          bool
+	IsGlobal              bool
 }
 
 // Run runs the generic repo delete test suite
@@ -53,7 +54,7 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 		})
 
 		if !suite.IsDeleteMany { // Single delete requires exactly one row to be deleted
-			t.Run("returns unauthorized if no entity matches criteria", func(t *testing.T) {
+			t.Run("returns error if no entity matches criteria", func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
@@ -65,8 +66,14 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 				err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
 				// THEN
 				require.Error(t, err)
-				require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
-				require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
+
+				if suite.IsGlobal {
+					require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
+					require.Contains(t, err.Error(), "delete should remove single row, but removed 0 rows")
+				} else {
+					require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
+					require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
+				}
 
 				sqlMock.AssertExpectations(t)
 				convMock.AssertExpectations(t)

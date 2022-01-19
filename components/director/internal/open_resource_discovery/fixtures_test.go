@@ -22,6 +22,7 @@ const (
 	customWebhookConfigURL = "http://custom.com/config/endpoint"
 	packageORDID           = "ns:package:PACKAGE_ID:v1"
 	productORDID           = "sap:product:id:"
+	globalProductORDID     = "sap:product:SAPCloudPlatform:"
 	product2ORDID          = "ns:product:id2:"
 	bundleORDID            = "ns:consumptionBundle:BUNDLE_ID:v1"
 	secondBundleORDID      = "ns:consumptionBundle:BUNDLE_ID:v2"
@@ -111,6 +112,10 @@ var (
 		"pkg-label": [
           "label-val"
         ]
+      }`)
+
+	documentLabels = removeWhitespace(`{
+        "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
       }`)
 
 	credentialExchangeStrategiesFormat = removeWhitespace(`[
@@ -242,27 +247,29 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		OpenResourceDiscovery: "1.0",
 		Description:           "Test Document",
 		DescribedSystemInstance: &model.Application{
-			BaseURL: str.Ptr(baseURL),
-			Labels:  json.RawMessage(labels),
+			BaseURL:             str.Ptr(baseURL),
+			Labels:              json.RawMessage(labels),
+			DocumentationLabels: json.RawMessage(documentLabels),
 		},
 		Packages: []*model.PackageInput{
 			{
-				OrdID:            packageORDID,
-				Vendor:           str.Ptr(vendorORDID),
-				Title:            "PACKAGE 1 TITLE",
-				ShortDescription: "lorem ipsum",
-				Description:      "lorem ipsum dolor set",
-				Version:          "1.1.2",
-				PackageLinks:     json.RawMessage(fmt.Sprintf(packageLinksFormat, providedBaseURL)),
-				Links:            json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
-				LicenseType:      str.Ptr("licence"),
-				Tags:             json.RawMessage(`["testTag"]`),
-				Countries:        json.RawMessage(`["BG","EN"]`),
-				Labels:           json.RawMessage(packageLabels),
-				PolicyLevel:      policyLevel,
-				PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
-				Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+				OrdID:               packageORDID,
+				Vendor:              str.Ptr(vendorORDID),
+				Title:               "PACKAGE 1 TITLE",
+				ShortDescription:    "lorem ipsum",
+				Description:         "lorem ipsum dolor set",
+				Version:             "1.1.2",
+				PackageLinks:        json.RawMessage(fmt.Sprintf(packageLinksFormat, providedBaseURL)),
+				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				LicenseType:         str.Ptr("licence"),
+				Tags:                json.RawMessage(`["testTag"]`),
+				Countries:           json.RawMessage(`["BG","EN"]`),
+				Labels:              json.RawMessage(packageLabels),
+				DocumentationLabels: json.RawMessage(documentLabels),
+				PolicyLevel:         policyLevel,
+				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+				LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+				Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			},
 		},
 		ConsumptionBundles: []*model.BundleCreateInput{
@@ -273,19 +280,21 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				ShortDescription:             str.Ptr("lorem ipsum"),
 				Links:                        json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				Labels:                       json.RawMessage(labels),
+				DocumentationLabels:          json.RawMessage(documentLabels),
 				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, providedBaseURL)),
 				CorrelationIDs:               json.RawMessage(correlationIDs),
 			},
 		},
 		Products: []*model.ProductInput{
 			{
-				OrdID:            productORDID,
-				Title:            "PRODUCT TITLE",
-				ShortDescription: "lorem ipsum",
-				Vendor:           vendorORDID,
-				Parent:           str.Ptr(product2ORDID),
-				CorrelationIDs:   json.RawMessage(correlationIDs),
-				Labels:           json.RawMessage(labels),
+				OrdID:               productORDID,
+				Title:               "PRODUCT TITLE",
+				ShortDescription:    "lorem ipsum",
+				Vendor:              vendorORDID,
+				Parent:              str.Ptr(product2ORDID),
+				CorrelationIDs:      json.RawMessage(correlationIDs),
+				Labels:              json.RawMessage(labels),
+				DocumentationLabels: json.RawMessage(documentLabels),
 			},
 		},
 		APIResources: []*model.APIDefinitionInput{
@@ -307,6 +316,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Successors:                              nil,
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Labels:                                  json.RawMessage(labels),
+				DocumentationLabels:                     json.RawMessage(documentLabels),
 				Visibility:                              str.Ptr("public"),
 				Disabled:                                &boolPtr,
 				PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
@@ -377,6 +387,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Successors:                              json.RawMessage(fmt.Sprintf(`["%s"]`, api1ORDID)),
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Labels:                                  json.RawMessage(labels),
+				DocumentationLabels:                     json.RawMessage(documentLabels),
 				Visibility:                              str.Ptr("public"),
 				Disabled:                                nil,
 				PartOfProducts:                          json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
@@ -433,6 +444,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				SunsetDate:          nil,
 				Successors:          nil,
 				Labels:              json.RawMessage(labels),
+				DocumentationLabels: json.RawMessage(documentLabels),
 				Visibility:          str.Ptr("public"),
 				Disabled:            &boolPtr,
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
@@ -475,6 +487,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				SunsetDate:          str.Ptr("2020-12-08T15:47:04+0000"),
 				Successors:          json.RawMessage(fmt.Sprintf(`["%s"]`, event2ORDID)),
 				Labels:              json.RawMessage(labels),
+				DocumentationLabels: json.RawMessage(documentLabels),
 				Visibility:          str.Ptr("public"),
 				Disabled:            nil,
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
@@ -511,16 +524,18 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		},
 		Vendors: []*model.VendorInput{
 			{
-				OrdID:    vendorORDID,
-				Title:    "SAP",
-				Partners: json.RawMessage(partners),
-				Labels:   json.RawMessage(labels),
+				OrdID:               vendorORDID,
+				Title:               "SAP",
+				Partners:            json.RawMessage(partners),
+				Labels:              json.RawMessage(labels),
+				DocumentationLabels: json.RawMessage(documentLabels),
 			},
 			{
-				OrdID:    vendor2ORDID,
-				Title:    "SAP",
-				Partners: json.RawMessage(partners),
-				Labels:   json.RawMessage(labels),
+				OrdID:               vendor2ORDID,
+				Title:               "SAP",
+				Partners:            json.RawMessage(partners),
+				Labels:              json.RawMessage(labels),
+				DocumentationLabels: json.RawMessage(documentLabels),
 			},
 		},
 	}
@@ -562,19 +577,31 @@ func fixWebhooks() []*model.Webhook {
 func fixVendors() []*model.Vendor {
 	return []*model.Vendor{
 		{
-			ID:            vendorID,
-			OrdID:         vendorORDID,
-			ApplicationID: appID,
-			Title:         "SAP",
-			Partners:      json.RawMessage(partners),
-			Labels:        json.RawMessage(labels),
+			ID:                  vendorID,
+			OrdID:               vendorORDID,
+			ApplicationID:       str.Ptr(appID),
+			Title:               "SAP",
+			Partners:            json.RawMessage(partners),
+			Labels:              json.RawMessage(labels),
+			DocumentationLabels: json.RawMessage(documentLabels),
 		},
 		{
-			ID:       vendorID2,
-			OrdID:    vendor2ORDID,
-			Title:    "SAP",
-			Partners: json.RawMessage(partners),
-			Labels:   json.RawMessage(labels),
+			ID:                  vendorID2,
+			OrdID:               vendor2ORDID,
+			Title:               "SAP",
+			Partners:            json.RawMessage(partners),
+			Labels:              json.RawMessage(labels),
+			DocumentationLabels: json.RawMessage(documentLabels),
+		},
+	}
+}
+
+func fixGlobalVendors() []*model.Vendor {
+	return []*model.Vendor{
+		{
+			ID:    vendorID,
+			OrdID: vendorORDID,
+			Title: "SAP SE",
 		},
 	}
 }
@@ -582,15 +609,28 @@ func fixVendors() []*model.Vendor {
 func fixProducts() []*model.Product {
 	return []*model.Product{
 		{
+			ID:                  productID,
+			OrdID:               productORDID,
+			ApplicationID:       str.Ptr(appID),
+			Title:               "PRODUCT TITLE",
+			ShortDescription:    "lorem ipsum",
+			Vendor:              vendorORDID,
+			Parent:              str.Ptr(product2ORDID),
+			CorrelationIDs:      json.RawMessage(`["foo.bar.baz:123456"]`),
+			Labels:              json.RawMessage(labels),
+			DocumentationLabels: json.RawMessage(documentLabels),
+		},
+	}
+}
+
+func fixGlobalProducts() []*model.Product {
+	return []*model.Product{
+		{
 			ID:               productID,
-			OrdID:            productORDID,
-			ApplicationID:    appID,
-			Title:            "PRODUCT TITLE",
-			ShortDescription: "lorem ipsum",
+			OrdID:            globalProductORDID,
+			Title:            "SAP Business Technology Platform",
+			ShortDescription: "Accelerate business outcomes with integration, data to value, and extensibility.",
 			Vendor:           vendorORDID,
-			Parent:           str.Ptr(product2ORDID),
-			CorrelationIDs:   json.RawMessage(`["foo.bar.baz:123456"]`),
-			Labels:           json.RawMessage(labels),
 		},
 	}
 }
@@ -598,24 +638,25 @@ func fixProducts() []*model.Product {
 func fixPackages() []*model.Package {
 	return []*model.Package{
 		{
-			ID:               packageID,
-			ApplicationID:    appID,
-			OrdID:            packageORDID,
-			Vendor:           str.Ptr(vendorORDID),
-			Title:            "PACKAGE 1 TITLE",
-			ShortDescription: "lorem ipsum",
-			Description:      "lorem ipsum dolor set",
-			Version:          "1.1.2",
-			PackageLinks:     json.RawMessage(fmt.Sprintf(packageLinksFormat, baseURL)),
-			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
-			LicenseType:      str.Ptr("licence"),
-			Tags:             json.RawMessage(`["testTag"]`),
-			Countries:        json.RawMessage(`["BG","EN"]`),
-			Labels:           json.RawMessage(packageLabels),
-			PolicyLevel:      policyLevel,
-			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
-			Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+			ID:                  packageID,
+			ApplicationID:       appID,
+			OrdID:               packageORDID,
+			Vendor:              str.Ptr(vendorORDID),
+			Title:               "PACKAGE 1 TITLE",
+			ShortDescription:    "lorem ipsum",
+			Description:         "lorem ipsum dolor set",
+			Version:             "1.1.2",
+			PackageLinks:        json.RawMessage(fmt.Sprintf(packageLinksFormat, baseURL)),
+			Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			LicenseType:         str.Ptr("licence"),
+			Tags:                json.RawMessage(`["testTag"]`),
+			Countries:           json.RawMessage(`["BG","EN"]`),
+			Labels:              json.RawMessage(packageLabels),
+			DocumentationLabels: json.RawMessage(documentLabels),
+			PolicyLevel:         policyLevel,
+			PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+			LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+			Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 		},
 	}
 }
@@ -630,6 +671,7 @@ func fixBundles() []*model.Bundle {
 			ShortDescription:             str.Ptr("lorem ipsum"),
 			Links:                        json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
 			Labels:                       json.RawMessage(labels),
+			DocumentationLabels:          json.RawMessage(documentLabels),
 			CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, baseURL)),
 			CorrelationIDs:               json.RawMessage(correlationIDs),
 			BaseEntity: &model.BaseEntity{
@@ -643,20 +685,22 @@ func fixBundles() []*model.Bundle {
 func fixBundleCreateInput() []*model.BundleCreateInput {
 	return []*model.BundleCreateInput{
 		{
-			Name:             "BUNDLE TITLE",
-			Description:      str.Ptr("lorem ipsum dolor nsq sme"),
-			OrdID:            str.Ptr(bundleORDID),
-			ShortDescription: str.Ptr("lorem ipsum"),
-			Labels:           json.RawMessage(labels),
-			CorrelationIDs:   json.RawMessage(correlationIDs),
+			Name:                "BUNDLE TITLE",
+			Description:         str.Ptr("lorem ipsum dolor nsq sme"),
+			OrdID:               str.Ptr(bundleORDID),
+			ShortDescription:    str.Ptr("lorem ipsum"),
+			Labels:              json.RawMessage(labels),
+			DocumentationLabels: json.RawMessage(documentLabels),
+			CorrelationIDs:      json.RawMessage(correlationIDs),
 		},
 		{
-			Name:             "BUNDLE TITLE 2 ",
-			Description:      str.Ptr("foo bar"),
-			OrdID:            str.Ptr(secondBundleORDID),
-			ShortDescription: str.Ptr("bar foo"),
-			Labels:           json.RawMessage(labels),
-			CorrelationIDs:   json.RawMessage(correlationIDs),
+			Name:                "BUNDLE TITLE 2 ",
+			Description:         str.Ptr("foo bar"),
+			OrdID:               str.Ptr(secondBundleORDID),
+			ShortDescription:    str.Ptr("bar foo"),
+			Labels:              json.RawMessage(labels),
+			DocumentationLabels: json.RawMessage(documentLabels),
+			CorrelationIDs:      json.RawMessage(correlationIDs),
 		},
 	}
 }
@@ -728,6 +772,7 @@ func fixAPIs() []*model.APIDefinition {
 			Version: &model.Version{
 				Value: "2.1.3",
 			},
+			DocumentationLabels: json.RawMessage(documentLabels),
 			BaseEntity: &model.BaseEntity{
 				ID:    api1ID,
 				Ready: true,
@@ -761,6 +806,7 @@ func fixAPIs() []*model.APIDefinition {
 			Version: &model.Version{
 				Value: "1.1.1",
 			},
+			DocumentationLabels: json.RawMessage(documentLabels),
 			BaseEntity: &model.BaseEntity{
 				ID:    api2ID,
 				Ready: true,
@@ -805,23 +851,24 @@ func fixEventPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
 func fixEvents() []*model.EventDefinition {
 	return []*model.EventDefinition{
 		{
-			ApplicationID:    appID,
-			PackageID:        str.Ptr(packageORDID),
-			Name:             "EVENT TITLE",
-			Description:      str.Ptr("lorem ipsum dolor sit amet"),
-			OrdID:            str.Ptr(event1ORDID),
-			ShortDescription: str.Ptr("lorem ipsum"),
-			ChangeLogEntries: json.RawMessage(changeLogEntries),
-			Links:            json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
-			Tags:             json.RawMessage(`["testTag","eventTestTag"]`),
-			Countries:        json.RawMessage(`["BG","EN","US"]`),
-			ReleaseStatus:    str.Ptr("active"),
-			Labels:           json.RawMessage(mergedLabels),
-			Visibility:       str.Ptr("public"),
-			Disabled:         &boolPtr,
-			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-			LineOfBusiness:   json.RawMessage(`["Finance","Sales"]`),
-			Industry:         json.RawMessage(`["Automotive","Banking","Chemicals"]`),
+			ApplicationID:       appID,
+			PackageID:           str.Ptr(packageORDID),
+			Name:                "EVENT TITLE",
+			Description:         str.Ptr("lorem ipsum dolor sit amet"),
+			OrdID:               str.Ptr(event1ORDID),
+			ShortDescription:    str.Ptr("lorem ipsum"),
+			ChangeLogEntries:    json.RawMessage(changeLogEntries),
+			Links:               json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
+			Tags:                json.RawMessage(`["testTag","eventTestTag"]`),
+			Countries:           json.RawMessage(`["BG","EN","US"]`),
+			ReleaseStatus:       str.Ptr("active"),
+			Labels:              json.RawMessage(mergedLabels),
+			DocumentationLabels: json.RawMessage(documentLabels),
+			Visibility:          str.Ptr("public"),
+			Disabled:            &boolPtr,
+			PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
+			LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
+			Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
 			Version: &model.Version{
 				Value: "2.1.3",
 			},
@@ -852,6 +899,7 @@ func fixEvents() []*model.EventDefinition {
 			Version: &model.Version{
 				Value: "1.1.1",
 			},
+			DocumentationLabels: json.RawMessage(documentLabels),
 			BaseEntity: &model.BaseEntity{
 				ID:    event2ID,
 				Ready: true,
@@ -1084,8 +1132,30 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 		ShortDescription:               in.ShortDescription,
 		Links:                          in.Links,
 		Labels:                         in.Labels,
+		DocumentationLabels:            in.DocumentationLabels,
 		CredentialExchangeStrategies:   in.CredentialExchangeStrategies,
 		CorrelationIDs:                 in.CorrelationIDs,
+	}
+}
+
+func fixGlobalRegistryORDDocument() *ord.Document {
+	return &ord.Document{
+		Schema:                "./spec/v1/generated/Document.schema.json",
+		OpenResourceDiscovery: "1.0",
+		Products: []*model.ProductInput{
+			{
+				OrdID:            globalProductORDID,
+				Title:            "SAP Business Technology Platform",
+				ShortDescription: "Accelerate business outcomes with integration, data to value, and extensibility.",
+				Vendor:           vendorORDID,
+			},
+		},
+		Vendors: []*model.VendorInput{
+			{
+				OrdID: vendorORDID,
+				Title: "SAP SE",
+			},
+		},
 	}
 }
 
