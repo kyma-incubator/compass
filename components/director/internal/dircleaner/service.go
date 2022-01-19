@@ -167,26 +167,30 @@ func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool, d
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var notDeletedDirs []string
+	var dirsForDeletion []string // temporarily while deletion of dirs is switched off
 
 	log.C(ctx).Infof("%d directories are to be deleted", len(dirs))
-	successfullyDeleted := 0
-	for tenant := range dirs {
-		if dirsNotToDelete[tenant] {
-			notDeletedDirs = append(notDeletedDirs, tenant)
+	//successfullyDeleted := 0
+	for tnt := range dirs {
+		if dirsNotToDelete[tnt] {
+			notDeletedDirs = append(notDeletedDirs, tnt)
 			continue
 		}
-		log.C(ctx).Infof("Deleting directory with ID %s", tenant)
-		if err = s.tenantSvc.DeleteByExternalTenant(ctx, tenant); err != nil {
-			log.C(ctx).Error(err)
-		} else {
-			successfullyDeleted++
-		}
+
+		//log.C(ctx).Infof("Deleting directory with ID %s", tnt)
+		//if err = s.tenantSvc.DeleteByExternalTenant(ctx, tenant); err != nil {
+		//	log.C(ctx).Error(err)
+		//} else {
+		//	successfullyDeleted++
+		//}
+		dirsForDeletion = append(dirsForDeletion, tnt)
 	}
 
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
-	log.C(ctx).Infof("%d from %d directories were deleted", successfullyDeleted, len(dirs))
+	//log.C(ctx).Infof("%d from %d directories were deleted", successfullyDeleted, len(dirs))
+	log.C(ctx).Infof("%d IDs of Directories marked for deletion: %v", len(dirsForDeletion), dirsForDeletion)
 
 	return notDeletedDirs, nil
 }
