@@ -456,8 +456,6 @@ func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 	respBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	fmt.Println(string(respBody))
-
 	state := gjson.GetBytes(respBody, "state")
 	require.True(t, state.Exists())
 
