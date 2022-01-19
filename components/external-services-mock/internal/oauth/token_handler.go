@@ -18,21 +18,21 @@ import (
 )
 
 const (
-	contentTypeHeader                = "Content-Type"
-	contentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
-	contentTypeApplicationJson       = "application/json"
+	ContentTypeHeader                = "Content-Type"
+	ContentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
+	ContentTypeApplicationJson       = "application/json"
 
-	grantTypeFieldName   = "grant_type"
-	credentialsGrantType = "client_credentials"
-	passwordGrantType    = "password"
-	scopesFieldName      = "scopes"
-	claimsKey            = "claims_key"
+	GrantTypeFieldName   = "grant_type"
+	CredentialsGrantType = "client_credentials"
+	PasswordGrantType    = "password"
+	ScopesFieldName      = "scopes"
+	ClaimsKey            = "claims_key"
 
-	clientIDKey     = "client_id"
-	clientSecretKey = "client_secret"
-	userNameKey     = "username"
-	passwordKey     = "password"
-	zidKey          = "x-zid"
+	ClientIDKey     = "client_id"
+	ClientSecretKey = "client_secret"
+	UserNameKey     = "username"
+	PasswordKey     = "password"
+	ZidKey          = "x-zid"
 )
 
 type ClaimsGetterFunc func() map[string]interface{}
@@ -69,8 +69,8 @@ func NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeaderName, expe
 func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	if r.Header.Get(contentTypeHeader) != contentTypeApplicationURLEncoded {
-		log.C(ctx).Errorf("Unsupported media type, expected: application/x-www-form-urlencoded got: %s", r.Header.Get(contentTypeHeader))
+	if r.Header.Get(ContentTypeHeader) != ContentTypeApplicationURLEncoded {
+		log.C(ctx).Errorf("Unsupported media type, expected: application/x-www-form-urlencoded got: %s", r.Header.Get(ContentTypeHeader))
 		writer.WriteHeader(http.StatusUnsupportedMediaType)
 		return
 	}
@@ -81,13 +81,13 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.FormValue(grantTypeFieldName) != credentialsGrantType && r.FormValue(grantTypeFieldName) != passwordGrantType {
-		log.C(ctx).Errorf("The grant_type should be %s or %s but we got: %s", credentialsGrantType, passwordGrantType, r.FormValue(grantTypeFieldName))
+	if r.FormValue(GrantTypeFieldName) != CredentialsGrantType && r.FormValue(GrantTypeFieldName) != PasswordGrantType {
+		log.C(ctx).Errorf("The grant_type should be %s or %s but we got: %s", CredentialsGrantType, PasswordGrantType, r.FormValue(GrantTypeFieldName))
 		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusBadRequest)
 		return
 	}
 
-	if r.FormValue(grantTypeFieldName) == credentialsGrantType {
+	if r.FormValue(GrantTypeFieldName) == CredentialsGrantType {
 		if err := h.handleClientCredentialsRequest(r); err != nil {
 			log.C(ctx).Error(err)
 			httphelpers.WriteError(writer, err, http.StatusBadRequest)
@@ -101,15 +101,15 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var claims map[string]interface{}
-	claimsFunc, ok := h.staticMappingClaims[r.FormValue(claimsKey)]
+	claims := make(map[string]interface{})
+	claimsFunc, ok := h.staticMappingClaims[r.FormValue(ClaimsKey)]
 	if ok { // If the request contains claims key, use the corresponding claims in the static mapping for that key
 		claims = claimsFunc()
-		claims[zidKey] = r.Header.Get(h.tenantHeaderName)
 	} else { // If there is no claims key provided use empty claims
 		log.C(ctx).Info("Did not find claims key in the request. Proceeding with empty claims...")
 	}
 
+	claims[ZidKey] = r.Header.Get(h.tenantHeaderName)
 	respond(writer, r, claims, h.signingKey)
 }
 
@@ -117,7 +117,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	claims := map[string]interface{}{}
 
 	tenant := r.Header.Get(h.tenantHeaderName)
-	claims[zidKey] = tenant
+	claims[ZidKey] = tenant
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -149,12 +149,12 @@ func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter,
 	if form, err := url.ParseQuery(string(body)); err != nil {
 		log.C(r.Context()).Errorf("Cannot parse form. Error: %s", err)
 	} else {
-		client := form.Get(clientIDKey)
-		scopes := form.Get(scopesFieldName)
+		client := form.Get(ClientIDKey)
+		scopes := form.Get(ScopesFieldName)
 		tenant := r.Header.Get(h.tenantHeaderName)
-		claims[clientIDKey] = client
-		claims[scopesFieldName] = scopes
-		claims[zidKey] = tenant
+		claims[ClientIDKey] = client
+		claims[ScopesFieldName] = scopes
+		claims[ZidKey] = tenant
 	}
 
 	respond(writer, r, claims, h.signingKey)
@@ -166,8 +166,8 @@ func (h *handler) handleClientCredentialsRequest(r *http.Request) error {
 	authorization := r.Header.Get("authorization")
 	if id, secret, err := getBasicCredentials(authorization); err != nil {
 		log.C(r.Context()).Info("Did not find client_id or client_secret in the authorization header. Checking the request body...")
-		id = r.FormValue(clientIDKey)
-		secret = r.FormValue(clientSecretKey)
+		id = r.FormValue(ClientIDKey)
+		secret = r.FormValue(ClientSecretKey)
 		if id != h.expectedID || secret != h.expectedSecret {
 			return errors.New(fmt.Sprintf("client_id or client_secret from request body doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedID, h.expectedSecret, id, secret))
 		}
@@ -192,8 +192,8 @@ func (h *handler) handlePasswordCredentialsRequest(r *http.Request) error {
 		return errors.New(fmt.Sprintf("client_id or client_secret doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedID, h.expectedSecret, id, secret))
 	}
 
-	username := r.FormValue(userNameKey)
-	password := r.FormValue(passwordKey)
+	username := r.FormValue(UserNameKey)
+	password := r.FormValue(PasswordKey)
 	if username != h.expectedUsername || password != h.expectedPassword {
 		return errors.New(fmt.Sprintf("username or password doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedUsername, h.expectedPassword, username, password))
 	}
@@ -229,7 +229,7 @@ func respond(writer http.ResponseWriter, r *http.Request, claims map[string]inte
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
-	writer.Header().Set(contentTypeHeader, contentTypeApplicationJson)
+	writer.Header().Set(ContentTypeHeader, ContentTypeApplicationJson)
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write(payload); err != nil {
 		log.C(r.Context()).Errorf("while writing response: %s", err.Error())

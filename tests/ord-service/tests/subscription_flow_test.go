@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
@@ -44,6 +45,17 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
+)
+
+const (
+	authorizationHeader = "Authorization"
+	contentTypeHeader   = "Content-Type"
+	locationHeader      = "Location"
+	jobSucceededStatus  = "SUCCEEDED"
+	eventuallyTimeout   = 5 * time.Second
+	eventuallyTick      = time.Second
+
+	contentTypeApplicationJson = "application/json"
 )
 
 func TestSelfRegisterFlow(t *testing.T) {
@@ -215,7 +227,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 
 		// Create a token with the necessary consumer claims and add it in authorization header
 		tkn := token.GetClientCredentialsToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "subscriptionClaims")
-		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", tkn)}}
+		headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", tkn)}}
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
@@ -308,7 +320,7 @@ func TestNewChanges(t *testing.T) {
 		selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
 		require.Contains(t, selfRegLabelValue, testConfig.SelfRegisterLabelValuePrefix+runtime.ID)
-		response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", "application/json", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", contentTypeApplicationJson, bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
@@ -328,8 +340,8 @@ func TestNewChanges(t *testing.T) {
 		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		tenantFetcherToken := token.GetClientCredentialsToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "tenantFetcherClaims")
-		subscribeReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tenantFetcherToken))
-		subscribeReq.Header.Add("Content-Type", "application/json")
+		subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", tenantFetcherToken))
+		subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
 
 		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 		resp, err := httpClient.Do(subscribeReq)
@@ -340,22 +352,34 @@ func TestNewChanges(t *testing.T) {
 			}
 		}()
 		require.Equal(t, http.StatusAccepted, resp.StatusCode)
+		subJobStatusPath := resp.Header.Get(locationHeader)
+		require.NotEmpty(t, subJobStatusPath)
+		subJobStatusURL := testConfig.SubscriptionURL + subJobStatusPath
+		require.Eventually(t, func() bool {
+			return getSubscriptionJobStatus(t, httpClient, subJobStatusURL, tenantFetcherToken) == jobSucceededStatus
+		}, eventuallyTimeout, eventuallyTick)
 
 		defer func() {
 			unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
-			unsubscribeReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tenantFetcherToken))
+			unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", tenantFetcherToken))
 
 			t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 			unsubscribeResp, err := httpClient.Do(unsubscribeReq)
 			require.NoError(t, err)
 			require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode)
+			unsubJobStatusPath := unsubscribeResp.Header.Get(locationHeader)
+			require.NotEmpty(t, unsubJobStatusPath)
+			unsubJobStatusURL := testConfig.SubscriptionURL + subJobStatusPath
+			require.Eventually(t, func() bool {
+				return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, tenantFetcherToken) == jobSucceededStatus
+			}, eventuallyTimeout, eventuallyTick)
 		}()
 
 		// HTTP client configured with manually signed client certificate
 		extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
 		subscriptionToken := token.GetUserToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, testConfig.BasicUsername, testConfig.BasicPassword, "subscriptionClaims")
-		headers := map[string][]string{"Authorization": {fmt.Sprintf("Bearer %s", subscriptionToken)}}
+		headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", subscriptionToken)}}
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
@@ -364,7 +388,7 @@ func TestNewChanges(t *testing.T) {
 
 		// Build unsubscribe request
 		unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
-		unsubscribeReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tenantFetcherToken))
+		unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", tenantFetcherToken))
 
 		t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 		unsubscribeResp, err := httpClient.Do(unsubscribeReq)
@@ -418,4 +442,24 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 	}
 
 	k8s.CreateJobByGivenJobDefinition(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace, jobDef)
+}
+
+func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusURL, token string) string {
+	getJobReq, err := http.NewRequest(http.MethodGet, jobStatusURL, bytes.NewBuffer([]byte{}))
+	require.NoError(t, err)
+	getJobReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", token))
+	getJobReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
+
+	resp, err := httpClient.Do(getJobReq)
+	require.NoError(t, err)
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	fmt.Println(string(respBody))
+
+	state := gjson.GetBytes(respBody, "state")
+	require.True(t, state.Exists())
+
+	return state.String()
 }

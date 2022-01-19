@@ -69,7 +69,7 @@ type ORDServers struct {
 	OauthPort          int `envconfig:"default=8085"`
 	GlobalRegistryPort int `envconfig:"default=8086"`
 
-	OrdCertSecuredBaseURL string
+	CertSecuredBaseURL string
 }
 
 type OAuthConfig struct {
@@ -154,9 +154,11 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc(cfg.JWKSPath, jwksHanlder.Handle)
 
 	// Subscription handlers
-	subHandler := subscription.NewHandler(cfg.TenantConfig, cfg.TenantProviderConfig, fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.TokenPath, cfg.ClientID, cfg.ClientSecret, staticMappingClaims)
+	jobID := "818cbe72-8dea-4e01-850d-bc1b54b00e78" // randomly chosen UUID
+	subHandler := subscription.NewHandler(cfg.TenantConfig, cfg.TenantProviderConfig, fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.TokenPath, cfg.ClientID, cfg.ClientSecret, jobID, staticMappingClaims)
 	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Subscription).Methods(http.MethodPost)
 	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Deprovisioning).Methods(http.MethodDelete)
+	router.HandleFunc(fmt.Sprintf("/api/v1/jobs/%s", jobID), subHandler.JobStatus).Methods(http.MethodGet)
 
 	// OnSubscription callback handler
 	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", subHandler.OnSubscription).Methods(http.MethodPut)
@@ -181,7 +183,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
 	systemsRouter := router.PathPrefix("/systemfetcher/systems").Subrouter()
-	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator(cfg.DefaultTenant)))
+	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator(cfg.DefaultTenant, cfg.ClientID, cfg.Scopes)))
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
@@ -233,7 +235,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 
 	// non-isolated and unsecured ORD handlers. NOTE: Do not host document endpoints on this default server in order to ensure tests separation.
 	// Unsecured config pointing to cert secured document
-	router.HandleFunc("/cert", ord_aggregator.HandleFuncOrdConfigWithDocPath(cfg.ORDServers.OrdCertSecuredBaseURL, "/open-resource-discovery/v1/documents/example2", "sap:cmp-mtls:v1"))
+	router.HandleFunc("/cert", ord_aggregator.HandleFuncOrdConfigWithDocPath(cfg.ORDServers.CertSecuredBaseURL, "/open-resource-discovery/v1/documents/example2", "sap:cmp-mtls:v1"))
 
 	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.SelfRegConfig)
 	selfRegRouter := router.PathPrefix(cfg.SelfRegConfig.Path).Subrouter()
@@ -257,7 +259,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.
 	router.HandleFunc("/oauth/token", tokenHandlerWithKey.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
 
-	tokenHandler := oauth.NewHandler(cfg.ClientSecret, cfg.ClientID)
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, cfg.Username, cfg.Password, key, staticMappingClaims)
 	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
 
 	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
@@ -285,8 +287,8 @@ func initCertSecuredORDServer(cfg config) *http.Server {
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
 
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.OrdCertSecuredBaseURL, "sap:cmp-mtls:v1"))
-	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.OrdCertSecuredBaseURL, "sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
 
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
@@ -455,7 +457,7 @@ func stopServer(server *http.Server) {
 func noopClaimsValidator(_ *oauth.Claims) bool {
 	return true
 }
-func getClaimsValidator(expectedTenant string) func(*oauth.Claims) bool {
+func getClaimsValidator(expectedTenant, expectedClient, expectedScopes string) func(*oauth.Claims) bool {
 	return func(claims *oauth.Claims) bool {
 		return claims.Tenant == expectedTenant
 	}

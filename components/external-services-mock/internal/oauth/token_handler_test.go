@@ -22,33 +22,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	contentTypeHeader                = "Content-Type"
-	contentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
-
-	grantTypeFieldName   = "grant_type"
-	credentialsGrantType = "client_credentials"
-	passwordGrantType    = "password"
-	scopesFieldName      = "scopes"
-	claimsKey            = "claims_key"
-
-	clientIDKey     = "client_id"
-	clientSecretKey = "client_secret"
-	userNameKey     = "username"
-	passwordKey     = "password"
-)
-
 func TestHandler_Generate(t *testing.T) {
 	//GIVEN
 	data := url.Values{}
-	data.Add(grantTypeFieldName, credentialsGrantType)
+	data.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
 
 	id, secret := "id", "secret"
 	req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", strings.NewReader(data.Encode()))
 
 	encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
 	req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
-	req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+	req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 
 	h := oauth2.NewHandler(secret, id)
 	r := httptest.NewRecorder()
@@ -84,10 +68,10 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 	t.Run("Failed generate token if the grant type is not client_credentials or password", func(t *testing.T) {
 		// GIVEN
 		data := url.Values{}
-		data.Add(grantTypeFieldName, "invalid")
+		data.Add(oauth2.GrantTypeFieldName, "invalid")
 
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
-		req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 		handler := oauth2.NewHandlerWithSigningKey("", "", "", "", "", nil, map[string]oauth2.ClaimsGetterFunc{})
 		r := httptest.NewRecorder()
 
@@ -102,11 +86,11 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 	t.Run("Successfully issue client_credentials token with client_id and client_secret as authorization header", func(t *testing.T) {
 		//GIVEN
 		data := url.Values{}
-		data.Add(grantTypeFieldName, credentialsGrantType)
+		data.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
 
 		id, secret, tenantHeader := "id", "secret", "x-zid"
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
-		req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 
 		encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
 		req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
@@ -135,11 +119,11 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 	t.Run("Failed issuing client_credentials token if the client_id or client_secret as part of authorization header does not match the expected one", func(t *testing.T) {
 		//GIVEN
 		data := url.Values{}
-		data.Add(grantTypeFieldName, credentialsGrantType)
+		data.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
 
 		id, secret, tenantHeader := "id", "secret", "x-zid"
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
-		req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 
 		encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
 		req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
@@ -172,12 +156,12 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		id, secret, tenantHeader := "id", "secret", "x-zid"
 
 		data := url.Values{}
-		data.Add(grantTypeFieldName, credentialsGrantType)
-		data.Add(clientIDKey, id)
-		data.Add(clientSecretKey, secret)
+		data.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
+		data.Add(oauth2.ClientIDKey, id)
+		data.Add(oauth2.ClientSecretKey, secret)
 
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
-		req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
@@ -205,12 +189,12 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		id, secret, tenantHeader := "id", "secret", "x-zid"
 
 		data := url.Values{}
-		data.Add(grantTypeFieldName, credentialsGrantType)
-		data.Add(clientIDKey, id)
-		data.Add(clientSecretKey, secret)
+		data.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
+		data.Add(oauth2.ClientIDKey, id)
+		data.Add(oauth2.ClientSecretKey, secret)
 
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
-		req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
@@ -240,15 +224,15 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		id, secret, username, password, tenantHeader := "id", "secret", "username", "password", "x-zid"
 
 		data := url.Values{}
-		data.Add(grantTypeFieldName, passwordGrantType)
-		data.Add(clientIDKey, id)
-		data.Add(userNameKey, username)
-		data.Add(passwordKey, password)
+		data.Add(oauth2.GrantTypeFieldName, oauth2.PasswordGrantType)
+		data.Add(oauth2.ClientIDKey, id)
+		data.Add(oauth2.UserNameKey, username)
+		data.Add(oauth2.PasswordKey, password)
 
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
 		encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
 		req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
-		req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
@@ -276,13 +260,13 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		id, secret, username, password, tenantHeader := "id", "secret", "username", "password", "x-zid"
 
 		data := url.Values{}
-		data.Add(grantTypeFieldName, passwordGrantType)
-		data.Add(clientIDKey, id)
-		data.Add(userNameKey, username)
-		data.Add(passwordKey, password)
+		data.Add(oauth2.GrantTypeFieldName, oauth2.PasswordGrantType)
+		data.Add(oauth2.ClientIDKey, id)
+		data.Add(oauth2.UserNameKey, username)
+		data.Add(oauth2.PasswordKey, password)
 
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
-		req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
@@ -310,15 +294,15 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		id, secret, username, password, tenantHeader := "id", "secret", "username", "password", "x-zid"
 
 		data := url.Values{}
-		data.Add(grantTypeFieldName, passwordGrantType)
-		data.Add(clientIDKey, id)
-		data.Add(userNameKey, username)
-		data.Add(passwordKey, password)
+		data.Add(oauth2.GrantTypeFieldName, oauth2.PasswordGrantType)
+		data.Add(oauth2.ClientIDKey, id)
+		data.Add(oauth2.UserNameKey, username)
+		data.Add(oauth2.PasswordKey, password)
 
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
 		encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
 		req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
-		req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
@@ -348,15 +332,15 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		id, secret, username, password, tenantHeader := "id", "secret", "username", "password", "x-zid"
 
 		data := url.Values{}
-		data.Add(grantTypeFieldName, passwordGrantType)
-		data.Add(clientIDKey, id)
-		data.Add(userNameKey, username)
-		data.Add(passwordKey, password)
+		data.Add(oauth2.GrantTypeFieldName, oauth2.PasswordGrantType)
+		data.Add(oauth2.ClientIDKey, id)
+		data.Add(oauth2.UserNameKey, username)
+		data.Add(oauth2.PasswordKey, password)
 
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
 		encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
 		req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
-		req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
@@ -395,15 +379,15 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		id, secret, tenantHeader := "id", "secret", "x-zid"
 
 		data := url.Values{}
-		data.Add(grantTypeFieldName, credentialsGrantType)
+		data.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
 
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
 		encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
 		req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
-		req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 
 		q := req.URL.Query()
-		q.Add(claimsKey, "tenantFetcherClaims")
+		q.Add(oauth2.ClaimsKey, "tenantFetcherClaims")
 		req.URL.RawQuery = q.Encode()
 
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -440,15 +424,15 @@ func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
 	scopes, id, tenantHeader := "scopes", "id", "x-zid"
 
 	form := url.Values{}
-	form.Add(grantTypeFieldName, credentialsGrantType)
-	form.Add(clientIDKey, id)
-	form.Add(scopesFieldName, scopes)
+	form.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
+	form.Add(oauth2.ClientIDKey, id)
+	form.Add(oauth2.ScopesFieldName, scopes)
 
 	body := strings.NewReader(form.Encode())
 	req, err := http.NewRequest(http.MethodPost, "http://target.com/oauth/token", body)
 	require.NoError(t, err)
 	req.Header.Set(tenantHeader, "tenant1")
-	req.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
+	req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 

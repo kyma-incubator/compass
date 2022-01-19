@@ -3,6 +3,7 @@ package subscription
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -28,10 +29,16 @@ type handler struct {
 	clientID            string
 	clientSecret        string
 	xsappnameClone      string
+	jobID               string
 	staticMappingClaims map[string]oauth.ClaimsGetterFunc
 }
 
-func NewHandler(tenantConfig Config, providerConfig ProviderConfig, externalSvcMockURL, oauthTokenPath, clientID, clientSecret string, staticMappingClaims map[string]oauth.ClaimsGetterFunc) *handler {
+type JobStatus struct {
+	ID    string `json:"id"`
+	State string `json:"state"`
+}
+
+func NewHandler(tenantConfig Config, providerConfig ProviderConfig, externalSvcMockURL, oauthTokenPath, clientID, clientSecret, jobID string, staticMappingClaims map[string]oauth.ClaimsGetterFunc) *handler {
 	return &handler{
 		tenantConfig:        tenantConfig,
 		providerConfig:      providerConfig,
@@ -39,6 +46,7 @@ func NewHandler(tenantConfig Config, providerConfig ProviderConfig, externalSvcM
 		oauthTokenPath:      oauthTokenPath,
 		clientID:            clientID,
 		clientSecret:        clientSecret,
+		jobID:               jobID,
 		staticMappingClaims: staticMappingClaims,
 	}
 }
@@ -49,6 +57,7 @@ func (h *handler) Subscription(writer http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while executing subscription request"), statusCode)
 		return
 	}
+	writer.Header().Set("Location", fmt.Sprintf("/api/v1/jobs/%s", h.jobID))
 	writer.WriteHeader(http.StatusAccepted)
 }
 
@@ -58,7 +67,72 @@ func (h *handler) Deprovisioning(writer http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while executing unsubscription request"), statusCode)
 		return
 	}
+	writer.Header().Set("Location", fmt.Sprintf("/api/v1/jobs/%s", h.jobID))
 	writer.WriteHeader(http.StatusAccepted)
+}
+
+func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writer.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	jobStatus := &JobStatus{
+		ID:    h.jobID,
+		State: "SUCCEEDED",
+	}
+
+	payload, err := json.Marshal(jobStatus)
+	if err != nil {
+		log.C(r.Context()).Errorf("while marshalling response: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
+		return
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+	if _, err = writer.Write(payload); err != nil {
+		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *handler) OnSubscription(writer http.ResponseWriter, r *http.Request) {
+	writer.Header().Set("Content-Type", "text/plain")
+	writer.WriteHeader(http.StatusOK)
+	if _, err := writer.Write([]byte(compassURL)); err != nil {
+		log.C(r.Context()).WithError(err).Errorf("Failed to write response body: %v", err)
+	}
+}
+
+func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
+		return
+	}
+
+	if string(body) == "" {
+		log.C(r.Context()).Error("The request body is empty")
+		httphelpers.WriteError(writer, errors.New("The request body is empty"), http.StatusInternalServerError)
+		return
+	}
+
+	h.xsappnameClone = string(body)
+	writer.Header().Set("Content-Type", "application/json")
+	if _, err := writer.Write(body); err != nil {
+		log.C(r.Context()).WithError(err).Errorf("Failed to write response body for dependencies configure request")
+		return
+	}
+}
+
+func (h *handler) Dependencies(writer http.ResponseWriter, r *http.Request) {
+	writer.Header().Set("Content-Type", "application/json")
+	if _, err := writer.Write([]byte(h.xsappnameClone)); err != nil {
+		log.C(r.Context()).WithError(err).Errorf("Failed to write response body for dependencies request")
+		return
+	}
 }
 
 func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string) (error, int) {
@@ -114,44 +188,6 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	}
 
 	return nil, http.StatusOK
-}
-
-func (h *handler) OnSubscription(writer http.ResponseWriter, r *http.Request) {
-	writer.Header().Set("Content-Type", "text/plain")
-	writer.WriteHeader(http.StatusOK)
-	if _, err := writer.Write([]byte(compassURL)); err != nil {
-		log.C(r.Context()).WithError(err).Errorf("Failed to write response body: %v", err)
-	}
-}
-
-func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
-		return
-	}
-
-	if string(body) == "" {
-		log.C(r.Context()).Error("The request body is empty")
-		httphelpers.WriteError(writer, errors.New("The request body is empty"), http.StatusInternalServerError)
-		return
-	}
-
-	h.xsappnameClone = string(body)
-	writer.Header().Set("Content-Type", "application/json")
-	if _, err := writer.Write(body); err != nil {
-		log.C(r.Context()).WithError(err).Errorf("Failed to write response body for dependencies configure request")
-		return
-	}
-}
-
-func (h *handler) Dependencies(writer http.ResponseWriter, r *http.Request) {
-	writer.Header().Set("Content-Type", "application/json")
-	if _, err := writer.Write([]byte(h.xsappnameClone)); err != nil {
-		log.C(r.Context()).WithError(err).Errorf("Failed to write response body for dependencies request")
-		return
-	}
 }
 
 func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token string) (*http.Request, error) {
