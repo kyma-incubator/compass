@@ -167,7 +167,7 @@ func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool, d
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var notDeletedDirs []string
-	dirsForDeletion := make ([]string, 0, len(dirs)) // temporarily while deletion of dirs is switched off
+	dirsForDeletion := make([]string, 0, len(dirs)) // temporarily while deletion of dirs is switched off
 
 	log.C(ctx).Infof("%d directories are to be deleted", len(dirs))
 	// successfullyDeleted := 0
