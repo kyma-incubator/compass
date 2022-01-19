@@ -11,11 +11,11 @@ spec:
   hosts:
   - 'compass-system-broker-ts.{{ .Values.global.ingress.domainName }}'
   http:
-    match:
-    - uri:
-        regex: /.*
-    route:
-    - destination:
-        host: {{ .Chart.Name }}-e2e-system-broker-ts.kyma-system.svc.cluster.local
-        port:
-          number: {{.Values.global.tests.token.server.port}}
+    - match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: {{ .Chart.Name }}-e2e-system-broker-ts.kyma-system.svc.cluster.local
+          port:
+            number: {{.Values.global.tests.token.server.port}}

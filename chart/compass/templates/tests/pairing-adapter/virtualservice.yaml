@@ -11,11 +11,11 @@ spec:
   hosts:
   - 'compass-pairing-adapter-ts.{{ .Values.global.ingress.domainName }}'
   http:
-    match:
-    - uri:
-        regex: /.*
-    route:
-    - destination:
-        host: {{ .Chart.Name }}-e2e-pairing-adapter-ts.kyma-system.svc.cluster.local
-        port:
-          number: {{.Values.global.tests.token.server.port}}
+    - match:
+      - uri:
+          regex: /.*
+      route:
+      - destination:
+          host: {{ .Chart.Name }}-e2e-pairing-adapter-ts.kyma-system.svc.cluster.local
+          port:
+            number: {{.Values.global.tests.token.server.port}}
