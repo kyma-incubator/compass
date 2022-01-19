@@ -11,9 +11,6 @@ spec:
   hosts:
   - 'compass-pairing-adapter-ts.{{ .Values.global.ingress.domainName }}'
   http:
-  - corsPolicy:
-      allowOrigins:
-      - regex: .*
     match:
     - uri:
         regex: /.*

@@ -27,8 +27,6 @@ spec:
             port:
               number: {{ $.Values.global.oathkeeper.port }}
       corsPolicy:
-        allowOrigins:
-          - regex: ".*"
         allowHeaders:
           - "authorization"
           - "content-type"

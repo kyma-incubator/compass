@@ -11,9 +11,6 @@ spec:
   hosts:
   - 'compass-ord-service-ts.{{ .Values.global.ingress.domainName }}'
   http:
-  - corsPolicy:
-      allowOrigins:
-      - regex: .*
     match:
     - uri:
         regex: /.*

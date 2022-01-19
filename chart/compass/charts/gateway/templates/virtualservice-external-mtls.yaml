@@ -48,8 +48,6 @@ spec:
             - {{ . }}
             {{- end }}
       corsPolicy:
-        allowOrigins:
-          - regex: ".*"
         allowHeaders:
           - "authorization"
           - "content-type"
