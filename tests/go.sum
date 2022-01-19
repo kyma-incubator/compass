@@ -318,8 +318,8 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2022010
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220104145031-c9120ed20881/go.mod h1:ANt35WRvHY+5yDPyhDSdjVuQTSa/7SPUTbcpCdKaKtU=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220104145031-c9120ed20881 h1:iQicQd3qgD6taf1GkgMhNnSHryF/tqNiyVCH+valQw0=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220104145031-c9120ed20881/go.mod h1:NHpaOE/9XuX0XIEi7ButaDyWejakMXRo/mh4JhjDoxY=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220112143941-3b8983645ef2 h1:C3E06c+/gJco7ED3qFpeqWqbkk01xp0jBWvjkEktR5U=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220112143941-3b8983645ef2/go.mod h1:uubNkUVkBXMFWnQ6K7PtAOWfn7MP1SzXPBUaIm3bCR8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220119141926-14d56650ab23 h1:w3IZQe6F5WdHECL0BJvEZIWPUDG3kjahvprk1uhqDTE=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220119141926-14d56650ab23/go.mod h1:uubNkUVkBXMFWnQ6K7PtAOWfn7MP1SzXPBUaIm3bCR8=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220104145031-c9120ed20881 h1:7lTr+0w5XB5Ioi1MbNHbJYrUbG7e0QW9dCEIImXvYi0=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220104145031-c9120ed20881/go.mod h1:peJsIiUyfTM78NVShpFPMvW1YF3zHrwO4HN5Kyy0xQc=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20220104145031-c9120ed20881 h1:sN8RdWEyOpCSo8lf7ksZwKGwmAAotRBzaZQgtDIraAg=

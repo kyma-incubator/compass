@@ -579,7 +579,6 @@ func validateApplication(t *testing.T, app *graphql.ApplicationExt, appType, sys
 
 func retrieveApps(t *testing.T, ctx context.Context, labelFilter graphql.LabelFilter) ([]*graphql.ApplicationExt, error) {
 	labelFilterGQL, err := testctx.Tc.Graphqlizer.LabelFilterToGQL(labelFilter)
-	fmt.Println("<<<<<<<<<<<<", labelFilterGQL)
 	require.NoError(t, err)
 
 	query := fixtures.FixApplicationsFilteredPageableRequest(labelFilterGQL, 100, "")
