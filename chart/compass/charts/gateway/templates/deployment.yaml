@@ -23,14 +23,6 @@ spec:
         reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit5MBLabel }}
         release: {{ .Release.Name }}
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      # HostAliases are used by Pod to resolve kyma.local domain
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            # Used for calls to nsadapter
-            - "compass-ns-adapter.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
