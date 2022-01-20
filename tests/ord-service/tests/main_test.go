@@ -74,6 +74,8 @@ type config struct {
 	ConsumerSubaccountIdsLabelKey    string
 	SelfRegisterDistinguishLabelKey  string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 	SelfRegisterLabelKey             string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
+	AccountTenantID                  string
+	SubaccountTenantID               string
 	SkipSSLValidation                bool   `envconfig:"default=false"`
 }
 
