@@ -50,7 +50,7 @@ func TestAuditlogIntegration(t *testing.T) {
 	t.Log("Get auditlog service Token")
 	auditlogToken := fixtures.GetAuditlogToken(t, &httpClient, testConfig.Auditlog)
 
-	t.Log("Get auditlog from external services mock")
+	t.Log("Get auditlog from auditlog API")
 	auditlogs := fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog, auditlogToken, appName, timeFrom, timeTo)
 
 	assert.Eventually(t, func() bool {

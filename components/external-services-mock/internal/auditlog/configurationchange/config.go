@@ -12,5 +12,4 @@ func InitConfigurationChangeHandler(router *mux.Router, handler *ConfigChangeHan
 	router.HandleFunc("", handler.List).Methods(http.MethodGet)
 	router.HandleFunc("/{id}", handler.Get).Methods(http.MethodGet)
 	router.HandleFunc("/{id}", handler.Delete).Methods(http.MethodDelete)
-	router.Path("/search").Queries("timeFrom", "*", "timeTo", "*").HandlerFunc(handler.SearchByTimestamp).Methods("GET")
 }
