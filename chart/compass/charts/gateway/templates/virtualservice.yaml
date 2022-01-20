@@ -74,9 +74,6 @@ spec:
             - {{ . }}
             {{- end }}
       corsPolicy:
-        allowOrigins:
-          - exact: "compass.{{ .Values.global.ingress.domainName }}"
-          - regex: "compass-dev.kyma.local.*"
         allowHeaders:
           - "authorization"
           - "content-type"
@@ -84,7 +81,6 @@ spec:
           - {{ .Values.global.director.clientIDHeaderKey }}
         allowMethods:
           - "GET"
-          - "OPTIONS"
     - match:
       - uri:
           regex: /.*
@@ -100,6 +96,9 @@ spec:
             - {{ . }}
             {{- end }}
       corsPolicy:
+        allowOrigins:
+          - exact: "https://compass-mf.{{ .Values.global.ingress.domainName }}"
+          - exact: "http://compass-dev.kyma.local:8888"
         allowHeaders:
           - "authorization"
           - "content-type"
@@ -110,3 +109,4 @@ spec:
           - "POST"
           - "PUT"
           - "DELETE"
+          - "OPTIONS"
