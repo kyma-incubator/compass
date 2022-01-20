@@ -27,6 +27,7 @@ data:
   global.kubernetes.serviceAccountTokenJWKS: "https://container.googleapis.com/v1beta1/projects/$CLOUDSDK_CORE_PROJECT/locations/$CLOUDSDK_COMPUTE_ZONE/clusters/$COMMON_NAME/jwks"
   global.oathkeeper.mutators.authenticationMappingServices.tenant-fetcher.authenticator.enabled: "true"
   global.oathkeeper.mutators.authenticationMappingServices.subscriber.authenticator.enabled: "true"
+  global.oathkeeper.mutators.authenticationMappingServices.nsadapter.authenticator.enabled: "true"
   system-broker.http.client.skipSSLValidation: "true"
   connector.http.client.skipSSLValidation: "true"
   operations-controller.http.client.skipSSLValidation: "true"
