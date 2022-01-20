@@ -6,6 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/config"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
@@ -16,12 +21,6 @@ import (
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
-)
-
-const (
-	auditlogTokenEndpoint        = "secured/oauth/token"
-	auditlogSearchEndpoint       = "audit-log/v2/configuration-changes/search"
-	auditlogDeleteEndpointFormat = "audit-log/v2/configuration-changes/%s"
 )
 
 type Token struct {
@@ -43,11 +42,15 @@ func FixEventDefinitionInBundleRequest(appID, bndlID, eventID string) *gcli.Requ
 			}`, appID, bndlID, eventID, testctx.Tc.GQLFieldsProvider.ForEventDefinition()))
 }
 
-func GetAuditlogMockToken(t require.TestingT, client *http.Client, baseURL string) Token {
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s%s", baseURL, auditlogTokenEndpoint), nil)
+func GetAuditlogToken(t require.TestingT, client *http.Client, auditlogConfig config.AuditlogConfig) Token {
+	form := url.Values{}
+	form.Add("grant_type", "client_credentials")
+	reqBody := strings.NewReader(form.Encode())
+	req, err := http.NewRequest(http.MethodPost, auditlogConfig.TokenURL+"/oauth/token", reqBody)
 	require.NoError(t, err)
 
-	req.Header.Add("Authorization", base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", "client_id", "client_secret"))))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Authorization", "Basic "+base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", auditlogConfig.ClientID, auditlogConfig.ClientSecret))))
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 
@@ -61,16 +64,27 @@ func GetAuditlogMockToken(t require.TestingT, client *http.Client, baseURL strin
 	return auditlogToken
 }
 
-func SearchForAuditlogByString(t require.TestingT, client *http.Client, baseURL string, auditlogToken Token, search string) []model.ConfigurationChange {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", baseURL, auditlogSearchEndpoint), nil)
+func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Client, auditlogConfig config.AuditlogConfig, auditlogToken Token, search string, timeFrom, timeTo time.Time) []model.ConfigurationChange {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", auditlogConfig.ManagementURL, auditlogConfig.ManagementAPIPath), nil)
 	require.NoError(t, err)
 
-	req.URL.RawQuery = fmt.Sprintf("query=%s", search)
+	timeFromStr := timeFrom.Format(time.RFC3339Nano)
+	timeToStr := timeTo.Format(time.RFC3339Nano)
+
+	timeFromStr = timeFromStr[:len(timeFromStr)-1] // remove the 'Z' char from the time string
+	timeToStr = timeToStr[:len(timeToStr)-1]       // remove the 'Z' char from the time string
+
+	req.URL.RawQuery = fmt.Sprintf("time_from=%s&time_to=%s", timeFromStr, timeToStr)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auditlogToken.AccessToken))
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 
-	var auditlogs []model.ConfigurationChange
+	type configurationChange struct {
+		model.ConfigurationChange
+		Message *string `json:"message"`
+	}
+
+	var auditlogs []configurationChange
 	body, err := ioutil.ReadAll(resp.Body)
 
 	require.NoError(t, err)
@@ -78,18 +92,35 @@ func SearchForAuditlogByString(t require.TestingT, client *http.Client, baseURL 
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	return auditlogs
-}
+	var matchingAuditlogs []model.ConfigurationChange
+	for i := range auditlogs {
 
-func DeleteAuditlogByID(t require.TestingT, client *http.Client, baseURL string, auditlogToken Token, id string) {
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s%s", baseURL, fmt.Sprintf(auditlogDeleteEndpointFormat, id)), nil)
-	require.NoError(t, err)
+		// Our productive & mocked auditlog logic is all based on the the model.ConfigurationChange struct, which doesn't contain
+		// the new Message attribute which is part of the payload when using the real Auditlog Management Read API.
+		// This is why when running the e2e tests on real env we need to adapt and populate the existing model.ConfigurationChange struct
+		// properties Attributes & Object with the ones contained in the new Message attribute.
+		if auditlogs[i].Message != nil {
+			message := struct {
+				Attributes []model.Attribute `json:"attributes"`
+				Object     model.Object      `json:"object"`
+			}{}
 
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auditlogToken.AccessToken))
-	resp, err := client.Do(req)
-	require.NoError(t, err)
+			err := json.Unmarshal([]byte(*auditlogs[i].Message), &message)
+			require.NoError(t, err)
 
-	require.Equal(t, http.StatusOK, resp.StatusCode)
+			auditlogs[i].Attributes = message.Attributes
+			auditlogs[i].Object = message.Object
+
+			require.NoError(t, err)
+		}
+		for _, attribute := range auditlogs[i].Attributes {
+			if strings.Contains(attribute.New, search) {
+				matchingAuditlogs = append(matchingAuditlogs, auditlogs[i].ConfigurationChange)
+			}
+		}
+	}
+
+	return matchingAuditlogs
 }
 
 func FixGetViewerRequest() *gcli.Request {

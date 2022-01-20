@@ -114,13 +114,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2166"
+      version: "PR-2174"
     console:
       dir:
       version: "PR-52"
     e2e_tests:
       dir:
-      version: "PR-2182"
+      version: "PR-2174"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -592,7 +592,6 @@ global:
 
   externalServicesMock:
     enabled: false
-    auditlog: false
     certSecuredPort: 8081
     unsecuredPort: 8082
     basicSecuredPort: 8083
@@ -602,6 +601,15 @@ global:
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials
+    auditlog:
+      applyMockConfiguration: false
+      managementApiPath: /audit-log/v2/configuration-changes/search
+      secret:
+        name: "auditlog-instance-management"
+        urlKey: url
+        tokenUrlKey: token-url
+        clientIdKey: client-id
+        clientSecretKey: client-secret
 
   tests:
     http:
@@ -613,6 +621,8 @@ global:
     ordService:
       skipPattern: ""
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
+    externalServicesMock:
+      skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     directorFQDN: http://compass-director.compass-system.svc.cluster.local

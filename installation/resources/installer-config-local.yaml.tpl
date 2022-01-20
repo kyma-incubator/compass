@@ -39,7 +39,7 @@ data:
   global.minikubeIP: ""
   global.ingress.domainName: "kyma.local"
   global.externalServicesMock.enabled: "true"
-  global.externalServicesMock.auditlog: "true"
+  global.externalServicesMock.auditlog.applyMockConfiguration: "true"
   global.systemFetcher.enabled: "true"
   global.systemFetcher.systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
   global.systemFetcher.systemsAPIFilterCriteria: "no"
