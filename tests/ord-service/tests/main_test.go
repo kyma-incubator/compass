@@ -76,7 +76,7 @@ type config struct {
 	SelfRegisterLabelKey             string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
 	AccountTenantID                  string
 	SubaccountTenantID               string
-	SkipSSLValidation                bool   `envconfig:"default=false"`
+	SkipSSLValidation                bool `envconfig:"default=false"`
 }
 
 var testConfig config
