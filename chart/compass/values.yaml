@@ -120,7 +120,7 @@ global:
       version: "PR-52"
     e2e_tests:
       dir:
-      version: "PR-2179"
+      version: "PR-2182"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -430,7 +430,8 @@ global:
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "" # It's empty because in local setup we use connector CA which didn't have Locality property
-    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=f8075207-1478-4a80-bd26-24a4785a2bfd/L=%s/CN=%s"
+    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
+    ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
     commonName: "compass"
     locality: "local"
     certSvcApiPath: "/cert"
@@ -611,6 +612,7 @@ global:
           connectivityAdapter: true
     ordService:
       skipPattern: ""
+      accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     directorFQDN: http://compass-director.compass-system.svc.cluster.local
