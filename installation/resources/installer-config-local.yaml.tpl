@@ -67,7 +67,7 @@ data:
   global.tests.http.client.skipSSLValidation.director: "true"
   global.tests.http.client.skipSSLValidation.ordService: "true"
   global.externalCertConfiguration.secrets.externalCertSvcSecret.manage: "true"
-  global.tests.externalServicesMock.oauthSecret.manage: "true"
+  global.externalServicesMock.oauthSecret.manage: "true"
   global.tests.basicCredentials.manage: "true"
 
   global.tenantFetchers.account-fetcher.enabled: "true"

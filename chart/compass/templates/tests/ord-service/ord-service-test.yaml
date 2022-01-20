@@ -70,22 +70,22 @@ spec:
             - name: TOKEN_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.tests.externalServicesMock.oauthSecret.name }}
-                  key: {{ .Values.global.tests.externalServicesMock.oauthSecret.oauthUrlKey }}
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.oauthUrlKey }}
             - name: TOKEN_PATH
-              value: {{ .Values.global.tests.externalServicesMock.oauthSecret.oauthTokenPath }}
+              value: {{ .Values.global.externalServicesMock.oauthSecret.oauthTokenPath }}
             - name: SUBSCRIPTION_URL
               value: {{ .Values.global.tests.subscriptionURL }}
             - name: CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.tests.externalServicesMock.oauthSecret.name }}
-                  key: {{ .Values.global.tests.externalServicesMock.oauthSecret.clientIdKey }}
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
             - name: CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.tests.externalServicesMock.oauthSecret.name }}
-                  key: {{ .Values.global.tests.externalServicesMock.oauthSecret.clientSecretKey }}
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
             - name: SUBSCRIPTION_PROVIDER_LABEL_KEY
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: SUBSCRIPTION_PROVIDER_ID
@@ -182,16 +182,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.tests.basicCredentials.secretName }}
                   key: password
-            - name: TEST_PROVIDER_ACCOUNT_ID # TODO:: May not be used anywhere?
-              value: {{ .Values.global.tests.ordService.providerAccountID }} # TODO:: May not be used anywhere?
+            - name: ACCOUNT_TENANT_ID
+              value: {{ .Values.global.tests.ordService.accountTenantID }}
+            - name: SUBACCOUNT_TENANT_ID
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
             - name: TEST_CONSUMER_ACCOUNT_ID
               value: {{ .Values.global.tests.ordService.consumerAccountID }}
             - name: TEST_PROVIDER_SUBACCOUNT_ID
               value: {{ .Values.global.tests.ordService.providerSubaccountID }}
             - name: TEST_CONSUMER_SUBACCOUNT_ID
               value: {{ .Values.global.tests.ordService.consumerSubaccountID }}
-            - name: TEST_REUSE_SVC_SUBACCOUNT_ID # TODO:: May not be used anywhere?
-              value: {{ .Values.global.tests.ordService.reuseSvcSubaccountID }} # TODO:: May not be used anywhere?
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine

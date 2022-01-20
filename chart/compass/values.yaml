@@ -601,6 +601,13 @@ global:
     ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
+    oauthSecret:
+      manage: false
+      name: compass-external-services-mock-oauth-credentials
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      oauthUrlKey: url
+      oauthTokenPath: "/secured/oauth/token"
 
   tests:
     http:
@@ -611,7 +618,7 @@ global:
           connectivityAdapter: true
     ordService:
       skipPattern: ""
-      providerAccountID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
+      accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
       providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
       consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
@@ -626,14 +633,6 @@ global:
     ordServiceFQDN: http://compass-ord-service.compass-system.svc.cluster.local
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
-    externalServicesMock:
-      oauthSecret:
-        manage: false
-        name: compass-external-services-mock-oauth-credentials
-        clientIdKey: client-id
-        clientSecretKey: client-secret
-        oauthUrlKey: url
-        oauthTokenPath: "/secured/oauth/token"
     basicCredentials:
       manage: false
       secretName: "test-basic-credentials-secret"

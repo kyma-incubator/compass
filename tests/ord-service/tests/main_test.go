@@ -82,11 +82,11 @@ type config struct {
 	ExternalCertCronjobContainerName      string
 	BasicUsername                         string
 	BasicPassword                         string
-	TestProviderAccountID                 string
+	AccountTenantID                       string
+	SubaccountTenantID                    string
 	TestConsumerAccountID                 string
 	TestProviderSubaccountID              string
 	TestConsumerSubaccountID              string
-	TestReuseSvcSubaccountID              string // TODO:: Check if we need it
 }
 
 var testConfig config
