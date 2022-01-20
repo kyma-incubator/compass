@@ -137,7 +137,7 @@ spec:
                 - name: CERT_SVC_API_PATH
                   value: {{ .Values.global.externalCertConfiguration.certSvcApiPath }}
                 - name: CERT_SUBJECT_PATTERN
-                  value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+                  value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.ouCertSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
                 - name: EXPECTED_ISSUER_LOCALITY
                   value: {{ .Values.global.externalCertConfiguration.issuerLocality }}
                 - name: CERT_VALIDITY
