@@ -121,7 +121,6 @@ func TestConsumerProviderFlow(t *testing.T) {
 	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
 		ctx := context.Background()
 		secondaryTenant := testConfig.TestConsumerAccountID
-		//reuseServiceSubaccountID := testConfig.TestReuseSvcSubaccountID
 		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
 		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
 		jobName := "external-certificate-rotation-test-job"
@@ -253,7 +252,6 @@ func TestNewChanges(t *testing.T) {
 	t.Run("TestNewChanges", func(t *testing.T) {
 		ctx := context.Background()
 		secondaryTenant := testConfig.TestConsumerAccountID
-		//reuseServiceSubaccountID := testConfig.TestReuseSvcSubaccountID
 		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
 		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
 		jobName := "external-certificate-rotation-test-job"
