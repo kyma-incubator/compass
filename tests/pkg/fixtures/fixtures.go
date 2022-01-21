@@ -23,6 +23,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const timeFormat = "%d-%02d-%02dT%02d:%02d:%02d"
+
 type Token struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
@@ -68,11 +70,13 @@ func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Clie
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", auditlogConfig.ManagementURL, auditlogConfig.ManagementAPIPath), nil)
 	require.NoError(t, err)
 
-	timeFromStr := timeFrom.Format(time.RFC3339Nano)
-	timeToStr := timeTo.Format(time.RFC3339Nano)
+	timeFromStr := fmt.Sprintf(timeFormat,
+		timeFrom.Year(), timeFrom.Month(), timeFrom.Day(),
+		timeFrom.Hour(), timeFrom.Minute(), timeFrom.Second())
 
-	timeFromStr = timeFromStr[:len(timeFromStr)-1] // remove the 'Z' char from the time string
-	timeToStr = timeToStr[:len(timeToStr)-1]       // remove the 'Z' char from the time string
+	timeToStr := fmt.Sprintf(timeFormat,
+		timeTo.Year(), timeTo.Month(), timeTo.Day(),
+		timeTo.Hour(), timeTo.Minute(), timeTo.Second())
 
 	req.URL.RawQuery = fmt.Sprintf("time_from=%s&time_to=%s", timeFromStr, timeToStr)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auditlogToken.AccessToken))
