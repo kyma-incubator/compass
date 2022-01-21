@@ -16,6 +16,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const timestampLayout = "2006-01-02T15:04:05"
+
 //go:generate mockery --name=ConfigChangeService --output=automock --outpkg=automock --case=underscore
 type ConfigChangeService interface {
 	Save(change model.ConfigurationChange) (string, error)
@@ -124,21 +126,13 @@ func (h *ConfigChangeHandler) SearchByTimestamp(writer http.ResponseWriter, req 
 		return
 	}
 
-	if !strings.HasSuffix(timeFromString, "Z") {
-		timeFromString += "Z"
-	}
-
-	if !strings.HasSuffix(timeToString, "Z") {
-		timeToString += "Z"
-	}
-
-	from, err := time.Parse(time.RFC3339Nano, timeFromString)
+	from, err := time.Parse(timestampLayout, timeFromString)
 	if err != nil {
 		httphelpers.WriteError(writer, errors.New("parameter [time_from] is not in proper format"), http.StatusBadRequest)
 		return
 	}
 
-	to, err := time.Parse(time.RFC3339Nano, timeToString)
+	to, err := time.Parse(timestampLayout, timeToString)
 	if err != nil {
 		httphelpers.WriteError(writer, errors.New("parameter [time_to] is not in proper format"), http.StatusBadRequest)
 		return

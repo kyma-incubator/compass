@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -28,162 +30,175 @@ import (
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/webhook"
 )
 
-func TestAsyncAPIDeleteApplicationWithAppWebhook(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
-	appInput := graphql.ApplicationRegisterInput{
-		Name:         appName,
-		ProviderName: ptr.String("compass"),
-		Webhooks:     []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
-	}
+func TestAsyncAPIDeleteApplicationWithAppWebhook(stdT *testing.T) {
+	t := testingx.NewT(stdT)
+	t.Run("TestAsyncAPIDeleteApplicationWithAppWebhook", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
+		appInput := graphql.ApplicationRegisterInput{
+			Name:         appName,
+			ProviderName: ptr.String("compass"),
+			Webhooks:     []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
+		}
 
-	t.Log(fmt.Sprintf("Registering application: %s", appName))
-	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
-	require.NoError(t, err)
+		t.Log(fmt.Sprintf("Registering application: %s", appName))
+		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
+		require.NoError(t, err)
 
-	registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
-	require.NoError(t, err)
+		registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
+		app := graphql.ApplicationExt{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		require.NoError(t, err)
 
-	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
-	require.Len(t, app.Webhooks, 1)
-	nearCreationTime := time.Now().Add(-1 * time.Second)
+		require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
+		require.Len(t, app.Webhooks, 1)
+		nearCreationTime := time.Now().Add(-1 * time.Second)
 
-	triggerAsyncDeletion(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, dexGraphQLClient)
+		triggerAsyncDeletion(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, dexGraphQLClient)
+	})
 }
 
-func TestAsyncAPIDeleteApplicationWithMTLSAppWebhook(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
-	mtlsWebhook := testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockMTLSSecuredURL, graphql.WebhookTypeUnregisterApplication)
-	mtlsWebhook.Auth = &graphql.AuthInput{
-		AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
-	}
-	appInput := graphql.ApplicationRegisterInput{
-		Name:         appName,
-		ProviderName: ptr.String("compass"),
-		Webhooks:     []*graphql.WebhookInput{mtlsWebhook},
-	}
+func TestAsyncAPIDeleteApplicationWithMTLSAppWebhook(stdT *testing.T) {
+	t := testingx.NewT(stdT)
+	t.Run("TestAsyncAPIDeleteApplicationWithMTLSAppWebhook", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
+		mtlsWebhook := testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockMTLSSecuredURL, graphql.WebhookTypeUnregisterApplication)
+		mtlsWebhook.Auth = &graphql.AuthInput{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		}
+		appInput := graphql.ApplicationRegisterInput{
+			Name:         appName,
+			ProviderName: ptr.String("compass"),
+			Webhooks:     []*graphql.WebhookInput{mtlsWebhook},
+		}
 
-	t.Log(fmt.Sprintf("Registering application: %s", appName))
-	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
-	require.NoError(t, err)
+		t.Log(fmt.Sprintf("Registering application: %s", appName))
+		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
+		require.NoError(t, err)
 
-	registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
-	require.NoError(t, err)
+		registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
+		app := graphql.ApplicationExt{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		require.NoError(t, err)
 
-	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
-	require.Len(t, app.Webhooks, 1)
-	nearCreationTime := time.Now().Add(-1 * time.Second)
+		require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
+		require.Len(t, app.Webhooks, 1)
+		nearCreationTime := time.Now().Add(-1 * time.Second)
 
-	triggerAsyncDeletion(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, dexGraphQLClient)
+		triggerAsyncDeletion(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, dexGraphQLClient)
+	})
 }
 
-func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
-	appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
-	appTemplateInput := graphql.ApplicationTemplateInput{
-		Name: appTemplateName,
-		ApplicationInput: &graphql.ApplicationRegisterInput{
-			Name: appName,
-		},
-		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
-		Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
-	}
+func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
+	t := testingx.NewT(stdT)
+	t.Run("TestAsyncAPIDeleteApplicationWithAppTemplateWebhook", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
+		appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
+		appTemplateInput := graphql.ApplicationTemplateInput{
+			Name: appTemplateName,
+			ApplicationInput: &graphql.ApplicationRegisterInput{
+				Name: appName,
+			},
+			AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
+			Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
+		}
 
-	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
-	appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
-	require.NoError(t, err)
+		t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
+		appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
+		require.NoError(t, err)
 
-	registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
-	appTemplate := graphql.ApplicationTemplate{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
-	require.NoError(t, err)
+		registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
+		appTemplate := graphql.ApplicationTemplate{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		require.NoError(t, err)
 
-	require.Len(t, appTemplate.Webhooks, 1)
+		require.Len(t, appTemplate.Webhooks, 1)
 
-	t.Log(fmt.Sprintf("Registering application from template: %s", appTemplateName))
-	appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
-		TemplateName: appTemplateName,
-	}
-	appFromTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromAppTemplateInput)
-	require.NoError(t, err)
+		t.Log(fmt.Sprintf("Registering application from template: %s", appTemplateName))
+		appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
+			TemplateName: appTemplateName,
+		}
+		appFromTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromAppTemplateInput)
+		require.NoError(t, err)
 
-	registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
-	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
-	require.NoError(t, err)
+		registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
+		app := graphql.ApplicationExt{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		require.NoError(t, err)
 
-	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
-	nearCreationTime := time.Now().Add(-1 * time.Second)
+		require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
+		nearCreationTime := time.Now().Add(-1 * time.Second)
 
-	triggerAsyncDeletion(t, ctx, app, nearCreationTime, appTemplate.Webhooks[0].ID, dexGraphQLClient)
+		triggerAsyncDeletion(t, ctx, app, nearCreationTime, appTemplate.Webhooks[0].ID, dexGraphQLClient)
+	})
 }
 
-func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
-	appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
-	appTemplateInput := graphql.ApplicationTemplateInput{
-		Name: appTemplateName,
-		ApplicationInput: &graphql.ApplicationRegisterInput{
-			Name: appName,
-		},
-		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
-		Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
-	}
+func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook(stdT *testing.T) {
+	t := testingx.NewT(stdT)
+	t.Run("TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook", func(t *testing.T) {
 
-	t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
-	appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
-	require.NoError(t, err)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
+		appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
+		appTemplateInput := graphql.ApplicationTemplateInput{
+			Name: appTemplateName,
+			ApplicationInput: &graphql.ApplicationRegisterInput{
+				Name: appName,
+			},
+			AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
+			Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
+		}
 
-	registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
-	appTemplate := graphql.ApplicationTemplate{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
-	require.NoError(t, err)
+		t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
+		appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
+		require.NoError(t, err)
 
-	require.Len(t, appTemplate.Webhooks, 1)
+		registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
+		appTemplate := graphql.ApplicationTemplate{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		require.NoError(t, err)
 
-	t.Log(fmt.Sprintf("Registering application from template: %s", appName))
-	appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
-		TemplateName: appTemplateName,
-	}
-	appFromTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromAppTemplateInput)
-	require.NoError(t, err)
+		require.Len(t, appTemplate.Webhooks, 1)
 
-	registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
-	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
-	require.NoError(t, err)
+		t.Log(fmt.Sprintf("Registering application from template: %s", appName))
+		appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
+			TemplateName: appTemplateName,
+		}
+		appFromTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromAppTemplateInput)
+		require.NoError(t, err)
 
-	require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
-	require.Len(t, app.Webhooks, 1)
-	nearCreationTime := time.Now().Add(-1 * time.Second)
+		registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
+		app := graphql.ApplicationExt{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		require.NoError(t, err)
 
-	t.Log(fmt.Sprintf("Registering webhook for application: %s", appName))
-	appWebhookInputGQL, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication))
-	require.NoError(t, err)
+		require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
+		require.Len(t, app.Webhooks, 1)
+		nearCreationTime := time.Now().Add(-1 * time.Second)
 
-	registerAppWebhookRequest := fixtures.FixAddWebhookRequest(app.ID, appWebhookInputGQL)
-	webhookResult := graphql.Webhook{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppWebhookRequest, &webhookResult)
-	require.NoError(t, err)
+		t.Log(fmt.Sprintf("Registering webhook for application: %s", appName))
+		appWebhookInputGQL, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication))
+		require.NoError(t, err)
 
-	triggerAsyncDeletion(t, ctx, app, nearCreationTime, webhookResult.ID, dexGraphQLClient)
+		registerAppWebhookRequest := fixtures.FixAddWebhookRequest(app.ID, appWebhookInputGQL)
+		webhookResult := graphql.Webhook{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppWebhookRequest, &webhookResult)
+		require.NoError(t, err)
+
+		triggerAsyncDeletion(t, ctx, app, nearCreationTime, webhookResult.ID, dexGraphQLClient)
+	})
 }
 
 func triggerAsyncDeletion(t *testing.T, ctx context.Context, app graphql.ApplicationExt, appNearCreationTime time.Time, expectedWebhookID string, gqlClient *gcli.Client) {
