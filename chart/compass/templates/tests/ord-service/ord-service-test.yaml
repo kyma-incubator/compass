@@ -157,6 +157,10 @@ spec:
               value: {{ .Values.global.director.selfRegister.distinguishLabel }}
             - name: APP_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
+            - name: ACCOUNT_TENANT_ID
+              value: {{ .Values.global.tests.ordService.accountTenantID }}
+            - name: SUBACCOUNT_TENANT_ID
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
