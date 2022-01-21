@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -40,7 +41,6 @@ func TestMain(m *testing.M) {
 	}
 
 	dexToken := server.Token()
-
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 
 	exitVal := m.Run()
