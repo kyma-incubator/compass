@@ -97,8 +97,7 @@ spec:
             {{- end }}
       corsPolicy:
         allowOrigins:
-          - exact: "https://compass-mf.{{ .Values.global.ingress.domainName }}"
-          - exact: "http://compass-dev.kyma.local:8888"
+          - regex: "(http|https)://(compass-dev|compass|compass-mf).{{ .Values.global.ingress.domainName }}.(:[0-9]{4})?"
         allowHeaders:
           - "authorization"
           - "content-type"
