@@ -17,7 +17,6 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        test: 1
         app: {{ .Chart.Name }}-external-services-mock-tests-app
     spec:
       {{ if .Values.global.isLocalEnv }}
