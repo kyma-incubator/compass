@@ -61,9 +61,6 @@ func GetAuditlogToken(t require.TestingT, client *http.Client, auditlogConfig co
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	fmt.Println("Audit log token response:")
-	fmt.Println(string(body))
-
 	err = json.Unmarshal(body, &auditlogToken)
 	require.NoError(t, err)
 
@@ -84,6 +81,8 @@ func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Clie
 
 	req.URL.RawQuery = fmt.Sprintf("time_from=%s&time_to=%s", timeFromStr, timeToStr)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auditlogToken.AccessToken))
+	fmt.Println("Requesting: ", fmt.Sprintf("%s%s", auditlogConfig.ManagementURL, auditlogConfig.ManagementAPIPath))
+	fmt.Println(req)
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, resp.StatusCode, http.StatusOK, fmt.Sprintf("unexpected status code: expected: %d, actual: %d", http.StatusOK, resp.StatusCode))
@@ -95,9 +94,6 @@ func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Clie
 
 	var auditlogs []configurationChange
 	body, err := ioutil.ReadAll(resp.Body)
-
-	fmt.Println("Audit log fetch response:")
-	fmt.Println(string(body))
 
 	require.NoError(t, err)
 	err = json.Unmarshal(body, &auditlogs)
