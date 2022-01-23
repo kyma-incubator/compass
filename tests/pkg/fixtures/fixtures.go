@@ -91,6 +91,11 @@ func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Clie
 	var auditlogs []configurationChange
 	body, err := ioutil.ReadAll(resp.Body)
 
+	fmt.Println()
+	fmt.Println("Audit log fetch response:")
+	fmt.Println(string(body))
+	fmt.Println()
+
 	require.NoError(t, err)
 	err = json.Unmarshal(body, &auditlogs)
 	require.NoError(t, err)
