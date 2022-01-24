@@ -85,13 +85,7 @@ func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Clie
 	fmt.Println(req)
 	resp, err := client.Do(req)
 	require.NoError(t, err)
-	fmt.Println("===")
 	fmt.Println(auditlogToken.AccessToken)
-	fmt.Println("===")
-	body, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-	fmt.Println(string(body))
-	fmt.Println("===")
 	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("unexpected status code: expected: %d, actual: %d", http.StatusOK, resp.StatusCode))
 
 	type configurationChange struct {
@@ -100,6 +94,9 @@ func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Clie
 	}
 
 	var auditlogs []configurationChange
+	body, err := ioutil.ReadAll(resp.Body)
+
+	require.NoError(t, err)
 	err = json.Unmarshal(body, &auditlogs)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
