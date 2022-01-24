@@ -2,12 +2,13 @@ package tests
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/pkg/errors"
-	"os"
-	"testing"
 
 	pkgConfig "github.com/kyma-incubator/compass/tests/pkg/config"
 
