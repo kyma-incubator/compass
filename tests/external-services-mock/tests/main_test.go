@@ -46,8 +46,8 @@ func TestMain(m *testing.M) {
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 
 	claims := claims{}
-	_, err = jwt.ParseWithClaims(dexToken, &claims, nil)
-	if err != nil {
+	jwt.ParseWithClaims(dexToken, &claims, nil)
+	if err != nil && err != jwt.NewValidationError("no Keyfunc was provided.", jwt.ValidationErrorUnverifiable) { // Validation is not necessary
 		panic(err)
 	}
 
