@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
@@ -50,6 +51,7 @@ func TestMain(m *testing.M) {
 	}
 
 	staticUser = claims.Name
+	fmt.Println("Static user from token:", staticUser)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
