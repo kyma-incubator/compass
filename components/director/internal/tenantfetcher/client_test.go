@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
@@ -47,7 +49,9 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointSubaccountUpdated: endpoint + "/sub-updated",
 		EndpointSubaccountMoved:   endpoint + "/sub-moved",
 	}
-	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
+	client, err := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	require.NoError(t, err)
+
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
@@ -121,7 +125,9 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantDeleted: "http://127.0.0.1:8111/badpath",
 		EndpointTenantUpdated: endpoint + "/empty",
 	}
-	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
+	client, err = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	require.NoError(t, err)
+
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
@@ -155,7 +161,9 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantDeleted: endpoint + "/deleted",
 		EndpointTenantUpdated: endpoint + "/badRequest",
 	}
-	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
+	client, err = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	require.NoError(t, err)
+
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
@@ -171,7 +179,9 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	apiCfg = tenantfetcher.APIConfig{
 		EndpointSubaccountMoved: "",
 	}
-	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
+	client, err = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	require.NoError(t, err)
+
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 

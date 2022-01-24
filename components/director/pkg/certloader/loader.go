@@ -2,10 +2,7 @@ package certloader
 
 import (
 	"context"
-	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
-	"encoding/pem"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -154,31 +151,5 @@ func parseCertificate(ctx context.Context, secretData map[string][]byte, config 
 		return nil, errors.New("There is no certificate data provided")
 	}
 
-	certs, err := cert.DecodeCertificates(certChainBytes)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error while decoding certificate pem block")
-	}
-
-	privateKeyPem, _ := pem.Decode(privateKeyBytes)
-	if privateKeyPem == nil {
-		return nil, errors.New("Error while decoding private key pem block")
-	}
-
-	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyPem.Bytes)
-	if err != nil {
-		pkcs8PrivateKey, err := x509.ParsePKCS8PrivateKey(privateKeyPem.Bytes)
-		if err != nil {
-			return nil, err
-		}
-		var ok bool
-		privateKey, ok = pkcs8PrivateKey.(*rsa.PrivateKey)
-		if !ok {
-			return nil, err
-		}
-	}
-
-	log.C(ctx).Info("Successfully parse certificate")
-	tlsCert := cert.NewTLSCertificate(privateKey, certs...)
-
-	return &tlsCert, nil
+	return cert.ParseCertificateBytes(certChainBytes, privateKeyBytes)
 }

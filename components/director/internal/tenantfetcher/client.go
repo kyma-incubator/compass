@@ -2,6 +2,7 @@ package tenantfetcher
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -10,6 +11,9 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+	"golang.org/x/oauth2"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -24,9 +28,10 @@ const (
 // OAuth2Config missing godoc
 type OAuth2Config struct {
 	ClientID           string `envconfig:"APP_CLIENT_ID"`
-	ClientSecret       string `envconfig:"APP_CLIENT_SECRET"`
+	ClientSecret       string `envconfig:"optional,APP_CLIENT_SECRET"`
 	OAuthTokenEndpoint string `envconfig:"APP_OAUTH_TOKEN_ENDPOINT"`
 	TokenPath          string `envconfig:"optional,APP_OAUTH_TOKEN_PATH"`
+	X509Config         oauth.X509Config
 }
 
 // APIConfig missing godoc
@@ -65,20 +70,59 @@ type Client struct {
 }
 
 // NewClient missing godoc
-func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig, timeout time.Duration) *Client {
+func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, apiConfig APIConfig, timeout time.Duration) (*Client, error) {
+	ctx := context.Background()
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
 		ClientSecret: oAuth2Config.ClientSecret,
 		TokenURL:     oAuth2Config.OAuthTokenEndpoint + oAuth2Config.TokenPath,
 	}
 
-	httpClient := cfg.Client(context.Background())
+	switch authMode {
+	case oauth.Standard:
+		{
+			// do nothing
+		}
+
+	case oauth.Mtls:
+		{
+			cert, err := oAuth2Config.X509Config.ParseCertificate()
+			if nil != err {
+				return nil, err
+			}
+
+			// When the auth style is InParams, the TokenSource
+			// will not add the clientSecret if it's empty
+			cfg.AuthStyle = oauth2.AuthStyleInParams
+			cfg.ClientSecret = ""
+
+			transport := &http.Transport{
+				TLSClientConfig: &tls.Config{
+					Certificates: []tls.Certificate{*cert},
+				},
+			}
+
+			mtlClient := &http.Client{
+				Transport: transport,
+				Timeout:   timeout,
+			}
+
+			ctx = context.WithValue(ctx, oauth2.HTTPClient, mtlClient)
+		}
+
+	default:
+		{
+			return nil, errors.New("unsupported auth mode:" + string(authMode))
+		}
+	}
+
+	httpClient := cfg.Client(ctx)
 	httpClient.Timeout = timeout
 
 	return &Client{
 		httpClient: httpClient,
 		apiConfig:  apiConfig,
-	}
+	}, nil
 }
 
 // SetMetricsPusher missing godoc
