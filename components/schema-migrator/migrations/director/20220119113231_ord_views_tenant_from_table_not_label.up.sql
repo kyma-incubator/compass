@@ -96,16 +96,16 @@ SELECT DISTINCT t_apps.tenant_id,
                 apis.documentation_labels
 FROM api_definitions apis
          JOIN (SELECT a1.id,
-                      a1.tenant_id AS tenant_id,
-                      a1.tenant_id AS provider_tenant_id
+                      a1.tenant_id::text AS tenant_id,
+                      a1.tenant_id::text AS provider_tenant_id
                FROM tenant_applications a1
                UNION ALL
                SELECT apps_subaccounts_func.id,
-                      apps_subaccounts_func.tenant_id,
-                      apps_subaccounts_func.provider_tenant_id
+                      apps_subaccounts_func.tenant_id::text,
+                      apps_subaccounts_func.provider_tenant_id::text
                FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id, provider_tenant_id)
                UNION ALL
-               SELECT ta.id AS app_id, ta.tenant_id AS consumer_tenant, tenant_runtimes.tenant_id AS provider_tenant
+               SELECT ta.id AS app_id, ta.tenant_id::text AS consumer_tenant, tenant_runtimes.tenant_id::text AS provider_tenant
                FROM (SELECT labels.runtime_id, v ->> 0 AS consumer_tenant
                      FROM labels
                               JOIN jsonb_array_elements(labels.value) AS v ON TRUE
@@ -147,16 +147,16 @@ SELECT DISTINCT t_apps.tenant_id,
 FROM applications apps
          LEFT JOIN app_templates tmpl ON apps.app_template_id = tmpl.id
          JOIN (SELECT a1.id,
-                      a1.tenant_id AS tenant_id,
-                      a1.tenant_id AS provider_tenant_id
+                      a1.tenant_id::text AS tenant_id,
+                      a1.tenant_id::text AS provider_tenant_id
                FROM tenant_applications a1
                UNION ALL
                SELECT apps_subaccounts_func.id,
-                      apps_subaccounts_func.tenant_id,
-                      apps_subaccounts_func.provider_tenant_id
+                      apps_subaccounts_func.tenant_id::text,
+                      apps_subaccounts_func.provider_tenant_id::text
                FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id, provider_tenant_id)
                UNION ALL
-               SELECT ta.id AS app_id, ta.tenant_id AS consumer_tenant, tenant_runtimes.tenant_id AS provider_tenant
+               SELECT ta.id AS app_id, ta.tenant_id::text AS consumer_tenant, tenant_runtimes.tenant_id::text AS provider_tenant
                FROM (SELECT labels.runtime_id, v ->> 0 AS consumer_tenant
                      FROM labels
                               JOIN jsonb_array_elements(labels.value) AS v ON TRUE
@@ -194,16 +194,16 @@ SELECT DISTINCT t_apps.tenant_id,
                 b.correlation_ids
 FROM bundles b
          JOIN (SELECT a1.id,
-                      a1.tenant_id AS tenant_id,
-                      a1.tenant_id AS provider_tenant_id
+                      a1.tenant_id::text AS tenant_id,
+                      a1.tenant_id::text AS provider_tenant_id
                FROM tenant_applications a1
                UNION ALL
                SELECT apps_subaccounts_func.id,
-                      apps_subaccounts_func.tenant_id,
-                      apps_subaccounts_func.provider_tenant_id
+                      apps_subaccounts_func.tenant_id::text,
+                      apps_subaccounts_func.provider_tenant_id::text
                FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id, provider_tenant_id)
                UNION ALL
-               SELECT ta.id AS app_id, ta.tenant_id AS consumer_tenant, tenant_runtimes.tenant_id AS provider_tenant
+               SELECT ta.id AS app_id, ta.tenant_id::text AS consumer_tenant, tenant_runtimes.tenant_id::text AS provider_tenant
                FROM (SELECT labels.runtime_id, v ->> 0 AS consumer_tenant
                      FROM labels
                               JOIN jsonb_array_elements(labels.value) AS v ON TRUE
@@ -259,16 +259,16 @@ SELECT DISTINCT t_apps.tenant_id,
                 events.resource_hash
 FROM event_api_definitions events
          JOIN (SELECT a1.id,
-                      a1.tenant_id AS tenant_id,
-                      a1.tenant_id AS provider_tenant_id
+                      a1.tenant_id::text AS tenant_id,
+                      a1.tenant_id::text AS provider_tenant_id
                FROM tenant_applications a1
                UNION ALL
                SELECT apps_subaccounts_func.id,
-                      apps_subaccounts_func.tenant_id,
-                      apps_subaccounts_func.provider_tenant_id
+                      apps_subaccounts_func.tenant_id::text,
+                      apps_subaccounts_func.provider_tenant_id::text
                FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id, provider_tenant_id)
                UNION ALL
-               SELECT ta.id AS app_id, ta.tenant_id AS consumer_tenant, tenant_runtimes.tenant_id AS provider_tenant
+               SELECT ta.id AS app_id, ta.tenant_id::text AS consumer_tenant, tenant_runtimes.tenant_id::text AS provider_tenant
                FROM (SELECT labels.runtime_id, v ->> 0 AS consumer_tenant
                      FROM labels
                               JOIN jsonb_array_elements(labels.value) AS v ON TRUE
@@ -309,16 +309,16 @@ SELECT DISTINCT t_apps.tenant_id,
                 p.resource_hash
 FROM packages p
          JOIN (SELECT a1.id,
-                      a1.tenant_id AS tenant_id,
-                      a1.tenant_id AS provider_tenant_id
+                      a1.tenant_id::text AS tenant_id,
+                      a1.tenant_id::text AS provider_tenant_id
                FROM tenant_applications a1
                UNION ALL
                SELECT apps_subaccounts_func.id,
-                      apps_subaccounts_func.tenant_id,
-                      apps_subaccounts_func.provider_tenant_id
+                      apps_subaccounts_func.tenant_id::text,
+                      apps_subaccounts_func.provider_tenant_id::text
                FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id, provider_tenant_id)
                UNION ALL
-               SELECT ta.id AS app_id, ta.tenant_id AS consumer_tenant, tenant_runtimes.tenant_id AS provider_tenant
+               SELECT ta.id AS app_id, ta.tenant_id::text AS consumer_tenant, tenant_runtimes.tenant_id::text AS provider_tenant
                FROM (SELECT labels.runtime_id, v ->> 0 AS consumer_tenant
                      FROM labels
                               JOIN jsonb_array_elements(labels.value) AS v ON TRUE
@@ -348,16 +348,16 @@ SELECT DISTINCT t_apps.tenant_id,
                 p.documentation_labels
 FROM products p
          JOIN (SELECT a1.id,
-                      a1.tenant_id AS tenant_id,
-                      a1.tenant_id AS provider_tenant_id
+                      a1.tenant_id::text AS tenant_id,
+                      a1.tenant_id::text AS provider_tenant_id
                FROM tenant_applications a1
                UNION ALL
                SELECT apps_subaccounts_func.id,
-                      apps_subaccounts_func.tenant_id,
-                      apps_subaccounts_func.provider_tenant_id
+                      apps_subaccounts_func.tenant_id::text,
+                      apps_subaccounts_func.provider_tenant_id::text
                FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id, provider_tenant_id)
                UNION ALL
-               SELECT ta.id AS app_id, ta.tenant_id AS consumer_tenant, tenant_runtimes.tenant_id AS provider_tenant
+               SELECT ta.id AS app_id, ta.tenant_id::text AS consumer_tenant, tenant_runtimes.tenant_id::text AS provider_tenant
                FROM (SELECT labels.runtime_id, v ->> 0 AS consumer_tenant
                      FROM labels
                               JOIN jsonb_array_elements(labels.value) AS v ON TRUE
@@ -383,16 +383,16 @@ SELECT DISTINCT t_apps.tenant_id,
                 v.documentation_labels
 FROM vendors v
          JOIN (SELECT a1.id,
-                      a1.tenant_id AS tenant_id,
-                      a1.tenant_id AS provider_tenant_id
+                      a1.tenant_id::text AS tenant_id,
+                      a1.tenant_id::text AS provider_tenant_id
                FROM tenant_applications a1
                UNION ALL
                SELECT apps_subaccounts_func.id,
-                      apps_subaccounts_func.tenant_id,
-                      apps_subaccounts_func.provider_tenant_id
+                      apps_subaccounts_func.tenant_id::text,
+                      apps_subaccounts_func.provider_tenant_id::text
                FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id, provider_tenant_id)
                UNION ALL
-               SELECT ta.id AS app_id, ta.tenant_id AS consumer_tenant, tenant_runtimes.tenant_id AS provider_tenant
+               SELECT ta.id AS app_id, ta.tenant_id::text AS consumer_tenant, tenant_runtimes.tenant_id::text AS provider_tenant
                FROM (SELECT labels.runtime_id, v ->> 0 AS consumer_tenant
                      FROM labels
                               JOIN jsonb_array_elements(labels.value) AS v ON TRUE
@@ -414,16 +414,16 @@ SELECT DISTINCT t_apps.tenant_id,
                 t.id
 FROM tombstones t
          JOIN (SELECT a1.id,
-                      a1.tenant_id AS tenant_id,
-                      a1.tenant_id AS provider_tenant_id
+                      a1.tenant_id::text AS tenant_id,
+                      a1.tenant_id::text AS provider_tenant_id
                FROM tenant_applications a1
                UNION ALL
                SELECT apps_subaccounts_func.id,
-                      apps_subaccounts_func.tenant_id,
-                      apps_subaccounts_func.provider_tenant_id
+                      apps_subaccounts_func.tenant_id::text,
+                      apps_subaccounts_func.provider_tenant_id::text
                FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id, provider_tenant_id)
                UNION ALL
-               SELECT ta.id AS app_id, ta.tenant_id AS consumer_tenant, tenant_runtimes.tenant_id AS provider_tenant
+               SELECT ta.id AS app_id, ta.tenant_id::text AS consumer_tenant, tenant_runtimes.tenant_id::text AS provider_tenant
                FROM (SELECT labels.runtime_id, v ->> 0 AS consumer_tenant
                      FROM labels
                               JOIN jsonb_array_elements(labels.value) AS v ON TRUE
