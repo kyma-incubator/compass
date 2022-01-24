@@ -81,12 +81,16 @@ func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Clie
 
 	req.URL.RawQuery = fmt.Sprintf("time_from=%s&time_to=%s", timeFromStr, timeToStr)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auditlogToken.AccessToken))
-	fmt.Println("Requesting: ", fmt.Sprintf("%s%s", auditlogConfig.ManagementURL, auditlogConfig.ManagementAPIPath))
-	fmt.Println(req)
 	resp, err := client.Do(req)
 	require.NoError(t, err)
-	fmt.Println(auditlogToken.AccessToken)
-	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("unexpected status code: expected: %d, actual: %d", http.StatusOK, resp.StatusCode))
+	require.True(t, resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent, fmt.Sprintf("unexpected status code: expected: %d or %d, actual: %d", http.StatusOK, http.StatusNoContent, resp.StatusCode))
+
+	if resp.StatusCode == http.StatusNoContent {
+		return []model.ConfigurationChange{}
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
 
 	type configurationChange struct {
 		model.ConfigurationChange
@@ -94,12 +98,8 @@ func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Clie
 	}
 
 	var auditlogs []configurationChange
-	body, err := ioutil.ReadAll(resp.Body)
-
-	require.NoError(t, err)
 	err = json.Unmarshal(body, &auditlogs)
 	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var matchingAuditlogs []model.ConfigurationChange
 	for i := range auditlogs {
