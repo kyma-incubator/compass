@@ -5,6 +5,9 @@ DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_apps;
 DROP VIEW IF EXISTS tenants_bundles;
 DROP VIEW IF EXISTS tenants_events;
+DROP VIEW IF EXISTS tenants_products;
+DROP VIEW IF EXISTS tenants_vendors;
+DROP VIEW IF EXISTS tenants_tombstones;
 
 DROP FUNCTION IF EXISTS apps_subaccounts_func();
 
@@ -299,6 +302,117 @@ FROM event_api_definitions events
                                                           FROM business_tenant_mappings
                                                           WHERE business_tenant_mappings.id = a_s.tenant_id::uuid))::text)) t_apps
               ON events.app_id = t_apps.id;
+
+-----
+
+CREATE OR REPLACE VIEW tenants_products
+            (tenant_id, provider_tenant_id, ord_id, app_id, title, short_description, vendor, parent, labels,
+             correlation_ids, id, documentation_labels)
+AS
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.provider_tenant_id,
+                p.ord_id,
+                p.app_id,
+                p.title,
+                p.short_description,
+                p.vendor,
+                p.parent,
+                p.labels,
+                p.correlation_ids,
+                p.id,
+                p.documentation_labels
+FROM products p
+         JOIN (SELECT a1.id,
+                      a1.tenant_id::text AS tenant_id,
+                      a1.tenant_id::text AS provider_tenant_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT apps_subaccounts_func.id,
+                      apps_subaccounts_func.tenant_id,
+                      apps_subaccounts_func.provider_tenant_id
+               FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id, provider_tenant_id)
+               UNION ALL
+               SELECT a_s.id,
+                      a_s.tenant_id,
+                      (SELECT business_tenant_mappings.id::text AS id
+                       FROM business_tenant_mappings
+                       WHERE business_tenant_mappings.external_tenant::text = cpr.provider_tenant) AS provider_tenant_id
+               FROM apps_subaccounts_func() a_s(id, tenant_id, provider_tenant_id)
+                        JOIN consumers_provider_for_runtimes_func() cpr(provider_tenant, consumer_tenants)
+                             ON cpr.consumer_tenants ? (((SELECT business_tenant_mappings.external_tenant
+                                                          FROM business_tenant_mappings
+                                                          WHERE business_tenant_mappings.id = a_s.tenant_id::uuid))::text)) t_apps
+              ON p.app_id = t_apps.id OR p.app_id IS NULL;
+
+-----
+
+CREATE OR REPLACE VIEW tenants_vendors
+            (tenant_id, provider_tenant_id, ord_id, app_id, title, labels, partners, id, documentation_labels)
+AS
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.provider_tenant_id,
+                v.ord_id,
+                v.app_id,
+                v.title,
+                v.labels,
+                v.partners,
+                v.id,
+                v.documentation_labels
+FROM vendors v
+         JOIN (SELECT a1.id,
+                      a1.tenant_id::text AS tenant_id,
+                      a1.tenant_id::text AS provider_tenant_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT apps_subaccounts_func.id,
+                      apps_subaccounts_func.tenant_id,
+                      apps_subaccounts_func.provider_tenant_id
+               FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id, provider_tenant_id)
+               UNION ALL
+               SELECT a_s.id,
+                      a_s.tenant_id,
+                      (SELECT business_tenant_mappings.id::text AS id
+                       FROM business_tenant_mappings
+                       WHERE business_tenant_mappings.external_tenant::text = cpr.provider_tenant) AS provider_tenant_id
+               FROM apps_subaccounts_func() a_s(id, tenant_id, provider_tenant_id)
+                        JOIN consumers_provider_for_runtimes_func() cpr(provider_tenant, consumer_tenants)
+                             ON cpr.consumer_tenants ? (((SELECT business_tenant_mappings.external_tenant
+                                                          FROM business_tenant_mappings
+                                                          WHERE business_tenant_mappings.id = a_s.tenant_id::uuid))::text)) t_apps
+              ON v.app_id = t_apps.id OR v.app_id IS NULL;
+
+-----
+
+CREATE OR REPLACE VIEW tenants_tombstones(tenant_id, provider_tenant_id, ord_id, app_id, removal_date, id)
+AS
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.provider_tenant_id,
+                t.ord_id,
+                t.app_id,
+                t.removal_date,
+                t.id
+FROM tombstones t
+         JOIN (SELECT a1.id,
+                      a1.tenant_id::text AS tenant_id,
+                      a1.tenant_id::text AS provider_tenant_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT apps_subaccounts_func.id,
+                      apps_subaccounts_func.tenant_id,
+                      apps_subaccounts_func.provider_tenant_id
+               FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id, provider_tenant_id)
+               UNION ALL
+               SELECT a_s.id,
+                      a_s.tenant_id,
+                      (SELECT business_tenant_mappings.id::text AS id
+                       FROM business_tenant_mappings
+                       WHERE business_tenant_mappings.external_tenant::text = cpr.provider_tenant) AS provider_tenant_id
+               FROM apps_subaccounts_func() a_s(id, tenant_id, provider_tenant_id)
+                        JOIN consumers_provider_for_runtimes_func() cpr(provider_tenant, consumer_tenants)
+                             ON cpr.consumer_tenants ? (((SELECT business_tenant_mappings.external_tenant
+                                                          FROM business_tenant_mappings
+                                                          WHERE business_tenant_mappings.id = a_s.tenant_id::uuid))::text)) t_apps
+              ON t.app_id = t_apps.id;
 
 -----
 
