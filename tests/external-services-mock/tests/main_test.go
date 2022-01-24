@@ -52,6 +52,7 @@ func TestMain(m *testing.M) {
 
 	staticUser = claims.Name
 	fmt.Println("Static user from token:", staticUser)
+	fmt.Println("Token: ", dexToken)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
