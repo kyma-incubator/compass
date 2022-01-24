@@ -62,7 +62,8 @@ func (s *service) Clean(ctx context.Context) error {
 
 	succsessfullyProcessed := 0
 	correctSubaccounts := 0
-	dirsToDelete := make(map[string]bool)
+	// internal_id -> external_id
+	dirsToDelete := make(map[string]string)
 	dirsNotToDelete := make(map[string]bool) // in case a SA can't be found, there may be another valid SA that shares the same parent Dir and the Dir will be marked for deletion by the correct SA which will result in deletion of the not found SA due to cascade
 	var notFoundSAs []string
 
@@ -111,7 +112,7 @@ func (s *service) Clean(ctx context.Context) error {
 						return err
 					} else { // the update was successful
 						// mark the directory for deletion later because it still may have other child subaccounts which will be deleted by the cascade
-						dirsToDelete[parentFromDB.ID] = true
+						dirsToDelete[parentFromDB.ID] = parentFromDB.ExternalTenant
 						succsessfullyProcessed++
 					}
 				} else if err != nil && !apperrors.IsNotFoundError(err) {
@@ -158,7 +159,7 @@ func (s *service) Clean(ctx context.Context) error {
 	return nil
 }
 
-func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool, dirsNotToDelete map[string]bool) ([]string, error) {
+func (s *service) deleteDirectories(ctx context.Context, dirs map[string]string, dirsNotToDelete map[string]bool) ([]string, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -171,26 +172,28 @@ func (s *service) deleteDirectories(ctx context.Context, dirs map[string]bool, d
 
 	log.C(ctx).Infof("%d directories are to be deleted", len(dirs))
 	// successfullyDeleted := 0
-	for tnt := range dirs {
-		if dirsNotToDelete[tnt] {
-			notDeletedDirs = append(notDeletedDirs, tnt)
+	for internalID, externalID := range dirs {
+		if dirsNotToDelete[internalID] {
+			notDeletedDirs = append(notDeletedDirs, internalID)
 			continue
 		}
 
-		// log.C(ctx).Infof("Deleting directory with ID %s", tnt)
-		// if err = s.tenantSvc.DeleteByExternalTenant(ctx, tenant); err != nil {
+		// log.C(ctx).Infof("Deleting directory with external ID %s", externalID)
+		// if err = s.tenantSvc.DeleteByExternalTenant(ctx, externalID); err != nil {
 		//	log.C(ctx).Error(err)
 		// } else {
 		//	successfullyDeleted++
 		// }
-		dirsForDeletion = append(dirsForDeletion, tnt)
+
+		log.C(ctx).Infof("Directory with external ID marked for deletion %s", externalID)
+		dirsForDeletion = append(dirsForDeletion, internalID)
 	}
 
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 	// log.C(ctx).Infof("%d from %d directories were deleted", successfullyDeleted, len(dirs))
-	log.C(ctx).Infof("%d IDs of Directories marked for deletion: %v", len(dirsForDeletion), dirsForDeletion)
+	log.C(ctx).Infof("%d internal IDs of Directories marked for deletion: %v", len(dirsForDeletion), dirsForDeletion)
 
 	return notDeletedDirs, nil
 }
