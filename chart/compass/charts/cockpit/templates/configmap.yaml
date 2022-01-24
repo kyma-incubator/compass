@@ -18,5 +18,6 @@ data:
         client_id: 'compass-ui',
         scope: 'audience:server:client_id:compass-ui openid profile email groups',
       },
-      clientIDHeaderKey: '{{ .Values.global.director.clientIDHeaderKey }}'
+      clientIDHeaderKey: '{{ .Values.global.director.clientIDHeaderKey }}',
+      idpUrl: '{{ .Values.idpUrl }}'
     };
