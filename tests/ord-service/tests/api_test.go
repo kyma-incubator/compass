@@ -55,8 +55,8 @@ func TestORDService(t *testing.T) {
 	defaultTestTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
 	secondaryTenant := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
 
-	tenantFilteringTenant := tenant.TestTenants.GetDefaultTenantID()
-	subTenantID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+	tenantFilteringTenant := testConfig.AccountTenantID
+	subTenantID := testConfig.SubaccountTenantID
 
 	tenantAPIProtocolFiltering := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 
