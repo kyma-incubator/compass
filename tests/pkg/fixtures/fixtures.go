@@ -55,6 +55,7 @@ func GetAuditlogToken(t require.TestingT, client *http.Client, auditlogConfig co
 	req.Header.Add("Authorization", "Basic "+base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", auditlogConfig.ClientID, auditlogConfig.ClientSecret))))
 	resp, err := client.Do(req)
 	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("failed to get token: unexpected status code: expected: %d, actual: %d", http.StatusOK, resp.StatusCode))
 
 	var auditlogToken Token
 	body, err := ioutil.ReadAll(resp.Body)
@@ -82,6 +83,14 @@ func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Clie
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auditlogToken.AccessToken))
 	resp, err := client.Do(req)
 	require.NoError(t, err)
+	require.True(t, resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent, fmt.Sprintf("failed to fetch auditlogs: unexpected status code: expected: %d or %d, actual: %d", http.StatusOK, http.StatusNoContent, resp.StatusCode))
+
+	if resp.StatusCode == http.StatusNoContent {
+		return []model.ConfigurationChange{}
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
 
 	type configurationChange struct {
 		model.ConfigurationChange
@@ -89,12 +98,8 @@ func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Clie
 	}
 
 	var auditlogs []configurationChange
-	body, err := ioutil.ReadAll(resp.Body)
-
-	require.NoError(t, err)
 	err = json.Unmarshal(body, &auditlogs)
 	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var matchingAuditlogs []model.ConfigurationChange
 	for i := range auditlogs {

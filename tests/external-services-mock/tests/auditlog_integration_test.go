@@ -84,7 +84,7 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	assert.Equal(t, requestBody.String(), preRequest)
 	assert.Equal(t, 2, len(auditlogs))
-	assert.Equal(t, "admin", pre.Object.ID["consumerID"])
+	assert.Equal(t, staticUser, pre.Object.ID["consumerID"])
 	assert.Equal(t, "Static User", pre.Object.ID["apiConsumer"])
 
 	var postRequest string
@@ -95,7 +95,7 @@ func TestAuditlogIntegration(t *testing.T) {
 	}
 
 	assert.Equal(t, requestBody.String(), postRequest)
-	assert.Equal(t, "admin", post.Object.ID["consumerID"])
+	assert.Equal(t, staticUser, post.Object.ID["consumerID"])
 	assert.Equal(t, "Static User", post.Object.ID["apiConsumer"])
 }
 
