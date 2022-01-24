@@ -1,5 +1,6 @@
 BEGIN;
 
+DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_apps;
 DROP VIEW IF EXISTS tenants_bundles;
@@ -298,5 +299,35 @@ FROM event_api_definitions events
                                                           FROM business_tenant_mappings
                                                           WHERE business_tenant_mappings.id = a_s.tenant_id::uuid))::text)) t_apps
               ON events.app_id = t_apps.id;
+
+-----
+
+CREATE OR REPLACE VIEW tenants_specifications
+            (tenant_id, provider_tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type,
+             event_spec_format, event_spec_type, custom_type, created_at)
+AS
+SELECT DISTINCT t_api_event_def.tenant_id,
+                t_api_event_def.provider_tenant_id,
+                spec.id,
+                spec.api_def_id,
+                spec.event_def_id,
+                spec.spec_data,
+                spec.api_spec_format,
+                spec.api_spec_type,
+                spec.event_spec_format,
+                spec.event_spec_type,
+                spec.custom_type,
+                spec.created_at
+FROM specifications spec
+         JOIN (SELECT a.id,
+                      a.tenant_id,
+                      a.provider_tenant_id
+               FROM tenants_apis a
+               UNION ALL
+               SELECT e.id,
+                      e.tenant_id,
+                      e.provider_tenant_id
+               FROM tenants_events e) t_api_event_def
+              ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
 
 COMMIT;
