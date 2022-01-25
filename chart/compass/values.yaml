@@ -103,7 +103,7 @@ global:
       version: "PR-58"
     schema_migrator:
       dir:
-      version: "PR-2166"
+      version: "PR-2187"
     system_broker:
       dir:
       version: "PR-2166"
@@ -120,7 +120,7 @@ global:
       version: "PR-53"
     e2e_tests:
       dir:
-      version: "PR-2183"
+      version: "PR-2187"
   isLocalEnv: false
   oauth2:
     host: oauth2
