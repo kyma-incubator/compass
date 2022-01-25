@@ -4,6 +4,12 @@ apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: "{{ $.Chart.Name }}-ord-aggregator"
+  {{ if .Values.global.isLocalEnv }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation
+{{ end }}
 spec:
   schedule: "{{ .Values.global.ordAggregator.schedule }}"
   failedJobsHistoryLimit: 5
