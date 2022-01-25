@@ -26,15 +26,5 @@ spec:
             host: {{ $.Values.global.oathkeeper.host }}
             port:
               number: {{ $.Values.global.oathkeeper.port }}
-      corsPolicy:
-        allowHeaders:
-          - "authorization"
-          - "content-type"
-          - {{ $.Values.global.director.suggestTokenHeaderKey }}
-        allowMethods:
-          - "GET"
-          - "POST"
-          - "PUT"
-          - "DELETE"
 {{ end }}
 {{- end -}}

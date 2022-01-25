@@ -25,14 +25,6 @@ spec:
           {{- range .Values.global.gateway.headers.request.remove }}
           - {{ . }}
           {{- end }}
-    corsPolicy:
-      allowHeaders:
-        - "authorization"
-        - "content-type"
-        - "tenant"
-        - {{ .Values.global.director.suggestTokenHeaderKey }}
-      allowMethods:
-        - "GET"
   - match:
     - uri:
         regex: /.*
@@ -41,15 +33,3 @@ spec:
         host: {{ .Values.global.oathkeeper.host }}
         port:
           number: {{ .Values.global.oathkeeper.port }}
-    corsPolicy:
-      allowHeaders:
-      - "authorization"
-      - "content-type"
-      - "tenant"
-      - {{ .Values.global.director.suggestTokenHeaderKey }}
-      - {{ .Values.global.director.clientIDHeaderKey }}
-      allowMethods:
-      - "GET"
-      - "POST"
-      - "PUT"
-      - "DELETE"

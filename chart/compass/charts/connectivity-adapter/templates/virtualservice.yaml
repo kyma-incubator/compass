@@ -30,13 +30,3 @@ spec:
             {{- range .Values.global.gateway.headers.request.remove }}
             - {{ . }}
             {{- end }}
-      corsPolicy:
-        allowHeaders:
-          - "authorization"
-          - "content-type"
-          - "tenant"
-        allowMethods:
-          - "GET"
-          - "POST"
-          - "PUT"
-          - "DELETE"

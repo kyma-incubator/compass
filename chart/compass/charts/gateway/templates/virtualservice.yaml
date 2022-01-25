@@ -73,14 +73,6 @@ spec:
             {{- range .Values.global.gateway.headers.request.remove }}
             - {{ . }}
             {{- end }}
-      corsPolicy:
-        allowHeaders:
-          - "authorization"
-          - "content-type"
-          - "tenant"
-          - {{ .Values.global.director.clientIDHeaderKey }}
-        allowMethods:
-          - "GET"
     - match:
       - uri:
           regex: /.*
