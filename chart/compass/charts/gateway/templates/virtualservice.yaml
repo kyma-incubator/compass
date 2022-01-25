@@ -73,16 +73,6 @@ spec:
             {{- range .Values.global.gateway.headers.request.remove }}
             - {{ . }}
             {{- end }}
-      corsPolicy:
-        allowOrigins:
-          - regex: ".*"
-        allowHeaders:
-          - "authorization"
-          - "content-type"
-          - "tenant"
-          - {{ .Values.global.director.clientIDHeaderKey }}
-        allowMethods:
-          - "GET"
     - match:
       - uri:
           regex: /.*
@@ -99,7 +89,7 @@ spec:
             {{- end }}
       corsPolicy:
         allowOrigins:
-          - regex: ".*"
+          - regex: "(http|https)://(compass-dev|compass|compass-mf).{{ .Values.global.ingress.domainName }}(:[0-9]{4})?"
         allowHeaders:
           - "authorization"
           - "content-type"
@@ -110,3 +100,4 @@ spec:
           - "POST"
           - "PUT"
           - "DELETE"
+          - "OPTIONS"
