@@ -21,8 +21,8 @@ gateway:
 
 rateLimit:
   headerValue: "{{ print .Extra.consumerType }}"
-  maxTokens: 5000
-  tokensPerFill: 500
+  maxTokens: 8000
+  tokensPerFill: 800
   fillInterval: "60s"
 
 metrics:
