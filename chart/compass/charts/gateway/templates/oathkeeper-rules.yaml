@@ -160,7 +160,7 @@ spec:
   - handler: header
     config:
       headers:
-        {{ .Values.global.gateway.headers.rateLimit }}: "{{ .Values.rateLimit.headerValue }}"
+        {{ .Values.global.gateway.headers.rateLimit }}: "{{ .Values.rateLimit.headerValueTemplate }}"
   - handler: id_token
     config:
       claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}

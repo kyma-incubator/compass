@@ -20,10 +20,21 @@ gateway:
     authMode: "basic"
 
 rateLimit:
-  headerValue: "{{ print .Extra.consumerType }}"
-  maxTokens: 8000
-  tokensPerFill: 800
-  fillInterval: "60s"
+  headerValueTemplate: "{{ print .Extra.consumerType }}"
+  runtimes:
+    headerValue: Runtime
+    maxTokens: 3000
+    tokensPerFill: 300
+    fillInterval: "30s"
+  apps:
+    headerValue: Application
+    maxTokens: 3000
+    tokensPerFill: 300
+    fillInterval: "30s"
+  common:
+    maxTokens: 8000
+    tokensPerFill: 800
+    fillInterval: "30s"
 
 metrics:
   port: 3001

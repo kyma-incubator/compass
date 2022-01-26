@@ -53,19 +53,3 @@ readinessProbe:
   initialDelaySeconds: 5
   timeoutSeconds: 2
   periodSeconds: 5
-
-rateLimit:
-  runtimes:
-    headerValue: Runtime
-    maxTokens: 3000
-    tokensPerFill: 300
-    fillInterval: "60s"
-  apps:
-    headerValue: Application
-    maxTokens: 3000
-    tokensPerFill: 300
-    fillInterval: "60s"
-  common:
-    maxTokens: 5000
-    tokensPerFill: 500
-    fillInterval: "60s"

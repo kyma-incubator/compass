@@ -10,11 +10,10 @@ spec:
   configPatches:
     - applyTo: HTTP_FILTER
       match:
-        context: SIDECAR_INBOUND
         listener:
           filterChain:
             filter:
-              name: "envoy.filters.network.http_connection_manager"
+              name: "envoy.http_connection_manager"
       patch:
         operation: INSERT_BEFORE
         value:
@@ -24,22 +23,59 @@ spec:
             type_url: type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
             value:
               stat_prefix: http_local_rate_limiter_{{ .Chart.Name }}
-              token_bucket:
-                max_tokens: {{ .Values.rateLimit.maxTokens }}
-                tokens_per_fill:  {{ .Values.rateLimit.tokensPerFill }}
-                fill_interval:  "{{ .Values.rateLimit.fillInterval }}"
-              filter_enabled:
-                runtime_key: local_rate_limit_enabled
-                default_value:
-                  numerator: 100
-                  denominator: HUNDRED
-              filter_enforced:
-                runtime_key: local_rate_limit_enforced
-                default_value:
-                  numerator: 100
-                  denominator: HUNDRED
-              response_headers_to_add:
-                - append: false
-                  header:
-                    key: x-local-rate-limit
-                    value: "{{ .Chart.Name }}"
+
+    - applyTo: HTTP_ROUTE
+      match:
+        context: SIDECAR_INBOUND
+        routeConfiguration:
+          vhost:
+            name: "inbound|http|{{ .Values.global.director.graphql.external.port }}"
+      patch:
+        operation: MERGE
+        value:
+          route:
+            rate_limits:
+              - actions:
+                  - request_headers:
+                      header_name: "{{ .Values.global.gateway.headers.rateLimit }}"
+                      descriptor_key: "consumer"
+          typed_per_filter_config:
+            envoy.filters.http.local_ratelimit:
+              "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+              type_url: type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+              value:
+                stat_prefix: http_local_rate_limiter_{{ .Chart.Name }}
+                descriptors:
+                  - entries:
+                      - key: "consumer"
+                        value: "{{ .Values.rateLimit.runtimes.headerValue }}"
+                    token_bucket:
+                      max_tokens: {{ .Values.rateLimit.runtimes.maxTokens }}
+                      tokens_per_fill: {{.Values.rateLimit.runtimes.tokensPerFill }}
+                      fill_interval: "{{ .Values.rateLimit.runtimes.fillInterval }}"
+                  - entries:
+                      - key: "consumer"
+                        value: "{{ .Values.rateLimit.apps.headerValue }}"
+                    token_bucket:
+                      max_tokens: {{ .Values.rateLimit.apps.maxTokens }}
+                      tokens_per_fill: {{.Values.rateLimit.apps.tokensPerFill }}
+                      fill_interval: "{{ .Values.rateLimit.apps.fillInterval }}"
+                filter_enabled:
+                  runtime_key: local_rate_limit_enabled
+                  default_value:
+                    numerator: 100
+                    denominator: HUNDRED
+                filter_enforced:
+                  runtime_key: local_rate_limit_enforced
+                  default_value:
+                    numerator: 100
+                    denominator: HUNDRED
+                token_bucket:
+                  max_tokens: {{ .Values.rateLimit.common.maxTokens }}
+                  tokens_per_fill: {{ .Values.rateLimit.common.tokensPerFill }}
+                  fill_interval: "{{ .Values.rateLimit.common.fillInterval }}"
+                response_headers_to_add:
+                  - append: false
+                    header:
+                      key: x-local-rate-limit
+                      value: "{{ .Chart.Name }}"
