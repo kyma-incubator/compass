@@ -175,13 +175,14 @@ func TestConfigChangeHandler_Get(t *testing.T) {
 	assert.Equal(t, input, response)
 }
 
-func TestConfigChangeHandler_SearchByString_Success(t *testing.T) {
+func TestConfigChangeHandler_SearchByTimestamp_Success(t *testing.T) {
 	//GIVEN
 	svc := configurationchange.NewService()
 	input := fixConfigurationChange(logID)
 	_, err := svc.Save(input)
 	require.NoError(t, err)
 
+	startTime := time.Now()
 	input = fixConfigurationChangeWithAttributes("4020af04-7c7c-4b90-a410-967571e38bec")
 	_, err = svc.Save(input)
 	require.NoError(t, err)
@@ -189,17 +190,94 @@ func TestConfigChangeHandler_SearchByString_Success(t *testing.T) {
 	requestURL := path.Join("/search")
 	handler := configurationchange.NewConfigurationHandler(svc, nil)
 	req := httptest.NewRequest(http.MethodGet, requestURL, bytes.NewBuffer([]byte{}))
+
+	timeFrom := startTime.UTC()
+	timeTo := startTime.Add(1 * time.Minute).UTC()
+
+	timeFromStr := timeFrom.Format(time.RFC3339Nano)
+	timeFromStr = timeFromStr[:len(timeFromStr)-1] // remove the 'Z' char from the time string
+
+	timeToStr := timeTo.Format(time.RFC3339Nano)
+	timeToStr = timeToStr[:len(timeToStr)-1] // remove the 'Z' char from the time string
+
 	q := req.URL.Query()
-	q.Add("query", searchString)
+	q.Add("time_from", timeFromStr)
+	q.Add("time_to", timeToStr)
 	req.URL.RawQuery = q.Encode()
 
 	//WHEN
 	w := httptest.NewRecorder()
-	handler.SearchByString(w, req)
+	handler.SearchByTimestamp(w, req)
 
 	//THEN
 	require.Equal(t, http.StatusOK, w.Code)
-	require.Len(t, svc.SearchByString(searchString), 1)
+	require.Len(t, svc.SearchByTimestamp(timeFrom, timeTo), 1)
+}
+
+func TestConfigChangeHandler_SearchByTimestamp_WhenMissingTimeFrom_Fails(t *testing.T) {
+	//GIVEN
+	svc := configurationchange.NewService()
+	input := fixConfigurationChange(logID)
+	_, err := svc.Save(input)
+	require.NoError(t, err)
+
+	startTime := time.Now()
+	input = fixConfigurationChangeWithAttributes("4020af04-7c7c-4b90-a410-967571e38bec")
+	_, err = svc.Save(input)
+	require.NoError(t, err)
+
+	requestURL := path.Join("/search")
+	handler := configurationchange.NewConfigurationHandler(svc, nil)
+	req := httptest.NewRequest(http.MethodGet, requestURL, bytes.NewBuffer([]byte{}))
+
+	timeTo := startTime.Add(1 * time.Minute).UTC()
+
+	timeToStr := timeTo.Format(time.RFC3339Nano)
+	timeToStr = timeToStr[:len(timeToStr)-1] // remove the 'Z' char from the time string
+
+	q := req.URL.Query()
+	q.Add("time_to", timeToStr)
+	req.URL.RawQuery = q.Encode()
+
+	//WHEN
+	w := httptest.NewRecorder()
+	handler.SearchByTimestamp(w, req)
+
+	//THEN
+	require.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestConfigChangeHandler_SearchByTimestamp_WhenMissingTimeTo_Fails(t *testing.T) {
+	//GIVEN
+	svc := configurationchange.NewService()
+	input := fixConfigurationChange(logID)
+	_, err := svc.Save(input)
+	require.NoError(t, err)
+
+	startTime := time.Now()
+	input = fixConfigurationChangeWithAttributes("4020af04-7c7c-4b90-a410-967571e38bec")
+	_, err = svc.Save(input)
+	require.NoError(t, err)
+
+	requestURL := path.Join("/search")
+	handler := configurationchange.NewConfigurationHandler(svc, nil)
+	req := httptest.NewRequest(http.MethodGet, requestURL, bytes.NewBuffer([]byte{}))
+
+	timeFrom := startTime.UTC()
+
+	timeFromStr := timeFrom.Format(time.RFC3339Nano)
+	timeFromStr = timeFromStr[:len(timeFromStr)-1] // remove the 'Z' char from the time string
+
+	q := req.URL.Query()
+	q.Add("time_from", timeFromStr)
+	req.URL.RawQuery = q.Encode()
+
+	//WHEN
+	w := httptest.NewRecorder()
+	handler.SearchByTimestamp(w, req)
+
+	//THEN
+	require.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func TestConcurrentCalls(t *testing.T) {
