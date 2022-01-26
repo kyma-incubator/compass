@@ -1,20 +1,25 @@
 package configurationchange
 
 import (
-	"strings"
 	"sync"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 )
 
+type timestampedConfigurationChange struct {
+	model.ConfigurationChange
+	CreatedAt time.Time
+}
+
 type Service struct {
-	configLogs map[string]model.ConfigurationChange
+	configLogs map[string]timestampedConfigurationChange
 	mutex      sync.RWMutex
 }
 
 func NewService() *Service {
 	return &Service{
-		configLogs: make(map[string]model.ConfigurationChange),
+		configLogs: make(map[string]timestampedConfigurationChange),
 		mutex:      sync.RWMutex{},
 	}
 }
@@ -22,7 +27,10 @@ func (s *Service) Save(change model.ConfigurationChange) (string, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.configLogs[change.UUID] = change
+	s.configLogs[change.UUID] = timestampedConfigurationChange{
+		ConfigurationChange: change,
+		CreatedAt:           time.Now().UTC(),
+	}
 
 	return change.UUID, nil
 }
@@ -33,7 +41,7 @@ func (s *Service) Get(id string) *model.ConfigurationChange {
 
 	val, ok := s.configLogs[id]
 	if ok {
-		return &val
+		return &val.ConfigurationChange
 	}
 	return nil
 }
@@ -44,21 +52,19 @@ func (s *Service) List() []model.ConfigurationChange {
 
 	var auditLogs []model.ConfigurationChange
 	for _, v := range s.configLogs {
-		auditLogs = append(auditLogs, v)
+		auditLogs = append(auditLogs, v.ConfigurationChange)
 	}
 	return auditLogs
 }
 
-func (s *Service) SearchByString(searchString string) []model.ConfigurationChange {
+func (s *Service) SearchByTimestamp(timeFrom, timeTo time.Time) []model.ConfigurationChange {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
 	configurationChangeSet := make(map[string]model.ConfigurationChange)
 	for _, auditLog := range s.configLogs {
-		for _, attribute := range auditLog.Attributes {
-			if strings.Contains(attribute.New, searchString) {
-				configurationChangeSet[auditLog.UUID] = auditLog
-			}
+		if auditLog.CreatedAt.After(timeFrom) && auditLog.CreatedAt.Before(timeTo) {
+			configurationChangeSet[auditLog.UUID] = auditLog.ConfigurationChange
 		}
 	}
 
