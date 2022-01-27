@@ -25,15 +25,6 @@ spec:
             {{- range .Values.global.gateway.headers.request.remove }}
             - {{ . }}
       {{- end }}
-      corsPolicy:
-        allowOrigins:
-          - regex: ".*"
-        allowHeaders:
-          - "authorization"
-          - "content-type"
-          - "tenant"
-        allowMethods:
-          - "GET"
     - match:
         - uri:
             regex: /.*
