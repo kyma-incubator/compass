@@ -27,3 +27,7 @@ deployment:
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
 
+rateLimit:
+  maxTokens: 2000
+  tokensPerFill: 200
+  fillInterval: "60s"
