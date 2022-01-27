@@ -148,13 +148,13 @@ fi
 if [[ ! ${SKIP_MINIKUBE_START} ]]; then
   echo "Provisioning Minikube cluster..."
   if [[ ! ${DOCKER_DRIVER} ]]; then
-    kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --kube-version ${APISERVER_VERSION}
+    kyma provision k3d #--cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --kube-version ${APISERVER_VERSION}
   else
     kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --kube-version ${APISERVER_VERSION} --vm-driver docker --docker-ports 443:443 --docker-ports 80:80
   fi
 fi
 
-useMinikube
+#useMinikube
 
 echo "Label Minikube node for benchmark execution..."
 NODE=$(kubectl get nodes | tail -n 1 | cut -d ' ' -f 1)

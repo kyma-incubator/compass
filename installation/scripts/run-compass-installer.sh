@@ -5,7 +5,7 @@ set -o errexit
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 source $CURRENT_DIR/utils.sh
-useMinikube
+#useMinikube
 
 DOMAIN="kyma.local"
 

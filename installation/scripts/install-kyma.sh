@@ -9,7 +9,7 @@ LOCAL_ENV=${LOCAL_ENV:-false}
 CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 source $SCRIPTS_DIR/utils.sh
-useMinikube
+#useMinikube
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -89,7 +89,7 @@ if [[ $KYMA_INSTALLATION == *full* ]]; then
   kyma install -c $INSTALLER_CR_FULL_PATH -o $FULL_OVERRIDES_FILENAME --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  kyma install -c $INSTALLER_CR_PATH -o $MINIMAL_OVERRIDES_FILENAME --source $KYMA_SOURCE
+  kyma deploy #-c $INSTALLER_CR_PATH -o $MINIMAL_OVERRIDES_FILENAME --source $KYMA_SOURCE
 fi
 set +o xtrace
 
