@@ -1,0 +1,130 @@
+imageRegistry: "eu.gcr.io/kyma-project/incubator/develop"
+
+replicaCount: 1
+
+containerPort: 5556
+
+oidc:
+  staticClientsBase: |-
+    - id: kyma-client
+      name: 'Kyma Client'
+      redirectURIs:
+      - 'http://127.0.0.1:5555/callback'
+      secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+      trustedPeers:
+      - kubecontroller
+      - console
+    - id: console
+      name: Console
+      redirectURIs:
+      - 'http://console-dev.{{ .Values.global.domainName }}:4200'
+      - 'https://console.{{ .Values.global.domainName }}'
+      secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+    - id: grafana
+      name: Grafana UI
+      redirectURIs:
+      - 'https://grafana.{{ .Values.global.domainName }}/login/generic_oauth'
+      - 'https://grafana.{{ .Values.global.domainName }}/oauth2/callback'
+      secret: apie4eeX6hiC9ainieli
+    - id: jaeger
+      name: Jaeger UI
+      redirectURIs:
+      - 'http://jaeger.{{ .Values.global.domainName }}:3000/oauth2/callback'
+      - 'https://jaeger.{{ .Values.global.domainName }}/oauth2/callback'
+      secret: oiEWUWOIEwedfgg
+    - id: kiali
+      name: Kiali UI
+      redirectURIs:
+      - 'http://kiali.{{ .Values.global.domainName }}:3000/oauth2/callback'
+      - 'https://kiali.{{ .Values.global.domainName }}/oauth2/callback'
+      secret: hiFWLWqIxw5d3gl
+    - id: compass-ui
+      name: Compass UI
+      redirectURIs:
+      - 'https://compass.{{ .Values.global.domainName }}'
+      - 'http://compass-dev.{{ .Values.global.domainName }}:8080'
+      secret: th2T43VyHp43bqr
+  staticClientsExtra: |-
+
+connectors: |- # <--- EXTERNALIZE
+  - type: saml
+    id: sci
+    name: SAP ID
+    config:
+      entityIssuer: dex.dev.cmp.cloud.sap
+      ssoURL: https://as5rzk3dn.accounts400.ondemand.com/saml2/idp/sso/as5rzk3dn.accounts400.ondemand.com
+      caData: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURHRENDQWdDZ0F3SUJBUUlHQVhPYTR1aUVNQTBHQ1NxR1NJYjNEUUVCQ3dVQU1Fc3hDekFKQmdOVkJBWVRBa1JGTVE4d0RRWURWUVFLRXdaVFFWQXRVMFV4S3pBcEJnTlZCQU1USW1Gek5YSjZhek5rYmk1aFkyTnZkVzUwY3pRd01DNXZibVJsYldGdVpDNWpiMjB3SGhjTk1qQXdOekk1TVRRd016UTRXaGNOTXpBd056STVNVFF3TXpRNFdqQkxNUXN3Q1FZRFZRUUdFd0pFUlRFUE1BMEdBMVVFQ2hNR1UwRlFMVk5GTVNzd0tRWURWUVFERXlKaGN6VnllbXN6Wkc0dVlXTmpiM1Z1ZEhNME1EQXViMjVrWlcxaGJtUXVZMjl0TUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFnMmh3V1ZRNTZUSUNwYWViWW04SkorcHBuRXRoUkhCRk43eE1UUkdndS80SFYrNXp0ZUNlb2QxUmVtVmQvR0FxdHZJM2lKMllmanEwSTlWN1J5QWx6OGJEWjFzdjBINTNnR2k3Q1phUmZRZjZjalhCSjQyNTd4cklmU0pzaVN6bEFGYlJxa0tTaXpwbUpJS3RseHdzRzFsRERVUkY5RzdIT215byt3VWNwUzlKM204RWNwWEQ3SFdTb2ZTL3ZWK3JGWXpYV3ZhNlZhQ3FldEdqZDFSQktlZk1iaUZiS2o4MnNZYVJFN1lEb1pVK00ySUdPNDgvVGFwcDgvK1lUSm10UG0rY3JVKzliaFFYRTRNcmR5RCtNblFodEN4TWZma3djVkNBc01tN2k3YytUQVZFVm9LMHRPNHpPNXI4UG12cmxBaEowRGZoLzRSZVlwTy9FQUpPNlFJREFRQUJnZ0lBQURBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQUdiVnVQMXYrREh1bHd2akpBTEpreWErczN0YlB0QVhMM2VJWDJHZWcvZWU1S3Arc1F0ZlMvVndPSjhpelpST0x0VW8rOFFTTTBYVjRPZ0hrYnlYb2V0VWxRdjBUSFp6bWNuUk1lUWpiOXQ3MWVGdjBvWUVITHU3QnJadEJrQjNiRGdFbWhhaEgwZXEzSEhLV1luSCtEWHhHMVpyUUdzaDU3bXgzVDdSZkNEa3lISzhYRU11UVNBMHRPRndDQ1JhYVZuNVh4S0F0aUZKTDQ0ZE1BSUZnVzdyOUFIMDJLcnlYV1p6TVlIUTBSVTdwZHlIMzF2ZnppMHBlR3MzeVNJVUh6RXF3QmxrZkxGem9xOEE3dkkxTXlBNUl6eUdNZWJzMEFCdHc4QlEzbDlCM3g4cnB6ZnlpSktTdmkvcWlIZFp0MjkrL3Znb1VUckc3QjFYcG55NGlkUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+      redirectURI: 'https://dex.mps.dev.kyma.cloud.sap/callback'
+      usernameAttr: login_name
+      emailAttr: mail
+      groupsAttr: groups
+
+volumeMountsExtra: |-
+
+volumesExtra: |-
+
+telemetry:
+  enabled: false # <--- EXTERNALIZE
+  port: 5558
+
+securityContext:
+  allowPrivilegeEscalation: false
+  privileged: false
+  runAsGroup: 2000
+  runAsNonRoot: true
+  runAsUser: 2000
+
+dex:
+  expiry:
+    signingKeys: "720h"
+    idTokens: "8h"
+  logger:
+    # Log level, can be "debug", "info", "warn", "error", "fatal", "panic"
+    level: info
+    # log format, can be "text" or "json"
+    format: json
+  useStaticConnector: true
+
+deploymentStrategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 16Mi
+global:
+  domainName: local.kyma.dev # <--- EXTERNALIZE
+  isLocalEnv: false
+  istio:
+    gateway:
+      name: kyma-gateway
+      namespace: kyma-system
+  dex_static_user_configurer:
+    dir:
+    version: fe9f5885
+  containerRegistry:
+    path: eu.gcr.io/kyma-project
+  dex_integration_tests:
+    dir:
+    version: "277f4247"
+
+nodeSelector: {}
+
+tests:
+  labels:
+    integration: true
+    after-upgrade: true
+    e2e-skr: true
+  securityContext:
+    runAsUser: 65534
+    runAsNonRoot: true
+    runAsGroup: 65534
+
+livenessProbe:
+  enabled: false
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 4
