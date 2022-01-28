@@ -146,7 +146,7 @@ if [[ ${DUMP_DB} ]]; then
 fi
 
 if [[ ! ${SKIP_MINIKUBE_START} ]]; then
-  echo "Provisioning Minikube cluster..."
+  echo "Provisioning k3d cluster..."
   if [[ ! ${DOCKER_DRIVER} ]]; then
     kyma provision k3d #--cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --kube-version ${APISERVER_VERSION}
   else

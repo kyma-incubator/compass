@@ -89,7 +89,7 @@ if [[ $KYMA_INSTALLATION == *full* ]]; then
   kyma install -c $INSTALLER_CR_FULL_PATH -o $FULL_OVERRIDES_FILENAME --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  kyma deploy #-c $INSTALLER_CR_PATH -o $MINIMAL_OVERRIDES_FILENAME --source $KYMA_SOURCE
+  kyma deploy --components-file ../resources/kyma-components.yml #-c $INSTALLER_CR_PATH -o $MINIMAL_OVERRIDES_FILENAME --source $KYMA_SOURCE
 fi
 set +o xtrace
 
