@@ -141,6 +141,10 @@ global:
     graphql:
       external:
         port: 3000
+    tls:
+      secure:
+        internal:
+          host: compass-director-internal
     validator:
       port: 8080
     metrics:
