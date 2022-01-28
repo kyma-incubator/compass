@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 
@@ -65,8 +65,14 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 		return nil, errors.Wrap(err, "Failed to authenticate request, consumer type not found")
 	}
 
+	authToken, err := auth.NewServiceAccountTokenAuthorizationProvider().GetAuthorization(ctx)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Error occured while obtaining service account token")
+		return nil, errors.Wrap(err, "Failed to get one-time token during fetching configuration process")
+	}
+
 	log.C(ctx).Infof("Getting one-time token as part of fetching configuration process for client with id %s", clientId)
-	token, err := r.tokenService.GetToken(ctx, clientId, consumerType)
+	ott, err := r.tokenService.GetToken(ctx, clientId, authToken, consumerType)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error occurred while getting one-time token for client with id %s during fetching configuration process: %v", clientId, err)
 		return nil, errors.Wrap(err, "Failed to get one-time token during fetching configuration process")
@@ -80,7 +86,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 	log.C(ctx).Infof("Configuration for client with id %s successfully fetched.", clientId)
 
 	return &externalschema.Configuration{
-		Token:                         &externalschema.Token{Token: token},
+		Token:                         &externalschema.Token{Token: ott},
 		CertificateSigningRequestInfo: csrInfo,
 		ManagementPlaneInfo: &externalschema.ManagementPlaneInfo{
 			DirectorURL:                    &r.directorURL,
