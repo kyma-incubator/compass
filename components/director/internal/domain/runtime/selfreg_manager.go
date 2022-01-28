@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -34,14 +36,18 @@ type SelfRegConfig struct {
 	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM,optional"`
 	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN,optional"`
 
-	ClientID       string `envconfig:"APP_SELF_REGISTER_CLIENT_ID,optional"`
-	ClientSecret   string `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
-	URL            string `envconfig:"APP_SELF_REGISTER_URL,optional"`
-	OauthTokenPath string `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
+	ClientID       string         `envconfig:"APP_SELF_REGISTER_CLIENT_ID,optional"`
+	ClientSecret   string         `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
+	OAuthMode      oauth.AuthMode `envconfig:"APP_SELF_REGISTER_OAUTH_MODE,default=standard"`
+	URL            string         `envconfig:"APP_SELF_REGISTER_URL,optional"`
+	OauthTokenPath string         `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
 
 	SkipSSLValidation bool `envconfig:"APP_SELF_REGISTER_SKIP_SSL_VALIDATION,default=false"`
 
 	ClientTimeout time.Duration `envconfig:"default=30s"`
+
+	Cert string `envconfig:"APP_SELF_REGISTER_OAUTH_X509_CERT,optional"`
+	Key  string `envconfig:"APP_SELF_REGISTER_OAUTH_X509_KEY,optional"`
 }
 
 // ExternalSvcCaller is used to call external services with given authentication

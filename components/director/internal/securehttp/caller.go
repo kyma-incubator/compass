@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 
 	"github.com/pkg/errors"
@@ -19,7 +18,6 @@ type CallerConfig struct {
 	ClientTimeout time.Duration
 
 	SkipSSLValidation bool
-	Cache             certloader.Cache
 }
 
 // Caller can be used to call secured http endpoints with given credentials
@@ -41,18 +39,15 @@ func NewCaller(config CallerConfig) *Caller {
 	case auth.BasicCredentialType:
 		c.provider = auth.NewBasicAuthorizationProvider()
 	case auth.OAuthCredentialType:
-		// TODO  When the change for fetching xsuaa token
-		// with certificate is merged mtlsTokenAuthorizationProvider should be used so this if has to be removed
-		oAuthCredentials, ok := config.Credentials.Get().(*auth.OAuthCredentials)
-		if ok && oAuthCredentials.ClientSecret == "" {
-			oauthCfg := oauth.Config{
-				TokenRequestTimeout: config.ClientTimeout,
-				SkipSSLValidation:   config.SkipSSLValidation,
-			}
-			c.provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, config.Cache, auth.DefaultMtlsClientCreator)
-		} else {
-			c.provider = auth.NewTokenAuthorizationProvider(&http.Client{Timeout: config.ClientTimeout})
+		c.provider = auth.NewTokenAuthorizationProvider(&http.Client{Timeout: config.ClientTimeout})
+	case auth.OAuthMtlsCredentialType:
+		oauthCfg := oauth.Config{
+			TokenRequestTimeout: config.ClientTimeout,
+			SkipSSLValidation:   config.SkipSSLValidation,
 		}
+		// TODO: handle error properly
+		credentials, _ := config.Credentials.Get().(*auth.OAuthMtlsCredentials)
+		c.provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, credentials.CertCache, auth.DefaultMtlsClientCreator)
 	}
 	c.client.Transport = director_http.NewCorrelationIDTransport(director_http.NewSecuredTransport(http.DefaultTransport, c.provider))
 	return c
