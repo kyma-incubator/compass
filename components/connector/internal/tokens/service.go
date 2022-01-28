@@ -58,7 +58,9 @@ func (svc *tokenService) getOneTimeToken(ctx context.Context, id, authToken, con
 	}
 	req := gcli.NewRequest(fmt.Sprintf(query, "", id))
 
-	req.Header.Set("Authorization", authToken)
+	if authToken != "" {
+		req.Header.Set("Authorization", authToken)
+	}
 
 	tenant, err := authentication.GetStringFromContext(ctx, authentication.TenantKey)
 	if err != nil {

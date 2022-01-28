@@ -3,10 +3,9 @@ package api
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
-
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
@@ -15,7 +14,9 @@ import (
 	certificatesMocks "github.com/kyma-incubator/compass/components/connector/internal/certificates/mocks"
 	revocationMocks "github.com/kyma-incubator/compass/components/connector/internal/revocation/mocks"
 	tokensMocks "github.com/kyma-incubator/compass/components/connector/internal/tokens/automock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -219,13 +220,23 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 
 	t.Run("should return configuration", func(t *testing.T) {
 		// given
+		tokenFileName := "token"
+		tokenContent := "test-token"
+		err := ioutil.WriteFile(tokenFileName, []byte(tokenContent), os.ModePerm)
+		assert.NoError(t, err)
+		defer func() {
+			err := os.Remove(tokenFileName)
+			assert.NoError(t, err)
+		}()
+
 		ctx := context.WithValue(context.Background(), authentication.ConsumerType, "Application")
 		ctx = context.WithValue(ctx, authentication.TenantKey, "tenant")
+		ctx = context.WithValue(ctx, authentication.ServiceAccountFile, tokenFileName)
 
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", ctx).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
-		tokenService.On("GetToken", mock.Anything, subject.CommonName, "Application").Return(token, nil)
+		tokenService.On("GetToken", mock.Anything, subject.CommonName, "Bearer "+tokenContent, "Application").Return(token, nil)
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
@@ -245,13 +256,23 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 
 	t.Run("should return error when failed to generate token", func(t *testing.T) {
 		// given
+		tokenFileName := "token"
+		tokenContent := "test-token"
+		err := ioutil.WriteFile(tokenFileName, []byte(tokenContent), os.ModePerm)
+		assert.NoError(t, err)
+		defer func() {
+			err := os.Remove(tokenFileName)
+			assert.NoError(t, err)
+		}()
+
 		ctx := context.WithValue(context.Background(), authentication.ConsumerType, "Application")
 		ctx = context.WithValue(ctx, authentication.TenantKey, "tenant")
+		ctx = context.WithValue(ctx, authentication.ServiceAccountFile, tokenFileName)
 
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", ctx).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
-		tokenService.On("GetToken", mock.Anything, subject.CommonName, "Application").Return("", apperrors.Internal("error"))
+		tokenService.On("GetToken", mock.Anything, subject.CommonName, "Bearer "+tokenContent, "Application").Return("", apperrors.Internal("error"))
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)

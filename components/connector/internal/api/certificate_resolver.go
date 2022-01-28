@@ -65,10 +65,14 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 		return nil, errors.Wrap(err, "Failed to authenticate request, consumer type not found")
 	}
 
-	authToken, err := auth.NewServiceAccountTokenAuthorizationProvider().GetAuthorization(ctx)
+	serviceAccountFile := auth.DefaultServiceAccountTokenPath
+	if _, ok := ctx.Value(authentication.ServiceAccountFile).(string); ok {
+		serviceAccountFile = ctx.Value(authentication.ServiceAccountFile).(string)
+	}
+	tokenProvider := auth.NewServiceAccountTokenAuthorizationProviderWithPath(serviceAccountFile)
+	authToken, err := tokenProvider.GetAuthorization(ctx)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Error occured while obtaining service account token")
-		return nil, errors.Wrap(err, "Failed to get one-time token during fetching configuration process")
+		log.C(ctx).WithError(err).Warnf("Error occured while obtaining service account token, continuing without an auth token")
 	}
 
 	log.C(ctx).Infof("Getting one-time token as part of fetching configuration process for client with id %s", clientId)
