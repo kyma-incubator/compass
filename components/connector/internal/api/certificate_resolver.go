@@ -66,8 +66,8 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 	}
 
 	serviceAccountFile := auth.DefaultServiceAccountTokenPath
-	if _, ok := ctx.Value(authentication.ServiceAccountFile).(string); ok {
-		serviceAccountFile = ctx.Value(authentication.ServiceAccountFile).(string)
+	if saFileString, ok := ctx.Value(authentication.ServiceAccountFile).(string); ok {
+		serviceAccountFile = saFileString
 	}
 	tokenProvider := auth.NewServiceAccountTokenAuthorizationProviderWithPath(serviceAccountFile)
 	authToken, err := tokenProvider.GetAuthorization(ctx)
