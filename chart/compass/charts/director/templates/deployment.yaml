@@ -165,6 +165,13 @@ spec:
               value: {{ $config.authenticator.trusted_issuers | quote }}
             - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.authenticator.attributes | quote }}
+            {{- if eq $config.authenticator.checkSuffix true }}
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_CLIENT_ID_SUFFIX
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.director.selfRegister.secret.name }}
+                  key: {{ $.Values.global.director.selfRegister.secret.clientIdKey }}
+            {{- end }}
             {{- end }}
             {{- end }}
             - name: APP_HEALTH_CONFIG_INDICATORS

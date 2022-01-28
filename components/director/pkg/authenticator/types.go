@@ -31,6 +31,7 @@ type Config struct {
 	Name           string          `json:"name"`
 	TrustedIssuers []TrustedIssuer `json:"trusted_issuers"`
 	Attributes     Attributes      `json:"attributes"`
+	ClientIDSuffix string          `json:"client_id_suffix"`
 }
 
 // TrustedIssuer missing godoc

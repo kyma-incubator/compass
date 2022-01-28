@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
-	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 )
 
@@ -65,18 +64,7 @@ func TestDeltaReport(stdT *testing.T) {
 		Query: &filterQueryWithoutLocationID,
 	}
 
-	claims := map[string]interface{}{
-		"ns-adapter-test": "ns-adapter-flow",
-		"ext_attr": map[string]interface{}{
-			"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321",
-		},
-		"scope":    []string{},
-		"tenant":   testConfig.DefaultTestTenant,
-		"identity": "nsadapter-flow-identity",
-		"iss":      testConfig.ExternalServicesMockURL,
-		"exp":      time.Now().Unix() + int64(time.Minute.Seconds()*10),
-	}
-	token := token.FromExternalServicesMock(stdT, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret, claims)
+	token := getToken()
 
 	t.Run("Delta report - create system", func(t *testing.T) {
 		ctx := context.Background()

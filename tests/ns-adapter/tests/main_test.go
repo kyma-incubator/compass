@@ -2,8 +2,10 @@ package tests
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
@@ -24,6 +26,7 @@ type config struct {
 	Domain                  string
 	DirectorURL             string
 	AdapterURL              string
+	IsLocalEnv              bool
 }
 
 var (
@@ -46,4 +49,32 @@ func TestMain(m *testing.M) {
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
+}
+
+func getToken(t *testing.T,) string {
+	if testConfig.IsLocalEnv {
+		return getTokenFromExternalSVCMock(t)
+	}
+
+	return getTokenFromClone(t)
+}
+
+func getTokenFromExternalSVCMock(t *testing.T,) string {
+	claims := map[string]interface{}{
+		"ns-adapter-test": "ns-adapter-flow",
+		"ext_attr": map[string]interface{}{
+			"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+		},
+		"scope":     []string{},
+		"client_id": "test_client_id",
+		"tenant":    testConfig.DefaultTestTenant,
+		"identity":  "nsadapter-flow-identity",
+		"iss":       testConfig.ExternalServicesMockURL,
+		"exp":       time.Now().Unix() + int64(time.Minute.Seconds()*10),
+	}
+	return token.FromExternalServicesMock(t, testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret, claims)
+}
+
+func getTokenFromClone(t *testing.T,) string {
+return ""
 }

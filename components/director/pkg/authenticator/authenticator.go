@@ -31,6 +31,7 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 	authenticators := make(map[string]*Config)
 	attributesPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_ATTRIBUTES$", envPrefix))
 	trustedIssuersPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_TRUSTED_ISSUERS$", envPrefix))
+	clientIDSuffixPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_CLIENT_ID_SUFFIX$", envPrefix))
 
 	for _, env := range os.Environ() {
 		pair := strings.SplitN(env, "=", 2)
@@ -73,6 +74,20 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 				authenticators[authenticatorName] = &Config{
 					Name:           authenticatorName,
 					TrustedIssuers: trustedIssuers,
+				}
+			}
+		}
+
+		matches = clientIDSuffixPattern.FindStringSubmatch(key)
+		if len(matches) > 0 {
+			authenticatorName := matches[1]
+
+			if authenticator, exists := authenticators[authenticatorName]; exists {
+				authenticator.ClientIDSuffix = value
+			} else {
+				authenticators[authenticatorName] = &Config{
+					Name:           authenticatorName,
+					ClientIDSuffix: value,
 				}
 			}
 		}

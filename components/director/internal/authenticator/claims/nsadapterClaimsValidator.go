@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 )
 
@@ -21,8 +20,8 @@ func (v *claimsValidator) Validate(_ context.Context, claims Claims) error {
 		return errors.Wrapf(err, "while validating claims")
 	}
 
-	if claims.Tenant[tenantmapping.ConsumerTenantKey] == "" && claims.Tenant[tenantmapping.ExternalTenantKey] != "" {
-		return apperrors.NewTenantNotFoundError(claims.Tenant[tenantmapping.ExternalTenantKey])
+	if claims.Tenant[tenantmapping.ConsumerTenantKey] == "" || claims.Tenant[tenantmapping.ExternalTenantKey] == "" {
+		return errors.New("missing tenant")
 	}
 
 	return nil

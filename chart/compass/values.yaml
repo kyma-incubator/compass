@@ -151,7 +151,11 @@ global:
     prefix: /nsadapter
     path: /nsadapter/api/v1/notifications
     systemToTemplateMappings: '[{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
-
+    secret:
+      name: nsadapter-secret
+      subaccountKey: subaccount
+      local:
+        subaccountValue: subaccount
 
   director:
     host: compass-director.compass-system.svc.cluster.local
@@ -386,9 +390,10 @@ global:
             createRule: true
             gatewayHost: "compass-gateway-xsuaa"
             trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-            attributes: '{"uniqueAttribute": { "key": "ns-adapter-test", "value": "ns-adapter-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+            attributes: '{"uniqueAttribute": { "key": "ns-adapter-test", "value": "ns-adapter-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
             path: /nsadapter/api/v1/notifications
             upstreamComponent: "compass-gateway"
+            checkSuffix: true
         tenant-fetcher:
           cfg:
             config:
@@ -405,6 +410,7 @@ global:
             attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
             path: /tenants/<.*>
             upstreamComponent: "compass-tenant-fetcher"
+            checkSuffix: false
         subscriber:
           cfg:
             config:
@@ -420,6 +426,7 @@ global:
             trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
             attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
             path: /<.*>
+            checkSuffix: false
       tenantMappingService:
         config:
           api:

@@ -97,6 +97,13 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.externalServicesMock.oauthSecretName }}
                   key: client-secret
+            - name: NS_SUBACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.nsAdapter.secret.name }}
+                  key: {{ .Values.global.nsAdapter.secret.subaccountKey }}
+            - name: IS_LOCAL_ENV
+              value: {{ .Values.global.isLocalEnv }}
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
