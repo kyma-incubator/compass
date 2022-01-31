@@ -80,40 +80,32 @@ func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, apiConfig API
 
 	switch authMode {
 	case oauth.Standard:
-		{
-			// do nothing
-		}
-
+		// do nothing
 	case oauth.Mtls:
-		{
-			cert, err := oAuth2Config.X509Config.ParseCertificate()
-			if nil != err {
-				return nil, err
-			}
-
-			// When the auth style is InParams, the TokenSource
-			// will not add the clientSecret if it's empty
-			cfg.AuthStyle = oauth2.AuthStyleInParams
-			cfg.ClientSecret = ""
-
-			transport := &http.Transport{
-				TLSClientConfig: &tls.Config{
-					Certificates: []tls.Certificate{*cert},
-				},
-			}
-
-			mtlClient := &http.Client{
-				Transport: transport,
-				Timeout:   timeout,
-			}
-
-			ctx = context.WithValue(ctx, oauth2.HTTPClient, mtlClient)
+		cert, err := oAuth2Config.X509Config.ParseCertificate()
+		if nil != err {
+			return nil, err
 		}
 
+		// When the auth style is InParams, the TokenSource
+		// will not add the clientSecret if it's empty
+		cfg.AuthStyle = oauth2.AuthStyleInParams
+		cfg.ClientSecret = ""
+
+		transport := &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{*cert},
+			},
+		}
+
+		mtlClient := &http.Client{
+			Transport: transport,
+			Timeout:   timeout,
+		}
+
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, mtlClient)
 	default:
-		{
-			return nil, errors.New("unsupported auth mode:" + string(authMode))
-		}
+		return nil, errors.New("unsupported auth mode:" + string(authMode))
 	}
 
 	httpClient := cfg.Client(ctx)
