@@ -147,7 +147,7 @@ spec:
     url: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
   match:
     methods: ["GET", "POST", "OPTIONS"]
-    url: <http|https>://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>/graphql
+    url: <http|https>://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>/<.*>
   authenticators:
     - handler: jwt
       config:

@@ -35,6 +35,7 @@ spec:
           hostnames:
             # Used for calls to Director
             - "{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
