@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -85,7 +87,7 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 		}
 
 		if response.StatusCode != http.StatusCreated {
-			return labels, errors.New(fmt.Sprintf("received unexpected status %d while preparing self-registered runtime: %s", response.StatusCode, string(respBytes)))
+			return labels, apperrors.NewCustomErrorWithCode(response.StatusCode, fmt.Sprintf("received unexpected status %d while preparing self-registered runtime: %s", response.StatusCode, string(respBytes)))
 		}
 
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
