@@ -463,7 +463,7 @@ func fixMetricsPusherMock() *automock.MetricsPusher {
 }
 
 func TestNewClient(t *testing.T) {
-	const clientId = "client"
+	const clientID = "client"
 	const clientSecret = "secret"
 
 	t.Run("expect error on invalid auth mode", func(t *testing.T) {
@@ -473,7 +473,7 @@ func TestNewClient(t *testing.T) {
 
 	t.Run("standard client-credentials mode", func(t *testing.T) {
 		client, err := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{
-			ClientID:     clientId,
+			ClientID:     clientID,
 			ClientSecret: clientSecret,
 		}, oauth.Standard, tenantfetcher.APIConfig{}, 1)
 		require.NoError(t, err)
@@ -484,7 +484,7 @@ func TestNewClient(t *testing.T) {
 		require.Equal(t, http.DefaultClient.Transport, tr.Base)
 
 		cfg := clientcredentials.Config{
-			ClientID:     clientId,
+			ClientID:     clientID,
 			ClientSecret: clientSecret,
 		}
 		expectedTokenSrc := cfg.TokenSource(context.Background())
@@ -505,7 +505,7 @@ func TestNewClient(t *testing.T) {
 
 		oauthCfg := tenantfetcher.OAuth2Config{
 			X509Config: certCfg,
-			ClientID:   clientId,
+			ClientID:   clientID,
 		}
 		client, err := tenantfetcher.NewClient(oauthCfg, oauth.Mtls, tenantfetcher.APIConfig{}, 1)
 		require.NoError(t, err)
