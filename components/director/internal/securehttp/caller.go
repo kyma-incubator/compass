@@ -45,7 +45,7 @@ func NewCaller(config CallerConfig) *Caller {
 			TokenRequestTimeout: config.ClientTimeout,
 			SkipSSLValidation:   config.SkipSSLValidation,
 		}
-		credentials, _ := config.Credentials.Get().(*auth.OAuthMtlsCredentials)
+		credentials := config.Credentials.Get().(*auth.OAuthMtlsCredentials)
 		c.provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, credentials.CertCache, auth.DefaultMtlsClientCreator)
 	}
 	c.client.Transport = director_http.NewCorrelationIDTransport(director_http.NewSecuredTransport(http.DefaultTransport, c.provider))
