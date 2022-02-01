@@ -7,6 +7,8 @@ import (
 	"encoding/pem"
 	"regexp"
 
+	"github.com/kyma-incubator/compass/components/director/internal/util"
+
 	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
@@ -188,4 +190,47 @@ func getAllRegexMatches(regex, text string) []string {
 	}
 
 	return result
+}
+
+// ParseCertificate creates a tls.Certificate from certificate and key
+// The cert/key can be in PEM format or can be base64 encoded
+func ParseCertificate(cert string, key string) (*tls.Certificate, error) {
+	if cert == "" || key == "" {
+		return nil, errors.New("The cert/key is required")
+	}
+
+	certChainBytes := util.TryDecodeBase64(cert)
+	privateKeyBytes := util.TryDecodeBase64(key)
+
+	return ParseCertificateBytes(certChainBytes, privateKeyBytes)
+}
+
+// ParseCertificateBytes creates a tls.Certificate from certificate and key
+func ParseCertificateBytes(cert []byte, key []byte) (*tls.Certificate, error) {
+	certs, err := DecodeCertificates(cert)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error while decoding certificate pem block")
+	}
+
+	privateKeyPem, _ := pem.Decode(key)
+	if privateKeyPem == nil {
+		return nil, errors.New("Error while decoding private key pem block")
+	}
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyPem.Bytes)
+	if err != nil {
+		pkcs8PrivateKey, err := x509.ParsePKCS8PrivateKey(privateKeyPem.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		var ok bool
+		privateKey, ok = pkcs8PrivateKey.(*rsa.PrivateKey)
+		if !ok {
+			return nil, err
+		}
+	}
+
+	tlsCert := NewTLSCertificate(privateKey, certs...)
+
+	return &tlsCert, nil
 }
