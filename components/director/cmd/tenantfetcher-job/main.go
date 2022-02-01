@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+
 	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -41,15 +43,16 @@ type config struct {
 	Log      log.Config
 	Features features.Config
 
-	TenantProvider              string        `envconfig:"APP_TENANT_PROVIDER"`
-	AccountsRegion              string        `envconfig:"default=central,APP_ACCOUNT_REGION"`
-	SubaccountRegions           []string      `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
-	MetricsPushEndpoint         string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
-	TenantInsertChunkSize       int           `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
-	ClientTimeout               time.Duration `envconfig:"default=60s"`
-	FullResyncInterval          time.Duration `envconfig:"default=12h"`
-	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
-	HTTPClientSkipSslValidation bool          `envconfig:"default=false"`
+	AuthMode                    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
+	TenantProvider              string         `envconfig:"APP_TENANT_PROVIDER"`
+	AccountsRegion              string         `envconfig:"default=central,APP_ACCOUNT_REGION"`
+	SubaccountRegions           []string       `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
+	MetricsPushEndpoint         string         `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+	TenantInsertChunkSize       int            `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
+	ClientTimeout               time.Duration  `envconfig:"default=60s"`
+	FullResyncInterval          time.Duration  `envconfig:"default=12h"`
+	DirectorGraphQLEndpoint     string         `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
+	HTTPClientSkipSslValidation bool           `envconfig:"default=false"`
 
 	ShouldSyncSubaccounts bool `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
 }
@@ -78,7 +81,9 @@ func main() {
 	kubeClient, err := tenantfetcher.NewKubernetesClient(ctx, cfg.KubernetesConfig)
 	exitOnError(err, "Failed to initialize Kubernetes client")
 
-	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, kubeClient, metricsPusher)
+	tenantFetcherSvc, err := createTenantFetcherSvc(cfg, transact, kubeClient, metricsPusher)
+	exitOnError(err, "failed to create tenant fetcher service")
+
 	err = tenantFetcherSvc.SyncTenants()
 
 	if metricsPusher != nil {
@@ -97,7 +102,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kubeClient tenantfetcher.KubeClient, metricsPusher *metrics.Pusher) tenantfetcher.TenantSyncService {
+func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kubeClient tenantfetcher.KubeClient, metricsPusher *metrics.Pusher) (tenantfetcher.TenantSyncService, error) {
 	uidSvc := uid.NewService()
 
 	labelDefConverter := labeldef.NewConverter()
@@ -123,7 +128,11 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 
 	runtimeService := runtime.NewService(runtimeRepository, labelRepository, labelDefService, labelService, uidSvc, scenarioAssignEngine, tenantStorageSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
 
-	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, cfg.ClientTimeout)
+	eventAPIClient, err := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.AuthMode, cfg.APIConfig, cfg.ClientTimeout)
+	if nil != err {
+		return nil, err
+	}
+
 	if metricsPusher != nil {
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
@@ -135,9 +144,9 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
 	if cfg.ShouldSyncSubaccounts {
-		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedSubaccountFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelRepository, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv)
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedSubaccountFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelRepository, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv), nil
 	}
-	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv)
+	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv), nil
 }
 
 func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
