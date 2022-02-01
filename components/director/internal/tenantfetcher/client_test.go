@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"io"
 	"net/http"
 	"net/http/httptest"
