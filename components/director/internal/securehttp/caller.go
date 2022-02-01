@@ -45,7 +45,6 @@ func NewCaller(config CallerConfig) *Caller {
 			TokenRequestTimeout: config.ClientTimeout,
 			SkipSSLValidation:   config.SkipSSLValidation,
 		}
-		// TODO: handle error properly
 		credentials, _ := config.Credentials.Get().(*auth.OAuthMtlsCredentials)
 		c.provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, credentials.CertCache, auth.DefaultMtlsClientCreator)
 	}
