@@ -1,12 +1,19 @@
 package tenantfetcher_test
 
 import (
+	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -47,7 +54,9 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointSubaccountUpdated: endpoint + "/sub-updated",
 		EndpointSubaccountMoved:   endpoint + "/sub-moved",
 	}
-	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
+	client, err := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	require.NoError(t, err)
+
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
@@ -121,7 +130,9 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantDeleted: "http://127.0.0.1:8111/badpath",
 		EndpointTenantUpdated: endpoint + "/empty",
 	}
-	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
+	client, err = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	require.NoError(t, err)
+
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
@@ -155,7 +166,9 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantDeleted: endpoint + "/deleted",
 		EndpointTenantUpdated: endpoint + "/badRequest",
 	}
-	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
+	client, err = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	require.NoError(t, err)
+
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
@@ -171,7 +184,9 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	apiCfg = tenantfetcher.APIConfig{
 		EndpointSubaccountMoved: "",
 	}
-	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
+	client, err = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	require.NoError(t, err)
+
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
@@ -445,4 +460,63 @@ func fixMetricsPusherMock() *automock.MetricsPusher {
 	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusBadRequest, "400 Bad Request").Once()
 
 	return metricsPusherMock
+}
+
+func TestNewClient(t *testing.T) {
+	const clientID = "client"
+	const clientSecret = "secret"
+
+	t.Run("expect error on invalid auth mode", func(t *testing.T) {
+		_, err := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, "invalid-auth-mode", tenantfetcher.APIConfig{}, 1)
+		require.Error(t, err)
+	})
+
+	t.Run("standard client-credentials mode", func(t *testing.T) {
+		client, err := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+		}, oauth.Standard, tenantfetcher.APIConfig{}, 1)
+		require.NoError(t, err)
+
+		httpClient := client.GetHTTPClient()
+		tr, ok := httpClient.Transport.(*oauth2.Transport)
+		require.True(t, ok, "expected *oauth2.Transport")
+		require.Equal(t, http.DefaultClient.Transport, tr.Base)
+
+		cfg := clientcredentials.Config{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+		}
+		expectedTokenSrc := cfg.TokenSource(context.Background())
+		require.Equal(t, expectedTokenSrc, tr.Source)
+	})
+
+	t.Run("mtls+client-secret mode", func(t *testing.T) {
+		const certificate = "-----BEGIN CERTIFICATE-----\nMIIDbjCCAlYCCQDg7pmtw8dIVTANBgkqhkiG9w0BAQsFADB5MQswCQYDVQQGEwJC\nRzENMAsGA1UECAwEVGVzdDENMAsGA1UEBwwEVGVzdDENMAsGA1UECgwEVGVzdDEN\nMAsGA1UECwwEVGVzdDENMAsGA1UEAwwEVGVzdDEfMB0GCSqGSIb3DQEJARYQdGVz\ndEBleGFtcGxlLmNvbTAeFw0yMjAxMjQxMTM4MDFaFw0zMjAxMjIxMTM4MDFaMHkx\nCzAJBgNVBAYTAkJHMQ0wCwYDVQQIDARUZXN0MQ0wCwYDVQQHDARUZXN0MQ0wCwYD\nVQQKDARUZXN0MQ0wCwYDVQQLDARUZXN0MQ0wCwYDVQQDDARUZXN0MR8wHQYJKoZI\nhvcNAQkBFhB0ZXN0QGV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A\nMIIBCgKCAQEAuiFt98GUVTDSCHsOlBcblvUB/02uEmsalsG+DKEufzIVrp4DCxsA\nEsIN85Ywkd1Fsl0vwg9+3ibQlf1XtyXqJ6/jwm2zFdJPM3u2JfGGiiQpscHYp5hS\nlVscBjxZh1CQMKeBXltDsD64EV+XgHGN1aaw9mWKb6iSKsHLhBz594jYMFCnP3wH\nw9/hm6zBAhoF4Xr6UMOp4ZzzY8nzLCGPQuQ9UGp4lyAethrBpsqI6zAxjPKlqhmx\nL3591wkQgTzuL9th54yLEmyEvPTE26ONJBKylH2BqbAFiZPrwet0+PRJSflAfMU8\nYHqqo2AkaY1lmMAZiKDhj1RxMe/jt3HmVQIDAQABMA0GCSqGSIb3DQEBCwUAA4IB\nAQBx8BRhJ59UA3JDL+FHNKwIpxFewxjJwIGWqJTsOh4+rjPK3QeSnF0vt4cnLrCY\n+FLuhhUdFxjeFqJtWN7tHDK3ywSn/yZQTD5Nwcy/F1RmLjl91hjudxO/VewznOlq\nHJlDoM7kW9kOG6xS2HbbSaC1CzU33E90QOwcyCoeVXJ8aMDe6v/kWC65RoI9evg5\n2OxoARA8fpjyUphMTXuVNVI1kd2Uskpo8PePbc1h3OJVzYPIQ4+qMGsu7n3ZdwzI\nqDs2kdBD77k6cBQS+n7g5ETwv5OAgl5q1O17ye/YFNA/T3FhL9to6Nmrkqt7rlnF\nL8uAkeTGuHEATjmosQWUmbYi\n-----END CERTIFICATE-----\n"
+		const key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAuiFt98GUVTDSCHsOlBcblvUB/02uEmsalsG+DKEufzIVrp4D\nCxsAEsIN85Ywkd1Fsl0vwg9+3ibQlf1XtyXqJ6/jwm2zFdJPM3u2JfGGiiQpscHY\np5hSlVscBjxZh1CQMKeBXltDsD64EV+XgHGN1aaw9mWKb6iSKsHLhBz594jYMFCn\nP3wHw9/hm6zBAhoF4Xr6UMOp4ZzzY8nzLCGPQuQ9UGp4lyAethrBpsqI6zAxjPKl\nqhmxL3591wkQgTzuL9th54yLEmyEvPTE26ONJBKylH2BqbAFiZPrwet0+PRJSflA\nfMU8YHqqo2AkaY1lmMAZiKDhj1RxMe/jt3HmVQIDAQABAoIBAH+9xa0N6/FzqhIr\n8ltsaID38cD33QnC++KPYRFl5XViOEM5KrmKdEhragvM/dR92gGJtucmn1lzph/q\nWTLXEJbgPh4ID6pgRf79Xos38bAJFZxrf3e2MKdUei1FaeRWRD9AFqddV100DjvO\nMTnztPX2iujv00zCkl5J1pT7FgrtcYgDPxXQK7dIcHrc9bV9fdTQUnpbVIs/9U7a\n7Qk/eJnEkezbjQCk7+Pgt3ymR29s4vJvyPen3jek0FKhQCxAg6iA5ZOtY+J5AS9e\n3ozZLUEa3b0eOABMw8QnKMtGTmIhLbf9JhISK2Ltsisc/yHHH3KfFE2nayqjvLZf\n5GR62hkCgYEA612EgoRHg4+BSfPfLNG3xsSnM+a98nZOmyxgZ3eNFWpSvi+7MemL\nCJHpwwje412OU1wCc2MtWYvGFY+heL62FxT8+JJLntykZcTQzQoHX3wvaMwopWRi\nJdrv3tEDtSJo9za54kfrNqnVyaxu82r7zgxVbcNiAVR+n7cRXuov288CgYEAynLm\nVI7cIKBOM6U44unkKyIS99Bh57FPjE1QAIsEOiNCWZay4qmzdEboOXjtC95Qyyxn\nTb+MONybwXKkGiLZQZQ2SlgjtEMBDQ+ofk2fK+yHWf4VeLtYWJdBESaAz85xGCCY\nYqlqbFEQd8cl86gTne+emLXp8KrDMuXhbbPvMJsCgYEAgBISAacS9t6GfoQqA0xW\nkNz/EnnTD/UaTst15bci2O1S+tQkK0OmeNJU/eB80AFfabKeTsU/rwMklSTjuz0i\n/ipYgLWyWk47UnknGPsFCgscDQ1SbLTTxz972KWpO83uid6IhT2XGtaNU0D12pRz\nUipZ7fEsCgc9I5FM7XXG9vcCgYBp6xN2ygeBSl2fx6GrlpM5veoOnYeboLjtvsVM\ng28Cu8/K731H+WFaRH7bEtlyjC3ZHrItiznhxgn3e/M/eVwRY2nEG7kSZrv2CWsu\nKY5NfMKT4st5Dwt5zijMwEhEcM3awbL4a4qygPcMs7S3dghNaUCgxQxQTgcyafM3\nYhySYQKBgF7pqQW7ESo1Mp9by+HzJBJsSju5zPBrCZrx8rFAMLCk1uDAIRcUuQtq\n+YwKU8ViemkOHWfN6bePap3/kdVHUxj2xJ6xTAUYHpVOQVMhTw1UmOikiV4FwUo+\nGb5Nk5evWBGhsl2LFqoOqhvFpjftv8+qgRHxmWtj4EoJYWng+hRz\n-----END RSA PRIVATE KEY-----\n"
+
+		certCfg := oauth.X509Config{
+			Cert: certificate,
+			Key:  key,
+		}
+
+		tlsCert, err := certCfg.ParseCertificate()
+		require.NoError(t, err)
+
+		oauthCfg := tenantfetcher.OAuth2Config{
+			X509Config: certCfg,
+			ClientID:   clientID,
+		}
+		client, err := tenantfetcher.NewClient(oauthCfg, oauth.Mtls, tenantfetcher.APIConfig{}, 1)
+		require.NoError(t, err)
+
+		httpClient := client.GetHTTPClient()
+		tr, ok := httpClient.Transport.(*oauth2.Transport)
+		require.True(t, ok, "expected *oauth2.Transport")
+
+		expectedTransport := &http.Transport{
+			TLSClientConfig: &tls.Config{Certificates: []tls.Certificate{*tlsCert}},
+		}
+		require.Equal(t, tr.Base, expectedTransport)
+	})
 }

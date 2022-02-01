@@ -125,7 +125,7 @@ global:
       version: "PR-2174"
     console:
       dir:
-      version: "PR-53"
+      version: "PR-54"
     e2e_tests:
       dir:
       version: "PR-2173"
@@ -280,6 +280,7 @@ global:
         host: compass-gateway-sap-mtls
         certSecret: compass-gateway-mtls-certs # Use connector's root CA as root CA by default. This should be overridden for productive deployments.
     headers:
+      rateLimit: X-Flow-Identity
       request:
         remove:
           - "Client-Id-From-Token"
