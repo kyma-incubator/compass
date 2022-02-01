@@ -108,17 +108,3 @@ function checkInputParameterValue() {
         exit 1
     fi
 }
-
-function useMinikube() {
-    CURRENT_CONTEXT=$(kubectl config current-context)
-    if [ $CURRENT_CONTEXT != "minikube"  ]; then
-        echo "Current context is not minikube, switching to minikube..."
-        minikube update-context
-        if [ $? -ne 0 ]; then
-            echo "Failed to update context to minikube. Local installation requires minikube running"
-            return 1
-        fi
-    fi
-
-    echo "Using minikube kubectl context"
-}

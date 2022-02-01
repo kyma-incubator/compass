@@ -15,10 +15,10 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
 UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml)
 
-MINIKUBE_MEMORY=8192
-MINIKUBE_TIMEOUT=25m
-MINIKUBE_CPUS=5
-APISERVER_VERSION=1.19.16
+K3D_MEMORY=8192MB
+K3D_TIMEOUT=10m0s
+K3D_CPUS=5
+APISERVER_VERSION=1.20.11
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -37,16 +37,12 @@ do
             shift # past argument
             shift # past value
         ;;
-        --skip-minikube-start)
-            SKIP_MINIKUBE_START=true
+        --skip-k3d-start)
+            SKIP_K3D_START=true
             shift # past argument
         ;;
         --skip-kyma-start)
             SKIP_KYMA_START=true
-            shift # past argument
-        ;;
-        --docker-driver)
-            DOCKER_DRIVER=true
             shift # past argument
         ;;
         --dump-db)
@@ -54,27 +50,21 @@ do
             DUMP_IMAGE_TAG="dump"
             shift # past argument
         ;;
-        --minikube-cpus)
+        --k3d-cpus)
             checkInputParameterValue "${2}"
-            MINIKUBE_CPUS="${2}"
+            K3D_CPUS="${2}"
             shift # past argument
             shift # past value
         ;;
-        --minikube-memory)
+        --k3d-memory)
             checkInputParameterValue "${2}"
-            MINIKUBE_MEMORY="${2}"
+            K3D_MEMORY="${2}"
             shift # past argument
             shift # past value
         ;;
-        --minikube-timeout)
+        --k3d-timeout)
             checkInputParameterValue "${2}"
-            MINIKUBE_TIMEOUT="${2}"
-            shift # past argument
-            shift # past value
-        ;;
-        --apiserver-version)
-            checkInputParameterValue "${2}"
-            APISERVER_VERSION="${2}"
+            K3D_TIMEOUT="${2}"
             shift # past argument
             shift # past value
         ;;
@@ -145,19 +135,15 @@ if [[ ${DUMP_DB} ]]; then
     fi
 fi
 
-if [[ ! ${SKIP_MINIKUBE_START} ]]; then
+if [[ ! ${SKIP_K3D_START} ]]; then
   echo "Provisioning k3d cluster..."
-  if [[ ! ${DOCKER_DRIVER} ]]; then
-    kyma provision k3d #--cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --kube-version ${APISERVER_VERSION}
-  else
-    kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --kube-version ${APISERVER_VERSION} --vm-driver docker --docker-ports 443:443 --docker-ports 80:80
-  fi
+  # todo cpu limit
+  kyma provision k3d --k3d-arg='--servers-memory '${K3D_MEMORY} --k3d-arg='--agents-memory '${K3D_MEMORY} --timeout ${K3D_TIMEOUT} --kube-version "${APISERVER_VERSION}"
 fi
 
-#useMinikube
 
-echo "Label Minikube node for benchmark execution..."
-NODE=$(kubectl get nodes | tail -n 1 | cut -d ' ' -f 1)
+echo "Label k3d node for benchmark execution..."
+NODE=$(kubectl get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)
 kubectl label node "$NODE" benchmark=true || true
 
 if [[ ${DUMP_DB} ]]; then
@@ -170,29 +156,27 @@ if [[ ! ${SKIP_KYMA_START} ]]; then
   LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-release ${KYMA_RELEASE} --kyma-installation ${KYMA_INSTALLATION}
 fi
 
-if [[ `kubectl get TestDefinition logging -n kyma-system` ]]; then
-  # Patch logging TestDefinition
-  HOSTNAMES_TO=$(kubectl get TestDefinition logging -n kyma-system -o json |  jq -r '.spec.template.spec.hostAliases[0].hostnames += ["loki.kyma.local"]' | jq -r ".spec.template.spec.hostAliases[0].hostnames" | jq ". | unique")
-  IP_TO=$(kubectl get TestDefinition logging -n kyma-system -o json | jq '.spec.template.spec.hostAliases[0].ip')
-  PATCH_TO=$(cat "${ROOT_PATH}"/installation/resources/logging-test-definition-patch.json | jq -c ".spec.template.spec.hostAliases[0].hostnames += $HOSTNAMES_TO" | jq -c ".spec.template.spec.hostAliases[0].ip += $IP_TO")
-  kubectl patch TestDefinition logging -n kyma-system  --type='merge' -p "$PATCH_TO"
-fi
+# todo
+#if [[ `kubectl get TestDefinition logging -n kyma-system` ]]; then
+#  # Patch logging TestDefinition
+#  HOSTNAMES_TO=$(kubectl get TestDefinition logging -n kyma-system -o json |  jq -r '.spec.template.spec.hostAliases[0].hostnames += ["loki.kyma.local"]' | jq -r ".spec.template.spec.hostAliases[0].hostnames" | jq ". | unique")
+#  IP_TO=$(kubectl get TestDefinition logging -n kyma-system -o json | jq '.spec.template.spec.hostAliases[0].ip')
+#  PATCH_TO=$(cat "${ROOT_PATH}"/installation/resources/logging-test-definition-patch.json | jq -c ".spec.template.spec.hostAliases[0].hostnames += $HOSTNAMES_TO" | jq -c ".spec.template.spec.hostAliases[0].ip += $IP_TO")
+#  kubectl patch TestDefinition logging -n kyma-system  --type='merge' -p "$PATCH_TO"
+#fi
+#
+#if [[ `kubectl get TestDefinition dex-connection -n kyma-system` ]]; then
+#  # Patch dex-connection TestDefinition
+#  kubectl patch TestDefinition dex-connection -n kyma-system --type=json -p="[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/image\", \"value\": \"eu.gcr.io/kyma-project/external/curlimages/curl:7.70.0\"}]"
+#fi
 
-if [[ `kubectl get TestDefinition dex-connection -n kyma-system` ]]; then
-  # Patch dex-connection TestDefinition
-  kubectl patch TestDefinition dex-connection -n kyma-system --type=json -p="[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/image\", \"value\": \"eu.gcr.io/kyma-project/external/curlimages/curl:7.70.0\"}]"
-fi
+#mount_minikube_ca_to_oathkeeper
 
-mount_minikube_ca_to_oathkeeper
-
-prometheusMTLSPatch
+#prometheusMTLSPatch
 
 bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh --kyma-installation ${KYMA_INSTALLATION}
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
 
 echo "Adding Compass entries to /etc/hosts..."
-MINIKUBE_IP=$(minikube ip)
-if [[ ${DOCKER_DRIVER} ]]; then
-    MINIKUBE_IP=127.0.0.1
-fi
-sudo sh -c "echo \"\n${MINIKUBE_IP} adapter-gateway.kyma.local adapter-gateway-mtls.kyma.local compass-gateway-mtls.kyma.local compass-gateway-sap-mtls.kyma.local compass-gateway-auth-oauth.kyma.local compass-gateway.kyma.local compass-gateway-int.kyma.local compass.kyma.local compass-mf.kyma.local kyma-env-broker.kyma.local director.kyma.local compass-external-services-mock-sap-mtls.kyma.local\" >> /etc/hosts"
+K3D_IP=127.0.0.1
+sudo sh -c "echo \"\n${K3D_IP} adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev\" >> /etc/hosts"

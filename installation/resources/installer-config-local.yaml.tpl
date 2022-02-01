@@ -37,7 +37,7 @@ data:
   global.domainName: "kyma.local"
   global.adminPassword: ""
   global.minikubeIP: ""
-  global.ingress.domainName: "kyma.local"
+  global.ingress.domainName: "local.kyma.dev"
   global.externalServicesMock.enabled: "true"
   global.externalServicesMock.auditlog.applyMockConfiguration: "true"
   global.systemFetcher.enabled: "true"

@@ -98,7 +98,6 @@ metadata:
   namespace: compass-installer
   labels:
     name: compass-installer
-    kyma-project.io/installation: "compass-installer"
     kyma-project.io/installation: ""
 spec:
   selector:
@@ -117,7 +116,7 @@ spec:
       serviceAccountName: compass-installer              
       containers:
       - name: compass-installer-container
-        image: eu.gcr.io/kyma-project/develop/kyma-installer:63f27f76
+        image: compass-installer:latest
         imagePullPolicy: IfNotPresent
         env:
           - name: INST_RESOURCE
@@ -128,7 +127,7 @@ spec:
           - -overrideLogFile=/app/overrides.txt
 ---
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: compass-installer-reader
   labels:
@@ -139,7 +138,7 @@ rules:
   verbs: ["*"]
 ---
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: compass-installer
   labels:

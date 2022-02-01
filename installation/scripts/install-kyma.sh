@@ -9,7 +9,6 @@ LOCAL_ENV=${LOCAL_ENV:-false}
 CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 source $SCRIPTS_DIR/utils.sh
-#useMinikube
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -43,8 +42,15 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
-CERT=$(<$HOME/.minikube/ca.crt)
-CERT="${CERT//$'\n'/\\\\n}"
+function installAdditionalComponents() {
+    echo 'Installing dex'
+    DEX_CHARTS_PATH="${ROOT_PATH}"/chart/compass/charts/dex
+    helm install -f "${DEX_CHARTS_PATH}"/values.yaml dex "${DEX_CHARTS_PATH}"
+
+    echo 'Installing testing'
+    TESTING_CHARTS_PATH="${ROOT_PATH}"/chart/compass/charts/testing
+    helm install -f "${TESTING_CHARTS_PATH}"/values.yaml testing "${TESTING_CHARTS_PATH}"
+}
 
 INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma-minimal.yaml
 OVERRIDES_KYMA_MINIMAL_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-minimal-config-local.yaml
@@ -82,24 +88,12 @@ fi
 
 echo "Using Kyma source '${KYMA_SOURCE}'..."
 
-echo "Installing Kyma..."
-set -o xtrace
-if [[ $KYMA_INSTALLATION == *full* ]]; then
+if [[ $KYMA_INSTALLATION == *full* ]]; then # todo add overrides if possible
   echo "Installing full Kyma"
-  kyma install -c $INSTALLER_CR_FULL_PATH -o $FULL_OVERRIDES_FILENAME --source $KYMA_SOURCE
+  kyma deploy --components-file $INSTALLER_CR_FULL_PATH --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  kyma deploy --components-file ../resources/kyma-components.yml #-c $INSTALLER_CR_PATH -o $MINIMAL_OVERRIDES_FILENAME --source $KYMA_SOURCE
+  kyma deploy --components-file $INSTALLER_CR_PATH  --source $KYMA_SOURCE
 fi
-set +o xtrace
 
-# Kyma CLI uses the internal IP for the /etc/hosts override when docker driver is used. However on the host machine this should be localhost
-USED_DRIVER=$(minikube profile list -o json | jq -r ".valid[0].Config.Driver")
-if [[ $USED_DRIVER == "docker" ]]; then
-  MINIKUBE_IP=$(minikube ssh egrep "minikube$" /etc/hosts | cut -f1)
-  if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines, reference issue: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
-    sudo sed -i "" "s/$MINIKUBE_IP/127.0.0.1/g" /etc/hosts
-  else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
-    sudo sed -i "s/$MINIKUBE_IP/127.0.0.1/g" /etc/hosts
-  fi
-fi
+#installAdditionalComponents

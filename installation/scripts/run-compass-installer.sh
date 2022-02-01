@@ -5,14 +5,8 @@ set -o errexit
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 source $CURRENT_DIR/utils.sh
-#useMinikube
 
-DOMAIN="kyma.local"
-
-VM_DRIVER="virtualbox"
-if [ `uname -s` = "Darwin" ]; then
-    VM_DRIVER="hyperkit"
-fi
+DOMAIN="local.kyma.dev"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -30,12 +24,6 @@ do
             CR_PATH="$2"
             shift # past argument
             shift # past value
-        ;;
-        --vm-driver)
-            checkInputParameterValue "$2"
-            VM_DRIVER="$2"
-            shift
-            shift
         ;;
         --password)
             checkInputParameterValue "$2"
@@ -61,7 +49,7 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-bash ${SCRIPTS_DIR}/build-compass-installer.sh --vm-driver "${VM_DRIVER}"
+bash ${SCRIPTS_DIR}/build-compass-installer.sh
 
 if [ -z "$CR_PATH" ]; then
 
