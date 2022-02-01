@@ -2,9 +2,10 @@ package model_test
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestVendorInput_ToVendor(t *testing.T) {
