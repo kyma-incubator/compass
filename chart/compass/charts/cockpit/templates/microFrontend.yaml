@@ -3,7 +3,9 @@ kind: CustomResourceDefinition
 metadata:
   name: "microfrontends.ui.kyma-project.io"
   annotations:
-    "helm.sh/resource-policy": keep
+    "app.kubernetes.io/managed-by": "Helm"
+    "meta.helm.sh/release-name": "compass"
+    "meta.helm.sh/release-namespace": "compass-system"
 spec:
   group: ui.kyma-project.io
   version: v1alpha1

@@ -139,6 +139,8 @@ if [[ ! ${SKIP_K3D_START} ]]; then
   echo "Provisioning k3d cluster..."
   # todo cpu limit
   kyma provision k3d --k3d-arg='--servers-memory '${K3D_MEMORY} --k3d-arg='--agents-memory '${K3D_MEMORY} --timeout ${K3D_TIMEOUT} --kube-version "${APISERVER_VERSION}"
+  echo "Adding k3d registry entry to /etc/hosts..."
+  sudo sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
 fi
 
 

@@ -116,7 +116,7 @@ spec:
       serviceAccountName: compass-installer              
       containers:
       - name: compass-installer-container
-        image: compass-installer:latest
+        image: k3d-kyma-registry:5001/compass-installer:latest
         imagePullPolicy: IfNotPresent
         env:
           - name: INST_RESOURCE

@@ -35,5 +35,6 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 pushd $ROOT_DIR
 
 docker build -t ${IMAGE_NAME} ${BUILD_ARG} -f ./tools/compass-installer/compass.Dockerfile .
+docker push ${IMAGE_NAME}
 
 popd 
