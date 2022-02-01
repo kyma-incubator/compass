@@ -116,7 +116,7 @@ func NewRootResolver(
 		var err error
 		credentials, err = authpkg.NewOAuthMtlsCredentials(&selfRegConfig)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while creating OAuth Mtls credentials")
+			return nil, errors.Wrap(err, "while creating OAuth Mtls credentials")
 		}
 	} else {
 		return nil, errors.New(fmt.Sprintf("unsupported OAuth mode: %s", selfRegConfig.OAuthMode))
@@ -128,7 +128,10 @@ func NewRootResolver(
 		SkipSSLValidation: selfRegConfig.SkipSSLValidation,
 	}
 
-	caller := securehttp.NewCaller(config)
+	caller, err := securehttp.NewCaller(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating caller")
+	}
 
 	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)
 	hydra := hydraClient.New(transport, nil)
