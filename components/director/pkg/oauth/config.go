@@ -40,3 +40,22 @@ type X509Config struct {
 func (c *X509Config) ParseCertificate() (*tls.Certificate, error) {
 	return cert.ParseCertificate(c.Cert, c.Key)
 }
+
+// CertCache holds x509 cert
+type CertCache struct {
+	cert *tls.Certificate
+}
+
+// NewCertCache creates CertCache from X509Config
+func NewCertCache(x509config *X509Config) (*CertCache, error) {
+	c, err := x509config.ParseCertificate()
+	if err != nil {
+		return nil, err
+	}
+	return &CertCache{cert: c}, nil
+}
+
+// Get returns CertCache's certificate
+func (c CertCache) Get() *tls.Certificate {
+	return c.cert
+}

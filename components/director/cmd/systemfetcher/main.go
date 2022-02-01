@@ -38,7 +38,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
-	oauth "github.com/kyma-incubator/compass/components/director/pkg/oauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -48,6 +48,8 @@ import (
 type config struct {
 	APIConfig      systemfetcher.APIConfig
 	OAuth2Config   oauth.Config
+	X509Config     oauth.X509Config
+	OAuthMode      oauth.AuthMode `envconfig:"APP_OAUTH_MODE,default=standard"`
 	SystemFetcher  systemfetcher.Config
 	Database       persistence.DatabaseConfig
 	TemplateConfig appTemplateConfig
@@ -215,16 +217,23 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 
 	var authProvider httputil.AuthorizationProvider
 
-	if cfg.OAuth2Config.ClientSecret == "" {
-		// mTLS client credentials
-		authProvider = pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, certCache, pkgAuth.DefaultMtlsClientCreator)
-	} else {
+	switch cfg.OAuthMode {
+	case oauth.Standard:
 		// plain client credentials
 		baseClient := &http.Client{
 			Timeout:   cfg.OAuth2Config.TokenRequestTimeout,
 			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: cfg.OAuth2Config.SkipSSLValidation}},
 		}
 		authProvider = pkgAuth.NewTokenAuthorizationProvider(baseClient)
+	case oauth.Mtls:
+		// mTLS client credentials
+		cache, err := oauth.NewCertCache(&cfg.X509Config)
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid x509 config")
+		}
+		authProvider = pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, cache, pkgAuth.DefaultMtlsClientCreator)
+	default:
+		return nil, errors.Errorf("unsupported AuthMode: %s", cfg.OAuthMode)
 	}
 
 	client := &http.Client{
