@@ -94,7 +94,7 @@ global:
       version: "PR-2223"
     gateway:
       dir:
-      version: "PR-2166"
+      version: "PR-2198"
     operations_controller:
       dir:
       version: "PR-2166"
