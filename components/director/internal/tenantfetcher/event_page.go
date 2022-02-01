@@ -159,7 +159,7 @@ func (ep eventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 
 	subdomain := gjson.Get(jsonPayload, ep.fieldMapping.SubdomainField)
 	if !subdomain.Exists() {
-		log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.SubdomainField, id)
+		log.D().Warnf("Missing or invalid format of field: %s for tenant with ID: %s", ep.fieldMapping.SubdomainField, id)
 	}
 
 	entityType := gjson.Get(jsonPayload, ep.fieldMapping.EntityTypeField)
