@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 
 	"github.com/pkg/errors"
@@ -18,6 +20,7 @@ type CallerConfig struct {
 	ClientTimeout time.Duration
 
 	SkipSSLValidation bool
+	Cache             certloader.Cache
 }
 
 // Caller can be used to call secured http endpoints with given credentials

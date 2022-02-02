@@ -38,7 +38,7 @@ type SelfRegConfig struct {
 
 	ClientID       string         `envconfig:"APP_SELF_REGISTER_CLIENT_ID,optional"`
 	ClientSecret   string         `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
-	OAuthMode      oauth.AuthMode `envconfig:"APP_SELF_REGISTER_OAUTH_MODE,default=standard"`
+	OAuthMode      oauth.AuthMode `envconfig:"APP_SELF_REGISTER_OAUTH_MODE,default=oauth-mtls"`
 	URL            string         `envconfig:"APP_SELF_REGISTER_URL,optional"`
 	OauthTokenPath string         `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
 
