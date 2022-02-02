@@ -220,6 +220,7 @@ func main() {
 		cfg.OneTimeToken.Length,
 		adminURL,
 		accessStrategyExecutorProvider,
+		certCache,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
