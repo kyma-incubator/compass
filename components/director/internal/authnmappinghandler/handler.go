@@ -244,13 +244,13 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 	}
 
 	if config.ClientIDSuffix != "" {
-		c := make(map[string]interface{}, 0)
+		c := make(map[string]interface{})
 		if err = claims.Claims(&c); err != nil {
 			return nil, authenticator.Coordinates{}, err
 		}
 
 		if !strings.HasSuffix(c[config.Attributes.ClientID.Key].(string), config.ClientIDSuffix) {
-			return nil, authenticator.Coordinates{}, errors.Wrapf(aggregatedErr,"client suffix mismatch")
+			return nil, authenticator.Coordinates{}, errors.Wrapf(aggregatedErr, "client suffix mismatch")
 		}
 	}
 

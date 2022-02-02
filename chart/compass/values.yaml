@@ -156,6 +156,18 @@ global:
       subaccountKey: subaccount
       local:
         subaccountValue: subaccount
+    authSecret:
+      name: "compass-external-services-mock-oauth-credentials"
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      tokenUrlKey: url
+      instanceUrlKey: url
+      certKey: cert
+      keyKey: key
+    registerPath: "/register"
+    tokenPath: "/secured/oauth/token"
+    createClonePattern: '{"key": "%s"}'
+    createBindingPattern: '{}'
 
   director:
     host: compass-director.compass-system.svc.cluster.local

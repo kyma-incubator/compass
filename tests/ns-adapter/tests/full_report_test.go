@@ -3,14 +3,15 @@ package tests
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
-	"net/http"
-	"testing"
 )
 
 type SccKey struct {
@@ -115,7 +116,14 @@ func TestFullReport(stdT *testing.T) {
 		Query: &filterQueryWithoutLocationID,
 	}
 
-	token := getToken()
+	var token string
+	if testConfig.UseClone {
+		instanceName := getInstanceName(stdT)
+		defer deleteClone(stdT, instanceName)
+		token = getTokenFromClone(stdT, instanceName)
+	} else {
+		token = getTokenFromExternalSVCMock(stdT)
+	}
 
 	t.Run("Full report - create system", func(t *testing.T) {
 		ctx := context.Background()

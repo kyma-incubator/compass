@@ -13,6 +13,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/go-logr/logr v0.4.0 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
@@ -30,10 +31,11 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220104145031-c9120ed20881
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20220104145031-c9120ed20881
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220119141926-14d56650ab23
+	github.com/kyma-incubator/compass/components/director v0.0.0-20220201115039-8f2f386c207f
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220104145031-c9120ed20881
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20220104145031-c9120ed20881
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220104145031-c9120ed20881
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220104122431-99ed924ea212 // indirect
 	github.com/lib/pq v1.10.4 // indirect
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/copystructure v1.1.2 // indirect
@@ -77,6 +79,7 @@ require (
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v0.20.2
 	k8s.io/klog/v2 v2.4.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd // indirect
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009 // indirect
 	sigs.k8s.io/controller-runtime v0.8.3 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.0.2 // indirect

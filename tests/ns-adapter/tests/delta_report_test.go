@@ -64,7 +64,14 @@ func TestDeltaReport(stdT *testing.T) {
 		Query: &filterQueryWithoutLocationID,
 	}
 
-	token := getToken()
+	var token string
+	if testConfig.UseClone {
+		instanceName := getInstanceName(stdT)
+		defer deleteClone(stdT, instanceName)
+		token = getTokenFromClone(stdT, instanceName)
+	} else {
+		token = getTokenFromExternalSVCMock(stdT)
+	}
 
 	t.Run("Delta report - create system", func(t *testing.T) {
 		ctx := context.Background()

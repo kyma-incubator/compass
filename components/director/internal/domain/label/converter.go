@@ -63,7 +63,7 @@ func (c *converter) ToEntity(in *model.Label) (*Entity, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in *Entity) (*model.Label, error){
+func (c *converter) FromEntity(in *Entity) (*model.Label, error) {
 	var valueUnmarshalled interface{}
 	if in.Value != "" {
 		err := json.Unmarshal([]byte(in.Value), &valueUnmarshalled)
