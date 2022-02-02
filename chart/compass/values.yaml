@@ -103,7 +103,7 @@ global:
       version: "PR-58"
     schema_migrator:
       dir:
-      version: "PR-2166"
+      version: "PR-2187"
     system_broker:
       dir:
       version: "PR-2166"
@@ -117,7 +117,7 @@ global:
       version: "PR-2153"
     console:
       dir:
-      version: "PR-52"
+      version: "PR-54"
     e2e_tests:
       dir:
       version: "PR-2153"
@@ -254,6 +254,7 @@ global:
         host: compass-gateway-sap-mtls
         certSecret: compass-gateway-mtls-certs # Use connector's root CA as root CA by default. This should be overridden for productive deployments.
     headers:
+      rateLimit: X-Flow-Identity
       request:
         remove:
           - "Client-Id-From-Token"
@@ -590,7 +591,6 @@ global:
 
   externalServicesMock:
     enabled: false
-    auditlog: false
     certSecuredPort: 8081
     ordCertSecuredPort: 8082
     unsecuredPort: 8083
@@ -608,6 +608,15 @@ global:
       clientSecretKey: client-secret
       oauthUrlKey: url
       oauthTokenPath: "/secured/oauth/token"
+    auditlog:
+      applyMockConfiguration: false
+      managementApiPath: /audit-log/v2/configuration-changes/search
+      secret:
+        name: "auditlog-instance-management"
+        urlKey: url
+        tokenUrlKey: token-url
+        clientIdKey: client-id
+        clientSecretKey: client-secret
 
   tests:
     http:
@@ -624,6 +633,8 @@ global:
       consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
       externalClientCertTestSecretName: "external-client-certificate-test-secret"
       externalClientCertTestSecretNamespace: "compass-system"
+    externalServicesMock:
+      skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     directorFQDN: http://compass-director.compass-system.svc.cluster.local

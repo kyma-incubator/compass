@@ -157,6 +157,10 @@ spec:
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: header
+    config:
+      headers:
+        {{ .Values.global.gateway.headers.rateLimit }}: "{{ .Values.rateLimit.headerValueTemplate }}"
   - handler: id_token
     config:
       claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
@@ -249,6 +253,10 @@ spec:
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: header
+    config:
+      headers:
+        {{ .Values.global.gateway.headers.rateLimit }}: "{{ .Values.rateLimit.headerValueTemplate }}"
   - handler: id_token
     config:
       claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}

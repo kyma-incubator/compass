@@ -339,6 +339,15 @@ func NewConcurrentUpdate() error {
 	}
 }
 
+// NewCustomErrorWithCode returns Error with a given code and message
+func NewCustomErrorWithCode(code int, msg string) error {
+	return Error{
+		errorCode: ErrorType(code),
+		Message:   msg,
+		arguments: map[string]string{},
+	}
+}
+
 // IsValueNotFoundInConfiguration missing godoc
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
