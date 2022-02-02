@@ -28,7 +28,7 @@ func TestTokenService(t *testing.T) {
 		gcliMock.On("Run", ctx, mock.Anything, mock.Anything).Run(GenerateTestToken(t, expected)).Return(nil).Once()
 		tokenService := NewTokenService(gcliMock)
 		// WHEN
-		actualToken, appError := tokenService.GetToken(ctx, clientId, "", "Application")
+		actualToken, appError := tokenService.GetToken(ctx, clientId, "Application")
 		// THEN
 		require.NoError(t, appError)
 		assert.Equal(t, token, actualToken)
@@ -43,22 +43,7 @@ func TestTokenService(t *testing.T) {
 		gcliMock.On("Run", ctx, mock.Anything, mock.Anything).Return(err)
 		tokenService := NewTokenService(gcliMock)
 		// WHEN
-		actualToken, appError := tokenService.GetToken(ctx, clientId, "", "Application")
-		// THEN
-		require.Error(t, appError)
-		assert.Equal(t, "", actualToken)
-	})
-
-	t.Run("should return error when auth token is not valid", func(t *testing.T) {
-		// GIVEN
-		gcliMock := &gcliMocks.GraphQLClient{}
-		defer gcliMock.AssertExpectations(t)
-		err := errors.New("could not get the one time token due to invalid auth token")
-		ctx := context.WithValue(context.Background(), authentication.TenantKey, "tenant")
-		gcliMock.On("Run", ctx, mock.Anything, mock.Anything).Return(err)
-		tokenService := NewTokenService(gcliMock)
-		// WHEN
-		actualToken, appError := tokenService.GetToken(ctx, clientId, "invalidAuthToken", "Application")
+		actualToken, appError := tokenService.GetToken(ctx, clientId, "Application")
 		// THEN
 		require.Error(t, appError)
 		assert.Equal(t, "", actualToken)

@@ -18,7 +18,7 @@ type GraphQLClient interface {
 
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
-	GetToken(ctx context.Context, clientId, authToken, consumerType string) (string, apperrors.AppError)
+	GetToken(ctx context.Context, clientId, consumerType string) (string, apperrors.AppError)
 }
 
 var consumerTypeToQuery = map[string]string{
@@ -42,8 +42,8 @@ func NewTokenService(cli GraphQLClient) *tokenService {
 	return &tokenService{cli: cli}
 }
 
-func (svc *tokenService) GetToken(ctx context.Context, clientId, authToken, consumerType string) (string, apperrors.AppError) {
-	token, err := svc.getOneTimeToken(ctx, clientId, authToken, consumerType)
+func (svc *tokenService) GetToken(ctx context.Context, clientId, consumerType string) (string, apperrors.AppError) {
+	token, err := svc.getOneTimeToken(ctx, clientId, consumerType)
 	if err != nil {
 		return "", apperrors.Internal("could not get one time token: %s", err)
 	}
@@ -51,16 +51,12 @@ func (svc *tokenService) GetToken(ctx context.Context, clientId, authToken, cons
 	return token, nil
 }
 
-func (svc *tokenService) getOneTimeToken(ctx context.Context, id, authToken, consumerType string) (string, error) {
+func (svc *tokenService) getOneTimeToken(ctx context.Context, id, consumerType string) (string, error) {
 	query, found := consumerTypeToQuery[consumerType]
 	if !found {
 		return "", errors.Errorf("No token generation for consumer type %s", consumerType)
 	}
 	req := gcli.NewRequest(fmt.Sprintf(query, "", id))
-
-	if authToken != "" {
-		req.Header.Set("Authorization", authToken)
-	}
 
 	tenant, err := authentication.GetStringFromContext(ctx, authentication.TenantKey)
 	if err != nil {

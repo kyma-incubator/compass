@@ -10,7 +10,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
@@ -65,18 +64,8 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 		return nil, errors.Wrap(err, "Failed to authenticate request, consumer type not found")
 	}
 
-	serviceAccountFile := auth.DefaultServiceAccountTokenPath
-	if saFileString, ok := ctx.Value(authentication.ServiceAccountFile).(string); ok {
-		serviceAccountFile = saFileString
-	}
-	tokenProvider := auth.NewServiceAccountTokenAuthorizationProviderWithPath(serviceAccountFile)
-	authToken, err := tokenProvider.GetAuthorization(ctx)
-	if err != nil {
-		log.C(ctx).WithError(err).Warnf("Error occured while obtaining service account token, continuing without an auth token")
-	}
-
 	log.C(ctx).Infof("Getting one-time token as part of fetching configuration process for client with id %s", clientId)
-	ott, err := r.tokenService.GetToken(ctx, clientId, authToken, consumerType)
+	token, err := r.tokenService.GetToken(ctx, clientId, consumerType)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error occurred while getting one-time token for client with id %s during fetching configuration process: %v", clientId, err)
 		return nil, errors.Wrap(err, "Failed to get one-time token during fetching configuration process")
@@ -90,7 +79,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 	log.C(ctx).Infof("Configuration for client with id %s successfully fetched.", clientId)
 
 	return &externalschema.Configuration{
-		Token:                         &externalschema.Token{Token: ott},
+		Token:                         &externalschema.Token{Token: token},
 		CertificateSigningRequestInfo: csrInfo,
 		ManagementPlaneInfo: &externalschema.ManagementPlaneInfo{
 			DirectorURL:                    &r.directorURL,
