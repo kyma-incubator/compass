@@ -124,32 +124,19 @@ spec:
             periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
           volumeMounts:
         {{if eq .Values.global.database.embedded.enabled false}}
-            - name: cloudsql-instance-credentials
-              mountPath: /secrets/cloudsql-instance-credentials
-              readOnly: true
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
           command: ["/cloud_sql_proxy",
                     "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
-                    "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json",
                     "-term_timeout=2s"]
           resources:
           {{- toYaml .Values.deployment.resourcesCloudsqlProxy | nindent 12 }}
-          volumeMounts:
-            - name: cloudsql-instance-credentials
-              mountPath: /secrets/cloudsql-instance-credentials
-              readOnly: true
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}
           {{- end }}
           {{end}}
       volumes:
-        {{if eq .Values.global.database.embedded.enabled false}}
-        - name: cloudsql-instance-credentials
-          secret:
-            secretName: cloudsql-instance-credentials
-        {{end}}
         - name: director-config
           configMap:
             name: {{ template "fullname" . }}-config
