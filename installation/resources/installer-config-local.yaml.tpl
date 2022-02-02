@@ -34,6 +34,7 @@ metadata:
     kyma-project.io/installation: ""
 data:
   global.isLocalEnv: "true"
+  global.isForTesting: "true"
   global.domainName: "kyma.local"
   global.adminPassword: ""
   global.minikubeIP: ""

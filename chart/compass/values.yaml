@@ -130,6 +130,7 @@ global:
       dir:
       version: "PR-2173"
   isLocalEnv: false
+  isForTesting: false
   oauth2:
     host: oauth2
   livenessProbe:

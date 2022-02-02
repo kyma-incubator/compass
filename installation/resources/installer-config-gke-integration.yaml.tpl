@@ -8,6 +8,7 @@ metadata:
     installer: overrides
     kyma-project.io/installation: ""
 data:
+  global.isForTesting: "true"
   global.externalServicesMock.enabled: "true"
   global.externalServicesMock.auditlog.applyMockConfiguration: "true"
   gateway.gateway.auditlog.enabled: "true"
