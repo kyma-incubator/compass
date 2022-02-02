@@ -78,11 +78,6 @@ spec:
                     secretKeyRef:
                       name: {{ .Values.global.systemFetcher.secret.name }}
                       key: {{ .Values.global.systemFetcher.secret.clientIdKey }}
-                - name: APP_OAUTH_CLIENT_SECRET
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ .Values.global.systemFetcher.secret.name }}
-                      key: {{ .Values.global.systemFetcher.secret.clientSecretKey }}
                 - name: APP_OAUTH_TOKEN_BASE_URL
                   valueFrom:
                     secretKeyRef:
