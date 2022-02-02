@@ -26,11 +26,15 @@ func _() {
 	_ = x[InvalidStatusCondition-33]
 	_ = x[CannotUpdateObjectInManyBundles-34]
 	_ = x[ConcurrentUpdate-35]
+	_ = x[BadRequest-400]
+	_ = x[Conflict-409]
 }
 
 const (
 	_ErrorType_name_0 = "InternalErrorUnknownError"
 	_ErrorType_name_1 = "NotFoundNotUniqueInvalidDataInsufficientScopesTenantRequiredTenantNotFoundUnauthorizedInvalidOperationOperationTimeoutEmptyDataInconsistentDataNotUniqueNameConcurrentOperationInvalidStatusConditionCannotUpdateObjectInManyBundlesConcurrentUpdate"
+	_ErrorType_name_2 = "BadRequest"
+	_ErrorType_name_3 = "Conflict"
 )
 
 var (
@@ -46,6 +50,10 @@ func (i ErrorType) String() string {
 	case 20 <= i && i <= 35:
 		i -= 20
 		return _ErrorType_name_1[_ErrorType_index_1[i]:_ErrorType_index_1[i+1]]
+	case i == 400:
+		return _ErrorType_name_2
+	case i == 409:
+		return _ErrorType_name_3
 	default:
 		return "ErrorType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
