@@ -67,12 +67,10 @@ const (
 	expectedNumberOfSystemInstances           = 6
 	expectedNumberOfPackages                  = 6
 	expectedNumberOfBundles                   = 12
-	expectedNumberOfProducts                  = 7
 	expectedNumberOfAPIs                      = 6
 	expectedNumberOfResourceDefinitionsPerAPI = 3
 	expectedNumberOfEvents                    = 12
 	expectedNumberOfTombstones                = 6
-	expectedNumberOfVendors                   = 7
 
 	expectedNumberOfAPIsInFirstBundle    = 1
 	expectedNumberOfAPIsInSecondBundle   = 1
@@ -87,6 +85,12 @@ const (
 	documentationLabelKey         = "Documentation label key"
 	documentationLabelFirstValue  = "Markdown Documentation with links"
 	documentationLabelSecondValue = "With multiple values"
+)
+
+var (
+	// The expected number is increased with initial number of global vendors/products before test execution
+	expectedNumberOfProducts = 6
+	expectedNumberOfVendors  = 6
 )
 
 func TestORDAggregator(t *testing.T) {
@@ -170,30 +174,6 @@ func TestORDAggregator(t *testing.T) {
 
 		ctx := context.Background()
 
-		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
-		require.NoError(t, err)
-
-		secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
-		require.NoError(t, err)
-
-		thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
-		require.NoError(t, err)
-
-		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
-		require.NoError(t, err)
-
-		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
-		require.NoError(t, err)
-
-		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
-		require.NoError(t, err)
-
 		t.Log("Create integration system")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
 		defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys)
@@ -222,6 +202,41 @@ func TestORDAggregator(t *testing.T) {
 		ctx = context.WithValue(ctx, oauth2.HTTPClient, unsecuredHttpClient)
 		httpClient := conf.Client(ctx)
 		httpClient.Timeout = 20 * time.Second
+
+		// Get vendors
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		numberOfGlobalVendors := len(gjson.Get(respBody, "value").Array())
+		expectedNumberOfVendors += numberOfGlobalVendors
+
+		// Get products
+		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		numberOfGlobalProducts := len(gjson.Get(respBody, "value").Array())
+		expectedNumberOfProducts += numberOfGlobalProducts
+
+		// Register systems
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		require.NoError(t, err)
+
+		secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
+		require.NoError(t, err)
+
+		thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
+		require.NoError(t, err)
+
+		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
+		require.NoError(t, err)
+
+		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
+		require.NoError(t, err)
+
+		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
+		require.NoError(t, err)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
