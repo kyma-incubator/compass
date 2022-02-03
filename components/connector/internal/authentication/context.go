@@ -11,7 +11,6 @@ const (
 	ConnectorTokenKey          ContextKey = "ConnectorToken"
 	TenantKey                  ContextKey = "TenantKey"
 	ConsumerType               ContextKey = "ConsumerType"
-	ServiceAccountFile         ContextKey = "ServiceAccountFile"
 	ClientIdFromTokenKey       ContextKey = "ClientIdFromToken"
 	ClientIdFromCertificateKey ContextKey = "ClientIdFromCertificate"
 	ClientCertificateHashKey   ContextKey = "ClientCertificateHash"
