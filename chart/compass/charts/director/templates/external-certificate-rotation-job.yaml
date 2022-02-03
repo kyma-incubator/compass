@@ -102,12 +102,15 @@ spec:
                   }
 
                   echo -e "${YELLOW}Issuing token... ${NC}"
+                  echo $CERT_SVC_OAUTH_CLIENT_CERT | openssl enc -base64 -d -out /tmp/client-cert.pem
+                  echo $CERT_SVC_OAUTH_CLIENT_KEY | openssl enc -base64 -d -out /tmp/client-key.pem
+
                   TOKEN=$(curl \
                     -s \
                     -m 30 \
                     -X POST \
-                    --cert /var/cert-svc-cred/client-cert.pem \
-                    --key /var/cert-svc-cred/client-key.pem \
+                    --cert /tmp/client-cert.pem \
+                    --key /tmp/client-key.pem \
                     "$CERT_SVC_OAUTH_URL$CERT_SVC_TOKEN_PATH" \
                     -H "Content-Type: application/x-www-form-urlencoded" \
                     -H "Accept: application/json" \
@@ -167,19 +170,16 @@ spec:
                       key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.oauthUrlKey }}
                 - name: CERT_SVC_TOKEN_PATH
                   value: {{ .Values.global.externalCertConfiguration.tokenPath }}
-              volumeMounts:
-                - mountPath: /var/cert-svc-cred
-                  name: cert-service-credentials
-                  readOnly: true
-          volumes:
-            - name: cert-service-credentials
-              secret:
-                secretName: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
-                items:
-                  - key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientCert }}
-                    path: client-cert.pem
-                  - key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientKey }}
-                    path: client-key.pem
+                - name: CERT_SVC_OAUTH_CLIENT_CERT
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientCert }}
+                - name: CERT_SVC_OAUTH_CLIENT_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientKey }}
 
 ---
 apiVersion: v1
