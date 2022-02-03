@@ -169,7 +169,7 @@ global:
     tokenPath: "/secured/oauth/token"
     createClonePattern: '{"key": "%s"}'
     createBindingPattern: '{}'
-    useClone: false
+    useClone: "false"
 
   director:
     host: compass-director.compass-system.svc.cluster.local

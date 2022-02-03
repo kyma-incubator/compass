@@ -131,7 +131,7 @@ spec:
                   name: {{ .Values.global.nsAdapter.authSecret.name }}
                   key: {{ .Values.global.nsAdapter.authSecret.keyKey }}
             - name: USE_CLONE
-              value: {{ .Values.global.nsAdapter.useClone }}
+              value: {{ .Values.global.nsAdapter.useClone | quote }}
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
