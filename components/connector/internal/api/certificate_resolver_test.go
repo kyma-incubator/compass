@@ -224,6 +224,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", ctx).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
+		tokenService.On("GetToken", mock.Anything, subject.CommonName, "Application").Return(token, nil)
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
@@ -249,6 +250,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", ctx).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
+		tokenService.On("GetToken", mock.Anything, subject.CommonName, "Application").Return("", apperrors.Internal("error"))
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
