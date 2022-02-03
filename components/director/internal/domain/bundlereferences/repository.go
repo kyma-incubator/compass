@@ -2,6 +2,7 @@ package bundlereferences
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -19,12 +20,16 @@ const (
 	APIDefURLColumn string = "api_def_url"
 	// EventDefIDColumn represents the db column of the EventDefinition ID
 	EventDefIDColumn string = "event_def_id"
+
 	bundleIDColumn   string = "bundle_id"
+	visibilityColumn string = "visibility"
+	internalVisibilityScope string = "internal_visibility:read"
+	publicVisibilityValue   string = "public"
 )
 
 var (
-	bundleReferencesColumns         = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url", "id", "is_default_bundle"}
-	updatableColumns                = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url", "is_default_bundle"}
+	bundleReferencesColumns         = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url", "id", "is_default_bundle", "visibility"}
+	updatableColumns                = []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url", "is_default_bundle", "visibility"}
 	updatableColumnsWithoutBundleID = []string{"api_def_id", "event_def_id", "api_def_url"}
 )
 
@@ -190,9 +195,17 @@ func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.Bundl
 		return nil, nil, err
 	}
 
-	conditions := repo.Conditions{
-		repo.NewNotNullCondition(objectFieldName),
+	isInternalVisibilityScopePresent, err := scope.IsGivenScopePresent(ctx, internalVisibilityScope)
+	if err != nil {
+		return nil, nil, err
 	}
+
+	var conditions repo.Conditions
+	if !isInternalVisibilityScopePresent {
+		conditions = append(conditions, repo.NewEqualCondition(visibilityColumn, publicVisibilityValue))
+	}
+
+	conditions = append(conditions, repo.NewNotNullCondition(objectFieldName))
 
 	orderByColumns, err := getOrderByColumnsByObjectType(objectType)
 	if err != nil {

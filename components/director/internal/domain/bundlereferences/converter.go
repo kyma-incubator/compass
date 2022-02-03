@@ -37,6 +37,7 @@ func (c *converter) ToEntity(in model.BundleReference) Entity {
 		EventDefID:          eventDefID,
 		APIDefaultTargetURL: apiDefaultTargetURL,
 		IsDefaultBundle:     in.IsDefaultBundle,
+		Visibility:          in.Visibility,
 	}
 }
 
@@ -54,6 +55,7 @@ func (c *converter) FromEntity(in Entity) (model.BundleReference, error) {
 		ObjectID:            repo.StringPtrFromNullableString(objectID),
 		APIDefaultTargetURL: repo.StringPtrFromNullableString(in.APIDefaultTargetURL),
 		IsDefaultBundle:     in.IsDefaultBundle,
+		Visibility:          in.Visibility,
 	}, nil
 }
 

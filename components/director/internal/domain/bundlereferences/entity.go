@@ -10,4 +10,5 @@ type Entity struct {
 	EventDefID          sql.NullString `db:"event_def_id"`
 	APIDefaultTargetURL sql.NullString `db:"api_def_url"`
 	IsDefaultBundle     bool           `db:"is_default_bundle"`
+	Visibility          string         `db:"visibility"`
 }

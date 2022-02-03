@@ -15,6 +15,7 @@ func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
 	bundleID := "bundle-id"
 	refID := "ref-id"
 	apiDefaultTargetURL := "http://test.com"
+	visibility := "public"
 	testCases := []struct {
 		Name                     string
 		InputReferenceObjectType model.BundleReferenceObjectType
@@ -36,6 +37,7 @@ func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
 				ObjectType:          model.BundleAPIReference,
 				ObjectID:            &refID,
 				APIDefaultTargetURL: &apiDefaultTargetURL,
+				Visibility:          visibility,
 			},
 		},
 		{
@@ -61,6 +63,7 @@ func TestBundleReferenceInput_ToBundleReference(t *testing.T) {
 				ObjectType:          model.BundleEventReference,
 				ObjectID:            &refID,
 				APIDefaultTargetURL: nil,
+				Visibility:          visibility,
 			},
 		},
 		{

@@ -146,7 +146,7 @@ func TestPgRepository_Create(t *testing.T) {
 
 func TestPgRepository_Update(t *testing.T) {
 	updateQueryWithoutBundleID := regexp.QuoteMeta(`UPDATE public.bundle_references SET api_def_id = ?, event_def_id = ?, api_def_url = ? WHERE api_def_id = ?`)
-	updateQueryWithBundleID := regexp.QuoteMeta(`UPDATE public.bundle_references SET api_def_id = ?, event_def_id = ?, bundle_id = ?, api_def_url = ?, is_default_bundle = ? WHERE api_def_id = ? AND bundle_id = ?`)
+	updateQueryWithBundleID := regexp.QuoteMeta(`UPDATE public.bundle_references SET api_def_id = ?, event_def_id = ?, bundle_id = ?, api_def_url = ?, is_default_bundle = ?, visibility = ? WHERE api_def_id = ? AND bundle_id = ?`)
 
 	t.Run("success without bundleID", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -178,7 +178,7 @@ func TestPgRepository_Update(t *testing.T) {
 		convMock := &automock.BundleReferenceConverter{}
 		convMock.On("ToEntity", apiBundleReferenceModel).Return(apiBundleReferenceEntity, nil)
 		sqlMock.ExpectExec(updateQueryWithBundleID).
-			WithArgs(apiBundleReferenceEntity.APIDefID, apiBundleReferenceEntity.EventDefID, apiBundleReferenceEntity.BundleID, apiBundleReferenceEntity.APIDefaultTargetURL, apiBundleReferenceEntity.IsDefaultBundle, apiBundleReferenceEntity.APIDefID, apiBundleReferenceEntity.BundleID).
+			WithArgs(apiBundleReferenceEntity.APIDefID, apiBundleReferenceEntity.EventDefID, apiBundleReferenceEntity.BundleID, apiBundleReferenceEntity.APIDefaultTargetURL, apiBundleReferenceEntity.IsDefaultBundle, apiBundleReferenceEntity.Visibility, apiBundleReferenceEntity.APIDefID, apiBundleReferenceEntity.BundleID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		pgRepository := bundlereferences.NewRepository(convMock)

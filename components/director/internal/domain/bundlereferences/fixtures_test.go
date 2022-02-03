@@ -18,6 +18,7 @@ const (
 	secondBundleID = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 
 	apiDefTargetURL = "http://test.com"
+	visibility      = "public"
 )
 
 func fixAPIBundleReferenceModel() model.BundleReference {
@@ -28,6 +29,7 @@ func fixAPIBundleReferenceModel() model.BundleReference {
 		ObjectID:            str.Ptr(apiDefID),
 		APIDefaultTargetURL: str.Ptr(apiDefTargetURL),
 		IsDefaultBundle:     false,
+		Visibility:          visibility,
 	}
 }
 
@@ -39,6 +41,7 @@ func fixAPIBundleReferenceEntity() bundlereferences.Entity {
 		EventDefID:          sql.NullString{},
 		APIDefaultTargetURL: repo.NewValidNullableString(apiDefTargetURL),
 		IsDefaultBundle:     false,
+		Visibility:          visibility,
 	}
 }
 
@@ -50,6 +53,7 @@ func fixAPIBundleReferenceEntityWithArgs(bndlID, apiID, targetURL string) bundle
 		EventDefID:          sql.NullString{},
 		APIDefaultTargetURL: repo.NewValidNullableString(targetURL),
 		IsDefaultBundle:     false,
+		Visibility:          visibility,
 	}
 }
 
@@ -61,6 +65,7 @@ func fixInvalidAPIBundleReferenceEntity() bundlereferences.Entity {
 		EventDefID:          sql.NullString{},
 		APIDefaultTargetURL: repo.NewValidNullableString(apiDefTargetURL),
 		IsDefaultBundle:     false,
+		Visibility:          visibility,
 	}
 }
 
@@ -71,6 +76,7 @@ func fixEventBundleReferenceModel() model.BundleReference {
 		ObjectType:      model.BundleEventReference,
 		ObjectID:        str.Ptr(eventDefID),
 		IsDefaultBundle: false,
+		Visibility:      visibility,
 	}
 }
 
@@ -82,6 +88,7 @@ func fixEventBundleReferenceEntity() bundlereferences.Entity {
 		EventDefID:          repo.NewValidNullableString(eventDefID),
 		APIDefaultTargetURL: sql.NullString{},
 		IsDefaultBundle:     false,
+		Visibility:          visibility,
 	}
 }
 
@@ -91,6 +98,7 @@ func fixEventBundleReferenceEntityWithArgs(bndlID, eventID string) bundlereferen
 		BundleID:        repo.NewValidNullableString(bndlID),
 		EventDefID:      repo.NewValidNullableString(eventID),
 		IsDefaultBundle: false,
+		Visibility:      visibility,
 	}
 }
 
@@ -102,23 +110,24 @@ func fixInvalidEventBundleReferenceEntity() bundlereferences.Entity {
 		EventDefID:          sql.NullString{},
 		APIDefaultTargetURL: sql.NullString{},
 		IsDefaultBundle:     false,
+		Visibility:          visibility,
 	}
 }
 
 func fixBundleReferenceColumns() []string {
-	return []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url", "id", "is_default_bundle"}
+	return []string{"api_def_id", "event_def_id", "bundle_id", "api_def_url", "id", "is_default_bundle", "visibility"}
 }
 
 func fixBundleReferenceRowWithoutEventID() []driver.Value {
-	return []driver.Value{repo.NewValidNullableString(apiDefID), sql.NullString{}, repo.NewValidNullableString(bundleID), repo.NewValidNullableString(apiDefTargetURL), bundleRefID, false}
+	return []driver.Value{repo.NewValidNullableString(apiDefID), sql.NullString{}, repo.NewValidNullableString(bundleID), repo.NewValidNullableString(apiDefTargetURL), bundleRefID, false, visibility}
 }
 
 func fixBundleReferenceRowWithoutEventIDWithArgs(bndlID, apiID, targetURL string) []driver.Value {
-	return []driver.Value{repo.NewValidNullableString(apiID), sql.NullString{}, repo.NewValidNullableString(bndlID), repo.NewValidNullableString(targetURL), bundleRefID, false}
+	return []driver.Value{repo.NewValidNullableString(apiID), sql.NullString{}, repo.NewValidNullableString(bndlID), repo.NewValidNullableString(targetURL), bundleRefID, false, visibility}
 }
 
 func fixBundleReferenceRowWithoutAPIIDWithArgs(bndlID, eventID string) []driver.Value {
-	return []driver.Value{sql.NullString{}, repo.NewValidNullableString(eventID), repo.NewValidNullableString(bndlID), sql.NullString{}, bundleRefID, false}
+	return []driver.Value{sql.NullString{}, repo.NewValidNullableString(eventID), repo.NewValidNullableString(bndlID), sql.NullString{}, bundleRefID, false, visibility}
 }
 
 func fixBundleIDs(id string) []driver.Value {
@@ -126,5 +135,5 @@ func fixBundleIDs(id string) []driver.Value {
 }
 
 func fixBundleReferenceCreateArgs(bRef *model.BundleReference) []driver.Value {
-	return []driver.Value{repo.NewValidNullableString(*bRef.ObjectID), sql.NullString{}, repo.NewValidNullableString(*bRef.BundleID), repo.NewValidNullableString(*bRef.APIDefaultTargetURL), bRef.ID, bRef.IsDefaultBundle}
+	return []driver.Value{repo.NewValidNullableString(*bRef.ObjectID), sql.NullString{}, repo.NewValidNullableString(*bRef.BundleID), repo.NewValidNullableString(*bRef.APIDefaultTargetURL), bRef.ID, bRef.IsDefaultBundle, bRef.Visibility}
 }
