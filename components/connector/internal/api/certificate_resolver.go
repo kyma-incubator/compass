@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 

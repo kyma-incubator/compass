@@ -2,7 +2,6 @@ package authentication
 
 import (
 	"context"
-	"errors"
 	"fmt"
 )
 
@@ -22,7 +21,7 @@ func GetStringFromContext(ctx context.Context, key ContextKey) (string, error) {
 
 	str, ok := value.(string)
 	if !ok {
-		return "", errors.New(fmt.Sprintf("Cannot read %s key from context", string(key)))
+		return "", fmt.Errorf("cannot read %s key from context", string(key))
 	}
 
 	return str, nil

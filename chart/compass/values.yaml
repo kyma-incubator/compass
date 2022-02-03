@@ -82,7 +82,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2166"
+      version: "PR-2192"
     connectivity_adapter:
       dir:
       version: "PR-2166"
@@ -141,6 +141,10 @@ global:
     graphql:
       external:
         port: 3000
+    tls:
+      secure:
+        internal:
+          host: compass-director-internal
     validator:
       port: 8080
     metrics:
