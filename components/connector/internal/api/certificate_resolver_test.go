@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/mock"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	authenticationMocks "github.com/kyma-incubator/compass/components/connector/internal/authentication/mocks"
@@ -15,7 +12,9 @@ import (
 	certificatesMocks "github.com/kyma-incubator/compass/components/connector/internal/certificates/mocks"
 	revocationMocks "github.com/kyma-incubator/compass/components/connector/internal/revocation/mocks"
 	tokensMocks "github.com/kyma-incubator/compass/components/connector/internal/tokens/automock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
