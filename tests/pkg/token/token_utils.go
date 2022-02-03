@@ -142,7 +142,7 @@ func GetToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecre
 		}
 	}()
 
-	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("failed to get token: unexpected status code: expected: %d, actual: %d", http.StatusOK, resp.StatusCode))
 	require.NotEmpty(t, resp.Body)
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)

@@ -117,136 +117,137 @@ func TestSelfRegisterFlow(t *testing.T) {
 	})
 }
 
-func TestConsumerProviderFlow(t *testing.T) {
-	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
-		ctx := context.Background()
-		secondaryTenant := testConfig.TestConsumerAccountID
-		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
-		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
-		jobName := "external-certificate-rotation-test-job"
-
-		// Prepare provider external client certificate and secret
-		k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-		require.NoError(t, err)
-		createExtCertJob(t, ctx, k8sClient, testConfig, jobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
-		defer func() {
-			k8s.DeleteJob(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
-			k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
-		}()
-		k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
-
-		providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(testConfig.ExternalClientCertTestSecretNamespace).Get(ctx, testConfig.ExternalClientCertTestSecretName, metav1.GetOptions{})
-		require.NoError(t, err)
-		providerKeyBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretKeyKey]
-		providerCertChainBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
-
-		// Build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certs.ClientCertPair(t, providerCertChainBytes, providerKeyBytes)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
-
-		runtimeInput := graphql.RuntimeInput{
-			Name:        "providerRuntime",
-			Description: ptr.String("providerRuntime-description"),
-			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
-		}
-
-		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
-		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
-		require.NotEmpty(t, runtime.ID)
-
-		// Register application
-		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", secondaryTenant)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &app)
-		require.NoError(t, err)
-		require.NotEmpty(t, app.ID)
-
-		// Register consumer application
-		consumerApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "consumerApp", secondaryTenant)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &consumerApp)
-		require.NoError(t, err)
-		require.NotEmpty(t, consumerApp.ID)
-		require.NotEmpty(t, consumerApp.Name)
-
-		// Create label definition
-		scenarios := []string{"DEFAULT", "consumer-test-scenario"}
-		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios)
-		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[:1])
-
-		// Assign consumer application to scenario
-		appLabelRequest := fixtures.FixSetApplicationLabelRequest(consumerApp.ID, scenariosLabel, scenarios[1:])
-		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, appLabelRequest, nil))
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, secondaryTenant, consumerApp.ID, testConfig.DefaultScenarioEnabled)
-
-		// Create automatic scenario assigment for consumer subaccount
-		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarios[1], selectorKey, subscriptionConsumerSubaccountID)
-		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
-		defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[1])
-
-		providedTenants := tenantfetcher.Tenant{
-			TenantID:               secondaryTenant,
-			SubaccountID:           subscriptionConsumerSubaccountID,
-			Subdomain:              tenantfetcher.DefaultSubdomain,
-			SubscriptionProviderID: testConfig.SubscriptionProviderID,
-		}
-
-		tenantProperties := tenantfetcher.TenantIDProperties{
-			TenantIDProperty:               testConfig.TenantIDProperty,
-			SubaccountTenantIDProperty:     testConfig.SubaccountTenantIDProperty,
-			CustomerIDProperty:             testConfig.CustomerIDProperty,
-			SubdomainProperty:              testConfig.SubdomainProperty,
-			SubscriptionProviderIDProperty: testConfig.SubscriptionProviderIDProperty,
-		}
-
-		httpClient := &http.Client{
-			Timeout: 10 * time.Second,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			},
-		}
-
-		// Build a request for consumer subscription
-		subscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
-
-		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
-		subscribeResp, err := httpClient.Do(subscribeReq)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, subscribeResp.StatusCode)
-
-		defer func() {
-			unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
-
-			t.Log(fmt.Sprintf("Deleting a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
-			unsubscribeResp, err := httpClient.Do(unsubscribeReq)
-			require.NoError(t, err)
-			require.Equal(t, http.StatusOK, unsubscribeResp.StatusCode)
-		}()
-
-		// HTTP client configured with manually signed client certificate
-		extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
-
-		// Create a token with the necessary consumer claims and add it in authorization header
-		tkn := token.GetClientCredentialsToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "subscriptionClaims")
-		headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", tkn)}}
-
-		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
-		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-
-		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
-		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
-
-		// Build unsubscribe request
-		unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
-
-		t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
-		unsubscribeResp, err := httpClient.Do(unsubscribeReq)
-
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, unsubscribeResp.StatusCode)
-		respBody = makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-
-		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
-	})
-}
+// TODO:: Remove after successful validation on dev-val cluster
+//func TestConsumerProviderFlow(t *testing.T) {
+//	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
+//		ctx := context.Background()
+//		secondaryTenant := testConfig.TestConsumerAccountID
+//		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
+//		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
+//		jobName := "external-certificate-rotation-test-job"
+//
+//		// Prepare provider external client certificate and secret
+//		k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+//		require.NoError(t, err)
+//		createExtCertJob(t, ctx, k8sClient, testConfig, jobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
+//		defer func() {
+//			k8s.DeleteJob(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
+//			k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
+//		}()
+//		k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
+//
+//		providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(testConfig.ExternalClientCertTestSecretNamespace).Get(ctx, testConfig.ExternalClientCertTestSecretName, metav1.GetOptions{})
+//		require.NoError(t, err)
+//		providerKeyBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretKeyKey]
+//		providerCertChainBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
+//
+//		// Build graphql director client configured with certificate
+//		providerClientKey, providerRawCertChain := certs.ClientCertPair(t, providerCertChainBytes, providerKeyBytes)
+//		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
+//
+//		runtimeInput := graphql.RuntimeInput{
+//			Name:        "providerRuntime",
+//			Description: ptr.String("providerRuntime-description"),
+//			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
+//		}
+//
+//		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+//		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
+//		require.NotEmpty(t, runtime.ID)
+//
+//		// Register application
+//		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", secondaryTenant)
+//		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &app)
+//		require.NoError(t, err)
+//		require.NotEmpty(t, app.ID)
+//
+//		// Register consumer application
+//		consumerApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "consumerApp", secondaryTenant)
+//		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &consumerApp)
+//		require.NoError(t, err)
+//		require.NotEmpty(t, consumerApp.ID)
+//		require.NotEmpty(t, consumerApp.Name)
+//
+//		// Create label definition
+//		scenarios := []string{"DEFAULT", "consumer-test-scenario"}
+//		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios)
+//		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[:1])
+//
+//		// Assign consumer application to scenario
+//		appLabelRequest := fixtures.FixSetApplicationLabelRequest(consumerApp.ID, scenariosLabel, scenarios[1:])
+//		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, appLabelRequest, nil))
+//		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, secondaryTenant, consumerApp.ID, testConfig.DefaultScenarioEnabled)
+//
+//		// Create automatic scenario assigment for consumer subaccount
+//		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarios[1], selectorKey, subscriptionConsumerSubaccountID)
+//		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
+//		defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[1])
+//
+//		providedTenants := tenantfetcher.Tenant{
+//			TenantID:               secondaryTenant,
+//			SubaccountID:           subscriptionConsumerSubaccountID,
+//			Subdomain:              tenantfetcher.DefaultSubdomain,
+//			SubscriptionProviderID: testConfig.SubscriptionProviderID,
+//		}
+//
+//		tenantProperties := tenantfetcher.TenantIDProperties{
+//			TenantIDProperty:               testConfig.TenantIDProperty,
+//			SubaccountTenantIDProperty:     testConfig.SubaccountTenantIDProperty,
+//			CustomerIDProperty:             testConfig.CustomerIDProperty,
+//			SubdomainProperty:              testConfig.SubdomainProperty,
+//			SubscriptionProviderIDProperty: testConfig.SubscriptionProviderIDProperty,
+//		}
+//
+//		httpClient := &http.Client{
+//			Timeout: 10 * time.Second,
+//			Transport: &http.Transport{
+//				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+//			},
+//		}
+//
+//		// Build a request for consumer subscription
+//		subscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
+//
+//		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
+//		subscribeResp, err := httpClient.Do(subscribeReq)
+//		require.NoError(t, err)
+//		require.Equal(t, http.StatusOK, subscribeResp.StatusCode)
+//
+//		defer func() {
+//			unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
+//
+//			t.Log(fmt.Sprintf("Deleting a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
+//			unsubscribeResp, err := httpClient.Do(unsubscribeReq)
+//			require.NoError(t, err)
+//			require.Equal(t, http.StatusOK, unsubscribeResp.StatusCode)
+//		}()
+//
+//		// HTTP client configured with manually signed client certificate
+//		extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
+//
+//		// Create a token with the necessary consumer claims and add it in authorization header
+//		tkn := token.GetClientCredentialsToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "subscriptionClaims")
+//		headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", tkn)}}
+//
+//		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
+//		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+//
+//		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
+//		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+//
+//		// Build unsubscribe request
+//		unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
+//
+//		t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
+//		unsubscribeResp, err := httpClient.Do(unsubscribeReq)
+//
+//		require.NoError(t, err)
+//		require.Equal(t, http.StatusOK, unsubscribeResp.StatusCode)
+//		respBody = makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+//
+//		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
+//	})
+//}
 
 func TestNewChanges(t *testing.T) {
 	t.Run("TestNewChanges", func(t *testing.T) {
@@ -450,6 +451,7 @@ func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 
 	resp, err := httpClient.Do(getJobReq)
 	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)

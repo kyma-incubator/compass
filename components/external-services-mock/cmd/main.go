@@ -147,7 +147,6 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	// Oauth server handlers
 	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, cfg.Username, cfg.Password, key, staticMappingClaims)
 	router.HandleFunc("/secured/oauth/token", tokenHandler.Generate).Methods(http.MethodPost)
-	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
 	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
