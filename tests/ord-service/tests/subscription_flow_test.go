@@ -419,6 +419,9 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 				if env.Name == "CERT_SUBJECT_PATTERN" {
 					env.Value = testConfig.TestExternalCertSubject
 				}
+				if env.Name == "CERT_SVC_CSR_ENDPOINT" || env.Name == "CERT_SVC_CLIENT_ID" || env.Name == "CERT_SVC_CLIENT_SECRET" || env.Name == "CERT_SVC_OAUTH_URL" {
+					env.ValueFrom.SecretKeyRef.Name = "cert-svc-instance-tests" // certificate service instance from TestMultitenantApplication-Dev-Val subaccount used as "provider" to run consumer-provider test on real env TODO:: Rename subaccount name
+				}
 			}
 			break
 		}
