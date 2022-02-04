@@ -1,0 +1,161 @@
+cluster-essentials:
+  limitRange:
+    default:
+      memory: 256Mi
+    defaultRequest:
+      memory: 32Mi
+api-gateway:
+  deployment:
+    resources:
+      limits:
+        cpu: 200m
+helm-broker:
+  ctrl:
+    resources:
+      limits:
+        memory: 256Mi
+  broker:
+    resources:
+      limits:
+        memory: 512Mi
+istio-configuration:
+  helmValues:
+    pilot:
+      resources:
+        limits:
+          memory: 2048Mi
+    global:
+      proxy:
+        holdApplicationUntilProxyStarts: true
+        resources:
+          requests:
+            cpu: 30m
+            memory: 64Mi
+          limits:
+            cpu: 150m
+            memory: 256Mi
+  components:
+    ingressGateways:
+      config:
+        affinity:
+          nodeAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - preference:
+                matchExpressions:
+                - key: beta.kubernetes.io/arch
+                  operator: In
+                  values:
+                  - arm64
+                  - amd64
+              weight: 2
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: beta.kubernetes.io/arch
+                  operator: In
+                  values:
+                  - arm64
+                  - amd64
+        hpaSpec: # hpaSpec, securityContext and resources are the defaults and taken from: https://github.com/kyma-project/kyma/blob/443ca89e31cb94b9eeecf44afc6811b8da568635/resources/istio-configuration/values.yaml#L64
+          maxReplicas: 5
+          minReplicas: 1
+          metrics:
+            - resource:
+                name: cpu
+                targetAverageUtilization: 80
+              type: Resource
+            - resource:
+                name: memory
+                targetAverageUtilization: 80
+              type: Resource
+        securityContext:
+          runAsUser: 65534
+          runAsNonRoot: true
+          runAsGroup: 65534
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 1024Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        strategy:
+          rollingUpdate:
+            maxSurge: 100%
+            maxUnavailable: 0
+ory:
+  hydra:
+    deployment:
+      resources:
+        limits:
+          cpu: 500m
+          memory: 400Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+  oathkeeper:
+    deployment:
+      resources:
+        limits:
+          cpu: 250m
+          memory: 512Mi
+        requests:
+          cpu: 50m
+          memory: 128Mi
+    oathkeeper-maester:
+      deployment:
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+monitoring:
+  prometheusOperator:
+    configReloaderMemory: 256Mi
+  prometheus-istio:
+    server:
+      resources:
+        limits:
+          memory: "1Gi"
+  grafana:
+    sidecar:
+      resources:
+        limits:
+          memory: 256Mi
+          cpu: 200m
+        requests:
+          memory: 64Mi
+          cpu: 50m
+tracing:
+  kcproxy:
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        memory: 32Mi
+  authProxy:
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        memory: 32Mi
+kiali:
+  kcproxy:
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        memory: 32Mi
+  authProxy:
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        memory: 32Mi
+logging:
+  loki:
+    resources:
+      limits:
+        memory: 512Mi

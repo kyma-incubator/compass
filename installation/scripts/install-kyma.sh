@@ -93,7 +93,7 @@ if [[ $KYMA_INSTALLATION == *full* ]]; then # todo add overrides if possible
   kyma deploy --components-file $INSTALLER_CR_FULL_PATH --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  #kyma deploy --components-file $INSTALLER_CR_PATH  --source $KYMA_SOURCE
+  kyma deploy --components-file $INSTALLER_CR_PATH  --source $KYMA_SOURCE
 fi
 
 #installAdditionalComponents
