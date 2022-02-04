@@ -637,6 +637,7 @@ global:
       consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
       externalClientCertTestSecretName: "external-client-certificate-test-secret"
       externalClientCertTestSecretNamespace: "compass-system"
+      certSvcInstanceTestSecretName: "cert-svc-secret"
     externalServicesMock:
       skipPattern: ""
     namespace: kyma-system

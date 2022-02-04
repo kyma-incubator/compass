@@ -79,6 +79,7 @@ type config struct {
 	TestExternalCertSubject               string
 	ExternalClientCertTestSecretName      string
 	ExternalClientCertTestSecretNamespace string
+	CertSvcInstanceTestSecretName         string
 	ExternalCertCronjobContainerName      string
 	BasicUsername                         string
 	BasicPassword                         string

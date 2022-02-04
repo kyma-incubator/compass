@@ -170,6 +170,8 @@ spec:
               value: {{ .Values.global.tests.ordService.externalClientCertTestSecretName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
               value: {{ .Values.global.tests.ordService.externalClientCertTestSecretNamespace }}
+            - name: CERT_SVC_INSTANCE_TEST_SECRET_NAME
+              value: {{ .Values.global.tests.ordService.certSvcInstanceTestSecretName }}
             - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
               value: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
             - name: BASIC_USERNAME
