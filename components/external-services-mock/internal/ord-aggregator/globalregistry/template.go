@@ -26,19 +26,6 @@ const ordDocument = `{
    "$schema":"./spec/v1/generated/Document.schema.json",
    "openResourceDiscovery":"1.2",
    "description":"Global Registry Test Document",
-   "products":[
-		{
-		  "ordId": "sap:product:SAPCloudPlatform:",
-		  "title": "SAP Business Technology Platform",
-		  "shortDescription": "Accelerate business outcomes with integration, data to value, and extensibility.",
-		  "vendor": "sap:vendor:SAP:"
-		}
-   ],
-   "vendors":[
-		{
-		  "ordId": "sap:vendor:SAP:",
-		  "title": "SAP SE",
-		  "partners": []
-		}
-   ]
+   "products":[],
+   "vendors":[]
 }`

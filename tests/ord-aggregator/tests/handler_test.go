@@ -4,6 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 	"strings"
 	"testing"
@@ -89,8 +92,8 @@ const (
 
 var (
 	// The expected number is increased with initial number of global vendors/products before test execution
-	expectedNumberOfProducts = 7
-	expectedNumberOfVendors  = 7
+	expectedNumberOfProducts = 6
+	expectedNumberOfVendors  = 6
 )
 
 func TestORDAggregator(t *testing.T) {
@@ -203,15 +206,9 @@ func TestORDAggregator(t *testing.T) {
 		httpClient := conf.Client(ctx)
 		httpClient.Timeout = 20 * time.Second
 
-		// Get vendors
-		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		numberOfGlobalVendors := len(gjson.Get(respBody, "value").Array())
-		expectedNumberOfVendors += numberOfGlobalVendors
-
-		// Get products
-		respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		numberOfGlobalProducts := len(gjson.Get(respBody, "value").Array())
-		expectedNumberOfProducts += numberOfGlobalProducts
+		globalProductsNumber, globalVendorsNumber := getGlobalResources()
+		expectedNumberOfProducts += globalProductsNumber
+		expectedNumberOfVendors += globalVendorsNumber
 
 		// Register systems
 		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
@@ -412,4 +409,35 @@ func storeMappingBetweenORDAndInternalBundleID(t *testing.T, respBody string, nu
 	}
 
 	return ordAndInternalIDsMapping
+}
+
+func getGlobalResources() (int, int) {
+	ctx := context.Background()
+	httpClient := &http.Client{
+		Timeout: testConfig.ClientTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: testConfig.SkipSSLValidation,
+			},
+		},
+	}
+
+	certCache, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	exitOnError(err, "Failed to initialize certificate loader")
+
+	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
+	ordClient := NewClient(httpClient, accessStrategyExecutorProvider)
+
+	products, vendors, err := ordClient.GetGlobalResourcesNumber(ctx, testConfig.GlobalRegistryURL)
+	if err != nil {
+		log.D().Errorf("while fetching global registry resources from %s %v", testConfig.GlobalRegistryURL, err)
+	}
+	return products, vendors
+}
+
+func exitOnError(err error, context string) {
+	if err != nil {
+		wrappedError := errors.Wrap(err, context)
+		log.D().Fatal(wrappedError)
+	}
 }

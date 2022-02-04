@@ -17,6 +17,7 @@
 package tests
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"os"
 	"testing"
 	"time"
@@ -48,6 +49,10 @@ type config struct {
 	BasicUsername                      string
 	BasicPassword                      string
 	ORDServiceDefaultResponseType      string
+	GlobalRegistryURL                  string
+	CertLoaderConfig                   certloader.Config
+	ClientTimeout                      time.Duration `envconfig:"default=60s"`
+	SkipSSLValidation                  bool          `envconfig:"default=false"`
 }
 
 var (
