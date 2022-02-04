@@ -303,20 +303,39 @@ func TestNewChanges(t *testing.T) {
 		require.NotEmpty(t, consumerApp.ID)
 		require.NotEmpty(t, consumerApp.Name)
 
-		// Create label definition
-		scenarios := []string{"DEFAULT", "consumer-test-scenario"}
-		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios)
-		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[:1])
+		// TODO:: Remove
+		//// Create label definition
+		//scenarios := []string{"DEFAULT", "consumer-test-scenario"}
+		//fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios)
+		//defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[:1])
+		//
+		//// Assign consumer application to scenario
+		//appLabelRequest := fixtures.FixSetApplicationLabelRequest(consumerApp.ID, scenariosLabel, scenarios[1:])
+		//require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, appLabelRequest, nil))
+		//defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, secondaryTenant, consumerApp.ID, testConfig.DefaultScenarioEnabled)
+		//
+		//// Create automatic scenario assigment for consumer subaccount
+		//asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarios[1], selectorKey, subscriptionConsumerSubaccountID)
+		//fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
+		//defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[1])
 
-		// Assign consumer application to scenario
-		appLabelRequest := fixtures.FixSetApplicationLabelRequest(consumerApp.ID, scenariosLabel, scenarios[1:])
-		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, appLabelRequest, nil))
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, secondaryTenant, consumerApp.ID, testConfig.DefaultScenarioEnabled)
+		consumerFormationName := "consumer-test-scenario"
 
-		// Create automatic scenario assigment for consumer subaccount
-		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarios[1], selectorKey, subscriptionConsumerSubaccountID)
-		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
-		defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[1])
+		t.Logf("Assign application to formation %s", consumerFormationName)
+		assignReq := fixtures.FixAssignFormationRequest(consumerApp.ID, "APPLICATION", consumerFormationName)
+		var assignFormation graphql.Formation
+		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, assignReq, &assignFormation)
+		require.NoError(t, err)
+		require.Equal(t, consumerFormationName, assignFormation.Name)
+		t.Logf("Successfully assigned application to formation %s", consumerFormationName)
+
+		t.Logf("Should create formation: %s", consumerFormationName)
+		var consumerFormation graphql.Formation
+		createUnusedReq := fixtures.FixCreateFormationRequest(consumerFormationName)
+		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createUnusedReq, &consumerFormation)
+		require.NoError(t, err)
+		require.Equal(t, consumerFormationName, consumerFormation.Name)
+		t.Logf("Successfully created formation: %s", consumerFormationName)
 
 		selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
