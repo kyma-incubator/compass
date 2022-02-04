@@ -244,8 +244,8 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 	scopesWithoutInternalVisibility := []string{"test:test"}
 	publicVisibility := "public"
 
-	firstAPIBndlRefEntity := fixAPIBundleReferenceEntityWithArgs(firstBndlID, firstAPIID, firstTargetURL, publicVisibility)
-	secondAPIBndlRefEntity := fixAPIBundleReferenceEntityWithArgs(secondBndlID, secondAPIID, secondTargetURL, publicVisibility)
+	firstAPIBndlRefEntity := fixAPIBundleReferenceEntityWithArgs(firstBndlID, firstAPIID, firstTargetURL)
+	secondAPIBndlRefEntity := fixAPIBundleReferenceEntityWithArgs(secondBndlID, secondAPIID, secondTargetURL)
 	firstEventBndlRefEntity := fixEventBundleReferenceEntityWithArgs(firstBndlID, firstEventID)
 	secondEventBndlRefEntity := fixEventBundleReferenceEntityWithArgs(secondBndlID, secondEventID)
 	bundleIDs := []string{firstBndlID, secondBndlID}

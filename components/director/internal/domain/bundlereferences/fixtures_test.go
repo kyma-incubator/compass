@@ -45,7 +45,7 @@ func fixAPIBundleReferenceEntity() bundlereferences.Entity {
 	}
 }
 
-func fixAPIBundleReferenceEntityWithArgs(bndlID, apiID, targetURL, visibility string) bundlereferences.Entity {
+func fixAPIBundleReferenceEntityWithArgs(bndlID, apiID, targetURL string) bundlereferences.Entity {
 	return bundlereferences.Entity{
 		ID:                  bundleRefID,
 		BundleID:            repo.NewValidNullableString(bndlID),
