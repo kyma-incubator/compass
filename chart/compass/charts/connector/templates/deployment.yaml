@@ -34,7 +34,7 @@ spec:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
             # Used for calls to Director
-            - "{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
@@ -104,7 +104,7 @@ spec:
             - name: APP_KUBERNETES_CLIENT_POLL_TIMEOUT
               value: {{ .Values.deployment.kubernetesClient.pollTimeout | quote }}
             - name: APP_ONE_TIME_TOKEN_URL
-              value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+              value: "https://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}/graphql"
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
               value: "{{ .Values.http.client.skipSSLValidation }}"
             - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
