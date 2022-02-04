@@ -434,6 +434,7 @@ func TestService_Create(t *testing.T) {
 	frURL := "foo.bar"
 	spec := "test"
 	spec2 := "test2"
+	isDefaultBundle := true
 
 	modelInput := model.APIDefinitionInput{
 		Name:         name,
@@ -477,7 +478,7 @@ func TestService_Create(t *testing.T) {
 
 	bundleReferenceInputWithDefaultBundle := &model.BundleReferenceInput{
 		APIDefaultTargetURL: str.Ptr(api.ExtractTargetURLFromJSONArray(modelAPIDefinition.TargetURLs)),
-		IsDefaultBundle:     true,
+		IsDefaultBundle:     &isDefaultBundle,
 	}
 
 	singleDefaultTargetURLPerBundle := map[string]string{bundleID: targetURL}
@@ -961,6 +962,7 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 	timestamp := time.Now()
 	frURL := "foo.bar"
 	spec := "spec"
+	isDefaultBundle := true
 
 	modelInput := model.APIDefinitionInput{
 		Name:         "Foo",
@@ -1001,12 +1003,12 @@ func TestService_UpdateInManyBundles(t *testing.T) {
 
 	bundleReferenceInputWithDefaultBundle := &model.BundleReferenceInput{
 		APIDefaultTargetURL: str.Ptr(api.ExtractTargetURLFromJSONArray(modelInput.TargetURLs)),
-		IsDefaultBundle:     true,
+		IsDefaultBundle:     &isDefaultBundle,
 	}
 
 	secondBundleReferenceInputWithDefaultBundle := &model.BundleReferenceInput{
 		APIDefaultTargetURL: str.Ptr(secondTargetURL),
-		IsDefaultBundle:     true,
+		IsDefaultBundle:     &isDefaultBundle,
 	}
 
 	defaultTargetURLPerBundleForUpdate := map[string]string{firstBndlID: firstTargetURL}
