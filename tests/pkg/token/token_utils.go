@@ -98,15 +98,20 @@ func HttpRequestBodyCloser(t *testing.T, resp *http.Response) {
 }
 
 func GetClientCredentialsToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecret, staticMappingClaimsKey string) string {
+	log.C(ctx).Info("Issuing client_credentials token...")
 	data := url.Values{}
 	data.Add(grantTypeFieldName, credentialsGrantType)
 	data.Add(clientIDKey, clientID)
 	data.Add(claimsKey, staticMappingClaimsKey)
 
-	return GetToken(t, ctx, tokenURL, clientID, clientSecret, data)
+	token := GetToken(t, ctx, tokenURL, clientID, clientSecret, data)
+	log.C(ctx).Info("Successfully issued client_credentials token")
+
+	return token
 }
 
 func GetUserToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecret, username, password, staticMappingClaimsKey string) string {
+	log.C(ctx).Info("Issuing user token...")
 	data := url.Values{}
 	data.Add(grantTypeFieldName, passwordGrantType)
 	data.Add(clientIDKey, clientID)
@@ -114,12 +119,13 @@ func GetUserToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientS
 	data.Add(userNameKey, username)
 	data.Add(passwordKey, password)
 
-	return GetToken(t, ctx, tokenURL, clientID, clientSecret, data)
+	token := GetToken(t, ctx, tokenURL, clientID, clientSecret, data)
+	log.C(ctx).Info("Successfully issued user token")
+
+	return token
 }
 
 func GetToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecret string, data url.Values) string {
-	log.C(ctx).Info("Issuing token...")
-
 	req, err := http.NewRequest(http.MethodPost, tokenURL, bytes.NewBuffer([]byte(data.Encode())))
 	if err != nil {
 		fmt.Println(err)
@@ -150,8 +156,6 @@ func GetToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecre
 	tkn := gjson.GetBytes(body, "access_token")
 	require.True(t, tkn.Exists())
 	require.NotEmpty(t, tkn)
-
-	log.C(ctx).Info("Successfully issued token")
 
 	return tkn.String()
 }

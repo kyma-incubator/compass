@@ -288,7 +288,7 @@ func TestNewChanges(t *testing.T) {
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(t, runtime.ID)
 
-		// TODO:: Add defer deletion for self register cloning
+		// TODO:: Consider adding defer deletion for self register cloning
 
 		// Register application
 		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", secondaryTenant)
@@ -303,39 +303,23 @@ func TestNewChanges(t *testing.T) {
 		require.NotEmpty(t, consumerApp.ID)
 		require.NotEmpty(t, consumerApp.Name)
 
-		// TODO:: Remove
-		//// Create label definition
-		//scenarios := []string{"DEFAULT", "consumer-test-scenario"}
-		//fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios)
-		//defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[:1])
-		//
-		//// Assign consumer application to scenario
-		//appLabelRequest := fixtures.FixSetApplicationLabelRequest(consumerApp.ID, scenariosLabel, scenarios[1:])
-		//require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, appLabelRequest, nil))
-		//defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, secondaryTenant, consumerApp.ID, testConfig.DefaultScenarioEnabled)
-		//
-		//// Create automatic scenario assigment for consumer subaccount
-		//asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarios[1], selectorKey, subscriptionConsumerSubaccountID)
-		//fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
-		//defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[1])
-
 		consumerFormationName := "consumer-test-scenario"
+
+		t.Logf("Creating formation with name %s...", consumerFormationName)
+		var consumerFormation graphql.Formation
+		createFormationReq := fixtures.FixCreateFormationRequest(consumerFormationName)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, createFormationReq, &consumerFormation)
+		require.NoError(t, err)
+		require.Equal(t, consumerFormationName, consumerFormation.Name)
+		t.Logf("Successfully created formation: %s", consumerFormationName)
 
 		t.Logf("Assign application to formation %s", consumerFormationName)
 		assignReq := fixtures.FixAssignFormationRequest(consumerApp.ID, "APPLICATION", consumerFormationName)
 		var assignFormation graphql.Formation
-		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, assignReq, &assignFormation)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, assignReq, &assignFormation)
 		require.NoError(t, err)
 		require.Equal(t, consumerFormationName, assignFormation.Name)
 		t.Logf("Successfully assigned application to formation %s", consumerFormationName)
-
-		t.Logf("Should create formation: %s", consumerFormationName)
-		var consumerFormation graphql.Formation
-		createUnusedReq := fixtures.FixCreateFormationRequest(consumerFormationName)
-		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createUnusedReq, &consumerFormation)
-		require.NoError(t, err)
-		require.Equal(t, consumerFormationName, consumerFormation.Name)
-		t.Logf("Successfully created formation: %s", consumerFormationName)
 
 		selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
@@ -378,6 +362,7 @@ func TestNewChanges(t *testing.T) {
 		require.Eventually(t, func() bool {
 			return getSubscriptionJobStatus(t, httpClient, subJobStatusURL, tenantFetcherToken) == jobSucceededStatus
 		}, eventuallyTimeout, eventuallyTick)
+		t.Log(fmt.Sprintf("Successfully created subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 
 		defer func() {
 			unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
@@ -393,6 +378,7 @@ func TestNewChanges(t *testing.T) {
 			require.Eventually(t, func() bool {
 				return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, tenantFetcherToken) == jobSucceededStatus
 			}, eventuallyTimeout, eventuallyTick)
+			t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 		}()
 
 		// HTTP client configured with manually signed client certificate
@@ -402,9 +388,11 @@ func TestNewChanges(t *testing.T) {
 		headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", subscriptionToken)}}
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
+		t.Log("Getting consumer application using both provider and consumer credentials...")
 		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+		t.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
 		// Build unsubscribe request
 		unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
@@ -414,6 +402,13 @@ func TestNewChanges(t *testing.T) {
 		unsubscribeResp, err := httpClient.Do(unsubscribeReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode)
+		unsubJobStatusPath := unsubscribeResp.Header.Get(locationHeader)
+		require.NotEmpty(t, unsubJobStatusPath)
+		unsubJobStatusURL := testConfig.SubscriptionURL + unsubJobStatusPath
+		require.Eventually(t, func() bool {
+			return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, tenantFetcherToken) == jobSucceededStatus
+		}, eventuallyTimeout, eventuallyTick)
+		t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 
 		respBody = makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
