@@ -21,14 +21,13 @@ import (
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
-
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	c "github.com/robfig/cron/v3"
+	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 
@@ -48,6 +47,10 @@ type config struct {
 	BasicUsername                         string
 	BasicPassword                         string
 	ORDServiceDefaultResponseType         string
+	GlobalRegistryURL                     string
+	CertLoaderConfig                      certloader.Config
+	ClientTimeout                         time.Duration `envconfig:"default=60s"`
+	SkipSSLValidation                     bool          `envconfig:"default=false"`
 }
 
 var (
