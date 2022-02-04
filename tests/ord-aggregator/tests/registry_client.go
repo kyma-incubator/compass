@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,16 +17,12 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type Client interface {
-	GetGlobalProductsAndVendorsNumber(ctx context.Context, globalRegistryURL string) (int, int, error)
-}
-
 type client struct {
 	*http.Client
 	accessStrategyExecutorProvider accessstrategy.ExecutorProvider
 }
 
-func NewClient(httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
+func NewGlobalRegistryClient(httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
 	return &client{
 		Client:                         httpClient,
 		accessStrategyExecutorProvider: accessStrategyExecutorProvider,
@@ -52,8 +49,7 @@ func (c *client) GetGlobalProductsAndVendorsNumber(ctx context.Context, globalRe
 		}
 		strategy, ok := docDetails.AccessStrategies.GetSupported()
 		if !ok {
-			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
-			continue
+			return globalProducts, globalVendors, fmt.Errorf("unsupported access strategies for ORD Document %q", documentURL)
 		}
 		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy)
 		if err != nil {

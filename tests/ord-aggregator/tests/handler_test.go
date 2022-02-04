@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
@@ -205,7 +204,7 @@ func TestORDAggregator(t *testing.T) {
 		httpClient := conf.Client(ctx)
 		httpClient.Timeout = 20 * time.Second
 
-		globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber(ctx, unsecuredHttpClient)
+		globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber(ctx, t, unsecuredHttpClient)
 		t.Logf("Global products number: %d, Global vendors number: %d", globalProductsNumber, globalVendorsNumber)
 
 		expectedNumberOfProducts += globalProductsNumber
@@ -412,19 +411,17 @@ func storeMappingBetweenORDAndInternalBundleID(t *testing.T, respBody string, nu
 	return ordAndInternalIDsMapping
 }
 
-func getGlobalResourcesNumber(ctx context.Context, httpClient *http.Client) (int, int) {
+func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *http.Client) (int, int) {
 	certCache, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
-	if err != nil {
-		log.C(ctx).Errorf("Failed to initialize certificate loader %v", err)
-		return 0, 0
-	}
+	require.NoError(t, err, "Failed to initialize certificate loader")
 
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
-	ordClient := NewClient(httpClient, accessStrategyExecutorProvider)
+	ordClient := NewGlobalRegistryClient(httpClient, accessStrategyExecutorProvider)
 
 	products, vendors, err := ordClient.GetGlobalProductsAndVendorsNumber(ctx, testConfig.GlobalRegistryURL)
 	if err != nil {
-		log.C(ctx).Errorf("while fetching global registry resources from %s %v", testConfig.GlobalRegistryURL, err)
+		t.Logf("while fetching global registry resources from %s %v", testConfig.GlobalRegistryURL, err)
+		t.Fail()
 	}
 	return products, vendors
 }
