@@ -313,6 +313,16 @@ func TestNewChanges(t *testing.T) {
 		require.Equal(t, consumerFormationName, consumerFormation.Name)
 		t.Logf("Successfully created formation: %s", consumerFormationName)
 
+		defer func() {
+			t.Logf("Deleting formation with name: %s...", consumerFormationName)
+			deleteRequest := fixtures.FixDeleteFormationRequest(consumerFormationName)
+			var deleteFormation graphql.Formation
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, deleteRequest, &deleteFormation)
+			require.NoError(t, err)
+			require.Equal(t, consumerFormationName, deleteFormation.Name)
+			t.Logf("Successfully deleted formation with name: %s...", consumerFormationName)
+		}()
+
 		t.Logf("Assign application to formation %s", consumerFormationName)
 		assignReq := fixtures.FixAssignFormationRequest(consumerApp.ID, "APPLICATION", consumerFormationName)
 		var assignFormation graphql.Formation
@@ -320,6 +330,34 @@ func TestNewChanges(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, consumerFormationName, assignFormation.Name)
 		t.Logf("Successfully assigned application to formation %s", consumerFormationName)
+
+		defer func() {
+			t.Logf("Unassign Application from formation %s", consumerFormationName)
+			unassignAppReq := fixtures.FixUnassignFormationRequest(consumerApp.ID, "APPLICATION", consumerFormationName)
+			var unassignAppFormation graphql.Formation
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, unassignAppReq, &unassignAppFormation)
+			require.NoError(t, err)
+			require.Equal(t, consumerFormationName, unassignAppFormation.Name)
+			t.Logf("Successfully unassigned application from formation %s", consumerFormationName)
+		}()
+
+		t.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, consumerFormationName)
+		assignTenantReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", consumerFormationName)
+		var assignTenantFormation graphql.Formation
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, assignTenantReq, &assignTenantFormation)
+		require.NoError(t, err)
+		require.Equal(t, consumerFormationName, assignTenantFormation.Name)
+		t.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
+
+		defer func() {
+			t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
+			unassignTenantReq := fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", consumerFormationName)
+			var unassignTenantFormation graphql.Formation
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, unassignTenantReq, &unassignTenantFormation)
+			require.NoError(t, err)
+			require.Equal(t, consumerFormationName, unassignTenantFormation.Name)
+			t.Logf("Successfully unassigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
+		}()
 
 		selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
