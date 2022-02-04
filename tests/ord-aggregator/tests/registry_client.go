@@ -19,7 +19,7 @@ import (
 )
 
 type Client interface {
-	GetGlobalResourcesNumber(ctx context.Context, globalRegistryURL string) (int, int, error)
+	GetGlobalProductsAndVendorsNumber(ctx context.Context, globalRegistryURL string) (int, int, error)
 }
 
 type client struct {
@@ -34,7 +34,7 @@ func NewClient(httpClient *http.Client, accessStrategyExecutorProvider accessstr
 	}
 }
 
-func (c *client) GetGlobalResourcesNumber(ctx context.Context, globalRegistryURL string) (int, int, error) {
+func (c *client) GetGlobalProductsAndVendorsNumber(ctx context.Context, globalRegistryURL string) (int, int, error) {
 	config, err := c.fetchConfig(ctx, globalRegistryURL)
 	if err != nil {
 		return 0, 0, err

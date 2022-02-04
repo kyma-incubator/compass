@@ -206,7 +206,9 @@ func TestORDAggregator(t *testing.T) {
 		httpClient := conf.Client(ctx)
 		httpClient.Timeout = 20 * time.Second
 
-		globalProductsNumber, globalVendorsNumber := getGlobalResources()
+		globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber()
+		log.D().Println("Global products number: %d, Global vendors number: %d", globalProductsNumber, globalVendorsNumber)
+
 		expectedNumberOfProducts += globalProductsNumber
 		expectedNumberOfVendors += globalVendorsNumber
 
@@ -411,7 +413,7 @@ func storeMappingBetweenORDAndInternalBundleID(t *testing.T, respBody string, nu
 	return ordAndInternalIDsMapping
 }
 
-func getGlobalResources() (int, int) {
+func getGlobalResourcesNumber() (int, int) {
 	ctx := context.Background()
 	httpClient := &http.Client{
 		Timeout: testConfig.ClientTimeout,
@@ -423,21 +425,17 @@ func getGlobalResources() (int, int) {
 	}
 
 	certCache, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
-	exitOnError(err, "Failed to initialize certificate loader")
+	if err != nil {
+		log.D().Errorf("Failed to initialize certificate loader %v", err)
+		return 0, 0
+	}
 
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
 	ordClient := NewClient(httpClient, accessStrategyExecutorProvider)
 
-	products, vendors, err := ordClient.GetGlobalResourcesNumber(ctx, testConfig.GlobalRegistryURL)
+	products, vendors, err := ordClient.GetGlobalProductsAndVendorsNumber(ctx, testConfig.GlobalRegistryURL)
 	if err != nil {
 		log.D().Errorf("while fetching global registry resources from %s %v", testConfig.GlobalRegistryURL, err)
 	}
 	return products, vendors
-}
-
-func exitOnError(err error, context string) {
-	if err != nil {
-		wrappedError := errors.Wrap(err, context)
-		log.D().Fatal(wrappedError)
-	}
 }
