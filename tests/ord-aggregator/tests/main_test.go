@@ -17,19 +17,17 @@
 package tests
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"os"
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
-
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	c "github.com/robfig/cron/v3"
+	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 

@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"encoding/json"
-	"github.com/tidwall/gjson"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,11 +10,10 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 )
 
 type Client interface {

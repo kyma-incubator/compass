@@ -4,17 +4,16 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/assertions"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/pkg/errors"
@@ -207,7 +206,7 @@ func TestORDAggregator(t *testing.T) {
 		httpClient.Timeout = 20 * time.Second
 
 		globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber()
-		log.D().Println("Global products number: %d, Global vendors number: %d", globalProductsNumber, globalVendorsNumber)
+		t.Logf("Global products number: %d, Global vendors number: %d", globalProductsNumber, globalVendorsNumber)
 
 		expectedNumberOfProducts += globalProductsNumber
 		expectedNumberOfVendors += globalVendorsNumber
