@@ -281,12 +281,14 @@ func TestNewChanges(t *testing.T) {
 		runtimeInput := graphql.RuntimeInput{
 			Name:        "providerRuntime",
 			Description: ptr.String("providerRuntime-description"),
-			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, selectorKey: subscriptionProviderSubaccountID},
+			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
 		}
 
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(t, runtime.ID)
+
+		// TODO:: Add defer deletion for self register cloning
 
 		// Register application
 		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", secondaryTenant)

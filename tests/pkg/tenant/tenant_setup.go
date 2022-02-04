@@ -186,14 +186,6 @@ func (mgr *TestTenantsManager) Init() {
 			Status:         Active,
 			Parent:         testDefaultTenant,
 		},
-		TestConsumerSubaccount: { // TODO:: Add this tenant on dev and dev-main as well
-			Name:           TestConsumerSubaccount,
-			ExternalTenant: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae",
-			ProviderName:   testProvider,
-			Type:           Subaccount,
-			Status:         Active,
-			Parent:         ApplicationsForRuntimeTenantName,
-		},
 		TestIntegrationSystemManagedSubaccount: {
 			Name:           TestIntegrationSystemManagedSubaccount,
 			ExternalTenant: "3cfcdd62-320d-403b-b66a-4ee3cdd06947",
