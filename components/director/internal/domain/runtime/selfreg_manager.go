@@ -40,6 +40,7 @@ type SelfRegConfig struct {
 	ClientSecret   string         `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
 	OAuthMode      oauth.AuthMode `envconfig:"APP_SELF_REGISTER_OAUTH_MODE,default=oauth-mtls"`
 	URL            string         `envconfig:"APP_SELF_REGISTER_URL,optional"`
+	TokenURL       string         `envconfig:"APP_SELF_REGISTER_TOKEN_URL,optional"`
 	OauthTokenPath string         `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
 
 	SkipSSLValidation bool `envconfig:"APP_SELF_REGISTER_SKIP_SSL_VALIDATION,default=false"`

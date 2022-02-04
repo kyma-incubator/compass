@@ -20,11 +20,11 @@ import (
 	"context"
 	"crypto/tls"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/pkg/errors"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 )
 
 type contextKey string
@@ -89,7 +89,7 @@ func NewOAuthMtlsCredentials(config *runtime.SelfRegConfig) (*OAuthMtlsCredentia
 		CertCache: &certCache{
 			cert: mtlsCert,
 		},
-		TokenURL: config.URL + config.OauthTokenPath,
+		TokenURL: config.TokenURL + config.OauthTokenPath,
 	}, nil
 }
 

@@ -163,7 +163,12 @@ global:
         clientIdKey: client-id
         clientSecretKey: client-secret
         urlKey: url
-      oauthTokenPath: "/secured/oauth/token"
+        tokenUrlKey: token-url
+        clientCertKey: client-cert
+        clientKeyKey: client-key
+      oauthTokenPath: "/cert/token"
+      oauthMode: "oauth-mtls"
+      distinguishLabel: "distinguishingLabel"
       label: "selfRegLabel"
       labelValuePrefix: "self-reg-prefix-"
       responseKey: "self-reg-key"
@@ -632,7 +637,7 @@ global:
       client:
         skipSSLValidation:
           director: false
-          ordService: false
+          ordService: true
           connectivityAdapter: true
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
@@ -690,7 +695,7 @@ global:
 
   http:
     client:
-      skipSSLValidation: false
+      skipSSLValidation: true
 
   pairingAdapter:
     e2e:

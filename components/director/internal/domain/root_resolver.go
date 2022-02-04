@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/pkg/errors"
 
@@ -101,7 +99,6 @@ func NewRootResolver(
 	tokenLength int,
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
-	cache certloader.Cache,
 ) (*RootResolver, error) {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
@@ -120,7 +117,6 @@ func NewRootResolver(
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating OAuth Mtls credentials")
 		}
-		mtlsCredentials.CertCache = cache
 		credentials = mtlsCredentials
 	} else {
 		return nil, errors.New(fmt.Sprintf("unsupported OAuth mode: %s", selfRegConfig.OAuthMode))
