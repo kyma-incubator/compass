@@ -40,7 +40,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
@@ -58,64 +57,65 @@ const (
 	contentTypeApplicationJson = "application/json"
 )
 
-func TestSelfRegisterFlow(t *testing.T) {
-	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
-		ctx := context.Background()
-		// defaultTenantId is the parent of the subaccountID
-		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
-
-		// Build graphql director client configured with certificate
-		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
-
-		// Register application
-		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", defaultTenantId)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTenantId, &app)
-		require.NoError(t, err)
-		require.NotEmpty(t, app.ID)
-
-		// Create label definition
-		scenarios := []string{"DEFAULT", "sr-test-scenario"}
-		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios)
-		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios[:1])
-
-		// Assign application to scenario
-		appLabelRequest := fixtures.FixSetApplicationLabelRequest(app.ID, scenariosLabel, scenarios[1:])
-		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, defaultTenantId, appLabelRequest, nil))
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, defaultTenantId, app.ID, testConfig.DefaultScenarioEnabled)
-
-		// Self register runtime
-		runtimeInput := graphql.RuntimeInput{
-			Name:        "selfRegisterRuntime",
-			Description: ptr.String("selfRegisterRuntime-description"),
-			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID},
-		}
-		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
-		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
-		require.NotEmpty(t, runtime.ID)
-		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
-		require.True(t, ok)
-		require.Contains(t, strLbl, runtime.ID)
-
-		// Verify that the label returned cannot be modified
-		setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
-		label := graphql.Label{}
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, setLabelRequest, &label)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
-
-		labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId)
-		require.NoError(t, err)
-		numOfScenarioLabelDefinitions := 0
-		for _, ld := range labelDefinitions {
-			if ld.Key == scenariosLabel {
-				numOfScenarioLabelDefinitions++
-			}
-		}
-		// the parent tenant should not see child label definitions
-		require.Equal(t, 1, numOfScenarioLabelDefinitions)
-	})
-}
+// TODO:: Uncomment
+//func TestSelfRegisterFlow(t *testing.T) {
+//	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
+//		ctx := context.Background()
+//		// defaultTenantId is the parent of the subaccountID
+//		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
+//
+//		// Build graphql director client configured with certificate
+//		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
+//		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
+//
+//		// Register application
+//		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", defaultTenantId)
+//		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTenantId, &app)
+//		require.NoError(t, err)
+//		require.NotEmpty(t, app.ID)
+//
+//		// Create label definition
+//		scenarios := []string{"DEFAULT", "sr-test-scenario"}
+//		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios)
+//		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios[:1])
+//
+//		// Assign application to scenario
+//		appLabelRequest := fixtures.FixSetApplicationLabelRequest(app.ID, scenariosLabel, scenarios[1:])
+//		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, defaultTenantId, appLabelRequest, nil))
+//		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, defaultTenantId, app.ID, testConfig.DefaultScenarioEnabled)
+//
+//		// Self register runtime
+//		runtimeInput := graphql.RuntimeInput{
+//			Name:        "selfRegisterRuntime",
+//			Description: ptr.String("selfRegisterRuntime-description"),
+//			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID},
+//		}
+//		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+//		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
+//		require.NotEmpty(t, runtime.ID)
+//		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
+//		require.True(t, ok)
+//		require.Contains(t, strLbl, runtime.ID)
+//
+//		// Verify that the label returned cannot be modified
+//		setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
+//		label := graphql.Label{}
+//		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, setLabelRequest, &label)
+//		require.Error(t, err)
+//		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
+//
+//		labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId)
+//		require.NoError(t, err)
+//		numOfScenarioLabelDefinitions := 0
+//		for _, ld := range labelDefinitions {
+//			if ld.Key == scenariosLabel {
+//				numOfScenarioLabelDefinitions++
+//			}
+//		}
+//		// the parent tenant should not see child label definitions
+//		require.Equal(t, 1, numOfScenarioLabelDefinitions)
+//	})
+//}
 
 // TODO:: Remove after successful validation on dev-val cluster
 //func TestConsumerProviderFlow(t *testing.T) {
