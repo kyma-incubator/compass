@@ -159,16 +159,16 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 
 	// if bundleIDs == nil we are in the graphQL flow
 	if bundleIDs == nil {
-		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID); err != nil {
+		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{Visibility: eventAPI.Visibility}, model.BundleEventReference, &eventAPI.ID, bundleID); err != nil {
 			return "", err
 		}
 	} else {
 		for _, bndlID := range bundleIDs {
-			bundleRefInput := &model.BundleReferenceInput{}
+			bundleRefInput := &model.BundleReferenceInput{
+				Visibility: eventAPI.Visibility,
+			}
 			if defaultBundleID != "" && bndlID == defaultBundleID {
-				bundleRefInput = &model.BundleReferenceInput{
-					IsDefaultBundle: true,
-				}
+				bundleRefInput.IsDefaultBundle = true
 			}
 			if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleEventReference, &eventAPI.ID, &bndlID); err != nil {
 				return "", err
@@ -203,9 +203,11 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 	}
 
 	for _, bundleID := range bundleIDsForCreation {
-		createBundleRefInput := &model.BundleReferenceInput{}
+		createBundleRefInput := &model.BundleReferenceInput{
+			Visibility: event.Visibility,
+		}
 		if defaultBundleID != "" && bundleID == defaultBundleID {
-			createBundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: true}
+			createBundleRefInput.IsDefaultBundle = true
 		}
 		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *createBundleRefInput, model.BundleEventReference, &event.ID, &bundleID); err != nil {
 			return err
@@ -219,9 +221,11 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 	}
 
 	for _, bundleID := range bundleIDsFromBundleReference {
-		bundleRefInput := &model.BundleReferenceInput{}
+		bundleRefInput := &model.BundleReferenceInput{
+			Visibility: event.Visibility,
+		}
 		if defaultBundleID != "" && bundleID == defaultBundleID {
-			bundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: true}
+			bundleRefInput.IsDefaultBundle = true
 		}
 		if err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleEventReference, &event.ID, &bundleID); err != nil {
 			return err
