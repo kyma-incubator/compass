@@ -102,8 +102,8 @@ spec:
                   }
 
                   echo -e "${YELLOW}Issuing token... ${NC}"
-                  echo $CERT_SVC_OAUTH_CLIENT_CERT | openssl enc -base64 -d -out /tmp/client-cert.pem
-                  echo $CERT_SVC_OAUTH_CLIENT_KEY | openssl enc -base64 -d -out /tmp/client-key.pem
+                  echo $CERT_SVC_OAUTH_CLIENT_CERT | openssl enc -base64 -d -A -out /tmp/client-cert.pem
+                  echo $CERT_SVC_OAUTH_CLIENT_KEY | openssl enc -base64 -d -A -out /tmp/client-key.pem
 
                   TOKEN=$(curl \
                     -s \
