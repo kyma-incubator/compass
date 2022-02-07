@@ -129,6 +129,7 @@ func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Requ
 
 func (h *handler) Dependencies(writer http.ResponseWriter, r *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write([]byte(h.xsappnameClone)); err != nil {
 		log.C(r.Context()).WithError(err).Errorf("Failed to write response body for dependencies request")
 		return

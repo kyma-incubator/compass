@@ -250,189 +250,157 @@ const (
 //}
 
 func TestNewChanges(t *testing.T) {
-	t.Run("TestNewChanges", func(t *testing.T) {
-		ctx := context.Background()
-		secondaryTenant := testConfig.TestConsumerAccountID
-		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
-		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
-		jobName := "external-certificate-rotation-test-job"
+	ctx := context.Background()
+	secondaryTenant := testConfig.TestConsumerAccountID
+	subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
+	subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
+	jobName := "external-certificate-rotation-test-job"
 
-		// Prepare provider external client certificate and secret
-		k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	// Prepare provider external client certificate and secret
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	require.NoError(t, err)
+	createExtCertJob(t, ctx, k8sClient, testConfig, jobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
+	defer func() {
+		k8s.DeleteJob(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
+		k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
+	}()
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
+
+	providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(testConfig.ExternalClientCertTestSecretNamespace).Get(ctx, testConfig.ExternalClientCertTestSecretName, metav1.GetOptions{})
+	require.NoError(t, err)
+	providerKeyBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretKeyKey]
+	require.NotEmpty(t, providerKeyBytes)
+	providerCertChainBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
+	require.NotEmpty(t, providerCertChainBytes)
+
+	// Build graphql director client configured with certificate
+	providerClientKey, providerRawCertChain := certs.ClientCertPair(t, providerCertChainBytes, providerKeyBytes)
+	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
+
+	runtimeInput := graphql.RuntimeInput{
+		Name:        "providerRuntime",
+		Description: ptr.String("providerRuntime-description"),
+		Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
+	}
+
+	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
+	require.NotEmpty(t, runtime.ID)
+
+	// TODO:: Consider adding defer deletion for self register cloning
+
+	// Register application
+	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", secondaryTenant)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &app)
+	require.NoError(t, err)
+	require.NotEmpty(t, app.ID)
+
+	// Register consumer application
+	consumerApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "consumerApp", secondaryTenant)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &consumerApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, consumerApp.ID)
+	require.NotEmpty(t, consumerApp.Name)
+
+	consumerFormationName := "consumer-test-scenario"
+	t.Logf("Creating formation with name %s...", consumerFormationName)
+	var consumerFormation graphql.Formation
+	createFormationReq := fixtures.FixCreateFormationRequest(consumerFormationName)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, createFormationReq, &consumerFormation)
+	require.NoError(t, err)
+	require.Equal(t, consumerFormationName, consumerFormation.Name)
+	t.Logf("Successfully created formation: %s", consumerFormationName)
+
+	defer func() {
+		t.Logf("Deleting formation with name: %s...", consumerFormationName)
+		deleteRequest := fixtures.FixDeleteFormationRequest(consumerFormationName)
+		var deleteFormation graphql.Formation
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, deleteRequest, &deleteFormation)
 		require.NoError(t, err)
-		createExtCertJob(t, ctx, k8sClient, testConfig, jobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
-		defer func() {
-			k8s.DeleteJob(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
-			k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
-		}()
-		k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
+		require.Equal(t, consumerFormationName, deleteFormation.Name)
+		t.Logf("Successfully deleted formation with name: %s...", consumerFormationName)
+	}()
 
-		providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(testConfig.ExternalClientCertTestSecretNamespace).Get(ctx, testConfig.ExternalClientCertTestSecretName, metav1.GetOptions{})
+	t.Logf("Assign application to formation %s", consumerFormationName)
+	assignReq := fixtures.FixAssignFormationRequest(consumerApp.ID, "APPLICATION", consumerFormationName)
+	var assignFormation graphql.Formation
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, assignReq, &assignFormation)
+	require.NoError(t, err)
+	require.Equal(t, consumerFormationName, assignFormation.Name)
+	t.Logf("Successfully assigned application to formation %s", consumerFormationName)
+
+	defer func() {
+		t.Logf("Unassign Application from formation %s", consumerFormationName)
+		unassignAppReq := fixtures.FixUnassignFormationRequest(consumerApp.ID, "APPLICATION", consumerFormationName)
+		var unassignAppFormation graphql.Formation
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, unassignAppReq, &unassignAppFormation)
 		require.NoError(t, err)
-		providerKeyBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretKeyKey]
-		require.NotEmpty(t, providerKeyBytes)
-		providerCertChainBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
-		require.NotEmpty(t, providerCertChainBytes)
+		require.Equal(t, consumerFormationName, unassignAppFormation.Name)
+		t.Logf("Successfully unassigned application from formation %s", consumerFormationName)
+	}()
 
-		// Build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certs.ClientCertPair(t, providerCertChainBytes, providerKeyBytes)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
+	t.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, consumerFormationName)
+	assignTenantReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", consumerFormationName)
+	var assignTenantFormation graphql.Formation
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, assignTenantReq, &assignTenantFormation)
+	require.NoError(t, err)
+	require.Equal(t, consumerFormationName, assignTenantFormation.Name)
+	t.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
 
-		runtimeInput := graphql.RuntimeInput{
-			Name:        "providerRuntime",
-			Description: ptr.String("providerRuntime-description"),
-			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
+	defer func() {
+		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
+		unassignTenantReq := fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", consumerFormationName)
+		var unassignTenantFormation graphql.Formation
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, unassignTenantReq, &unassignTenantFormation)
+		require.NoError(t, err)
+		require.Equal(t, consumerFormationName, unassignTenantFormation.Name)
+		t.Logf("Successfully unassigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
+	}()
+
+	selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
+	require.True(t, ok)
+	require.Contains(t, selfRegLabelValue, testConfig.SelfRegisterLabelValuePrefix+runtime.ID)
+	response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", contentTypeApplicationJson, bytes.NewBuffer([]byte(selfRegLabelValue)))
+	require.NoError(t, err)
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
 		}
+	}()
+	require.Equal(t, http.StatusOK, response.StatusCode)
 
-		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
-		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
-		require.NotEmpty(t, runtime.ID)
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: testConfig.SkipSSLValidation},
+		},
+	}
 
-		// TODO:: Consider adding defer deletion for self register cloning
+	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerSubaccountID)
+	subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
+	require.NoError(t, err)
+	tenantFetcherToken := token.GetClientCredentialsToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "tenantFetcherClaims")
+	subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", tenantFetcherToken))
+	subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
 
-		// Register application
-		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", secondaryTenant)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &app)
-		require.NoError(t, err)
-		require.NotEmpty(t, app.ID)
-
-		// Register consumer application
-		consumerApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "consumerApp", secondaryTenant)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &consumerApp)
-		require.NoError(t, err)
-		require.NotEmpty(t, consumerApp.ID)
-		require.NotEmpty(t, consumerApp.Name)
-
-		consumerFormationName := "consumer-test-scenario"
-
-		t.Logf("Creating formation with name %s...", consumerFormationName)
-		var consumerFormation graphql.Formation
-		createFormationReq := fixtures.FixCreateFormationRequest(consumerFormationName)
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, createFormationReq, &consumerFormation)
-		require.NoError(t, err)
-		require.Equal(t, consumerFormationName, consumerFormation.Name)
-		t.Logf("Successfully created formation: %s", consumerFormationName)
-
-		defer func() {
-			t.Logf("Deleting formation with name: %s...", consumerFormationName)
-			deleteRequest := fixtures.FixDeleteFormationRequest(consumerFormationName)
-			var deleteFormation graphql.Formation
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, deleteRequest, &deleteFormation)
-			require.NoError(t, err)
-			require.Equal(t, consumerFormationName, deleteFormation.Name)
-			t.Logf("Successfully deleted formation with name: %s...", consumerFormationName)
-		}()
-
-		t.Logf("Assign application to formation %s", consumerFormationName)
-		assignReq := fixtures.FixAssignFormationRequest(consumerApp.ID, "APPLICATION", consumerFormationName)
-		var assignFormation graphql.Formation
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, assignReq, &assignFormation)
-		require.NoError(t, err)
-		require.Equal(t, consumerFormationName, assignFormation.Name)
-		t.Logf("Successfully assigned application to formation %s", consumerFormationName)
-
-		defer func() {
-			t.Logf("Unassign Application from formation %s", consumerFormationName)
-			unassignAppReq := fixtures.FixUnassignFormationRequest(consumerApp.ID, "APPLICATION", consumerFormationName)
-			var unassignAppFormation graphql.Formation
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, unassignAppReq, &unassignAppFormation)
-			require.NoError(t, err)
-			require.Equal(t, consumerFormationName, unassignAppFormation.Name)
-			t.Logf("Successfully unassigned application from formation %s", consumerFormationName)
-		}()
-
-		t.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, consumerFormationName)
-		assignTenantReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", consumerFormationName)
-		var assignTenantFormation graphql.Formation
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, assignTenantReq, &assignTenantFormation)
-		require.NoError(t, err)
-		require.Equal(t, consumerFormationName, assignTenantFormation.Name)
-		t.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
-
-		defer func() {
-			t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
-			unassignTenantReq := fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", consumerFormationName)
-			var unassignTenantFormation graphql.Formation
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, unassignTenantReq, &unassignTenantFormation)
-			require.NoError(t, err)
-			require.Equal(t, consumerFormationName, unassignTenantFormation.Name)
-			t.Logf("Successfully unassigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
-		}()
-
-		selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
-		require.True(t, ok)
-		require.Contains(t, selfRegLabelValue, testConfig.SelfRegisterLabelValuePrefix+runtime.ID)
-		response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", contentTypeApplicationJson, bytes.NewBuffer([]byte(selfRegLabelValue)))
-		require.NoError(t, err)
-		defer func() {
-			if err := response.Body.Close(); err != nil {
-				t.Logf("Could not close response body %s", err)
-			}
-		}()
-		require.Equal(t, http.StatusOK, response.StatusCode)
-
-		httpClient := &http.Client{
-			Timeout: 10 * time.Second,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: testConfig.SkipSSLValidation},
-			},
+	t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+	resp, err := httpClient.Do(subscribeReq)
+	require.NoError(t, err)
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
 		}
+	}()
+	require.Equal(t, http.StatusAccepted, resp.StatusCode)
+	subJobStatusPath := resp.Header.Get(locationHeader)
+	require.NotEmpty(t, subJobStatusPath)
+	subJobStatusURL := testConfig.SubscriptionURL + subJobStatusPath
+	require.Eventually(t, func() bool {
+		return getSubscriptionJobStatus(t, httpClient, subJobStatusURL, tenantFetcherToken) == jobSucceededStatus
+	}, eventuallyTimeout, eventuallyTick)
+	t.Log(fmt.Sprintf("Successfully created subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerSubaccountID)
-		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
-		require.NoError(t, err)
-		tenantFetcherToken := token.GetClientCredentialsToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "tenantFetcherClaims")
-		subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", tenantFetcherToken))
-		subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
-
-		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
-		resp, err := httpClient.Do(subscribeReq)
-		require.NoError(t, err)
-		defer func() {
-			if err := response.Body.Close(); err != nil {
-				t.Logf("Could not close response body %s", err)
-			}
-		}()
-		require.Equal(t, http.StatusAccepted, resp.StatusCode)
-		subJobStatusPath := resp.Header.Get(locationHeader)
-		require.NotEmpty(t, subJobStatusPath)
-		subJobStatusURL := testConfig.SubscriptionURL + subJobStatusPath
-		require.Eventually(t, func() bool {
-			return getSubscriptionJobStatus(t, httpClient, subJobStatusURL, tenantFetcherToken) == jobSucceededStatus
-		}, eventuallyTimeout, eventuallyTick)
-		t.Log(fmt.Sprintf("Successfully created subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
-
-		defer func() {
-			unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
-			unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", tenantFetcherToken))
-
-			t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
-			unsubscribeResp, err := httpClient.Do(unsubscribeReq)
-			require.NoError(t, err)
-			require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode)
-			unsubJobStatusPath := unsubscribeResp.Header.Get(locationHeader)
-			require.NotEmpty(t, unsubJobStatusPath)
-			unsubJobStatusURL := testConfig.SubscriptionURL + subJobStatusPath
-			require.Eventually(t, func() bool {
-				return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, tenantFetcherToken) == jobSucceededStatus
-			}, eventuallyTimeout, eventuallyTick)
-			t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
-		}()
-
-		// HTTP client configured with manually signed client certificate
-		extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
-
-		subscriptionToken := token.GetUserToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, testConfig.BasicUsername, testConfig.BasicPassword, "subscriptionClaims")
-		headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", subscriptionToken)}}
-
-		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
-		t.Log("Getting consumer application using both provider and consumer credentials...")
-		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
-		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
-		t.Log("Successfully fetched consumer application using both provider and consumer credentials")
-
-		// Build unsubscribe request
+	defer func() {
 		unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
 		unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", tenantFetcherToken))
 
@@ -442,15 +410,44 @@ func TestNewChanges(t *testing.T) {
 		require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode)
 		unsubJobStatusPath := unsubscribeResp.Header.Get(locationHeader)
 		require.NotEmpty(t, unsubJobStatusPath)
-		unsubJobStatusURL := testConfig.SubscriptionURL + unsubJobStatusPath
+		unsubJobStatusURL := testConfig.SubscriptionURL + subJobStatusPath
 		require.Eventually(t, func() bool {
 			return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, tenantFetcherToken) == jobSucceededStatus
 		}, eventuallyTimeout, eventuallyTick)
 		t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+	}()
 
-		respBody = makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
-	})
+	// HTTP client configured with manually signed client certificate
+	extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
+
+	subscriptionToken := token.GetUserToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, testConfig.BasicUsername, testConfig.BasicPassword, "subscriptionClaims")
+	headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", subscriptionToken)}}
+
+	// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
+	t.Log("Getting consumer application using both provider and consumer credentials...")
+	respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+	require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
+	require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+	t.Log("Successfully fetched consumer application using both provider and consumer credentials")
+
+	// Build unsubscribe request
+	unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
+	unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", tenantFetcherToken))
+
+	t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+	unsubscribeResp, err := httpClient.Do(unsubscribeReq)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode)
+	unsubJobStatusPath := unsubscribeResp.Header.Get(locationHeader)
+	require.NotEmpty(t, unsubJobStatusPath)
+	unsubJobStatusURL := testConfig.SubscriptionURL + unsubJobStatusPath
+	require.Eventually(t, func() bool {
+		return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, tenantFetcherToken) == jobSucceededStatus
+	}, eventuallyTimeout, eventuallyTick)
+	t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+
+	respBody = makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+	require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 }
 
 // createExtCertJob will schedule a temporary kubernetes job from director-external-certificate-rotation-job cronjob
