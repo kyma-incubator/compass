@@ -461,7 +461,8 @@ func TestService_Create(t *testing.T) {
 	}
 
 	bundleReferenceInput := &model.BundleReferenceInput{}
-	bundleReferenceInputWithDefaultBundle := &model.BundleReferenceInput{IsDefaultBundle: true}
+	isDefault := true
+	bundleReferenceInputWithDefaultBundle := &model.BundleReferenceInput{IsDefaultBundle: &isDefault}
 	bundleIDs := []string{bundleID, bundleID2}
 
 	ctx := context.TODO()
@@ -913,8 +914,9 @@ func TestService_UpdateManyBundles(t *testing.T) {
 		Version: &model.Version{},
 	}
 
+	isDefault := true
 	bundleReferenceInputWithDefaultBundle := &model.BundleReferenceInput{
-		IsDefaultBundle: true,
+		IsDefaultBundle: &isDefault,
 	}
 
 	bundleIDsForCreation := []string{bndlID1, bndlID2}

@@ -166,8 +166,9 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 		for _, bndlID := range bundleIDs {
 			bundleRefInput := &model.BundleReferenceInput{}
 			if defaultBundleID != "" && bndlID == defaultBundleID {
+				isDefaultBundle := true
 				bundleRefInput = &model.BundleReferenceInput{
-					IsDefaultBundle: true,
+					IsDefaultBundle: &isDefaultBundle,
 				}
 			}
 			if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleEventReference, &eventAPI.ID, &bndlID); err != nil {
@@ -205,7 +206,8 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 	for _, bundleID := range bundleIDsForCreation {
 		createBundleRefInput := &model.BundleReferenceInput{}
 		if defaultBundleID != "" && bundleID == defaultBundleID {
-			createBundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: true}
+			isDefaultBundle := true
+			createBundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: &isDefaultBundle}
 		}
 		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *createBundleRefInput, model.BundleEventReference, &event.ID, &bundleID); err != nil {
 			return err
@@ -221,7 +223,8 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 	for _, bundleID := range bundleIDsFromBundleReference {
 		bundleRefInput := &model.BundleReferenceInput{}
 		if defaultBundleID != "" && bundleID == defaultBundleID {
-			bundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: true}
+			isDefaultBundle := true
+			bundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: &isDefaultBundle}
 		}
 		if err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleEventReference, &event.ID, &bundleID); err != nil {
 			return err
