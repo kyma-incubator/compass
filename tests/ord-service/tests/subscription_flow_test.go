@@ -360,6 +360,7 @@ func TestNewChanges(t *testing.T) {
 	selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 	require.True(t, ok)
 	require.Contains(t, selfRegLabelValue, testConfig.SelfRegisterLabelValuePrefix+runtime.ID)
+	fmt.Printf("dep url --> %s <--", testConfig.SubscriptionURL+"/v1/dependencies/configure")
 	response, err := http.DefaultClient.Post(testConfig.SubscriptionURL+"/v1/dependencies/configure", contentTypeApplicationJson, bytes.NewBuffer([]byte(selfRegLabelValue)))
 	require.NoError(t, err)
 	defer func() {
@@ -376,6 +377,14 @@ func TestNewChanges(t *testing.T) {
 		},
 	}
 
+	// TODO:: Delete
+	//fmt.Printf("dep url --> %s <--", testConfig.SubscriptionURL+"/v1/dependencies/configure")
+	//depReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+	//require.NoError(t, err)
+	//depResp, err := httpClient.Do(depReq)
+	//require.NoError(t, err)
+	//require.Equal(t, http.StatusOK, depResp.StatusCode)
+
 	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerSubaccountID)
 	subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 	require.NoError(t, err)
@@ -387,7 +396,7 @@ func TestNewChanges(t *testing.T) {
 	resp, err := httpClient.Do(subscribeReq)
 	require.NoError(t, err)
 	defer func() {
-		if err := response.Body.Close(); err != nil {
+		if err := resp.Body.Close(); err != nil {
 			t.Logf("Could not close response body %s", err)
 		}
 	}()

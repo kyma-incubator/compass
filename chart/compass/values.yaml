@@ -651,7 +651,6 @@ global:
     basicCredentials:
       manage: false
       secretName: "test-basic-credentials-secret"
-    tokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
     subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
     subscriptionProviderIdValue: "id-value!t12345"
     db:

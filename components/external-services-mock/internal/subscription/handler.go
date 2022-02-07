@@ -106,6 +106,12 @@ func (h *handler) OnSubscription(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		log.C(r.Context()).Errorf("expected %s method but got: %s", http.MethodPost, r.Method)
+		writer.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
@@ -120,6 +126,7 @@ func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Requ
 	}
 
 	h.xsappnameClone = string(body)
+	log.C(r.Context()).Infof("Successfully configure dependency with value: %s", h.xsappnameClone)
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write(body); err != nil {
