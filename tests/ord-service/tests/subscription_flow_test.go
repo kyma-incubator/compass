@@ -21,13 +21,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
-	gcli "github.com/machinebox/graphql"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
