@@ -114,6 +114,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	claims := map[string]interface{}{}
 
 	tenant := r.Header.Get(h.tenantHeaderName)
@@ -121,7 +122,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
+		log.C(ctx).Errorf("while reading request body: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
 		return
 	}
@@ -129,7 +130,7 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 	if len(body) > 0 {
 		err = json.Unmarshal(body, &claims)
 		if err != nil {
-			log.C(r.Context()).WithError(err).Infof("Cannot json unmarshal the request body. Error: %s. Proceeding with empty claims", err)
+			log.C(ctx).WithError(err).Infof("Cannot json unmarshal the request body. Error: %s. Proceeding with empty claims", err)
 		}
 	}
 
@@ -137,17 +138,18 @@ func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http
 }
 
 func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	claims := map[string]interface{}{}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
+		log.C(ctx).Errorf("while reading request body: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
 		return
 	}
 
 	if form, err := url.ParseQuery(string(body)); err != nil {
-		log.C(r.Context()).Errorf("Cannot parse form. Error: %s", err)
+		log.C(ctx).Errorf("Cannot parse form. Error: %s", err)
 	} else {
 		client := form.Get(ClientIDKey)
 		scopes := form.Get(ScopesFieldName)
@@ -161,11 +163,11 @@ func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter,
 }
 
 func (h *handler) handleClientCredentialsRequest(r *http.Request) error {
-	log.C(r.Context()).Info("Validating client credentials token request...")
-
+	ctx := r.Context()
+	log.C(ctx).Info("Validating client credentials token request...")
 	authorization := r.Header.Get("authorization")
 	if id, secret, err := getBasicCredentials(authorization); err != nil {
-		log.C(r.Context()).Info("Did not find client_id or client_secret in the authorization header. Checking the request body...")
+		log.C(ctx).Info("Did not find client_id or client_secret in the authorization header. Checking the request body...")
 		id = r.FormValue(ClientIDKey)
 		secret = r.FormValue(ClientSecretKey)
 		if id != h.expectedID || secret != h.expectedSecret {
@@ -175,13 +177,14 @@ func (h *handler) handleClientCredentialsRequest(r *http.Request) error {
 		return errors.New(fmt.Sprintf("client_id or client_secret from authorization header doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedID, h.expectedSecret, id, secret))
 	}
 
-	log.C(r.Context()).Info("Successfully validated client credentials token request")
+	log.C(ctx).Info("Successfully validated client credentials token request")
 
 	return nil
 }
 
 func (h *handler) handlePasswordCredentialsRequest(r *http.Request) error {
-	log.C(r.Context()).Info("Validating password grant type token request...")
+	ctx := r.Context()
+	log.C(ctx).Info("Validating password grant type token request...")
 	authorization := r.Header.Get("authorization")
 	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
@@ -198,7 +201,7 @@ func (h *handler) handlePasswordCredentialsRequest(r *http.Request) error {
 		return errors.New(fmt.Sprintf("username or password doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedUsername, h.expectedPassword, username, password))
 	}
 
-	log.C(r.Context()).Info("Successfully validated password grant type token request")
+	log.C(ctx).Info("Successfully validated password grant type token request")
 
 	return nil
 }
@@ -216,8 +219,9 @@ func respond(writer http.ResponseWriter, r *http.Request, claims map[string]inte
 		output, err = token.SigningString()
 	}
 
+	ctx := r.Context()
 	if err != nil {
-		log.C(r.Context()).Errorf("while creating oauth token: %s", err.Error())
+		log.C(ctx).Errorf("while creating oauth token: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while creating oauth token"), http.StatusInternalServerError)
 		return
 	}
@@ -225,14 +229,14 @@ func respond(writer http.ResponseWriter, r *http.Request, claims map[string]inte
 	response := createResponse(output)
 	payload, err := json.Marshal(response)
 	if err != nil {
-		log.C(r.Context()).Errorf("while marshalling response: %s", err.Error())
+		log.C(ctx).Errorf("while marshalling response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
 	writer.Header().Set(ContentTypeHeader, ContentTypeApplicationJson)
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write(payload); err != nil {
-		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
+		log.C(ctx).Errorf("while writing response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
 		return
 	}

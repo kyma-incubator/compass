@@ -21,6 +21,9 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
+	gcli "github.com/machinebox/graphql"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -57,65 +60,66 @@ const (
 	contentTypeApplicationJson = "application/json"
 )
 
-// TODO:: Uncomment
-//func TestSelfRegisterFlow(t *testing.T) {
-//	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
-//		ctx := context.Background()
-//		// defaultTenantId is the parent of the subaccountID
-//		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
-//
-//		// Build graphql director client configured with certificate
-//		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
-//		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
-//
-//		// Register application
-//		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", defaultTenantId)
-//		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTenantId, &app)
-//		require.NoError(t, err)
-//		require.NotEmpty(t, app.ID)
-//
-//		// Create label definition
-//		scenarios := []string{"DEFAULT", "sr-test-scenario"}
-//		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios)
-//		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios[:1])
-//
-//		// Assign application to scenario
-//		appLabelRequest := fixtures.FixSetApplicationLabelRequest(app.ID, scenariosLabel, scenarios[1:])
-//		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, defaultTenantId, appLabelRequest, nil))
-//		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, defaultTenantId, app.ID, testConfig.DefaultScenarioEnabled)
-//
-//		// Self register runtime
-//		runtimeInput := graphql.RuntimeInput{
-//			Name:        "selfRegisterRuntime",
-//			Description: ptr.String("selfRegisterRuntime-description"),
-//			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID},
-//		}
-//		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
-//		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
-//		require.NotEmpty(t, runtime.ID)
-//		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
-//		require.True(t, ok)
-//		require.Contains(t, strLbl, runtime.ID)
-//
-//		// Verify that the label returned cannot be modified
-//		setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
-//		label := graphql.Label{}
-//		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, setLabelRequest, &label)
-//		require.Error(t, err)
-//		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
-//
-//		labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId)
-//		require.NoError(t, err)
-//		numOfScenarioLabelDefinitions := 0
-//		for _, ld := range labelDefinitions {
-//			if ld.Key == scenariosLabel {
-//				numOfScenarioLabelDefinitions++
-//			}
-//		}
-//		// the parent tenant should not see child label definitions
-//		require.Equal(t, 1, numOfScenarioLabelDefinitions)
-//	})
-//}
+// TODO:: Consider unskipping this test
+func TestSelfRegisterFlow(stdT *testing.T) {
+	t := testingx.NewT(stdT)
+	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
+		ctx := context.Background()
+		// defaultTenantId is the parent of the subaccountID
+		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
+
+		// Build graphql director client configured with certificate
+		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
+
+		// Register application
+		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", defaultTenantId)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTenantId, &app)
+		require.NoError(t, err)
+		require.NotEmpty(t, app.ID)
+
+		// Create label definition
+		scenarios := []string{"DEFAULT", "sr-test-scenario"}
+		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios)
+		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios[:1])
+
+		// Assign application to scenario
+		appLabelRequest := fixtures.FixSetApplicationLabelRequest(app.ID, scenariosLabel, scenarios[1:])
+		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, defaultTenantId, appLabelRequest, nil))
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, defaultTenantId, app.ID, testConfig.DefaultScenarioEnabled)
+
+		// Self register runtime
+		runtimeInput := graphql.RuntimeInput{
+			Name:        "selfRegisterRuntime",
+			Description: ptr.String("selfRegisterRuntime-description"),
+			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID},
+		}
+		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
+		require.NotEmpty(t, runtime.ID)
+		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
+		require.True(t, ok)
+		require.Contains(t, strLbl, runtime.ID)
+
+		// Verify that the label returned cannot be modified
+		setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
+		label := graphql.Label{}
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, setLabelRequest, &label)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
+
+		labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId)
+		require.NoError(t, err)
+		numOfScenarioLabelDefinitions := 0
+		for _, ld := range labelDefinitions {
+			if ld.Key == scenariosLabel {
+				numOfScenarioLabelDefinitions++
+			}
+		}
+		// the parent tenant should not see child label definitions
+		require.Equal(t, 1, numOfScenarioLabelDefinitions)
+	})
+}
 
 // TODO:: Remove after successful validation on dev-val cluster
 //func TestConsumerProviderFlow(t *testing.T) {
@@ -304,56 +308,34 @@ func TestNewChanges(t *testing.T) {
 
 	consumerFormationName := "consumer-test-scenario"
 	t.Logf("Creating formation with name %s...", consumerFormationName)
-	var consumerFormation graphql.Formation
 	createFormationReq := fixtures.FixCreateFormationRequest(consumerFormationName)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, createFormationReq, &consumerFormation)
-	require.NoError(t, err)
-	require.Equal(t, consumerFormationName, consumerFormation.Name)
+	executeGQLRequest(t, ctx, createFormationReq, consumerFormationName, secondaryTenant)
 	t.Logf("Successfully created formation: %s", consumerFormationName)
 
 	defer func() {
 		t.Logf("Deleting formation with name: %s...", consumerFormationName)
 		deleteRequest := fixtures.FixDeleteFormationRequest(consumerFormationName)
-		var deleteFormation graphql.Formation
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, deleteRequest, &deleteFormation)
-		require.NoError(t, err)
-		require.Equal(t, consumerFormationName, deleteFormation.Name)
+		executeGQLRequest(t, ctx, deleteRequest, consumerFormationName, secondaryTenant)
 		t.Logf("Successfully deleted formation with name: %s...", consumerFormationName)
 	}()
 
 	t.Logf("Assign application to formation %s", consumerFormationName)
-	assignReq := fixtures.FixAssignFormationRequest(consumerApp.ID, "APPLICATION", consumerFormationName)
-	var assignFormation graphql.Formation
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, assignReq, &assignFormation)
-	require.NoError(t, err)
-	require.Equal(t, consumerFormationName, assignFormation.Name)
+	assignToFormation(t, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
 	t.Logf("Successfully assigned application to formation %s", consumerFormationName)
 
 	defer func() {
-		t.Logf("Unassign Application from formation %s", consumerFormationName)
-		unassignAppReq := fixtures.FixUnassignFormationRequest(consumerApp.ID, "APPLICATION", consumerFormationName)
-		var unassignAppFormation graphql.Formation
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, unassignAppReq, &unassignAppFormation)
-		require.NoError(t, err)
-		require.Equal(t, consumerFormationName, unassignAppFormation.Name)
+		t.Logf("Unassign application from formation %s", consumerFormationName)
+		unassignFromFormation(t, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
 		t.Logf("Successfully unassigned application from formation %s", consumerFormationName)
 	}()
 
 	t.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, consumerFormationName)
-	assignTenantReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", consumerFormationName)
-	var assignTenantFormation graphql.Formation
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, assignTenantReq, &assignTenantFormation)
-	require.NoError(t, err)
-	require.Equal(t, consumerFormationName, assignTenantFormation.Name)
+	assignToFormation(t, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
 	t.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
 
 	defer func() {
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
-		unassignTenantReq := fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", consumerFormationName)
-		var unassignTenantFormation graphql.Formation
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, unassignTenantReq, &unassignTenantFormation)
-		require.NoError(t, err)
-		require.Equal(t, consumerFormationName, unassignTenantFormation.Name)
+		unassignFromFormation(t, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
 		t.Logf("Successfully unassigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
 	}()
 
@@ -514,4 +496,21 @@ func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 	require.True(t, state.Exists())
 
 	return state.String()
+}
+
+func assignToFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {
+	assignReq := fixtures.FixAssignFormationRequest(objectID, objectType, formationName)
+	executeGQLRequest(t, ctx, assignReq, formationName, tenantID)
+}
+
+func unassignFromFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {
+	unassignReq := fixtures.FixUnassignFormationRequest(objectID, objectType, formationName)
+	executeGQLRequest(t, ctx, unassignReq, formationName, tenantID)
+}
+
+func executeGQLRequest(t *testing.T, ctx context.Context, gqlRequest *gcli.Request, formationName, tenantID string) {
+	var formation graphql.Formation
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, gqlRequest, &formation)
+	require.NoError(t, err)
+	require.Equal(t, formationName, formation.Name)
 }

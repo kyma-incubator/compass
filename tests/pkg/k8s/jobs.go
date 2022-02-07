@@ -46,17 +46,17 @@ func GetCronJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clients
 }
 
 func CreateJobByGivenJobDefinition(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string, job *v1.Job) {
-	t.Logf("Creating test job %s", jobName)
+	t.Logf("Creating test job with name: %s", jobName)
 	_, err := k8sClient.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 	require.NoError(t, err)
-	t.Logf("Test job created %s", jobName)
+	t.Logf("Test job with name %s was successfully created", jobName)
 }
 
 func DeleteSecret(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, secretName, namespace string) {
-	t.Logf("Deleting test secret \"%s\" in \"%s\" namespace", secretName, namespace)
+	t.Logf("Deleting test secret %q in %q namespace", secretName, namespace)
 	err := k8sClient.CoreV1().Secrets(namespace).Delete(ctx, secretName, metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod, PropagationPolicy: nil})
 	require.NoError(t, err)
-	t.Logf("Test secret \"%s\" in \"%s\" namespace was successfully deleted", secretName, namespace)
+	t.Logf("Test secret %q in %q namespace was successfully deleted", secretName, namespace)
 }
 
 func DeleteJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
@@ -100,7 +100,7 @@ func WaitForJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clients
 			t.Fatalf("Timeout reached waiting for job %s to complete. Exiting...", jobName)
 		default:
 		}
-		t.Logf("Waiting for job %s to finish", jobName)
+		t.Logf("Waiting for job %s to finish...", jobName)
 		job, err := k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
 		require.NoError(t, err)
 		if job.Status.Failed > 0 {
