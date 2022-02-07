@@ -20,6 +20,6 @@ type OpenResourceDiscoveryV1 struct {
 
 // DocumentDetails contains fields related to the fetching of each Document
 type DocumentDetails struct {
- 	URL              string                          `json:"url"`
+	URL              string                          `json:"url"`
 	AccessStrategies accessstrategy.AccessStrategies `json:"accessStrategies"`
 }
