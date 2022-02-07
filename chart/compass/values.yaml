@@ -183,6 +183,8 @@ global:
       urlKey: url
       clientIdKey: client-id
       clientSecretKey: client-secret
+      clientCert: client-cert
+      clientKey: client-key
 
   log:
     format: "kibana"

@@ -77,6 +77,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.auditlog.secret.name }}
                   key: {{ .Values.global.auditlog.secret.clientIdKey }}
+            - name: APP_AUDITLOG_X509_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.clientCert }}
+            - name: APP_AUDITLOG_X509_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.clientKey }}
             - name: APP_AUDITLOG_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
