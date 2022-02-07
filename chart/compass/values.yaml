@@ -553,6 +553,10 @@ global:
         clientIdKey: client-id
         clientSecretKey: client-secret
         oauthUrlKey: url
+        oauthMode: "oauth-mtls"
+        clientCertKey: client-cert
+        clientKeyKey: client-key
+
       endpoints:
         accountCreated: "127.0.0.1/events?type=account-created"
         accountDeleted: "127.0.0.1/events?type=account-deleted"
