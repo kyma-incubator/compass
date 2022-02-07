@@ -638,6 +638,13 @@ global:
       externalClientCertTestSecretName: "external-client-certificate-test-secret"
       externalClientCertTestSecretNamespace: "compass-system"
       certSvcInstanceTestSecretName: "cert-svc-secret"
+      consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      subscriptionOauthSecret:
+        manage: false
+        name: compass-external-services-mock-oauth-credentials
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
     externalServicesMock:
       skipPattern: ""
     namespace: kyma-system

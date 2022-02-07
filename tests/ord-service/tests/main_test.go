@@ -67,11 +67,14 @@ type config struct {
 	ORDServiceStaticPrefix                string
 	ORDServiceDefaultResponseType         string
 	DefaultScenarioEnabled                bool `envconfig:"default=true"`
-	TokenURL                              string
+	ConsumerTokenURL                      string
 	TokenPath                             string
-	SubscriptionURL                       string
 	ClientID                              string
 	ClientSecret                          string
+	SubscriptionURL                       string
+	SubscriptionTokenURL                  string
+	SubscriptionClientID                  string
+	SubscriptionClientSecret              string
 	SubscriptionProviderLabelKey          string
 	SubscriptionProviderID                string
 	SelfRegisterLabelKey                  string

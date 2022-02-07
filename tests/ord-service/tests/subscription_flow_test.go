@@ -79,15 +79,28 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 
-		// Create label definition
-		scenarios := []string{"DEFAULT", "sr-test-scenario"}
-		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios)
-		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios[:1])
+		formationName := "sr-test-scenario"
+		t.Logf("Creating formation with name %s...", formationName)
+		createFormationReq := fixtures.FixCreateFormationRequest(formationName)
+		executeGQLRequest(t, ctx, createFormationReq, formationName, defaultTenantId)
+		t.Logf("Successfully created formation: %s", formationName)
 
-		// Assign application to scenario
-		appLabelRequest := fixtures.FixSetApplicationLabelRequest(app.ID, scenariosLabel, scenarios[1:])
-		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, defaultTenantId, appLabelRequest, nil))
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, defaultTenantId, app.ID, testConfig.DefaultScenarioEnabled)
+		defer func() {
+			t.Logf("Deleting formation with name: %s...", formationName)
+			deleteRequest := fixtures.FixDeleteFormationRequest(formationName)
+			executeGQLRequest(t, ctx, deleteRequest, formationName, defaultTenantId)
+			t.Logf("Successfully deleted formation with name: %s...", formationName)
+		}()
+
+		t.Logf("Assign application to formation %s", formationName)
+		assignToFormation(t, ctx, app.ID, "APPLICATION", formationName, defaultTenantId)
+		t.Logf("Successfully assigned application to formation %s", formationName)
+
+		defer func() {
+			t.Logf("Unassign application from formation %s", formationName)
+			unassignFromFormation(t, ctx, app.ID, "APPLICATION", formationName, defaultTenantId)
+			t.Logf("Successfully unassigned application from formation %s", formationName)
+		}()
 
 		// Self register runtime
 		runtimeInput := graphql.RuntimeInput{
@@ -211,7 +224,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 //		}
 //
 //		// Build a request for consumer subscription
-//		subscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
+//		subscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.ConsumerTokenURL, testConfig.ClientID, testConfig.ClientSecret)
 //
 //		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
 //		subscribeResp, err := httpClient.Do(subscribeReq)
@@ -219,7 +232,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 //		require.Equal(t, http.StatusOK, subscribeResp.StatusCode)
 //
 //		defer func() {
-//			unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
+//			unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.ConsumerTokenURL, testConfig.ClientID, testConfig.ClientSecret)
 //
 //			t.Log(fmt.Sprintf("Deleting a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
 //			unsubscribeResp, err := httpClient.Do(unsubscribeReq)
@@ -231,7 +244,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 //		extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 //
 //		// Create a token with the necessary consumer claims and add it in authorization header
-//		tkn := token.GetClientCredentialsToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "subscriptionClaims")
+//		tkn := token.GetClientCredentialsToken(t, ctx, testConfig.ConsumerTokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "subscriptionClaims")
 //		headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", tkn)}}
 //
 //		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
@@ -241,7 +254,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 //		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 //
 //		// Build unsubscribe request
-//		unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.TokenURL, testConfig.ClientID, testConfig.ClientSecret)
+//		unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.ConsumerTokenURL, testConfig.ClientID, testConfig.ClientSecret)
 //
 //		t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
 //		unsubscribeResp, err := httpClient.Do(unsubscribeReq)
@@ -362,11 +375,11 @@ func TestNewChanges(t *testing.T) {
 	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerSubaccountID)
 	subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 	require.NoError(t, err)
-	tenantFetcherToken := token.GetClientCredentialsToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "tenantFetcherClaims")
-	subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", tenantFetcherToken))
+	subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionTokenURL+testConfig.TokenPath, testConfig.SubscriptionClientID, testConfig.SubscriptionClientSecret, "tenantFetcherClaims")
+	subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 	subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
 
-	t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+	t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %q and provider with name: %q and id: %q, and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
 	resp, err := httpClient.Do(subscribeReq)
 	require.NoError(t, err)
 	defer func() {
@@ -379,15 +392,15 @@ func TestNewChanges(t *testing.T) {
 	require.NotEmpty(t, subJobStatusPath)
 	subJobStatusURL := testConfig.SubscriptionURL + subJobStatusPath
 	require.Eventually(t, func() bool {
-		return getSubscriptionJobStatus(t, httpClient, subJobStatusURL, tenantFetcherToken) == jobSucceededStatus
+		return getSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == jobSucceededStatus
 	}, eventuallyTimeout, eventuallyTick)
 	t.Log(fmt.Sprintf("Successfully created subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
 
 	defer func() {
 		unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
-		unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", tenantFetcherToken))
+		unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 
-		t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+		t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and id: %q, and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
 		unsubscribeResp, err := httpClient.Do(unsubscribeReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode)
@@ -395,16 +408,16 @@ func TestNewChanges(t *testing.T) {
 		require.NotEmpty(t, unsubJobStatusPath)
 		unsubJobStatusURL := testConfig.SubscriptionURL + subJobStatusPath
 		require.Eventually(t, func() bool {
-			return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, tenantFetcherToken) == jobSucceededStatus
+			return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, subscriptionToken) == jobSucceededStatus
 		}, eventuallyTimeout, eventuallyTick)
-		t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+		t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and provider with name: %q and id: %q, and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
 	}()
 
 	// HTTP client configured with manually signed client certificate
 	extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
-	subscriptionToken := token.GetUserToken(t, ctx, testConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, testConfig.BasicUsername, testConfig.BasicPassword, "subscriptionClaims")
-	headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", subscriptionToken)}}
+	consumerToken := token.GetUserToken(t, ctx, testConfig.ConsumerTokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, testConfig.BasicUsername, testConfig.BasicPassword, "subscriptionClaims")
+	headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
 
 	// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 	t.Log("Getting consumer application using both provider and consumer credentials...")
@@ -415,9 +428,9 @@ func TestNewChanges(t *testing.T) {
 
 	// Build unsubscribe request
 	unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
-	unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", tenantFetcherToken))
+	unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 
-	t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+	t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and id: %q, and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
 	unsubscribeResp, err := httpClient.Do(unsubscribeReq)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode)
@@ -425,9 +438,9 @@ func TestNewChanges(t *testing.T) {
 	require.NotEmpty(t, unsubJobStatusPath)
 	unsubJobStatusURL := testConfig.SubscriptionURL + unsubJobStatusPath
 	require.Eventually(t, func() bool {
-		return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, tenantFetcherToken) == jobSucceededStatus
+		return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, subscriptionToken) == jobSucceededStatus
 	}, eventuallyTimeout, eventuallyTick)
-	t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+	t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and provider with name: %q and id: %q, and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
 
 	respBody = makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 	require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
