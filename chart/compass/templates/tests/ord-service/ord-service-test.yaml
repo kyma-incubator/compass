@@ -35,6 +35,8 @@ spec:
           command: ["/bin/sh"]
           args: ["-c", "./ord-service.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
+            - name: EXTERNAL_SERVICES_MOCK_BASE_URL
+              value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
             - name: ORD_SERVICE_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
             - name: ORD_EXTERNAL_CERT_SECURED_SERVICE_URL

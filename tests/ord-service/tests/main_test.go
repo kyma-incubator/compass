@@ -59,6 +59,7 @@ type config struct {
 	TenantConfig
 	ExternalCA certs.CAConfig
 
+	ExternalServicesMockBaseURL           string
 	DirectorURL                           string
 	DirectorExternalCertSecuredURL        string
 	ORDServiceURL                         string

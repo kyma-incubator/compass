@@ -360,7 +360,7 @@ func TestNewChanges(t *testing.T) {
 	selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 	require.True(t, ok)
 	require.Contains(t, selfRegLabelValue, testConfig.SelfRegisterLabelValuePrefix+runtime.ID)
-	response, err := http.DefaultClient.Post(testConfig.TokenURL+"/v1/dependencies/configure", contentTypeApplicationJson, bytes.NewBuffer([]byte(selfRegLabelValue)))
+	response, err := http.DefaultClient.Post(testConfig.ExternalServicesMockBaseURL+"/v1/dependencies/configure", contentTypeApplicationJson, bytes.NewBuffer([]byte(selfRegLabelValue)))
 	require.NoError(t, err)
 	defer func() {
 		if err := response.Body.Close(); err != nil {
