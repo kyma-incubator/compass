@@ -146,7 +146,7 @@ fi
 
 echo "Label k3d node for benchmark execution..."
 NODE=$(kubectl get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)
-kubectl label node "$NODE" benchmark=true || true
+kubectl label --overwrite node "$NODE" benchmark=true || true
 
 if [[ ${DUMP_DB} ]]; then
     echo -e "${YELLOW}DUMP_DB option is selected. Building an image for the schema-migrator using local files...${NC}"
@@ -176,8 +176,10 @@ fi
 
 #prometheusMTLSPatch
 
-bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh --kyma-installation ${KYMA_INSTALLATION}
-bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
+echo 'Installing Compass'
+bash "${ROOT_PATH}"/installation/scripts/install-compass.sh
+sleep 5
+helm status compass -o json
 
 echo "Adding Compass entries to /etc/hosts..."
 K3D_IP=127.0.0.1

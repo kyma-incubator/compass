@@ -3,7 +3,7 @@ kind: DestinationRule
 metadata:
   name: dex-service
 spec:
-  host: dex-service.{{ .Release.Namespace }}.svc.cluster.local
+  host: dex-service.kyma-system.svc.cluster.local
   trafficPolicy:
     tls:
       mode: DISABLE

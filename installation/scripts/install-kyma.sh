@@ -8,6 +8,7 @@ LOCAL_ENV=${LOCAL_ENV:-false}
 
 CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
+OVERRIDES_DIR="${CURRENT_DIR}/../resources/kyma"
 source $SCRIPTS_DIR/utils.sh
 
 POSITIONAL=()
@@ -41,16 +42,6 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
-
-function installAdditionalComponents() {
-    echo 'Installing dex'
-    DEX_CHARTS_PATH="${ROOT_PATH}"/chart/compass/charts/dex
-    helm install -f "${DEX_CHARTS_PATH}"/values.yaml dex "${DEX_CHARTS_PATH}"
-
-    echo 'Installing testing'
-    TESTING_CHARTS_PATH="${ROOT_PATH}"/chart/compass/charts/testing
-    helm install -f "${TESTING_CHARTS_PATH}"/values.yaml testing "${TESTING_CHARTS_PATH}"
-}
 
 INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma-minimal.yaml
 OVERRIDES_KYMA_MINIMAL_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-minimal-config-local.yaml
@@ -93,7 +84,5 @@ if [[ $KYMA_INSTALLATION == *full* ]]; then # todo add overrides if possible
   kyma deploy --components-file $INSTALLER_CR_FULL_PATH --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  kyma deploy --components-file $INSTALLER_CR_PATH  --source $KYMA_SOURCE
+  kyma deploy --components-file $INSTALLER_CR_PATH  --values-file $OVERRIDES_DIR/kyma2.0-overrides.yaml --source $KYMA_SOURCE
 fi
-
-#installAdditionalComponents

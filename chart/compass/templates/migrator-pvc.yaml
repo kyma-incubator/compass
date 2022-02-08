@@ -8,7 +8,7 @@ metadata:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
 spec:
-  storageClassName: standard
+  storageClassName: local-path
   volumeMode: Filesystem
   accessModes:
     - ReadWriteOnce

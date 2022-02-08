@@ -3,9 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   name: "clustermicrofrontends.ui.kyma-project.io"
   annotations:
-    "app.kubernetes.io/managed-by": "Helm"
-    "meta.helm.sh/release-name": "compass"
-    "meta.helm.sh/release-namespace": "compass-system"
+    "helm.sh/hook": pre-install
 spec:
   group: ui.kyma-project.io
   version: v1alpha1

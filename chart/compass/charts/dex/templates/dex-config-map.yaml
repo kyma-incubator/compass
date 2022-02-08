@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: dex-config
-  namespace: {{ .Release.Namespace }}
+  namespace: kyma-system
   labels:
     app: dex
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}

@@ -46,25 +46,14 @@ oidc:
       secret: th2T43VyHp43bqr
   staticClientsExtra: |-
 
-connectors: |- # <--- EXTERNALIZE
-  - type: saml
-    id: sci
-    name: SAP ID
-    config:
-      entityIssuer: dex.dev.cmp.cloud.sap
-      ssoURL: https://as5rzk3dn.accounts400.ondemand.com/saml2/idp/sso/as5rzk3dn.accounts400.ondemand.com
-      caData: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURHRENDQWdDZ0F3SUJBUUlHQVhPYTR1aUVNQTBHQ1NxR1NJYjNEUUVCQ3dVQU1Fc3hDekFKQmdOVkJBWVRBa1JGTVE4d0RRWURWUVFLRXdaVFFWQXRVMFV4S3pBcEJnTlZCQU1USW1Gek5YSjZhek5rYmk1aFkyTnZkVzUwY3pRd01DNXZibVJsYldGdVpDNWpiMjB3SGhjTk1qQXdOekk1TVRRd016UTRXaGNOTXpBd056STVNVFF3TXpRNFdqQkxNUXN3Q1FZRFZRUUdFd0pFUlRFUE1BMEdBMVVFQ2hNR1UwRlFMVk5GTVNzd0tRWURWUVFERXlKaGN6VnllbXN6Wkc0dVlXTmpiM1Z1ZEhNME1EQXViMjVrWlcxaGJtUXVZMjl0TUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFnMmh3V1ZRNTZUSUNwYWViWW04SkorcHBuRXRoUkhCRk43eE1UUkdndS80SFYrNXp0ZUNlb2QxUmVtVmQvR0FxdHZJM2lKMllmanEwSTlWN1J5QWx6OGJEWjFzdjBINTNnR2k3Q1phUmZRZjZjalhCSjQyNTd4cklmU0pzaVN6bEFGYlJxa0tTaXpwbUpJS3RseHdzRzFsRERVUkY5RzdIT215byt3VWNwUzlKM204RWNwWEQ3SFdTb2ZTL3ZWK3JGWXpYV3ZhNlZhQ3FldEdqZDFSQktlZk1iaUZiS2o4MnNZYVJFN1lEb1pVK00ySUdPNDgvVGFwcDgvK1lUSm10UG0rY3JVKzliaFFYRTRNcmR5RCtNblFodEN4TWZma3djVkNBc01tN2k3YytUQVZFVm9LMHRPNHpPNXI4UG12cmxBaEowRGZoLzRSZVlwTy9FQUpPNlFJREFRQUJnZ0lBQURBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQUdiVnVQMXYrREh1bHd2akpBTEpreWErczN0YlB0QVhMM2VJWDJHZWcvZWU1S3Arc1F0ZlMvVndPSjhpelpST0x0VW8rOFFTTTBYVjRPZ0hrYnlYb2V0VWxRdjBUSFp6bWNuUk1lUWpiOXQ3MWVGdjBvWUVITHU3QnJadEJrQjNiRGdFbWhhaEgwZXEzSEhLV1luSCtEWHhHMVpyUUdzaDU3bXgzVDdSZkNEa3lISzhYRU11UVNBMHRPRndDQ1JhYVZuNVh4S0F0aUZKTDQ0ZE1BSUZnVzdyOUFIMDJLcnlYV1p6TVlIUTBSVTdwZHlIMzF2ZnppMHBlR3MzeVNJVUh6RXF3QmxrZkxGem9xOEE3dkkxTXlBNUl6eUdNZWJzMEFCdHc4QlEzbDlCM3g4cnB6ZnlpSktTdmkvcWlIZFp0MjkrL3Znb1VUckc3QjFYcG55NGlkUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
-      redirectURI: 'https://dex.mps.dev.kyma.cloud.sap/callback'
-      usernameAttr: login_name
-      emailAttr: mail
-      groupsAttr: groups
+connectors: |-
 
 volumeMountsExtra: |-
 
 volumesExtra: |-
 
 telemetry:
-  enabled: false # <--- EXTERNALIZE
+  enabled: true
   port: 5558
 
 securityContext:
@@ -95,7 +84,7 @@ resources:
     cpu: 50m
     memory: 16Mi
 global:
-  domainName: local.kyma.dev # <--- EXTERNALIZE
+  domainName: local.kyma.dev
   isLocalEnv: false
   istio:
     gateway:
