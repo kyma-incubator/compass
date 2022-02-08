@@ -218,10 +218,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	// TODO The mtls_token_provider sends client id and scopes in url.values form. When the change for fetching xsuaa token
 	// with certificate is merged GenerateWithCredentialsFromReqBody should be used for testing the flows that include fetching
 	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.
-	router.HandleFunc("/oauth/token", tokenHandlerWithKey.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
-
-	tokenHandler := oauth.NewHandler(cfg.ClientSecret, cfg.ClientID)
-	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
+	router.HandleFunc("/cert/token", tokenHandlerWithKey.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
 
 	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
