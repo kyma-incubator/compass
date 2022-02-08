@@ -32,25 +32,25 @@ import (
 )
 
 type config struct {
-	DefaultTestTenant                  string
-	DirectorURL                        string
-	ORDServiceURL                      string
-	AggregatorSchedule                 string
-	ExternalServicesMockBaseURL        string
-	ExternalServicesMockUnsecuredURL   string
-	ExternalServicesMockAbsoluteURL    string
+	DefaultTestTenant                     string
+	DirectorURL                           string
+	ORDServiceURL                         string
+	AggregatorSchedule                    string
+	ExternalServicesMockBaseURL           string
+	ExternalServicesMockUnsecuredURL      string
+	ExternalServicesMockAbsoluteURL       string
 	ExternalServicesMockOrdCertSecuredURL string
-	ExternalServicesMockOauthURL       string
-	ClientID                           string
-	ClientSecret                       string
-	ExternalServicesMockBasicURL       string
-	BasicUsername                      string
-	BasicPassword                      string
-	ORDServiceDefaultResponseType      string
-	GlobalRegistryURL                  string
-	CertLoaderConfig                   certloader.Config
-	ClientTimeout                      time.Duration `envconfig:"default=60s"`
-	SkipSSLValidation                  bool          `envconfig:"default=false"`
+	ExternalServicesMockOauthURL          string
+	ClientID                              string
+	ClientSecret                          string
+	ExternalServicesMockBasicURL          string
+	BasicUsername                         string
+	BasicPassword                         string
+	ORDServiceDefaultResponseType         string
+	GlobalRegistryURL                     string
+	CertLoaderConfig                      certloader.Config
+	ClientTimeout                         time.Duration `envconfig:"default=60s"`
+	SkipSSLValidation                     bool          `envconfig:"default=false"`
 }
 
 var (

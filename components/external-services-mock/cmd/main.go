@@ -97,7 +97,7 @@ func main() {
 	wg.Add(2)
 
 	go startServer(ctx, initDefaultServer(cfg, key), wg)
-    go startServer(ctx, initDefaultCertServer(cfg, key), wg)
+	go startServer(ctx, initDefaultCertServer(cfg, key), wg)
 
 	for _, server := range ordServers {
 		wg.Add(1)
