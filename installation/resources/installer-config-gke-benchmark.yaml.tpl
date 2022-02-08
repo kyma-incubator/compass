@@ -35,4 +35,3 @@ data:
   global.externalCertConfiguration.secrets.externalCertSvcSecret.manage: "true"
   global.externalServicesMock.oauthSecret.manage: "true"
   global.tests.basicCredentials.manage: "true"
-  global.tests.ordService.subscriptionOauthSecret.manage: "true"
