@@ -388,7 +388,7 @@ func TestNewChanges(t *testing.T) {
 		}
 	}()
 	body, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err, fmt.Sprintf("error occured while reading subscription response body: %v", err.Error()))
+	require.NoError(t, err)
 	require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("error occured while executing subscription request: %s", body))
 	subJobStatusPath := resp.Header.Get(locationHeader)
 	require.NotEmpty(t, subJobStatusPath)
