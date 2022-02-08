@@ -24,16 +24,18 @@ spec:
               env:
               - name: APP_PORT
                 value: "{{ .Values.deployment.port }}"
-              - name: APP_ORD_SERVERS_CERT_PORT
+              - name: APP_CERT_PORT
                 value: "{{ .Values.global.externalServicesMock.certSecuredPort }}"
+              - name: APP_ORD_SERVERS_CERT_PORT
+                value: "{{ .Values.global.externalServicesMock.ordCertSecuredPort }}"
               - name: APP_ORD_SERVERS_UNSECURED_PORT
                 value: "{{ .Values.global.externalServicesMock.unsecuredPort }}"
               - name: APP_ORD_SERVERS_BASIC_PORT
                 value: "{{ .Values.global.externalServicesMock.basicSecuredPort }}"
               - name: APP_ORD_SERVERS_OAUTH_PORT
                 value: "{{ .Values.global.externalServicesMock.oauthSecuredPort }}"
-              - name: APP_ORD_SERVERS_CERT_SECURED_BASE_URL
-                value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+              - name: APP_ORD_SERVERS_ORD_CERT_SECURED_BASE_URL
+                value: "https://{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
@@ -86,6 +88,9 @@ spec:
                 protocol: TCP
               - name: http-mtls
                 containerPort: {{ .Values.global.externalServicesMock.certSecuredPort }}
+                protocol: TCP
+              - name: http-mtls-ord
+                containerPort: {{ .Values.global.externalServicesMock.ordCertSecuredPort }}
                 protocol: TCP
               - name: http-unsecured
                 containerPort: {{ .Values.global.externalServicesMock.unsecuredPort }}

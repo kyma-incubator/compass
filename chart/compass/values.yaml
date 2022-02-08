@@ -478,7 +478,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8085/.well-known/open-resource-discovery
+    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8086/.well-known/open-resource-discovery
 
   systemFetcher:
     enabled: false
@@ -598,11 +598,13 @@ global:
   externalServicesMock:
     enabled: false
     certSecuredPort: 8081
-    unsecuredPort: 8082
-    basicSecuredPort: 8083
-    oauthSecuredPort: 8084
-    ordGlobalRegistryPort: 8085
+    ordCertSecuredPort: 8082
+    unsecuredPort: 8083
+    basicSecuredPort: 8084
+    oauthSecuredPort: 8085
+    ordGlobalRegistryPort: 8086
     certSecuredHost: compass-external-services-mock-sap-mtls
+    ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
     oauthSecretName: compass-external-services-mock-oauth-credentials

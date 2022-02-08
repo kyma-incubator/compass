@@ -17,7 +17,6 @@ import (
 	"github.com/form3tech-oss/jwt-go"
 	oauth2 "github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,12 +36,12 @@ func TestHandler_Generate(t *testing.T) {
 	resp := r.Result()
 
 	//THEN
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
 	var response oauth2.TokenResponse
 	err = json.Unmarshal(body, &response)
 	require.NoError(t, err)
-	assert.NotEmpty(t, response.AccessToken)
+	require.NotEmpty(t, response.AccessToken)
 }
 
 func TestHandler_GenerateWithSigningKey(t *testing.T) {
@@ -71,14 +70,14 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 	resp := r.Result()
 
 	//THEN
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
 
 	var response oauth2.TokenResponse
 	err = json.Unmarshal(body, &response)
-
 	require.NoError(t, err)
-	assert.NotEmpty(t, response.AccessToken)
+	require.NotEmpty(t, response.AccessToken)
 
 	claims := map[string]interface{}{}
 
@@ -115,7 +114,7 @@ func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
 	resp := r.Result()
 
 	//THEN
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 	respBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
@@ -123,7 +122,7 @@ func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
 	err = json.Unmarshal(respBody, &response)
 
 	require.NoError(t, err)
-	assert.NotEmpty(t, response.AccessToken)
+	require.NotEmpty(t, response.AccessToken)
 
 	claims := &oauth2.Claims{}
 
