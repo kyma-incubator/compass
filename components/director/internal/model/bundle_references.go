@@ -9,8 +9,8 @@ type BundleReference struct {
 	ObjectType          BundleReferenceObjectType
 	ObjectID            *string
 	APIDefaultTargetURL *string
-	IsDefaultBundle     bool
 	Visibility          string
+	IsDefaultBundle     *bool
 }
 
 // BundleReferenceObjectType missing godoc
@@ -28,8 +28,8 @@ const (
 // BundleReferenceInput missing godoc
 type BundleReferenceInput struct {
 	APIDefaultTargetURL *string
-	IsDefaultBundle     bool
 	Visibility          *string
+	IsDefaultBundle     *bool
 }
 
 // ToBundleReference missing godoc

@@ -21,6 +21,8 @@ const (
 	visibility      = "public"
 )
 
+var isDefaultBundle = false
+
 func fixAPIBundleReferenceModel() model.BundleReference {
 	return model.BundleReference{
 		ID:                  bundleRefID,
@@ -28,8 +30,8 @@ func fixAPIBundleReferenceModel() model.BundleReference {
 		ObjectType:          model.BundleAPIReference,
 		ObjectID:            str.Ptr(apiDefID),
 		APIDefaultTargetURL: str.Ptr(apiDefTargetURL),
-		IsDefaultBundle:     false,
 		Visibility:          visibility,
+		IsDefaultBundle:     &isDefaultBundle,
 	}
 }
 
@@ -40,8 +42,8 @@ func fixAPIBundleReferenceEntity() bundlereferences.Entity {
 		APIDefID:            repo.NewValidNullableString(apiDefID),
 		EventDefID:          sql.NullString{},
 		APIDefaultTargetURL: repo.NewValidNullableString(apiDefTargetURL),
-		IsDefaultBundle:     false,
 		Visibility:          visibility,
+		IsDefaultBundle:     repo.NewNullableBool(&isDefaultBundle),
 	}
 }
 
@@ -52,8 +54,8 @@ func fixAPIBundleReferenceEntityWithArgs(bndlID, apiID, targetURL string) bundle
 		APIDefID:            repo.NewValidNullableString(apiID),
 		EventDefID:          sql.NullString{},
 		APIDefaultTargetURL: repo.NewValidNullableString(targetURL),
-		IsDefaultBundle:     false,
 		Visibility:          visibility,
+		IsDefaultBundle:     repo.NewNullableBool(&isDefaultBundle),
 	}
 }
 
@@ -64,8 +66,8 @@ func fixInvalidAPIBundleReferenceEntity() bundlereferences.Entity {
 		APIDefID:            sql.NullString{},
 		EventDefID:          sql.NullString{},
 		APIDefaultTargetURL: repo.NewValidNullableString(apiDefTargetURL),
-		IsDefaultBundle:     false,
 		Visibility:          visibility,
+		IsDefaultBundle:     repo.NewNullableBool(&isDefaultBundle),
 	}
 }
 
@@ -75,8 +77,8 @@ func fixEventBundleReferenceModel() model.BundleReference {
 		BundleID:        str.Ptr(bundleID),
 		ObjectType:      model.BundleEventReference,
 		ObjectID:        str.Ptr(eventDefID),
-		IsDefaultBundle: false,
 		Visibility:      visibility,
+		IsDefaultBundle: &isDefaultBundle,
 	}
 }
 
@@ -87,8 +89,8 @@ func fixEventBundleReferenceEntity() bundlereferences.Entity {
 		APIDefID:            sql.NullString{},
 		EventDefID:          repo.NewValidNullableString(eventDefID),
 		APIDefaultTargetURL: sql.NullString{},
-		IsDefaultBundle:     false,
 		Visibility:          visibility,
+		IsDefaultBundle:     repo.NewNullableBool(&isDefaultBundle),
 	}
 }
 
@@ -97,8 +99,8 @@ func fixEventBundleReferenceEntityWithArgs(bndlID, eventID string) bundlereferen
 		ID:              bundleRefID,
 		BundleID:        repo.NewValidNullableString(bndlID),
 		EventDefID:      repo.NewValidNullableString(eventID),
-		IsDefaultBundle: false,
 		Visibility:      visibility,
+		IsDefaultBundle: repo.NewNullableBool(&isDefaultBundle),
 	}
 }
 
@@ -109,8 +111,8 @@ func fixInvalidEventBundleReferenceEntity() bundlereferences.Entity {
 		APIDefID:            sql.NullString{},
 		EventDefID:          sql.NullString{},
 		APIDefaultTargetURL: sql.NullString{},
-		IsDefaultBundle:     false,
 		Visibility:          visibility,
+		IsDefaultBundle:     repo.NewNullableBool(&isDefaultBundle),
 	}
 }
 

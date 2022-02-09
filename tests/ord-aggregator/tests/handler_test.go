@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/assertions"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/pkg/errors"
@@ -78,11 +79,9 @@ const (
 	expectedNumberOfSystemInstances = 6
 	expectedNumberOfPackages        = 6
 	expectedNumberOfBundles         = 12
-	expectedNumberOfProducts        = 7
 	expectedNumberOfAPIs            = 18
 	expectedNumberOfEvents          = 24
 	expectedNumberOfTombstones      = 6
-	expectedNumberOfVendors         = 7
 
 	expectedNumberOfPublicAPIs   = 6
 	expectedNumberOfPublicEvents = 12
@@ -100,6 +99,12 @@ const (
 	documentationLabelKey         = "Documentation label key"
 	documentationLabelFirstValue  = "Markdown Documentation with links"
 	documentationLabelSecondValue = "With multiple values"
+)
+
+var (
+	// The expected number is increased with initial number of global vendors/products before test execution
+	expectedNumberOfProducts = 6
+	expectedNumberOfVendors  = 6
 )
 
 func TestORDAggregator(t *testing.T) {
@@ -202,30 +207,6 @@ func TestORDAggregator(t *testing.T) {
 
 		ctx := context.Background()
 
-		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
-		require.NoError(t, err)
-
-		secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
-		require.NoError(t, err)
-
-		thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
-		require.NoError(t, err)
-
-		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
-		require.NoError(t, err)
-
-		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
-		require.NoError(t, err)
-
-		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
-		require.NoError(t, err)
-
 		t.Log("Create integration system")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
 		defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys)
@@ -264,6 +245,37 @@ func TestORDAggregator(t *testing.T) {
 
 		httpClientWithoutVisibilityScope := cfgWithoutScopes.Client(ctx)
 		httpClientWithoutVisibilityScope.Timeout = 20 * time.Second
+
+		globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber(ctx, t, unsecuredHttpClient)
+		t.Logf("Global products number: %d, Global vendors number: %d", globalProductsNumber, globalVendorsNumber)
+
+		expectedNumberOfProducts += globalProductsNumber
+		expectedNumberOfVendors += globalVendorsNumber
+
+		// Register systems
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		require.NoError(t, err)
+
+		secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
+		require.NoError(t, err)
+
+		thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
+		require.NoError(t, err)
+
+		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
+		require.NoError(t, err)
+
+		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
+		require.NoError(t, err)
+
+		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
+		require.NoError(t, err)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
@@ -451,4 +463,19 @@ func verifyEntitiesWithPublicVisibility(t *testing.T, httpClient *http.Client, p
 
 	assertions.AssertMultipleEntitiesFromORDService(t, respBody, publicEntitiesMap, expectedNumberOfPublicEntities, descriptionField)
 	t.Logf("Successfully verified public %s", entity)
+}
+
+func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *http.Client) (int, int) {
+	certCache, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	require.NoError(t, err, "Failed to initialize certificate loader")
+
+	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
+	ordClient := NewGlobalRegistryClient(httpClient, accessStrategyExecutorProvider)
+
+	products, vendors, err := ordClient.GetGlobalProductsAndVendorsNumber(ctx, testConfig.GlobalRegistryURL)
+	if err != nil {
+		t.Logf("while fetching global registry resources from %s %v", testConfig.GlobalRegistryURL, err)
+		t.Fail()
+	}
+	return products, vendors
 }

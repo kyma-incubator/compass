@@ -178,7 +178,8 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 				Visibility: in.Visibility,
 			}
 			if defaultBundleID != "" && crrBndlID == defaultBundleID {
-				bundleRefInput.IsDefaultBundle = true
+				isDefaultBundle := true
+				bundleRefInput.IsDefaultBundle = &isDefaultBundle
 			}
 			err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, &crrBndlID)
 			if err != nil {
@@ -312,7 +313,8 @@ func (s *service) updateBundleReferences(ctx context.Context, api *model.APIDefi
 			Visibility: api.Visibility,
 		}
 		if defaultBundleID != "" && defaultBundleID == crrBndlID {
-			bundleRefInput.IsDefaultBundle = true
+			isDefaultBundle := true
+			bundleRefInput.IsDefaultBundle = &isDefaultBundle
 		}
 
 		err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, &crrBndlID)
@@ -330,7 +332,8 @@ func (s *service) createBundleReferences(ctx context.Context, api *model.APIDefi
 			Visibility: api.Visibility,
 		}
 		if defaultBundleID != "" && crrBndlID == defaultBundleID {
-			bundleRefInput.IsDefaultBundle = true
+			isDefaultBundle := true
+			bundleRefInput.IsDefaultBundle = &isDefaultBundle
 		}
 
 		err := s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, &crrBndlID)
