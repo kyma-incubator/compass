@@ -20,7 +20,7 @@ const (
 // Config is Oauth2 configuration
 type Config struct {
 	ClientID              string        `envconfig:"APP_OAUTH_CLIENT_ID"`
-	TokenBaseURL          string        `envconfig:"APP_OAUTH_TOKEN_BASE_URL"`
+	TokenBaseHost         string        `envconfig:"APP_OAUTH_TOKEN_BASE_HOST"`
 	TokenPath             string        `envconfig:"APP_OAUTH_TOKEN_PATH"`
 	TokenEndpointProtocol string        `envconfig:"APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL"`
 	ClientSecret          string        `envconfig:"APP_OAUTH_CLIENT_SECRET,optional"`

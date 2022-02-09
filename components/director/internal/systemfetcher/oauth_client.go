@@ -10,7 +10,6 @@ import (
 
 type oauthClient struct {
 	clientID     string
-	clientSecret string
 	tokenURL     string
 	scopesClaim  string
 	tenantHeader string
@@ -22,8 +21,7 @@ type oauthClient struct {
 func NewOauthClient(oauthCfg oauth.Config, client *http.Client) *oauthClient {
 	return &oauthClient{
 		clientID:     oauthCfg.ClientID,
-		clientSecret: oauthCfg.ClientSecret,
-		tokenURL:     oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
+		tokenURL:     oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseHost + oauthCfg.TokenPath,
 		scopesClaim:  strings.Join(oauthCfg.ScopesClaim, " "),
 		tenantHeader: oauthCfg.TenantHeaderName,
 		c:            client,
@@ -34,7 +32,6 @@ func NewOauthClient(oauthCfg oauth.Config, client *http.Client) *oauthClient {
 func (oc *oauthClient) Do(req *http.Request, tenant string) (*http.Response, error) {
 	req = req.WithContext(auth.SaveToContext(req.Context(), &auth.OAuthCredentials{
 		ClientID:          oc.clientID,
-		ClientSecret:      oc.clientSecret,
 		TokenURL:          oc.tokenURL,
 		Scopes:            oc.scopesClaim,
 		AdditionalHeaders: map[string]string{oc.tenantHeader: tenant},
