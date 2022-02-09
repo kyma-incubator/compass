@@ -2,6 +2,7 @@ package bundlereferences
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -21,8 +22,8 @@ const (
 	// EventDefIDColumn represents the db column of the EventDefinition ID
 	EventDefIDColumn string = "event_def_id"
 
-	bundleIDColumn   string = "bundle_id"
-	visibilityColumn string = "visibility"
+	bundleIDColumn          string = "bundle_id"
+	visibilityColumn        string = "visibility"
 	internalVisibilityScope string = "internal_visibility:read"
 	publicVisibilityValue   string = "public"
 )

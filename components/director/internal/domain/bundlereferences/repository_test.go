@@ -3,6 +3,7 @@ package bundlereferences_test
 import (
 	"context"
 	"errors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 

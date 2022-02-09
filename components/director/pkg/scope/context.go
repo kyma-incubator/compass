@@ -25,6 +25,7 @@ func LoadFromContext(ctx context.Context) ([]string, error) {
 func SaveToContext(ctx context.Context, scopes []string) context.Context {
 	return context.WithValue(ctx, ScopesContextKey, scopes)
 }
+
 // IsGivenScopePresent returns whether an input scope is present in the provided scopes in the context. It returns error if scopes cannot be found
 func IsGivenScopePresent(ctx context.Context, scope string) (bool, error) {
 	value := ctx.Value(ScopesContextKey)
