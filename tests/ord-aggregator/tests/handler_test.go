@@ -23,7 +23,7 @@ import (
 
 const (
 	tenantHeader            = "Tenant"
-	applicationTypeLabelKey = "applicationType"
+	internalVisibilityScope = "internal_visibility:read"
 
 	descriptionField      = "description"
 	shortDescriptionField = "shortDescription"
@@ -57,22 +57,35 @@ const (
 	secondProductShortDescription           = "Accelerate business outcomes with integration, data to value, and extensibility."
 	firstAPIExpectedTitle                   = "API TITLE"
 	firstAPIExpectedDescription             = "lorem ipsum dolor sit amet"
+	firstAPIExpectedNumberOfSpecs           = 3
+	secondAPIExpectedTitle                  = "API TITLE INTERNAL"
+	secondAPIExpectedDescription            = "Test description internal"
+	secondAPIExpectedNumberOfSpecs          = 2
+	thirdAPIExpectedTitle                   = "API TITLE PRIVATE"
+	thirdAPIExpectedDescription             = "Test description private"
+	thirdAPIExpectedNumberOfSpecs           = 2
 	firstEventTitle                         = "EVENT TITLE"
 	firstEventDescription                   = "lorem ipsum dolor sit amet"
 	secondEventTitle                        = "EVENT TITLE 2"
 	secondEventDescription                  = "lorem ipsum dolor sit amet"
+	thirdEventTitle                         = "EVENT TITLE INTERNAL"
+	thirdEventDescription                   = "Test description internal"
+	fourthEventTitle                        = "EVENT TITLE PRIVATE"
+	fourthEventDescription                  = "Test description private"
 	expectedTombstoneOrdIDRegex             = "ns:apiResource:API_ID2(.+):v1"
 	expectedVendorTitle                     = "SAP SE"
 
-	expectedNumberOfSystemInstances           = 6
-	expectedNumberOfPackages                  = 6
-	expectedNumberOfBundles                   = 12
-	expectedNumberOfProducts                  = 7
-	expectedNumberOfAPIs                      = 6
-	expectedNumberOfResourceDefinitionsPerAPI = 3
-	expectedNumberOfEvents                    = 12
-	expectedNumberOfTombstones                = 6
-	expectedNumberOfVendors                   = 7
+	expectedNumberOfSystemInstances = 6
+	expectedNumberOfPackages        = 6
+	expectedNumberOfBundles         = 12
+	expectedNumberOfProducts        = 7
+	expectedNumberOfAPIs            = 18
+	expectedNumberOfEvents          = 24
+	expectedNumberOfTombstones      = 6
+	expectedNumberOfVendors         = 7
+
+	expectedNumberOfPublicAPIs   = 6
+	expectedNumberOfPublicEvents = 12
 
 	expectedNumberOfAPIsInFirstBundle    = 1
 	expectedNumberOfAPIsInSecondBundle   = 1
@@ -128,12 +141,31 @@ func TestORDAggregator(t *testing.T) {
 		systemInstancesMap[expectedFifthSystemInstanceName] = expectedFifthSystemInstanceDescription
 		systemInstancesMap[expectedSixthSystemInstanceName] = expectedSixthSystemInstanceDescription
 
+		apisMap := make(map[string]string)
+		apisMap[firstAPIExpectedTitle] = firstAPIExpectedDescription
+		apisMap[secondAPIExpectedTitle] = secondAPIExpectedDescription
+		apisMap[thirdAPIExpectedTitle] = thirdAPIExpectedDescription
+
+		publicApisMap := make(map[string]string)
+		publicApisMap[firstAPIExpectedTitle] = firstAPIExpectedDescription
+
 		apisDefaultBundleMap := make(map[string]string)
 		apisDefaultBundleMap[firstAPIExpectedTitle] = firstBundleOrdIDRegex
+
+		apiSpecsMap := make(map[string]int)
+		apiSpecsMap[firstAPIExpectedTitle] = firstAPIExpectedNumberOfSpecs
+		apiSpecsMap[secondAPIExpectedTitle] = secondAPIExpectedNumberOfSpecs
+		apiSpecsMap[thirdAPIExpectedTitle] = thirdAPIExpectedNumberOfSpecs
 
 		eventsMap := make(map[string]string)
 		eventsMap[firstEventTitle] = firstEventDescription
 		eventsMap[secondEventTitle] = secondEventDescription
+		eventsMap[thirdEventTitle] = thirdEventDescription
+		eventsMap[fourthEventTitle] = fourthEventDescription
+
+		publicEventsMap := make(map[string]string)
+		publicEventsMap[firstEventTitle] = firstEventDescription
+		publicEventsMap[secondEventTitle] = secondEventDescription
 
 		eventsDefaultBundleMap := make(map[string]string)
 		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdIDRegex
@@ -213,15 +245,25 @@ func TestORDAggregator(t *testing.T) {
 		oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
 		require.True(t, ok)
 
-		conf := &clientcredentials.Config{
+		cfgWithInternalVisibilityScope := &clientcredentials.Config{
+			ClientID:     oauthCredentialData.ClientID,
+			ClientSecret: oauthCredentialData.ClientSecret,
+			TokenURL:     oauthCredentialData.URL,
+			Scopes:       []string{internalVisibilityScope},
+		}
+
+		cfgWithoutScopes := &clientcredentials.Config{
 			ClientID:     oauthCredentialData.ClientID,
 			ClientSecret: oauthCredentialData.ClientSecret,
 			TokenURL:     oauthCredentialData.URL,
 		}
 
 		ctx = context.WithValue(ctx, oauth2.HTTPClient, unsecuredHttpClient)
-		httpClient := conf.Client(ctx)
+		httpClient := cfgWithInternalVisibilityScope.Client(ctx)
 		httpClient.Timeout = 20 * time.Second
+
+		httpClientWithoutVisibilityScope := cfgWithoutScopes.Client(ctx)
+		httpClientWithoutVisibilityScope.Timeout = 20 * time.Second
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
@@ -291,8 +333,8 @@ func TestORDAggregator(t *testing.T) {
 				return false
 			}
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfAPIs)
-			// In the document there are actually 2 APIs but there is a tombstone for the second one so in the end there will be only one API
-			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfAPIs, firstAPIExpectedTitle, firstAPIExpectedDescription, descriptionField)
+			// In the document there are actually 4 APIs but there is a tombstone for one of them so in the end there will be 3 APIs
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, apisMap, expectedNumberOfAPIs, descriptionField)
 			t.Log("Successfully verified apis")
 
 			// Verify defaultBundle for apis
@@ -300,8 +342,7 @@ func TestORDAggregator(t *testing.T) {
 			t.Log("Successfully verified defaultBundles for apis")
 
 			// Verify the api spec
-			specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
-			require.Equal(t, expectedNumberOfResourceDefinitionsPerAPI, len(specs))
+			specs := assertions.AssertSpecsFromORDService(t, respBody, apiSpecsMap)
 
 			var specURL string
 			for _, s := range specs {
@@ -320,6 +361,9 @@ func TestORDAggregator(t *testing.T) {
 			}
 			t.Log("Successfully verified api spec")
 
+			// verify public apis
+			verifyEntitiesWithPublicVisibility(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, expectedNumberOfPublicAPIs)
+
 			// Verify events
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
@@ -330,6 +374,9 @@ func TestORDAggregator(t *testing.T) {
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfEvents)
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, eventsMap, expectedNumberOfEvents, descriptionField)
 			t.Log("Successfully verified events")
+
+			// verify public events
+			verifyEntitiesWithPublicVisibility(t, httpClientWithoutVisibilityScope, publicEventsMap, eventsField, expectedNumberOfPublicEvents)
 
 			// Verify defaultBundle for events
 			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfEvents, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
@@ -397,4 +444,11 @@ func storeMappingBetweenORDAndInternalBundleID(t *testing.T, respBody string, nu
 	}
 
 	return ordAndInternalIDsMapping
+}
+
+func verifyEntitiesWithPublicVisibility(t *testing.T, httpClient *http.Client, publicEntitiesMap map[string]string, entity string, expectedNumberOfPublicEntities int) {
+	respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+fmt.Sprintf("/%s?$format=json", entity), map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+
+	assertions.AssertMultipleEntitiesFromORDService(t, respBody, publicEntitiesMap, expectedNumberOfPublicEntities, descriptionField)
+	t.Logf("Successfully verified public %s", entity)
 }
