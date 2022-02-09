@@ -495,6 +495,9 @@ func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 	getJobReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", token))
 	getJobReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
 
+	t.Log(fmt.Sprintf("job status req --> %v <--", getJobReq))
+	t.Log(fmt.Sprintf("job status req token --> %v <--", token))
+
 	resp, err := httpClient.Do(getJobReq)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -502,8 +505,12 @@ func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 	respBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
+	t.Log(fmt.Sprintf("job status body --> %v <--", string(respBody)))
+
 	state := gjson.GetBytes(respBody, "state")
 	require.True(t, state.Exists())
+
+	t.Log(fmt.Sprintf("job status state --> %v <--", state))
 
 	return state.String()
 }
