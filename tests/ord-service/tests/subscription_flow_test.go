@@ -272,6 +272,7 @@ func TestNewChanges(t *testing.T) {
 	secondaryTenant := testConfig.TestConsumerAccountID
 	subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
 	subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
+	subscriptionConsumerTenantID := testConfig.TestConsumerTenantID
 	jobName := "external-certificate-rotation-test-job"
 
 	// Prepare provider external client certificate and secret
@@ -372,14 +373,14 @@ func TestNewChanges(t *testing.T) {
 		},
 	}
 
-	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerSubaccountID)
+	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
 	subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 	require.NoError(t, err)
 	subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionTokenURL+testConfig.TokenPath, testConfig.SubscriptionClientID, testConfig.SubscriptionClientSecret, "tenantFetcherClaims")
 	subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 	subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
 
-	t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %q and provider with name: %q and id: %q, and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
+	t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
 	resp, err := httpClient.Do(subscribeReq)
 	require.NoError(t, err)
 	defer func() {
@@ -396,9 +397,9 @@ func TestNewChanges(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return getSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == jobSucceededStatus
 	}, eventuallyTimeout, eventuallyTick)
-	t.Log(fmt.Sprintf("Successfully created subscription between consumer with subaccount id: %q and provider with name: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, subscriptionProviderSubaccountID))
+	t.Log(fmt.Sprintf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
 
-	defer buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+	defer buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 	// HTTP client configured with certificate with patched subject, issued from cert-rotation job
 	extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
@@ -413,7 +414,7 @@ func TestNewChanges(t *testing.T) {
 	require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 	t.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
-	buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+	buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 	t.Log("Validating no application is returned after successful unsubscription request...")
 	respBody = makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
@@ -468,12 +469,12 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 	k8s.CreateJobByGivenJobDefinition(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace, jobDef)
 }
 
-func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt, httpClient *http.Client, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID string) {
+func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt, httpClient *http.Client, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID string) {
 	unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
 	unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 
-	t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and id: %q, and subaccount id: %s", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
+	t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
 	unsubscribeResp, err := httpClient.Do(unsubscribeReq)
 	require.NoError(t, err)
 	unsubscribeBody, err := ioutil.ReadAll(unsubscribeResp.Body)
@@ -485,7 +486,7 @@ func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt,
 	require.Eventually(t, func() bool {
 		return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, subscriptionToken) == jobSucceededStatus
 	}, eventuallyTimeout, eventuallyTick)
-	t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and provider with name: %q and id: %q, and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
+	t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q, and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
 }
 
 func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusURL, token string) string {

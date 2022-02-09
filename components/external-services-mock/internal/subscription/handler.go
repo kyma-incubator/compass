@@ -158,8 +158,8 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return errors.New("token value is required"), http.StatusBadRequest
 	}
 
-	consumerSubaccountID := mux.Vars(r)["tenant_id"]
-	if consumerSubaccountID == "" {
+	consumerTenantID := mux.Vars(r)["tenant_id"]
+	if consumerTenantID == "" {
 		log.C(ctx).Error("parameter [tenant_id] not provided")
 		return errors.New("parameter [tenant_id] not provided"), http.StatusBadRequest
 	}
@@ -179,7 +179,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		},
 	}
 
-	log.C(ctx).Infof("Creating/Removing subscription for consumer with subaccount id: %s", consumerSubaccountID)
+	log.C(ctx).Infof("Creating/Removing subscription for consumer with tenant id: %s and subaccount id: %s", consumerTenantID, h.tenantConfig.TestConsumerSubaccountID)
 	resp, err := httpClient.Do(request)
 	if err != nil {
 		log.C(ctx).Errorf("while executing subscription request: %s", err.Error())

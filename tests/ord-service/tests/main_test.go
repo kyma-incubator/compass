@@ -92,6 +92,7 @@ type config struct {
 	TestConsumerAccountID                 string
 	TestProviderSubaccountID              string
 	TestConsumerSubaccountID              string
+	TestConsumerTenantID                  string
 }
 
 var testConfig config
