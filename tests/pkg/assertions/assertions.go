@@ -488,7 +488,7 @@ func AssertSpecInBundleNotNil(t *testing.T, bndl graphql.BundleExt) {
 	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec.Data)
 }
 
-func AssertSpecsFromORDService(t *testing.T, respBody string, apiSpecsMap map[string]int) []gjson.Result{
+func AssertSpecsFromORDService(t *testing.T, respBody string, apiSpecsMap map[string]int) []gjson.Result {
 	var specs []gjson.Result
 	for i := 0; i < len(apiSpecsMap); i++ {
 		crrSpecs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", i)).Array()
