@@ -77,6 +77,38 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.auditlog.secret.name }}
                   key: {{ .Values.global.auditlog.secret.clientIdKey }}
+            - name: APP_AUDITLOG_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.clientSecretKey }}
+            - name: APP_AUDITLOG_OAUTH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.urlKey }}
+            - name: APP_AUDITLOG_TOKEN_PATH
+              value: {{ .Values.global.auditlog.tokenPath }}
+            - name: APP_AUDITLOG_OAUTH_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.global.auditlog.configMapName }}
+                  key: auditlog-oauth-user-var
+                  optional: true
+            - name: APP_AUDITLOG_OAUTH_TENANT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.global.auditlog.configMapName }}
+                  key: auditlog-oauth-tenant-var
+                  optional: true
+            {{ else if eq .Values.gateway.auditlog.authMode "oauth-mtls" }}
+            - name: APP_AUDITLOG_AUTH_MODE
+              value: "oauth-mtls"
+            - name: APP_AUDITLOG_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.clientIdKey }}
             - name: APP_AUDITLOG_X509_CERT
               valueFrom:
                 secretKeyRef:
@@ -87,11 +119,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.auditlog.secret.name }}
                   key: {{ .Values.global.auditlog.secret.clientKey }}
-            - name: APP_AUDITLOG_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.auditlog.secret.name }}
-                  key: {{ .Values.global.auditlog.secret.clientSecretKey }}
             - name: APP_AUDITLOG_OAUTH_URL
               valueFrom:
                 secretKeyRef:
