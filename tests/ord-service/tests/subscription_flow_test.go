@@ -380,7 +380,7 @@ func TestNewChanges(t *testing.T) {
 	subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 	subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
 
-	t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
+	t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 	resp, err := httpClient.Do(subscribeReq)
 	require.NoError(t, err)
 	defer func() {
@@ -391,15 +391,16 @@ func TestNewChanges(t *testing.T) {
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, body))
+
+	defer buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
 	subJobStatusPath := resp.Header.Get(locationHeader)
 	require.NotEmpty(t, subJobStatusPath)
 	subJobStatusURL := testConfig.SubscriptionURL + subJobStatusPath
 	require.Eventually(t, func() bool {
 		return getSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == jobSucceededStatus
 	}, eventuallyTimeout, eventuallyTick)
-	t.Log(fmt.Sprintf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
-
-	defer buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+	t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 
 	// HTTP client configured with certificate with patched subject, issued from cert-rotation job
 	extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
@@ -474,7 +475,7 @@ func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt,
 	require.NoError(t, err)
 	unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 
-	t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
+	t.Logf("Remove a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 	unsubscribeResp, err := httpClient.Do(unsubscribeReq)
 	require.NoError(t, err)
 	unsubscribeBody, err := ioutil.ReadAll(unsubscribeResp.Body)
@@ -486,7 +487,7 @@ func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt,
 	require.Eventually(t, func() bool {
 		return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, subscriptionToken) == jobSucceededStatus
 	}, eventuallyTimeout, eventuallyTick)
-	t.Log(fmt.Sprintf("Successfully removed subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q, and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID))
+	t.Logf("Successfully removed subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q, and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 }
 
 func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusURL, token string) string {
@@ -495,8 +496,8 @@ func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 	getJobReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", token))
 	getJobReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
 
-	t.Log(fmt.Sprintf("job status req --> %v <--", getJobReq))
-	t.Log(fmt.Sprintf("job status req token --> %v <--", token))
+	t.Logf("job status req --> %v <--", getJobReq)
+	t.Logf("job status req token --> %v <--", token)
 
 	resp, err := httpClient.Do(getJobReq)
 	require.NoError(t, err)
@@ -505,12 +506,17 @@ func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 	respBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	t.Log(fmt.Sprintf("job status body --> %v <--", string(respBody)))
+	t.Logf("job status body --> %v <--", string(respBody))
 
 	state := gjson.GetBytes(respBody, "state")
 	require.True(t, state.Exists())
 
-	t.Log(fmt.Sprintf("job status state --> %v <--", state))
+	jobErr := gjson.GetBytes(respBody, "error")
+	if jobErr.Exists() {
+		t.Errorf("Error occurred while executing asynchronous subscription job: %s", jobErr.String())
+	}
+
+	t.Logf("job status state --> %v <--", state)
 
 	return state.String()
 }
