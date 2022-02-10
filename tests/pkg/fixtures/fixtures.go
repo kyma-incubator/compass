@@ -36,6 +36,29 @@ func FixEventDefinitionInBundleRequest(appID, bndlID, eventID string) *gcli.Requ
 			}`, appID, bndlID, eventID, testctx.Tc.GQLFieldsProvider.ForEventDefinition()))
 }
 
+func GetAuditlogToken(t require.TestingT, client *http.Client, auditlogConfig config.AuditlogConfig) Token {
+	form := url.Values{}
+	form.Add("grant_type", "client_credentials")
+	form.Add("client_id", auditlogConfig.ClientID)
+	reqBody := strings.NewReader(form.Encode())
+	req, err := http.NewRequest(http.MethodPost, auditlogConfig.TokenURL+"/oauth/token", reqBody)
+	require.NoError(t, err)
+
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("failed to get token: unexpected status code: expected: %d, actual: %d", http.StatusOK, resp.StatusCode))
+
+	var auditlogToken Token
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	err = json.Unmarshal(body, &auditlogToken)
+	require.NoError(t, err)
+
+	return auditlogToken
+}
+
 func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Client, auditlogConfig config.AuditlogConfig, auditlogToken string, search string, timeFrom, timeTo time.Time) []model.ConfigurationChange {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", auditlogConfig.ManagementURL, auditlogConfig.ManagementAPIPath), nil)
 	require.NoError(t, err)

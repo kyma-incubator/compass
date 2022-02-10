@@ -3,12 +3,15 @@ package tests
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/token"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -27,7 +30,16 @@ import (
 
 func TestAuditlogIntegration(t *testing.T) {
 	ctx := context.Background()
-	httpClient := http.Client{}
+	crt, err := cert.ParseCertificate(testConfig.Auditlog.X509Cert, testConfig.Auditlog.X509Key)
+	require.NoError(t, err)
+
+	httpClient := http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{*crt},
+			},
+		},
+	}
 	appName := "app-for-testing-auditlog-mock"
 	appInput := graphql.ApplicationRegisterInput{
 		Name:         appName,

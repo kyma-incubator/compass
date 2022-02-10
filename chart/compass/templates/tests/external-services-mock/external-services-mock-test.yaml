@@ -112,6 +112,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.externalServicesMock.auditlog.secret.name }}
                   key: {{ .Values.global.externalServicesMock.auditlog.secret.clientSecretKey }}
+            - name: AUDITLOG_X509_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+                  key: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}
+            - name: AUDITLOG_X509_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+                  key: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}
       restartPolicy: Never
       serviceAccountName: {{ .Chart.Name }}-operations-tests-service-account
 ---
