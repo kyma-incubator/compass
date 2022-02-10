@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -121,6 +122,7 @@ func TestFullReport(stdT *testing.T) {
 		instanceName := getInstanceName(stdT)
 		defer deleteClone(stdT, instanceName)
 		token = getTokenFromClone(stdT, instanceName)
+		token = strings.TrimPrefix(token, "Bearer ")
 	} else {
 		token = getTokenFromExternalSVCMock(stdT)
 	}

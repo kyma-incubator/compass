@@ -30,14 +30,22 @@ const envPrefix = "APP"
 
 func TestInitFromEnv(t *testing.T) {
 	authenticatorDomain := "example.domain.com"
-	authenticatorPrefix := "prefix!"
+	authenticatorPrefix := "prefix!."
+	authenticatorPrefixTrimmed := "prefix!"
+	authenticator2Domain := "example2.domain.com"
+	authenticator2Prefix := "prefix2!."
+	authenticator2PrefixTrimmed := "prefix2!"
 	trustedIssuers := []authenticator.TrustedIssuer{
 		{
 			DomainURL:   authenticatorDomain,
 			ScopePrefix: authenticatorPrefix,
 		},
+		{
+			DomainURL:   authenticator2Domain,
+			ScopePrefix: authenticator2Prefix,
+		},
 	}
-	clientIDSufix := "suffix"
+	clientIDSufixes := []string{authenticatorPrefixTrimmed, authenticator2PrefixTrimmed}
 
 	t.Run("When environment contains authenticator configuration", func(t *testing.T) {
 		os.Clearenv()
@@ -57,7 +65,8 @@ func TestInitFromEnv(t *testing.T) {
 					Key: "test-identity-key",
 				},
 			},
-			ClientIDSuffix: clientIDSufix,
+			CheckSuffix:      true,
+			ClientIDSuffixes: clientIDSufixes,
 		}
 
 		attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
@@ -72,7 +81,7 @@ func TestInitFromEnv(t *testing.T) {
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator.Name), string(issuersJSON))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CLIENT_ID_SUFFIX", expectedAuthenticator.Name), clientIDSufix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX", expectedAuthenticator.Name), "true")
 		require.NoError(t, err)
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)
@@ -93,7 +102,7 @@ func TestInitFromEnv(t *testing.T) {
 				ScopePrefix: authenticatorPrefix2,
 			},
 		}
-		clientIDSufix2 := "suffix2"
+		clientIDSufixes2 := []string{authenticatorPrefix2}
 
 		expectedAuthenticator1 := authenticator.Config{
 			Name:           "TEST_AUTHN1",
@@ -110,7 +119,8 @@ func TestInitFromEnv(t *testing.T) {
 					Key: "test-identity-key",
 				},
 			},
-			ClientIDSuffix: clientIDSufix,
+			CheckSuffix:      true,
+			ClientIDSuffixes: clientIDSufixes,
 		}
 
 		expectedAuthenticator2 := authenticator.Config{
@@ -128,7 +138,8 @@ func TestInitFromEnv(t *testing.T) {
 					Key: "test-identity-key",
 				},
 			},
-			ClientIDSuffix: clientIDSufix2,
+			CheckSuffix:      true,
+			ClientIDSuffixes: clientIDSufixes2,
 		}
 
 		expectedAuthenticators := []authenticator.Config{expectedAuthenticator1, expectedAuthenticator2}
@@ -151,7 +162,7 @@ func TestInitFromEnv(t *testing.T) {
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator1.Name), string(issuersJSON1))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CLIENT_ID_SUFFIX", expectedAuthenticator1.Name), clientIDSufix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX", expectedAuthenticator1.Name), "true")
 		require.NoError(t, err)
 
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator2.Name), string(attributesJSON2))
@@ -160,7 +171,7 @@ func TestInitFromEnv(t *testing.T) {
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator2.Name), string(issuersJSON2))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CLIENT_ID_SUFFIX", expectedAuthenticator2.Name), clientIDSufix2)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX", expectedAuthenticator2.Name), "true")
 		require.NoError(t, err)
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)
@@ -174,7 +185,7 @@ func TestInitFromEnv(t *testing.T) {
 		os.Clearenv()
 		defer os.Clearenv()
 		authenticatorDomain2 := "example.domain2.com"
-		authenticatorPrefix2 := "prefix!2"
+		authenticatorPrefix2 := "prefix!2."
 		trustedIssuers2 := []authenticator.TrustedIssuer{
 			{
 				DomainURL:   authenticatorDomain2,
@@ -197,7 +208,8 @@ func TestInitFromEnv(t *testing.T) {
 					Key: "test-identity-key",
 				},
 			},
-			ClientIDSuffix: clientIDSufix,
+			CheckSuffix:      true,
+			ClientIDSuffixes: clientIDSufixes,
 		}
 
 		expectedAuthenticator2 := authenticator.Config{
@@ -237,7 +249,7 @@ func TestInitFromEnv(t *testing.T) {
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator1.Name), string(issuersJSON1))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CLIENT_ID_SUFFIX", expectedAuthenticator1.Name), clientIDSufix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX", expectedAuthenticator1.Name), "true")
 		require.NoError(t, err)
 
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator2.Name), string(attributesJSON2))
@@ -281,7 +293,8 @@ func TestInitFromEnv(t *testing.T) {
 					Key: "",
 				},
 			},
-			ClientIDSuffix: clientIDSufix,
+			CheckSuffix:      true,
+			ClientIDSuffixes: clientIDSufixes,
 		}
 
 		attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
@@ -296,7 +309,7 @@ func TestInitFromEnv(t *testing.T) {
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator.Name), string(issuersJSON))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CLIENT_ID_SUFFIX", expectedAuthenticator.Name), clientIDSufix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX", expectedAuthenticator.Name), "true")
 		require.NoError(t, err)
 
 		_, err = authenticator.InitFromEnv(envPrefix)
@@ -323,7 +336,8 @@ func TestInitFromEnv(t *testing.T) {
 					Key: "test-identity-key",
 				},
 			},
-			ClientIDSuffix: clientIDSufix,
+			CheckSuffix:      true,
+			ClientIDSuffixes: clientIDSufixes,
 		}
 
 		attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
@@ -338,7 +352,7 @@ func TestInitFromEnv(t *testing.T) {
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator.Name), string(issuersJSON))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CLIENT_ID_SUFFIX", expectedAuthenticator.Name), clientIDSufix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX", expectedAuthenticator.Name), "true")
 		require.NoError(t, err)
 
 		_, err = authenticator.InitFromEnv(envPrefix)
@@ -365,7 +379,8 @@ func TestInitFromEnv(t *testing.T) {
 					Key: "test-identity-key",
 				},
 			},
-			ClientIDSuffix: clientIDSufix,
+			CheckSuffix:      true,
+			ClientIDSuffixes: clientIDSufixes,
 		}
 
 		attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
@@ -380,7 +395,7 @@ func TestInitFromEnv(t *testing.T) {
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator.Name), string(issuersJSON))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CLIENT_ID_SUFFIX", expectedAuthenticator.Name), clientIDSufix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX", expectedAuthenticator.Name), "true")
 		require.NoError(t, err)
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)

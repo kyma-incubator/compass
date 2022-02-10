@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -69,6 +70,7 @@ func TestDeltaReport(stdT *testing.T) {
 		instanceName := getInstanceName(stdT)
 		defer deleteClone(stdT, instanceName)
 		token = getTokenFromClone(stdT, instanceName)
+		token = strings.TrimPrefix(token, "Bearer ")
 	} else {
 		token = getTokenFromExternalSVCMock(stdT)
 	}

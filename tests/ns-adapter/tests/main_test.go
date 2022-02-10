@@ -80,7 +80,7 @@ func getTokenFromExternalSVCMock(t *testing.T) string {
 			"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321",
 		},
 		"scope":     []string{},
-		"client_id": "test_client_id",
+		"client_id": "test_prefix",
 		"tenant":    testConfig.DefaultTestTenant,
 		"identity":  "nsadapter-flow-identity",
 		"iss":       testConfig.ExternalServicesMockURL,
