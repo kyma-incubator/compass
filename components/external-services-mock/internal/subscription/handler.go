@@ -82,16 +82,17 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 		State: "SUCCEEDED",
 	}
 
+	ctx := r.Context()
 	payload, err := json.Marshal(jobStatus)
 	if err != nil {
-		log.C(r.Context()).Errorf("while marshalling response: %s", err.Error())
+		log.C(ctx).Errorf("while marshalling response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	if _, err = writer.Write(payload); err != nil {
-		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
+		log.C(ctx).Errorf("while writing response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
 		return
 	}
@@ -106,42 +107,48 @@ func (h *handler) OnSubscription(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log.C(ctx).Info("Configuring subscription dependency...")
 	if r.Method != http.MethodPost {
-		log.C(r.Context()).Errorf("expected %s method but got: %s", http.MethodPost, r.Method)
+		log.C(ctx).Errorf("expected %s method but got: %s", http.MethodPost, r.Method)
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
+		log.C(ctx).Errorf("while reading request body: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
 		return
 	}
 
 	if string(body) == "" {
-		log.C(r.Context()).Error("The request body is empty")
+		log.C(ctx).Error("The request body is empty")
 		httphelpers.WriteError(writer, errors.New("The request body is empty"), http.StatusInternalServerError)
 		return
 	}
 
 	h.xsappnameClone = string(body)
-	log.C(r.Context()).Infof("Successfully configure dependency with value: %s", h.xsappnameClone)
+	log.C(ctx).Infof("Successfully configure dependency with value: %s", h.xsappnameClone)
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write(body); err != nil {
-		log.C(r.Context()).WithError(err).Errorf("Failed to write response body for dependencies configure request")
+		log.C(ctx).WithError(err).Errorf("Failed to write response body for dependencies configure request")
 		return
 	}
+	log.C(ctx).Infof("Successfully configured subscription dependency: %s", h.xsappnameClone)
 }
 
 func (h *handler) Dependencies(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log.C(ctx).Info("Handling dependency request...")
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write([]byte(h.xsappnameClone)); err != nil {
 		log.C(r.Context()).WithError(err).Errorf("Failed to write response body for dependencies request")
 		return
 	}
+	log.C(ctx).Info("Successfully handled dependency request")
 }
 
 func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string) (error, int) {
