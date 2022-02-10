@@ -116,6 +116,8 @@ spec:
                 value: {{ .Values.global.tests.ordService.consumerAccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.ordService.consumerSubaccountID }}
+              - name: APP_TENANT_CONFIG_TEST_CONSUMER_TENANT_ID
+                value: {{ .Values.global.tests.ordService.consumerTenantID }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}

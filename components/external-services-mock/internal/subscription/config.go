@@ -21,6 +21,7 @@ type Config struct {
 	TenantFetcherFullRegionalURL string `envconfig:"-"`
 	TestConsumerAccountID        string
 	TestConsumerSubaccountID     string
+	TestConsumerTenantID         string
 }
 
 // ProviderConfig includes the configuration for tenant providers - the tenant ID json property names - account, subaccount, customer. The subdomain property name and subscription provider ID property.

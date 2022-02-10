@@ -508,8 +508,11 @@ func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 
 	t.Logf("job status body --> %v <--", string(respBody))
 
+	id := gjson.GetBytes(respBody, "id")
 	state := gjson.GetBytes(respBody, "state")
+	require.True(t, id.Exists())
 	require.True(t, state.Exists())
+	t.Logf("state of the asynchronous job with id: %s is: %s", id.String(), state.String())
 
 	jobErr := gjson.GetBytes(respBody, "error")
 	if jobErr.Exists() {

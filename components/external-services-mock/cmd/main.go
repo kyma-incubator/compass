@@ -164,7 +164,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 
 	// Get dependencies handler
 	router.HandleFunc("/v1/dependencies/configure", subHandler.DependenciesConfigure).Methods(http.MethodPost)
-	router.HandleFunc("/v1/dependencies", subHandler.Dependencies).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("/v1/dependencies?tenantId=%s", cfg.TenantConfig.TestConsumerTenantID), subHandler.Dependencies).Methods(http.MethodGet)
 
 	// CA server handlers
 	certHandler := cert.NewHandler(cfg.CACert, cfg.CAKey)
