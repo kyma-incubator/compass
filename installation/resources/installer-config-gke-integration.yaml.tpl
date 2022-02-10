@@ -21,8 +21,6 @@ data:
   global.systemFetcher.oauth.tokenBaseUrl: "compass-external-services-mock-sap-mtls"
   global.systemFetcher.oauth.tokenPath: "/cert/token"
   global.systemFetcher.oauth.tokenEndpointProtocol: "https"
-  global.systemFetcher.oauth.scopesClaim: "scopes"
-  global.systemFetcher.oauth.tenantHeaderName: "x-zid"
   global.migratorJob.nodeSelectorEnabled: "true"
   global.kubernetes.serviceAccountTokenJWKS: "https://container.googleapis.com/v1beta1/projects/$CLOUDSDK_CORE_PROJECT/locations/$CLOUDSDK_COMPUTE_ZONE/clusters/$COMMON_NAME/jwks"
   global.oathkeeper.mutators.authenticationMappingServices.tenant-fetcher.authenticator.enabled: "true"

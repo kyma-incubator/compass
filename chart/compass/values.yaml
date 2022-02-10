@@ -514,7 +514,6 @@ global:
         skipSSLValidation: false
     oauth:
       client: "client_id"
-      secret: ""
       tokenEndpointProtocol: "https"
       tokenBaseUrl: "compass-external-services-mock-sap-mtls"
       tokenPath: "/cert/token"

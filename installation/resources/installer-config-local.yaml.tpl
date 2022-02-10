@@ -49,8 +49,6 @@ data:
   global.systemFetcher.oauth.tokenBaseUrl: "compass-external-services-mock-sap-mtls"
   global.systemFetcher.oauth.tokenPath: "/cert/token"
   global.systemFetcher.oauth.tokenEndpointProtocol: "https"
-  global.systemFetcher.oauth.scopesClaim: "scopes"
-  global.systemFetcher.oauth.tenantHeaderName: "x-zid"
   global.oathkeeper.mutators.authenticationMappingServices.tenant-fetcher.authenticator.enabled: "true"
   global.oathkeeper.mutators.authenticationMappingServices.subscriber.authenticator.enabled: "true"
   gateway.gateway.auditlog.enabled: "true"
