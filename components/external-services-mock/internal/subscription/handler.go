@@ -99,11 +99,14 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) OnSubscription(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log.C(ctx).Info("Handling on subscription request...")
 	writer.Header().Set("Content-Type", "text/plain")
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write([]byte(compassURL)); err != nil {
-		log.C(r.Context()).WithError(err).Errorf("Failed to write response body: %v", err)
+		log.C(ctx).WithError(err).Errorf("Failed to write response body: %v", err)
 	}
+	log.C(ctx).Info("Successfully handled on subscription request")
 }
 
 func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Request) {
