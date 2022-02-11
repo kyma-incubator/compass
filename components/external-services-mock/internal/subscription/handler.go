@@ -38,6 +38,10 @@ type JobStatus struct {
 	State string `json:"state"`
 }
 
+type Dependency struct {
+	Xsappname string `json:"xsappname"`
+}
+
 func NewHandler(tenantConfig Config, providerConfig ProviderConfig, externalSvcMockURL, oauthTokenPath, clientID, clientSecret, jobID string, staticMappingClaims map[string]oauth.ClaimsGetterFunc) *handler {
 	return &handler{
 		tenantConfig:        tenantConfig,
@@ -63,7 +67,7 @@ func (h *handler) Subscription(writer http.ResponseWriter, r *http.Request) {
 
 func (h *handler) Deprovisioning(writer http.ResponseWriter, r *http.Request) {
 	if err, statusCode := h.executeSubscriptionRequest(r, http.MethodDelete); err != nil {
-		log.C(r.Context()).WithError(err).Errorf("while executing unsubscription request: %v", err)
+		log.C(r.Context()).Errorf("while executing unsubscription request: %v", err)
 		httphelpers.WriteError(writer, errors.Wrap(err, "while executing unsubscription request"), statusCode)
 		return
 	}
@@ -104,7 +108,9 @@ func (h *handler) OnSubscription(writer http.ResponseWriter, r *http.Request) {
 	writer.Header().Set("Content-Type", "text/plain")
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write([]byte(compassURL)); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to write response body: %v", err)
+		log.C(ctx).Errorf("while writing response: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
+		return
 	}
 	log.C(ctx).Info("Successfully handled on subscription request")
 }
@@ -132,11 +138,11 @@ func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Requ
 	}
 
 	h.xsappnameClone = string(body)
-	log.C(ctx).Infof("Successfully configure dependency with value: %s", h.xsappnameClone)
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write(body); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to write response body for dependencies configure request")
+		log.C(ctx).Errorf("while writing response: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
 		return
 	}
 	log.C(ctx).Infof("Successfully configured subscription dependency: %s", h.xsappnameClone)
@@ -145,10 +151,20 @@ func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Requ
 func (h *handler) Dependencies(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log.C(ctx).Info("Handling dependency request...")
+
+	deps := []*Dependency{{Xsappname: h.xsappnameClone}}
+	depsMarshalled, err := json.Marshal(deps)
+	if err != nil {
+		log.C(ctx).Errorf("while marshalling subscription dependencies: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling subscription dependencies"), http.StatusInternalServerError)
+		return
+	}
+
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
-	if _, err := writer.Write([]byte(h.xsappnameClone)); err != nil {
-		log.C(r.Context()).WithError(err).Errorf("Failed to write response body for dependencies request")
+	if _, err := writer.Write(depsMarshalled); err != nil {
+		log.C(ctx).Errorf("while writing response: %s", err.Error())
+		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
 		return
 	}
 	log.C(ctx).Info("Successfully handled dependency request")

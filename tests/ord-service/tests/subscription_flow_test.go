@@ -380,9 +380,6 @@ func TestNewChanges(t *testing.T) {
 	subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 	subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
 
-	t.Logf("sub req --> %v <--", subscribeReq)            // TODO:: Remove
-	t.Logf("sub req token --> %v <--", subscriptionToken) // TODO:: Remove
-
 	t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 	resp, err := httpClient.Do(subscribeReq)
 	require.NoError(t, err)
@@ -478,7 +475,7 @@ func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt,
 	require.NoError(t, err)
 	unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 
-	t.Logf("Remove a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
+	t.Logf("Removing subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 	unsubscribeResp, err := httpClient.Do(unsubscribeReq)
 	require.NoError(t, err)
 	unsubscribeBody, err := ioutil.ReadAll(unsubscribeResp.Body)
