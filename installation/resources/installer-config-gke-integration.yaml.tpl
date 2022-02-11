@@ -17,10 +17,6 @@ data:
   global.systemFetcher.systemsAPIFilterCriteria: "no"
   global.systemFetcher.systemsAPIFilterTenantCriteriaPattern: "tenant=%s"
   global.systemFetcher.systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] },{"Name": "temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
-  global.systemFetcher.oauth.client: "client_id"
-  global.systemFetcher.oauth.tokenBaseUrl: "compass-external-services-mock-sap-mtls"
-  global.systemFetcher.oauth.tokenPath: "/cert/token"
-  global.systemFetcher.oauth.tokenEndpointProtocol: "https"
   global.migratorJob.nodeSelectorEnabled: "true"
   global.kubernetes.serviceAccountTokenJWKS: "https://container.googleapis.com/v1beta1/projects/$CLOUDSDK_CORE_PROJECT/locations/$CLOUDSDK_COMPUTE_ZONE/clusters/$COMMON_NAME/jwks"
   global.oathkeeper.mutators.authenticationMappingServices.tenant-fetcher.authenticator.enabled: "true"
@@ -28,7 +24,6 @@ data:
   system-broker.http.client.skipSSLValidation: "true"
   connector.http.client.skipSSLValidation: "true"
   operations-controller.http.client.skipSSLValidation: "true"
-  global.systemFetcher.http.client.skipSSLValidation: "true"
   global.ordAggregator.http.client.skipSSLValidation: "true"
   global.http.client.skipSSLValidation: "true"
   global.tests.http.client.skipSSLValidation.director: "true"
