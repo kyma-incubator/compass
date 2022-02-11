@@ -380,6 +380,9 @@ func TestNewChanges(t *testing.T) {
 	subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 	subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
 
+	t.Logf("sub req --> %v <--", subscribeReq) // TODO:: Remove
+	t.Logf("sub req token --> %v <--", subscriptionToken) // TODO:: Remove
+
 	t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 	resp, err := httpClient.Do(subscribeReq)
 	require.NoError(t, err)
@@ -496,17 +499,12 @@ func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 	getJobReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", token))
 	getJobReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
 
-	t.Logf("job status req --> %v <--", getJobReq)
-	t.Logf("job status req token --> %v <--", token)
-
 	resp, err := httpClient.Do(getJobReq)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
-
-	t.Logf("job status body --> %v <--", string(respBody))
 
 	id := gjson.GetBytes(respBody, "id")
 	state := gjson.GetBytes(respBody, "state")
@@ -518,8 +516,6 @@ func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 	if jobErr.Exists() {
 		t.Errorf("Error occurred while executing asynchronous subscription job: %s", jobErr.String())
 	}
-
-	t.Logf("job status state --> %v <--", state)
 
 	return state.String()
 }
