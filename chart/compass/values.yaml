@@ -628,6 +628,8 @@ global:
         tokenUrlKey: token-url
         clientIdKey: client-id
         clientSecretKey: client-secret
+        clientCert: client-cert
+        clientKey: client-key
 
   tests:
     http:
