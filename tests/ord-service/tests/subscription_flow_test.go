@@ -55,8 +55,8 @@ const (
 	contentTypeHeader   = "Content-Type"
 	locationHeader      = "Location"
 	jobSucceededStatus  = "SUCCEEDED"
-	eventuallyTimeout   = 5 * time.Second
-	eventuallyTick      = time.Second
+	eventuallyTimeout   = 10 * time.Second
+	eventuallyTick      = 2 * time.Second
 
 	contentTypeApplicationJson = "application/json"
 )
