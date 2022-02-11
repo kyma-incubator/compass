@@ -125,7 +125,7 @@ spec:
               - name: http-mtls
                 containerPort: {{ .Values.global.externalServicesMock.certSecuredPort }}
                 protocol: TCP
-              - name: http-mtls-ord # TODO:: Check the port name?
+              - name: http-mtls-ord
                 containerPort: {{ .Values.global.externalServicesMock.ordCertSecuredPort }}
                 protocol: TCP
               - name: http-unsecured

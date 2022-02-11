@@ -20,7 +20,7 @@ spec:
     - port: {{ .Values.global.externalServicesMock.ordCertSecuredPort }}
       targetPort: {{ .Values.global.externalServicesMock.ordCertSecuredPort }}
       protocol: TCP
-      name: http-mtls-ord # TODO:: Check the name, can be something different than http-mtls for mtls connection?
+      name: http-mtls-ord
     - port: {{ .Values.global.externalServicesMock.unsecuredPort }}
       targetPort: {{ .Values.global.externalServicesMock.unsecuredPort }}
       protocol: TCP

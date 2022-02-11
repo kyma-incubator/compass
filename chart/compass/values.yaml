@@ -106,7 +106,7 @@ global:
       version: "PR-2187"
     system_broker:
       dir:
-      version: "PR-2166"
+      version: "PR-2208"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
