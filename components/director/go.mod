@@ -21,7 +21,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20220104122431-99ed924ea212
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220104122431-99ed924ea212
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220104122431-99ed924ea212
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220208132958-a8193aa87b45
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.14
 	github.com/lib/pq v1.10.4

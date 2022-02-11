@@ -42,6 +42,7 @@ import (
 
 type config struct {
 	Port       int `envconfig:"default=8080"`
+	CertPort   int `envconfig:"default=8081"`
 	ORDServers ORDServers
 	BaseURL    string `envconfig:"default=http://compass-external-services-mock.compass-system.svc.cluster.local"`
 	JWKSPath   string `envconfig:"default=/jwks.json"`
@@ -58,13 +59,13 @@ type config struct {
 // This is needed in order to ensure that every call in the context of an application happens in a single server isolated from others.
 // Prior to this separation there were cases when tests succeeded (false positive) due to mistakenly configured baseURL resulting in different flow - different access strategy returned.
 type ORDServers struct {
-	CertPort           int `envconfig:"default=8081"`
-	UnsecuredPort      int `envconfig:"default=8082"`
-	BasicPort          int `envconfig:"default=8083"`
-	OauthPort          int `envconfig:"default=8084"`
-	GlobalRegistryPort int `envconfig:"default=8085"`
+	CertPort           int `envconfig:"default=8082"`
+	UnsecuredPort      int `envconfig:"default=8083"`
+	BasicPort          int `envconfig:"default=8084"`
+	OauthPort          int `envconfig:"default=8085"`
+	GlobalRegistryPort int `envconfig:"default=8086"`
 
-	CertSecuredBaseURL string
+	OrdCertSecuredBaseURL string
 }
 
 type OAuthConfig struct {
@@ -93,9 +94,10 @@ func main() {
 	ordServers := initORDServers(cfg, key)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	wg.Add(2)
 
 	go startServer(ctx, initDefaultServer(cfg, key), wg)
+	go startServer(ctx, initDefaultCertServer(cfg, key), wg)
 
 	for _, server := range ordServers {
 		wg.Add(1)
@@ -121,10 +123,6 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	// Oauth server handlers
 	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
 	router.HandleFunc("/secured/oauth/token", tokenHandler.Generate).Methods(http.MethodPost)
-	// TODO The mtls_token_provider sends client id and scopes in url.values form. When the change for fetching xsuaa token
-	// with certificate is merged GenerateWithCredentialsFromReqBody should be used for testing the flows that include fetching
-	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.
-	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
 	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
@@ -198,7 +196,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 
 	// non-isolated and unsecured ORD handlers. NOTE: Do not host document endpoints on this default server in order to ensure tests separation.
 	// Unsecured config pointing to cert secured document
-	router.HandleFunc("/cert", ord_aggregator.HandleFuncOrdConfigWithDocPath(cfg.ORDServers.CertSecuredBaseURL, "/open-resource-discovery/v1/documents/example2", "sap:cmp-mtls:v1"))
+	router.HandleFunc("/cert", ord_aggregator.HandleFuncOrdConfigWithDocPath(cfg.ORDServers.OrdCertSecuredBaseURL, "/open-resource-discovery/v1/documents/example2", "sap:cmp-mtls:v1"))
 
 	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.SelfRegConfig)
 	selfRegRouter := router.PathPrefix(cfg.SelfRegConfig.Path).Subrouter()
@@ -212,9 +210,29 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	}
 }
 
+func initDefaultCertServer(cfg config, key *rsa.PrivateKey) *http.Server {
+	router := mux.NewRouter()
+
+	// Oauth server handlers
+	tokenHandlerWithKey := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
+	// TODO The mtls_token_provider sends client id and scopes in url.values form. When the change for fetching xsuaa token
+	// with certificate is merged GenerateWithCredentialsFromReqBody should be used for testing the flows that include fetching
+	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.
+	router.HandleFunc("/cert/token", tokenHandlerWithKey.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
+
+	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
+	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
+	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.CertPort),
+		Handler: router,
+	}
+}
+
 func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers := make([]*http.Server, 0, 0)
-	servers = append(servers, initCertSecuredServer(cfg, key))
+	servers = append(servers, initCertSecuredServer(cfg))
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
@@ -222,23 +240,16 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	return servers
 }
 
-func initCertSecuredServer(cfg config, key *rsa.PrivateKey) *http.Server {
+func initCertSecuredServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
 
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
-	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.OrdCertSecuredBaseURL, "sap:cmp-mtls:v1"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.OrdCertSecuredBaseURL, "sap:cmp-mtls:v1"))
 
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
-
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
-	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
-
-	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
-	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
-	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.CertPort),

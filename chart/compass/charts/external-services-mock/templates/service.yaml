@@ -17,6 +17,10 @@ spec:
       targetPort: {{ .Values.global.externalServicesMock.certSecuredPort }}
       protocol: TCP
       name: http-mtls
+    - port: {{ .Values.global.externalServicesMock.ordCertSecuredPort }}
+      targetPort: {{ .Values.global.externalServicesMock.ordCertSecuredPort }}
+      protocol: TCP
+      name: http-mtls-ord
     - port: {{ .Values.global.externalServicesMock.unsecuredPort }}
       targetPort: {{ .Values.global.externalServicesMock.unsecuredPort }}
       protocol: TCP
