@@ -23,7 +23,6 @@ type Config struct {
 	TokenBaseHost         string        `envconfig:"APP_OAUTH_TOKEN_BASE_HOST"`
 	TokenPath             string        `envconfig:"APP_OAUTH_TOKEN_PATH"`
 	TokenEndpointProtocol string        `envconfig:"APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL"`
-	ClientSecret          string        `envconfig:"APP_OAUTH_CLIENT_SECRET,optional"`
 	TenantHeaderName      string        `envconfig:"APP_OAUTH_TENANT_HEADER_NAME"`
 	ScopesClaim           []string      `envconfig:"APP_OAUTH_SCOPES_CLAIM"`
 	TokenRequestTimeout   time.Duration `envconfig:"APP_OAUTH_TOKEN_REQUEST_TIMEOUT"`
