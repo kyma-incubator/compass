@@ -21,6 +21,7 @@ data:
   global.oathkeeper.mutators.authenticationMappingServices.subscriber.authenticator.enabled: "true"
   system-broker.http.client.skipSSLValidation: "true"
   operations-controller.http.client.skipSSLValidation: "true"
+  global.systemFetcher.http.client.skipSSLValidation: "true"
   global.http.client.skipSSLValidation: "true"
   global.tests.http.client.skipSSLValidation.director: "true"
   global.tests.http.client.skipSSLValidation.ordService: "true"

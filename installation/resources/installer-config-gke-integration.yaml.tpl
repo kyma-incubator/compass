@@ -24,6 +24,7 @@ data:
   system-broker.http.client.skipSSLValidation: "true"
   connector.http.client.skipSSLValidation: "true"
   operations-controller.http.client.skipSSLValidation: "true"
+  global.systemFetcher.http.client.skipSSLValidation: "true"
   global.ordAggregator.http.client.skipSSLValidation: "true"
   global.http.client.skipSSLValidation: "true"
   global.tests.http.client.skipSSLValidation.director: "true"
