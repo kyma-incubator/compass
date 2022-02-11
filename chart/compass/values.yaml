@@ -514,16 +514,18 @@ global:
         skipSSLValidation: false
     oauth:
       client: "client_id"
+      secret: ""
       tokenEndpointProtocol: "https"
-      tokenBaseHost: "compass-external-services-mock-sap-mtls"
+      tokenBaseUrl: "compass-external-services-mock-sap-mtls"
       tokenPath: "/cert/token"
       scopesClaim: "scopes"
       tenantHeaderName: "x-zid"
       tokenRequestTimeout: 10s
-      skipSSLValidation: false
+      skipSSLValidation: true
     secret:
       name: "compass-system-fetcher-secret"
       clientIdKey: client-id
+      clientSecretKey: client-secret
       oauthUrlKey: url
     paging:
       pageSize: 200

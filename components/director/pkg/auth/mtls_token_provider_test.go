@@ -46,7 +46,7 @@ const (
 var oauthCfg = oauth.Config{
 	ClientID:              "client-id",
 	TokenEndpointProtocol: "https",
-	TokenBaseHost:         "test.mtls.domain.com",
+	TokenBaseURL:          "test.mtls.domain.com",
 	TokenPath:             "/cert/token",
 	ScopesClaim:           []string{"my-scope"},
 	TenantHeaderName:      "x-tenant",
@@ -119,7 +119,7 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 
 	ctx := auth.SaveToContext(context.Background(), &auth.OAuthCredentials{
 		ClientID:          oauthCfg.ClientID,
-		TokenURL:          oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseHost + oauthCfg.TokenPath,
+		TokenURL:          oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
 		Scopes:            strings.Join(oauthCfg.ScopesClaim, " "),
 		AdditionalHeaders: map[string]string{oauthCfg.TenantHeaderName: tenant},
 	})
@@ -136,7 +136,7 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 
 	ctx := auth.SaveToContext(context.Background(), &auth.OAuthCredentials{
 		ClientID:          oauthCfg.ClientID,
-		TokenURL:          oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseHost + oauthCfg.TokenPath,
+		TokenURL:          oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
 		Scopes:            strings.Join(oauthCfg.ScopesClaim, " "),
 		AdditionalHeaders: map[string]string{oauthCfg.TenantHeaderName: tenant},
 	})
@@ -170,7 +170,7 @@ func getFakeCreator(oauthCfg oauth.Config, suite suite.Suite, shouldFail bool) a
 	return func(_ auth.CertificateCache, skipSSLValidation bool, timeout time.Duration) *http.Client {
 		return &http.Client{
 			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
-				suite.Require().Equal(req.URL.Host, oauthCfg.TokenBaseHost)
+				suite.Require().Equal(req.URL.Host, oauthCfg.TokenBaseURL)
 				suite.Require().Equal(req.URL.Scheme, oauthCfg.TokenEndpointProtocol)
 				suite.Require().Equal(req.URL.Path, oauthCfg.TokenPath)
 				suite.Require().Equal(req.Header.Get(oauthCfg.TenantHeaderName), tenant)
