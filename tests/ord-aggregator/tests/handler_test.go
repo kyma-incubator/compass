@@ -354,7 +354,8 @@ func TestORDAggregator(t *testing.T) {
 			t.Log("Successfully verified defaultBundles for apis")
 
 			// Verify the api spec
-			specs := assertions.AssertSpecsFromORDService(t, respBody, apiSpecsMap)
+			specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIs, apiSpecsMap)
+			t.Log("Successfully verified specs for apis")
 
 			var specURL string
 			for _, s := range specs {
