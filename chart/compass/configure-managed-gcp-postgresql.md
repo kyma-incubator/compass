@@ -30,6 +30,11 @@ It allows a Kubernetes service account to act as an IAM service account.
 Pods that use the configured Kubernetes service account automatically authenticate as the GCP service account when accessing Google Cloud APIs. 
 All kubernetes service accounts, which are used by workloads to access the database, have annotation "iam.gke.io/gcp-service-account" pointing to the `sqlProxyServiceAccount`.
 
+When adding a workload (deployment, job, etc.) which needs access to the database, the following steps have to be done:
+  - Ensure that the workload has kubernetes service account associated to it
+  - Ensure that this service account has annotation "iam.gke.io/gcp-service-account" pointing to the `sqlProxyServiceAccount`
+  - Ensure that there is IAM policy binding for `sqlProxyServiceAccount` which contains the kubernetes service account as a member
+
 To connect to managed database, we use [cloudsql-proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy) provided by Google, which consumes `instanceConnectionName` value.
 
 To find `Instance connection name`, go to the [SQL Instances page](https://console.cloud.google.com/sql/instances) and open desired database overview.
