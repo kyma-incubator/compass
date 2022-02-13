@@ -10,4 +10,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: {{ template "octopus.fullname" . }}
-  namespace: kyma-system
+  namespace: {{ .Release.Namespace }}

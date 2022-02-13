@@ -8,4 +8,4 @@ COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/helm-compass-overrides.yaml"
 CRDS="${CURRENT_DIR}/../resources/crds"
 
 kubectl apply -f "$CRDS"
-helm install -f "$COMPASS_CHARTS"/values.yaml --create-namespace --namespace compass-system compass -f "$COMPASS_OVERRIDES" "$COMPASS_CHARTS"
+helm install --wait --timeout 30 -f "$COMPASS_CHARTS"/values.yaml --create-namespace --namespace compass-system compass -f "$COMPASS_OVERRIDES" "$COMPASS_CHARTS"
