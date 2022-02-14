@@ -2,15 +2,11 @@ package subscription
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
-
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/oauth"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -22,15 +18,11 @@ import (
 const compassURL = "https://github.com/kyma-incubator/compass"
 
 type handler struct {
-	tenantConfig        Config
-	providerConfig      ProviderConfig
-	externalSvcMockURL  string
-	oauthTokenPath      string
-	clientID            string
-	clientSecret        string
-	xsappnameClone      string
-	jobID               string
-	staticMappingClaims map[string]oauth.ClaimsGetterFunc
+	httpClient     *http.Client
+	tenantConfig   Config
+	providerConfig ProviderConfig
+	xsappnameClone string
+	jobID          string
 }
 
 type JobStatus struct {
@@ -42,16 +34,12 @@ type Dependency struct {
 	Xsappname string `json:"xsappname"`
 }
 
-func NewHandler(tenantConfig Config, providerConfig ProviderConfig, externalSvcMockURL, oauthTokenPath, clientID, clientSecret, jobID string, staticMappingClaims map[string]oauth.ClaimsGetterFunc) *handler {
+func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig ProviderConfig, jobID string) *handler {
 	return &handler{
-		tenantConfig:        tenantConfig,
-		providerConfig:      providerConfig,
-		externalSvcMockURL:  externalSvcMockURL,
-		oauthTokenPath:      oauthTokenPath,
-		clientID:            clientID,
-		clientSecret:        clientSecret,
-		jobID:               jobID,
-		staticMappingClaims: staticMappingClaims,
+		httpClient:     httpClient,
+		tenantConfig:   tenantConfig,
+		providerConfig: providerConfig,
+		jobID:          jobID,
 	}
 }
 
@@ -76,6 +64,24 @@ func (h *handler) Deprovisioning(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log.C(ctx).Info("Handling subscription job status request...")
+
+	authorization := r.Header.Get("Authorization")
+	if len(authorization) == 0 {
+		log.C(ctx).Error("authorization header is required")
+		httphelpers.WriteError(writer, errors.New("authorization header is required"), http.StatusUnauthorized)
+		return
+	}
+
+	token := strings.TrimPrefix(authorization, "Bearer ")
+
+	if !strings.HasPrefix(authorization, "Bearer ") || len(token) == 0 {
+		log.C(ctx).Error("token value is required")
+		httphelpers.WriteError(writer, errors.New("token value is required"), http.StatusUnauthorized)
+		return
+	}
+
 	if r.Method != http.MethodGet {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -86,7 +92,6 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 		State: "SUCCEEDED",
 	}
 
-	ctx := r.Context()
 	payload, err := json.Marshal(jobStatus)
 	if err != nil {
 		log.C(ctx).Errorf("while marshalling response: %s", err.Error())
@@ -100,11 +105,19 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
 		return
 	}
+	log.C(ctx).Info("Successfully handled subscription job status request")
 }
 
 func (h *handler) OnSubscription(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log.C(ctx).Info("Handling on subscription request...")
+
+	if r.Method != http.MethodPut && r.Method != http.MethodDelete {
+		log.C(ctx).Errorf("expected %s or %s method but got: %s", http.MethodPut, http.MethodDelete, r.Method)
+		writer.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
 	writer.Header().Set("Content-Type", "text/plain")
 	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write([]byte(compassURL)); err != nil {
@@ -175,13 +188,13 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	authorization := r.Header.Get("Authorization")
 
 	if len(authorization) == 0 {
-		return errors.New("authorization header is required"), http.StatusBadRequest
+		return errors.New("authorization header is required"), http.StatusUnauthorized
 	}
 
 	token := strings.TrimPrefix(authorization, "Bearer ")
 
 	if !strings.HasPrefix(authorization, "Bearer ") || len(token) == 0 {
-		return errors.New("token value is required"), http.StatusBadRequest
+		return errors.New("token value is required"), http.StatusUnauthorized
 	}
 
 	consumerTenantID := mux.Vars(r)["tenant_id"]
@@ -198,15 +211,8 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return errors.Wrap(err, "while creating subscription request"), http.StatusInternalServerError
 	}
 
-	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-
 	log.C(ctx).Infof("Creating/Removing subscription for consumer with tenant id: %s and subaccount id: %s", consumerTenantID, h.tenantConfig.TestConsumerSubaccountID)
-	resp, err := httpClient.Do(request)
+	resp, err := h.httpClient.Do(request)
 	if err != nil {
 		log.C(ctx).Errorf("while executing subscription request: %s", err.Error())
 		return err, http.StatusInternalServerError
@@ -219,7 +225,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 
 	if resp.StatusCode != http.StatusOK {
 		log.C(ctx).Errorf("wrong status code while executing subscription request, got [%d], expected [%d]", resp.StatusCode, http.StatusOK)
-		return errors.Wrapf(err, "wrong status code while executing subscription request, got [%d], expected [%d]", resp.StatusCode, http.StatusOK), http.StatusInternalServerError
+		return errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d]", resp.StatusCode, http.StatusOK)), http.StatusInternalServerError
 	}
 
 	return nil, http.StatusOK

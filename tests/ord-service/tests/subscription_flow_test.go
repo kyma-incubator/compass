@@ -67,7 +67,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
 		ctx := context.Background()
 		// defaultTenantId is the parent of the subaccountID
-		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
+		defaultTenantId := tenant.TestTenants.GetDefaultTenantID() // TODO:: Change to our GA on real env
 
 		// Build graphql director client configured with certificate
 		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)

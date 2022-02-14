@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	AuthorizationHeader              = "Authorization"
 	ContentTypeHeader                = "Content-Type"
 	ContentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
 	ContentTypeApplicationJson       = "application/json"
