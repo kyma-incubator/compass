@@ -436,7 +436,7 @@ global:
     commonName: "compass"
     locality: "local"
     certSvcApiPath: "/cert"
-    tokenPath: "/oauth/token"
+    tokenPath: "/cert/token"
     secrets:
       externalCertSvcSecret:
         manage: false
