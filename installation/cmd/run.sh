@@ -85,22 +85,22 @@ function revert_migrator_file() {
     echo "$UPDATE_EXPECTED_SCHEMA_VERSION_FILE" > "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml
 }
 
-function mount_minikube_ca_to_oathkeeper() {
-  echo "Mounting minikube CA cert into oathkeeper's container..."
+function mount_k3d_ca_to_oathkeeper() {
+  echo "Mounting k3d CA cert into oathkeeper's container..."
 
-  cat $HOME/.minikube/ca.crt > mk-ca.crt
-  trap "rm -f mk-ca.crt" RETURN EXIT INT TERM
+  docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt > k3d-ca.crt
+  trap "rm -f k3d-ca.crt" RETURN EXIT INT TERM
 
-  kubectl create configmap -n kyma-system minikube-ca --from-file mk-ca.crt --dry-run -o yaml | kubectl apply -f -
+  kubectl create configmap -n kyma-system k3d-ca --from-file k3d-ca.crt --dry-run -o yaml | kubectl apply -f -
 
   OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n kyma-system | grep oathkeeper | awk '{print $1}')
   OATHKEEPER_CONTAINER_NAME=$(kubectl get deployment -n kyma-system "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
 
   kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
- -p '{"spec":{"template":{"spec":{"volumes":[{"configMap":{"defaultMode": 420,"name": "minikube-ca"},"name": "minikube-ca-volume"}]}}}}'
+ -p '{"spec":{"template":{"spec":{"volumes":[{"configMap":{"defaultMode": 420,"name": "k3d-ca"},"name": "k3d-ca-volume"}]}}}}'
 
   kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
- -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/mk-ca.crt'","name": "minikube-ca-volume","subPath": "mk-ca.crt"}]}]}}}}'
+ -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}]}}}}'
 }
 
 if [[ ${DUMP_DB} ]]; then
@@ -138,7 +138,13 @@ fi
 if [[ ! ${SKIP_K3D_START} ]]; then
   echo "Provisioning k3d cluster..."
   # todo cpu limit
-  kyma provision k3d --k3s-arg '--kube-apiserver-arg=anonymous-auth=true@server:*' --k3s-arg '--kube-apiserver-arg=feature-gates=ServiceAccountIssuerDiscovery=true@server:*' --k3d-arg='--servers-memory '${K3D_MEMORY} --k3d-arg='--agents-memory '${K3D_MEMORY} --timeout ${K3D_TIMEOUT} --kube-version "${APISERVER_VERSION}"
+  kyma provision k3d \
+  --k3s-arg '--kube-apiserver-arg=anonymous-auth=true@server:*' \
+  --k3s-arg '--kube-apiserver-arg=feature-gates=ServiceAccountIssuerDiscovery=true@server:*' \
+  --k3d-arg='--servers-memory '"${K3D_MEMORY}" \
+  --k3d-arg='--agents-memory '"${K3D_MEMORY}" \
+  --timeout "${K3D_TIMEOUT}" \
+  --kube-version "${APISERVER_VERSION}"
   echo "Adding k3d registry entry to /etc/hosts..."
   sudo sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
 fi
@@ -172,14 +178,15 @@ fi
 #  kubectl patch TestDefinition dex-connection -n kyma-system --type=json -p="[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/image\", \"value\": \"eu.gcr.io/kyma-project/external/curlimages/curl:7.70.0\"}]"
 #fi
 
-#mount_minikube_ca_to_oathkeeper
+mount_k3d_ca_to_oathkeeper
 
 #prometheusMTLSPatch
 
 echo 'Installing Compass'
 bash "${ROOT_PATH}"/installation/scripts/install-compass.sh
 sleep 5
-helm status compass -o json
+STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
+echo "Compass installation status ${STATUS}"
 
 echo "Adding Compass entries to /etc/hosts..."
 K3D_IP=127.0.0.1
