@@ -41,6 +41,7 @@ data:
   global.externalServicesMock.auditlog.applyMockConfiguration: "true"
   global.externalServicesMock.auditlog.secret.clientCert: client-cert
   global.externalServicesMock.auditlog.secret.clientKey: client-key
+  global.auditlog.tokenPath: "/cert/token"
   global.systemFetcher.enabled: "true"
   global.systemFetcher.systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
   global.systemFetcher.systemsAPIFilterCriteria: "no"

@@ -12,6 +12,7 @@ data:
   global.externalServicesMock.auditlog.applyMockConfiguration: "true"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth-mtls"
+  global.auditlog.tokenPath: "/cert/token"
   global.systemFetcher.enabled: "true"
   global.systemFetcher.systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
   global.systemFetcher.systemsAPIFilterCriteria: "no"

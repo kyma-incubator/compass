@@ -41,7 +41,7 @@ func GetAuditlogToken(t require.TestingT, client *http.Client, auditlogConfig co
 	form.Add("grant_type", "client_credentials")
 	form.Add("client_id", auditlogConfig.ClientID)
 	reqBody := strings.NewReader(form.Encode())
-	req, err := http.NewRequest(http.MethodPost, auditlogConfig.TokenURL+"/oauth/token", reqBody)
+	req, err := http.NewRequest(http.MethodPost, auditlogConfig.TokenURL+"/cert/token", reqBody)
 	require.NoError(t, err)
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
