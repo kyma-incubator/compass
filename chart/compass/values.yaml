@@ -177,7 +177,7 @@ global:
 
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
-    tokenPath: "/oauth/token"
+    tokenPath: "/cert/token"
     secret:
       name: "compass-gateway-auditlog-secret"
       urlKey: url
