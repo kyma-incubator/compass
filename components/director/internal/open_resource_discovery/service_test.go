@@ -79,20 +79,20 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulTenantSvc := func() *automock.TenantService {
 		tenantSvc := &automock.TenantService{}
-		tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return(tenantID, nil).Once()
+		tenantSvc.On("GetLowestOwnerForResourceWithSelectForUpdate", txtest.CtxWithDBMatcher(), resource.Application, appID).Return(tenantID, nil).Once()
 		return tenantSvc
 	}
 
 	successfulWebhookList := func() *automock.WebhookService {
 		whSvc := &automock.WebhookService{}
-		whSvc.On("ListForApplication", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooks(), nil).Once()
+		whSvc.On("ListForApplicationWithSelectForUpdate", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooks(), nil).Once()
 		return whSvc
 	}
 
 	successfulBundleUpdate := func() *automock.BundleService {
 		bundlesSvc := &automock.BundleService{}
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
-		bundlesSvc.On("Update", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0])).Return(nil).Once()
+		bundlesSvc.On("UpdateWithSelectForUpdate", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0])).Return(nil).Once()
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
 		return bundlesSvc
 	}
@@ -563,7 +563,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:        successfulAppList,
 			tenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return("", testErr).Once()
+				tenantSvc.On("GetLowestOwnerForResourceWithSelectForUpdate", txtest.CtxWithDBMatcher(), resource.Application, appID).Return("", testErr).Once()
 				return tenantSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -620,7 +620,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			tenantSvcFn: successfulTenantSvc,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListForApplication", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
+				whSvc.On("ListForApplicationWithSelectForUpdate", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -869,7 +869,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
-				bundlesSvc.On("Update", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0])).Return(testErr).Once()
+				bundlesSvc.On("UpdateWithSelectForUpdate", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0])).Return(testErr).Once()
 				return bundlesSvc
 			},
 			clientFn:          successfulClientFetch,

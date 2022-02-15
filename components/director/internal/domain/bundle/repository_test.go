@@ -3,9 +3,10 @@ package bundle_test
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
