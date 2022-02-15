@@ -109,10 +109,7 @@ func buildCustomSelectQueryFromTree(tableName string, selectedColumns string, co
 		return "", nil, errors.Wrap(err, "while writing order by part")
 	}
 
-	//lock := strings.TrimSpace(lockClause)
-	//if lock != "" {
-	//	stmtBuilder.WriteString(" " + lock)
-	//}
+	writeLockClause(&stmtBuilder, lockClause)
 
 	if isRebindingNeeded {
 		return getQueryFromBuilder(stmtBuilder), allArgs, nil
@@ -149,10 +146,7 @@ func buildCustomSelectQuery(tableName string, selectedColumns string, conditions
 		return "", nil, errors.Wrap(err, "while writing order by part")
 	}
 
-	//lock := strings.TrimSpace(lockClause)
-	//if lock != "" {
-	//	stmtBuilder.WriteString(" " + lock)
-	//}
+	writeLockClause(&stmtBuilder, lockClause)
 
 	if isRebindingNeeded {
 		return getQueryFromBuilder(stmtBuilder), allArgs, nil
@@ -355,4 +349,11 @@ func writeOffsetPart(builder *strings.Builder) error {
 
 	builder.WriteString(" OFFSET ?")
 	return nil
+}
+
+func writeLockClause(builder *strings.Builder, lockClause string) {
+	//lock := strings.TrimSpace(lockClause)
+	//if lock != "" {
+	//	builder.WriteString(" " + lock)
+	//}
 }
