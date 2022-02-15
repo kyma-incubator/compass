@@ -1040,7 +1040,7 @@ func TestPgRepository_GetLowestOwnerForResourceWithSelectForUpdate(t *testing.T)
 func mockDBSuccess(t *testing.T, runtimeID string, lockClause string) (*sqlx.DB, testdb.DBMock) {
 	db, dbMock := testdb.MockDatabase(t)
 	rowsToReturn := sqlmock.NewRows([]string{"tenant_id"}).AddRow(testID)
-	dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id )))))`)).
+	dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id FOR UPDATE) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id FOR UPDATE) FOR UPDATE))) FOR UPDATE)`)).
 		WithArgs(runtimeID, runtimeID).
 		WillReturnRows(rowsToReturn)
 	return db, dbMock
@@ -1048,7 +1048,7 @@ func mockDBSuccess(t *testing.T, runtimeID string, lockClause string) (*sqlx.DB,
 
 func mockDBError(t *testing.T, runtimeID string, lockClause string) (*sqlx.DB, testdb.DBMock) {
 	db, dbMock := testdb.MockDatabase(t)
-	dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
+	dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id FOR UPDATE) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id FOR UPDATE) FOR UPDATE))) FOR UPDATE)`)).
 		WithArgs(runtimeID, runtimeID).WillReturnError(testError)
 	return db, dbMock
 }

@@ -297,10 +297,7 @@ func (r *pgRepository) getLowestOwnerForResourceWithCustomSelect(ctx context.Con
 		` AND (NOT EXISTS(SELECT 1 FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }}{{ .lockClause }})` + // the tenant has no children
 		` OR (NOT EXISTS(SELECT 1 FROM {{ .m2mTable }} ta2` +
 		` WHERE ta2.{{ .m2mID }} = ? AND ta2.{{ .owner }} = true AND` +
-		` ta2.{{ .m2mTenantID }} IN` +
-		` (SELECT {{ .id }} FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }}{{ .lockClause }})` +
-		`{{ .lockClause }}))` +
-		`){{ .lockClause }})` // there is no child that has owner access
+		` ta2.{{ .m2mTenantID }} IN (SELECT {{ .id }} FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }}{{ .lockClause }}){{ .lockClause }}))){{ .lockClause }})` // there is no child that has owner access
 
 	t, err := template.New("").Parse(rawStmt)
 	if err != nil {
