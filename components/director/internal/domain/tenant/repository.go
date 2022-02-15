@@ -285,11 +285,11 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 
 // GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
 func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	return r.getLowestOwnerForResourceWithCustomSelect(ctx, resourceType, objectID, "")
+	return r.getLowestOwnerForResourceWithCustomSelect(ctx, resourceType, objectID, repo.NoLock)
 }
 
 func (r *pgRepository) GetLowestOwnerForResourceWithSelectForUpdate(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	return r.getLowestOwnerForResourceWithCustomSelect(ctx, resourceType, objectID, " FOR UPDATE")
+	return r.getLowestOwnerForResourceWithCustomSelect(ctx, resourceType, objectID, " "+repo.ForUpdateLock)
 }
 
 func (r *pgRepository) getLowestOwnerForResourceWithCustomSelect(ctx context.Context, resourceType resource.Type, objectID string, lockClause string) (string, error) {
