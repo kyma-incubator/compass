@@ -128,7 +128,7 @@ func (s *service) GetLowestOwnerForResource(ctx context.Context, resourceType re
 	return s.tenantMappingRepo.GetLowestOwnerForResource(ctx, resourceType, objectID)
 }
 
-// GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
+// GetLowestOwnerForResourceWithSelectForUpdate returns the lowest tenant in the hierarchy that is owner of a given resource.
 func (s *service) GetLowestOwnerForResourceWithSelectForUpdate(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
 	return s.tenantMappingRepo.GetLowestOwnerForResourceWithSelectForUpdate(ctx, resourceType, objectID)
 }

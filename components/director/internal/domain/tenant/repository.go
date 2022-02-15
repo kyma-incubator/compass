@@ -285,19 +285,22 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 
 // GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
 func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	return r.getLowestOwnerForResourceWithCustomSelect("SELECT", ctx, resourceType, objectID)
+	return r.getLowestOwnerForResourceWithCustomSelect(ctx, resourceType, objectID, "")
 }
 
 func (r *pgRepository) GetLowestOwnerForResourceWithSelectForUpdate(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	return r.getLowestOwnerForResourceWithCustomSelect("SELECT FOR UPDATE", ctx, resourceType, objectID)
+	return r.getLowestOwnerForResourceWithCustomSelect(ctx, resourceType, objectID, " FOR UPDATE")
 }
 
-func (r *pgRepository) getLowestOwnerForResourceWithCustomSelect(selectStatement string, ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	rawStmt := `({{ .selectStatement }} {{ .m2mTenantID }} FROM {{ .m2mTable }} ta WHERE ta.{{ .m2mID }} = ? AND ta.{{ .owner }} = true` +
-		` AND (NOT EXISTS(SELECT 1 FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})` + // the tenant has no children
+func (r *pgRepository) getLowestOwnerForResourceWithCustomSelect(ctx context.Context, resourceType resource.Type, objectID string, lockClause string) (string, error) {
+	rawStmt := `(SELECT {{ .m2mTenantID }} FROM {{ .m2mTable }} ta WHERE ta.{{ .m2mID }} = ? AND ta.{{ .owner }} = true` +
+		` AND (NOT EXISTS(SELECT 1 FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }}{{ .lockClause }})` + // the tenant has no children
 		` OR (NOT EXISTS(SELECT 1 FROM {{ .m2mTable }} ta2` +
 		` WHERE ta2.{{ .m2mID }} = ? AND ta2.{{ .owner }} = true AND` +
-		` ta2.{{ .m2mTenantID }} IN (SELECT {{ .id }} FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})))))` // there is no child that has owner access
+		` ta2.{{ .m2mTenantID }} IN` +
+		` (SELECT {{ .id }} FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }}{{ .lockClause }})` +
+		`{{ .lockClause }}))` +
+		`){{ .lockClause }})` // there is no child that has owner access
 
 	t, err := template.New("").Parse(rawStmt)
 	if err != nil {
@@ -310,14 +313,14 @@ func (r *pgRepository) getLowestOwnerForResourceWithCustomSelect(selectStatement
 	}
 
 	data := map[string]string{
-		"selectStatement": selectStatement,
-		"m2mTenantID":     repo.M2MTenantIDColumn,
-		"m2mTable":        m2mTable,
-		"m2mID":           repo.M2MResourceIDColumn,
-		"owner":           repo.M2MOwnerColumn,
-		"tenantsTable":    tableName,
-		"parent":          parentColumn,
-		"id":              idColumn,
+		"m2mTenantID":  repo.M2MTenantIDColumn,
+		"m2mTable":     m2mTable,
+		"m2mID":        repo.M2MResourceIDColumn,
+		"owner":        repo.M2MOwnerColumn,
+		"tenantsTable": tableName,
+		"parent":       parentColumn,
+		"id":           idColumn,
+		"lockClause":   lockClause,
 	}
 
 	res := new(bytes.Buffer)

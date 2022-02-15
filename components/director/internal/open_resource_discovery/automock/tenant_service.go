@@ -15,6 +15,10 @@ type TenantService struct {
 	mock.Mock
 }
 
+func (_m *TenantService) GetLowestOwnerForResourceWithSelectForUpdate(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
+	return _m.GetLowestOwnerForResource(ctx, resourceType, objectID)
+}
+
 // GetLowestOwnerForResource provides a mock function with given fields: ctx, resourceType, objectID
 func (_m *TenantService) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
 	ret := _m.Called(ctx, resourceType, objectID)

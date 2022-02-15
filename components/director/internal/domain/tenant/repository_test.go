@@ -973,7 +973,7 @@ func TestPgRepository_GetLowestOwnerForResource(t *testing.T) {
 	runtimeID := "runtimeID"
 
 	t.Run("Success", func(t *testing.T) {
-		db, dbMock := mockDBSuccess(t, runtimeID, "SELECT")
+		db, dbMock := mockDBSuccess(t, runtimeID, "")
 		defer dbMock.AssertExpectations(t)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -988,7 +988,7 @@ func TestPgRepository_GetLowestOwnerForResource(t *testing.T) {
 	})
 
 	t.Run("Error when getting", func(t *testing.T) {
-		db, dbMock := mockDBError(t, runtimeID, "SELECT")
+		db, dbMock := mockDBError(t, runtimeID, "")
 		defer dbMock.AssertExpectations(t)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -1007,7 +1007,7 @@ func TestPgRepository_GetLowestOwnerForResourceWithSelectForUpdate(t *testing.T)
 	runtimeID := "runtimeID"
 
 	t.Run("Success", func(t *testing.T) {
-		db, dbMock := mockDBSuccess(t, runtimeID, "SELECT FOR UPDATE")
+		db, dbMock := mockDBSuccess(t, runtimeID, "FOR UPDATE")
 		defer dbMock.AssertExpectations(t)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -1022,7 +1022,7 @@ func TestPgRepository_GetLowestOwnerForResourceWithSelectForUpdate(t *testing.T)
 	})
 
 	t.Run("Error when getting", func(t *testing.T) {
-		db, dbMock := mockDBError(t, runtimeID, "SELECT FOR UPDATE")
+		db, dbMock := mockDBError(t, runtimeID, "FOR UPDATE")
 		defer dbMock.AssertExpectations(t)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -1037,18 +1037,18 @@ func TestPgRepository_GetLowestOwnerForResourceWithSelectForUpdate(t *testing.T)
 	})
 }
 
-func mockDBSuccess(t *testing.T, runtimeID string, selectStatement string) (*sqlx.DB, testdb.DBMock) {
+func mockDBSuccess(t *testing.T, runtimeID string, lockClause string) (*sqlx.DB, testdb.DBMock) {
 	db, dbMock := testdb.MockDatabase(t)
 	rowsToReturn := sqlmock.NewRows([]string{"tenant_id"}).AddRow(testID)
-	dbMock.ExpectQuery(regexp.QuoteMeta(`(`+selectStatement+` tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
+	dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
 		WithArgs(runtimeID, runtimeID).
 		WillReturnRows(rowsToReturn)
 	return db, dbMock
 }
 
-func mockDBError(t *testing.T, runtimeID string, selectStatement string) (*sqlx.DB, testdb.DBMock) {
+func mockDBError(t *testing.T, runtimeID string, lockClause string) (*sqlx.DB, testdb.DBMock) {
 	db, dbMock := testdb.MockDatabase(t)
-	dbMock.ExpectQuery(regexp.QuoteMeta(`(`+selectStatement+` tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
+	dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
 		WithArgs(runtimeID, runtimeID).WillReturnError(testError)
 	return db, dbMock
 }

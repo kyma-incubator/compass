@@ -133,7 +133,12 @@ func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func
 	}
 
 	// TODO: Refactor query builder
-	stmtWithPagination := fmt.Sprintf("%s %s", query, paginationSQL)
+	var stmtWithPagination = ""
+	if strings.Contains(query, "FOR UPDATE") {
+		stmtWithPagination = strings.Replace(query, "FOR UPDATE", paginationSQL+" FOR UPDATE", -1)
+	} else {
+		stmtWithPagination = fmt.Sprintf("%s %s", query, paginationSQL)
+	}
 
 	err = persist.SelectContext(ctx, dest, stmtWithPagination, args...)
 	if err != nil {

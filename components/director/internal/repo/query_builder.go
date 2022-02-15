@@ -85,17 +85,17 @@ func (b *universalQueryBuilder) BuildQuery(resourceType resource.Type, tenantID 
 }
 
 func buildSelectQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
-	return buildCustomSelectQueryFromTree("SELECT", tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
+	return buildCustomSelectQueryFromTree(tableName, selectedColumns, conditions, orderByParams, "", isRebindingNeeded)
 }
 
 func buildSelectForUpdateQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
-	return buildCustomSelectQueryFromTree("SELECT FOR UPDATE", tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
+	return buildCustomSelectQueryFromTree(tableName, selectedColumns, conditions, orderByParams, "FOR UPDATE", isRebindingNeeded)
 }
 
-func buildCustomSelectQueryFromTree(selectStatement string, tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+func buildCustomSelectQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, lockClause string, isRebindingNeeded bool) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder
 
-	stmtBuilder.WriteString(fmt.Sprintf("%s %s FROM %s", selectStatement, selectedColumns, tableName))
+	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
 	var allArgs []interface{}
 	if conditions != nil {
 		stmtBuilder.WriteString(" WHERE ")
@@ -109,6 +109,10 @@ func buildCustomSelectQueryFromTree(selectStatement string, tableName string, se
 		return "", nil, errors.Wrap(err, "while writing order by part")
 	}
 
+	if strings.TrimSpace(lockClause) != "" {
+		stmtBuilder.WriteString(" " + lockClause)
+	}
+
 	if isRebindingNeeded {
 		return getQueryFromBuilder(stmtBuilder), allArgs, nil
 	}
@@ -116,18 +120,18 @@ func buildCustomSelectQueryFromTree(selectStatement string, tableName string, se
 }
 
 func buildSelectQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
-	return buildCustomSelectQuery("SELECT", tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
+	return buildCustomSelectQuery(tableName, selectedColumns, conditions, orderByParams, "", isRebindingNeeded)
 }
 
 func buildSelectForUpdateQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
-	return buildCustomSelectQuery("SELECT FOR UPDATE", tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
+	return buildCustomSelectQuery(tableName, selectedColumns, conditions, orderByParams, "FOR UPDATE", isRebindingNeeded)
 }
 
 // TODO: Refactor builder
-func buildCustomSelectQuery(selectStatement string, tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+func buildCustomSelectQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, lockClause string, isRebindingNeeded bool) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder
 
-	stmtBuilder.WriteString(fmt.Sprintf("%s %s FROM %s", selectStatement, selectedColumns, tableName))
+	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
 	if len(conditions) > 0 {
 		stmtBuilder.WriteString(" WHERE")
 	}
@@ -142,6 +146,10 @@ func buildCustomSelectQuery(selectStatement string, tableName string, selectedCo
 	err = writeOrderByPart(&stmtBuilder, orderByParams)
 	if err != nil {
 		return "", nil, errors.Wrap(err, "while writing order by part")
+	}
+
+	if strings.TrimSpace(lockClause) != "" {
+		stmtBuilder.WriteString(" " + lockClause)
 	}
 
 	if isRebindingNeeded {
