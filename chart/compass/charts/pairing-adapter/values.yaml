@@ -16,7 +16,6 @@ deployment:
         type: "mtls"
         secret: ""
       envs:
-        #mappingTemplateExternalURL: "https://{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}/cert/token"
         mappingTemplateExternalURL: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}/cert/token"
         mappingTemplateHeaders: '{"Content-Type":["application/json"]}'
         mappingTemplateJSONBody: "{}"
