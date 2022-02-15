@@ -17,6 +17,7 @@ import (
 // Lister is an interface for listing tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type Lister interface {
 	List(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error
+	ListWithSelectForUpdate(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error
 	SetSelectedColumns(selectedColumns []string)
 	Clone() *universalLister
 }
@@ -99,6 +100,26 @@ func (l *universalLister) List(ctx context.Context, resourceType resource.Type, 
 	return l.list(ctx, resourceType, dest, additionalConditions...)
 }
 
+func (l *universalLister) ListWithSelectForUpdate(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error {
+	if tenant == "" {
+		return apperrors.NewTenantRequiredError()
+	}
+
+	if l.tenantColumn != nil {
+		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
+		return l.listWithSelectForUpdate(ctx, resourceType, dest, additionalConditions...)
+	}
+
+	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
+	if err != nil {
+		return err
+	}
+
+	additionalConditions = append(additionalConditions, tenantIsolation)
+
+	return l.listWithSelectForUpdate(ctx, resourceType, dest, additionalConditions...)
+}
+
 // SetSelectedColumns sets the selected columns for the query.
 func (l *universalLister) SetSelectedColumns(selectedColumns []string) {
 	l.selectedColumns = strings.Join(selectedColumns, ", ")
@@ -122,16 +143,20 @@ func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, addit
 	return l.list(ctx, l.resourceType, dest, additionalConditions...)
 }
 
-// ListGlobal lists global entities without tenant isolation.
+// ListGlobalWithSelectForUpdate lists global entities without tenant isolation.
 func (l *universalLister) ListGlobalWithSelectForUpdate(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
-	return l.listWithCustomSelect(buildSelectForUpdateQuery, ctx, l.resourceType, dest, additionalConditions...)
+	return l.listGlobalWithCustomSelect(buildSelectForUpdateQuery, ctx, l.resourceType, dest, additionalConditions...)
 }
 
 func (l *universalLister) list(ctx context.Context, resourceType resource.Type, dest Collection, conditions ...Condition) error {
-	return l.listWithCustomSelect(buildSelectQuery, ctx, resourceType, dest, conditions...)
+	return l.listGlobalWithCustomSelect(buildSelectQuery, ctx, resourceType, dest, conditions...)
 }
 
-func (l *universalLister) listWithCustomSelect(buildSelectFunction func(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error),
+func (l *universalLister) listWithSelectForUpdate(ctx context.Context, resourceType resource.Type, dest Collection, conditions ...Condition) error {
+	return l.listGlobalWithCustomSelect(buildSelectForUpdateQuery, ctx, resourceType, dest, conditions...)
+}
+
+func (l *universalLister) listGlobalWithCustomSelect(buildSelectFunction func(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error),
 	ctx context.Context, resourceType resource.Type, dest Collection, conditions ...Condition) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {

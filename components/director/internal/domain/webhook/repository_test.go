@@ -331,6 +331,14 @@ func TestRepositoryDeleteAllByApplicationID(t *testing.T) {
 }
 
 func TestRepositoryListByApplicationID(t *testing.T) {
+	testListByApplicationID(t, "SELECT", "ListByApplicationID")
+}
+
+func TestRepositoryListByApplicationIDWithSelectForUpdate(t *testing.T) {
+	testListByApplicationID(t, "SELECT FOR UPDATE", "ListByApplicationIDWithSelectForUpdate")
+}
+
+func testListByApplicationID(t *testing.T, selectStatement string, methodName string) {
 	whID1 := "whID1"
 	whID2 := "whID2"
 	whModel1 := fixApplicationModelWebhook(whID1, givenApplicationID(), givenTenant(), "http://kyma.io")
@@ -343,7 +351,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 		Name: "List Webhooks by Application ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE app_id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`` + selectStatement + ` id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE app_id = $1 AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{givenApplicationID(), givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -364,7 +372,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 		ExpectedModelEntities: []interface{}{whModel1, whModel2},
 		ExpectedDBEntities:    []interface{}{whEntity1, whEntity2},
 		MethodArgs:            []interface{}{givenTenant(), givenApplicationID()},
-		MethodName:            "ListByApplicationID",
+		MethodName:            methodName,
 	}
 
 	suite.Run(t)

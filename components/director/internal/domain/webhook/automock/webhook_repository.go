@@ -111,6 +111,11 @@ func (_m *WebhookRepository) ListByApplicationID(ctx context.Context, tenant str
 	return r0, r1
 }
 
+// ListByApplicationIDWithSelectForUpdate provides a mock function with given fields: ctx, tenant, applicationID
+func (_m *WebhookRepository) ListByApplicationIDWithSelectForUpdate(ctx context.Context, tenant string, applicationID string) ([]*model.Webhook, error) {
+	return _m.ListByApplicationTemplateID(ctx, applicationID)
+}
+
 // ListByApplicationTemplateID provides a mock function with given fields: ctx, applicationTemplateID
 func (_m *WebhookRepository) ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, applicationTemplateID)
