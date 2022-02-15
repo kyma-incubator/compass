@@ -109,9 +109,10 @@ func buildCustomSelectQueryFromTree(tableName string, selectedColumns string, co
 		return "", nil, errors.Wrap(err, "while writing order by part")
 	}
 
-	if strings.TrimSpace(lockClause) != "" {
-		stmtBuilder.WriteString(" " + lockClause)
-	}
+	//lock := strings.TrimSpace(lockClause)
+	//if lock != "" {
+	//	stmtBuilder.WriteString(" " + lock)
+	//}
 
 	if isRebindingNeeded {
 		return getQueryFromBuilder(stmtBuilder), allArgs, nil
@@ -148,9 +149,10 @@ func buildCustomSelectQuery(tableName string, selectedColumns string, conditions
 		return "", nil, errors.Wrap(err, "while writing order by part")
 	}
 
-	if strings.TrimSpace(lockClause) != "" {
-		stmtBuilder.WriteString(" " + lockClause)
-	}
+	//lock := strings.TrimSpace(lockClause)
+	//if lock != "" {
+	//	stmtBuilder.WriteString(" " + lock)
+	//}
 
 	if isRebindingNeeded {
 		return getQueryFromBuilder(stmtBuilder), allArgs, nil

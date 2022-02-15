@@ -110,7 +110,7 @@ func (l *universalLister) ListWithSelectForUpdate(ctx context.Context, resourceT
 		return l.listWithSelectForUpdate(ctx, resourceType, dest, additionalConditions...)
 	}
 
-	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
+	tenantIsolation, err := NewTenantIsolationConditionWithSelectForUpdate(resourceType, tenant, false)
 	if err != nil {
 		return err
 	}

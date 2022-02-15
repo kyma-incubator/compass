@@ -367,15 +367,19 @@ func (c *tenantIsolationCondition) GetQueryArgs() ([]interface{}, bool) {
 // the entity table (m2m table or view). Conditionally an owner check is added to the subquery.
 // In case of resource.BundleInstanceAuth additional embedded owner check is added.
 func NewTenantIsolationCondition(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
-	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, true)
+	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, true, "")
 }
 
 // NewTenantIsolationConditionForNamedArgs is the same as NewTenantIsolationCondition, but for update queries which use named args.
 func NewTenantIsolationConditionForNamedArgs(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
-	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, false)
+	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, false, "")
 }
 
-func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tenant string, ownerCheck bool, positionalArgs bool) (Condition, error) {
+func NewTenantIsolationConditionWithSelectForUpdate(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
+	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, false, " FOR UPDATE")
+}
+
+func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tenant string, ownerCheck bool, positionalArgs bool, lockClause string) (Condition, error) {
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return nil, errors.Errorf("entity %s does not have access table", resourceType)
