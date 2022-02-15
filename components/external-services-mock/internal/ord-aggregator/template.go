@@ -503,6 +503,10 @@ const ordDocument = `{
          "title":"API TITLE INTERNAL",
          "shortDescription":"Test",
          "description":"Test description internal",
+         "entryPoints":[
+            "https://exmaple.com/test/v1",
+            "https://exmaple.com/test/v2"
+         ],
          "version":"1.0.0",
          "visibility":"internal",
          "releaseStatus":"beta",
@@ -519,6 +523,12 @@ const ordDocument = `{
             "supported":"automatic",
             "description":"Please find the extensibility documentation"
          },
+         "partOfConsumptionBundles":[
+            {
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
+               "defaultEntryPoint":"https://exmaple.com/test/v1"
+            }
+         ],
          "resourceDefinitions":[
             {
                "type":"edmx",
@@ -553,6 +563,10 @@ const ordDocument = `{
          "title":"API TITLE PRIVATE",
          "shortDescription":"Test",
          "description":"Test description private",
+         "entryPoints":[
+            "https://exmaple.com/test/v1",
+            "https://exmaple.com/test/v2"
+         ],
          "version":"1.0.0",
          "visibility":"private",
          "releaseStatus":"beta",
@@ -569,6 +583,12 @@ const ordDocument = `{
             "supported":"automatic",
             "description":"Please find the extensibility documentation"
          },
+         "partOfConsumptionBundles":[
+            {
+               "defaultEntryPoint":"https://exmaple.com/test/v1",
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
+            }
+         ],
          "resourceDefinitions":[
             {
                "type":"edmx",
@@ -802,6 +822,11 @@ const ordDocument = `{
             "supported":"automatic",
             "description":"Please find the extensibility documentation"
          },
+         "partOfConsumptionBundles":[
+            {
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
+            }
+         ],
          "resourceDefinitions":[
             {
                "type":"asyncapi-v2",
@@ -831,6 +856,11 @@ const ordDocument = `{
             "supported":"automatic",
             "description":"Please find the extensibility documentation"
          },
+         "partOfConsumptionBundles":[
+            {
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
+            }
+         ],
          "resourceDefinitions":[
             {
                "type":"asyncapi-v2",
