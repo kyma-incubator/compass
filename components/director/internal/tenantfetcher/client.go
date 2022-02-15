@@ -94,7 +94,8 @@ func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, apiConfig API
 
 		transport := &http.Transport{
 			TLSClientConfig: &tls.Config{
-				Certificates: []tls.Certificate{*cert},
+				Certificates:       []tls.Certificate{*cert},
+				InsecureSkipVerify: true, // TODO: Should be environment variable
 			},
 		}
 
