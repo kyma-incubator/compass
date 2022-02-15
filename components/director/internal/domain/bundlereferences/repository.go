@@ -104,7 +104,6 @@ func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferen
 	if err != nil {
 		return nil, err
 	}
-
 	return &bundleReferenceModel, nil
 }
 
