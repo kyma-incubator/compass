@@ -74,13 +74,18 @@ func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferen
 	}
 
 	var bundleReferenceEntity Entity
-	conditions := createConditions(bundleID, fieldName, objectID)
+	var conditions repo.Conditions
+
+	if bundleID == nil {
+		conditions = repo.Conditions{repo.NewEqualCondition(fieldName, objectID)}
+	} else {
+		conditions = repo.Conditions{
+			repo.NewEqualCondition(fieldName, objectID),
+			repo.NewEqualCondition(bundleIDColumn, bundleID),
+		}
+	}
 
 	err = r.getter.GetGlobal(ctx, conditions, repo.NoOrderBy, &bundleReferenceEntity)
-	return convertToBundleReference(err, r, bundleReferenceEntity)
-}
-
-func convertToBundleReference(err error, r *repository, bundleReferenceEntity Entity) (*model.BundleReference, error) {
 	if err != nil {
 		return nil, err
 	}

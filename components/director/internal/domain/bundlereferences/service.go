@@ -78,16 +78,6 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.Bundle
 // UpdateByReferenceObjectID updates a BundleReference for a specific object(APIDefinition/EventDefinition).
 func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
 	bundleReference, err := s.repo.GetByID(ctx, objectType, objectID, bundleID)
-	return updateBundleReference(ctx, in, objectType, objectID, bundleID, err, bundleReference, s)
-}
-
-// UpdateByReferenceObjectIDWithSelectForUpdate updates a BundleReference for a specific object(APIDefinition/EventDefinition).
-func (s *service) UpdateByReferenceObjectIDWithSelectForUpdate(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
-	bundleReference, err := s.repo.GetByIDWithSelectForUpdate(ctx, objectType, objectID, bundleID)
-	return updateBundleReference(ctx, in, objectType, objectID, bundleID, err, bundleReference, s)
-}
-
-func updateBundleReference(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID *string, bundleID *string, err error, bundleReference *model.BundleReference, s *service) error {
 	if err != nil {
 		return err
 	}

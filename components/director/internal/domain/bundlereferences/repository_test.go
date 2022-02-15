@@ -75,7 +75,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 }
 
 func TestPgRepository_GetBundleIDsForObject(t *testing.T) {
-	selectQuery := `SELECT (.+) FROM public\.bundle_references WHERE api_def_id = \$1 FOR UPDATE`
+	selectQuery := `SELECT (.+) FROM public\.bundle_references WHERE api_def_id = \$1`
 
 	t.Run("success", func(t *testing.T) {
 		// GIVEN

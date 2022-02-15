@@ -140,24 +140,11 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
 	var apiDefEntity Entity
 	err := r.singleGetter.Get(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
-
-	return convertToAPIDefinition(err, r, &apiDefEntity)
-}
-
-// GetByIDWithSelectForUpdate retrieves the APIDefinition with matching ID from the Compass storage.
-func (r *pgRepository) GetByIDWithSelectForUpdate(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
-	var apiDefEntity Entity
-	err := r.singleGetter.GetWithSelectForUpdate(ctx, resource.API, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
-
-	return convertToAPIDefinition(err, r, &apiDefEntity)
-}
-
-func convertToAPIDefinition(err error, r *pgRepository, apiDefEntity *Entity) (*model.APIDefinition, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting APIDefinition")
 	}
 
-	apiDefModel := r.conv.FromEntity(apiDefEntity)
+	apiDefModel := r.conv.FromEntity(&apiDefEntity)
 	return apiDefModel, nil
 }
 
