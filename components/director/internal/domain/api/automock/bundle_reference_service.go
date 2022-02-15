@@ -14,6 +14,11 @@ type BundleReferenceService struct {
 	mock.Mock
 }
 
+func (_m *BundleReferenceService) UpdateByReferenceObjectIDWithSelectForUpdate(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 // CreateByReferenceObjectID provides a mock function with given fields: ctx, in, objectType, objectID, bundleID
 func (_m *BundleReferenceService) CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID *string, bundleID *string) error {
 	ret := _m.Called(ctx, in, objectType, objectID, bundleID)

@@ -145,7 +145,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 // ListByApplicationID lists all EventDefinitions for a given application ID.
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error) {
 	eventCollection := EventAPIDefCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.EventDefinition, tenantID, &eventCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.List(ctx, resource.EventDefinition, tenantID, &eventCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	events := make([]*model.EventDefinition, 0, eventCollection.Len())
