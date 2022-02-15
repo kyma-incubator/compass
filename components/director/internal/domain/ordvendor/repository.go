@@ -117,7 +117,7 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Vendor, error) {
 	log.C(ctx).Debugf("Getting Vendor entity with id %q", id)
 	var vendorEnt Entity
-	if err := r.singleGetter.Get(ctx, resource.Vendor, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &vendorEnt); err != nil {
+	if err := r.singleGetter.GetWithSelectForUpdate(ctx, resource.Vendor, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &vendorEnt); err != nil {
 		return nil, err
 	}
 
@@ -133,7 +133,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.V
 func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Vendor, error) {
 	log.C(ctx).Debugf("Getting Vendor entity with id %q", id)
 	var vendorEnt Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &vendorEnt); err != nil {
+	if err := r.singleGetterGlobal.GetGlobalWithSelectForUpdate(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &vendorEnt); err != nil {
 		return nil, err
 	}
 

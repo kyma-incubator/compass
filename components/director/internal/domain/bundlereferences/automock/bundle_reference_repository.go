@@ -88,6 +88,10 @@ func (_m *BundleReferenceRepository) GetByID(ctx context.Context, objectType mod
 	return r0, r1
 }
 
+func (_m *BundleReferenceRepository) GetByIDWithSelectForUpdate(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error) {
+	return _m.GetByID(ctx, objectType, objectID, bundleID)
+}
+
 // ListByBundleIDs provides a mock function with given fields: ctx, objectType, bundleIDs, pageSize, cursor
 func (_m *BundleReferenceRepository) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
 	ret := _m.Called(ctx, objectType, bundleIDs, pageSize, cursor)

@@ -100,7 +100,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.P
 // ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Package, error) {
 	pkgCollection := pkgCollection{}
-	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Package, tenantID, &pkgCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.List(ctx, resource.Package, tenantID, &pkgCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	pkgs := make([]*model.Package, 0, pkgCollection.Len())

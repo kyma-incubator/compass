@@ -142,13 +142,20 @@ func TestPgRepository_Exists(t *testing.T) {
 }
 
 func TestPgRepository_GetByID(t *testing.T) {
+	testGetById(t, "GetByID", "")
+}
+func TestPgRepository_GetByIDWithSelectForUpdate(t *testing.T) {
+	testGetById(t, "GetByIDWithSelectForUpdate", " FOR UPDATE")
+}
+
+func testGetById(t *testing.T, methodName string, lockClause string) {
 	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Bundle",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2` + lockClause + `))` + lockClause),
 				Args:     []driver.Value{bundleID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -171,6 +178,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		ExpectedModelEntity: fixBundleModel("foo", "bar"),
 		ExpectedDBEntity:    bndlEntity,
 		MethodArgs:          []interface{}{tenantID, bundleID},
+		MethodName:          methodName,
 	}
 
 	suite.Run(t)

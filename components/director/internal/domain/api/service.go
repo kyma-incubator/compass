@@ -17,6 +17,7 @@ import (
 //go:generate mockery --name=APIRepository --output=automock --outpkg=automock --case=underscore
 type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
+	GetByIDWithSelectForUpdate(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListByBundleIDs(ctx context.Context, tenantID string, bundleIDs []string, bundleRefs []*model.BundleReference, counts map[string]int, pageSize int, cursor string) ([]*model.APIDefinitionPage, error)
@@ -50,6 +51,7 @@ type BundleReferenceService interface {
 	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
 	CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
+	UpdateByReferenceObjectIDWithSelectForUpdate(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
@@ -110,6 +112,21 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 	}
 
 	api, err := s.repo.GetByID(ctx, tnt, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return api, nil
+}
+
+// GetWithSelectForUpdate returns the APIDefinition by its ID.
+func (s *service) GetWithSelectForUpdate(ctx context.Context, id string) (*model.APIDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	api, err := s.repo.GetByIDWithSelectForUpdate(ctx, tnt, id)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +211,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 	return s.UpdateInManyBundles(ctx, id, in, specIn, nil, nil, nil, 0, "")
 }
 
-// UpdateInManyBundles updates APIDefinition/s. This function is used both in the ORD scenario and is re-used in Update but with "null" ORD specific arguments.
+// UpdateInManyBundles updates APIDefinition/s. Used in Update but with "null" ORD specific arguments.
 func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -223,6 +240,67 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 		}
 	} else {
 		err = s.updateBundleReferences(ctx, &api.ID, defaultTargetURLPerBundleForUpdate, defaultBundleID)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = s.createBundleReferences(ctx, &api.ID, defaultTargetURLPerBundleForCreation, defaultBundleID)
+	if err != nil {
+		return err
+	}
+
+	err = s.deleteBundleIDs(ctx, &api.ID, bundleIDsForDeletion)
+	if err != nil {
+		return err
+	}
+
+	if specIn != nil {
+		dbSpec, err := s.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+		}
+
+		if dbSpec == nil {
+			_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, model.APISpecReference, api.ID)
+			return err
+		}
+
+		return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, model.APISpecReference, api.ID)
+	}
+
+	return nil
+}
+
+// UpdateInManyBundlesWithSelectForUpdate updates APIDefinition/s. Used in the ORD scenario.
+func (s *service) UpdateInManyBundlesWithSelectForUpdate(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput, defaultTargetURLPerBundleForUpdate map[string]string, defaultTargetURLPerBundleForCreation map[string]string, bundleIDsForDeletion []string, apiHash uint64, defaultBundleID string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	api, err := s.GetWithSelectForUpdate(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	api = in.ToAPIDefinition(id, api.ApplicationID, api.PackageID, apiHash)
+
+	if err = s.repo.Update(ctx, tnt, api); err != nil {
+		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
+	}
+
+	// when defaultTargetURLPerBundle == nil we are in the graphQL flow
+	if defaultTargetURLPerBundleForUpdate == nil {
+		bundleRefInput := &model.BundleReferenceInput{
+			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(in.TargetURLs)),
+		}
+		err = s.bundleReferenceService.UpdateByReferenceObjectIDWithSelectForUpdate(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, nil)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = s.updateBundleReferencesWithSelectForUpdate(ctx, &api.ID, defaultTargetURLPerBundleForUpdate, defaultBundleID)
 		if err != nil {
 			return err
 		}
@@ -314,6 +392,24 @@ func (s *service) updateBundleReferences(ctx context.Context, apiID *string, def
 		}
 
 		err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, apiID, &crrBndlID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *service) updateBundleReferencesWithSelectForUpdate(ctx context.Context, apiID *string, defaultTargetURLPerBundleForUpdate map[string]string, defaultBundleID string) error {
+	for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundleForUpdate {
+		bundleRefInput := &model.BundleReferenceInput{
+			APIDefaultTargetURL: &defaultTargetURL,
+		}
+		if defaultBundleID != "" && defaultBundleID == crrBndlID {
+			isDefaultBundle := true
+			bundleRefInput.IsDefaultBundle = &isDefaultBundle
+		}
+
+		err := s.bundleReferenceService.UpdateByReferenceObjectIDWithSelectForUpdate(ctx, *bundleRefInput, model.BundleAPIReference, apiID, &crrBndlID)
 		if err != nil {
 			return err
 		}

@@ -156,7 +156,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		Name: "List Packages",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, ord_id, vendor, title, short_description, description, version, package_links, links, licence_type, tags, countries, labels, policy_level, custom_policy_level, part_of_products, line_of_business, industry, resource_hash, documentation_labels FROM public.packages WHERE app_id = $1 AND (id IN (SELECT id FROM packages_tenants WHERE tenant_id = $2 FOR UPDATE)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, ord_id, vendor, title, short_description, description, version, package_links, links, licence_type, tags, countries, labels, policy_level, custom_policy_level, part_of_products, line_of_business, industry, resource_hash, documentation_labels FROM public.packages WHERE app_id = $1 AND (id IN (SELECT id FROM packages_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {

@@ -110,7 +110,7 @@ func (g *universalPageableQuerier) listWithSelectForUpdate(ctx context.Context, 
 	return g.listWithCustomSelect(buildSelectForUpdateQueryFromTree, ctx, resourceType, pageSize, cursor, orderByColumn, dest, conditions)
 }
 
-func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error),
+func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func(string, string, *ConditionTree, OrderByParams, bool) (string, []interface{}, error),
 	ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {

@@ -74,17 +74,27 @@ func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferen
 	}
 
 	var bundleReferenceEntity Entity
-	var conditions repo.Conditions
+	conditions := createConditions(bundleID, fieldName, objectID)
 
-	if bundleID == nil {
-		conditions = repo.Conditions{repo.NewEqualCondition(fieldName, objectID)}
-	} else {
-		conditions = repo.Conditions{
-			repo.NewEqualCondition(fieldName, objectID),
-			repo.NewEqualCondition(bundleIDColumn, bundleID),
-		}
-	}
 	err = r.getter.GetGlobal(ctx, conditions, repo.NoOrderBy, &bundleReferenceEntity)
+	return convertToBundleReference(err, r, bundleReferenceEntity)
+}
+
+// GetByIDWithSelectForUpdate retrieves the BundleReference with matching objectID/objectID and bundleID from the Compass storage.
+func (r *repository) GetByIDWithSelectForUpdate(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error) {
+	fieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	var bundleReferenceEntity Entity
+	conditions := createConditions(bundleID, fieldName, objectID)
+
+	err = r.getter.GetGlobalWithSelectForUpdate(ctx, conditions, repo.NoOrderBy, &bundleReferenceEntity)
+	return convertToBundleReference(err, r, bundleReferenceEntity)
+}
+
+func convertToBundleReference(err error, r *repository, bundleReferenceEntity Entity) (*model.BundleReference, error) {
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +105,20 @@ func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferen
 	}
 
 	return &bundleReferenceModel, nil
+}
+
+func createConditions(bundleID *string, fieldName string, objectID *string) repo.Conditions {
+	var conditions repo.Conditions
+
+	if bundleID == nil {
+		conditions = repo.Conditions{repo.NewEqualCondition(fieldName, objectID)}
+	} else {
+		conditions = repo.Conditions{
+			repo.NewEqualCondition(fieldName, objectID),
+			repo.NewEqualCondition(bundleIDColumn, bundleID),
+		}
+	}
+	return conditions
 }
 
 // GetBundleIDsForObject retrieves all BundleReference IDs for matching objectID from the Compass storage.
@@ -113,7 +137,7 @@ func (r *repository) GetBundleIDsForObject(ctx context.Context, objectType model
 		repo.NewEqualCondition(fieldName, objectID),
 	}
 
-	err = lister.ListGlobal(ctx, &objectBundleIDs, conditions...)
+	err = lister.ListGlobalWithSelectForUpdate(ctx, &objectBundleIDs, conditions...)
 	if err != nil {
 		return nil, err
 	}

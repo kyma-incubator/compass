@@ -156,7 +156,7 @@ func (l *universalLister) listWithSelectForUpdate(ctx context.Context, resourceT
 	return l.listGlobalWithCustomSelect(buildSelectForUpdateQuery, ctx, resourceType, dest, conditions...)
 }
 
-func (l *universalLister) listGlobalWithCustomSelect(buildSelectFunction func(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error),
+func (l *universalLister) listGlobalWithCustomSelect(buildSelectFunction func(string, string, Conditions, OrderByParams, bool) (string, []interface{}, error),
 	ctx context.Context, resourceType resource.Type, dest Collection, conditions ...Condition) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {

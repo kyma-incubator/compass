@@ -15,6 +15,7 @@ type BundleReferenceRepository interface {
 	Update(ctx context.Context, item *model.BundleReference) error
 	DeleteByReferenceObjectID(ctx context.Context, bundleID string, objectType model.BundleReferenceObjectType, objectID string) error
 	GetByID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
+	GetByIDWithSelectForUpdate(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
 	GetBundleIDsForObject(ctx context.Context, objectType model.BundleReferenceObjectType, objectID *string) (ids []string, err error)
 	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
@@ -77,6 +78,16 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.Bundle
 // UpdateByReferenceObjectID updates a BundleReference for a specific object(APIDefinition/EventDefinition).
 func (s *service) UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
 	bundleReference, err := s.repo.GetByID(ctx, objectType, objectID, bundleID)
+	return updateBundleReference(ctx, in, objectType, objectID, bundleID, err, bundleReference, s)
+}
+
+// UpdateByReferenceObjectIDWithSelectForUpdate updates a BundleReference for a specific object(APIDefinition/EventDefinition).
+func (s *service) UpdateByReferenceObjectIDWithSelectForUpdate(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error {
+	bundleReference, err := s.repo.GetByIDWithSelectForUpdate(ctx, objectType, objectID, bundleID)
+	return updateBundleReference(ctx, in, objectType, objectID, bundleID, err, bundleReference, s)
+}
+
+func updateBundleReference(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID *string, bundleID *string, err error, bundleReference *model.BundleReference, s *service) error {
 	if err != nil {
 		return err
 	}

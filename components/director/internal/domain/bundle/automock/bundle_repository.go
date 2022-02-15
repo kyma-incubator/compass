@@ -63,6 +63,10 @@ func (_m *BundleRepository) Exists(ctx context.Context, tenant string, id string
 	return r0, r1
 }
 
+func (_m *BundleRepository) GetByIDWithSelectForUpdate(ctx context.Context, tenant, id string) (*model.Bundle, error) {
+	return _m.GetByID(ctx, tenant, id)
+}
+
 // GetByID provides a mock function with given fields: ctx, tenant, id
 func (_m *BundleRepository) GetByID(ctx context.Context, tenant string, id string) (*model.Bundle, error) {
 	ret := _m.Called(ctx, tenant, id)

@@ -202,7 +202,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		Name: "Get Vendor",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, documentation_labels FROM public.vendors WHERE id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, documentation_labels FROM public.vendors WHERE id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2 FOR UPDATE)) FOR UPDATE`),
 				Args:     []driver.Value{vendorID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -230,7 +230,7 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 		Name: "Get Global Vendor",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, documentation_labels FROM public.vendors WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, documentation_labels FROM public.vendors WHERE id = $1 FOR UPDATE`),
 				Args:     []driver.Value{vendorID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {

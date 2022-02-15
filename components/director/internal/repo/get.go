@@ -17,11 +17,13 @@ import (
 // SingleGetter is an interface for getting tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type SingleGetter interface {
 	Get(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
+	GetWithSelectForUpdate(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
 
 // SingleGetterGlobal is an interface for getting global entities.
 type SingleGetterGlobal interface {
 	GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
+	GetGlobalWithSelectForUpdate(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
 
 type universalSingleGetter struct {
@@ -80,12 +82,46 @@ func (g *universalSingleGetter) Get(ctx context.Context, resourceType resource.T
 	return g.get(ctx, resourceType, conditions, orderByParams, dest)
 }
 
+// GetWithSelectForUpdate gets tenant scoped entities with tenant isolation subquery.
+func (g *universalSingleGetter) GetWithSelectForUpdate(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+	if tenant == "" {
+		return apperrors.NewTenantRequiredError()
+	}
+
+	if g.tenantColumn != nil {
+		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
+		return g.getWithSelectForUpdate(ctx, resourceType, conditions, orderByParams, dest)
+	}
+
+	tenantIsolation, err := NewTenantIsolationConditionWithSelectForUpdate(resourceType, tenant, false)
+	if err != nil {
+		return err
+	}
+
+	conditions = append(conditions, tenantIsolation)
+
+	return g.getWithSelectForUpdate(ctx, resourceType, conditions, orderByParams, dest)
+}
+
 // GetGlobal gets global entities without tenant isolation.
 func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	return g.get(ctx, g.resourceType, conditions, orderByParams, dest)
 }
 
+// GetGlobalWithSelectForUpdate gets global entities without tenant isolation.
+func (g *universalSingleGetter) GetGlobalWithSelectForUpdate(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+	return g.getWithSelectForUpdate(ctx, g.resourceType, conditions, orderByParams, dest)
+}
+
 func (g *universalSingleGetter) get(ctx context.Context, resourceType resource.Type, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+	return g.getWithCustomSelect(buildSelectQuery, ctx, resourceType, conditions, orderByParams, dest)
+}
+
+func (g *universalSingleGetter) getWithSelectForUpdate(ctx context.Context, resourceType resource.Type, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+	return g.getWithCustomSelect(buildSelectForUpdateQuery, ctx, resourceType, conditions, orderByParams, dest)
+}
+
+func (g *universalSingleGetter) getWithCustomSelect(buildSelectFunction func(string, string, Conditions, OrderByParams, bool) (string, []interface{}, error), ctx context.Context, resourceType resource.Type, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if dest == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -94,7 +130,7 @@ func (g *universalSingleGetter) get(ctx context.Context, resourceType resource.T
 		return err
 	}
 
-	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, orderByParams, true)
+	query, args, err := buildSelectFunction(g.tableName, g.selectedColumns, conditions, orderByParams, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}
