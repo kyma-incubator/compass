@@ -45,16 +45,6 @@ type repository struct {
 	conv        BundleReferenceConverter
 }
 
-func (r repository) GetBundleIDsForObject(ctx context.Context, objectType model.BundleReferenceObjectType, objectID *string) (ids []string, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (r repository) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 // NewRepository returns a new entity responsible for repo-layer BundleReference operations.
 func NewRepository(conv BundleReferenceConverter) *repository {
 	return &repository{
