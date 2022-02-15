@@ -376,7 +376,7 @@ func NewTenantIsolationConditionForNamedArgs(resourceType resource.Type, tenant 
 }
 
 func NewTenantIsolationConditionWithSelectForUpdate(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
-	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, false, " FOR UPDATE")
+	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, true, " FOR UPDATE")
 }
 
 func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tenant string, ownerCheck bool, positionalArgs bool, lockClause string) (Condition, error) {
@@ -389,10 +389,10 @@ func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tena
 
 	var args []interface{}
 	if positionalArgs {
-		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = ?", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn))
+		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = ?%s", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn, lockClause))
 		args = append(args, tenant)
 	} else {
-		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = :tenant_id", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn))
+		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = :tenant_id%s", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn, lockClause))
 	}
 
 	if ownerCheck {

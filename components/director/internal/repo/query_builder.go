@@ -352,8 +352,8 @@ func writeOffsetPart(builder *strings.Builder) error {
 }
 
 func writeLockClause(builder *strings.Builder, lockClause string) {
-	//lock := strings.TrimSpace(lockClause)
-	//if lock != "" {
-	//	builder.WriteString(" " + lock)
-	//}
+	lock := strings.TrimSpace(lockClause)
+	if lock != "" {
+		builder.WriteString(" " + lock)
+	}
 }
