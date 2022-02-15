@@ -45,6 +45,16 @@ type repository struct {
 	conv        BundleReferenceConverter
 }
 
+func (r repository) GetBundleIDsForObject(ctx context.Context, objectType model.BundleReferenceObjectType, objectID *string) (ids []string, err error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r repository) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 // NewRepository returns a new entity responsible for repo-layer BundleReference operations.
 func NewRepository(conv BundleReferenceConverter) *repository {
 	return &repository{
@@ -96,20 +106,6 @@ func (r *repository) GetByID(ctx context.Context, objectType model.BundleReferen
 	}
 
 	return &bundleReferenceModel, nil
-}
-
-func createConditions(bundleID *string, fieldName string, objectID *string) repo.Conditions {
-	var conditions repo.Conditions
-
-	if bundleID == nil {
-		conditions = repo.Conditions{repo.NewEqualCondition(fieldName, objectID)}
-	} else {
-		conditions = repo.Conditions{
-			repo.NewEqualCondition(fieldName, objectID),
-			repo.NewEqualCondition(bundleIDColumn, bundleID),
-		}
-	}
-	return conditions
 }
 
 // GetBundleIDsForObject retrieves all BundleReference IDs for matching objectID from the Compass storage.

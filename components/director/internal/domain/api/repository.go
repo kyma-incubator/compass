@@ -145,6 +145,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	}
 
 	apiDefModel := r.conv.FromEntity(&apiDefEntity)
+
 	return apiDefModel, nil
 }
 

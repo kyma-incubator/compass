@@ -50,7 +50,6 @@ type BundleReferenceService interface {
 	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
 	CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	UpdateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
-	UpdateByReferenceObjectIDWithSelectForUpdate(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	DeleteByReferenceObjectID(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error
 	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
@@ -315,24 +314,6 @@ func (s *service) updateBundleReferences(ctx context.Context, apiID *string, def
 		}
 
 		err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, apiID, &crrBndlID)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *service) updateBundleReferencesWithSelectForUpdate(ctx context.Context, apiID *string, defaultTargetURLPerBundleForUpdate map[string]string, defaultBundleID string) error {
-	for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundleForUpdate {
-		bundleRefInput := &model.BundleReferenceInput{
-			APIDefaultTargetURL: &defaultTargetURL,
-		}
-		if defaultBundleID != "" && defaultBundleID == crrBndlID {
-			isDefaultBundle := true
-			bundleRefInput.IsDefaultBundle = &isDefaultBundle
-		}
-
-		err := s.bundleReferenceService.UpdateByReferenceObjectIDWithSelectForUpdate(ctx, *bundleRefInput, model.BundleAPIReference, apiID, &crrBndlID)
 		if err != nil {
 			return err
 		}
