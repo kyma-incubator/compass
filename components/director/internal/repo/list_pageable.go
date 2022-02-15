@@ -23,6 +23,7 @@ type PageableQuerier interface {
 type PageableQuerierGlobal interface {
 	ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection) (*pagination.Page, int, error)
 	ListGlobalWithAdditionalConditions(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error)
+	ListGlobalWithSelectForUpdate(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection) (*pagination.Page, int, error)
 }
 
 type universalPageableQuerier struct {
@@ -91,12 +92,26 @@ func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int,
 	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, nil)
 }
 
+// ListGlobal lists a page of global entities without tenant isolation.
+func (g *universalPageableQuerier) ListGlobalWithSelectForUpdate(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection) (*pagination.Page, int, error) {
+	return g.listWithSelectForUpdate(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, nil)
+}
+
 // ListGlobalWithAdditionalConditions lists a page of global entities without tenant isolation.
 func (g *universalPageableQuerier) ListGlobalWithAdditionalConditions(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
 	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, conditions)
 }
 
 func (g *universalPageableQuerier) list(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
+	return g.listWithCustomSelect(buildSelectQueryFromTree, ctx, resourceType, pageSize, cursor, orderByColumn, dest, conditions)
+}
+
+func (g *universalPageableQuerier) listWithSelectForUpdate(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
+	return g.listWithCustomSelect(buildSelectForUpdateQueryFromTree, ctx, resourceType, pageSize, cursor, orderByColumn, dest, conditions)
+}
+
+func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error),
+	ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, -1, err
@@ -112,7 +127,7 @@ func (g *universalPageableQuerier) list(ctx context.Context, resourceType resour
 		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
 	}
 
-	query, args, err := buildSelectQueryFromTree(g.tableName, g.selectedColumns, conditions, OrderByParams{}, true)
+	query, args, err := buildSelectFunction(g.tableName, g.selectedColumns, conditions, OrderByParams{}, true)
 	if err != nil {
 		return nil, -1, errors.Wrap(err, "while building list query")
 	}

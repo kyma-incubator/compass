@@ -285,7 +285,15 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 
 // GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
 func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	rawStmt := `(SELECT {{ .m2mTenantID }} FROM {{ .m2mTable }} ta WHERE ta.{{ .m2mID }} = ? AND ta.{{ .owner }} = true` +
+	return r.getLowestOwnerForResourceWithCustomSelect("SELECT", ctx, resourceType, objectID)
+}
+
+func (r *pgRepository) GetLowestOwnerForResourceWithSelectForUpdate(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
+	return r.getLowestOwnerForResourceWithCustomSelect("SELECT FOR UPDATE", ctx, resourceType, objectID)
+}
+
+func (r *pgRepository) getLowestOwnerForResourceWithCustomSelect(selectStatement string, ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
+	rawStmt := `({{ .selectStatement }} {{ .m2mTenantID }} FROM {{ .m2mTable }} ta WHERE ta.{{ .m2mID }} = ? AND ta.{{ .owner }} = true` +
 		` AND (NOT EXISTS(SELECT 1 FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})` + // the tenant has no children
 		` OR (NOT EXISTS(SELECT 1 FROM {{ .m2mTable }} ta2` +
 		` WHERE ta2.{{ .m2mID }} = ? AND ta2.{{ .owner }} = true AND` +
@@ -302,13 +310,14 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	}
 
 	data := map[string]string{
-		"m2mTenantID":  repo.M2MTenantIDColumn,
-		"m2mTable":     m2mTable,
-		"m2mID":        repo.M2MResourceIDColumn,
-		"owner":        repo.M2MOwnerColumn,
-		"tenantsTable": tableName,
-		"parent":       parentColumn,
-		"id":           idColumn,
+		"selectStatement": selectStatement,
+		"m2mTenantID":     repo.M2MTenantIDColumn,
+		"m2mTable":        m2mTable,
+		"m2mID":           repo.M2MResourceIDColumn,
+		"owner":           repo.M2MOwnerColumn,
+		"tenantsTable":    tableName,
+		"parent":          parentColumn,
+		"id":              idColumn,
 	}
 
 	res := new(bytes.Buffer)

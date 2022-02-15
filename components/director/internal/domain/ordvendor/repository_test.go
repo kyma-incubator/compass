@@ -288,7 +288,7 @@ func TestPgRepository_ListGlobal(t *testing.T) {
 		Name: "List Global Vendors",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, documentation_labels FROM public.vendors WHERE app_id IS NULL`),
+				Query:    regexp.QuoteMeta(`SELECT FOR UPDATE ord_id, app_id, title, labels, partners, id, documentation_labels FROM public.vendors WHERE app_id IS NULL`),
 				Args:     []driver.Value{},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {

@@ -967,6 +967,7 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 	})
 }
 
+//TODO add test
 func TestPgRepository_GetLowestOwnerForResource(t *testing.T) {
 	runtimeID := "runtimeID"
 

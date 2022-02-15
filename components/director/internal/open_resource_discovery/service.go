@@ -150,7 +150,7 @@ func (s *Service) processApp(ctx context.Context, app *model.Application, global
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, app.ID)
+	tnt, err := s.tenantSvc.GetLowestOwnerForResourceWithSelectForUpdate(ctx, resource.Application, app.ID)
 	if err != nil {
 		return err
 	}

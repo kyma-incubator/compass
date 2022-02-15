@@ -85,9 +85,17 @@ func (b *universalQueryBuilder) BuildQuery(resourceType resource.Type, tenantID 
 }
 
 func buildSelectQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+	return buildCustomSelectQueryFromTree("SELECT", tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
+}
+
+func buildSelectForUpdateQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+	return buildCustomSelectQueryFromTree("SELECT FOR UPDATE", tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
+}
+
+func buildCustomSelectQueryFromTree(selectStatement string, tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder
 
-	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
+	stmtBuilder.WriteString(fmt.Sprintf("%s %s FROM %s", selectStatement, selectedColumns, tableName))
 	var allArgs []interface{}
 	if conditions != nil {
 		stmtBuilder.WriteString(" WHERE ")
@@ -107,11 +115,19 @@ func buildSelectQueryFromTree(tableName string, selectedColumns string, conditio
 	return stmtBuilder.String(), allArgs, nil
 }
 
-// TODO: Refactor builder
 func buildSelectQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+	return buildCustomSelectQuery("SELECT", tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
+}
+
+func buildSelectForUpdateQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+	return buildCustomSelectQuery("SELECT FOR UPDATE", tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
+}
+
+// TODO: Refactor builder
+func buildCustomSelectQuery(selectStatement string, tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder
 
-	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
+	stmtBuilder.WriteString(fmt.Sprintf("%s %s FROM %s", selectStatement, selectedColumns, tableName))
 	if len(conditions) > 0 {
 		stmtBuilder.WriteString(" WHERE")
 	}

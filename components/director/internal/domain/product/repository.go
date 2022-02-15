@@ -165,7 +165,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 // ListGlobal gets all global products (with NULL app_id) without tenant isolation
 func (r *pgRepository) ListGlobal(ctx context.Context) ([]*model.Product, error) {
 	productCollection := productCollection{}
-	if err := r.listerGlobal.ListGlobal(ctx, &productCollection, repo.NewNullCondition("app_id")); err != nil {
+	if err := r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &productCollection, repo.NewNullCondition("app_id")); err != nil {
 		return nil, err
 	}
 	products := make([]*model.Product, 0, productCollection.Len())

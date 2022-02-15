@@ -118,6 +118,11 @@ func (_m *TenantMappingRepository) GetByExternalTenant(ctx context.Context, exte
 	return r0, r1
 }
 
+// GetLowestOwnerForResourceWithSelectForUpdate provides a mock function with given fields: ctx, resourceType, objectID
+func (_m *TenantMappingRepository) GetLowestOwnerForResourceWithSelectForUpdate(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
+	return _m.GetLowestOwnerForResource(ctx, resourceType, objectID)
+}
+
 // GetLowestOwnerForResource provides a mock function with given fields: ctx, resourceType, objectID
 func (_m *TenantMappingRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
 	ret := _m.Called(ctx, resourceType, objectID)

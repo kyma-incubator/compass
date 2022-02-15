@@ -24,6 +24,7 @@ type Lister interface {
 // ListerGlobal is an interface for listing global entities.
 type ListerGlobal interface {
 	ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error
+	ListGlobalWithSelectForUpdate(ctx context.Context, dest Collection, additionalConditions ...Condition) error
 	SetSelectedColumns(selectedColumns []string)
 	Clone() *universalLister
 }
@@ -121,13 +122,23 @@ func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, addit
 	return l.list(ctx, l.resourceType, dest, additionalConditions...)
 }
 
+// ListGlobal lists global entities without tenant isolation.
+func (l *universalLister) ListGlobalWithSelectForUpdate(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
+	return l.listWithCustomSelect(buildSelectForUpdateQuery, ctx, l.resourceType, dest, additionalConditions...)
+}
+
 func (l *universalLister) list(ctx context.Context, resourceType resource.Type, dest Collection, conditions ...Condition) error {
+	return l.listWithCustomSelect(buildSelectQuery, ctx, resourceType, dest, conditions...)
+}
+
+func (l *universalLister) listWithCustomSelect(buildSelectFunction func(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error),
+	ctx context.Context, resourceType resource.Type, dest Collection, conditions ...Condition) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
-	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, l.orderByParams, true)
+	query, args, err := buildSelectFunction(l.tableName, l.selectedColumns, conditions, l.orderByParams, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}
