@@ -3,6 +3,7 @@ package bundle_test
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"regexp"
 	"testing"
 
@@ -142,10 +143,10 @@ func TestPgRepository_Exists(t *testing.T) {
 }
 
 func TestPgRepository_GetByID(t *testing.T) {
-	testGetById(t, "GetByID", "")
+	testGetById(t, "GetByID", repo.NoLock)
 }
 func TestPgRepository_GetByIDWithSelectForUpdate(t *testing.T) {
-	testGetById(t, "GetByIDWithSelectForUpdate", " FOR UPDATE")
+	testGetById(t, "GetByIDWithSelectForUpdate", " "+repo.ForUpdateLock)
 }
 
 func testGetById(t *testing.T, methodName string, lockClause string) {

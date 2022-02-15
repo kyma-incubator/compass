@@ -973,7 +973,7 @@ func TestPgRepository_GetLowestOwnerForResource(t *testing.T) {
 	runtimeID := "runtimeID"
 
 	t.Run("Success", func(t *testing.T) {
-		db, dbMock := mockDBSuccess(t, runtimeID, "")
+		db, dbMock := mockDBSuccess(t, runtimeID, repo.NoLock)
 		defer dbMock.AssertExpectations(t)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -988,7 +988,7 @@ func TestPgRepository_GetLowestOwnerForResource(t *testing.T) {
 	})
 
 	t.Run("Error when getting", func(t *testing.T) {
-		db, dbMock := mockDBError(t, runtimeID, "")
+		db, dbMock := mockDBError(t, runtimeID, repo.NoLock)
 		defer dbMock.AssertExpectations(t)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -1007,7 +1007,7 @@ func TestPgRepository_GetLowestOwnerForResourceWithSelectForUpdate(t *testing.T)
 	runtimeID := "runtimeID"
 
 	t.Run("Success", func(t *testing.T) {
-		db, dbMock := mockDBSuccess(t, runtimeID, " FOR UPDATE")
+		db, dbMock := mockDBSuccess(t, runtimeID, " "+repo.ForUpdateLock)
 		defer dbMock.AssertExpectations(t)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -1022,7 +1022,7 @@ func TestPgRepository_GetLowestOwnerForResourceWithSelectForUpdate(t *testing.T)
 	})
 
 	t.Run("Error when getting", func(t *testing.T) {
-		db, dbMock := mockDBError(t, runtimeID, " FOR UPDATE")
+		db, dbMock := mockDBError(t, runtimeID, " "+repo.ForUpdateLock)
 		defer dbMock.AssertExpectations(t)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)

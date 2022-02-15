@@ -559,7 +559,7 @@ func TestPgRepository_ListGlobal(t *testing.T) {
 	totalCount := 2
 
 	pageableQuery := `SELECT (.+) FROM public\.applications ORDER BY id LIMIT %d OFFSET %d FOR UPDATE$`
-	countQuery := `SELECT COUNT\(\*\) FROM public\.applications FOR UPDATE`
+	countQuery := `SELECT COUNT\(\*\) FROM public\.applications`
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN

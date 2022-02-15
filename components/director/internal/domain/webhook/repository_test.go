@@ -331,11 +331,11 @@ func TestRepositoryDeleteAllByApplicationID(t *testing.T) {
 }
 
 func TestRepositoryListByApplicationID(t *testing.T) {
-	testListByApplicationID(t, "ListByApplicationID", "")
+	testListByApplicationID(t, "ListByApplicationID", repo.NoLock)
 }
 
 func TestRepositoryListByApplicationIDWithSelectForUpdate(t *testing.T) {
-	testListByApplicationID(t, "ListByApplicationIDWithSelectForUpdate", " FOR UPDATE")
+	testListByApplicationID(t, "ListByApplicationIDWithSelectForUpdate", " "+repo.ForUpdateLock)
 }
 
 func testListByApplicationID(t *testing.T, methodName string, lockClause string) {

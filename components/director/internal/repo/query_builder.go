@@ -13,6 +13,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	ForUpdateLock string = "FOR UPDATE"
+	NoLock        string = ""
+)
+
 // QueryBuilder is an interface for building queries about tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type QueryBuilder interface {
 	BuildQuery(resourceType resource.Type, tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
@@ -84,15 +89,7 @@ func (b *universalQueryBuilder) BuildQuery(resourceType resource.Type, tenantID 
 	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, isRebindingNeeded)
 }
 
-func buildSelectQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
-	return buildCustomSelectQueryFromTree(tableName, selectedColumns, conditions, orderByParams, "", isRebindingNeeded)
-}
-
-func buildSelectForUpdateQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
-	return buildCustomSelectQueryFromTree(tableName, selectedColumns, conditions, orderByParams, "FOR UPDATE", isRebindingNeeded)
-}
-
-func buildCustomSelectQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, lockClause string, isRebindingNeeded bool) (string, []interface{}, error) {
+func buildSelectQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, lockClause string, isRebindingNeeded bool) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder
 
 	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
@@ -118,11 +115,11 @@ func buildCustomSelectQueryFromTree(tableName string, selectedColumns string, co
 }
 
 func buildSelectQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
-	return buildCustomSelectQuery(tableName, selectedColumns, conditions, orderByParams, "", isRebindingNeeded)
+	return buildCustomSelectQuery(tableName, selectedColumns, conditions, orderByParams, NoLock, isRebindingNeeded)
 }
 
 func buildSelectForUpdateQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
-	return buildCustomSelectQuery(tableName, selectedColumns, conditions, orderByParams, "FOR UPDATE", isRebindingNeeded)
+	return buildCustomSelectQuery(tableName, selectedColumns, conditions, orderByParams, ForUpdateLock, isRebindingNeeded)
 }
 
 // TODO: Refactor builder

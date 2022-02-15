@@ -103,15 +103,14 @@ func (g *universalPageableQuerier) ListGlobalWithAdditionalConditions(ctx contex
 }
 
 func (g *universalPageableQuerier) list(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
-	return g.listWithCustomSelect(buildSelectQueryFromTree, ctx, resourceType, pageSize, cursor, orderByColumn, dest, conditions)
+	return g.listWithCustomSelect(buildSelectQueryFromTree, NoLock, ctx, resourceType, pageSize, cursor, orderByColumn, dest, conditions)
 }
 
 func (g *universalPageableQuerier) listWithSelectForUpdate(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
-	return g.listWithCustomSelect(buildSelectForUpdateQueryFromTree, ctx, resourceType, pageSize, cursor, orderByColumn, dest, conditions)
+	return g.listWithCustomSelect(buildSelectQueryFromTree, ForUpdateLock, ctx, resourceType, pageSize, cursor, orderByColumn, dest, conditions)
 }
 
-func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func(string, string, *ConditionTree, OrderByParams, bool) (string, []interface{}, error),
-	ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
+func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func(string, string, *ConditionTree, OrderByParams, string, bool) (string, []interface{}, error), lockClause string, ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, -1, err
@@ -127,15 +126,15 @@ func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func
 		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
 	}
 
-	query, args, err := buildSelectFunction(g.tableName, g.selectedColumns, conditions, OrderByParams{}, true)
+	query, args, err := buildSelectFunction(g.tableName, g.selectedColumns, conditions, OrderByParams{}, lockClause, true)
 	if err != nil {
 		return nil, -1, errors.Wrap(err, "while building list query")
 	}
 
 	// TODO: Refactor query builder
 	var stmtWithPagination = ""
-	if strings.Contains(query, "FOR UPDATE") {
-		stmtWithPagination = strings.Replace(query, "FOR UPDATE", paginationSQL+" FOR UPDATE", -1)
+	if isLockClauseProvided(lockClause) {
+		stmtWithPagination = strings.Replace(query, lockClause, paginationSQL+" "+lockClause, -1)
 	} else {
 		stmtWithPagination = fmt.Sprintf("%s %s", query, paginationSQL)
 	}
@@ -145,7 +144,11 @@ func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func
 		return nil, -1, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list page of objects from '%s' table", g.tableName)
 	}
 
-	totalCount, err := g.getTotalCount(ctx, resourceType, persist, query, args)
+	var countQuery = query
+	if isLockClauseProvided(lockClause) {
+		countQuery = strings.Replace(query, " "+lockClause, "", -1)
+	}
+	totalCount, err := g.getTotalCount(ctx, resourceType, persist, countQuery, args)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -156,6 +159,10 @@ func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func
 		EndCursor:   endCursor,
 		HasNextPage: hasNextPage,
 	}, totalCount, nil
+}
+
+func isLockClauseProvided(lockClause string) bool {
+	return strings.TrimSpace(lockClause) != NoLock
 }
 
 func (g *universalPageableQuerier) getNextPageAndCursor(totalCount, offset, pageSize, totalLen int) (bool, string) {
