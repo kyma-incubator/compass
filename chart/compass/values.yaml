@@ -91,7 +91,7 @@ global:
       version: "PR-2166"
     director:
       dir:
-      version: "PR-2194"
+      version: "PR-2153"
     gateway:
       dir:
       version: "PR-2166"
@@ -114,13 +114,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2174"
+      version: "PR-2153"
     console:
       dir:
       version: "PR-54"
     e2e_tests:
       dir:
-      version: "PR-2204"
+      version: "PR-2153"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -183,9 +183,6 @@ global:
 
   log:
     format: "kibana"
-
-  testCredentials:
-    secretName: "test-credentials-secret"
 
   enableCompassDefaultScenarioAssignment: true
 
@@ -418,7 +415,7 @@ global:
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       name: "provider"
-      subscriptionProviderIdProperty: "subscriptionProviderId"
+      subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
@@ -439,7 +436,7 @@ global:
     tokenPath: "/secured/oauth/token"
     secrets:
       externalCertSvcSecret:
-        manage: true
+        manage: false
         name: "cert-svc-secret"
         clientIdKey: client-id
         clientSecretKey: client-secret
@@ -455,6 +452,7 @@ global:
       schedule: "*/1 * * * *" # Executes every minute
       certValidity: "7"
       clientCertRetryAttempts: "8"
+      containerName: "certificate-rotation"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
@@ -474,7 +472,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8085/.well-known/open-resource-discovery
+    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8086/.well-known/open-resource-discovery
 
   systemFetcher:
     enabled: false
@@ -594,14 +592,22 @@ global:
   externalServicesMock:
     enabled: false
     certSecuredPort: 8081
-    unsecuredPort: 8082
-    basicSecuredPort: 8083
-    oauthSecuredPort: 8084
-    ordGlobalRegistryPort: 8085
+    ordCertSecuredPort: 8082
+    unsecuredPort: 8083
+    basicSecuredPort: 8084
+    oauthSecuredPort: 8085
+    ordGlobalRegistryPort: 8086
     certSecuredHost: compass-external-services-mock-sap-mtls
+    ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
-    oauthSecretName: compass-external-services-mock-oauth-credentials
+    oauthSecret:
+      manage: false
+      name: compass-external-services-mock-oauth-credentials
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      oauthUrlKey: url
+      oauthTokenPath: "/secured/oauth/token"
     auditlog:
       applyMockConfiguration: false
       managementApiPath: /audit-log/v2/configuration-changes/search
@@ -622,6 +628,19 @@ global:
     ordService:
       skipPattern: ""
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
+      consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
+      providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
+      consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
+      consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
+      externalClientCertTestSecretName: "external-client-certificate-test-secret"
+      externalClientCertTestSecretNamespace: "compass-system"
+      certSvcInstanceTestSecretName: "cert-svc-secret"
+      consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      subscriptionOauthSecret:
+        name: compass-external-services-mock-oauth-credentials
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
     externalServicesMock:
       skipPattern: ""
     namespace: kyma-system
@@ -632,6 +651,11 @@ global:
     ordServiceFQDN: http://compass-ord-service.compass-system.svc.cluster.local
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
+    basicCredentials:
+      manage: false
+      secretName: "test-basic-credentials-secret"
+    subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+    subscriptionProviderIdValue: "id-value!t12345"
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1

@@ -39,7 +39,7 @@ type config struct {
 	ExternalServicesMockBaseURL        string
 	ExternalServicesMockUnsecuredURL   string
 	ExternalServicesMockAbsoluteURL    string
-	ExternalServicesMockCertSecuredURL string
+	ExternalServicesMockOrdCertSecuredURL string
 	ExternalServicesMockOauthURL       string
 	ClientID                           string
 	ClientSecret                       string
