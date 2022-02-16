@@ -106,7 +106,7 @@ spec:
                   echo $CERT_SVC_OAUTH_CLIENT_KEY | openssl enc -base64 -d -A -out /tmp/client-key.pem
 
                   TOKEN=$(curl \
-                    -s $SKIP_SSL_VALIDATION \
+                    -s $SKIP_SSL_VALIDATION_FLAG \
                     -m 30 \
                     -X POST \
                     --cert /tmp/client-cert.pem \
@@ -180,8 +180,8 @@ spec:
                     secretKeyRef:
                       name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
                       key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientKey }}
-                - name: SKIP_SSL_VALIDATION
-                  value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.skipSSLValidation }}
+                - name: SKIP_SSL_VALIDATION_FLAG
+                  value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.skipSSLValidationFlag }}
 
 ---
 apiVersion: v1
