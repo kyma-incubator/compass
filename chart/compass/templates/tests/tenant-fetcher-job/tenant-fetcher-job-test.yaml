@@ -24,7 +24,6 @@ spec:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ $.Values.global.externalServicesMock.certSecuredHost }}.{{ $.Values.global.ingress.domainName }}"
             - "{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}"
             - "dex.{{ .Values.global.ingress.domainName }}"
       {{ end }}
