@@ -243,59 +243,6 @@ func respond(writer http.ResponseWriter, r *http.Request, claims map[string]inte
 	}
 }
 
-func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter, r *http.Request) {
-	claims := map[string]interface{}{}
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
-		return
-	}
-
-	if form, err := url.ParseQuery(string(body)); err != nil {
-		log.C(r.Context()).Errorf("Cannot parse form. Error: %s", err)
-	} else {
-		client := form.Get("client_id")
-		scopes := form.Get("scopes")
-		tenant := r.Header.Get(h.tenantHeaderName)
-		claims["client_id"] = client
-		claims["scopes"] = scopes
-		claims["x-zid"] = tenant
-	}
-
-	var output string
-	if h.signingKey != nil {
-		token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims(claims))
-		output, err = token.SignedString(h.signingKey)
-	} else {
-		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims(claims))
-		output, err = token.SigningString()
-	}
-
-	if err != nil {
-		log.C(r.Context()).Errorf("while creating oauth token: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while creating oauth token"), http.StatusInternalServerError)
-		return
-	}
-
-	response := createResponse(output)
-	payload, err := json.Marshal(response)
-	if err != nil {
-		log.C(r.Context()).Errorf("while marshalling response: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
-		return
-	}
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-	_, err = writer.Write(payload)
-	if err != nil {
-		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
-		return
-	}
-}
-
 func createResponse(token string) TokenResponse {
 	return TokenResponse{
 		AccessToken: token,
