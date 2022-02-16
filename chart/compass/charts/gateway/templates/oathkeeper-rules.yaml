@@ -56,7 +56,7 @@ spec:
   authenticators:
   - handler: jwt
     config:
-      trusted_issuers: ["https://dex.{{ .Values.global.ingress.domainName }}"]
+      trusted_issuers: ["https://dex.{{ .Values.global.ingress.domainName }}", "{{ .Values.global.cockpit.auth.idpHost }}"]
   authorizer:
     handler: allow
   mutators:

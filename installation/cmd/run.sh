@@ -78,6 +78,18 @@ do
             shift # past argument
             shift # past value
         ;;
+        --oidc-host)
+            checkInputParameterValue "${2}"
+            OIDC_HOST="${2}"
+            shift # past argument
+            shift # past value
+        ;;
+        --oidc-client-id)
+            checkInputParameterValue "${2}"
+            OIDC_CLIENT_ID="${2}"
+            shift # past argument
+            shift # past value
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -112,6 +124,21 @@ function mount_minikube_ca_to_oathkeeper() {
   kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
  -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/mk-ca.crt'","name": "minikube-ca-volume","subPath": "mk-ca.crt"}]}]}}}}'
 }
+
+function set_oidc_config() {
+  PATH_TO_VALUES="$CURRENT_DIR/../../chart/compass/values.yaml"
+  yq -i ".global.cockpit.auth.idpHost = \"$1\"" "$PATH_TO_VALUES"
+  yq -i ".global.cockpit.auth.clientID = \"$2\"" "$PATH_TO_VALUES"
+}
+
+if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
+  echo "OIDC host and clien-id were not provided. Exiting..."
+  exit 1
+else
+  set_oidc_config "$OIDC_HOST" "$OIDC_CLIENT_ID"
+  # Not passing arguments to the function invocation will result in resetting the values to empty strings
+  trap "set_oidc_config" EXIT TERM INT
+fi
 
 if [[ ${DUMP_DB} ]]; then
     trap revert_migrator_file EXIT

@@ -39,6 +39,10 @@ spec:
             mountPath: /var/public/config
           - name: config
             mountPath: /var/public-luigi/config
+          - name: oidc
+            mountPath: /var/public/oidc
+          - name: oidc
+            mountPath: /var/public-luigi/oidc
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}  
       volumes:
@@ -48,3 +52,9 @@ spec:
             items:
             - key: config.js
               path: config.js
+        - name: oidc
+          secret:
+            secretName: {{ .Values.global.cockpit.auth.secretName }}
+            items:
+              - key: secret.js
+                path: secret.js
