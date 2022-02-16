@@ -130,6 +130,8 @@ spec:
                     key: {{ $config.secret.clientKeyKey }}
               - name: APP_OAUTH_AUTH_MODE
                 value: {{ $config.secret.oauthMode }}
+              - name: APP_OAUTH_SKIP_SSL_VALIDATION
+                value: "{{ $config.secret.skipSSLValidation }}"
               - name: APP_OAUTH_TOKEN_ENDPOINT
                 valueFrom:
                   secretKeyRef:
