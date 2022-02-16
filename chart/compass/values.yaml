@@ -447,6 +447,7 @@ global:
         csrEndpointKey: csr-endpoint
         clientCert: client-cert
         clientKey: client-key
+        skipSSLValidation: "-k"
       externalClientCertSecret:
         name: "external-client-certificate"
         namespace: compass-system

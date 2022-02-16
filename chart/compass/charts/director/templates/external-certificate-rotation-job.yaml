@@ -23,7 +23,7 @@ spec:
           hostAliases:
             - ip: {{ .Values.global.minikubeIP }}
               hostnames:
-                - "{{ .Values.global.externalServicesMock.host }}.{{ .Values.global.ingress.domainName }}"
+                - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
           {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
           restartPolicy: Never
@@ -106,7 +106,7 @@ spec:
                   echo $CERT_SVC_OAUTH_CLIENT_KEY | openssl enc -base64 -d -A -out /tmp/client-key.pem
 
                   TOKEN=$(curl \
-                    -s \
+                    -s $SKIP_SSL_VALIDATION \
                     -m 30 \
                     -X POST \
                     --cert /tmp/client-cert.pem \
@@ -180,6 +180,8 @@ spec:
                     secretKeyRef:
                       name: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
                       key: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.clientKey }}
+                - name: SKIP_SSL_VALIDATION
+                  value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.skipSSLValidation }}
 
 ---
 apiVersion: v1
