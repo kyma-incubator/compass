@@ -516,8 +516,7 @@ func TestNewClient(t *testing.T) {
 
 		expectedTransport := &http.Transport{
 			TLSClientConfig: &tls.Config{
-				Certificates:       []tls.Certificate{*tlsCert},
-				InsecureSkipVerify: true,
+				Certificates: []tls.Certificate{*tlsCert},
 			},
 		}
 		require.Equal(t, tr.Base, expectedTransport)
