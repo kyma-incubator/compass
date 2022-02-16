@@ -91,7 +91,7 @@ function mount_k3d_ca_to_oathkeeper() {
   docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt > k3d-ca.crt
   trap "rm -f k3d-ca.crt" RETURN EXIT INT TERM
 
-  kubectl create configmap -n kyma-system k3d-ca --from-file k3d-ca.crt --dry-run -o yaml | kubectl apply -f -
+  kubectl create configmap -n kyma-system k3d-ca --from-file k3d-ca.crt --dry-run=client -o yaml | kubectl apply -f -
 
   OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n kyma-system | grep oathkeeper | awk '{print $1}')
   OATHKEEPER_CONTAINER_NAME=$(kubectl get deployment -n kyma-system "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
@@ -182,9 +182,20 @@ mount_k3d_ca_to_oathkeeper
 
 #prometheusMTLSPatch
 
+# Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
+# with the needed keys, by first getting them using kubectl
+function patchJWKS() {
+  JWKS="'$(kubectl get --raw '/openid/v1/jwks')'"
+  until [[ $(kubectl get requestauthentication kyma-internal-authn -n kyma-system) ]]; do
+    echo "Waiting for requestauthentication kyma-internal-authn to be created"
+    sleep 3
+  done
+  kubectl get requestauthentication kyma-internal-authn -n kyma-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
+}
+patchJWKS&
+
 echo 'Installing Compass'
 bash "${ROOT_PATH}"/installation/scripts/install-compass.sh
-sleep 5
 STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
 echo "Compass installation status ${STATUS}"
 
