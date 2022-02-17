@@ -640,6 +640,7 @@ global:
       externalClientCertTestSecretNamespace: "compass-system"
       certSvcInstanceTestSecretName: "cert-svc-secret"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      region: "eu-1"
       subscriptionOauthSecret:
         name: compass-external-services-mock-oauth-credentials
         clientIdKey: client-id

@@ -105,6 +105,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: SUBSCRIPTION_PROVIDER_ID
               value: "{{ .Values.global.tests.subscriptionProviderIdValue }}"
+            - name: REGION
+              value: {{ .Values.global.tests.ordService.region }}
             - name: TENANT_CONFIG_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: TENANT_CONFIG_SUBACCOUNT_TENANT_ID_PROPERTY

@@ -77,6 +77,7 @@ type config struct {
 	SubscriptionClientSecret              string
 	SubscriptionProviderLabelKey          string
 	SubscriptionProviderID                string
+	Region                                string
 	SelfRegisterLabelKey                  string
 	SelfRegisterLabelValuePrefix          string
 	SkipSSLValidation                     bool
