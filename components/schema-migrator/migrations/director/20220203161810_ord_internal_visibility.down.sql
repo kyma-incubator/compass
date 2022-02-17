@@ -1,7 +1,10 @@
 BEGIN;
 
-ALTER TABLE bundle_references
-DROP COLUMN visibility;
+ALTER TABLE api_definitions
+ALTER COLUMN visibility DROP NOT NULL;
+
+ALTER TABLE event_api_definitions
+ALTER COLUMN visibility DROP NOT NULL;
 
 DROP VIEW IF EXISTS tenants_specifications; -- drop tenant_specifications because tenant_apis and tenant_events depends on it. There is no specific changes on this view.
 DROP VIEW IF EXISTS tenants_apis;

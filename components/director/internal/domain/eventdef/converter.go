@@ -3,6 +3,8 @@ package eventdef
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -171,6 +173,11 @@ func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 
 // ToEntity converts the provided service-layer representation of an EventDefinition to the repository-layer one.
 func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
+	visibility := eventModel.Visibility
+	if visibility == nil {
+		visibility = str.Ptr("public")
+	}
+
 	return &Entity{
 		ApplicationID:       eventModel.ApplicationID,
 		PackageID:           repo.NewNullableString(eventModel.PackageID),
@@ -188,7 +195,7 @@ func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 		Successors:          repo.NewNullableStringFromJSONRawMessage(eventModel.Successors),
 		ChangeLogEntries:    repo.NewNullableStringFromJSONRawMessage(eventModel.ChangeLogEntries),
 		Labels:              repo.NewNullableStringFromJSONRawMessage(eventModel.Labels),
-		Visibility:          repo.NewNullableString(eventModel.Visibility),
+		Visibility:          repo.NewNullableString(visibility),
 		Disabled:            repo.NewNullableBool(eventModel.Disabled),
 		PartOfProducts:      repo.NewNullableStringFromJSONRawMessage(eventModel.PartOfProducts),
 		LineOfBusiness:      repo.NewNullableStringFromJSONRawMessage(eventModel.LineOfBusiness),

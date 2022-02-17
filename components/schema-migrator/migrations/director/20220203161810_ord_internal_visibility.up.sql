@@ -1,24 +1,18 @@
 BEGIN;
 
-ALTER TABLE bundle_references
-ADD COLUMN visibility varchar;
-
-UPDATE bundle_references br
-SET visibility = (SELECT visibility FROM api_definitions WHERE api_def_id = api_definitions.id)
-WHERE br.api_def_id IS NOT NULL;
-
-UPDATE bundle_references br
-SET visibility = (SELECT visibility FROM event_api_definitions WHERE event_def_id = event_api_definitions.id)
-WHERE br.event_def_id IS NOT NULL;
-
--- all null records from APIs/Events mean that those APIs/Events have come from graphql flow - meaning that they are public, because the concept of private visibility is only ORD scoped
-UPDATE bundle_references
+UPDATE api_definitions
 SET visibility = 'public'
 WHERE visibility IS NULL;
 
-ALTER TABLE bundle_references
+ALTER TABLE api_definitions
 ALTER COLUMN visibility SET NOT NULL;
 
+UPDATE event_api_definitions
+SET visibility = 'public'
+WHERE visibility IS NULL;
+
+ALTER TABLE event_api_definitions
+ALTER COLUMN visibility SET NOT NULL;
 
 --- changes to tenants_apis and tenants_events ORD views
 
@@ -65,12 +59,7 @@ SELECT DISTINCT t_apps.tenant_id,
                 apis.changelog_entries,
                 apis.labels,
                 apis.package_id,
-                CASE
-                    WHEN apis.visibility = 'public' THEN 'public'::text
-                    WHEN apis.visibility = 'internal' THEN 'internal'::text
-                    WHEN apis.visibility = 'private' THEN 'private'::text
-                    WHEN apis.visibility is null THEN 'public'::text
-                    END AS visibility,
+                apis.visibility::text as visibility,
                 apis.disabled,
                 apis.part_of_products,
                 apis.line_of_business,
@@ -142,12 +131,7 @@ SELECT DISTINCT t_apps.tenant_id,
                 events.sunset_date,
                 events.labels,
                 events.package_id,
-                CASE
-                    WHEN events.visibility = 'public' THEN 'public'::text
-                    WHEN events.visibility = 'internal' THEN 'internal'::text
-                    WHEN events.visibility = 'private' THEN 'private'::text
-                    WHEN events.visibility is null THEN 'public'::text
-                    END AS visibility,
+                events.visibility::text as visibility,
                 events.disabled,
                 events.part_of_products,
                 events.line_of_business,

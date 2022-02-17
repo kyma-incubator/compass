@@ -159,14 +159,12 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 
 	// if bundleIDs == nil we are in the graphQL flow
 	if bundleIDs == nil {
-		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{Visibility: eventAPI.Visibility}, model.BundleEventReference, &eventAPI.ID, bundleID); err != nil {
+		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, model.BundleReferenceInput{}, model.BundleEventReference, &eventAPI.ID, bundleID); err != nil {
 			return "", err
 		}
 	} else {
 		for _, bndlID := range bundleIDs {
-			bundleRefInput := &model.BundleReferenceInput{
-				Visibility: eventAPI.Visibility,
-			}
+			bundleRefInput := &model.BundleReferenceInput{}
 			if defaultBundleID != "" && bndlID == defaultBundleID {
 				isDefaultBundle := true
 				bundleRefInput = &model.BundleReferenceInput{
@@ -206,9 +204,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 	}
 
 	for _, bundleID := range bundleIDsForCreation {
-		createBundleRefInput := &model.BundleReferenceInput{
-			Visibility: event.Visibility,
-		}
+		createBundleRefInput := &model.BundleReferenceInput{}
 		if defaultBundleID != "" && bundleID == defaultBundleID {
 			isDefaultBundle := true
 			createBundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: &isDefaultBundle}
@@ -225,9 +221,7 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.E
 	}
 
 	for _, bundleID := range bundleIDsFromBundleReference {
-		bundleRefInput := &model.BundleReferenceInput{
-			Visibility: event.Visibility,
-		}
+		bundleRefInput := &model.BundleReferenceInput{}
 		if defaultBundleID != "" && bundleID == defaultBundleID {
 			isDefaultBundle := true
 			bundleRefInput = &model.BundleReferenceInput{IsDefaultBundle: &isDefaultBundle}

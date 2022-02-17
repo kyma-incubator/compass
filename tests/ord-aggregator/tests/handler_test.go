@@ -34,6 +34,8 @@ const (
 	shortDescriptionField = "shortDescription"
 	apisField             = "apis"
 	eventsField           = "events"
+	publicAPIsField       = "publicAPIs"
+	publicEventsField     = "publicEvents"
 
 	expectedSpecType                        = "openapi-v3"
 	expectedSpecFormat                      = "application/json"
@@ -183,6 +185,12 @@ func TestORDAggregator(t *testing.T) {
 
 		eventsDefaultBundleMap := make(map[string]string)
 		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdIDRegex
+
+		apisAndEventsNumber := make(map[string]int)
+		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
+		apisAndEventsNumber[publicAPIsField] = expectedNumberOfPublicAPIsInFirstBundle + expectedNumberOfPublicAPIsInSecondBundle
+		apisAndEventsNumber[eventsField] = expectedNumberOfEventsInFirstBundle + expectedNumberOfEventsInSecondBundle
+		apisAndEventsNumber[publicEventsField] = expectedNumberOfPublicEventsInFirstBundle + expectedNumberOfPublicEventsInSecondBundle
 
 		bundlesMap := make(map[string]string)
 		bundlesMap[expectedBundleTitle] = expectedBundleDescription
@@ -394,9 +402,6 @@ func TestORDAggregator(t *testing.T) {
 			// verify public apis via ORD Service
 			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, expectedNumberOfPublicAPIs)
 
-			// verify apis visibility via Director's graphql
-			verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, apisMap, publicApisMap, expectedNumberOfAPIsInFirstBundle+expectedNumberOfAPIsInSecondBundle, expectedNumberOfPublicAPIsInFirstBundle+expectedNumberOfPublicAPIsInSecondBundle, app.ID, true)
-
 			// Verify events
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
@@ -415,8 +420,8 @@ func TestORDAggregator(t *testing.T) {
 			// verify public events via ORD Service
 			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicEventsMap, eventsField, expectedNumberOfPublicEvents)
 
-			// verify events visibility via Director's graphql
-			verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, eventsMap, publicEventsMap, expectedNumberOfEventsInFirstBundle+expectedNumberOfEventsInSecondBundle, expectedNumberOfPublicEventsInFirstBundle+expectedNumberOfPublicEventsInSecondBundle, app.ID, false)
+			// verify apis and events visibility via Director's graphql
+			verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, mergeMaps(apisMap, eventsMap), mergeMaps(publicApisMap, publicEventsMap), apisAndEventsNumber, app.ID)
 
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
@@ -489,7 +494,7 @@ func verifyEntitiesWithPublicVisibilityInORD(t *testing.T, httpClient *http.Clie
 	t.Logf("Successfully verified public %s", entity)
 }
 
-func verifyEntitiesVisibilityViaGraphql(t *testing.T, clientWithInternalScope, clientWithoutInternalScope *gcli.Client, entitiesMap, publicEntitiesMap map[string]string, expectedNumberOfEntities, expectedNumberOfPublicEntities int, appID string, isAPIDef bool) {
+func verifyEntitiesVisibilityViaGraphql(t *testing.T, clientWithInternalScope, clientWithoutInternalScope *gcli.Client, entitiesMap, publicEntitiesMap map[string]string, expectedNumberOfEntities map[string]int, appID string) {
 	appWithAllEntities := fixtures.GetApplication(t, context.Background(), clientWithInternalScope, testConfig.DefaultTestTenant, appID)
 	appWithPublicEntities := fixtures.GetApplication(t, context.Background(), clientWithoutInternalScope, testConfig.DefaultTestTenant, appID)
 
@@ -509,35 +514,34 @@ func verifyEntitiesVisibilityViaGraphql(t *testing.T, clientWithInternalScope, c
 		publicEvents = append(publicEvents, bndl.EventDefinitions.Data...)
 	}
 
-	if isAPIDef {
-		t.Log("Start verifying all APIs via Director graphql api")
-		for _, api := range allAPIs {
-			require.Equal(t, entitiesMap[api.Name], *api.Description)
-		}
-		require.Equal(t, len(allAPIs), expectedNumberOfEntities)
-		t.Log("Successfully verified all APIs via Director graphql api")
-
-		t.Log("Start verifying public APIs via Director graphql api")
-		for _, api := range publicAPIs {
-			require.Equal(t, publicEntitiesMap[api.Name], *api.Description)
-		}
-		require.Equal(t, len(publicAPIs), expectedNumberOfPublicEntities)
-		t.Log("Successfully verified public APIs via Director graphql api")
-	} else {
-		t.Log("Start verifying all Events via Director graphql api")
-		for _, event := range allEvents {
-			require.Equal(t, entitiesMap[event.Name], *event.Description)
-		}
-		require.Equal(t, len(allEvents), expectedNumberOfEntities)
-		t.Log("Successfully verified all Events via Director graphql api")
-
-		t.Log("Start verifying public Events via Director graphql api")
-		for _, event := range publicEvents {
-			require.Equal(t, publicEntitiesMap[event.Name], *event.Description)
-		}
-		require.Equal(t, len(publicEvents), expectedNumberOfPublicEntities)
-		t.Log("Successfully verified public Events via Director graphql api")
+	t.Log("Start verifying all APIs via Director graphql api")
+	for _, api := range allAPIs {
+		require.Equal(t, entitiesMap[api.Name], *api.Description)
 	}
+	require.Equal(t, len(allAPIs), expectedNumberOfEntities[apisField])
+	t.Log("Successfully verified all APIs via Director graphql api")
+
+	t.Log("Start verifying public APIs via Director graphql api")
+	for _, api := range publicAPIs {
+		require.Equal(t, publicEntitiesMap[api.Name], *api.Description)
+	}
+	require.Equal(t, len(publicAPIs), expectedNumberOfEntities[publicAPIsField])
+	t.Log("Successfully verified public APIs via Director graphql api")
+
+	t.Log("Start verifying all Events via Director graphql api")
+	for _, event := range allEvents {
+		require.Equal(t, entitiesMap[event.Name], *event.Description)
+	}
+	require.Equal(t, len(allEvents), expectedNumberOfEntities[eventsField])
+	t.Log("Successfully verified all Events via Director graphql api")
+
+	t.Log("Start verifying public Events via Director graphql api")
+	for _, event := range publicEvents {
+		require.Equal(t, publicEntitiesMap[event.Name], *event.Description)
+	}
+	require.Equal(t, len(publicEvents), expectedNumberOfEntities[publicEventsField])
+	t.Log("Successfully verified public Events via Director graphql api")
+
 }
 
 func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *http.Client) (int, int) {
@@ -553,4 +557,11 @@ func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *htt
 		t.Fail()
 	}
 	return products, vendors
+}
+
+func mergeMaps(first, second map[string]string) map[string]string {
+	for k, v := range second {
+		first[k] = v
+	}
+	return first
 }

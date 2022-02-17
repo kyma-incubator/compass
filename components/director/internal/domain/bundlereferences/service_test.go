@@ -26,7 +26,6 @@ func TestService_GetForBundle(t *testing.T) {
 		ObjectType:          model.BundleAPIReference,
 		ObjectID:            &objectID,
 		APIDefaultTargetURL: &targetURL,
-		Visibility:          visibility,
 	}
 
 	ctx := context.TODO()
@@ -156,7 +155,6 @@ func TestService_CreateByReferenceObjectID(t *testing.T) {
 		ObjectType:          model.BundleAPIReference,
 		ObjectID:            &objectID,
 		APIDefaultTargetURL: &targetURL,
-		Visibility:          visibility,
 	}
 
 	testCases := []struct {
@@ -237,7 +235,6 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 		ObjectType:          model.BundleAPIReference,
 		ObjectID:            &objectID,
 		APIDefaultTargetURL: &targetURL,
-		Visibility:          visibility,
 	}
 
 	bundleReferenceModelAfter := &model.BundleReference{
@@ -245,7 +242,6 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 		ObjectType:          model.BundleAPIReference,
 		ObjectID:            &objectID,
 		APIDefaultTargetURL: &updatedTargetURL,
-		Visibility:          visibility,
 	}
 
 	testCases := []struct {

@@ -9,7 +9,6 @@ type BundleReference struct {
 	ObjectType          BundleReferenceObjectType
 	ObjectID            *string
 	APIDefaultTargetURL *string
-	Visibility          string
 	IsDefaultBundle     *bool
 }
 
@@ -21,14 +20,11 @@ const (
 	BundleAPIReference BundleReferenceObjectType = "API"
 	// BundleEventReference missing godoc
 	BundleEventReference BundleReferenceObjectType = "Event"
-
-	publicVisibility string = "public"
 )
 
 // BundleReferenceInput missing godoc
 type BundleReferenceInput struct {
 	APIDefaultTargetURL *string
-	Visibility          *string
 	IsDefaultBundle     *bool
 }
 
@@ -42,13 +38,6 @@ func (b *BundleReferenceInput) ToBundleReference(id string, objectType BundleRef
 		return nil, errors.New("default targetURL for API cannot be empty")
 	}
 
-	var visibility string
-	if b.Visibility == nil {
-		visibility = publicVisibility
-	} else {
-		visibility = *b.Visibility
-	}
-
 	return &BundleReference{
 		ID:                  id,
 		BundleID:            bundleID,
@@ -56,6 +45,5 @@ func (b *BundleReferenceInput) ToBundleReference(id string, objectType BundleRef
 		ObjectID:            objectID,
 		APIDefaultTargetURL: b.APIDefaultTargetURL,
 		IsDefaultBundle:     b.IsDefaultBundle,
-		Visibility:          visibility,
 	}, nil
 }
