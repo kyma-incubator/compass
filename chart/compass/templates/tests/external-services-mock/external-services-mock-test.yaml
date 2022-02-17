@@ -116,12 +116,14 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.externalServicesMock.auditlog.secret.name }}
-                  key: {{ .Values.global.externalServicesMock.auditlog.secret.clientKey }}
+                  key: {{ .Values.global.externalServicesMock.auditlog.secret.clientKeyKey }}
             - name: AUDITLOG_X509_CERT
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.externalServicesMock.auditlog.secret.name }}
-                  key: {{ .Values.global.externalServicesMock.auditlog.secret.clientCert }}
+                  key: {{ .Values.global.externalServicesMock.auditlog.secret.clientCertKey }}
+            - name: AUDITLOG_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.auditlog.skipSSLValidation }}"
       restartPolicy: Never
       serviceAccountName: {{ .Chart.Name }}-operations-tests-service-account
 ---

@@ -7,4 +7,5 @@ type AuditlogConfig struct {
 	X509Key           string `envconfig:"AUDITLOG_X509_KEY"`
 	ManagementURL     string `envconfig:"AUDITLOG_MANAGEMENT_URL"`
 	ManagementAPIPath string `envconfig:"AUDITLOG_MANAGEMENT_API_PATH"`
+	SkipSSLValidation bool   `envconfig:"AUDITLOG_SKIP_SSL_VALIDATION,default=false"`
 }

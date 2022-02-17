@@ -42,13 +42,14 @@ type OAuthConfig struct {
 }
 
 type OAuthMtlsConfig struct {
-	ClientID  string `envconfig:"APP_AUDITLOG_CLIENT_ID"`
-	OAuthURL  string `envconfig:"APP_AUDITLOG_OAUTH_URL"`
-	User      string `envconfig:"APP_AUDITLOG_OAUTH_USER,default=$USER"`
-	Tenant    string `envconfig:"APP_AUDITLOG_OAUTH_TENANT,default=$PROVIDER"`
-	TokenPath string `envconfig:"APP_AUDITLOG_TOKEN_PATH"`
-	X509Cert  string `envconfig:"APP_AUDITLOG_X509_CERT"`
-	X509Key   string `envconfig:"APP_AUDITLOG_X509_KEY"`
+	ClientID          string `envconfig:"APP_AUDITLOG_CLIENT_ID"`
+	OAuthURL          string `envconfig:"APP_AUDITLOG_OAUTH_URL"`
+	User              string `envconfig:"APP_AUDITLOG_OAUTH_USER,default=$USER"`
+	Tenant            string `envconfig:"APP_AUDITLOG_OAUTH_TENANT,default=$PROVIDER"`
+	TokenPath         string `envconfig:"APP_AUDITLOG_TOKEN_PATH"`
+	SkipSSLValidation bool   `envconfig:"APP_AUDITLOG_SKIP_SSL_VALIDATION,default=false"`
+	X509Cert          string `envconfig:"APP_AUDITLOG_X509_CERT"`
+	X509Key           string `envconfig:"APP_AUDITLOG_X509_KEY"`
 }
 
 func (c *OAuthMtlsConfig) ParseCertificate() (*tls.Certificate, error) {

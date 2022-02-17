@@ -233,8 +233,7 @@ func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (p
 	case auditlog.OAuthMtls:
 		{
 			var mtlsConfig auditlog.OAuthMtlsConfig
-			err := envconfig.InitWithPrefix(&mtlsConfig, "APP")
-			if err != nil {
+			if err = envconfig.InitWithPrefix(&mtlsConfig, "APP"); err != nil {
 				return nil, nil, errors.Wrap(err, "while loading auditlog oauth-mTLS configuration")
 			}
 
@@ -245,16 +244,17 @@ func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (p
 
 			transport := httputil.NewCorrelationIDTransport(&http.Transport{
 				TLSClientConfig: &tls.Config{
-					Certificates: []tls.Certificate{*cert},
+					Certificates:       []tls.Certificate{*cert},
+					InsecureSkipVerify: mtlsConfig.SkipSSLValidation,
 				},
 			})
 
-			mtlClient := &http.Client{
+			mtlsClient := &http.Client{
 				Transport: transport,
 				Timeout:   cfg.ClientTimeout,
 			}
 
-			ctx := context.WithValue(context.Background(), oauth2.HTTPClient, mtlClient)
+			ctx := context.WithValue(context.Background(), oauth2.HTTPClient, mtlsClient)
 			ccCfg := fillOAuthMtlsCredentials(mtlsConfig)
 			client := ccCfg.Client(ctx)
 			collector.InstrumentAuditlogHTTPClient(client)

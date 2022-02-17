@@ -22,6 +22,13 @@ spec:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
+      {{ if $.Values.global.isLocalEnv }}
+      # HostAliases are used by Pod to resolve kyma.local domain
+      hostAliases:
+        - ip: {{ $.Values.global.minikubeIP }}
+          hostnames:
+            - "{{ $.Values.global.externalServicesMock.certSecuredHost }}.{{ $.Values.global.ingress.domainName }}"
+      {{ end }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
@@ -109,16 +116,18 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.auditlog.secret.name }}
                   key: {{ .Values.global.auditlog.secret.clientIdKey }}
+            - name: APP_AUDITLOG_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.auditlog.skipSSLValidation }}"
             - name: APP_AUDITLOG_X509_CERT
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.auditlog.secret.name }}
-                  key: {{ .Values.global.auditlog.secret.clientCert }}
+                  key: {{ .Values.global.auditlog.secret.clientCertKey }}
             - name: APP_AUDITLOG_X509_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.auditlog.secret.name }}
-                  key: {{ .Values.global.auditlog.secret.clientKey }}
+                  key: {{ .Values.global.auditlog.secret.clientKeyKey }}
             - name: APP_AUDITLOG_OAUTH_URL
               valueFrom:
                 secretKeyRef:

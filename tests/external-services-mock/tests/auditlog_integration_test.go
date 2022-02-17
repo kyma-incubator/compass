@@ -36,7 +36,8 @@ func TestAuditlogIntegration(t *testing.T) {
 	httpClient := http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				Certificates: []tls.Certificate{*crt},
+				Certificates:       []tls.Certificate{*crt},
+				InsecureSkipVerify: testConfig.Auditlog.SkipSSLValidation,
 			},
 		},
 	}
