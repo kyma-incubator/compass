@@ -132,12 +132,12 @@ function set_oidc_config() {
 }
 
 if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
-  echo "OIDC host and clien-id were not provided. Exiting..."
+  echo "OIDC host and client-id were not provided. Exiting..."
   exit 1
 else
   set_oidc_config "$OIDC_HOST" "$OIDC_CLIENT_ID"
   # Not passing arguments to the function invocation will result in resetting the values to empty strings
-  trap "set_oidc_config" EXIT TERM INT
+  trap "set_oidc_config" RETURN EXIT TERM INT
 fi
 
 if [[ ${DUMP_DB} ]]; then
