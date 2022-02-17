@@ -38,6 +38,7 @@ spec:
         - "{{ .Values.global.gateway.mtls.external.host }}.{{.Values.global.ingress.domainName}}"
         {{- if eq .Values.global.externalServicesMock.enabled true }}
         - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}"
+        - "{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{.Values.global.ingress.domainName}}"
         {{- end }}
 ---
 {{- if .Values.gateway.enabled }}
