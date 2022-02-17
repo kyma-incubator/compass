@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -388,7 +389,7 @@ func TestNewChanges(t *testing.T) {
 	}()
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
-	require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, body))
+	require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
 
 	defer buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
@@ -478,7 +479,14 @@ func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt,
 	require.NoError(t, err)
 	unsubscribeBody, err := ioutil.ReadAll(unsubscribeResp.Body)
 	require.NoError(t, err)
-	require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", unsubscribeResp.StatusCode, http.StatusAccepted, unsubscribeBody))
+	body := string(unsubscribeBody)
+
+	if strings.Contains(body, "does not exist") { // Check in the body if subscription is already removed if yes, do not perform unsubscription again because it will fail
+		t.Logf("Subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q, and subaccount id: %q is alredy removed", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
+		return
+	}
+
+	require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", unsubscribeResp.StatusCode, http.StatusAccepted, body))
 	unsubJobStatusPath := unsubscribeResp.Header.Get(locationHeader)
 	require.NotEmpty(t, unsubJobStatusPath)
 	unsubJobStatusURL := testConfig.SubscriptionURL + unsubJobStatusPath
