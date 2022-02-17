@@ -226,7 +226,7 @@ func fixEntityAPIDefinition(id string, name, targetURL string) *api.Entity {
 		Name:       name,
 		TargetURLs: repo.NewValidNullableString(`["` + targetURL + `"]`),
 		BaseEntity: &repo.BaseEntity{ID: id},
-		Visibility: repo.NewValidNullableString(publicVisibility),
+		Visibility: publicVisibility,
 	}
 }
 
@@ -251,7 +251,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		Successors:                              repo.NewValidNullableString(successors),
 		ChangeLogEntries:                        repo.NewValidNullableString("[]"),
 		Labels:                                  repo.NewValidNullableString("[]"),
-		Visibility:                              repo.NewValidNullableString(publicVisibility),
+		Visibility:                              publicVisibility,
 		Disabled:                                repo.NewValidNullableBool(false),
 		PartOfProducts:                          repo.NewValidNullableString("[]"),
 		LineOfBusiness:                          repo.NewValidNullableString("[]"),

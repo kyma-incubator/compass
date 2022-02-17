@@ -212,7 +212,7 @@ func fixEntityEventDefinition(id string, name string) *event.Entity {
 	return &event.Entity{
 		Name:       name,
 		BaseEntity: &repo.BaseEntity{ID: id},
-		Visibility: repo.NewValidNullableString(publicVisibility),
+		Visibility: publicVisibility,
 	}
 }
 
@@ -234,7 +234,7 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 		SunsetDate:          repo.NewValidNullableString("sunsetDate"),
 		Successors:          repo.NewValidNullableString(successors),
 		Labels:              repo.NewValidNullableString("[]"),
-		Visibility:          repo.NewValidNullableString(publicVisibility),
+		Visibility:          publicVisibility,
 		Disabled:            repo.NewValidNullableBool(false),
 		PartOfProducts:      repo.NewValidNullableString("[]"),
 		LineOfBusiness:      repo.NewValidNullableString("[]"),

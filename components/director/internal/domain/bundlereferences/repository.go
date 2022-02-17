@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -203,15 +205,18 @@ func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.Bundl
 
 	isInternalVisibilityScopePresent, err := scope.Contains(ctx, internalVisibilityScope)
 	if err != nil {
+		log.C(ctx).Infof("No scopes are present in the context meaning the flow is not user-initiated. Processing %ss without visibility check...", objectType)
 		isInternalVisibilityScopePresent = true
 	}
 
 	visibilityFilteringSubquery := fmt.Sprintf("(SELECT %s FROM %s WHERE %s.id = %s.%s)", visibilityColumn, objectTable, objectTable, BundleReferenceTable, objectIDCol)
 	var conditions repo.Conditions
 	if !isInternalVisibilityScopePresent {
+		log.C(ctx).Infof("No internal visibility scope is present in the context. Processing only public %ss...", objectType)
 		conditions = append(conditions, repo.NewEqualCondition(visibilityFilteringSubquery, publicVisibilityValue))
 	}
 
+	log.C(ctx).Infof("Internal visibility scope is present in the context. Processing %ss without visibility check...", objectType)
 	conditions = append(conditions, repo.NewNotNullCondition(objectFieldName))
 
 	orderByColumns, err := getOrderByColumnsByObjectType(objectType)
