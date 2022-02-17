@@ -1,4 +1,13 @@
 cluster-essentials:
+  pod-preset:
+    webhook:
+      resources:
+        requests:
+          cpu: 5m
+          memory: 36Mi
+        limits:
+          cpu: 30m
+          memory: 108Mi
   limitRange:
     default:
       memory: 256Mi
@@ -29,11 +38,11 @@ istio-configuration:
         holdApplicationUntilProxyStarts: true
         resources:
           requests:
-            cpu: 30m
-            memory: 64Mi
+            cpu: 45m
+            memory: 160Mi
           limits:
-            cpu: 150m
-            memory: 256Mi
+            cpu: 250m
+            memory: 384Mi
   components:
     ingressGateways:
       config:
@@ -88,7 +97,7 @@ ory:
     deployment:
       resources:
         limits:
-          cpu: 500m
+          cpu: 1000m
           memory: 400Mi
         requests:
           cpu: 100m
@@ -97,10 +106,10 @@ ory:
     deployment:
       resources:
         limits:
-          cpu: 250m
+          cpu: 100m
           memory: 512Mi
         requests:
-          cpu: 50m
+          cpu: 20m
           memory: 128Mi
     oathkeeper-maester:
       deployment:
