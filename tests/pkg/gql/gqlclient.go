@@ -76,6 +76,7 @@ func NewCertAuthorizedHTTPClient(key *rsa.PrivateKey, rawCertChain [][]byte, ski
 		Transport: &http.Transport{
 			TLSClientConfig: tlsConfig,
 		},
+		Timeout: time.Second * 30,
 	}
 
 	return httpClient
