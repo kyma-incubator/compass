@@ -296,8 +296,6 @@ func TestNewChanges(t *testing.T) {
 	providerClientKey, providerRawCertChain := certs.ClientCertPair(t, providerCertChainBytes, providerKeyBytes)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
-	fmt.Printf("\nregion test --> %s <--\n", testConfig.Region)
-
 	runtimeInput := graphql.RuntimeInput{
 		Name:        "providerRuntime",
 		Description: ptr.String("providerRuntime-description"),
