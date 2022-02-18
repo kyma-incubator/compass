@@ -105,16 +105,6 @@ spec:
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: SUBSCRIPTION_PROVIDER_ID
               value: "{{ .Values.global.tests.subscriptionProviderIdValue }}"
-            - name: TENANT_CONFIG_TENANT_ID_PROPERTY
-              value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
-            - name: TENANT_CONFIG_SUBACCOUNT_TENANT_ID_PROPERTY
-              value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
-            - name: TENANT_CONFIG_CUSTOMER_ID_PROPERTY
-              value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
-            - name: TENANT_CONFIG_SUBDOMAIN_PROPERTY
-              value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
-            - name: TENANT_CONFIG_SUBSCRIPTION_PROVIDER_ID_PROPERTY
-              value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
             - name: TENANT_CONFIG_TENANT_FETCHER_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: TENANT_CONFIG_ROOT_API
@@ -125,6 +115,8 @@ spec:
               value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
             - name: TENANT_CONFIG_REGION_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
+            - name: TENANT_CONFIG_REGION
+              value: {{ .Values.global.tests.ordService.region }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -173,8 +165,6 @@ spec:
               value: "{{.Values.global.tests.token.server.enabled}}"
             - name: APP_ADDRESS
               value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
-            - name: SKIP_TESTS_REGEX
-              value: {{ .Values.global.tests.ordService.skipPattern }}
             - name: SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
             - name: SELF_REGISTER_LABEL_VALUE_PREFIX

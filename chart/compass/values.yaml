@@ -628,7 +628,6 @@ global:
           ordService: false
           connectivityAdapter: true
     ordService:
-      skipPattern: ""
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
       providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
@@ -638,6 +637,7 @@ global:
       externalClientCertTestSecretNamespace: "compass-system"
       certSvcInstanceTestSecretName: "cert-svc-secret"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      region: "eu-1"
       subscriptionOauthSecret:
         name: compass-external-services-mock-oauth-credentials
         clientIdKey: client-id

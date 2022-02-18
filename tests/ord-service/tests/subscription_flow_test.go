@@ -23,11 +23,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -61,213 +60,76 @@ const (
 	contentTypeApplicationJson = "application/json"
 )
 
-// TODO:: Consider unskipping this test
-func TestSelfRegisterFlow(stdT *testing.T) {
-	t := testingx.NewT(stdT)
-	t.Run("TestSelfRegisterFlow flow: label definitions of the parent tenant are not overwritten", func(t *testing.T) {
-		ctx := context.Background()
-		// defaultTenantId is the parent of the subaccountID
-		defaultTenantId := tenant.TestTenants.GetDefaultTenantID() // TODO:: Change to our GA on real env
+func TestSelfRegisterFlow(t *testing.T) {
+	ctx := context.Background()
+	accountTenantID := testConfig.AccountTenantID // accountTenantID is parent of the tenant/subaccountID of the configured certificate client's tenant below
 
-		// Build graphql director client configured with certificate
-		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
+	// Build graphql director client configured with certificate
+	clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
+	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
 
-		// Register application
-		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", defaultTenantId)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTenantId, &app)
-		require.NoError(t, err)
-		require.NotEmpty(t, app.ID)
+	// Register application
+	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", accountTenantID)
+	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, accountTenantID, &app)
+	require.NoError(t, err)
+	require.NotEmpty(t, app.ID)
 
-		formationName := "sr-test-scenario"
-		t.Logf("Creating formation with name %s...", formationName)
-		createFormationReq := fixtures.FixCreateFormationRequest(formationName)
-		executeGQLRequest(t, ctx, createFormationReq, formationName, defaultTenantId)
-		t.Logf("Successfully created formation: %s", formationName)
+	formationName := "sr-test-scenario"
+	t.Logf("Creating formation with name %s...", formationName)
+	createFormationReq := fixtures.FixCreateFormationRequest(formationName)
+	executeGQLRequest(t, ctx, createFormationReq, formationName, accountTenantID)
+	t.Logf("Successfully created formation: %s", formationName)
 
-		defer func() {
-			t.Logf("Deleting formation with name: %s...", formationName)
-			deleteRequest := fixtures.FixDeleteFormationRequest(formationName)
-			executeGQLRequest(t, ctx, deleteRequest, formationName, defaultTenantId)
-			t.Logf("Successfully deleted formation with name: %s...", formationName)
-		}()
+	defer func() {
+		t.Logf("Deleting formation with name: %s...", formationName)
+		deleteRequest := fixtures.FixDeleteFormationRequest(formationName)
+		executeGQLRequest(t, ctx, deleteRequest, formationName, accountTenantID)
+		t.Logf("Successfully deleted formation with name: %s...", formationName)
+	}()
 
-		t.Logf("Assign application to formation %s", formationName)
-		assignToFormation(t, ctx, app.ID, "APPLICATION", formationName, defaultTenantId)
-		t.Logf("Successfully assigned application to formation %s", formationName)
+	t.Logf("Assign application to formation %s", formationName)
+	assignToFormation(t, ctx, app.ID, "APPLICATION", formationName, accountTenantID)
+	t.Logf("Successfully assigned application to formation %s", formationName)
 
-		defer func() {
-			t.Logf("Unassign application from formation %s", formationName)
-			unassignFromFormation(t, ctx, app.ID, "APPLICATION", formationName, defaultTenantId)
-			t.Logf("Successfully unassigned application from formation %s", formationName)
-		}()
+	defer func() {
+		t.Logf("Unassign application from formation %s", formationName)
+		unassignFromFormation(t, ctx, app.ID, "APPLICATION", formationName, accountTenantID)
+		t.Logf("Successfully unassigned application from formation %s", formationName)
+	}()
 
-		// Self register runtime
-		runtimeInput := graphql.RuntimeInput{
-			Name:        "selfRegisterRuntime",
-			Description: ptr.String("selfRegisterRuntime-description"),
-			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID},
+	// Self register runtime
+	runtimeInput := graphql.RuntimeInput{
+		Name:        "selfRegisterRuntime",
+		Description: ptr.String("selfRegisterRuntime-description"),
+		Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID},
+	}
+	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
+	require.NotEmpty(t, runtime.ID)
+	strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
+	require.True(t, ok)
+	require.Contains(t, strLbl, runtime.ID)
+
+	// Verify that the label returned cannot be modified
+	setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
+	label := graphql.Label{}
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, setLabelRequest, &label)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
+
+	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, accountTenantID)
+	require.NoError(t, err)
+	numOfScenarioLabelDefinitions := 0
+	for _, ld := range labelDefinitions {
+		if ld.Key == scenariosLabel {
+			numOfScenarioLabelDefinitions++
 		}
-		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
-		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
-		require.NotEmpty(t, runtime.ID)
-		strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
-		require.True(t, ok)
-		require.Contains(t, strLbl, runtime.ID)
-
-		// Verify that the label returned cannot be modified
-		setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
-		label := graphql.Label{}
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, setLabelRequest, &label)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
-
-		labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId)
-		require.NoError(t, err)
-		numOfScenarioLabelDefinitions := 0
-		for _, ld := range labelDefinitions {
-			if ld.Key == scenariosLabel {
-				numOfScenarioLabelDefinitions++
-			}
-		}
-		// the parent tenant should not see child label definitions
-		require.Equal(t, 1, numOfScenarioLabelDefinitions)
-	})
+	}
+	// the parent tenant should not see child label definitions
+	require.Equal(t, 1, numOfScenarioLabelDefinitions)
 }
 
-// TODO:: Remove after successful validation on dev-val cluster
-//func TestConsumerProviderFlow(t *testing.T) {
-//	t.Run("ConsumerProvider flow: calls with provider certificate and consumer token are successful when valid subscription exists", func(t *testing.T) {
-//		ctx := context.Background()
-//		secondaryTenant := testConfig.TestConsumerAccountID
-//		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
-//		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
-//		jobName := "external-certificate-rotation-test-job"
-//
-//		// Prepare provider external client certificate and secret
-//		k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-//		require.NoError(t, err)
-//		createExtCertJob(t, ctx, k8sClient, testConfig, jobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
-//		defer func() {
-//			k8s.DeleteJob(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
-//			k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
-//		}()
-//		k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
-//
-//		providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(testConfig.ExternalClientCertTestSecretNamespace).Get(ctx, testConfig.ExternalClientCertTestSecretName, metav1.GetOptions{})
-//		require.NoError(t, err)
-//		providerKeyBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretKeyKey]
-//		providerCertChainBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
-//
-//		// Build graphql director client configured with certificate
-//		providerClientKey, providerRawCertChain := certs.ClientCertPair(t, providerCertChainBytes, providerKeyBytes)
-//		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
-//
-//		runtimeInput := graphql.RuntimeInput{
-//			Name:        "providerRuntime",
-//			Description: ptr.String("providerRuntime-description"),
-//			Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
-//		}
-//
-//		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
-//		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
-//		require.NotEmpty(t, runtime.ID)
-//
-//		// Register application
-//		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", secondaryTenant)
-//		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &app)
-//		require.NoError(t, err)
-//		require.NotEmpty(t, app.ID)
-//
-//		// Register consumer application
-//		consumerApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "consumerApp", secondaryTenant)
-//		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &consumerApp)
-//		require.NoError(t, err)
-//		require.NotEmpty(t, consumerApp.ID)
-//		require.NotEmpty(t, consumerApp.Name)
-//
-//		// Create label definition
-//		scenarios := []string{"DEFAULT", "consumer-test-scenario"}
-//		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios)
-//		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[:1])
-//
-//		// Assign consumer application to scenario
-//		appLabelRequest := fixtures.FixSetApplicationLabelRequest(consumerApp.ID, scenariosLabel, scenarios[1:])
-//		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, appLabelRequest, nil))
-//		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, secondaryTenant, consumerApp.ID, testConfig.DefaultScenarioEnabled)
-//
-//		// Create automatic scenario assigment for consumer subaccount
-//		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarios[1], selectorKey, subscriptionConsumerSubaccountID)
-//		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
-//		defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[1])
-//
-//		providedTenants := tenantfetcher.Tenant{
-//			TenantID:               secondaryTenant,
-//			SubaccountID:           subscriptionConsumerSubaccountID,
-//			Subdomain:              tenantfetcher.DefaultSubdomain,
-//			SubscriptionProviderID: testConfig.SubscriptionProviderID,
-//		}
-//
-//		tenantProperties := tenantfetcher.TenantIDProperties{
-//			TenantIDProperty:               testConfig.TenantIDProperty,
-//			SubaccountTenantIDProperty:     testConfig.SubaccountTenantIDProperty,
-//			CustomerIDProperty:             testConfig.CustomerIDProperty,
-//			SubdomainProperty:              testConfig.SubdomainProperty,
-//			SubscriptionProviderIDProperty: testConfig.SubscriptionProviderIDProperty,
-//		}
-//
-//		httpClient := &http.Client{
-//			Timeout: 10 * time.Second,
-//			Transport: &http.Transport{
-//				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-//			},
-//		}
-//
-//		// Build a request for consumer subscription
-//		subscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodPut, testConfig.TenantFetcherFullRegionalURL, testConfig.ConsumerTokenURL, testConfig.ClientID, testConfig.ClientSecret)
-//
-//		t.Log(fmt.Sprintf("Creating a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
-//		subscribeResp, err := httpClient.Do(subscribeReq)
-//		require.NoError(t, err)
-//		require.Equal(t, http.StatusOK, subscribeResp.StatusCode)
-//
-//		defer func() {
-//			unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.ConsumerTokenURL, testConfig.ClientID, testConfig.ClientSecret)
-//
-//			t.Log(fmt.Sprintf("Deleting a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
-//			unsubscribeResp, err := httpClient.Do(unsubscribeReq)
-//			require.NoError(t, err)
-//			require.Equal(t, http.StatusOK, unsubscribeResp.StatusCode)
-//		}()
-//
-//		// HTTP client configured with manually signed client certificate
-//		extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
-//
-//		// Create a token with the necessary consumer claims and add it in authorization header
-//		tkn := token.GetClientCredentialsToken(t, ctx, testConfig.ConsumerTokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "subscriptionClaims")
-//		headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", tkn)}}
-//
-//		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
-//		respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-//
-//		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
-//		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
-//
-//		// Build unsubscribe request
-//		unsubscribeReq := tenantfetcher.CreateTenantRequest(t, providedTenants, tenantProperties, http.MethodDelete, testConfig.TenantFetcherFullRegionalURL, testConfig.ConsumerTokenURL, testConfig.ClientID, testConfig.ClientSecret)
-//
-//		t.Log(fmt.Sprintf("Remove a subscription between consumer with subaccount id: %s and provider with name: %s and subaccount id: %s", tenantfetcher.ActualTenantID(providedTenants), runtime.Name, subscriptionProviderSubaccountID))
-//		unsubscribeResp, err := httpClient.Do(unsubscribeReq)
-//
-//		require.NoError(t, err)
-//		require.Equal(t, http.StatusOK, unsubscribeResp.StatusCode)
-//		respBody = makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-//
-//		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
-//	})
-//}
-
-func TestNewChanges(t *testing.T) {
+func TestConsumerProviderFlow(t *testing.T) {
 	ctx := context.Background()
 	secondaryTenant := testConfig.TestConsumerAccountID
 	subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
@@ -299,14 +161,12 @@ func TestNewChanges(t *testing.T) {
 	runtimeInput := graphql.RuntimeInput{
 		Name:        "providerRuntime",
 		Description: ptr.String("providerRuntime-description"),
-		Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
+		Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: testConfig.Region},
 	}
 
 	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
 	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 	require.NotEmpty(t, runtime.ID)
-
-	// TODO:: Consider adding defer deletion for self register cloning?
 
 	// Register application
 	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", secondaryTenant)
@@ -390,7 +250,7 @@ func TestNewChanges(t *testing.T) {
 	}()
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
-	require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, body))
+	require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
 
 	defer buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
@@ -480,7 +340,14 @@ func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt,
 	require.NoError(t, err)
 	unsubscribeBody, err := ioutil.ReadAll(unsubscribeResp.Body)
 	require.NoError(t, err)
-	require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", unsubscribeResp.StatusCode, http.StatusAccepted, unsubscribeBody))
+
+	body := string(unsubscribeBody)
+	if strings.Contains(body, "does not exist") { // Check in the body if subscription is already removed if yes, do not perform unsubscription again because it will fail
+		t.Logf("Subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q, and subaccount id: %q is alredy removed", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
+		return
+	}
+
+	require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", unsubscribeResp.StatusCode, http.StatusAccepted, body))
 	unsubJobStatusPath := unsubscribeResp.Header.Get(locationHeader)
 	require.NotEmpty(t, unsubJobStatusPath)
 	unsubJobStatusURL := testConfig.SubscriptionURL + unsubJobStatusPath

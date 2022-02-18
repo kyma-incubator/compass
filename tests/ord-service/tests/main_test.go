@@ -42,16 +42,12 @@ var (
 )
 
 type TenantConfig struct {
-	TenantIDProperty               string
-	SubaccountTenantIDProperty     string
-	CustomerIDProperty             string
-	SubdomainProperty              string
-	SubscriptionProviderIDProperty string
 	TenantFetcherURL               string
 	RootAPI                        string
 	RegionalHandlerEndpoint        string
 	TenantPathParam                string
 	RegionPathParam                string
+	Region                         string
 	TenantFetcherFullRegionalURL   string `envconfig:"-"`
 }
 
