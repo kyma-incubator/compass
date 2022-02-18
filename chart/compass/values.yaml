@@ -389,7 +389,7 @@ global:
               max_delay: 2000ms
   cockpit:
     auth:
-      allowedConnectSrc: ""
+      allowedConnectSrc: "https://*.ondemand.com"
       secretName: "cockpit-auth-secret"
       idpHost: ""
       clientID: ""
