@@ -10,7 +10,7 @@ metadata:
 data:
   global.externalServicesMock.enabled: "true"
   gateway.gateway.auditlog.enabled: "false"
-  gateway.gateway.auditlog.authMode: "oauth"
+  gateway.gateway.auditlog.authMode: "oauth-mtls"
   global.systemFetcher.enabled: "true"
   global.systemFetcher.systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
   global.systemFetcher.systemsAPIFilterCriteria: "no"
