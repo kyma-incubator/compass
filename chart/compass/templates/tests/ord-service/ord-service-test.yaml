@@ -3,7 +3,6 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-e2e-ord-service
   labels:
-    label-test: "testingWhyTDIsNotUpdated-2" # TODO:: Remove
     app: {{ .Chart.Name }}-ord-service-tests-app
     release: {{ .Release.Name }}
     app.kubernetes.io/name: {{ .Chart.Name }}-ord-service-tests

@@ -42,13 +42,13 @@ var (
 )
 
 type TenantConfig struct {
-	TenantFetcherURL               string
-	RootAPI                        string
-	RegionalHandlerEndpoint        string
-	TenantPathParam                string
-	RegionPathParam                string
-	Region                         string
-	TenantFetcherFullRegionalURL   string `envconfig:"-"`
+	TenantFetcherURL             string
+	RootAPI                      string
+	RegionalHandlerEndpoint      string
+	TenantPathParam              string
+	RegionPathParam              string
+	Region                       string
+	TenantFetcherFullRegionalURL string `envconfig:"-"`
 }
 
 type config struct {
