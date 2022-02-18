@@ -420,8 +420,7 @@ func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *htt
 
 	products, vendors, err := ordClient.GetGlobalProductsAndVendorsNumber(ctx, testConfig.GlobalRegistryURL)
 	if err != nil {
-		t.Logf("while fetching global registry resources from %s %v", testConfig.GlobalRegistryURL, err)
-		t.Fail()
+		t.Fatalf("while fetching global registry resources from %s %v", testConfig.GlobalRegistryURL, err)
 	}
 	return products, vendors
 }
