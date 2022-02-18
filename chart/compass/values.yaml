@@ -389,6 +389,7 @@ global:
               max_delay: 2000ms
   cockpit:
     auth:
+      allowedConnectSrc: ""
       secretName: "cockpit-auth-secret"
       idpHost: ""
       clientID: ""

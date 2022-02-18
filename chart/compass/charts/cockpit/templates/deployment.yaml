@@ -28,6 +28,9 @@ spec:
               path: /healthz
               port: {{ .Values.statusPort }}
             initialDelaySeconds: 10
+          env:
+            - name: ALLOWED_CONNECT_SRC
+              value: {{.Values.global.cockpit.auth.allowedConnectSrc }}
           ports:
             - containerPort: {{ .Values.statusPort }}
             - containerPort: {{ .Values.service.internalPort }}
