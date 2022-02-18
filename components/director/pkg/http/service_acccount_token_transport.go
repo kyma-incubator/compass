@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"github.com/pkg/errors"
 )
 
@@ -60,5 +62,6 @@ func (tr *serviceAccountTokenTransport) RoundTrip(r *http.Request) (*http.Respon
 	}
 	r.Header.Set(headerName, "Bearer "+string(token))
 
+	spew.Dump(r)
 	return tr.roundTripper.RoundTrip(r)
 }
