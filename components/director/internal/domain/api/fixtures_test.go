@@ -30,6 +30,7 @@ const (
 	extensible       = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
 	successors       = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2"]`
 	resourceHash     = "123456"
+	publicVisibility = "public"
 )
 
 var fixedTimestamp = time.Now()
@@ -39,6 +40,7 @@ func fixAPIDefinitionModel(id string, name, targetURL string) *model.APIDefiniti
 		Name:       name,
 		TargetURLs: api.ConvertTargetURLToJSONArray(targetURL),
 		BaseEntity: &model.BaseEntity{ID: id},
+		Visibility: str.Ptr(publicVisibility),
 	}
 }
 
@@ -95,7 +97,7 @@ func fixFullAPIDefinitionModelWithID(id string, placeholder string) (model.APIDe
 		Successors:                              json.RawMessage(successors),
 		ChangeLogEntries:                        json.RawMessage("[]"),
 		Labels:                                  json.RawMessage("[]"),
-		Visibility:                              str.Ptr("visibility"),
+		Visibility:                              str.Ptr(publicVisibility),
 		Disabled:                                &boolVar,
 		PartOfProducts:                          json.RawMessage("[]"),
 		LineOfBusiness:                          json.RawMessage("[]"),
@@ -224,6 +226,7 @@ func fixEntityAPIDefinition(id string, name, targetURL string) *api.Entity {
 		Name:       name,
 		TargetURLs: repo.NewValidNullableString(`["` + targetURL + `"]`),
 		BaseEntity: &repo.BaseEntity{ID: id},
+		Visibility: publicVisibility,
 	}
 }
 
@@ -248,7 +251,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		Successors:                              repo.NewValidNullableString(successors),
 		ChangeLogEntries:                        repo.NewValidNullableString("[]"),
 		Labels:                                  repo.NewValidNullableString("[]"),
-		Visibility:                              repo.NewValidNullableString("visibility"),
+		Visibility:                              publicVisibility,
 		Disabled:                                repo.NewValidNullableBool(false),
 		PartOfProducts:                          repo.NewValidNullableString("[]"),
 		LineOfBusiness:                          repo.NewValidNullableString("[]"),
@@ -289,7 +292,7 @@ func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
 	return []driver.Value{id, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		ordID, "shortDescription", &boolVar, "apiProtocol", repo.NewValidNullableString("[]"),
-		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "visibility", &boolVar,
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil,
 		"implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`),
 		repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
