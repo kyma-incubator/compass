@@ -58,17 +58,17 @@ spec:
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.oauthSecuredPort }}/.well-known/open-resource-discovery"
             - name: GLOBAL_REGISTRY_URL
               value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
-            - name: APP_EXTERNAL_CA_SECRET_NAME
+            - name: EXTERNAL_CA_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: APP_EXTERNAL_CA_SECRET_NAMESPACE
+            - name: EXTERNAL_CA_SECRET_NAMESPACE
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}"
-            - name: APP_CA_SECRET_CERTIFICATE_KEY
+            - name: CA_SECRET_CERTIFICATE_KEY
               value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
-            - name: APP_CA_SECRET_KEY_KEY
+            - name: CA_SECRET_KEY_KEY
               value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
-            - name: APP_EXTERNAL_CA_SECRET_CERTIFICATE_KEY
+            - name: EXTERNAL_CA_SECRET_CERTIFICATE_KEY
               value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey | quote }}
-            - name: APP_EXTERNAL_CA_SECRET_KEY_KEY
+            - name: EXTERNAL_CA_SECRET_KEY_KEY
               value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey | quote }}
             - name: BASIC_USERNAME
               valueFrom:
