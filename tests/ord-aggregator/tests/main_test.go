@@ -18,13 +18,12 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/machinebox/graphql"
@@ -32,6 +31,7 @@ import (
 	c "github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type config struct {
