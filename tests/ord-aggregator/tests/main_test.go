@@ -17,11 +17,14 @@
 package tests
 
 import (
+	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/machinebox/graphql"
@@ -49,9 +52,9 @@ type config struct {
 	BasicPassword                         string
 	ORDServiceDefaultResponseType         string
 	GlobalRegistryURL                     string
-	CertLoaderConfig                      certloader.Config
 	ClientTimeout                         time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation                     bool          `envconfig:"default=false"`
+	ExternalCA                            certs.CAConfig
 }
 
 var (
@@ -68,6 +71,20 @@ func TestMain(m *testing.M) {
 	dexToken := server.Token()
 
 	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
+
+	ctx := context.Background()
+	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
+	}
+
+	extCrtSecret, err := k8sClientSet.CoreV1().Secrets(testConfig.ExternalCA.SecretNamespace).Get(ctx, testConfig.ExternalCA.SecretName, metav1.GetOptions{})
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
+	}
+
+	testConfig.ExternalCA.Key = extCrtSecret.Data[testConfig.ExternalCA.SecretKeyKey]
+	testConfig.ExternalCA.Certificate = extCrtSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

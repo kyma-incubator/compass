@@ -2,8 +2,12 @@ package tests
 
 import (
 	"context"
+	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"net/http"
 	"strings"
 	"testing"
@@ -14,7 +18,6 @@ import (
 	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -545,9 +548,7 @@ func verifyEntitiesVisibilityViaGraphql(t *testing.T, clientWithInternalScope, c
 }
 
 func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *http.Client) (int, int) {
-	certCache, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
-	require.NoError(t, err, "Failed to initialize certificate loader")
-
+	certCache := NewCertificateCache(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
 	ordClient := NewGlobalRegistryClient(httpClient, accessStrategyExecutorProvider)
 
@@ -564,4 +565,40 @@ func mergeMaps(first, second map[string]string) map[string]string {
 		first[k] = v
 	}
 	return first
+}
+
+type certificateCache struct {
+	tlsCert         *tls.Certificate
+	testing         *testing.T
+	certChainBytes  []byte
+	privateKeyBytes []byte
+}
+
+func NewCertificateCache(testing *testing.T, certChainBytes, privateKeyBytes []byte) *certificateCache {
+	return &certificateCache{
+		testing:         testing,
+		certChainBytes:  certChainBytes,
+		privateKeyBytes: privateKeyBytes,
+	}
+}
+
+func (cc *certificateCache) Get() *tls.Certificate {
+	certs, err := cert.DecodeCertificates(cc.certChainBytes)
+	require.NoError(cc.testing, err)
+
+	privateKeyPem, _ := pem.Decode(cc.privateKeyBytes)
+	require.NotNil(cc.testing, privateKeyPem)
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyPem.Bytes)
+	if err != nil {
+		pkcs8PrivateKey, err := x509.ParsePKCS8PrivateKey(privateKeyPem.Bytes)
+		require.NoError(cc.testing, err)
+
+		var ok bool
+		privateKey, ok = pkcs8PrivateKey.(*rsa.PrivateKey)
+		require.True(cc.testing, ok)
+	}
+
+	tlsCert := cert.NewTLSCertificate(privateKey, certs...)
+	return &tlsCert
 }
