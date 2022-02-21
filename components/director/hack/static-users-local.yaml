@@ -17,6 +17,7 @@
   - "automatic_scenario_assignment:read"
   - "automatic_scenario_assignment:write"
   - "formation:write"
+  - "internal_visibility:read"
 - username: "reader"
   tenants: 
   - "dcfc43da-9215-46ab-b377-7177b9c94a48"

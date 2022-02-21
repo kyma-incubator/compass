@@ -100,10 +100,10 @@ global:
       version: "PR-2166"
     ord_service:
       dir:
-      version: "PR-58"
+      version: "PR-59"
     schema_migrator:
       dir:
-      version: "PR-2187"
+      version: "PR-2207"
     system_broker:
       dir:
       version: "PR-2208"

@@ -25,6 +25,7 @@ spec:
               - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
               - "dex.{{ .Values.global.ingress.domainName }}"
               - "oauth2.{{ .Values.global.ingress.domainName }}"
+              - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
               - "compass-external-services-mock.compass-system.svc.cluster.local"
       {{ end }}
       serviceAccountName: {{ $.Chart.Name }}-ord-aggregator-test
@@ -41,6 +42,8 @@ spec:
               value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: DIRECTOR_GRAPHQL_OAUTH_URL
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080"
             - name: EXTERNAL_SERVICES_MOCK_UNSECURED_URL
