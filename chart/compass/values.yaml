@@ -178,7 +178,7 @@ global:
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     tokenPath: "/cert/token"
-    skipSSLValidation: true
+    skipSSLValidation: false
     secret:
       name: "compass-gateway-auditlog-secret"
       urlKey: url
