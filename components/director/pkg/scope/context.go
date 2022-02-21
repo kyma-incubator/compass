@@ -8,10 +8,10 @@ import (
 
 type key int
 
-// ScopesContextKey missing godoc
+// ScopesContextKey is the key under which the scopes are saved in a given context.Context.
 const ScopesContextKey key = iota
 
-// LoadFromContext missing godoc
+// LoadFromContext retrieves the scopes from the provided context. It returns error if they cannot be found
 func LoadFromContext(ctx context.Context) ([]string, error) {
 	value := ctx.Value(ScopesContextKey)
 	scopes, ok := value.([]string)
@@ -21,7 +21,23 @@ func LoadFromContext(ctx context.Context) ([]string, error) {
 	return scopes, nil
 }
 
-// SaveToContext missing godoc
+// SaveToContext returns a child context of the provided context, including the provided scopes information
 func SaveToContext(ctx context.Context, scopes []string) context.Context {
 	return context.WithValue(ctx, ScopesContextKey, scopes)
+}
+
+// Contains returns whether an input scope is present in the provided scopes in the context. It returns error if scopes cannot be found
+func Contains(ctx context.Context, scope string) (bool, error) {
+	value := ctx.Value(ScopesContextKey)
+	scopes, ok := value.([]string)
+	if !ok {
+		return false, apperrors.NewNoScopesInContextError()
+	}
+
+	for _, s := range scopes {
+		if s == scope {
+			return true, nil
+		}
+	}
+	return false, nil
 }
