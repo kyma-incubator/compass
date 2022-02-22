@@ -20,8 +20,6 @@ import (
 	"context"
 	"crypto/tls"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
@@ -132,7 +130,6 @@ func (oc *OAuthMtlsCredentials) Type() CredentialType {
 // LoadFromContext retrieves the credentials from the provided context
 func LoadFromContext(ctx context.Context) (Credentials, error) {
 	credentials, ok := ctx.Value(CredentialsCtxKey).(Credentials)
-	log.C(ctx).Infof("Context value: %+v ......", credentials)
 
 	if !ok {
 		return nil, apperrors.NewNotFoundErrorWithType("credentials")
