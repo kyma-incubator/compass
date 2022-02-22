@@ -165,21 +165,6 @@ func (h *handler) Dependencies(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log.C(ctx).Info("Handling dependency request...")
 
-	authorization := r.Header.Get("Authorization")
-	if len(authorization) == 0 {
-		log.C(ctx).Error("authorization header is required")
-		httphelpers.WriteError(writer, errors.New("authorization header is required"), http.StatusUnauthorized)
-		return
-	}
-
-	token := strings.TrimPrefix(authorization, "Bearer ")
-
-	if !strings.HasPrefix(authorization, "Bearer ") || len(token) == 0 {
-		log.C(ctx).Error("token value is required")
-		httphelpers.WriteError(writer, errors.New("token value is required"), http.StatusUnauthorized)
-		return
-	}
-
 	deps := []*Dependency{{Xsappname: h.xsappnameClone}}
 	depsMarshalled, err := json.Marshal(deps)
 	if err != nil {
