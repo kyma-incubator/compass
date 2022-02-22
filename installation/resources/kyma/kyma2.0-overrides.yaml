@@ -3,11 +3,11 @@ cluster-essentials:
     webhook:
       resources:
         requests:
-          cpu: 5m
+          cpu: 25m
           memory: 36Mi
         limits:
-          cpu: 30m
-          memory: 108Mi
+          cpu: 100m
+          memory: 128Mi
   limitRange:
     default:
       memory: 256Mi
