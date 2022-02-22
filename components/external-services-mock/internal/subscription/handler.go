@@ -26,6 +26,7 @@ type JobStatus struct {
 	State string `json:"state"`
 }
 
+// NewHandler returns new subscription handler responsible to subscribe and unsubscribe tenants
 func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig ProviderConfig, jobID string) *handler {
 	return &handler{
 		httpClient:     httpClient,
@@ -35,6 +36,8 @@ func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig Pro
 	}
 }
 
+// Subscribe build and execute subscribe request to tenant fetcher. This method is invoked on local setup,
+// on real environment an external service with the same path but different host is called and then the request is propagated to tenant fetcher component as callbacks
 func (h *handler) Subscribe(writer http.ResponseWriter, r *http.Request) {
 	if statusCode, err := h.executeSubscriptionRequest(r, http.MethodPut); err != nil {
 		log.C(r.Context()).Errorf("while executing subscribe request: %v", err)
@@ -45,6 +48,8 @@ func (h *handler) Subscribe(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusAccepted)
 }
 
+// Unsubscribe build and execute unsubscribe request to tenant fetcher. This method is invoked on local setup,
+// on real environment an external service with the same path but different host is called and then the request is propagated to tenant fetcher component as callbacks
 func (h *handler) Unsubscribe(writer http.ResponseWriter, r *http.Request) {
 	if statusCode, err := h.executeSubscriptionRequest(r, http.MethodDelete); err != nil {
 		log.C(r.Context()).Errorf("while executing unsubscribe request: %v", err)
@@ -55,6 +60,7 @@ func (h *handler) Unsubscribe(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusAccepted)
 }
 
+// JobStatus returns mock status of the asynchronous subscription job for testing purposes
 func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log.C(ctx).Info("Handling subscription job status request...")

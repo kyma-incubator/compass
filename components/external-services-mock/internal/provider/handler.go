@@ -24,6 +24,7 @@ func NewHandler() *handler {
 	return &handler{}
 }
 
+// OnSubscription handles subscription callback request on real environment. When someone is subscribed to the provider tenant this method will be executed
 func (h *handler) OnSubscription(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log.C(ctx).Info("Handling on subscription request...")
@@ -44,6 +45,7 @@ func (h *handler) OnSubscription(writer http.ResponseWriter, r *http.Request) {
 	log.C(ctx).Info("Successfully handled on subscription request")
 }
 
+// DependenciesConfigure configures a provider dependency that will be used later in subscription request callback
 func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log.C(ctx).Info("Configuring subscription dependency...")
@@ -77,6 +79,7 @@ func (h *handler) DependenciesConfigure(writer http.ResponseWriter, r *http.Requ
 	log.C(ctx).Infof("Successfully configured subscription dependency: %s", h.xsappnameClone)
 }
 
+// Dependencies is invoked on real environment as part of the subscription request and returns provider's dependencies in the expected format
 func (h *handler) Dependencies(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log.C(ctx).Info("Handling dependency request...")
