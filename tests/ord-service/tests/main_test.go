@@ -68,7 +68,6 @@ type config struct {
 	ProviderClientID                      string
 	ProviderClientSecret                  string
 	SubscriptionURL                       string
-	SubscriptionPath                       string
 	SubscriptionTokenURL                  string
 	SubscriptionClientID                  string
 	SubscriptionClientSecret              string
