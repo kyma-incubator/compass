@@ -132,9 +132,9 @@ func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func
 	}
 
 	// TODO: Refactor query builder
-	var stmtWithPagination = ""
+	var stmtWithPagination string
 	if isLockClauseProvided(lockClause) {
-		stmtWithPagination = strings.Replace(query, lockClause, paginationSQL+" "+lockClause, -1)
+		stmtWithPagination = strings.ReplaceAll(query, lockClause, paginationSQL+" "+lockClause)
 	} else {
 		stmtWithPagination = fmt.Sprintf("%s %s", query, paginationSQL)
 	}
@@ -146,7 +146,7 @@ func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func
 
 	var countQuery = query
 	if isLockClauseProvided(lockClause) {
-		countQuery = strings.Replace(query, " "+lockClause, "", -1)
+		countQuery = strings.ReplaceAll(query, " "+lockClause, "")
 	}
 	totalCount, err := g.getTotalCount(ctx, resourceType, persist, countQuery, args)
 	if err != nil {

@@ -144,13 +144,13 @@ func TestPgRepository_Exists(t *testing.T) {
 }
 
 func TestPgRepository_GetByID(t *testing.T) {
-	testGetById(t, "GetByID", repo.NoLock)
+	testGetByID(t, "GetByID", repo.NoLock)
 }
 func TestPgRepository_GetByIDWithSelectForUpdate(t *testing.T) {
-	testGetById(t, "GetByIDWithSelectForUpdate", " "+repo.ForUpdateLock)
+	testGetByID(t, "GetByIDWithSelectForUpdate", " "+repo.ForUpdateLock)
 }
 
-func testGetById(t *testing.T, methodName string, lockClause string) {
+func testGetByID(t *testing.T, methodName string, lockClause string) {
 	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
 
 	suite := testdb.RepoGetTestSuite{

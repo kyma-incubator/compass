@@ -375,6 +375,7 @@ func NewTenantIsolationConditionForNamedArgs(resourceType resource.Type, tenant 
 	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, false, NoLock)
 }
 
+// NewTenantIsolationConditionWithSelectForUpdate is the same as NewTenantIsolationCondition, but includes "FOR UPDATE" lock for select queries.
 func NewTenantIsolationConditionWithSelectForUpdate(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
 	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, true, " "+ForUpdateLock)
 }
