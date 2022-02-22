@@ -102,7 +102,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	runtimeInput := graphql.RuntimeInput{
 		Name:        "selfRegisterRuntime",
 		Description: ptr.String("selfRegisterRuntime-description"),
-		Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID},
+		Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID},
 	}
 	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
 	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
@@ -131,6 +131,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 }
 
 func TestConsumerProviderFlow(t *testing.T) {
+
 	ctx := context.Background()
 	secondaryTenant := testConfig.TestConsumerAccountID
 	subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
@@ -162,7 +163,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 	runtimeInput := graphql.RuntimeInput{
 		Name:        "providerRuntime",
 		Description: ptr.String("providerRuntime-description"),
-		Labels:      graphql.Labels{testConfig.SubscriptionProviderLabelKey: testConfig.SubscriptionProviderID, tenantfetcher.RegionKey: testConfig.Region},
+		Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID, tenantfetcher.RegionKey: testConfig.Region},
 	}
 
 	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
@@ -238,11 +239,15 @@ func TestConsumerProviderFlow(t *testing.T) {
 	require.Equal(t, http.StatusOK, response.StatusCode)
 
 	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
-	subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
+	subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 	require.NoError(t, err)
-	subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionTokenURL+testConfig.TokenPath, testConfig.SubscriptionClientID, testConfig.SubscriptionClientSecret, "tenantFetcherClaims")
+	subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "tenantFetcherClaims")
 	subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 	subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
+
+	// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
+	// In case there isn't subscription it will fail-safe without error
+	buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 	t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 	resp, err := httpClient.Do(subscribeReq)
@@ -260,7 +265,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 
 	subJobStatusPath := resp.Header.Get(locationHeader)
 	require.NotEmpty(t, subJobStatusPath)
-	subJobStatusURL := testConfig.SubscriptionURL + subJobStatusPath
+	subJobStatusURL := testConfig.SubscriptionConfig.URL + subJobStatusPath
 	require.Eventually(t, func() bool {
 		return getSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == jobSucceededStatus
 	}, eventuallyTimeout, eventuallyTick)
@@ -335,7 +340,7 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 }
 
 func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt, httpClient *http.Client, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID string) {
-	unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
+	unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
 	unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 
@@ -354,7 +359,7 @@ func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt,
 	require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", unsubscribeResp.StatusCode, http.StatusAccepted, body))
 	unsubJobStatusPath := unsubscribeResp.Header.Get(locationHeader)
 	require.NotEmpty(t, unsubJobStatusPath)
-	unsubJobStatusURL := testConfig.SubscriptionURL + unsubJobStatusPath
+	unsubJobStatusURL := testConfig.SubscriptionConfig.URL + unsubJobStatusPath
 	require.Eventually(t, func() bool {
 		return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, subscriptionToken) == jobSucceededStatus
 	}, eventuallyTimeout, eventuallyTick)
