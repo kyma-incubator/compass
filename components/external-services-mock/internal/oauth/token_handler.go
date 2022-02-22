@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -82,24 +81,23 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.FormValue(GrantTypeFieldName) != CredentialsGrantType && r.FormValue(GrantTypeFieldName) != PasswordGrantType {
+	switch r.FormValue(GrantTypeFieldName) {
+	case CredentialsGrantType:
+		if err := h.authenticateClientCredentialsRequest(r); err != nil {
+			log.C(ctx).Error(err)
+			httphelpers.WriteError(writer, err, http.StatusBadRequest)
+			return
+		}
+	case PasswordGrantType:
+		if err := h.authenticatePasswordCredentialsRequest(r); err != nil {
+			log.C(ctx).Error(err)
+			httphelpers.WriteError(writer, err, http.StatusBadRequest)
+			return
+		}
+	default:
 		log.C(ctx).Errorf("The grant_type should be %s or %s but we got: %s", CredentialsGrantType, PasswordGrantType, r.FormValue(GrantTypeFieldName))
 		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusBadRequest)
 		return
-	}
-
-	if r.FormValue(GrantTypeFieldName) == CredentialsGrantType {
-		if err := h.handleClientCredentialsRequest(r); err != nil {
-			log.C(ctx).Error(err)
-			httphelpers.WriteError(writer, err, http.StatusBadRequest)
-			return
-		}
-	} else { // Assume it's a password flow because currently we support only client_credentials and password
-		if err := h.handlePasswordCredentialsRequest(r); err != nil {
-			log.C(ctx).Error(err)
-			httphelpers.WriteError(writer, err, http.StatusBadRequest)
-			return
-		}
 	}
 
 	claims := make(map[string]interface{})
@@ -111,30 +109,6 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	claims[ZidKey] = r.Header.Get(h.tenantHeaderName)
-	respond(writer, r, claims, h.signingKey)
-}
-
-func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	claims := map[string]interface{}{}
-
-	tenant := r.Header.Get(h.tenantHeaderName)
-	claims[ZidKey] = tenant
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.C(ctx).Errorf("while reading request body: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
-		return
-	}
-
-	if len(body) > 0 {
-		err = json.Unmarshal(body, &claims)
-		if err != nil {
-			log.C(ctx).WithError(err).Infof("Cannot json unmarshal the request body. Error: %s. Proceeding with empty claims", err)
-		}
-	}
-
 	respond(writer, r, claims, h.signingKey)
 }
 
@@ -163,7 +137,7 @@ func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter,
 	respond(writer, r, claims, h.signingKey)
 }
 
-func (h *handler) handleClientCredentialsRequest(r *http.Request) error {
+func (h *handler) authenticateClientCredentialsRequest(r *http.Request) error {
 	ctx := r.Context()
 	log.C(ctx).Info("Validating client credentials token request...")
 	authorization := r.Header.Get("authorization")
@@ -172,10 +146,10 @@ func (h *handler) handleClientCredentialsRequest(r *http.Request) error {
 		id = r.FormValue(ClientIDKey)
 		secret = r.FormValue(ClientSecretKey)
 		if id != h.expectedID || secret != h.expectedSecret {
-			return errors.New(fmt.Sprintf("client_id or client_secret from request body doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedID, h.expectedSecret, id, secret))
+			return errors.New("client_id or client_secret from request body doesn't match the expected one")
 		}
 	} else if id != h.expectedID || secret != h.expectedSecret {
-		return errors.New(fmt.Sprintf("client_id or client_secret from authorization header doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedID, h.expectedSecret, id, secret))
+		return errors.New("client_id or client_secret from authorization header doesn't match the expected one")
 	}
 
 	log.C(ctx).Info("Successfully validated client credentials token request")
@@ -183,23 +157,23 @@ func (h *handler) handleClientCredentialsRequest(r *http.Request) error {
 	return nil
 }
 
-func (h *handler) handlePasswordCredentialsRequest(r *http.Request) error {
+func (h *handler) authenticatePasswordCredentialsRequest(r *http.Request) error {
 	ctx := r.Context()
 	log.C(ctx).Info("Validating password grant type token request...")
 	authorization := r.Header.Get("authorization")
 	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("client_id or client_secret doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedID, h.expectedSecret, id, secret))
+		return errors.Wrap(err, "client_id or client_secret doesn't match the expected one")
 	}
 
 	if id != h.expectedID || secret != h.expectedSecret {
-		return errors.New(fmt.Sprintf("client_id or client_secret doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedID, h.expectedSecret, id, secret))
+		return errors.New("client_id or client_secret doesn't match the expected one")
 	}
 
 	username := r.FormValue(UserNameKey)
 	password := r.FormValue(PasswordKey)
 	if username != h.expectedUsername || password != h.expectedPassword {
-		return errors.New(fmt.Sprintf("username or password doesn't match the expected one. Expected: %s and %s but we got: %s and %s", h.expectedUsername, h.expectedPassword, username, password))
+		return errors.New("username or password doesn't match the expected one")
 	}
 
 	log.C(ctx).Info("Successfully validated password grant type token request")

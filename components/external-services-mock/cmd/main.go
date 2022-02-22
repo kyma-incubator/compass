@@ -75,8 +75,6 @@ type ORDServers struct {
 type OAuthConfig struct {
 	ClientID     string `envconfig:"APP_CLIENT_ID"`
 	ClientSecret string `envconfig:"APP_CLIENT_SECRET"`
-	TokenPath    string `envconfig:"APP_TOKEN_PATH"`
-
 	Scopes       string `envconfig:"APP_OAUTH_SCOPES"`
 	TenantHeader string `envconfig:"APP_OAUTH_TENANT_HEADER"`
 }
@@ -159,17 +157,18 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
 	router.HandleFunc(cfg.JWKSPath, jwksHanlder.Handle)
 
-	// Subscription handlers
+	// Subscription handlers that mock subscription manager API's. On real environment we use the same path but with different(real) host
 	jobID := "818cbe72-8dea-4e01-850d-bc1b54b00e78" // randomly chosen UUID
 	subHandler := subscription.NewHandler(httpClient, cfg.TenantConfig, cfg.TenantProviderConfig, jobID)
-	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Subscription).Methods(http.MethodPost)
-	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Deprovisioning).Methods(http.MethodDelete)
+	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Subscribe).Methods(http.MethodPost)
+	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Unsubscribe).Methods(http.MethodDelete)
 	router.HandleFunc(fmt.Sprintf("/api/v1/jobs/%s", jobID), subHandler.JobStatus).Methods(http.MethodGet)
 
-	// OnSubscription callback handler
+	// Both handlers below are used only in local setup to mock OnSubscription and GetDependencies callback requests which on real environment will be already implemented by our component
+	// OnSubscription callback handler. It handles callback request from the above subscription manager API when someone is subscribed to a given tenant
 	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", subHandler.OnSubscription).Methods(http.MethodPut, http.MethodDelete)
 
-	// Get dependencies handler
+	// Get dependencies handler. It handles callback request from the above subscription manager API when someone is subscribed to a given tenant
 	router.HandleFunc("/v1/dependencies/configure", subHandler.DependenciesConfigure).Methods(http.MethodPost)
 	router.HandleFunc("/v1/dependencies", subHandler.Dependencies).Methods(http.MethodGet)
 

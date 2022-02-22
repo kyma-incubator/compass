@@ -37,7 +37,7 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 	}
 }
 
-func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
+func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 	// GIVEN
 	consumerTenantID := "94764028-8cf8-11ec-9ffc-acde48001122"
 	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", consumerTenantID)
@@ -80,15 +80,15 @@ func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
 		r := httptest.NewRecorder()
 
 		//WHEN
-		h.Subscription(r, subscribeReq)
+		h.Subscribe(r, subscribeReq)
 		resp := r.Result()
 
 		//THEN
-		expectedBody := "{\"error\":\"while executing subscription request: authorization header is required\"}\n"
+		expectedBody := "{\"error\":\"while executing subscribe request: authorization header is required\"}\n"
 		assertExpectedResponse(t, resp, expectedBody, http.StatusUnauthorized)
 	})
 
-	t.Run("Error when missing token", func(t *testing.T) {
+	t.Run("Error when missing Bearer token", func(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
@@ -97,11 +97,11 @@ func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
 		r := httptest.NewRecorder()
 
 		//WHEN
-		h.Subscription(r, subscribeReq)
+		h.Subscribe(r, subscribeReq)
 		resp := r.Result()
 
 		//THEN
-		expectedBody := "{\"error\":\"while executing subscription request: token value is required\"}\n"
+		expectedBody := "{\"error\":\"while executing subscribe request: token value is required\"}\n"
 		assertExpectedResponse(t, resp, expectedBody, http.StatusUnauthorized)
 	})
 
@@ -114,22 +114,22 @@ func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
 		r := httptest.NewRecorder()
 
 		//WHEN
-		h.Subscription(r, subReq)
+		h.Subscribe(r, subReq)
 		resp := r.Result()
 
 		//THEN
-		expectedBody := "{\"error\":\"while executing subscription request: parameter [tenant_id] not provided\"}\n"
+		expectedBody := "{\"error\":\"while executing subscribe request: parameter [tenant_id] not provided\"}\n"
 		assertExpectedResponse(t, resp, expectedBody, http.StatusBadRequest)
 	})
 
-	t.Run("Error when executing subscription request", func(t *testing.T) {
+	t.Run("Error when subscription request to tenant fetcher fails", func(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"tenant_id": consumerTenantID})
 
-		testErr = errors.New("while executing subscription request to tenant fetcher")
+		testErr = errors.New("while executing subscribe request to tenant fetcher")
 		testClient := NewTestClient(func(req *http.Request) *http.Response {
 			return nil
 		})
@@ -138,7 +138,7 @@ func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
 		r := httptest.NewRecorder()
 
 		//WHEN
-		h.Subscription(r, subscribeReq)
+		h.Subscribe(r, subscribeReq)
 		resp := r.Result()
 
 		//THEN
@@ -146,10 +146,10 @@ func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.NotEmpty(t, body)
-		require.Contains(t, string(body), "while executing subscription request")
+		require.Contains(t, string(body), "while executing subscribe request")
 	})
 
-	t.Run("Error when response code from subscription request is not the expected one", func(t *testing.T) {
+	t.Run("Error when tenant fetcher returns unexpected status code on subscribe request", func(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
@@ -166,7 +166,7 @@ func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
 		r := httptest.NewRecorder()
 
 		//WHEN
-		h.Subscription(r, subscribeReq)
+		h.Subscribe(r, subscribeReq)
 		resp := r.Result()
 
 		//THEN
@@ -174,10 +174,10 @@ func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.NotEmpty(t, body)
-		require.Contains(t, string(body), "while executing subscription request: wrong status code while executing subscription request")
+		require.Contains(t, string(body), "while executing subscribe request: wrong status code while executing subscription request")
 	})
 
-	t.Run("Successfully executed subscription and unsubscription requests", func(t *testing.T) {
+	t.Run("Successful API calls to tenant fetcher", func(t *testing.T) {
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 
@@ -190,12 +190,12 @@ func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
 			IsSubscription bool
 		}{
 			{
-				Name:           "Successfully executed subscription request",
+				Name:           "Successfully executed subscribe request",
 				Request:        subscribeReq,
 				IsSubscription: true,
 			},
 			{
-				Name:           "Successfully executed unsubscription request",
+				Name:           "Successfully executed unsubscribe request",
 				Request:        unsubscribeReq,
 				IsSubscription: false,
 			},
@@ -219,9 +219,9 @@ func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
 
 				//WHEN
 				if testCase.IsSubscription {
-					h.Subscription(r, req)
+					h.Subscribe(r, req)
 				} else {
-					h.Deprovisioning(r, req)
+					h.Unsubscribe(r, req)
 				}
 				resp := r.Result()
 
@@ -235,7 +235,7 @@ func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
 		}
 	})
 
-	t.Run("Error when executing unsubscription request", func(t *testing.T) {
+	t.Run("Error when executing unsubscribe request", func(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
@@ -243,11 +243,11 @@ func TestHandler_SubscriptionAndDeprovisioning(t *testing.T) {
 		r := httptest.NewRecorder()
 
 		//WHEN
-		h.Deprovisioning(r, subscribeReq)
+		h.Unsubscribe(r, subscribeReq)
 		resp := r.Result()
 
 		//THEN
-		expectedBody := "{\"error\":\"while executing unsubscription request: authorization header is required\"}\n"
+		expectedBody := "{\"error\":\"while executing unsubscribe request: authorization header is required\"}\n"
 		assertExpectedResponse(t, resp, expectedBody, http.StatusUnauthorized)
 	})
 }
@@ -256,41 +256,36 @@ func TestHandler_JobStatus(t *testing.T) {
 	jobID := "d1a21d4a-be03-4da5-a0ce-a006fbc851a6"
 	apiPath := fmt.Sprintf("/api/v1/jobs/%s", jobID)
 
-	t.Run("Error when missing authorization header", func(t *testing.T) {
-		//GIVEN
-		getJobReq, err := http.NewRequest(http.MethodGet, url+apiPath, bytes.NewBuffer([]byte{}))
-		require.NoError(t, err)
-		h := NewHandler(nil, Config{}, ProviderConfig{}, jobID)
-		r := httptest.NewRecorder()
-
-		//WHEN
-		h.JobStatus(r, getJobReq)
-		resp := r.Result()
-
-		//THEN
-		expectedBody := "{\"error\":\"authorization header is required\"}\n"
-		assertExpectedResponse(t, resp, expectedBody, http.StatusUnauthorized)
-	})
-
 	testCases := []struct {
 		Name                 string
 		RequestMethod        string
 		RequestBody          string
 		ExpectedResponseCode int
 		ExpectedBody         string
+		AuthHeader           string
 		Token                string
 	}{
+		{
+			Name:                 "Error when missing authorization header",
+			RequestMethod:        http.MethodGet,
+			ExpectedBody:         "{\"error\":\"authorization header is required\"}\n",
+			ExpectedResponseCode: http.StatusUnauthorized,
+			AuthHeader:           "",
+			Token:                "",
+		},
 		{
 			Name:                 "Error when missing token",
 			RequestMethod:        http.MethodGet,
 			ExpectedBody:         "{\"error\":\"token value is required\"}\n",
 			ExpectedResponseCode: http.StatusUnauthorized,
+			AuthHeader:           oauth2.AuthorizationHeader,
 			Token:                "",
 		},
 		{
 			Name:                 "Error when request method is not the expected one",
 			RequestMethod:        http.MethodPost,
 			ExpectedResponseCode: http.StatusMethodNotAllowed,
+			AuthHeader:           oauth2.AuthorizationHeader,
 			Token:                token,
 		},
 		{
@@ -298,6 +293,7 @@ func TestHandler_JobStatus(t *testing.T) {
 			RequestMethod:        http.MethodGet,
 			ExpectedResponseCode: http.StatusOK,
 			ExpectedBody:         fmt.Sprintf("{\"id\":\"%s\",\"state\":\"SUCCEEDED\"}", jobID),
+			AuthHeader:           oauth2.AuthorizationHeader,
 			Token:                token,
 		},
 	}
@@ -307,7 +303,10 @@ func TestHandler_JobStatus(t *testing.T) {
 			//GIVEN
 			getJobReq, err := http.NewRequest(testCase.RequestMethod, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
-			getJobReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", testCase.Token))
+			getJobReq.Header.Add(testCase.AuthHeader, fmt.Sprintf("Bearer %s", testCase.Token))
+			if testCase.AuthHeader == "" {
+				getJobReq.Header.Del(oauth2.AuthorizationHeader)
+			}
 			h := NewHandler(nil, Config{}, ProviderConfig{}, jobID)
 			r := httptest.NewRecorder()
 

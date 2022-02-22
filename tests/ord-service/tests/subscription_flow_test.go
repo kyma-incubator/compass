@@ -55,7 +55,7 @@ const (
 	contentTypeHeader   = "Content-Type"
 	locationHeader      = "Location"
 	jobSucceededStatus  = "SUCCEEDED"
-	eventuallyTimeout   = 10 * time.Second
+	eventuallyTimeout   = 15 * time.Second
 	eventuallyTick      = 2 * time.Second
 
 	contentTypeApplicationJson = "application/json"
@@ -215,10 +215,20 @@ func TestConsumerProviderFlow(t *testing.T) {
 		t.Logf("Successfully unassigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
 	}()
 
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: testConfig.SkipSSLValidation},
+		},
+	}
+
 	selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 	require.True(t, ok)
 	require.Contains(t, selfRegLabelValue, testConfig.SelfRegisterLabelValuePrefix+runtime.ID)
-	response, err := http.DefaultClient.Post(testConfig.ExternalServicesMockBaseURL+"/v1/dependencies/configure", contentTypeApplicationJson, bytes.NewBuffer([]byte(selfRegLabelValue)))
+
+	depConfigureReq, err := http.NewRequest(http.MethodPost, testConfig.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+	require.NoError(t, err)
+	response, err := httpClient.Do(depConfigureReq)
 	require.NoError(t, err)
 	defer func() {
 		if err := response.Body.Close(); err != nil {
@@ -226,13 +236,6 @@ func TestConsumerProviderFlow(t *testing.T) {
 		}
 	}()
 	require.Equal(t, http.StatusOK, response.StatusCode)
-
-	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: testConfig.SkipSSLValidation},
-		},
-	}
 
 	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
 	subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionURL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
@@ -264,14 +267,14 @@ func TestConsumerProviderFlow(t *testing.T) {
 	t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 
 	// HTTP client configured with certificate with patched subject, issued from cert-rotation job
-	extIssuerCertHttpClient := extIssuerCertClient(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
+	certHttpClient := createHttpClientWithCert(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
-	consumerToken := token.GetUserToken(t, ctx, testConfig.ConsumerTokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, testConfig.BasicUsername, testConfig.BasicPassword, "subscriptionClaims")
+	consumerToken := token.GetUserToken(t, ctx, testConfig.ConsumerTokenURL+testConfig.TokenPath, testConfig.ProviderClientID, testConfig.ProviderClientSecret, testConfig.BasicUsername, testConfig.BasicPassword, "subscriptionClaims")
 	headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
 
 	// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 	t.Log("Getting consumer application using both provider and consumer credentials...")
-	respBody := makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+	respBody := makeRequestWithHeaders(t, certHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 	require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 	require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 	t.Log("Successfully fetched consumer application using both provider and consumer credentials")
@@ -279,7 +282,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 	buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 	t.Log("Validating no application is returned after successful unsubscription request...")
-	respBody = makeRequestWithHeaders(t, extIssuerCertHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+	respBody = makeRequestWithHeaders(t, certHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 	require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 	t.Log("Successfully validated no application is returned after successful unsubscription request")
 }

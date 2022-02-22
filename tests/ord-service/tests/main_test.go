@@ -65,9 +65,10 @@ type config struct {
 	DefaultScenarioEnabled                bool `envconfig:"default=true"`
 	ConsumerTokenURL                      string
 	TokenPath                             string
-	ClientID                              string
-	ClientSecret                          string
+	ProviderClientID                      string
+	ProviderClientSecret                  string
 	SubscriptionURL                       string
+	SubscriptionPath                       string
 	SubscriptionTokenURL                  string
 	SubscriptionClientID                  string
 	SubscriptionClientSecret              string

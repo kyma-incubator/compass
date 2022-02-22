@@ -51,7 +51,7 @@ func TestHandler_Generate(t *testing.T) {
 }
 
 func TestHandler_GenerateWithSigningKey(t *testing.T) {
-	t.Run("Failed generate token if the content type is not application URL encoded", func(t *testing.T) {
+	t.Run("Failed to generate token if the content type is not application URL encoded", func(t *testing.T) {
 		// GIVEN
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte{}))
 		handler := oauth2.NewHandlerWithSigningKey("", "", "", "", "", nil, map[string]oauth2.ClaimsGetterFunc{})
@@ -65,7 +65,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		require.Equal(t, http.StatusUnsupportedMediaType, resp.StatusCode)
 	})
 
-	t.Run("Failed generate token if the grant type is not client_credentials or password", func(t *testing.T) {
+	t.Run("Failed to generate token if the grant type is not client_credentials or password", func(t *testing.T) {
 		// GIVEN
 		data := url.Values{}
 		data.Add(oauth2.GrantTypeFieldName, "invalid")
@@ -116,7 +116,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		require.NotEmpty(t, response.AccessToken)
 	})
 
-	t.Run("Failed issuing client_credentials token if the client_id or client_secret as part of authorization header does not match the expected one", func(t *testing.T) {
+	t.Run("Failed issuing client_credentials token if the client_id and client_secret as part of authorization header does not match the expected one", func(t *testing.T) {
 		//GIVEN
 		data := url.Values{}
 		data.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
@@ -148,7 +148,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		bodyErr := gjson.GetBytes(body, "error")
 		require.True(t, bodyErr.Exists())
 		require.NotEmpty(t, bodyErr)
-		require.Equal(t, bodyErr.String(), fmt.Sprintf("client_id or client_secret from authorization header doesn't match the expected one. Expected: %s and %s but we got: %s and %s", expectedID, expectedSecret, id, secret))
+		require.Contains(t, bodyErr.String(), "client_id or client_secret from authorization header doesn't match the expected one")
 	})
 
 	t.Run("Successfully issue client_credentials token with client_id and client_secret as part of the request body", func(t *testing.T) {
@@ -216,7 +216,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		bodyErr := gjson.GetBytes(body, "error")
 		require.True(t, bodyErr.Exists())
 		require.NotEmpty(t, bodyErr)
-		require.Equal(t, bodyErr.String(), fmt.Sprintf("client_id or client_secret from request body doesn't match the expected one. Expected: %s and %s but we got: %s and %s", expectedID, expectedSecret, id, secret))
+		require.Contains(t, bodyErr.String(), "client_id or client_secret from request body doesn't match the expected one")
 	})
 
 	t.Run("Successfully issue user token", func(t *testing.T) {
@@ -324,7 +324,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		bodyErr := gjson.GetBytes(body, "error")
 		require.True(t, bodyErr.Exists())
 		require.NotEmpty(t, bodyErr)
-		require.Equal(t, bodyErr.String(), fmt.Sprintf("client_id or client_secret doesn't match the expected one. Expected: %s and %s but we got: %s and %s", expectedID, expectedSecret, id, secret))
+		require.Contains(t, bodyErr.String(), "client_id or client_secret doesn't match the expected one")
 	})
 
 	t.Run("Failed issuing user token if username or password does not match the expected one", func(t *testing.T) {
@@ -362,7 +362,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		bodyErr := gjson.GetBytes(body, "error")
 		require.True(t, bodyErr.Exists())
 		require.NotEmpty(t, bodyErr)
-		require.Equal(t, bodyErr.String(), fmt.Sprintf("username or password doesn't match the expected one. Expected: %s and %s but we got: %s and %s", expectedUsername, expectedPassword, username, password))
+		require.Contains(t, bodyErr.String(), "username or password doesn't match the expected one")
 	})
 
 	t.Run("Successfully generate client_credentials token with provided claims_key", func(t *testing.T) {
@@ -417,51 +417,4 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expectedClaims, claims)
 	})
-}
-
-func TestHandler_GenerateWithoutCredentialsWithSigningKeyForm(t *testing.T) {
-	//GIVEN
-	scopes, id, tenantHeader := "scopes", "id", "x-zid"
-
-	form := url.Values{}
-	form.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
-	form.Add(oauth2.ClientIDKey, id)
-	form.Add(oauth2.ScopesFieldName, scopes)
-
-	body := strings.NewReader(form.Encode())
-	req, err := http.NewRequest(http.MethodPost, "http://target.com/oauth/token", body)
-	require.NoError(t, err)
-	req.Header.Set(tenantHeader, "tenant1")
-	req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	require.NoError(t, err)
-
-	h := oauth2.NewHandlerWithSigningKey("", id, tenantHeader, "", "", key, map[string]oauth2.ClaimsGetterFunc{})
-	r := httptest.NewRecorder()
-
-	//WHEN
-	h.GenerateWithCredentialsFromReqBody(r, req)
-	resp := r.Result()
-
-	//THEN
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-	respBody, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-
-	var response oauth2.TokenResponse
-	err = json.Unmarshal(respBody, &response)
-
-	require.NoError(t, err)
-	require.NotEmpty(t, response.AccessToken)
-
-	claims := &oauth2.Claims{}
-
-	_, err = jwt.ParseWithClaims(response.AccessToken, claims, func(token *jwt.Token) (interface{}, error) {
-		return key.Public(), nil
-	})
-
-	require.NoError(t, err)
-	require.Equal(t, "tenant1", claims.Tenant)
-	require.Equal(t, id, claims.ClientId)
-	require.Equal(t, scopes, claims.Scopes)
 }
