@@ -18,14 +18,6 @@ spec:
       labels:
         app: {{ .Chart.Name }}-system-broker-tests-app
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "dex.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       containers:
         - name: system-broker-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir}}compass-tests:{{ .Values.global.images.e2e_tests.version }}

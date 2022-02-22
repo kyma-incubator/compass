@@ -63,11 +63,3 @@ spec:
           - name: APP_ADDRESS
             value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
       restartPolicy: Never
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "dex.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
