@@ -6,7 +6,6 @@ function prometheusMTLSPatch() {
   patchKymaServiceMonitorsForMTLS
   removeKymaPeerAuthsForPrometheus
   patchDexPeerAuthForPrometheus
-  patchMonitoringTests
 }
 
 function patchPrometheusForMTLS() {
@@ -79,7 +78,6 @@ function patchDeploymentsToInjectSidecar() {
     kiali-server
     monitoring-kube-state-metrics
     monitoring-operator
-    api-gateway
   )
 
   resource="deployment"
@@ -307,20 +305,24 @@ EOF
 
 function patchKymaServiceMonitorsForMTLS() {
   kymaSvcMonitors=(
+    istio-component-monitor
     kiali
     logging-fluent-bit
     logging-loki
-    ory-oathkeeper-maester
-    ory-hydra-maester
-    tracing-jaeger-operator
-    tracing-jaeger
-    monitoring-grafana
     monitoring-alertmanager
-    monitoring-operator 
-    monitoring-kube-state-metrics 
-    dex
-    api-gateway
-    monitoring-prometheus-pushgateway
+    monitoring-apiserver
+    monitoring-grafana
+    monitoring-kube-state-metrics
+    monitoring-kubelet
+    monitoring-node-exporter
+    monitoring-operator
+    monitoring-prometheus
+    monitoring-prometheus-istio-server-server
+    ory-hydra-maester
+    ory-oathkeeper-maester
+    tracing-jaeger
+    tracing-jaeger-operator
+    tracing-metrics
   )
 
   crd="servicemonitors.monitoring.coreos.com"
@@ -332,7 +334,6 @@ function patchKymaServiceMonitorsForMTLS() {
       certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
       keyFile: /etc/prometheus/secrets/istio.default/key.pem
       insecureSkipVerify: true
-
 EOF
   )
 
@@ -372,7 +373,6 @@ function removeKymaPeerAuthsForPrometheus() {
     ory-hydra-maester-metrics
     tracing-jaeger-operator-metrics
     tracing-jaeger-metrics
-    monitoring-prometheus-pushgateway
   )
 
   for pa in "${allPAs[@]}"; do
@@ -407,36 +407,4 @@ EOF
     rm dex-pa.yaml
     rm patch-dex.yaml
   fi
-}
-
-function patchMonitoringTests() {
-  crd="testdefinitions"
-  namespace="kyma-system"
-  name="monitoring"
-
-  patchSidecarContainerCommand=$(cat <<"EOF"
-        - until curl -fsI http://localhost:15021/healthz/ready; do echo \"Waiting
-          for Sidecar...\"; sleep 3; done; echo \"Sidecar available. Running the command...\";
-          ./test-monitoring; x=$(echo $?); curl -fsI -X POST http://localhost:15020/quitquitquit
-          && exit $x
-EOF
-  )
-
-  echo "${patchSidecarContainerCommand}" > patchSidecarContainerCommand.yaml
-  kubectl get ${crd} -n ${namespace} ${name} -o yaml > testdef.yaml
-
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' -e 's/sidecar.istio.io\/inject: "false"/sidecar.istio.io\/inject: "true"/g' testdef.yaml
-    sed -i '' -e '/- .\/test-monitoring/r patchSidecarContainerCommand.yaml' testdef.yaml
-    sed -i '' -e 's/- .\/test-monitoring//g' testdef.yaml
-  else # assume Linux otherwise
-    sed -i 's/sidecar.istio.io\/inject: "false"/sidecar.istio.io\/inject: "true"/g' testdef.yaml
-    sed -i '/- .\/test-monitoring/r patchSidecarContainerCommand.yaml' testdef.yaml
-    sed -i 's/- .\/test-monitoring//g' testdef.yaml
-  fi
-
-  kubectl apply -f testdef.yaml || true
-
-  rm testdef.yaml
-  rm patchSidecarContainerCommand.yaml
 }

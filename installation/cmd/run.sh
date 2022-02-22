@@ -164,30 +164,22 @@ if [[ ! ${SKIP_KYMA_START} ]]; then
   LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-release ${KYMA_RELEASE} --kyma-installation ${KYMA_INSTALLATION}
 fi
 
-# todo
 #if [[ `kubectl get TestDefinition logging -n kyma-system` ]]; then
 #  # Patch logging TestDefinition
-#  HOSTNAMES_TO=$(kubectl get TestDefinition logging -n kyma-system -o json |  jq -r '.spec.template.spec.hostAliases[0].hostnames += ["loki.kyma.local"]' | jq -r ".spec.template.spec.hostAliases[0].hostnames" | jq ". | unique")
+#  HOSTNAMES_TO=$(kubectl get TestDefinition logging -n kyma-system -o json |  jq -r '.spec.template.spec.hostAliases[0].hostnames += ["loki.local.kyma.dev"]' | jq -r ".spec.template.spec.hostAliases[0].hostnames" | jq ". | unique")
 #  IP_TO=$(kubectl get TestDefinition logging -n kyma-system -o json | jq '.spec.template.spec.hostAliases[0].ip')
 #  PATCH_TO=$(cat "${ROOT_PATH}"/installation/resources/logging-test-definition-patch.json | jq -c ".spec.template.spec.hostAliases[0].hostnames += $HOSTNAMES_TO" | jq -c ".spec.template.spec.hostAliases[0].ip += $IP_TO")
 #  kubectl patch TestDefinition logging -n kyma-system  --type='merge' -p "$PATCH_TO"
 #fi
-#
-#if [[ `kubectl get TestDefinition dex-connection -n kyma-system` ]]; then
-#  # Patch dex-connection TestDefinition
-#  kubectl patch TestDefinition dex-connection -n kyma-system --type=json -p="[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/image\", \"value\": \"eu.gcr.io/kyma-project/external/curlimages/curl:7.70.0\"}]"
-#fi
 
 mount_k3d_ca_to_oathkeeper
-
-#prometheusMTLSPatch
 
 # Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
 # with the needed keys, by first getting them using kubectl
 function patchJWKS() {
   JWKS="'$(kubectl get --raw '/openid/v1/jwks')'"
-  until [[ $(kubectl get requestauthentication kyma-internal-authn -n kyma-system) &&
-          $(kubectl get requestauthentication compass-internal-authn -n compass-system) ]]; do
+  until [[ $(kubectl get requestauthentication kyma-internal-authn -n kyma-system 2>/dev/null) &&
+          $(kubectl get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
     echo "Waiting for requestauthentication resources to be created"
     sleep 3
   done
@@ -201,6 +193,7 @@ bash "${ROOT_PATH}"/installation/scripts/install-compass.sh
 STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
 echo "Compass installation status ${STATUS}"
 
+prometheusMTLSPatch
+
 echo "Adding Compass entries to /etc/hosts..."
-K3D_IP=127.0.0.1
-sudo sh -c "echo \"\n${K3D_IP} adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev\" >> /etc/hosts"
+sudo sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev\" >> /etc/hosts"

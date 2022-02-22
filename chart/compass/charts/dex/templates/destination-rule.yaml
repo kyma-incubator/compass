@@ -2,6 +2,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: dex-service
+  namespace: kyma-system
 spec:
   host: dex-service.kyma-system.svc.cluster.local
   trafficPolicy:
