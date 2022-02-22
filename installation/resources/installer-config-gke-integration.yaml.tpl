@@ -32,6 +32,7 @@ data:
   global.externalCertConfiguration.secrets.externalCertSvcSecret.manage: "true"
   global.externalServicesMock.oauthSecret.manage: "true"
   global.tests.basicCredentials.manage: "true"
+  global.tests.ordService.subscriptionOauthSecret.manage: "true"
 
   global.tenantFetchers.account-fetcher.enabled: "true"
   global.tenantFetchers.account-fetcher.dbPool.maxOpenConnections: "1"

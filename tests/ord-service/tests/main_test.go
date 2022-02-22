@@ -51,8 +51,20 @@ type TenantConfig struct {
 	TenantFetcherFullRegionalURL string `envconfig:"-"`
 }
 
+type SubscriptionConfig struct {
+	URL                          string
+	TokenURL                     string
+	ClientID                     string
+	ClientSecret                 string
+	ProviderLabelKey             string
+	ProviderID                   string
+	SelfRegisterLabelKey         string
+	SelfRegisterLabelValuePrefix string
+}
+
 type config struct {
 	TenantConfig
+	SubscriptionConfig
 	ExternalCA certs.CAConfig
 
 	ExternalServicesMockBaseURL           string
@@ -67,14 +79,6 @@ type config struct {
 	TokenPath                             string
 	ProviderClientID                      string
 	ProviderClientSecret                  string
-	SubscriptionURL                       string
-	SubscriptionTokenURL                  string
-	SubscriptionClientID                  string
-	SubscriptionClientSecret              string
-	SubscriptionProviderLabelKey          string
-	SubscriptionProviderID                string
-	SelfRegisterLabelKey                  string
-	SelfRegisterLabelValuePrefix          string
 	SkipSSLValidation                     bool
 	TestExternalCertSubject               string
 	ExternalClientCertTestSecretName      string

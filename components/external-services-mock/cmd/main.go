@@ -164,11 +164,14 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Unsubscribe).Methods(http.MethodDelete)
 	router.HandleFunc(fmt.Sprintf("/api/v1/jobs/%s", jobID), subHandler.JobStatus).Methods(http.MethodGet)
 
-	// Both handlers below are used only in local setup to mock OnSubscription and GetDependencies callback requests which on real environment will be already implemented by our component
-	// OnSubscription callback handler. It handles callback request from the above subscription manager API when someone is subscribed to a given tenant
+	// Both handlers below are part of the provider setup. On real environment when someone is subscribed to provider we want to mock OnSubscription and GetDependency callbacks
+	// and return expected results. CMP will be returned as dependency and will execute its subscription logic.
+	// On local setup, subscription request will be directly to tenant fetcher component with preconfigured data, without need of these mocks.
+
+	// OnSubscription callback handler. It handles subscription manager API callback request executed on real environment when someone is subscribed to a given tenant
 	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", subHandler.OnSubscription).Methods(http.MethodPut, http.MethodDelete)
 
-	// Get dependencies handler. It handles callback request from the above subscription manager API when someone is subscribed to a given tenant
+	// Get dependencies handler. It handles subscription manager API callback request executed on real environment when someone is subscribed to a given tenant
 	router.HandleFunc("/v1/dependencies/configure", subHandler.DependenciesConfigure).Methods(http.MethodPost)
 	router.HandleFunc("/v1/dependencies", subHandler.Dependencies).Methods(http.MethodGet)
 
@@ -262,7 +265,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	// TODO The mtls_token_provider sends client id and scopes in url.values form. When the change for fetching xsuaa token
 	// with certificate is merged GenerateWithCredentialsFromReqBody should be used for testing the flows that include fetching
 	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.
-	router.HandleFunc("/cert/token", tokenHandlerWithKey.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
+	router.HandleFunc("/cert/token", tokenHandlerWithKey.Generate).Methods(http.MethodPost)
 
 	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)

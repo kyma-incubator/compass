@@ -4,9 +4,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -105,35 +103,12 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	if ok { // If the request contains claims key, use the corresponding claims in the static mapping for that key
 		claims = claimsFunc()
 	} else { // If there is no claims key provided use empty claims
-		log.C(ctx).Info("Did not find claims key in the request. Proceeding with empty claims...")
+		log.C(ctx).Info("Did not find claims key in the request. Proceeding with default claims...")
+		claims[ClientIDKey] = r.FormValue(ClientIDKey)
+		claims[ScopesFieldName] = r.Form.Get(ScopesFieldName)
 	}
 
 	claims[ZidKey] = r.Header.Get(h.tenantHeaderName)
-	respond(writer, r, claims, h.signingKey)
-}
-
-func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	claims := map[string]interface{}{}
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.C(ctx).Errorf("while reading request body: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
-		return
-	}
-
-	if form, err := url.ParseQuery(string(body)); err != nil {
-		log.C(ctx).Errorf("Cannot parse form. Error: %s", err)
-	} else {
-		client := form.Get(ClientIDKey)
-		scopes := form.Get(ScopesFieldName)
-		tenant := r.Header.Get(h.tenantHeaderName)
-		claims[ClientIDKey] = client
-		claims[ScopesFieldName] = scopes
-		claims[ZidKey] = tenant
-	}
-
 	respond(writer, r, claims, h.signingKey)
 }
 
