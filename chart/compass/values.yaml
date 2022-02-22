@@ -100,10 +100,10 @@ global:
       version: "PR-2166"
     ord_service:
       dir:
-      version: "PR-58"
+      version: "PR-59"
     schema_migrator:
       dir:
-      version: "PR-2187"
+      version: "PR-2207"
     system_broker:
       dir:
       version: "PR-2208"
@@ -114,13 +114,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2208"
+      version: "PR-2207"
     console:
       dir:
       version: "PR-54"
     e2e_tests:
       dir:
-      version: "PR-2208"
+      version: "PR-2217"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -514,9 +514,8 @@ global:
         skipSSLValidation: false
     oauth:
       client: "client_id"
-      secret: ""
       tokenEndpointProtocol: "https"
-      tokenBaseUrl: "compass-external-services-mock-sap-mtls"
+      tokenBaseHost: "compass-external-services-mock-sap-mtls"
       tokenPath: "/cert/token"
       scopesClaim: "scopes"
       tenantHeaderName: "x-zid"
@@ -525,7 +524,6 @@ global:
     secret:
       name: "compass-system-fetcher-secret"
       clientIdKey: client-id
-      clientSecretKey: client-secret
       oauthUrlKey: url
     paging:
       pageSize: 200
