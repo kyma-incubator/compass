@@ -102,7 +102,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	claimsFunc, ok := h.staticMappingClaims[r.FormValue(ClaimsKey)]
 	if ok { // If the request contains claims key, use the corresponding claims in the static mapping for that key
 		claims = claimsFunc()
-	} else { // If there is no claims key provided use empty claims
+	} else { // If there is no claims key provided use default claims
 		log.C(ctx).Info("Did not find claims key in the request. Proceeding with default claims...")
 		claims[ClientIDKey] = r.FormValue(ClientIDKey)
 		claims[ScopesFieldName] = r.Form.Get(ScopesFieldName)
