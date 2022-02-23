@@ -38,10 +38,10 @@ istio-configuration:
         holdApplicationUntilProxyStarts: true
         resources:
           requests:
-            cpu: 45m
+            cpu: 50m
             memory: 160Mi
           limits:
-            cpu: 250m
+            cpu: 500m
             memory: 384Mi
   components:
     ingressGateways:
@@ -235,6 +235,13 @@ ory:
             cpu: 50m
             memory: 64Mi
 monitoring:
+  alertmanager:
+    alertmanagerSpec:
+      resources:
+        limits:
+          cpu: 40m
+        requests:
+          cpu: 5m
   prometheusOperator:
     configReloaderMemory: 256Mi
   prometheus-istio:
