@@ -637,7 +637,7 @@ global:
       client:
         skipSSLValidation:
           director: false
-          ordService: true
+          ordService: false
           connectivityAdapter: true
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
@@ -695,7 +695,7 @@ global:
 
   http:
     client:
-      skipSSLValidation: true
+      skipSSLValidation: false
 
   pairingAdapter:
     e2e:
