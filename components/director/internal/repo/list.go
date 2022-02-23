@@ -81,13 +81,22 @@ func NewListerGlobal(resourceType resource.Type, tableName string, selectedColum
 // If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
 // If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
 func (l *universalLister) List(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error {
+	return l.listWithTenantScope(ctx, resourceType, tenant, dest, NoLock, additionalConditions)
+}
+
+// ListWithSelectForUpdate lists tenant scoped entities with tenant isolation subquery and FOR UPDATE lock.
+func (l *universalLister) ListWithSelectForUpdate(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error {
+	return l.listWithTenantScope(ctx, resourceType, tenant, dest, ForUpdateLock, additionalConditions)
+}
+
+func (l *universalLister) listWithTenantScope(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, lockClause string, additionalConditions []Condition) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
 	}
 
 	if l.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
-		return l.list(ctx, resourceType, dest, NoLock, additionalConditions...)
+		return l.list(ctx, resourceType, dest, lockClause, additionalConditions...)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -97,27 +106,7 @@ func (l *universalLister) List(ctx context.Context, resourceType resource.Type, 
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return l.list(ctx, resourceType, dest, NoLock, additionalConditions...)
-}
-
-func (l *universalLister) ListWithSelectForUpdate(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error {
-	if tenant == "" {
-		return apperrors.NewTenantRequiredError()
-	}
-
-	if l.tenantColumn != nil {
-		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
-		return l.list(ctx, resourceType, dest, ForUpdateLock, additionalConditions...)
-	}
-
-	tenantIsolation, err := NewTenantIsolationConditionWithSelectForUpdate(resourceType, tenant, false)
-	if err != nil {
-		return err
-	}
-
-	additionalConditions = append(additionalConditions, tenantIsolation)
-
-	return l.list(ctx, resourceType, dest, ForUpdateLock, additionalConditions...)
+	return l.list(ctx, resourceType, dest, lockClause, additionalConditions...)
 }
 
 // SetSelectedColumns sets the selected columns for the query.
