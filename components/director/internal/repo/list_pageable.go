@@ -153,10 +153,6 @@ func (g *universalPageableQuerier) list(ctx context.Context, resourceType resour
 	}, totalCount, nil
 }
 
-func IsLockClauseProvided(lockClause string) bool {
-	return strings.TrimSpace(lockClause) != NoLock
-}
-
 func (g *universalPageableQuerier) getNextPageAndCursor(totalCount, offset, pageSize, totalLen int) (bool, string) {
 	hasNextPage := false
 	endCursor := ""
