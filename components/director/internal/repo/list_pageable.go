@@ -74,7 +74,7 @@ func (g *universalPageableQuerier) List(ctx context.Context, resourceType resour
 
 	if g.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, additionalConditions...)
-		return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, And(ConditionTreesFromConditions(additionalConditions)...))
+		return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, NoLock, And(ConditionTreesFromConditions(additionalConditions)...))
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -84,33 +84,25 @@ func (g *universalPageableQuerier) List(ctx context.Context, resourceType resour
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, And(ConditionTreesFromConditions(additionalConditions)...))
+	return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, NoLock, And(ConditionTreesFromConditions(additionalConditions)...))
 }
 
 // ListGlobal lists a page of global entities without tenant isolation.
 func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection) (*pagination.Page, int, error) {
-	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, nil)
+	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, NoLock, nil)
 }
 
-// ListGlobal lists a page of global entities without tenant isolation.
+// ListGlobalWithSelectForUpdate lists a page of global entities without tenant isolation.
 func (g *universalPageableQuerier) ListGlobalWithSelectForUpdate(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection) (*pagination.Page, int, error) {
-	return g.listWithSelectForUpdate(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, nil)
+	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, ForUpdateLock, nil)
 }
 
 // ListGlobalWithAdditionalConditions lists a page of global entities without tenant isolation.
 func (g *universalPageableQuerier) ListGlobalWithAdditionalConditions(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
-	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, conditions)
+	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, NoLock, conditions)
 }
 
-func (g *universalPageableQuerier) list(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
-	return g.listWithCustomSelect(buildSelectQueryFromTree, NoLock, ctx, resourceType, pageSize, cursor, orderByColumn, dest, conditions)
-}
-
-func (g *universalPageableQuerier) listWithSelectForUpdate(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
-	return g.listWithCustomSelect(buildSelectQueryFromTree, ForUpdateLock, ctx, resourceType, pageSize, cursor, orderByColumn, dest, conditions)
-}
-
-func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func(string, string, *ConditionTree, OrderByParams, string, bool) (string, []interface{}, error), lockClause string, ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
+func (g *universalPageableQuerier) list(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, lockClause string, conditions *ConditionTree) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, -1, err
@@ -126,7 +118,7 @@ func (g *universalPageableQuerier) listWithCustomSelect(buildSelectFunction func
 		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
 	}
 
-	query, args, err := buildSelectFunction(g.tableName, g.selectedColumns, conditions, OrderByParams{}, lockClause, true)
+	query, args, err := buildSelectQueryFromTree(g.tableName, g.selectedColumns, conditions, OrderByParams{}, lockClause, true)
 	if err != nil {
 		return nil, -1, errors.Wrap(err, "while building list query")
 	}

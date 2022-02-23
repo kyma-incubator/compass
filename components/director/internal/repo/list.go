@@ -87,7 +87,7 @@ func (l *universalLister) List(ctx context.Context, resourceType resource.Type, 
 
 	if l.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
-		return l.list(ctx, resourceType, dest, additionalConditions...)
+		return l.list(ctx, resourceType, dest, NoLock, additionalConditions...)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -97,7 +97,7 @@ func (l *universalLister) List(ctx context.Context, resourceType resource.Type, 
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return l.list(ctx, resourceType, dest, additionalConditions...)
+	return l.list(ctx, resourceType, dest, NoLock, additionalConditions...)
 }
 
 func (l *universalLister) ListWithSelectForUpdate(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error {
@@ -107,7 +107,7 @@ func (l *universalLister) ListWithSelectForUpdate(ctx context.Context, resourceT
 
 	if l.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
-		return l.listWithSelectForUpdate(ctx, resourceType, dest, additionalConditions...)
+		return l.list(ctx, resourceType, dest, ForUpdateLock, additionalConditions...)
 	}
 
 	tenantIsolation, err := NewTenantIsolationConditionWithSelectForUpdate(resourceType, tenant, false)
@@ -117,7 +117,7 @@ func (l *universalLister) ListWithSelectForUpdate(ctx context.Context, resourceT
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return l.listWithSelectForUpdate(ctx, resourceType, dest, additionalConditions...)
+	return l.list(ctx, resourceType, dest, ForUpdateLock, additionalConditions...)
 }
 
 // SetSelectedColumns sets the selected columns for the query.
@@ -140,30 +140,21 @@ func (l *universalLister) Clone() *universalLister {
 
 // ListGlobal lists global entities without tenant isolation.
 func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
-	return l.list(ctx, l.resourceType, dest, additionalConditions...)
+	return l.list(ctx, l.resourceType, dest, NoLock, additionalConditions...)
 }
 
 // ListGlobalWithSelectForUpdate lists global entities without tenant isolation.
 func (l *universalLister) ListGlobalWithSelectForUpdate(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
-	return l.listGlobalWithCustomSelect(buildSelectForUpdateQuery, ctx, l.resourceType, dest, additionalConditions...)
+	return l.list(ctx, l.resourceType, dest, ForUpdateLock, additionalConditions...)
 }
 
-func (l *universalLister) list(ctx context.Context, resourceType resource.Type, dest Collection, conditions ...Condition) error {
-	return l.listGlobalWithCustomSelect(buildSelectQuery, ctx, resourceType, dest, conditions...)
-}
-
-func (l *universalLister) listWithSelectForUpdate(ctx context.Context, resourceType resource.Type, dest Collection, conditions ...Condition) error {
-	return l.listGlobalWithCustomSelect(buildSelectForUpdateQuery, ctx, resourceType, dest, conditions...)
-}
-
-func (l *universalLister) listGlobalWithCustomSelect(buildSelectFunction func(string, string, Conditions, OrderByParams, bool) (string, []interface{}, error),
-	ctx context.Context, resourceType resource.Type, dest Collection, conditions ...Condition) error {
+func (l *universalLister) list(ctx context.Context, resourceType resource.Type, dest Collection, lockClause string, conditions ...Condition) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
-	query, args, err := buildSelectFunction(l.tableName, l.selectedColumns, conditions, l.orderByParams, true)
+	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, l.orderByParams, lockClause, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}

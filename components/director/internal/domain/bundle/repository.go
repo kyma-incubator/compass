@@ -114,16 +114,6 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.B
 	return convertToBundle(r, &bndlEnt)
 }
 
-// GetByIDWithSelectForUpdate missing godoc
-func (r *pgRepository) GetByIDWithSelectForUpdate(ctx context.Context, tenant, id string) (*model.Bundle, error) {
-	var bndlEnt Entity
-	if err := r.singleGetter.GetWithSelectForUpdate(ctx, resource.Bundle, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bndlEnt); err != nil {
-		return nil, err
-	}
-
-	return convertToBundle(r, &bndlEnt)
-}
-
 func convertToBundle(r *pgRepository, bndlEnt *Entity) (*model.Bundle, error) {
 	bndlModel, err := r.conv.FromEntity(bndlEnt)
 	if err != nil {

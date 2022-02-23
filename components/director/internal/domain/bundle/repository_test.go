@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -144,20 +142,13 @@ func TestPgRepository_Exists(t *testing.T) {
 }
 
 func TestPgRepository_GetByID(t *testing.T) {
-	testGetByID(t, "GetByID", repo.NoLock)
-}
-func TestPgRepository_GetByIDWithSelectForUpdate(t *testing.T) {
-	testGetByID(t, "GetByIDWithSelectForUpdate", " "+repo.ForUpdateLock)
-}
-
-func testGetByID(t *testing.T, methodName string, lockClause string) {
 	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Bundle",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2` + lockClause + `))` + lockClause),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.bundles WHERE id = $1 AND (id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{bundleID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -180,7 +171,6 @@ func testGetByID(t *testing.T, methodName string, lockClause string) {
 		ExpectedModelEntity: fixBundleModel("foo", "bar"),
 		ExpectedDBEntity:    bndlEntity,
 		MethodArgs:          []interface{}{tenantID, bundleID},
-		MethodName:          methodName,
 	}
 
 	suite.Run(t)
