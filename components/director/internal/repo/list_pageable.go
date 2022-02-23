@@ -125,7 +125,7 @@ func (g *universalPageableQuerier) list(ctx context.Context, resourceType resour
 
 	// TODO: Refactor query builder
 	var stmtWithPagination string
-	if isLockClauseProvided(lockClause) {
+	if IsLockClauseProvided(lockClause) {
 		stmtWithPagination = strings.ReplaceAll(query, lockClause, paginationSQL+" "+lockClause)
 	} else {
 		stmtWithPagination = fmt.Sprintf("%s %s", query, paginationSQL)
@@ -137,7 +137,7 @@ func (g *universalPageableQuerier) list(ctx context.Context, resourceType resour
 	}
 
 	var countQuery = query
-	if isLockClauseProvided(lockClause) {
+	if IsLockClauseProvided(lockClause) {
 		countQuery = strings.ReplaceAll(query, " "+lockClause, "")
 	}
 	totalCount, err := g.getTotalCount(ctx, resourceType, persist, countQuery, args)
@@ -153,7 +153,7 @@ func (g *universalPageableQuerier) list(ctx context.Context, resourceType resour
 	}, totalCount, nil
 }
 
-func isLockClauseProvided(lockClause string) bool {
+func IsLockClauseProvided(lockClause string) bool {
 	return strings.TrimSpace(lockClause) != NoLock
 }
 

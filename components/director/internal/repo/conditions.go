@@ -375,11 +375,6 @@ func NewTenantIsolationConditionForNamedArgs(resourceType resource.Type, tenant 
 	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, false, NoLock)
 }
 
-// NewTenantIsolationConditionWithSelectForUpdate is the same as NewTenantIsolationCondition, but includes "FOR UPDATE" lock for select queries.
-func NewTenantIsolationConditionWithSelectForUpdate(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
-	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, true, " "+ForUpdateLock)
-}
-
 func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tenant string, ownerCheck bool, positionalArgs bool, lockClause string) (Condition, error) {
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
@@ -387,8 +382,11 @@ func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tena
 	}
 
 	var stmtBuilder strings.Builder
-
 	var args []interface{}
+
+	if IsLockClauseProvided(lockClause) {
+		lockClause = " " + lockClause
+	}
 	if positionalArgs {
 		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = ?%s", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn, lockClause))
 		args = append(args, tenant)

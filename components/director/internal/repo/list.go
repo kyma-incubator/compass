@@ -84,7 +84,7 @@ func (l *universalLister) List(ctx context.Context, resourceType resource.Type, 
 	return l.listWithTenantScope(ctx, resourceType, tenant, dest, NoLock, additionalConditions)
 }
 
-// ListWithSelectForUpdate lists tenant scoped entities with tenant isolation subquery and FOR UPDATE lock.
+// ListWithSelectForUpdate lists tenant scoped entities with tenant isolation subquery and
 func (l *universalLister) ListWithSelectForUpdate(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error {
 	return l.listWithTenantScope(ctx, resourceType, tenant, dest, ForUpdateLock, additionalConditions)
 }
@@ -99,7 +99,8 @@ func (l *universalLister) listWithTenantScope(ctx context.Context, resourceType 
 		return l.list(ctx, resourceType, dest, lockClause, additionalConditions...)
 	}
 
-	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
+	tenantIsolation, err :=
+		newTenantIsolationConditionWithPlaceholder(resourceType, tenant, false, true, lockClause)
 	if err != nil {
 		return err
 	}
