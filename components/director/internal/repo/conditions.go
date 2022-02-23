@@ -412,7 +412,7 @@ func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tena
 	return &tenantIsolationCondition{sql: stmtBuilder.String(), args: args}, nil
 }
 
-//IsLockClauseProvided true if there is a non-empty lock clause provided, and false otherwise.
+// IsLockClauseProvided true if there is a non-empty lock clause provided, and false otherwise.
 func IsLockClauseProvided(lockClause string) bool {
 	return strings.TrimSpace(lockClause) != NoLock
 }
