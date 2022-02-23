@@ -6,7 +6,7 @@ Compass tests comprise end-to-end tests for the Compass project, as follows:
 
 ## Prerequisites
 
-To run the tests, it is required a running minikube instance with installed Kyma and Compass.
+To run the tests, it is required a running Minikube instance with installed Kyma and Compass.
 
 ## Usage
 
@@ -36,13 +36,32 @@ Each component test directory contains local Makefile that comprises the followi
 ### Execution steps for sandbox tests
 The sandbox tests enable the run of a single e2e test, and in case of an error, allow you to modify that test and rerun it again, without waiting and building a new image. This facilitates the iteration and testing of different scenarios. You can find a brief description for each command in the [Local Makefile](#local-makefile) section.
 
-Execution steps:
-1. To set up the environment, carry out the following command once in the beginning: `make sandbox-test`.
-2. To run a specific test, use the following command: `make run testName=<test-name>`.
-<br>Note that, `make run testName=TestConsumerProviderFlow` runs the whole test suite. However, if there are any nested tests in the suite, you can specify the one you want to carry out. To separate the test suite and the inner tests, you can use forward slash `/`. If the test name contains any spaces, you must replace them with underscore characters `_`.
-<br>Example:
-<br>`make run testName=TestConsumerProviderFlow/ConsumerProvider_flow:_calls_with_provider_certificate_and_consumer_token_are_successful_when_valid_subscription_exists`
+**Prerequisites:**
+In order to run the sandpox tests, you need to have one useful CLI tool called [`sponge`](https://rentes.github.io/unix/utilities/2015/07/27/moreutils-package/#sponge).
+You can install it on Mac OS via Homebrew:
+```bash
+brew install sponge
+```
 
-3. Optionally, you can modify the existing test and redeploy it using the following command: `make sandbox-deploy-test`.
+**Execution steps:**
+1. To set up the environment, carry out the following command once in the beginning:
+    ```bash
+    make sandbox-test
+    ```
+2. Once you have modified the existing tests, you should redeploy them by using the following command:
+    ```bash
+    make sandbox-deploy-test
+    ```
+3. To run a specific test, use:
+    ```bash
+    make run testName=<test-name>
+    ```
+    Note that, `make run testName=TestConsumerProviderFlow` will run the whole test suite. However, if there are any nested tests in the suite, you can specify the one you want to carry out. To separate the test suite and the inner tests, you can use forward slash `/`. If the test name contains any spaces, you must replace them with underscore characters `_`.
+    
+    **Example:**
+    ```bash
+    make run testName=TestConsumerProviderFlow/ConsumerProvider_flow:_calls_with_provider_certificate_and_consumer_token_are_successful_when_valid_subscription_exists
+    ```
+
 4. Repeat steps 2 and 3 as many times as needed.
 5. Finally, to clean up the setup, carry out the following command: `make sandbox-test-clean`.

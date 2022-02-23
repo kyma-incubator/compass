@@ -63,3 +63,4 @@ override-local-full.yaml
 docs/investigations/storage/postgres/sql/*.csv
 
 main
+*.test
