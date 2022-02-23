@@ -427,7 +427,7 @@ func (s *Service) resyncBundle(ctx context.Context, appID string, bundlesFromDB 
 	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
 		return equalStrings(bundlesFromDB[i].OrdID, bndl.OrdID)
 	}); found {
-		return s.bundleSvc.UpdateWithSelectForUpdate(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl))
+		return s.bundleSvc.Update(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl))
 	}
 	_, err := s.bundleSvc.Create(ctx, appID, bndl)
 	return err

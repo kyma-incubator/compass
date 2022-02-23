@@ -97,7 +97,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.T
 // ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Tombstone, error) {
 	tombstoneCollection := tombstoneCollection{}
-	if err := r.lister.List(ctx, resource.Tombstone, tenantID, &tombstoneCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Tombstone, tenantID, &tombstoneCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	tombstones := make([]*model.Tombstone, 0, tombstoneCollection.Len())

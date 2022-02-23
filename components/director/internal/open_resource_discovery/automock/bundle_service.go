@@ -85,17 +85,3 @@ func (_m *BundleService) Update(ctx context.Context, id string, in model.BundleU
 
 	return r0
 }
-
-// UpdateWithSelectForUpdate provides a mock function with given fields: ctx, id, in
-func (_m *BundleService) UpdateWithSelectForUpdate(ctx context.Context, id string, in model.BundleUpdateInput) error {
-	ret := _m.Called(ctx, id, in)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleUpdateInput) error); ok {
-		r0 = rf(ctx, id, in)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}

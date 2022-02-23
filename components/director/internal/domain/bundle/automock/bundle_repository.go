@@ -86,29 +86,6 @@ func (_m *BundleRepository) GetByID(ctx context.Context, tenant string, id strin
 	return r0, r1
 }
 
-// GetByIDWithSelectForUpdate provides a mock function with given fields: ctx, tenant, id
-func (_m *BundleRepository) GetByIDWithSelectForUpdate(ctx context.Context, tenant string, id string) (*model.Bundle, error) {
-	ret := _m.Called(ctx, tenant, id)
-
-	var r0 *model.Bundle
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Bundle); ok {
-		r0 = rf(ctx, tenant, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Bundle)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenant, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetForApplication provides a mock function with given fields: ctx, tenant, id, applicationID
 func (_m *BundleRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error) {
 	ret := _m.Called(ctx, tenant, id, applicationID)

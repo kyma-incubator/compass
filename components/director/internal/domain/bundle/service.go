@@ -20,7 +20,6 @@ type BundleRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error)
-	GetByIDWithSelectForUpdate(ctx context.Context, tenant, id string) (*model.Bundle, error)
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error)
 	ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error)
 	ListByApplicationIDs(ctx context.Context, tenantID string, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
@@ -104,18 +103,6 @@ func (s *service) Update(ctx context.Context, id string, in model.BundleUpdateIn
 	}
 
 	bndl, err := s.bndlRepo.GetByID(ctx, tnt, id)
-
-	return updateBundle(ctx, id, in, err, bndl, s, tnt)
-}
-
-// UpdateWithSelectForUpdate missing godoc
-func (s *service) UpdateWithSelectForUpdate(ctx context.Context, id string, in model.BundleUpdateInput) error {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	bndl, err := s.bndlRepo.GetByIDWithSelectForUpdate(ctx, tnt, id)
 
 	return updateBundle(ctx, id, in, err, bndl, s, tnt)
 }

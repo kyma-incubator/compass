@@ -31,7 +31,6 @@ type ApplicationService interface {
 type BundleService interface {
 	Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error)
 	Update(ctx context.Context, id string, in model.BundleUpdateInput) error
-	UpdateWithSelectForUpdate(ctx context.Context, id string, in model.BundleUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	ListByApplicationIDNoPaging(ctx context.Context, appID string) ([]*model.Bundle, error)
 }
