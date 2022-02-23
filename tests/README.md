@@ -17,16 +17,16 @@ The tests are run via Octopus. The Octopus test definitions can be found in `kym
 ## Make targets
 
 ### Global Makefile
-The global Makefile comprises the following commands:
+The global Makefile is located in the root tests directory `compass/tests/Makefile`, and supports the following commands:
 
-- `deploy-tests-on-minikube` - Pushes a new version of the tests into the Minikube cluster.
+- `deploy-tests-on-minikube` - Pushes a new image version of the tests into the Minikube cluster.
 - `e2e-test` - Creates a new cluster-test-suite matching all test-definitions. Then, runs the tests and provides information about the current status. Finally, cleans up after the test is carried out.
 - `e2e-test-clean` - In case of early termination of the `e2e-test`, the command cleans up the `cluster-test-suite` and `test-definition` created by the `e2e-test` after the test is carried out.
 
 ### Local Makefile
-Each component test directory contains local Makefile that comprises the following commands:
+Each Compass component has its own test directory. It contains local a Makefile that supports the following commands:
 
-- `e2e-test` - Creates a new cluster-test-suite matching the component's test-definition. Then, runs the tests and provides information about the current status. Finally, cleans up after the test is carried out.
+- `e2e-test` - Creates a new cluster-test-suite matching the given component's test-definition. Then, runs the tests and provides information about the current status. Finally, cleans up after the test is carried out.
 - `e2e-test-clean` - In case of early termination of the `e2e-test`, the command cleans up the `cluster-test-suite` and `test-definition` created by the `e2e-test` after the test is carried out.
 - `sandbox-test` - Creates a copy of the component's test-definition with changed command and installs go into the pod which is created by Octopus.
 - `run` - Runs the specified test. For example: `make testName=TestFullConnectorFlow run`.
@@ -34,10 +34,10 @@ Each component test directory contains local Makefile that comprises the followi
 - `sandbox-test-clean` - Deletes the cluster-test-suite and test-definition created by `sandbox-test`.
 
 ### Execution steps for sandbox tests
-The sandbox tests enable the run of a single e2e test, and in case of an error, allow you to modify that test and rerun it again, without waiting and building a new image. This facilitates the iteration and testing of different scenarios. You can find a brief description for each command in the [Local Makefile](#local-makefile) section.
+The sandbox tests enable the run of a single E2E test case of a given Compass component. In case of an error, you can modify the failed test and rerun it again, without building a new image and waiting for the whole test suite to finish. This facilitates the iteration and testing of different scenarios. You can find a brief description for each command in the [Local Makefile](#local-makefile) section.
 
 **Prerequisites:**
-In order to run the sandpox tests, you need to have one useful CLI tool called [`sponge`](https://rentes.github.io/unix/utilities/2015/07/27/moreutils-package/#sponge).
+In order to run the sandbox tests, you need to have one useful CLI tool called [`sponge`](https://rentes.github.io/unix/utilities/2015/07/27/moreutils-package/#sponge).
 You can install it on Mac OS via Homebrew:
 ```bash
 brew install sponge
