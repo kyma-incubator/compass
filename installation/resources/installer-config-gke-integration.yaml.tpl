@@ -48,7 +48,7 @@ data:
   global.tenantFetchers.account-fetcher.secret.skipSSLValidation: "true"
   global.tenantFetchers.account-fetcher.oauth.client: "client_id"
   global.tenantFetchers.account-fetcher.oauth.secret: "client_secret"
-  global.tenantFetchers.account-fetcher.oauth.tokenURL: "https://compass-external-services-mock-sap-mtls.kyma.local:443/cert/token"
+  global.tenantFetchers.account-fetcher.oauth.tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
   global.tenantFetchers.account-fetcher.providerName: "external-svc-mock"
   global.tenantFetchers.account-fetcher.schedule: "0 23 * * *"
   global.tenantFetchers.account-fetcher.kubernetes.configMapNamespace: "compass-system"
@@ -90,7 +90,7 @@ data:
   global.tenantFetchers.subaccount-fetcher.secret.skipSSLValidation: "true"
   global.tenantFetchers.subaccount-fetcher.oauth.client: "client_id"
   global.tenantFetchers.subaccount-fetcher.oauth.secret: "client_secret"
-  global.tenantFetchers.subaccount-fetcher.oauth.tokenURL: "https://compass-external-services-mock-sap-mtls.kyma.local:443/cert/token"
+  global.tenantFetchers.subaccount-fetcher.oauth.tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
   global.tenantFetchers.subaccount-fetcher.providerName: "subaccount-fetcher"
   global.tenantFetchers.subaccount-fetcher.schedule: "0 23 * * *"
   global.tenantFetchers.subaccount-fetcher.kubernetes.configMapNamespace: "compass-system"
