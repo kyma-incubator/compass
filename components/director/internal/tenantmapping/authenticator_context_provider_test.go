@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -31,7 +33,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -47,7 +48,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 	prefixedScopes := []interface{}{scopePrefix + "application:read", scopePrefix + "application:write"}
 	userObjCtxType := "Static User"
 
-	jwtAuthDetails := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, ScopePrefix: scopePrefix}
+	jwtAuthDetails := oathkeeper2.AuthDetails{AuthID: username, AuthFlow: oathkeeper2.JWTAuthFlow, ScopePrefix: scopePrefix}
 
 	t.Run("returns tenant and scopes that are defined in the Extra map of ReqData", func(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
@@ -55,12 +56,12 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		tenantAttributeKey := "tenant"
 		clientIDAttributeKey := "clientid"
 		clientID := "client_id"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					tenantAttributeKey:   expectedExternalTenantID.String(),
-					clientIDAttributeKey: clientID,
-					oathkeeper.ScopesKey: prefixedScopes,
+					tenantAttributeKey:    expectedExternalTenantID.String(),
+					clientIDAttributeKey:  clientID,
+					oathkeeper2.ScopesKey: prefixedScopes,
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -113,8 +114,8 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
 					tenantAttributeKey: expectedExternalTenantID.String(),
 					"extra": map[string]interface{}{
@@ -165,11 +166,11 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ScopesKey: 1,
-					tenantAttributeKey:   expectedExternalTenantID.String(),
+					oathkeeper2.ScopesKey: 1,
+					tenantAttributeKey:    expectedExternalTenantID.String(),
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -218,11 +219,11 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					tenantAttributeKey:   expectedExternalTenantID.String(),
-					oathkeeper.ScopesKey: prefixedScopes,
+					tenantAttributeKey:    expectedExternalTenantID.String(),
+					oathkeeper2.ScopesKey: prefixedScopes,
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -268,11 +269,11 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					tenantAttributeKey:   expectedExternalTenantID.String(),
-					oathkeeper.ScopesKey: []interface{}{"scope1", "scope2", 123},
+					tenantAttributeKey:    expectedExternalTenantID.String(),
+					oathkeeper2.ScopesKey: []interface{}{"scope1", "scope2", 123},
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -317,10 +318,10 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ScopesKey: prefixedScopes,
+					oathkeeper2.ScopesKey: prefixedScopes,
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -366,11 +367,11 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					tenantAttributeKey:   expectedExternalTenantID.String(),
-					oathkeeper.ScopesKey: prefixedScopes,
+					tenantAttributeKey:    expectedExternalTenantID.String(),
+					oathkeeper2.ScopesKey: prefixedScopes,
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -418,7 +419,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 		authenticatorName    string
 		scopePrefix          string
 		domainURL            string
-		reqData              oathkeeper.ReqData
+		reqData              oathkeeper2.ReqData
 		authn                []authenticator.Config
 	)
 	setup := func() {
@@ -430,8 +431,8 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 		scopePrefix = "prefix"
 		domainURL = "domain.com"
 		username = "some-username"
-		reqData = oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData = oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
 					authenticator.CoordinatesKey: authenticator.Coordinates{
 						Name:  authenticatorName,
@@ -473,7 +474,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper2.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, username, authDetails.AuthID)
 		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
 		require.Equal(t, region, authDetails.Region)
@@ -510,7 +511,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper2.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, username, authDetails.AuthID)
 		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
 	})
@@ -518,7 +519,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 	t.Run("returns ID string and JWTAuthFlow when authenticator identity and also default username attribute is specified in the Extra map of request body", func(t *testing.T) {
 		setup()
 		identityUsername := "some-identity"
-		reqData.Body.Extra[oathkeeper.UsernameKey] = username
+		reqData.Body.Extra[oathkeeper2.UsernameKey] = username
 		reqData.Body.Extra[identityAttributeKey] = identityUsername
 
 		provider := tenantmapping.NewAuthenticatorContextProvider(nil, authn)
@@ -526,7 +527,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper2.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, identityUsername, authDetails.AuthID)
 		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
 	})

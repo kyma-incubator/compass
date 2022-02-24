@@ -6,8 +6,6 @@ import (
 	"net/textproto"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/stretchr/testify/assert"
 
@@ -18,7 +16,7 @@ var ctx = context.TODO()
 
 func TestAuthFlow(t *testing.T) {
 	t.Run("IsCertFlow returns true when AuthFlow equals to Certificate", func(t *testing.T) {
-		authFlow := oathkeeper.CertificateFlow
+		authFlow := CertificateFlow
 
 		require.True(t, authFlow.IsCertFlow())
 		require.False(t, authFlow.IsJWTFlow())
@@ -26,7 +24,7 @@ func TestAuthFlow(t *testing.T) {
 	})
 
 	t.Run("IsOAuth2Flow returns true when AuthFlow equals to OAuth2", func(t *testing.T) {
-		authFlow := oathkeeper.OAuth2Flow
+		authFlow := OAuth2Flow
 
 		require.True(t, authFlow.IsOAuth2Flow())
 		require.False(t, authFlow.IsCertFlow())
@@ -34,7 +32,7 @@ func TestAuthFlow(t *testing.T) {
 	})
 
 	t.Run("IsJWTFlow returns true when AuthFlow equals to JWT", func(t *testing.T) {
-		authFlow := oathkeeper.JWTAuthFlow
+		authFlow := JWTAuthFlow
 
 		require.True(t, authFlow.IsJWTFlow())
 		require.False(t, authFlow.IsOAuth2Flow())
@@ -45,9 +43,9 @@ func TestAuthFlow(t *testing.T) {
 func TestReqData_GetTenantID(t *testing.T) {
 	t.Run("returns tenant ID when it is specified in the Header map", func(t *testing.T) {
 		expectedTenant := "f640a8e6-2ce4-450c-bd1c-cba9397f9d79"
-		reqData := oathkeeper.ReqData{
+		reqData := ReqData{
 			Header: http.Header{
-				textproto.CanonicalMIMEHeaderKey(oathkeeper.ExternalTenantKey): []string{expectedTenant},
+				textproto.CanonicalMIMEHeaderKey(ExternalTenantKey): []string{expectedTenant},
 			},
 		}
 
@@ -59,10 +57,10 @@ func TestReqData_GetTenantID(t *testing.T) {
 
 	t.Run("returns tenant ID when it is specified in the Header map of Body", func(t *testing.T) {
 		expectedTenant := "f640a8e6-2ce4-450c-bd1c-cba9397f9d79"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := ReqData{
+			Body: ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ExternalTenantKey): []string{expectedTenant},
+					textproto.CanonicalMIMEHeaderKey(ExternalTenantKey): []string{expectedTenant},
 				},
 			},
 		}
@@ -75,10 +73,10 @@ func TestReqData_GetTenantID(t *testing.T) {
 
 	t.Run("returns tenant ID when it is specified in the Extra map", func(t *testing.T) {
 		expectedTenant := "f640a8e6-2ce4-450c-bd1c-cba9397f9d79"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := ReqData{
+			Body: ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ExternalTenantKey: expectedTenant,
+					ExternalTenantKey: expectedTenant,
 				},
 			},
 		}
@@ -90,10 +88,10 @@ func TestReqData_GetTenantID(t *testing.T) {
 	})
 
 	t.Run("returns error when tenant ID is specified in Extra map in a non-string format", func(t *testing.T) {
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := ReqData{
+			Body: ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ExternalTenantKey: []byte{1, 2, 3},
+					ExternalTenantKey: []byte{1, 2, 3},
 				},
 			},
 		}
@@ -104,7 +102,7 @@ func TestReqData_GetTenantID(t *testing.T) {
 	})
 
 	t.Run("returns error when tenant ID is not specified", func(t *testing.T) {
-		reqData := oathkeeper.ReqData{}
+		reqData := ReqData{}
 
 		_, err := reqData.GetExternalTenantID()
 
@@ -116,10 +114,10 @@ func TestReqData_GetTenantID(t *testing.T) {
 func TestReqData_GetScopes(t *testing.T) {
 	t.Run("returns scopes string when it is specified in the Extra map", func(t *testing.T) {
 		expectedScopes := "applications:write runtimes:write"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := ReqData{
+			Body: ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ScopesKey: expectedScopes,
+					ScopesKey: expectedScopes,
 				},
 			},
 		}
@@ -131,10 +129,10 @@ func TestReqData_GetScopes(t *testing.T) {
 	})
 
 	t.Run("returns error when scopes value is specified in Extra map in a non-string format", func(t *testing.T) {
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := ReqData{
+			Body: ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ScopesKey: []byte{1, 2, 3},
+					ScopesKey: []byte{1, 2, 3},
 				},
 			},
 		}
@@ -145,7 +143,7 @@ func TestReqData_GetScopes(t *testing.T) {
 	})
 
 	t.Run("returns error when scopes value is not specified", func(t *testing.T) {
-		reqData := oathkeeper.ReqData{}
+		reqData := ReqData{}
 
 		_, err := reqData.GetScopes()
 
@@ -160,10 +158,10 @@ func TestReqData_GetUserScopes(t *testing.T) {
 	t.Run("returns scopes string array when it is specified in the Extra map", func(t *testing.T) {
 		scopes := []interface{}{scopePrefix + "applications:write", scopePrefix + "runtimes:write"}
 		expectedScopes := []interface{}{"applications:write", "runtimes:write"}
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := ReqData{
+			Body: ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ScopesKey: scopes,
+					ScopesKey: scopes,
 				},
 			},
 		}
@@ -175,7 +173,7 @@ func TestReqData_GetUserScopes(t *testing.T) {
 	})
 
 	t.Run("returns empty scopes string array when it is not specified in the Extra map", func(t *testing.T) {
-		reqData := oathkeeper.ReqData{}
+		reqData := ReqData{}
 
 		actualScopes, err := reqData.GetUserScopes(scopePrefix)
 
@@ -184,10 +182,10 @@ func TestReqData_GetUserScopes(t *testing.T) {
 	})
 
 	t.Run("returns empty scopes string array when it is specified in the Extra map but is not array", func(t *testing.T) {
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := ReqData{
+			Body: ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ScopesKey: 1,
+					ScopesKey: 1,
 				},
 			},
 		}
@@ -200,10 +198,10 @@ func TestReqData_GetUserScopes(t *testing.T) {
 
 	t.Run("returns error when scopes are specified in the Extra map but some elements/scopes are not strings", func(t *testing.T) {
 		scopes := []interface{}{"applications:write", "runtimes:write", 24}
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := ReqData{
+			Body: ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ScopesKey: scopes,
+					ScopesKey: scopes,
 				},
 			},
 		}
@@ -222,10 +220,10 @@ func TestReqData_GetUserGroups(t *testing.T) {
 			"tenantID=123",
 		}
 
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := ReqData{
+			Body: ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.GroupsKey: []interface{}{
+					GroupsKey: []interface{}{
 						"developers",
 						"admin",
 						"tenantID=123",
@@ -240,10 +238,10 @@ func TestReqData_GetUserGroups(t *testing.T) {
 	})
 
 	t.Run("returns empty array when groups value is specified in Extra map in a non-string format", func(t *testing.T) {
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := ReqData{
+			Body: ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.GroupsKey: []byte{1, 2, 3},
+					GroupsKey: []byte{1, 2, 3},
 				},
 			},
 		}
@@ -262,7 +260,7 @@ func TestReqData_ExtractCoordinates(t *testing.T) {
 
 	tests := []struct {
 		name                 string
-		body                 oathkeeper.ReqBody
+		body                 ReqBody
 		expectedCoordinates  authenticator.Coordinates
 		expectedSuccess      bool
 		expectError          bool
@@ -270,7 +268,7 @@ func TestReqData_ExtractCoordinates(t *testing.T) {
 	}{
 		{
 			name: "success",
-			body: oathkeeper.ReqBody{
+			body: ReqBody{
 				Extra: map[string]interface{}{
 					authenticator.CoordinatesKey: coordinates,
 				},
@@ -281,14 +279,14 @@ func TestReqData_ExtractCoordinates(t *testing.T) {
 		},
 		{
 			name:                "fail when key does not exist",
-			body:                oathkeeper.ReqBody{},
+			body:                ReqBody{},
 			expectedCoordinates: authenticator.Coordinates{},
 			expectedSuccess:     false,
 			expectError:         false,
 		},
 		{
 			name: "fail when error occurs while marshaling",
-			body: oathkeeper.ReqBody{
+			body: ReqBody{
 				Extra: map[string]interface{}{
 					authenticator.CoordinatesKey: "fail",
 				},
@@ -301,7 +299,7 @@ func TestReqData_ExtractCoordinates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := oathkeeper.NewReqData(context.TODO(), tt.body, nil)
+			d := NewReqData(context.TODO(), tt.body, nil)
 			coords, success, err := d.ExtractCoordinates()
 
 			if tt.expectError {

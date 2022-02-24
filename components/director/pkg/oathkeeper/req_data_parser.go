@@ -5,8 +5,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -21,15 +19,15 @@ func NewReqDataParser() *reqDataParser {
 type reqDataParser struct{}
 
 // Parse returns parsed incomming request as ReqData with body as ReqBody struct and original headers collection
-func (p *reqDataParser) Parse(req *http.Request) (oathkeeper.ReqData, error) {
-	var reqBody oathkeeper.ReqBody
+func (p *reqDataParser) Parse(req *http.Request) (ReqData, error) {
+	var reqBody ReqBody
 	err := json.NewDecoder(req.Body).Decode(&reqBody)
 	if err != nil {
 		if err == io.EOF {
-			return oathkeeper.ReqData{}, apperrors.NewInternalError("request body is empty")
+			return ReqData{}, apperrors.NewInternalError("request body is empty")
 		}
 
-		return oathkeeper.ReqData{}, errors.Wrap(err, "while decoding request body")
+		return ReqData{}, errors.Wrap(err, "while decoding request body")
 	}
 
 	defer func() {
@@ -39,5 +37,5 @@ func (p *reqDataParser) Parse(req *http.Request) (oathkeeper.ReqData, error) {
 		}
 	}()
 
-	return oathkeeper.NewReqData(req.Context(), reqBody, req.Header), nil
+	return NewReqData(req.Context(), reqBody, req.Header), nil
 }

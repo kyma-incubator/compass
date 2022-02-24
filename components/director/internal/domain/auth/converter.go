@@ -1,9 +1,12 @@
 package auth
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 )
 
@@ -14,6 +17,7 @@ type TokenConverter interface {
 }
 
 type converter struct {
+	tokenConverter TokenConverter
 }
 
 type converterOTT struct {
@@ -128,6 +132,54 @@ func (c *converter) InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, e
 	}, nil
 }
 
+// ModelFromGraphQLTokenInput missing godoc
+func (c *converter) ModelFromGraphQLTokenInput(in *graphql.OneTimeTokenInput) *model.OneTimeToken {
+	if in == nil {
+		return nil
+	}
+
+	return &model.OneTimeToken{
+		Token:        in.Token,
+		ConnectorURL: str.PtrStrToStr(in.ConnectorURL),
+		Type:         tokens.TokenType(*in.Type),
+		CreatedAt:    timestampToTime(in.CreatedAt),
+		UsedAt:       timestampToTime(in.UsedAt),
+		ExpiresAt:    timestampToTime(in.ExpiresAt),
+		Used:         in.Used,
+	}
+}
+
+// InputFromGraphQL missing godoc
+func (c *converter) ModelFromGraphQLInput(in graphql.AuthInput) (*model.Auth, error) {
+	credential := c.credentialModelFromGraphQL(in.Credential)
+
+	additionalHeaders, err := c.headersFromGraphQL(in.AdditionalHeaders, in.AdditionalHeadersSerialized)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting AdditionalHeaders from GraphQL input")
+	}
+
+	additionalQueryParams, err := c.queryParamsFromGraphQL(in.AdditionalQueryParams, in.AdditionalQueryParamsSerialized)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting AdditionalQueryParams from GraphQL input")
+	}
+
+	reqAuth, err := c.requestAuthFromGraphQL(in.RequestAuth)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Auth{
+		OneTimeToken:          c.ModelFromGraphQLTokenInput(in.OneTimeToken),
+		Credential:            credential,
+		AccessStrategy:        in.AccessStrategy,
+		AdditionalHeaders:     additionalHeaders,
+		AdditionalQueryParams: additionalQueryParams,
+		RequestAuth:           reqAuth,
+		CertCommonName:        str.PtrStrToStr(in.CertCommonName),
+	}, nil
+}
+
 func (c *converter) requestAuthToGraphQL(in *model.CredentialRequestAuth) *graphql.CredentialRequestAuth {
 	if in == nil {
 		return nil
@@ -188,6 +240,36 @@ func (c *converter) requestAuthInputFromGraphQL(in *graphql.CredentialRequestAut
 	}, nil
 }
 
+func (c *converter) requestAuthFromGraphQL(in *graphql.CredentialRequestAuthInput) (*model.CredentialRequestAuth, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	var csrf *model.CSRFTokenCredentialRequestAuth
+	if in.Csrf != nil {
+		additionalHeaders, err := c.headersFromGraphQL(in.Csrf.AdditionalHeaders, in.Csrf.AdditionalHeadersSerialized)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting CSRF AdditionalHeaders from GraphQL input")
+		}
+
+		additionalQueryParams, err := c.queryParamsFromGraphQL(in.Csrf.AdditionalQueryParams, in.Csrf.AdditionalQueryParamsSerialized)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting CSRF AdditionalQueryParams from GraphQL input")
+		}
+
+		csrf = &model.CSRFTokenCredentialRequestAuth{
+			TokenEndpointURL:      in.Csrf.TokenEndpointURL,
+			AdditionalQueryParams: additionalQueryParams,
+			AdditionalHeaders:     additionalHeaders,
+			Credential:            c.credentialModelFromGraphQL(in.Csrf.Credential),
+		}
+	}
+
+	return &model.CredentialRequestAuth{
+		Csrf: csrf,
+	}, nil
+}
+
 func (c *converter) headersFromGraphQL(headers graphql.HTTPHeaders, headersSerialized *graphql.HTTPHeadersSerialized) (map[string][]string, error) {
 	var h map[string][]string
 
@@ -239,6 +321,33 @@ func (c *converter) credentialInputFromGraphQL(in *graphql.CredentialDataInput) 
 	}
 }
 
+func (c *converter) credentialModelFromGraphQL(in *graphql.CredentialDataInput) model.CredentialData {
+	if in == nil {
+		return model.CredentialData{}
+	}
+
+	var basic *model.BasicCredentialData
+	var oauth *model.OAuthCredentialData
+
+	if in.Basic != nil {
+		basic = &model.BasicCredentialData{
+			Username: in.Basic.Username,
+			Password: in.Basic.Password,
+		}
+	} else if in.Oauth != nil {
+		oauth = &model.OAuthCredentialData{
+			URL:          in.Oauth.URL,
+			ClientID:     in.Oauth.ClientID,
+			ClientSecret: in.Oauth.ClientSecret,
+		}
+	}
+
+	return model.CredentialData{
+		Basic: basic,
+		Oauth: oauth,
+	}
+}
+
 func (c *converter) credentialToGraphQL(in model.CredentialData) graphql.CredentialData {
 	var credential graphql.CredentialData
 	if in.Basic != nil {
@@ -255,4 +364,8 @@ func (c *converter) credentialToGraphQL(in model.CredentialData) graphql.Credent
 	}
 
 	return credential
+}
+
+func timestampToTime(timestamp graphql.Timestamp) time.Time {
+	return time.Time(timestamp)
 }

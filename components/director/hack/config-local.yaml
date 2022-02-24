@@ -21,6 +21,7 @@ graphql:
     automaticScenarioAssignments: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:read"]
+    systemAuth: ["runtime.auths:read", "application.auths:read", "integration_system.auths:read"]
 
   mutation:
     registerApplication: ["application:write"]

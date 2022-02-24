@@ -4,11 +4,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,23 +18,23 @@ func TestMapSystemAuthToConsumerType(t *testing.T) {
 	// GIVEN
 	testCases := []struct {
 		name            string
-		sysAuthRefInput model.SystemAuthReferenceObjectType
+		sysAuthRefInput systemauth.SystemAuthReferenceObjectType
 		expected        consumer.ConsumerType
 		expectedErr     error
 	}{
 		{
 			name:            "Success - Map to application",
-			sysAuthRefInput: model.ApplicationReference,
+			sysAuthRefInput: systemauth.ApplicationReference,
 			expected:        consumer.Application,
 		},
 		{
 			name:            "Success - Map to runtime",
-			sysAuthRefInput: model.RuntimeReference,
+			sysAuthRefInput: systemauth.RuntimeReference,
 			expected:        consumer.Runtime,
 		},
 		{
 			name:            "Success - Map to integration system",
-			sysAuthRefInput: model.IntegrationSystemReference,
+			sysAuthRefInput: systemauth.IntegrationSystemReference,
 			expected:        consumer.IntegrationSystem,
 		},
 		{

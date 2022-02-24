@@ -3,9 +3,9 @@
 package automock
 
 import (
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 	http "net/http"
 
-	oathkeeper "github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,14 +15,14 @@ type ReqDataParser struct {
 }
 
 // Parse provides a mock function with given fields: req
-func (_m *ReqDataParser) Parse(req *http.Request) (oathkeeper.ReqData, error) {
+func (_m *ReqDataParser) Parse(req *http.Request) (oathkeeper2.ReqData, error) {
 	ret := _m.Called(req)
 
-	var r0 oathkeeper.ReqData
-	if rf, ok := ret.Get(0).(func(*http.Request) oathkeeper.ReqData); ok {
+	var r0 oathkeeper2.ReqData
+	if rf, ok := ret.Get(0).(func(*http.Request) oathkeeper2.ReqData); ok {
 		r0 = rf(req)
 	} else {
-		r0 = ret.Get(0).(oathkeeper.ReqData)
+		r0 = ret.Get(0).(oathkeeper2.ReqData)
 	}
 
 	var r1 error

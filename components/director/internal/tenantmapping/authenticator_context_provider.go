@@ -20,6 +20,8 @@ import (
 	"context"
 	"strings"
 
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/tidwall/gjson"
@@ -28,9 +30,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/pkg/errors"
 )
 
@@ -55,7 +56,7 @@ type authenticatorContextProvider struct {
 }
 
 // GetObjectContext is the authenticatorContextProvider implementation of the ObjectContextProvider interface
-func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper2.ReqData, authDetails oathkeeper2.AuthDetails) (ObjectContext, error) {
 	var externalTenantID, scopes string
 
 	logger := log.C(ctx).WithFields(logrus.Fields{
@@ -105,7 +106,7 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 }
 
 // Match checks whether any of its preconfigured authenticators matches the ReqData and if so builds AuthDetails for the matched authenticator
-func (m *authenticatorContextProvider) Match(ctx context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+func (m *authenticatorContextProvider) Match(ctx context.Context, data oathkeeper2.ReqData) (bool, *oathkeeper2.AuthDetails, error) {
 	coords, exist, err := data.ExtractCoordinates()
 	if err != nil {
 		return false, nil, errors.Wrap(err, "while extracting coordinates")
@@ -128,7 +129,7 @@ func (m *authenticatorContextProvider) Match(ctx context.Context, data oathkeepe
 			}
 
 			index := coords.Index
-			return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn, ScopePrefix: authn.TrustedIssuers[index].ScopePrefix, Region: authn.TrustedIssuers[index].Region}, nil
+			return true, &oathkeeper2.AuthDetails{AuthID: authID, AuthFlow: oathkeeper2.JWTAuthFlow, Authenticator: &authn, ScopePrefix: authn.TrustedIssuers[index].ScopePrefix, Region: authn.TrustedIssuers[index].Region}, nil
 		}
 	}
 

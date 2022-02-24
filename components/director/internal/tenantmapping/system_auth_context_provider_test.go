@@ -8,10 +8,12 @@ import (
 	"strings"
 	"testing"
 
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/google/uuid"
 	systemauthmock "github.com/kyma-incubator/compass/components/director/internal/domain/systemauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	tenantmappingmock "github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
@@ -27,12 +29,12 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		refObjID := uuid.New()
 		expectedTenantID := uuid.New()
 		expectedScopes := []string{"application:read"}
-		sysAuth := &model.SystemAuth{
+		sysAuth := &systemauth.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
-		reqData := oathkeeper.ReqData{}
+		reqData := oathkeeper2.ReqData{}
 
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
@@ -41,7 +43,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		scopesGetterMock.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(expectedScopes, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, scopesGetterMock, nil)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.CertificateFlow}
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -61,7 +63,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		expectedTenantID := uuid.New()
 		expectedExternalTenantID := uuid.New().String()
 		expectedScopes := "application:read"
-		sysAuth := &model.SystemAuth{
+		sysAuth := &systemauth.SystemAuth{
 			ID:                  authID.String(),
 			IntegrationSystemID: str.Ptr(refObjID.String()),
 		}
@@ -69,11 +71,11 @@ func TestSystemAuthContextProvider(t *testing.T) {
 			ID:             expectedTenantID.String(),
 			ExternalTenant: expectedExternalTenantID,
 		}
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ExternalTenantKey: expectedExternalTenantID,
-					oathkeeper.ScopesKey:         expectedScopes,
+					oathkeeper2.ExternalTenantKey: expectedExternalTenantID,
+					oathkeeper2.ScopesKey:         expectedScopes,
 				},
 			},
 		}
@@ -85,7 +87,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID).Return(tenantMappingModel, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, tenantRepoMock)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.OAuth2Flow}
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -104,15 +106,15 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		refObjID := uuid.New()
 		expectedTenantID := uuid.New()
 		expectedScopes := "application:read"
-		sysAuth := &model.SystemAuth{
+		sysAuth := &systemauth.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ScopesKey: expectedScopes,
+					oathkeeper2.ScopesKey: expectedScopes,
 				},
 			},
 		}
@@ -121,7 +123,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.OAuth2Flow}
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -140,7 +142,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		refObjID := uuid.New()
 		expectedTenantID := uuid.New()
 		expectedScopes := []string{"application:read"}
-		sysAuth := &model.SystemAuth{
+		sysAuth := &systemauth.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
@@ -150,17 +152,17 @@ func TestSystemAuthContextProvider(t *testing.T) {
 				},
 			},
 		}
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ScopesKey: strings.Join(expectedScopes, " "),
+					oathkeeper2.ScopesKey: strings.Join(expectedScopes, " "),
 				},
 			},
 		}
 
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
-		systemAuthSvcMock.On("Update", mock.Anything, mock.MatchedBy(func(sa *model.SystemAuth) bool {
+		systemAuthSvcMock.On("Update", mock.Anything, mock.MatchedBy(func(sa *systemauth.SystemAuth) bool {
 			return sa.Value.OneTimeToken == nil && sa.Value.CertCommonName == authID.String()
 		})).Return(nil).Once()
 
@@ -168,7 +170,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		scopesGetterMock.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(expectedScopes, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, scopesGetterMock, nil)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.CertificateFlow}
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -185,13 +187,13 @@ func TestSystemAuthContextProvider(t *testing.T) {
 	t.Run("returns error when unable to get SystemAuth from the service", func(t *testing.T) {
 		authID := uuid.New()
 
-		reqData := oathkeeper.ReqData{}
+		reqData := oathkeeper2.ReqData{}
 
 		systemAuthSvcMock := getSystemAuthSvcMock()
-		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(&model.SystemAuth{}, errors.New("some-error")).Once()
+		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(&systemauth.SystemAuth{}, errors.New("some-error")).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.OAuth2Flow}
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -202,16 +204,16 @@ func TestSystemAuthContextProvider(t *testing.T) {
 
 	t.Run("returns error when unable to get the ReferenceObjectType of underlying SystemAuth", func(t *testing.T) {
 		authID := uuid.New()
-		sysAuth := &model.SystemAuth{}
+		sysAuth := &systemauth.SystemAuth{}
 		sysAuth.ID = "42"
 
-		reqData := oathkeeper.ReqData{}
+		reqData := oathkeeper2.ReqData{}
 
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.OAuth2Flow}
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -224,17 +226,17 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 
-		sysAuth := &model.SystemAuth{
+		sysAuth := &systemauth.SystemAuth{
 			ID:                  authID.String(),
 			IntegrationSystemID: str.Ptr(refObjID.String()),
 		}
-		reqData := oathkeeper.ReqData{}
+		reqData := oathkeeper2.ReqData{}
 
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.OAuth2Flow}
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -246,17 +248,17 @@ func TestSystemAuthContextProvider(t *testing.T) {
 	t.Run("returns error when unable to parse tenant specified in the ReqData in the Application or Runtime SystemAuth case", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
-		sysAuth := &model.SystemAuth{
+		sysAuth := &systemauth.SystemAuth{
 			ID:       authID.String(),
 			AppID:    str.Ptr(refObjID.String()),
 			TenantID: str.Ptr("123"),
 		}
 
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ExternalTenantKey: []byte{1, 2, 3},
-					oathkeeper.ScopesKey:         "application:read",
+					oathkeeper2.ExternalTenantKey: []byte{1, 2, 3},
+					oathkeeper2.ScopesKey:         "application:read",
 				},
 			},
 		}
@@ -265,7 +267,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.OAuth2Flow}
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -280,7 +282,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		externalTenantID := uuid.New().String()
 		tenant1ID := uuid.New()
 		tenant2ID := uuid.New()
-		sysAuth := &model.SystemAuth{
+		sysAuth := &systemauth.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(tenant1ID.String()),
 			AppID:    str.Ptr(refObjID.String()),
@@ -289,11 +291,11 @@ func TestSystemAuthContextProvider(t *testing.T) {
 			ID:             tenant2ID.String(),
 			ExternalTenant: externalTenantID,
 		}
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ExternalTenantKey: externalTenantID,
-					oathkeeper.ScopesKey:         "application:read",
+					oathkeeper2.ExternalTenantKey: externalTenantID,
+					oathkeeper2.ScopesKey:         "application:read",
 				},
 			},
 		}
@@ -305,7 +307,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, externalTenantID).Return(tenantMappingModel, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, tenantRepoMock)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.OAuth2Flow}
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -318,15 +320,15 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		tenant2ID := uuid.New()
-		sysAuth := &model.SystemAuth{
+		sysAuth := &systemauth.SystemAuth{
 			ID:    authID.String(),
 			AppID: str.Ptr(refObjID.String()),
 		}
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ExternalTenantKey: tenant2ID.String(),
-					oathkeeper.ScopesKey:         "application:read",
+					oathkeeper2.ExternalTenantKey: tenant2ID.String(),
+					oathkeeper2.ScopesKey:         "application:read",
 				},
 			},
 		}
@@ -335,7 +337,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.OAuth2Flow}
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -348,18 +350,18 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		tenant1ID := uuid.New()
-		sysAuth := &model.SystemAuth{
+		sysAuth := &systemauth.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(tenant1ID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
-		reqData := oathkeeper.ReqData{}
+		reqData := oathkeeper2.ReqData{}
 
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, nil, nil)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.OAuth2Flow}
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -372,12 +374,12 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		expectedTenantID := uuid.New()
-		sysAuth := &model.SystemAuth{
+		sysAuth := &systemauth.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 		}
-		reqData := oathkeeper.ReqData{}
+		reqData := oathkeeper2.ReqData{}
 
 		systemAuthSvcMock := getSystemAuthSvcMock()
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
@@ -386,7 +388,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		scopesGetterMock.On("GetRequiredScopes", "scopesPerConsumerType.application").Return([]string{}, errors.New("some-error")).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(systemAuthSvcMock, scopesGetterMock, nil)
-		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
+		authDetails := oathkeeper2.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper2.CertificateFlow}
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
@@ -399,10 +401,10 @@ func TestSystemAuthContextProvider(t *testing.T) {
 func TestSystemAuthContextProviderMatch(t *testing.T) {
 	t.Run("returns ID string and OAuth2Flow when a client_id is specified in the Extra map of request body", func(t *testing.T) {
 		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ClientIDKey: clientID,
+					oathkeeper2.ClientIDKey: clientID,
 				},
 			},
 		}
@@ -413,18 +415,18 @@ func TestSystemAuthContextProviderMatch(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper.OAuth2Flow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper2.OAuth2Flow, authDetails.AuthFlow)
 		require.Equal(t, clientID, authDetails.AuthID)
 	})
 
 	t.Run("returns nil when authenticator_coordinates is specified in the Extra map of request body", func(t *testing.T) {
 		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ClientIDKey:       clientID,
-					oathkeeper.ScopesKey:         "application:read",
-					oathkeeper.UsernameKey:       "test",
+					oathkeeper2.ClientIDKey:      clientID,
+					oathkeeper2.ScopesKey:        "application:read",
+					oathkeeper2.UsernameKey:      "test",
 					authenticator.CoordinatesKey: "test",
 				},
 			},
@@ -442,10 +444,10 @@ func TestSystemAuthContextProviderMatch(t *testing.T) {
 		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
 
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey): []string{clientID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertKey): []string{clientID},
 				},
 			},
 		}
@@ -454,7 +456,7 @@ func TestSystemAuthContextProviderMatch(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper.CertificateFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper2.CertificateFlow, authDetails.AuthFlow)
 		require.Equal(t, clientID, authDetails.AuthID)
 	})
 
@@ -462,10 +464,10 @@ func TestSystemAuthContextProviderMatch(t *testing.T) {
 		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
 
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDTokenKey): []string{clientID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDTokenKey): []string{clientID},
 				},
 			},
 		}
@@ -474,14 +476,14 @@ func TestSystemAuthContextProviderMatch(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper.OneTimeTokenFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper2.OneTimeTokenFlow, authDetails.AuthFlow)
 		require.Equal(t, clientID, authDetails.AuthID)
 	})
 
 	t.Run("returns nil when does not match", func(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{},
 			},
 		}
@@ -495,10 +497,10 @@ func TestSystemAuthContextProviderMatch(t *testing.T) {
 
 	t.Run("returns error when client_id is specified in Extra map in a non-string format", func(t *testing.T) {
 		provider := tenantmapping.NewSystemAuthContextProvider(nil, nil, nil)
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper.ClientIDKey: []byte{1, 2, 3},
+					oathkeeper2.ClientIDKey: []byte{1, 2, 3},
 				},
 			},
 		}

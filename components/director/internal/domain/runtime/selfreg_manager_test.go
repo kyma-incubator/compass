@@ -7,13 +7,14 @@ import (
 	"testing"
 	"time"
 
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/rtmtest"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
 )
@@ -42,11 +43,11 @@ var testConfig = runtime.SelfRegConfig{
 func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 	tokenConsumer := consumer.Consumer{
 		ConsumerID: "test-consumer-id",
-		Flow:       oathkeeper.OAuth2Flow,
+		Flow:       oathkeeper2.OAuth2Flow,
 	}
 	certConsumer := consumer.Consumer{
 		ConsumerID: "test-consumer-id",
-		Flow:       oathkeeper.CertificateFlow,
+		Flow:       oathkeeper2.CertificateFlow,
 	}
 	lblInput := model.RuntimeInput{
 		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal},

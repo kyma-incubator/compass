@@ -18,7 +18,7 @@ import (
 	lbl_mock "github.com/kyma-incubator/compass/components/director/internal/domain/label/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
 	"github.com/stretchr/testify/assert"

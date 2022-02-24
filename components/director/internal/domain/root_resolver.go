@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"net/url"
 
+	systemauth2 "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -40,12 +41,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -215,7 +216,7 @@ func NewRootResolver(
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
 		labelDef:           labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:              onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter, oneTimeTokenCfg.SuggestTokenHeaderKey),
-		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
+		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter, authConverter),
 		oAuth20:            oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:             integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:             viewer.NewViewerResolver(),
@@ -477,6 +478,11 @@ func (r *queryResolver) AutomaticScenarioAssignments(ctx context.Context, first 
 	return r.scenarioAssignment.AutomaticScenarioAssignments(ctx, first, after)
 }
 
+// SystemAuth missing godoc
+func (r *queryResolver) SystemAuth(ctx context.Context, id string) (graphql.SystemAuth, error) {
+	return r.systemAuth.SystemAuth(ctx, id)
+}
+
 type mutationResolver struct {
 	*RootResolver
 }
@@ -679,20 +685,25 @@ func (r *mutationResolver) RequestClientCredentialsForIntegrationSystem(ctx cont
 
 // DeleteSystemAuthForRuntime missing godoc
 func (r *mutationResolver) DeleteSystemAuthForRuntime(ctx context.Context, authID string) (graphql.SystemAuth, error) {
-	fn := r.systemAuth.GenericDeleteSystemAuth(model.RuntimeReference)
+	fn := r.systemAuth.GenericDeleteSystemAuth(systemauth2.RuntimeReference)
 	return fn(ctx, authID)
 }
 
 // DeleteSystemAuthForApplication missing godoc
 func (r *mutationResolver) DeleteSystemAuthForApplication(ctx context.Context, authID string) (graphql.SystemAuth, error) {
-	fn := r.systemAuth.GenericDeleteSystemAuth(model.ApplicationReference)
+	fn := r.systemAuth.GenericDeleteSystemAuth(systemauth2.ApplicationReference)
 	return fn(ctx, authID)
 }
 
 // DeleteSystemAuthForIntegrationSystem missing godoc
 func (r *mutationResolver) DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (graphql.SystemAuth, error) {
-	fn := r.systemAuth.GenericDeleteSystemAuth(model.IntegrationSystemReference)
+	fn := r.systemAuth.GenericDeleteSystemAuth(systemauth2.IntegrationSystemReference)
 	return fn(ctx, authID)
+}
+
+// UpdateSystemAuth missing godoc
+func (r *mutationResolver) UpdateSystemAuth(ctx context.Context, authID string, in graphql.AuthInput) (graphql.SystemAuth, error) {
+	return r.systemAuth.UpdateSystemAuth(ctx, authID, in)
 }
 
 // RegisterIntegrationSystem missing godoc
@@ -978,4 +989,8 @@ func (r *tenantResolver) Labels(ctx context.Context, obj *graphql.Tenant, key *s
 // TenantByExternalID missing godoc
 func (r *queryResolver) TenantByExternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
 	return r.tenant.Tenant(ctx, id)
+}
+
+type systemAuthResolver struct {
+	*RootResolver
 }

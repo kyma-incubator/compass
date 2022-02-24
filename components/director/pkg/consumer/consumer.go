@@ -1,9 +1,9 @@
 package consumer
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 )
 
 // ConsumerType missing godoc
@@ -29,13 +29,13 @@ type Consumer struct {
 }
 
 // MapSystemAuthToConsumerType missing godoc
-func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (ConsumerType, error) {
+func MapSystemAuthToConsumerType(refObj systemauth.SystemAuthReferenceObjectType) (ConsumerType, error) {
 	switch refObj {
-	case model.ApplicationReference:
+	case systemauth.ApplicationReference:
 		return Application, nil
-	case model.RuntimeReference:
+	case systemauth.RuntimeReference:
 		return Runtime, nil
-	case model.IntegrationSystemReference:
+	case systemauth.IntegrationSystemReference:
 		return IntegrationSystem, nil
 	}
 	return "", apperrors.NewInternalError("unknown reference object type")

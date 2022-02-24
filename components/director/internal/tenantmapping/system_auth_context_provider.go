@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"strings"
 
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	systemauth2 "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -41,7 +41,7 @@ type systemAuthContextProvider struct {
 }
 
 // GetObjectContext missing godoc
-func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper2.ReqData, authDetails oathkeeper2.AuthDetails) (ObjectContext, error) {
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authDetails.AuthID)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
@@ -66,9 +66,9 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 	var tenantCtx TenantContext
 
 	switch refObjType {
-	case model.IntegrationSystemReference:
+	case systemauth2.IntegrationSystemReference:
 		tenantCtx, scopes, err = m.getTenantAndScopesForIntegrationSystem(ctx, reqData)
-	case model.RuntimeReference, model.ApplicationReference:
+	case systemauth2.RuntimeReference, systemauth2.ApplicationReference:
 		tenantCtx, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(ctx, sysAuth, refObjType, reqData, authDetails.AuthFlow)
 	default:
 		return ObjectContext{}, errors.Errorf("unsupported reference object type (%s)", refObjType)
@@ -96,7 +96,7 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 	return objCxt, nil
 }
 
-func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper2.ReqData) (bool, *oathkeeper2.AuthDetails, error) {
 	// Custom authenticator flow:
 	// If that key is set, then the request has already passed by the authenticator mapping handler,
 	// hence the context provider will be the one of that particular authenticator.
@@ -105,32 +105,32 @@ func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.Req
 	}
 
 	// Certificate flow
-	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
-	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
+	idVal := data.Body.Header.Get(oathkeeper2.ClientIDCertKey)
+	certIssuer := data.Body.Header.Get(oathkeeper2.ClientIDCertIssuer)
 
-	if idVal != "" && certIssuer != oathkeeper.ExternalIssuer {
-		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
+	if idVal != "" && certIssuer != oathkeeper2.ExternalIssuer {
+		return true, &oathkeeper2.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper2.CertificateFlow, CertIssuer: certIssuer}, nil
 	}
 
 	// One-Time Token flow
-	if idVal := data.Body.Header.Get(oathkeeper.ClientIDTokenKey); idVal != "" {
-		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.OneTimeTokenFlow}, nil
+	if idVal := data.Body.Header.Get(oathkeeper2.ClientIDTokenKey); idVal != "" {
+		return true, &oathkeeper2.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper2.OneTimeTokenFlow}, nil
 	}
 
 	// Hydra Client Credentials OAuth flow
-	if idVal, ok := data.Body.Extra[oathkeeper.ClientIDKey]; ok {
+	if idVal, ok := data.Body.Extra[oathkeeper2.ClientIDKey]; ok {
 		authID, err := str.Cast(idVal)
 		if err != nil {
-			return false, nil, errors.Wrapf(err, "while parsing the value for %s", oathkeeper.ClientIDKey)
+			return false, nil, errors.Wrapf(err, "while parsing the value for %s", oathkeeper2.ClientIDKey)
 		}
 
-		return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.OAuth2Flow}, nil
+		return true, &oathkeeper2.AuthDetails{AuthID: authID, AuthFlow: oathkeeper2.OAuth2Flow}, nil
 	}
 
 	return false, nil, nil
 }
 
-func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx context.Context, reqData oathkeeper.ReqData) (TenantContext, string, error) {
+func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx context.Context, reqData oathkeeper2.ReqData) (TenantContext, string, error) {
 	var externalTenantID, scopes string
 
 	scopes, err := reqData.GetScopes()
@@ -165,7 +165,7 @@ func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx c
 	return NewTenantContext(externalTenantID, tenantMapping.ID), scopes, nil
 }
 
-func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ctx context.Context, sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData oathkeeper.ReqData, authFlow oathkeeper.AuthFlow) (TenantContext, string, error) {
+func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ctx context.Context, sysAuth *systemauth2.SystemAuth, refObjType systemauth2.SystemAuthReferenceObjectType, reqData oathkeeper2.ReqData, authFlow oathkeeper2.AuthFlow) (TenantContext, string, error) {
 	var externalTenantID, scopes string
 	var err error
 
@@ -222,7 +222,7 @@ func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ct
 	return NewTenantContext(externalTenantID, *sysAuth.TenantID), scopes, nil
 }
 
-func buildPath(refObjectType model.SystemAuthReferenceObjectType) string {
+func buildPath(refObjectType systemauth2.SystemAuthReferenceObjectType) string {
 	lowerCaseType := strings.ToLower(string(refObjectType))
 	transformedObjType := strings.ReplaceAll(lowerCaseType, " ", "_")
 	return fmt.Sprintf("%s.%s", scopesPerConsumerTypePrefix, transformedObjType)

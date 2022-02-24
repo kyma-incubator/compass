@@ -7,8 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/google/uuid"
@@ -27,9 +25,9 @@ func TestParse(t *testing.T) {
 		reqData, err := parser.Parse(req)
 
 		require.NoError(t, err)
-		require.Equal(t, systemAuthID.String(), reqData.Body.Header.Get(oathkeeper.ClientIDCertKey))
-		require.Equal(t, systemAuthID.String(), reqData.Body.Extra[oathkeeper.ClientIDKey])
-		require.Equal(t, username, reqData.Body.Extra[oathkeeper.UsernameKey])
+		require.Equal(t, systemAuthID.String(), reqData.Body.Header.Get(ClientIDCertKey))
+		require.Equal(t, systemAuthID.String(), reqData.Body.Extra[ClientIDKey])
+		require.Equal(t, username, reqData.Body.Extra[UsernameKey])
 	})
 
 	t.Run("when request JSON does not contain Extra property the returned ReqData should have Extra property initialized", func(t *testing.T) {

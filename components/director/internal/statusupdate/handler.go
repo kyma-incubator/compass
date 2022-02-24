@@ -4,13 +4,13 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 )
 
 type update struct {
@@ -57,7 +57,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			if consumerInfo.Flow == oathkeeper.OneTimeTokenFlow {
+			if consumerInfo.Flow == oathkeeper2.OneTimeTokenFlow {
 				logger.Infof("AuthFlow is %s. Will not update status of %s with ID: %s", consumerInfo.Flow, consumerInfo.ConsumerType, consumerInfo.ConsumerID)
 				next.ServeHTTP(w, r)
 				return

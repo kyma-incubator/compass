@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"strings"
 
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
 	"github.com/form3tech-oss/jwt-go"
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 )
@@ -26,7 +27,7 @@ type Claims struct {
 	OnBehalfOf    string                `json:"onBehalfOf"`
 	Region        string                `json:"region"`
 	TokenClientID string                `json:"tokenClientID"`
-	Flow          oathkeeper.AuthFlow   `json:"flow"`
+	Flow          oathkeeper2.AuthFlow  `json:"flow"`
 	ZID           string                `json:"zid"`
 	jwt.StandardClaims
 }
@@ -41,7 +42,7 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 		OnBehalfOf    string                `json:"onBehalfOf"`
 		Region        string                `json:"region"`
 		TokenClientID string                `json:"tokenClientID"`
-		Flow          oathkeeper.AuthFlow   `json:"flow"`
+		Flow          oathkeeper2.AuthFlow  `json:"flow"`
 		ZID           string                `json:"zid"`
 		jwt.StandardClaims
 	}{}

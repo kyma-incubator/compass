@@ -9,14 +9,16 @@ import (
 	"strings"
 	"testing"
 
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/mock"
@@ -31,14 +33,14 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	emptyCtx := context.TODO()
 	consumerTenantID := uuid.New().String()
 	providerTenantID := uuid.New().String()
-	authDetails := oathkeeper.AuthDetails{AuthID: providerTenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
+	authDetails := oathkeeper2.AuthDetails{AuthID: providerTenantID, AuthFlow: oathkeeper2.CertificateFlow, CertIssuer: oathkeeper2.ExternalIssuer}
 
-	reqData := oathkeeper.ReqData{
-		Body: oathkeeper.ReqBody{
+	reqData := oathkeeper2.ReqData{
+		Body: oathkeeper2.ReqBody{
 			Extra: map[string]interface{}{
-				cert.ConsumerTypeExtraField:  model.IntegrationSystemReference,
-				cert.AccessLevelsExtraField:  []interface{}{tenantEntity.Subaccount},
-				oathkeeper.ExternalTenantKey: consumerTenantID,
+				cert.ConsumerTypeExtraField:   systemauth.IntegrationSystemReference,
+				cert.AccessLevelsExtraField:   []interface{}{tenantEntity.Subaccount},
+				oathkeeper2.ExternalTenantKey: consumerTenantID,
 			},
 		},
 	}
@@ -59,8 +61,8 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		TenantRepoFn       func() *automock.TenantRepository
-		ReqDataInput       oathkeeper.ReqData
-		AuthDetailsInput   oathkeeper.AuthDetails
+		ReqDataInput       oathkeeper2.ReqData
+		AuthDetailsInput   oathkeeper2.AuthDetails
 		ExpectedInternalID string
 		ExpectedConsumerID string
 		ExpectedErr        error
@@ -104,7 +106,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 		{
 			Name:             "Error when can't extract external tenant id",
 			TenantRepoFn:     unusedTenantRepo,
-			ReqDataInput:     oathkeeper.ReqData{},
+			ReqDataInput:     oathkeeper2.ReqData{},
 			AuthDetailsInput: authDetails,
 			ExpectedErr:      tenantKeyNotFoundErr,
 		},
@@ -152,12 +154,12 @@ func TestAccessLevelContextProvider_Match(t *testing.T) {
 	tenantHeader := "123"
 	accessLevels := []interface{}{"account"}
 	t.Run("returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map of request body", func(t *testing.T) {
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ExternalTenantKey):  []string{tenantHeader},
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{clientID},
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ExternalTenantKey):  []string{tenantHeader},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertKey):    []string{clientID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertIssuer): []string{oathkeeper2.ExternalIssuer},
 				},
 				Extra: map[string]interface{}{
 					cert.AccessLevelsExtraField: accessLevels,
@@ -169,17 +171,17 @@ func TestAccessLevelContextProvider_Match(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper.CertificateFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper2.CertificateFlow, authDetails.AuthFlow)
 		require.Equal(t, clientID, authDetails.AuthID)
 	})
 
 	t.Run("does not match when consumer type is not provided and does not match", func(t *testing.T) {
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ExternalTenantKey):  []string{tenantHeader},
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{clientID},
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ExternalTenantKey):  []string{tenantHeader},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertKey):    []string{clientID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertIssuer): []string{oathkeeper2.ExternalIssuer},
 				},
 			},
 		}
@@ -191,11 +193,11 @@ func TestAccessLevelContextProvider_Match(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("does not match when cert issuer is not external and does not match", func(t *testing.T) {
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ExternalTenantKey): []string{tenantHeader},
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):   []string{clientID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ExternalTenantKey): []string{tenantHeader},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertKey):   []string{clientID},
 				},
 				Extra: map[string]interface{}{
 					cert.AccessLevelsExtraField: accessLevels,
@@ -210,11 +212,11 @@ func TestAccessLevelContextProvider_Match(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("does not match when tenant header is missing", func(t *testing.T) {
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{clientID},
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertKey):    []string{clientID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertIssuer): []string{oathkeeper2.ExternalIssuer},
 				},
 				Extra: map[string]interface{}{
 					cert.ConsumerTypeExtraField: accessLevels,

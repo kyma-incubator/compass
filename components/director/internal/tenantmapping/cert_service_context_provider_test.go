@@ -8,14 +8,15 @@ import (
 	"strings"
 	"testing"
 
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/mock"
@@ -28,16 +29,16 @@ func TestCertServiceContextProvider(t *testing.T) {
 
 	emptyCtx := context.TODO()
 	tenantID := uuid.New().String()
-	authDetails := oathkeeper.AuthDetails{AuthID: tenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
+	authDetails := oathkeeper2.AuthDetails{AuthID: tenantID, AuthFlow: oathkeeper2.CertificateFlow, CertIssuer: oathkeeper2.ExternalIssuer}
 
 	scopes := []string{"runtime:read", "runtime:write", "tenant:read"}
 	scopesString := "runtime:read runtime:write tenant:read"
 
-	reqData := oathkeeper.ReqData{}
+	reqData := oathkeeper2.ReqData{}
 
 	internalConsumerID := "123"
-	reqDataWithInternalConsumerID := oathkeeper.ReqData{
-		Body: oathkeeper.ReqBody{Extra: map[string]interface{}{
+	reqDataWithInternalConsumerID := oathkeeper2.ReqData{
+		Body: oathkeeper2.ReqBody{Extra: map[string]interface{}{
 			cert.InternalConsumerIDField: internalConsumerID,
 		}},
 	}
@@ -55,8 +56,8 @@ func TestCertServiceContextProvider(t *testing.T) {
 		Name               string
 		TenantRepoFn       func() *automock.TenantRepository
 		ScopesGetterFn     func() *automock.ScopesGetter
-		ReqDataInput       oathkeeper.ReqData
-		AuthDetailsInput   oathkeeper.AuthDetails
+		ReqDataInput       oathkeeper2.ReqData
+		AuthDetailsInput   oathkeeper2.AuthDetails
 		ExpectedScopes     string
 		ExpectedInternalID string
 		ExpectedConsumerID string
@@ -183,11 +184,11 @@ func TestCertServiceContextProviderMatch(t *testing.T) {
 		clientID := "de766a55-3abb-4480-8d4a-6d255990b159"
 		provider := tenantmapping.NewCertServiceContextProvider(nil, nil)
 
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{clientID},
-					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertKey):    []string{clientID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertIssuer): []string{oathkeeper2.ExternalIssuer},
 				},
 			},
 		}
@@ -196,15 +197,15 @@ func TestCertServiceContextProviderMatch(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper.CertificateFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper2.CertificateFlow, authDetails.AuthFlow)
 		require.Equal(t, clientID, authDetails.AuthID)
 	})
 
 	t.Run("returns nil when does not match", func(t *testing.T) {
 		provider := tenantmapping.NewCertServiceContextProvider(nil, nil)
 
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
+		reqData := oathkeeper2.ReqData{
+			Body: oathkeeper2.ReqBody{
 				Header: http.Header{},
 			},
 		}

@@ -3,6 +3,9 @@ package systemauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -12,10 +15,11 @@ import (
 // SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
-	GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error)
-	GetGlobal(ctx context.Context, id string) (*model.SystemAuth, error)
-	DeleteByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) error
-	Update(ctx context.Context, item *model.SystemAuth) error
+	GetByIDForObject(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, authID string) (*systemauth.SystemAuth, error)
+	GetGlobal(ctx context.Context, id string) (*systemauth.SystemAuth, error)
+	DeleteByIDForObject(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, authID string) error
+	Update(ctx context.Context, item *systemauth.SystemAuth) error
+	UpdateValue(ctx context.Context, id string, item *model.Auth) (*systemauth.SystemAuth, error)
 }
 
 // OAuth20Service missing godoc
@@ -27,7 +31,7 @@ type OAuth20Service interface {
 // SystemAuthConverter missing godoc
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(model *model.SystemAuth) (graphql.SystemAuth, error)
+	ToGraphQL(model *systemauth.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // Resolver missing godoc
@@ -36,15 +40,16 @@ type Resolver struct {
 	svc        SystemAuthService
 	oAuth20Svc OAuth20Service
 	conv       SystemAuthConverter
+	authConv   AuthConverter
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, svc SystemAuthService, oAuth20Svc OAuth20Service, conv SystemAuthConverter) *Resolver {
-	return &Resolver{transact: transact, svc: svc, oAuth20Svc: oAuth20Svc, conv: conv}
+func NewResolver(transact persistence.Transactioner, svc SystemAuthService, oAuth20Svc OAuth20Service, conv SystemAuthConverter, authConverter AuthConverter) *Resolver {
+	return &Resolver{transact: transact, svc: svc, oAuth20Svc: oAuth20Svc, conv: conv, authConv: authConverter}
 }
 
 // GenericDeleteSystemAuth missing godoc
-func (r *Resolver) GenericDeleteSystemAuth(objectType model.SystemAuthReferenceObjectType) func(ctx context.Context, id string) (graphql.SystemAuth, error) {
+func (r *Resolver) GenericDeleteSystemAuth(objectType systemauth.SystemAuthReferenceObjectType) func(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return func(ctx context.Context, id string) (graphql.SystemAuth, error) {
 		tx, err := r.transact.Begin()
 		if err != nil {
@@ -83,4 +88,59 @@ func (r *Resolver) GenericDeleteSystemAuth(objectType model.SystemAuthReferenceO
 
 		return deletedItem, nil
 	}
+}
+
+// SystemAuth missing godoc
+func (r *Resolver) SystemAuth(ctx context.Context, id string) (graphql.SystemAuth, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	systemAuth, err := r.svc.GetGlobal(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(systemAuth)
+}
+
+// UpdateSystemAuth missing godoc
+func (r *Resolver) UpdateSystemAuth(ctx context.Context, id string, in graphql.AuthInput) (graphql.SystemAuth, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Infof("Updating System Auth with id %s", id)
+
+	convertedIn, err := r.authConv.ModelFromGraphQLInput(in)
+	if err != nil {
+		return nil, err
+	}
+
+	systemAuth, err := r.svc.UpdateValue(ctx, id, convertedIn)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("System Auth with id %s successfully updated", id)
+
+	return r.conv.ToGraphQL(systemAuth)
 }

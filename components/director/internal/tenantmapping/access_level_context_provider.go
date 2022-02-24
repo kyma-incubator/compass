@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -31,7 +32,7 @@ func NewAccessLevelContextProvider(tenantRepo TenantRepository) *accessLevelCont
 
 // GetObjectContext is the accessLevelContextProvider implementation of the ObjectContextProvider interface.
 // It receives the tenant information extracted from the tenant header in this case, and it verifies that the caller has access to this tenant.
-func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper2.ReqData, authDetails oathkeeper2.AuthDetails) (ObjectContext, error) {
 	consumerType := reqData.ConsumerType()
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumerType,
@@ -68,15 +69,15 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 }
 
 // Match will only match requests coming from certificate consumers that are able to access only a subset of tenants.
-func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper2.ReqData) (bool, *oathkeeper2.AuthDetails, error) {
 	if len(data.TenantAccessLevels()) == 0 {
 		return false, nil, nil
 	}
 
-	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
-	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
+	idVal := data.Body.Header.Get(oathkeeper2.ClientIDCertKey)
+	certIssuer := data.Body.Header.Get(oathkeeper2.ClientIDCertIssuer)
 
-	if idVal == "" || certIssuer != oathkeeper.ExternalIssuer {
+	if idVal == "" || certIssuer != oathkeeper2.ExternalIssuer {
 		return false, nil, nil
 	}
 
@@ -87,10 +88,10 @@ func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper.Re
 		return false, nil, err
 	}
 
-	return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
+	return true, &oathkeeper2.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper2.CertificateFlow, CertIssuer: certIssuer}, nil
 }
 
-func (p *accessLevelContextProvider) verifyTenantAccessLevels(tenant *model.BusinessTenantMapping, authDetails oathkeeper.AuthDetails, reqData oathkeeper.ReqData) error {
+func (p *accessLevelContextProvider) verifyTenantAccessLevels(tenant *model.BusinessTenantMapping, authDetails oathkeeper2.AuthDetails, reqData oathkeeper2.ReqData) error {
 	grantedAccessLevels := reqData.TenantAccessLevels()
 	var accessLevelExists bool
 	for _, al := range grantedAccessLevels {

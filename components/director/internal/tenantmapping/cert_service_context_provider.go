@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/sirupsen/logrus"
 )
@@ -36,7 +37,7 @@ type certServiceContextProvider struct {
 // GetObjectContext is the certServiceContextProvider implementation of the ObjectContextProvider interface
 // By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
 // There we should only convert the tenant identifier from external to internal.
-func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper2.ReqData, authDetails oathkeeper2.AuthDetails) (ObjectContext, error) {
 	externalTenantID := authDetails.AuthID
 
 	consumerType := reqData.ConsumerType()
@@ -71,18 +72,18 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 
 // Match checks if there is "client-id-from-certificate" Header with nonempty value and "client-certificate-issuer" Header with value "certificate-service".
 // If so AuthDetails object is build.
-func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
-	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
-	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
+func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper2.ReqData) (bool, *oathkeeper2.AuthDetails, error) {
+	idVal := data.Body.Header.Get(oathkeeper2.ClientIDCertKey)
+	certIssuer := data.Body.Header.Get(oathkeeper2.ClientIDCertIssuer)
 
-	if idVal != "" && certIssuer == oathkeeper.ExternalIssuer {
-		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
+	if idVal != "" && certIssuer == oathkeeper2.ExternalIssuer {
+		return true, &oathkeeper2.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper2.CertificateFlow, CertIssuer: certIssuer}, nil
 	}
 
 	return false, nil, nil
 }
 
-func (p *certServiceContextProvider) directorScopes(consumerType model.SystemAuthReferenceObjectType) (string, error) {
+func (p *certServiceContextProvider) directorScopes(consumerType systemauth.SystemAuthReferenceObjectType) (string, error) {
 	declaredScopes, err := p.scopesGetter.GetRequiredScopes(buildPath(consumerType))
 	if err != nil {
 		return "", errors.Wrap(err, "while fetching scopes")
@@ -90,7 +91,7 @@ func (p *certServiceContextProvider) directorScopes(consumerType model.SystemAut
 	return strings.Join(declaredScopes, " "), nil
 }
 
-func getConsumerID(data oathkeeper.ReqData, details oathkeeper.AuthDetails) string {
+func getConsumerID(data oathkeeper2.ReqData, details oathkeeper2.AuthDetails) string {
 	if id := data.InternalConsumerID(); id != "" {
 		return id
 	}

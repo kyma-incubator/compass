@@ -1,8 +1,8 @@
 package tenantmapping
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 )
 
 const (
@@ -32,7 +32,7 @@ type ObjectContext struct {
 	Region              string
 	OauthClientID       string
 	ConsumerID          string
-	AuthFlow            oathkeeper.AuthFlow
+	AuthFlow            oathkeeper2.AuthFlow
 	ConsumerType        consumer.ConsumerType
 	ContextProvider     string
 }
@@ -52,7 +52,7 @@ type KeysExtra struct {
 }
 
 // NewObjectContext missing godoc
-func NewObjectContext(tenantCtx TenantContext, keysExtra KeysExtra, scopes string, scopesMergeStrategy scopesMergeStrategy, region string, clientID string, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.ConsumerType, contextProvider string) ObjectContext {
+func NewObjectContext(tenantCtx TenantContext, keysExtra KeysExtra, scopes string, scopesMergeStrategy scopesMergeStrategy, region string, clientID string, consumerID string, authFlow oathkeeper2.AuthFlow, consumerType consumer.ConsumerType, contextProvider string) ObjectContext {
 	return ObjectContext{
 		TenantContext:       tenantCtx,
 		KeysExtra:           keysExtra,

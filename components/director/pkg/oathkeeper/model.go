@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -104,7 +105,7 @@ type ReqData struct {
 // ExtraData represents the extra fields that might be provided in the incoming request
 type ExtraData struct {
 	InternalConsumerID string
-	ConsumerType       model.SystemAuthReferenceObjectType
+	ConsumerType       systemauth.SystemAuthReferenceObjectType
 	AccessLevels       []tenantEntity.Type
 }
 
@@ -256,7 +257,7 @@ func (d *ReqData) IsIntegrationSystemFlow() bool {
 	if err != nil {
 		return false
 	}
-	return clientIDFromCert != tenant && d.ConsumerType() == model.IntegrationSystemReference
+	return clientIDFromCert != tenant && d.ConsumerType() == systemauth.IntegrationSystemReference
 }
 
 // TenantAccessLevels gets the granted tenant access levels from body extra if they exist.
@@ -279,8 +280,8 @@ func (d *ReqData) TenantAccessLevels() []tenantEntity.Type {
 }
 
 // ConsumerType gets consumer type from body extra if it exists.
-func (d *ReqData) ConsumerType() model.SystemAuthReferenceObjectType {
-	defaultConsumerType := model.RuntimeReference
+func (d *ReqData) ConsumerType() systemauth.SystemAuthReferenceObjectType {
+	defaultConsumerType := systemauth.RuntimeReference
 	if d.Body.Extra == nil {
 		return defaultConsumerType
 	}
@@ -288,7 +289,7 @@ func (d *ReqData) ConsumerType() model.SystemAuthReferenceObjectType {
 	if !found {
 		return defaultConsumerType
 	}
-	return model.SystemAuthReferenceObjectType(fmt.Sprint(consumerType))
+	return systemauth.SystemAuthReferenceObjectType(fmt.Sprint(consumerType))
 }
 
 // InternalConsumerID gets internal consumer id from body extra if it exists.
