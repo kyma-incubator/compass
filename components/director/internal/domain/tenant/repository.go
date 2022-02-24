@@ -285,10 +285,6 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 
 // GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
 func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	return r.getLowestOwnerForResourceWithCustomSelect(ctx, resourceType, objectID)
-}
-
-func (r *pgRepository) getLowestOwnerForResourceWithCustomSelect(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
 	rawStmt := `(SELECT {{ .m2mTenantID }} FROM {{ .m2mTable }} ta WHERE ta.{{ .m2mID }} = ? AND ta.{{ .owner }} = true` +
 		` AND (NOT EXISTS(SELECT 1 FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})` + // the tenant has no children
 		` OR (NOT EXISTS(SELECT 1 FROM {{ .m2mTable }} ta2` +
