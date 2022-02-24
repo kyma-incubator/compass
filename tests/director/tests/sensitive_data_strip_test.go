@@ -53,8 +53,8 @@ func TestSensitiveDataStrip(t *testing.T) {
 	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 
-	token := fixtures.RequestOneTimeTokenForApplication(t, ctx, dexGraphQLClient, app.ID)
-	assert.NotEmpty(t, token.Token)
+	ott := fixtures.RequestOneTimeTokenForApplication(t, ctx, dexGraphQLClient, app.ID)
+	assert.NotEmpty(t, ott)
 
 	t.Log(fmt.Sprintf("Asserting document, event and api definitions are present"))
 	require.Len(t, app.Bundles.Data, 1)
