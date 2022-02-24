@@ -82,7 +82,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2192"
+      version: "PR-2222"
     connectivity_adapter:
       dir:
       version: "PR-2166"
@@ -120,7 +120,7 @@ global:
       version: "PR-54"
     e2e_tests:
       dir:
-      version: "PR-2208"
+      version: "PR-2222"
   isLocalEnv: false
   oauth2:
     host: oauth2
