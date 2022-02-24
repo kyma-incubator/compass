@@ -172,3 +172,8 @@ func (g *universalPageableQuerier) getTotalCount(ctx context.Context, resourceTy
 	}
 	return totalCount, nil
 }
+
+// IsLockClauseProvided true if there is a non-empty lock clause provided, and false otherwise.
+func IsLockClauseProvided(lockClause string) bool {
+	return strings.TrimSpace(lockClause) != NoLock
+}

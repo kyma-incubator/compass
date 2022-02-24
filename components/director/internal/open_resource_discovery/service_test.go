@@ -79,7 +79,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulTenantSvc := func() *automock.TenantService {
 		tenantSvc := &automock.TenantService{}
-		tenantSvc.On("GetLowestOwnerForResourceWithSelectForUpdate", txtest.CtxWithDBMatcher(), resource.Application, appID).Return(tenantID, nil).Once()
+		tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return(tenantID, nil).Once()
 		return tenantSvc
 	}
 
@@ -563,7 +563,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:        successfulAppList,
 			tenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResourceWithSelectForUpdate", txtest.CtxWithDBMatcher(), resource.Application, appID).Return("", testErr).Once()
+				tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return("", testErr).Once()
 				return tenantSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,

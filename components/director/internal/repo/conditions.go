@@ -367,15 +367,15 @@ func (c *tenantIsolationCondition) GetQueryArgs() ([]interface{}, bool) {
 // the entity table (m2m table or view). Conditionally an owner check is added to the subquery.
 // In case of resource.BundleInstanceAuth additional embedded owner check is added.
 func NewTenantIsolationCondition(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
-	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, true, NoLock)
+	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, true)
 }
 
 // NewTenantIsolationConditionForNamedArgs is the same as NewTenantIsolationCondition, but for update queries which use named args.
 func NewTenantIsolationConditionForNamedArgs(resourceType resource.Type, tenant string, ownerCheck bool) (Condition, error) {
-	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, false, NoLock)
+	return newTenantIsolationConditionWithPlaceholder(resourceType, tenant, ownerCheck, false)
 }
 
-func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tenant string, ownerCheck bool, positionalArgs bool, lockClause string) (Condition, error) {
+func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tenant string, ownerCheck bool, positionalArgs bool) (Condition, error) {
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return nil, errors.Errorf("entity %s does not have access table", resourceType)
@@ -384,14 +384,11 @@ func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tena
 	var stmtBuilder strings.Builder
 	var args []interface{}
 
-	if IsLockClauseProvided(lockClause) {
-		lockClause = " " + lockClause
-	}
 	if positionalArgs {
-		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = ?%s", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn, lockClause))
+		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = ?", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn))
 		args = append(args, tenant)
 	} else {
-		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = :tenant_id%s", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn, lockClause))
+		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = :tenant_id", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn))
 	}
 
 	if ownerCheck {
@@ -410,9 +407,4 @@ func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tena
 	stmtBuilder.WriteString(")")
 
 	return &tenantIsolationCondition{sql: stmtBuilder.String(), args: args}, nil
-}
-
-// IsLockClauseProvided true if there is a non-empty lock clause provided, and false otherwise.
-func IsLockClauseProvided(lockClause string) bool {
-	return strings.TrimSpace(lockClause) != NoLock
 }

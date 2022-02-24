@@ -31,7 +31,6 @@ type TenantMappingRepository interface {
 	ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error)
 	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
-	GetLowestOwnerForResourceWithSelectForUpdate(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 }
 
 // LabelUpsertService is responsible for creating, or updating already existing labels, and their label definitions.
@@ -126,11 +125,6 @@ func (s *service) GetTenantByID(ctx context.Context, id string) (*model.Business
 // GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
 func (s *service) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
 	return s.tenantMappingRepo.GetLowestOwnerForResource(ctx, resourceType, objectID)
-}
-
-// GetLowestOwnerForResourceWithSelectForUpdate returns the lowest tenant in the hierarchy that is owner of a given resource.
-func (s *service) GetLowestOwnerForResourceWithSelectForUpdate(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	return s.tenantMappingRepo.GetLowestOwnerForResourceWithSelectForUpdate(ctx, resourceType, objectID)
 }
 
 // MultipleToTenantMapping assigns a new internal ID to all the provided tenants, and returns the BusinessTenantMappingInputs as BusinessTenantMappings.

@@ -100,7 +100,7 @@ func (l *universalLister) listWithTenantScope(ctx context.Context, resourceType 
 	}
 
 	tenantIsolation, err :=
-		newTenantIsolationConditionWithPlaceholder(resourceType, tenant, false, true, lockClause)
+		newTenantIsolationConditionWithPlaceholder(resourceType, tenant, false, true)
 	if err != nil {
 		return err
 	}

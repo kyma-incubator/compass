@@ -285,19 +285,15 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 
 // GetLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
 func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	return r.getLowestOwnerForResourceWithCustomSelect(ctx, resourceType, objectID, repo.NoLock)
+	return r.getLowestOwnerForResourceWithCustomSelect(ctx, resourceType, objectID)
 }
 
-func (r *pgRepository) GetLowestOwnerForResourceWithSelectForUpdate(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
-	return r.getLowestOwnerForResourceWithCustomSelect(ctx, resourceType, objectID, " "+repo.ForUpdateLock)
-}
-
-func (r *pgRepository) getLowestOwnerForResourceWithCustomSelect(ctx context.Context, resourceType resource.Type, objectID string, lockClause string) (string, error) {
+func (r *pgRepository) getLowestOwnerForResourceWithCustomSelect(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
 	rawStmt := `(SELECT {{ .m2mTenantID }} FROM {{ .m2mTable }} ta WHERE ta.{{ .m2mID }} = ? AND ta.{{ .owner }} = true` +
-		` AND (NOT EXISTS(SELECT 1 FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }}{{ .lockClause }})` + // the tenant has no children
+		` AND (NOT EXISTS(SELECT 1 FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})` + // the tenant has no children
 		` OR (NOT EXISTS(SELECT 1 FROM {{ .m2mTable }} ta2` +
 		` WHERE ta2.{{ .m2mID }} = ? AND ta2.{{ .owner }} = true AND` +
-		` ta2.{{ .m2mTenantID }} IN (SELECT {{ .id }} FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }}{{ .lockClause }}){{ .lockClause }}))){{ .lockClause }})` // there is no child that has owner access
+		` ta2.{{ .m2mTenantID }} IN (SELECT {{ .id }} FROM {{ .tenantsTable }} WHERE {{ .parent }} = ta.{{ .m2mTenantID }})))))` // there is no child that has owner access
 
 	t, err := template.New("").Parse(rawStmt)
 	if err != nil {
@@ -317,7 +313,6 @@ func (r *pgRepository) getLowestOwnerForResourceWithCustomSelect(ctx context.Con
 		"tenantsTable": tableName,
 		"parent":       parentColumn,
 		"id":           idColumn,
-		"lockClause":   lockClause,
 	}
 
 	res := new(bytes.Buffer)
