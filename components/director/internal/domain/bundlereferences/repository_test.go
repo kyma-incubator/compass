@@ -2,8 +2,9 @@ package bundlereferences_test
 
 import (
 	"context"
-
 	"errors"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"regexp"
 	"testing"
@@ -239,6 +240,9 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 	secondAPIID := "444444444-4444-4444-4444-444444444444"
 	firstEventID := "555555555-5555-5555-5555-555555555555"
 	secondEventID := "666666666-6666-6666-6666-666666666666"
+	scopesWithInternalVisibility := []string{"internal_visibility:read"}
+	scopesWithoutInternalVisibility := []string{"test:test"}
+	publicVisibility := "public"
 
 	firstAPIBndlRefEntity := fixAPIBundleReferenceEntityWithArgs(firstBndlID, firstAPIID, firstTargetURL)
 	secondAPIBndlRefEntity := fixAPIBundleReferenceEntityWithArgs(secondBndlID, secondAPIID, secondTargetURL)
@@ -246,13 +250,33 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 	secondEventBndlRefEntity := fixEventBundleReferenceEntityWithArgs(secondBndlID, secondEventID)
 	bundleIDs := []string{firstBndlID, secondBndlID}
 
-	selectQuery := `^\(SELECT (.+) FROM public\.bundle_references 
+	selectQueryForAPIs := `^\(SELECT (.+) FROM public\.bundle_references 
 		WHERE api_def_id IS NOT NULL AND bundle_id = \$1 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$2 OFFSET \$3\) UNION 
 		\(SELECT (.+) FROM public\.bundle_references WHERE api_def_id IS NOT NULL AND bundle_id = \$4 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$5 OFFSET \$6\)`
 
-	countQuery := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE api_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
+	countQueryForAPIs := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE api_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
 
-	t.Run("success when everything is returned for APIs", func(t *testing.T) {
+	selectQueryWithVisibilityCheckForAPIs := `^\(SELECT (.+) FROM public\.bundle_references 
+		WHERE \(SELECT visibility FROM api_definitions WHERE api_definitions.id = public.bundle_references.api_def_id\) = \$1 AND api_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$3 OFFSET \$4\) UNION 
+		\(SELECT (.+) FROM public\.bundle_references WHERE \(SELECT visibility FROM api_definitions WHERE api_definitions.id = public.bundle_references.api_def_id\) = \$5 AND api_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$7 OFFSET \$8\)`
+
+	countQueryWithVisibilityCheckForAPIs := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE \(SELECT visibility FROM api_definitions WHERE api_definitions.id = public.bundle_references.api_def_id\) = \$1 AND api_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
+
+	// queries for Events
+
+	selectQueryForEvents := `^\(SELECT (.+) FROM public\.bundle_references 
+		WHERE event_def_id IS NOT NULL AND bundle_id = \$1 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$2 OFFSET \$3\) UNION 
+		\(SELECT (.+) FROM public\.bundle_references WHERE event_def_id IS NOT NULL AND bundle_id = \$4 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$5 OFFSET \$6\)`
+
+	countQueryForEvents := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE event_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
+
+	selectQueryWithVisibilityCheckForEvents := `^\(SELECT (.+) FROM public\.bundle_references 
+		WHERE \(SELECT visibility FROM event_api_definitions WHERE event_api_definitions.id = public.bundle_references.event_def_id\) = \$1 AND event_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$3 OFFSET \$4\) UNION 
+		\(SELECT (.+) FROM public\.bundle_references WHERE \(SELECT visibility FROM event_api_definitions WHERE event_api_definitions.id = public.bundle_references.event_def_id\) = \$5 AND event_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$7 OFFSET \$8\)`
+
+	countQueryWithVisibilityCheckForEvents := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE \(SELECT visibility FROM event_api_definitions WHERE event_api_definitions.id = public.bundle_references.event_def_id\) = \$1 AND event_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
+
+	t.Run("success when everything is returned for APIs when there is internal_visibility scope", func(t *testing.T) {
 		ExpectedLimit := 1
 		ExpectedOffset := 0
 		inputPageSize := 1
@@ -266,16 +290,17 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(firstBndlID, firstAPIID, firstTargetURL)...).
 			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(secondBndlID, secondAPIID, secondTargetURL)...)
 
-		sqlMock.ExpectQuery(selectQuery).
+		sqlMock.ExpectQuery(selectQueryForAPIs).
 			WithArgs(firstBndlID, ExpectedLimit, ExpectedOffset, secondBndlID, ExpectedLimit, ExpectedOffset).
 			WillReturnRows(rows)
 
-		sqlMock.ExpectQuery(countQuery).
+		sqlMock.ExpectQuery(countQueryForAPIs).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
 				AddRow(firstBndlID, totalCountForFirstBundle).
 				AddRow(secondBndlID, totalCountForSecondBundle))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		ctx = scope.SaveToContext(ctx, scopesWithInternalVisibility)
 		convMock := &automock.BundleReferenceConverter{}
 		convMock.On("FromEntity", firstAPIBndlRefEntity).Return(model.BundleReference{
 			BundleID:            str.Ptr(firstBndlID),
@@ -307,7 +332,54 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 
-	t.Run("success when everything is returned for Events", func(t *testing.T) {
+	t.Run("success when there is no internal_visibility scope and result for APIs is filtered", func(t *testing.T) {
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+		inputPageSize := 1
+
+		totalCountForFirstBundle := 0
+		totalCountForSecondBundle := 1
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows(fixBundleReferenceColumns()).
+			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(secondBndlID, secondAPIID, secondTargetURL)...)
+
+		sqlMock.ExpectQuery(selectQueryWithVisibilityCheckForAPIs).
+			WithArgs(publicVisibility, firstBndlID, ExpectedLimit, ExpectedOffset, publicVisibility, secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQueryWithVisibilityCheckForAPIs).
+			WithArgs(publicVisibility).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		ctx = scope.SaveToContext(ctx, scopesWithoutInternalVisibility)
+		convMock := &automock.BundleReferenceConverter{}
+		convMock.On("FromEntity", secondAPIBndlRefEntity).Return(model.BundleReference{
+			BundleID:            str.Ptr(secondBndlID),
+			ObjectType:          model.BundleAPIReference,
+			ObjectID:            str.Ptr(secondAPIID),
+			APIDefaultTargetURL: str.Ptr(secondTargetURL),
+		}, nil)
+		pgRepository := bundlereferences.NewRepository(convMock)
+		// WHEN
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, inputPageSize, inputCursor)
+		// THEN
+		require.NoError(t, err)
+		require.Len(t, modelBndlRefs, 1)
+		assert.Equal(t, secondBndlID, *modelBndlRefs[0].BundleID)
+		assert.Equal(t, secondAPIID, *modelBndlRefs[0].ObjectID)
+		assert.Equal(t, secondTargetURL, *modelBndlRefs[0].APIDefaultTargetURL)
+		assert.Equal(t, totalCountForFirstBundle, totalCounts[firstBndlID])
+		assert.Equal(t, totalCountForSecondBundle, totalCounts[secondBndlID])
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("success when everything is returned for Events when there is internal_visibility scope", func(t *testing.T) {
 		ExpectedLimit := 1
 		ExpectedOffset := 0
 		inputPageSize := 1
@@ -315,11 +387,158 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		totalCountForFirstBundle := 1
 		totalCountForSecondBundle := 1
 
-		selectQueryForEvents := `^\(SELECT (.+) FROM public\.bundle_references 
-		WHERE event_def_id IS NOT NULL AND bundle_id = \$1 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$2 OFFSET \$3\) UNION 
-		\(SELECT (.+) FROM public\.bundle_references WHERE event_def_id IS NOT NULL AND bundle_id = \$4 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$5 OFFSET \$6\)`
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
 
-		countQueryForEvents := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE event_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
+		rows := sqlmock.NewRows(fixBundleReferenceColumns()).
+			AddRow(fixBundleReferenceRowWithoutAPIIDWithArgs(firstBndlID, firstEventID)...).
+			AddRow(fixBundleReferenceRowWithoutAPIIDWithArgs(secondBndlID, secondEventID)...)
+
+		sqlMock.ExpectQuery(selectQueryForEvents).
+			WithArgs(firstBndlID, ExpectedLimit, ExpectedOffset, secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQueryForEvents).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		ctx = scope.SaveToContext(ctx, scopesWithInternalVisibility)
+		convMock := &automock.BundleReferenceConverter{}
+		convMock.On("FromEntity", firstEventBndlRefEntity).Return(model.BundleReference{
+			BundleID:   str.Ptr(firstBndlID),
+			ObjectType: model.BundleEventReference,
+			ObjectID:   str.Ptr(firstEventID),
+		}, nil)
+		convMock.On("FromEntity", secondEventBndlRefEntity).Return(model.BundleReference{
+			BundleID:   str.Ptr(secondBndlID),
+			ObjectType: model.BundleEventReference,
+			ObjectID:   str.Ptr(secondEventID),
+		}, nil)
+		pgRepository := bundlereferences.NewRepository(convMock)
+		// WHEN
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleEventReference, bundleIDs, inputPageSize, inputCursor)
+		// THEN
+		require.NoError(t, err)
+		require.Len(t, modelBndlRefs, 2)
+		assert.Equal(t, firstBndlID, *modelBndlRefs[0].BundleID)
+		assert.Equal(t, secondBndlID, *modelBndlRefs[1].BundleID)
+		assert.Equal(t, firstEventID, *modelBndlRefs[0].ObjectID)
+		assert.Equal(t, secondEventID, *modelBndlRefs[1].ObjectID)
+		assert.Equal(t, totalCountForFirstBundle, totalCounts[firstBndlID])
+		assert.Equal(t, totalCountForSecondBundle, totalCounts[secondBndlID])
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("success when there is no internal_visibility scope and result for Events is filtered", func(t *testing.T) {
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+		inputPageSize := 1
+
+		totalCountForFirstBundle := 0
+		totalCountForSecondBundle := 1
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows(fixBundleReferenceColumns()).
+			AddRow(fixBundleReferenceRowWithoutAPIIDWithArgs(secondBndlID, secondEventID)...)
+
+		sqlMock.ExpectQuery(selectQueryWithVisibilityCheckForEvents).
+			WithArgs(publicVisibility, firstBndlID, ExpectedLimit, ExpectedOffset, publicVisibility, secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQueryWithVisibilityCheckForEvents).
+			WithArgs(publicVisibility).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		ctx = scope.SaveToContext(ctx, scopesWithoutInternalVisibility)
+		convMock := &automock.BundleReferenceConverter{}
+		convMock.On("FromEntity", secondEventBndlRefEntity).Return(model.BundleReference{
+			BundleID:   str.Ptr(secondBndlID),
+			ObjectType: model.BundleEventReference,
+			ObjectID:   str.Ptr(secondEventID),
+		}, nil)
+		pgRepository := bundlereferences.NewRepository(convMock)
+		// WHEN
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleEventReference, bundleIDs, inputPageSize, inputCursor)
+		// THEN
+		require.NoError(t, err)
+		require.Len(t, modelBndlRefs, 1)
+		assert.Equal(t, secondBndlID, *modelBndlRefs[0].BundleID)
+		assert.Equal(t, secondEventID, *modelBndlRefs[0].ObjectID)
+		assert.Equal(t, totalCountForFirstBundle, totalCounts[firstBndlID])
+		assert.Equal(t, totalCountForSecondBundle, totalCounts[secondBndlID])
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("success when there are more records", func(t *testing.T) {
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+		inputPageSize := 1
+
+		totalCountForFirstBundle := 10
+		totalCountForSecondBundle := 10
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+
+		rows := sqlmock.NewRows(fixBundleReferenceColumns()).
+			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(firstBndlID, firstAPIID, firstTargetURL)...).
+			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(secondBndlID, secondAPIID, secondTargetURL)...)
+
+		sqlMock.ExpectQuery(selectQueryForAPIs).
+			WithArgs(firstBndlID, ExpectedLimit, ExpectedOffset, secondBndlID, ExpectedLimit, ExpectedOffset).
+			WillReturnRows(rows)
+
+		sqlMock.ExpectQuery(countQueryForAPIs).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
+				AddRow(firstBndlID, totalCountForFirstBundle).
+				AddRow(secondBndlID, totalCountForSecondBundle))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		ctx = scope.SaveToContext(ctx, scopesWithInternalVisibility)
+		convMock := &automock.BundleReferenceConverter{}
+		convMock.On("FromEntity", firstAPIBndlRefEntity).Return(model.BundleReference{
+			BundleID:            str.Ptr(firstBndlID),
+			ObjectType:          model.BundleAPIReference,
+			ObjectID:            str.Ptr(firstAPIID),
+			APIDefaultTargetURL: str.Ptr(firstTargetURL),
+		}, nil)
+		convMock.On("FromEntity", secondAPIBndlRefEntity).Return(model.BundleReference{
+			BundleID:            str.Ptr(secondBndlID),
+			ObjectType:          model.BundleAPIReference,
+			ObjectID:            str.Ptr(secondAPIID),
+			APIDefaultTargetURL: str.Ptr(secondTargetURL),
+		}, nil)
+		pgRepository := bundlereferences.NewRepository(convMock)
+		// WHEN
+		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, inputPageSize, inputCursor)
+		// THEN
+		require.NoError(t, err)
+		require.Len(t, modelBndlRefs, 2)
+		assert.Equal(t, firstBndlID, *modelBndlRefs[0].BundleID)
+		assert.Equal(t, secondBndlID, *modelBndlRefs[1].BundleID)
+		assert.Equal(t, firstAPIID, *modelBndlRefs[0].ObjectID)
+		assert.Equal(t, secondAPIID, *modelBndlRefs[1].ObjectID)
+		assert.Equal(t, firstTargetURL, *modelBndlRefs[0].APIDefaultTargetURL)
+		assert.Equal(t, secondTargetURL, *modelBndlRefs[1].APIDefaultTargetURL)
+		assert.Equal(t, totalCountForFirstBundle, totalCounts[firstBndlID])
+		assert.Equal(t, totalCountForSecondBundle, totalCounts[secondBndlID])
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+
+	t.Run("returns both public and internal/private Events when check for internal scope fails", func(t *testing.T) {
+		ExpectedLimit := 1
+		ExpectedOffset := 0
+		inputPageSize := 1
+
+		totalCountForFirstBundle := 1
+		totalCountForSecondBundle := 1
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 
@@ -364,13 +583,13 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		sqlMock.AssertExpectations(t)
 	})
 
-	t.Run("success when there are more records", func(t *testing.T) {
+	t.Run("returns both public and internal/private APIs when check for internal scope fails", func(t *testing.T) {
 		ExpectedLimit := 1
 		ExpectedOffset := 0
 		inputPageSize := 1
 
-		totalCountForFirstBundle := 10
-		totalCountForSecondBundle := 10
+		totalCountForFirstBundle := 1
+		totalCountForSecondBundle := 1
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 
@@ -378,11 +597,11 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(firstBndlID, firstAPIID, firstTargetURL)...).
 			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(secondBndlID, secondAPIID, secondTargetURL)...)
 
-		sqlMock.ExpectQuery(selectQuery).
+		sqlMock.ExpectQuery(selectQueryForAPIs).
 			WithArgs(firstBndlID, ExpectedLimit, ExpectedOffset, secondBndlID, ExpectedLimit, ExpectedOffset).
 			WillReturnRows(rows)
 
-		sqlMock.ExpectQuery(countQuery).
+		sqlMock.ExpectQuery(countQueryForAPIs).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
 				AddRow(firstBndlID, totalCountForFirstBundle).
 				AddRow(secondBndlID, totalCountForSecondBundle))
@@ -434,16 +653,17 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(firstBndlID, firstAPIID, firstTargetURL)...).
 			AddRow(fixBundleReferenceRowWithoutEventIDWithArgs(secondBndlID, secondAPIID, secondTargetURL)...)
 
-		sqlMock.ExpectQuery(selectQuery).
+		sqlMock.ExpectQuery(selectQueryForAPIs).
 			WithArgs(firstBndlID, ExpectedLimit, ExpectedOffset, secondBndlID, ExpectedLimit, ExpectedOffset).
 			WillReturnRows(rows)
 
-		sqlMock.ExpectQuery(countQuery).
+		sqlMock.ExpectQuery(countQueryForAPIs).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
 				AddRow(firstBndlID, totalCountForFirstBundle).
 				AddRow(secondBndlID, totalCountForSecondBundle))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		ctx = scope.SaveToContext(ctx, scopesWithInternalVisibility)
 		convMock := &automock.BundleReferenceConverter{}
 		convMock.On("FromEntity", firstAPIBndlRefEntity).Return(model.BundleReference{}, testErr)
 		pgRepository := bundlereferences.NewRepository(convMock)
@@ -466,10 +686,11 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
 
-		sqlMock.ExpectQuery(selectQuery).
+		sqlMock.ExpectQuery(selectQueryForAPIs).
 			WithArgs(firstBndlID, ExpectedLimit, ExpectedOffset, secondBndlID, ExpectedLimit, ExpectedOffset).
 			WillReturnError(testError)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		ctx = scope.SaveToContext(ctx, scopesWithInternalVisibility)
 
 		// WHEN
 		modelBndlRefs, totalCounts, err := pgRepository.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, inputPageSize, inputCursor)

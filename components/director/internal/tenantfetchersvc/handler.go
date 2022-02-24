@@ -75,7 +75,7 @@ func (h *handler) SubscribeTenant(writer http.ResponseWriter, request *http.Requ
 	h.applySubscriptionChange(writer, request, h.subscriber.Subscribe, true)
 }
 
-// SubscribeTenant handles subscription for tenant. If tenant does not exist, will create it first.
+// UnSubscribeTenant handles unsubscription for tenant which will remove the tenant id label from the runtime
 func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Request) {
 	h.applySubscriptionChange(writer, request, h.subscriber.Unsubscribe, true)
 }

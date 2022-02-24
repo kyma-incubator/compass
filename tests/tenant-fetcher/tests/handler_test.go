@@ -433,8 +433,8 @@ func TestGetDependenciesHandler(t *testing.T) {
 		request, err := http.NewRequest(http.MethodGet, config.TenantFetcherFullDependenciesURL, nil)
 		require.NoError(t, err)
 
-		externalSvcMockUrl := config.ExternalServicesMockURL
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, externalSvcMockUrl, config.ClientID, config.ClientSecret, tenantfetcher.DefaultClaims(externalSvcMockUrl))))
+		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID, config.ClientSecret, "tenantFetcherClaims")
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
 
 		// WHEN
 		response, err := httpClient.Do(request)

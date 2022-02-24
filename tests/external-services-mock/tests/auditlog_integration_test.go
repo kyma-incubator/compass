@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -48,7 +50,7 @@ func TestAuditlogIntegration(t *testing.T) {
 	timeTo := timeFrom.Add(1 * time.Minute)
 
 	t.Log("Get auditlog service Token")
-	auditlogToken := fixtures.GetAuditlogToken(t, &httpClient, testConfig.Auditlog)
+	auditlogToken := token.GetClientCredentialsToken(t, context.Background(), testConfig.Auditlog.TokenURL+"/oauth/token", testConfig.Auditlog.ClientID, testConfig.Auditlog.ClientSecret, "")
 
 	t.Log("Get auditlog from auditlog API")
 	auditlogs := fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog, auditlogToken, appName, timeFrom, timeTo)

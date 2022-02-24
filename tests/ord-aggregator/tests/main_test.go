@@ -35,6 +35,7 @@ type config struct {
 	DefaultTestTenant                     string
 	DirectorURL                           string
 	DirectorExternalCertSecuredURL        string
+	DirectorGraphqlOauthURL               string
 	ORDServiceURL                         string
 	AggregatorSchedule                    string
 	ExternalServicesMockBaseURL           string

@@ -38,40 +38,56 @@ var (
 )
 
 type TenantConfig struct {
-	TenantIDProperty               string
-	SubaccountTenantIDProperty     string
-	CustomerIDProperty             string
-	SubdomainProperty              string
-	SubscriptionProviderIDProperty string
-	TenantFetcherURL               string
-	RootAPI                        string
-	RegionalHandlerEndpoint        string
-	TenantPathParam                string
-	RegionPathParam                string
-	TenantFetcherFullRegionalURL   string `envconfig:"-"`
+	TenantFetcherURL             string
+	RootAPI                      string
+	RegionalHandlerEndpoint      string
+	TenantPathParam              string
+	RegionPathParam              string
+	Region                       string
+	TenantFetcherFullRegionalURL string `envconfig:"-"`
+}
+
+type SubscriptionConfig struct {
+	URL                          string
+	TokenURL                     string
+	ClientID                     string
+	ClientSecret                 string
+	ProviderLabelKey             string
+	ProviderID                   string
+	SelfRegisterLabelKey         string
+	SelfRegisterLabelValuePrefix string
 }
 
 type config struct {
 	TenantConfig
 	CertLoaderConfig certloader.Config
-
-	DirectorURL                      string
-	DirectorExternalCertSecuredURL   string
-	ORDServiceURL                    string
-	ORDExternalCertSecuredServiceURL string
-	ORDServiceStaticPrefix           string
-	ORDServiceDefaultResponseType    string
-	DefaultScenarioEnabled           bool `envconfig:"default=true"`
-	ExternalServicesMockURL          string
-	ClientID                         string
-	ClientSecret                     string
-	SubscriptionProviderLabelKey     string
-	ConsumerSubaccountIdsLabelKey    string
-	SelfRegisterDistinguishLabelKey  string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
-	SelfRegisterLabelKey             string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
-	AccountTenantID                  string
-	SubaccountTenantID               string
-	SkipSSLValidation                bool `envconfig:"default=false"`
+	SubscriptionConfig
+	ExternalServicesMockBaseURL           string
+	DirectorURL                           string
+	DirectorExternalCertSecuredURL        string
+	ORDServiceURL                         string
+	ORDExternalCertSecuredServiceURL      string
+	ORDServiceStaticPrefix                string
+	ORDServiceDefaultResponseType         string
+	DefaultScenarioEnabled                bool `envconfig:"default=true"`
+	ConsumerTokenURL                      string
+	TokenPath                             string
+	ProviderClientID                      string
+	ProviderClientSecret                  string
+	SkipSSLValidation                     bool
+	TestExternalCertSubject               string
+	ExternalClientCertTestSecretName      string
+	ExternalClientCertTestSecretNamespace string
+	CertSvcInstanceTestSecretName         string
+	ExternalCertCronjobContainerName      string
+	BasicUsername                         string
+	BasicPassword                         string
+	AccountTenantID                       string
+	SubaccountTenantID                    string
+	TestConsumerAccountID                 string
+	TestProviderSubaccountID              string
+	TestConsumerSubaccountID              string
+	TestConsumerTenantID                  string
 }
 
 var testConfig config

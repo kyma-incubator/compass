@@ -92,14 +92,17 @@ const ordDocument = `{
                "label-val"
             ]
          },
-		 "documentationLabels":{
-			"Documentation label key":["Markdown Documentation with links","With multiple values"]
-		 },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
          "policyLevel":"sap:core:v1",
          "customPolicyLevel":null,
          "partOfProducts":[
             "sap:product:id{{ .randomSuffix }}:",
-			"sap:product:SAPCloudPlatform:"
+            "sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -130,19 +133,22 @@ const ordDocument = `{
                "url":"/testing/relative"
             }
          ],
-		 "correlationIds": [
-			"sap.s4:communicationScenario:SAP_COM_0001",
-			"sap.s4:communicationScenario:SAP_COM_0002"
-		 ],
+         "correlationIds":[
+            "sap.s4:communicationScenario:SAP_COM_0001",
+            "sap.s4:communicationScenario:SAP_COM_0002"
+         ],
          "labels":{
             "label-key-1":[
                "label-value-1",
                "label-value-2"
             ]
          },
- 		 "documentationLabels":{
-			"Documentation label key":["Markdown Documentation with links","With multiple values"]
-		 },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
          "credentialExchangeStrategies":[
             {
                "callbackUrl":"/credentials/relative",
@@ -171,19 +177,22 @@ const ordDocument = `{
                "type":"custom"
             }
          ],
-		 "correlationIds": [
-			"sap.s4:communicationScenario:SAP_COM_0001",
-			"sap.s4:communicationScenario:SAP_COM_0002"
-		 ],
+         "correlationIds":[
+            "sap.s4:communicationScenario:SAP_COM_0001",
+            "sap.s4:communicationScenario:SAP_COM_0002"
+         ],
          "labels":{
             "label-key-1":[
                "label-value-1",
                "label-value-2"
             ]
          },
-		 "documentationLabels":{
-			"Documentation label key":["Markdown Documentation with links","With multiple values"]
-		 },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
          "links":[
             {
                "description":"loremipsumdolornem",
@@ -215,9 +224,12 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
-		 "documentationLabels":{
-			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
-		 }
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         }
       }
    ],
    "apiResources":[
@@ -279,14 +291,17 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
-		 "documentationLabels":{
-			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
-		 },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
             "sap:product:id{{ .randomSuffix }}:",
-			"sap:product:SAPCloudPlatform:"
+            "sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -417,14 +432,17 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
- 		 "documentationLabels":{
-			"Documentation label key":["Markdown Documentation with links","With multiple values"]
-		 },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
             "sap:product:id{{ .randomSuffix }}:",
-			"sap:product:SAPCloudPlatform:"
+            "sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -479,6 +497,126 @@ const ordDocument = `{
             }
          ],
          "version":"1.1.0"
+      },
+      {
+         "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v3",
+         "title":"API TITLE INTERNAL",
+         "shortDescription":"Test",
+         "description":"Test description internal",
+         "entryPoints":[
+            "https://exmaple.com/test/v1",
+            "https://exmaple.com/test/v2"
+         ],
+         "version":"1.0.0",
+         "visibility":"internal",
+         "releaseStatus":"beta",
+         "systemInstanceAware":true,
+         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "apiProtocol":"rest",
+         "apiResourceLinks":[
+            {
+               "type":"console",
+               "url":"https://example.com/discover"
+            }
+         ],
+         "extensible":{
+            "supported":"automatic",
+            "description":"Please find the extensibility documentation"
+         },
+         "partOfConsumptionBundles":[
+            {
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
+               "defaultEntryPoint":"https://exmaple.com/test/v1"
+            }
+         ],
+         "resourceDefinitions":[
+            {
+               "type":"edmx",
+               "customType":"",
+               "mediaType":"application/xml",
+               "url":"/api/openApi.yaml",
+               "accessStrategies":[
+                  {
+                     "type":"{{ .specsAccessStrategy }}",
+                     "customType":"",
+                     "customDescription":""
+                  }
+               ]
+            },
+            {
+               "type":"openapi-v3",
+               "customType":"",
+               "mediaType":"text/yaml",
+               "url":"https://test.com/odata/1.0/catalog",
+               "accessStrategies":[
+                  {
+                     "type":"{{ .specsAccessStrategy }}",
+                     "customType":"",
+                     "customDescription":""
+                  }
+               ]
+            }
+         ]
+      },
+      {
+         "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v4",
+         "title":"API TITLE PRIVATE",
+         "shortDescription":"Test",
+         "description":"Test description private",
+         "entryPoints":[
+            "https://exmaple.com/test/v1",
+            "https://exmaple.com/test/v2"
+         ],
+         "version":"1.0.0",
+         "visibility":"private",
+         "releaseStatus":"beta",
+         "systemInstanceAware":true,
+         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "apiProtocol":"rest",
+         "apiResourceLinks":[
+            {
+               "type":"console",
+               "url":"https://example.com/discover"
+            }
+         ],
+         "extensible":{
+            "supported":"automatic",
+            "description":"Please find the extensibility documentation"
+         },
+         "partOfConsumptionBundles":[
+            {
+               "defaultEntryPoint":"https://exmaple.com/test/v1",
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
+            }
+         ],
+         "resourceDefinitions":[
+            {
+               "type":"edmx",
+               "customType":"",
+               "mediaType":"application/xml",
+               "url":"/api/openApi.yaml",
+               "accessStrategies":[
+                  {
+                     "type":"{{ .specsAccessStrategy }}",
+                     "customType":"",
+                     "customDescription":""
+                  }
+               ]
+            },
+            {
+               "type":"openapi-v3",
+               "customType":"",
+               "mediaType":"text/yaml",
+               "url":"https://test.com/odata/1.0/catalog",
+               "accessStrategies":[
+                  {
+                     "type":"{{ .specsAccessStrategy }}",
+                     "customType":"",
+                     "customDescription":""
+                  }
+               ]
+            }
+         ]
       }
    ],
    "eventResources":[
@@ -525,14 +663,17 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
-		 "documentationLabels":{
-			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
-		 },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
          "visibility":"public",
          "disabled":true,
          "partOfProducts":[
             "sap:product:id{{ .randomSuffix }}:",
-			"sap:product:SAPCloudPlatform:"
+            "sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -618,14 +759,17 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
- 		 "documentationLabels":{
-			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
-		 },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
          "visibility":"public",
          "disabled":null,
          "partOfProducts":[
             "sap:product:id{{ .randomSuffix }}:",
-			"sap:product:SAPCloudPlatform:"
+            "sap:product:SAPCloudPlatform:"
          ],
          "lineOfBusiness":[
             "Finance",
@@ -664,6 +808,74 @@ const ordDocument = `{
             }
          ],
          "version":"1.1.0"
+      },
+      {
+         "ordId":"ns3:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+         "title":"EVENT TITLE INTERNAL",
+         "shortDescription":"Test",
+         "description":"Test description internal",
+         "version":"0.1.0",
+         "releaseStatus":"beta",
+         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "visibility":"internal",
+         "extensible":{
+            "supported":"automatic",
+            "description":"Please find the extensibility documentation"
+         },
+         "partOfConsumptionBundles":[
+            {
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1"
+            }
+         ],
+         "resourceDefinitions":[
+            {
+               "type":"asyncapi-v2",
+               "customType":"",
+               "mediaType":"application/json",
+               "url":"http://localhost:8080/asyncApi3.json",
+               "accessStrategies":[
+                  {
+                     "type":"{{ .specsAccessStrategy }}",
+                     "customType":"",
+                     "customDescription":""
+                  }
+               ]
+            }
+         ]
+      },
+      {
+         "ordId":"ns4:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
+         "title":"EVENT TITLE PRIVATE",
+         "shortDescription":"Test",
+         "description":"Test description private",
+         "version":"0.1.0",
+         "releaseStatus":"beta",
+         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "visibility":"internal",
+         "extensible":{
+            "supported":"automatic",
+            "description":"Please find the extensibility documentation"
+         },
+         "partOfConsumptionBundles":[
+            {
+               "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2"
+            }
+         ],
+         "resourceDefinitions":[
+            {
+               "type":"asyncapi-v2",
+               "customType":"",
+               "mediaType":"application/json",
+               "url":"http://localhost:8080/asyncApi4.json",
+               "accessStrategies":[
+                  {
+                     "type":"{{ .specsAccessStrategy }}",
+                     "customType":"",
+                     "customDescription":""
+                  }
+               ]
+            }
+         ]
       }
    ],
    "tombstones":[
@@ -685,9 +897,12 @@ const ordDocument = `{
                "label-value-2"
             ]
          },
-		 "documentationLabels":{
-			"Documentation label key":["Markdown Documentation with links", "With multiple values"]
-		 }
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         }
       }
    ]
 }`
