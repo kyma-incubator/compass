@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -176,13 +175,13 @@ func TestORDAggregator(t *testing.T) {
 		ctx := context.Background()
 
 		t.Log("Create integration system")
-		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
-		defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys)
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", "test-int-system")
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys)
 		require.NoError(t, err)
 		require.NotEmpty(t, intSys.ID)
 
-		intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
-		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
+		intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
 
 		unsecuredHttpClient := http.DefaultClient
 		unsecuredHttpClient.Transport = &http.Transport{
@@ -211,28 +210,28 @@ func TestORDAggregator(t *testing.T) {
 		expectedNumberOfVendors += globalVendorsNumber
 
 		// Register systems
-		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 
-		secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
+		secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
 		require.NoError(t, err)
 
-		thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
+		thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
 		require.NoError(t, err)
 
-		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
+		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
 		require.NoError(t, err)
 
-		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
+		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
 		require.NoError(t, err)
 
-		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
+		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
 		require.NoError(t, err)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
@@ -412,9 +411,6 @@ func storeMappingBetweenORDAndInternalBundleID(t *testing.T, respBody string, nu
 }
 
 func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *http.Client) (int, int) {
-	certCache, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
-	require.NoError(t, err, "Failed to initialize certificate loader")
-
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
 	ordClient := NewGlobalRegistryClient(httpClient, accessStrategyExecutorProvider)
 

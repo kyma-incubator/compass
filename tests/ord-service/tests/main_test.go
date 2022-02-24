@@ -22,23 +22,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 
 var (
-	dexGraphQLClient *graphql.Client
+	certCache                certloader.Cache
+	certSecuredGraphQLClient *graphql.Client
 )
 
 type TenantConfig struct {
@@ -57,8 +53,7 @@ type TenantConfig struct {
 
 type config struct {
 	TenantConfig
-	CA         certs.CAConfig
-	ExternalCA certs.CAConfig
+	CertLoaderConfig certloader.Config
 
 	DirectorURL                      string
 	DirectorExternalCertSecuredURL   string
@@ -84,40 +79,27 @@ var testConfig config
 func TestMain(m *testing.M) {
 	err := envconfig.Init(&testConfig)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
+		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
 
 	tenant.TestTenants.Init()
 	defer tenant.TestTenants.Cleanup()
 
 	ctx := context.Background()
-
-	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	cc, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
+		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CA.SecretNamespace).Get(ctx, testConfig.CA.SecretName, metav1.GetOptions{}) // TODO:: Remove once the consumer-provider test is adapter to run on real environment
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
+	for cc.Get() == nil {
+		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
+		time.Sleep(1 * time.Second)
 	}
-
-	testConfig.CA.Certificate = secret.Data[testConfig.CA.SecretCertificateKey] // TODO:: Remove once the consumer-provider test is adapter to run on real environment
-	testConfig.CA.Key = secret.Data[testConfig.CA.SecretKeyKey]                 // TODO:: Remove once the consumer-provider test is adapter to run on real environment
-
-	extCrtSecret, err := k8sClientSet.CoreV1().Secrets(testConfig.ExternalCA.SecretNamespace).Get(ctx, testConfig.ExternalCA.SecretName, metav1.GetOptions{})
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
-	}
-
-	testConfig.ExternalCA.Key = extCrtSecret.Data[testConfig.ExternalCA.SecretKeyKey]
-	testConfig.ExternalCA.Certificate = extCrtSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
+	certCache = cc
 
 	testConfig.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(testConfig.RegionalHandlerEndpoint, testConfig.TenantPathParam, testConfig.RegionPathParam, testConfig.TenantFetcherURL, testConfig.RootAPI)
 
-	dexToken := server.Token()
-
-	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, cc.Get().Certificate, testConfig.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

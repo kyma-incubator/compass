@@ -40,6 +40,8 @@ spec:
           env:
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: USER_EMAIL
               valueFrom:
                 secretKeyRef:
@@ -84,10 +86,6 @@ spec:
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080/"
             - name: EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL
               value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}:443/"
-            - name: APP_IS_WITH_TOKEN
-              value: "{{.Values.global.tests.token.server.enabled}}"
-            - name: APP_ADDRESS
-              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.externalServicesMock.skipPattern }}
             - name: AUDITLOG_MANAGEMENT_API_PATH
@@ -112,6 +110,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.externalServicesMock.auditlog.secret.name }}
                   key: {{ .Values.global.externalServicesMock.auditlog.secret.clientSecretKey }}
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: CONSUMER_ID 
+              value: "{{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}"
+            - name: SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation.director }}"
       restartPolicy: Never
       serviceAccountName: {{ .Chart.Name }}-operations-tests-service-account
 ---
@@ -119,7 +127,14 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ .Chart.Name }}-operations-tests-service-account
-  namespace: kyma-system
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -148,5 +163,26 @@ subjects:
   - kind: ServiceAccount
     name: {{ .Chart.Name }}-operations-tests-service-account
     namespace: kyma-system
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-operations-tests-service-account
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-operations-tests-service-account
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io
 
 {{end}}

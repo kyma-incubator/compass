@@ -39,6 +39,8 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_COMPASS_MTLS_GATEWAY_URL
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_REQUEST_PAYLOAD_LIMIT
               value: {{ (.Values.global.istio.ingressgateway.requestPayloadSizeLimit | int) | quote }}
             - name: DIRECTOR_URL
@@ -101,10 +103,14 @@ spec:
               value: "DEFAULT"
             - name: APP_DEFAULT_NORMALIZATION_PREFIX
               value: "mp-"
-            - name: APP_IS_WITH_TOKEN
-              value: "{{.Values.global.tests.token.server.enabled}}"
-            - name: APP_ADDRESS
-              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: APP_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation.director }}"
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
@@ -133,3 +139,41 @@ spec:
           {{- end }}
           {{end}}
       restartPolicy: Never
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}-e2e-istio
+  namespace: {{ .Values.global.tests.namespace }}
+  {{- if eq .Values.global.database.embedded.enabled false }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
+  {{- end }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-istio
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-e2e-istio
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io

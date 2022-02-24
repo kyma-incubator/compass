@@ -28,27 +28,27 @@ func TestTenantErrors(t *testing.T) {
 		Name:         "app-static-user",
 		ProviderName: ptr.String("compass"),
 	}
-	_, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
+	_, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, notExistingTenant, appInput)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
-	_, err = fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, emptyTenant, appInput)
+	_, err = fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, emptyTenant, appInput)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantRequiredMessage)
 
-	is, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "test")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, is)
+	is, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "test")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, is)
 	require.NoError(t, err)
 	require.NotEmpty(t, is.ID)
 
 	req := fixtures.FixRequestClientCredentialsForIntegrationSystem(is.ID)
 
 	var credentials graphql.IntSysSystemAuth
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, notExistingTenant, req, &credentials)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, notExistingTenant, req, &credentials)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, emptyTenant, req, &credentials)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, emptyTenant, req, &credentials)
 	require.NoError(t, err)
 	require.NotNil(t, credentials)
 }

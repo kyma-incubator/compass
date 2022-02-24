@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
-	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/model"
@@ -108,28 +107,6 @@ func DecodeAndParseCerts(t *testing.T, crtResponse *model.CrtResponse) model.Dec
 		ClientCRT: clientCertificate,
 		CaCRT:     caCertificate,
 	}
-}
-
-// ClientCertPair returns a decoded client certificate and key pair.
-func ClientCertPair(t *testing.T, certChainBytes, privateKeyBytes []byte) (*rsa.PrivateKey, [][]byte) {
-	certs, err := cert.DecodeCertificates(certChainBytes)
-	require.NoError(t, err)
-
-	privateKeyPem, _ := pem.Decode(privateKeyBytes)
-	require.NotNil(t, privateKeyPem)
-
-	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyPem.Bytes)
-	if err != nil {
-		pkcs8PrivateKey, err := x509.ParsePKCS8PrivateKey(privateKeyPem.Bytes)
-		require.NoError(t, err)
-
-		var ok bool
-		privateKey, ok = pkcs8PrivateKey.(*rsa.PrivateKey)
-		require.True(t, ok)
-	}
-
-	tlsCert := cert.NewTLSCertificate(privateKey, certs...)
-	return privateKey, tlsCert.Certificate
 }
 
 // CheckIfSubjectEquals verifies that specified subject is equal to this in certificate

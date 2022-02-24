@@ -6,22 +6,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
-
-	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/machinebox/graphql"
-	log "github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 )
 
 var (
-	conf             = &config.DirectorConfig{}
-	dexGraphQLClient *graphql.Client
+	conf = &config.DirectorConfig{}
+
+	certCache                certloader.Cache
+	certSecuredGraphQLClient *graphql.Client
 )
 
 func TestMain(m *testing.M) {
@@ -30,25 +28,20 @@ func TestMain(m *testing.M) {
 
 	config.ReadConfig(conf)
 
-	dexToken := server.Token()
-
-	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
-
 	ctx := context.Background()
-	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
+		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	extCrtSecret, err := k8sClientSet.CoreV1().Secrets(conf.ExternalCA.SecretNamespace).Get(ctx, conf.ExternalCA.SecretName, metav1.GetOptions{})
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
+	for cc.Get() == nil {
+		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
+		time.Sleep(1 * time.Second)
 	}
+	certCache = cc
 
-	conf.ExternalCA.Key = extCrtSecret.Data[conf.ExternalCA.SecretKeyKey]
-	conf.ExternalCA.Certificate = extCrtSecret.Data[conf.ExternalCA.SecretCertificateKey]
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
 
 	exitVal := m.Run()
-
 	os.Exit(exitVal)
 }

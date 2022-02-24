@@ -104,30 +104,24 @@ spec:
               value: "DEFAULT"
             - name: APP_DEFAULT_NORMALIZATION_PREFIX
               value: "mp-"
-            - name: APP_IS_WITH_TOKEN
-              value: "{{.Values.global.tests.token.server.enabled}}"
-            - name: APP_ADDRESS
-              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
             - name: APP_INFO_API_ENDPOINT
               value: {{ .Values.global.director.info.path }}
             - name: APP_INFO_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.ouCertSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName | trimPrefix "/" | replace "/" ", " | quote }}
             - name: APP_INFO_CERT_ISSUER
               value: {{ .Values.global.externalCertConfiguration.issuer }}
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.distinguishLabel }}
-            - name: APP_EXTERNAL_CA_SECRET_NAME
-              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: APP_EXTERNAL_CA_SECRET_NAMESPACE
-              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}"
             - name: APP_CA_SECRET_CERTIFICATE_KEY
               value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
             - name: APP_CA_SECRET_KEY_KEY
               value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
-            - name: APP_EXTERNAL_CA_SECRET_CERTIFICATE_KEY
-              value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey | quote }}
-            - name: APP_EXTERNAL_CA_SECRET_KEY_KEY
-              value: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey | quote }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation.director }}"
           {{ if .Values.global.isLocalEnv }}
@@ -170,3 +164,79 @@ spec:
             type: DirectoryOrCreate
       {{ end }}
       restartPolicy: Never
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}-e2e-director
+  namespace: {{ .Values.global.tests.namespace }}
+  {{- if eq .Values.global.database.embedded.enabled false }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
+  {{- end }}
+  labels:
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-director
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-e2e-director
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Chart.Name }}-e2e-director
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+- apiGroups: ["*"]
+  resources: ["secrets"]
+  resourceNames: ["{{ .Values.global.connector.secrets.ca.name }}" , "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"]
+  verbs: ["get"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-director
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Chart.Name }}-e2e-director
+  namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Chart.Name }}-e2e-director
+  apiGroup: rbac.authorization.k8s.io

@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/authentication"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -44,20 +43,17 @@ func TestCallingCompassGateways(t *testing.T) {
 		tenant = tenant.TestTenants.GetDefaultTenantID()
 	)
 
-	dexToken := server.Token()
+	authorizedClient := gql.NewCertAuthorizedHTTPClient(certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
 
-	authorizedClient := gql.NewAuthorizedHTTPClient(dexToken)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 	logrus.Infof("Registering runtime with name: %s, within tenant: %s", runtimeInput.Name, tenant)
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, runtimeInput)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenant, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenant, runtimeInput)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
 	logrus.Infof("Generating one-time token for runtime with id: %s", runtime.ID)
-	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, ctx, certSecuredGraphQLClient, tenant, runtime.ID)
 	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
 
 	logrus.Info("Generating private key for cert...")
@@ -79,7 +75,7 @@ func TestCallingCompassGateways(t *testing.T) {
 		{
 			negativeDescription: "fails when request is too big and passes through gateway",
 			positiveDescription: "succeeds for a regular applications request passing through gateway",
-			url:                 conf.CompassGatewayURL + directorPath,
+			url:                 conf.DirectorExternalCertSecuredURL,
 			client:              authorizedClient,
 		},
 		{

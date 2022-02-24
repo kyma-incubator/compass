@@ -12,10 +12,20 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
+var (
 	RuntimeType           = "Runtime"
 	IntegrationSystemType = "Integration System"
 	ApplicationType       = "Application"
+	SuperAdminType        = "Super Admin"
+
+	// ConsumerTypes is a marker map that provides fast checks for supported and unsupported consumer types.
+	// Note: New consumer type constants should be added here as well.
+	ConsumerTypes = map[string]struct{}{
+		RuntimeType:           {},
+		IntegrationSystemType: {},
+		ApplicationType:       {},
+		SuperAdminType:        {},
+	}
 )
 
 type subjectConsumerTypeMapping struct {
@@ -29,7 +39,7 @@ func (s *subjectConsumerTypeMapping) validate() error {
 	if len(s.Subject) < 1 {
 		return errors.New("subject is not provided")
 	}
-	if s.ConsumerType != RuntimeType && s.ConsumerType != IntegrationSystemType && s.ConsumerType != ApplicationType {
+	if _, ok := ConsumerTypes[s.ConsumerType]; !ok {
 		return fmt.Errorf("consumer type %s is not valid", s.ConsumerType)
 	}
 	for _, al := range s.TenantAccessLevels {

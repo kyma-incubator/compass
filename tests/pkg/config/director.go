@@ -1,6 +1,8 @@
 package config
 
-import "github.com/kyma-incubator/compass/tests/pkg/certs"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+)
 
 type DirectorConfig struct {
 	BaseDirectorConfig
@@ -15,7 +17,7 @@ type DirectorConfig struct {
 	DirectorExternalCertSecuredURL  string
 	SkipSSLValidation               bool `envconfig:"default=false"`
 	SelfRegisterDistinguishLabelKey string
-	ExternalCA                      certs.CAConfig
+	CertLoaderConfig                certloader.Config
 }
 
 type BaseDirectorConfig struct {

@@ -147,10 +147,6 @@ spec:
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: DOMAIN
               value: "{{ .Values.global.ingress.domainName }}"
-            - name: APP_IS_WITH_TOKEN
-              value: "{{.Values.global.tests.token.server.enabled}}"
-            - name: APP_ADDRESS
-              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.ordService.skipPattern }}
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
@@ -161,6 +157,12 @@ spec:
               value: {{ .Values.global.tests.ordService.accountTenantID }}
             - name: SUBACCOUNT_TENANT_ID
               value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
@@ -189,3 +191,79 @@ spec:
           {{- end }}
           {{end}}
       restartPolicy: Never
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}-e2e-ord-service
+  namespace: {{ .Values.global.tests.namespace }}
+  {{- if eq .Values.global.database.embedded.enabled false }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
+  {{- end }}
+  labels:
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-ord-service
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-e2e-ord-service
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Chart.Name }}-e2e-ord-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+- apiGroups: ["*"]
+  resources: ["secrets"]
+  resourceNames: ["{{ .Values.global.connector.secrets.ca.name }}","{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"]
+  verbs: ["get"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-ord-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Chart.Name }}-e2e-ord-service
+  namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Chart.Name }}-e2e-ord-service
+  apiGroup: rbac.authorization.k8s.io

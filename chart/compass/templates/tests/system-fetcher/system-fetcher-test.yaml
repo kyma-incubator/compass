@@ -48,6 +48,8 @@ spec:
               value: "{{ .Values.global.ingress.domainName }}"
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: DIRECTOR_HEALTHZ_URL
               value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
@@ -84,6 +86,14 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation.director }}"
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.19.1-alpine
@@ -112,3 +122,90 @@ spec:
           {{- end }}
           {{end}}
       restartPolicy: Never
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}-e2e-system-fetcher
+  namespace: {{ .Values.global.tests.namespace }}
+  {{- if eq .Values.global.database.embedded.enabled false }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
+  {{- end }}
+  labels:
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-system-fetcher
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-e2e-system-fetcher
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Chart.Name }}-e2e-system-fetcher
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+- apiGroups: ["*"]
+  resources: ["jobs"]
+  resourceNames: ["system-fetcher-test", "system-fetcher-test2"]
+  verbs: ["get", "delete"]
+- apiGroups: ["*"]
+  resources: ["jobs"]
+  resourceNames: []
+  verbs: ["create"]
+- apiGroups: ["*"]
+  resources: ["cronjobs"]
+  resourceNames: ["{{ .Chart.Name }}-{{ .Values.global.systemFetcher.name }}"]
+  verbs: ["get"]
+- apiGroups: ["operations.compass"]
+  resources: ["operations"]
+  verbs: ["get"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-system-fetcher
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Chart.Name }}-e2e-system-fetcher
+  namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Chart.Name }}-e2e-system-fetcher
+  apiGroup: rbac.authorization.k8s.io

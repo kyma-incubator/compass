@@ -1,30 +1,34 @@
 package tests
 
 import (
+	"context"
 	"crypto/tls"
 	"net/http"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/machinebox/graphql"
-	gcli "github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
 
 type Config struct {
-	ExternalSvcMockURL     string `envconfig:"EXTERNAL_SERVICES_MOCK_BASE_URL"`
-	InternalDirectorGQLURL string `envconfig:"INTERNAL_DIRECTOR_URL"`
+	ExternalSvcMockURL             string `envconfig:"EXTERNAL_SERVICES_MOCK_BASE_URL"`
+	InternalDirectorGQLURL         string `envconfig:"INTERNAL_DIRECTOR_URL"`
+	DirectorExternalCertSecuredURL string ``
+	SkipSSLValidation              bool   `envconfig:"default=false"`
+	CertLoaderConfig               certloader.Config
 }
 
 var (
 	cfg                       Config
-	dexGraphQLClient          *graphql.Client
+	certSecuredGraphQLClient  *graphql.Client
 	directorInternalGQLClient *graphql.Client
 )
 
@@ -37,10 +41,19 @@ func TestMain(m *testing.M) {
 	tenant.TestTenants.Init()
 	defer tenant.TestTenants.Cleanup()
 
-	dexToken := server.Token()
+	ctx := context.Background()
+	cc, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
+	}
 
-	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
-	dexGraphQLClient.Log = func(s string) {
+	for cc.Get() == nil {
+		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
+		time.Sleep(1 * time.Second)
+	}
+
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(cfg.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation)
+	certSecuredGraphQLClient.Log = func(s string) {
 		log.D().Info(s)
 	}
 
@@ -54,7 +67,7 @@ func TestMain(m *testing.M) {
 		Transport: saTransport,
 		Timeout:   time.Second * 30,
 	}
-	directorInternalGQLClient = gcli.NewClient(cfg.InternalDirectorGQLURL, gcli.WithHTTPClient(client))
+	directorInternalGQLClient = graphql.NewClient(cfg.InternalDirectorGQLURL, graphql.WithHTTPClient(client))
 	directorInternalGQLClient.Log = func(s string) {
 		log.D().Info(s)
 	}

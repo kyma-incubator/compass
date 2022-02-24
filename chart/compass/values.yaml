@@ -228,7 +228,7 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}]'
 
   system_broker:
     enabled: true
@@ -639,10 +639,6 @@ global:
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1
-    token:
-      server:
-        enabled: false
-        port: 5000
     securityContext: # Set on container level
       runAsUser: 2000
       allowPrivilegeEscalation: false

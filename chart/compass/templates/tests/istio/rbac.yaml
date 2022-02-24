@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: {{ .Chart.Name }}-e2e-istio
-  namespace: {{ .Values.global.tests.namespace }}
-  {{- if eq .Values.global.database.embedded.enabled false }}
-  annotations:
-    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
-  {{- end }}

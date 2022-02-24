@@ -23,13 +23,13 @@ func TestCompassAuth(t *testing.T) {
 	ctx := context.Background()
 
 	t.Log("Register Integration System with Dex id token")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys.ID)
 
 	t.Log("Request Client Credentials for Integration System")
-	intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+	intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
 
 	intSysOauthCredentialData, ok := intSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
@@ -46,7 +46,7 @@ func TestCompassAuth(t *testing.T) {
 		IntegrationSystemID: &intSys.ID,
 	}
 	appByIntSys, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appInput)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appByIntSys)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appByIntSys)
 	require.NoError(t, err)
 	require.NotEmpty(t, appByIntSys.ID)
 
@@ -60,10 +60,10 @@ func TestCompassAuth(t *testing.T) {
 	fixtures.AddAPIToBundleWithInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, bndl.ID, apiInput)
 
 	t.Log("Try removing Integration System")
-	fixtures.UnregisterIntegrationSystemWithErr(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+	fixtures.UnregisterIntegrationSystemWithErr(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
 
 	t.Log("Check if SystemAuths are still present in the db")
-	auths := fixtures.GetSystemAuthsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+	auths := fixtures.GetSystemAuthsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
 	require.NotEmpty(t, auths)
 	require.NotNil(t, auths[0])
 	credentialDataFromDB, ok := auths[0].Auth.Credential.(*graphql.OAuthCredentialData)
@@ -74,7 +74,7 @@ func TestCompassAuth(t *testing.T) {
 	fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appByIntSys.ID)
 
 	t.Log("Remove Integration System")
-	fixtures.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+	fixtures.UnregisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
 
 	t.Log("Check if token granted for Integration System is invalid")
 	appByIntSys, err = fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appInput)

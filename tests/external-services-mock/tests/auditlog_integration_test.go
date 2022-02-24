@@ -42,8 +42,8 @@ func TestAuditlogIntegration(t *testing.T) {
 	app := graphql.ApplicationExt{}
 
 	timeFrom := time.Now()
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 	require.NoError(t, err)
 	timeTo := timeFrom.Add(1 * time.Minute)
 
@@ -84,7 +84,7 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	assert.Equal(t, requestBody.String(), preRequest)
 	assert.Equal(t, 2, len(auditlogs))
-	assert.Equal(t, staticUser, pre.Object.ID["consumerID"])
+	assert.Equal(t, consumerID, pre.Object.ID["consumerID"])
 	assert.Equal(t, "Static User", pre.Object.ID["apiConsumer"])
 
 	var postRequest string
@@ -95,7 +95,7 @@ func TestAuditlogIntegration(t *testing.T) {
 	}
 
 	assert.Equal(t, requestBody.String(), postRequest)
-	assert.Equal(t, staticUser, post.Object.ID["consumerID"])
+	assert.Equal(t, consumerID, post.Object.ID["consumerID"])
 	assert.Equal(t, "Static User", post.Object.ID["apiConsumer"])
 }
 

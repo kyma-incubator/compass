@@ -47,7 +47,7 @@ func TestAppRegistry(t *testing.T) {
 		},
 	}
 
-	directorClient, err := clients.NewDirectorClient(dexGraphQLClient, testConfig.Tenant, testConfig.DirectorReadyzUrl)
+	directorClient, err := clients.NewDirectorClient(certSecuredGraphQLClient, testConfig.Tenant, testConfig.DirectorReadyzUrl)
 	require.NoError(t, err)
 
 	appID, err := directorClient.CreateApplication(appInput)

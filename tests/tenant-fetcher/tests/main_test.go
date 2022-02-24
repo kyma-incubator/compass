@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -9,39 +10,38 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 
-var dexGraphQLClient *graphql.Client
+var certSecuredGraphQLClient *graphql.Client
 var httpClient *http.Client
 
 type testConfig struct {
-	TenantFetcherURL          string
-	RootAPI                   string
-	HandlerEndpoint           string
-	RegionalHandlerEndpoint   string
-	DependenciesEndpoint      string
-	TenantPathParam           string
-	RegionPathParam           string
-	DbUser                    string
-	DbPassword                string
-	DbHost                    string
-	DbPort                    string
-	DbName                    string
-	DbSSL                     string
-	DbMaxIdleConnections      string
-	DbMaxOpenConnections      string
-	Tenant                    string
-	SubscriptionCallbackScope string
+	DirectorExternalCertSecuredURL string
+	TenantFetcherURL               string
+	RootAPI                        string
+	HandlerEndpoint                string
+	RegionalHandlerEndpoint        string
+	DependenciesEndpoint           string
+	TenantPathParam                string
+	RegionPathParam                string
+	DbUser                         string
+	DbPassword                     string
+	DbHost                         string
+	DbPort                         string
+	DbName                         string
+	DbSSL                          string
+	DbMaxIdleConnections           string
+	DbMaxOpenConnections           string
+	Tenant                         string
+	SubscriptionCallbackScope      string
 	TenantProviderConfig
 	ExternalServicesMockURL          string
 	ClientID                         string
@@ -51,6 +51,8 @@ type testConfig struct {
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`
 	SubscriptionProviderLabelKey     string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY"`
 	ConsumerSubaccountIDsLabelKey    string `envconfig:"APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY"`
+	SkipSSLValidation                bool   `envconfig:"default=false"`
+	CertLoaderConfig                 certloader.Config
 }
 
 type TenantProviderConfig struct {
@@ -66,14 +68,24 @@ var config testConfig
 func TestMain(m *testing.M) {
 	err := envconfig.InitWithPrefix(&config, "APP")
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
+		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
 
 	tenant.TestTenants.Init()
 	defer tenant.TestTenants.Cleanup()
 
-	dexToken := server.Token()
-	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
+	ctx := context.Background()
+	cc, err := certloader.StartCertLoader(ctx, config.CertLoaderConfig)
+	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
+	}
+
+	for cc.Get() == nil {
+		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
+		time.Sleep(1 * time.Second)
+	}
+
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(config.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, config.SkipSSLValidation)
 
 	httpClient = &http.Client{
 		Timeout: 15 * time.Second,

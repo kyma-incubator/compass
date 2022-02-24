@@ -1,7 +1,7 @@
 package gql
 
 import (
-	"crypto/rsa"
+	"crypto"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -20,7 +20,7 @@ func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Clie
 	return gcli.NewClient(url, gcli.WithHTTPClient(authorizedClient))
 }
 
-func NewCertAuthorizedGraphQLClientWithCustomURL(url string, key *rsa.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *gcli.Client {
+func NewCertAuthorizedGraphQLClientWithCustomURL(url string, key crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *gcli.Client {
 	certAuthorizedClient := NewCertAuthorizedHTTPClient(key, rawCertChain, skipSSLValidation)
 	return gcli.NewClient(url, gcli.WithHTTPClient(certAuthorizedClient))
 }
@@ -61,7 +61,7 @@ func (t *authenticatedTransport) RoundTrip(req *http.Request) (*http.Response, e
 	return t.Transport.RoundTrip(req)
 }
 
-func NewCertAuthorizedHTTPClient(key *rsa.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
+func NewCertAuthorizedHTTPClient(key crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
 	tlsCert := tls.Certificate{
 		Certificate: rawCertChain,
 		PrivateKey:  key,

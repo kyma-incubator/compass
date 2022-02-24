@@ -24,7 +24,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -50,24 +49,23 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 		defaultTenantId := tenant.TestTenants.GetDefaultTenantID()
 
 		// Build graphql director client configured with certificate
-		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
 
 		// Register application
-		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", defaultTenantId)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTenantId, &app)
+		app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "testingApp", defaultTenantId)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, defaultTenantId, &app)
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 
 		// Create label definition
 		scenarios := []string{"DEFAULT", "sr-test-scenario"}
-		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios)
-		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId, scenarios[:1])
+		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantId, scenarios)
+		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantId, scenarios[:1])
 
 		// Assign application to scenario
 		appLabelRequest := fixtures.FixSetApplicationLabelRequest(app.ID, scenariosLabel, scenarios[1:])
-		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, defaultTenantId, appLabelRequest, nil))
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, defaultTenantId, app.ID, testConfig.DefaultScenarioEnabled)
+		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, defaultTenantId, appLabelRequest, nil))
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, defaultTenantId, app.ID, testConfig.DefaultScenarioEnabled)
 
 		// Self register runtime
 		runtimeInput := graphql.RuntimeInput{
@@ -89,7 +87,7 @@ func TestSelfRegisterFlow(stdT *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
 
-		labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, defaultTenantId)
+		labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantId)
 		require.NoError(t, err)
 		numOfScenarioLabelDefinitions := 0
 		for _, ld := range labelDefinitions {
@@ -112,7 +110,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscriptionConsumerSubaccountID := "1f538f34-30bf-4d3d-aeaa-02e69eef84ae"
 
 		// Build graphql director client configured with certificate
-		clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
+		clientKey, rawCertChain := certCache.Get().PrivateKey, certCache.Get().Certificate
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
 
 		runtimeInput := graphql.RuntimeInput{
@@ -127,27 +125,27 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, runtime.ID)
 
 		// Register application
-		app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", secondaryTenant)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &app)
+		app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "testingApp", secondaryTenant)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, secondaryTenant, &app)
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 
 		// Register consumer application
-		consumerApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "consumerApp", secondaryTenant)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &consumerApp)
+		consumerApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "consumerApp", secondaryTenant)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, secondaryTenant, &consumerApp)
 		require.NoError(t, err)
 		require.NotEmpty(t, consumerApp.ID)
 		require.NotEmpty(t, consumerApp.Name)
 
 		// Create label definition
 		scenarios := []string{"DEFAULT", "consumer-test-scenario"}
-		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios)
-		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[:1])
+		fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, secondaryTenant, scenarios)
+		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, secondaryTenant, scenarios[:1])
 
 		// Assign consumer application to scenario
 		appLabelRequest := fixtures.FixSetApplicationLabelRequest(consumerApp.ID, scenariosLabel, scenarios[1:])
-		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, secondaryTenant, appLabelRequest, nil))
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, secondaryTenant, consumerApp.ID, testConfig.DefaultScenarioEnabled)
+		require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, secondaryTenant, appLabelRequest, nil))
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, testConfig.DefaultScenarioEnabled)
 
 		providedTenantIDs := tenantfetcher.Tenant{
 			TenantID:               secondaryTenant,
@@ -190,8 +188,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Create automatic scenario assigment for consumer subaccount
 		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarios[1], selectorKey, subscriptionConsumerSubaccountID)
-		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, secondaryTenant)
-		defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, secondaryTenant, scenarios[1])
+		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, secondaryTenant)
+		defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, certSecuredGraphQLClient, secondaryTenant, scenarios[1])
 
 		// HTTP client configured with manually signed client certificate
 		extIssuerCertHttpClient := extIssuerCertClient(clientKey, rawCertChain, true)

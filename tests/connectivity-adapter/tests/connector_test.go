@@ -47,7 +47,7 @@ func TestConnector(t *testing.T) {
 		},
 	}
 
-	client, err := clients.NewDirectorClient(dexGraphQLClient, testConfig.Tenant, testConfig.DirectorReadyzUrl)
+	client, err := clients.NewDirectorClient(certSecuredGraphQLClient, testConfig.Tenant, testConfig.DirectorReadyzUrl)
 	require.NoError(t, err)
 
 	appID, err := client.CreateApplication(appInput)
