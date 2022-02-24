@@ -17,8 +17,8 @@ deployment:
         secret: ""
       envs:
         mappingTemplateExternalURL: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}/cert/token"
-        mappingTemplateHeaders: '{"Content-Type":["application/json"]}'
-        mappingTemplateJSONBody: "{}"
+        mappingTemplateHeaders: '{"Content-Type":["application/x-www-form-urlencoded"]}'
+        mappingTemplateJSONBody: "client_id=client_id&grant_type=client_credentials"
         mappingTemplateTokenFromResponse: "{{.access_token}}"
         oauthStyle: ""
         skipSSLVerify: true
