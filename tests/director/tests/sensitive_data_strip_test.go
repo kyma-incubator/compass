@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	gcli "github.com/machinebox/graphql"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,6 +52,9 @@ func TestSensitiveDataStrip(t *testing.T) {
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantId, appInput)
 	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
+
+	token := fixtures.RequestOneTimeTokenForApplication(t, ctx, dexGraphQLClient, app.ID)
+	assert.NotEmpty(t, token.Token)
 
 	t.Log(fmt.Sprintf("Asserting document, event and api definitions are present"))
 	require.Len(t, app.Bundles.Data, 1)
@@ -173,7 +177,6 @@ func TestSensitiveDataStrip(t *testing.T) {
 				for _, applicationAuth := range application.Auths {
 					require.NotEmpty(t, applicationAuth.ID)
 					require.Equal(t, applicationAuth.Auth != nil, test.fieldExpectations.appAuths)
-
 				}
 				require.Equal(t, application.Bundles.Data[0].InstanceAuths != nil, test.fieldExpectations.bundleInstanceAuths)
 
