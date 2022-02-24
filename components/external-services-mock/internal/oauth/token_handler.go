@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -17,6 +18,7 @@ import (
 const (
 	AuthorizationHeader              = "Authorization"
 	ContentTypeHeader                = "Content-Type"
+	XExternalHost                    = "X-External-Host"
 	ContentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
 	ContentTypeApplicationJson       = "application/json"
 
@@ -38,9 +40,10 @@ type ClaimsGetterFunc func() map[string]interface{}
 type handler struct {
 	expectedSecret      string
 	expectedID          string
-	tenantHeaderName    string
 	expectedUsername    string
 	expectedPassword    string
+	tenantHeaderName    string
+	externalHost        string
 	signingKey          *rsa.PrivateKey
 	staticMappingClaims map[string]ClaimsGetterFunc
 }
@@ -52,13 +55,14 @@ func NewHandler(expectedSecret, expectedID string) *handler {
 	}
 }
 
-func NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeaderName, expectedUsername, expectedPassword string, signingKey *rsa.PrivateKey, staticMappingClaims map[string]ClaimsGetterFunc) *handler {
+func NewHandlerWithSigningKey(expectedSecret, expectedID, expectedUsername, expectedPassword, tenantHeaderName, externalHost string, signingKey *rsa.PrivateKey, staticMappingClaims map[string]ClaimsGetterFunc) *handler {
 	return &handler{
 		expectedSecret:      expectedSecret,
 		expectedID:          expectedID,
-		tenantHeaderName:    tenantHeaderName,
 		expectedUsername:    expectedUsername,
 		expectedPassword:    expectedPassword,
+		tenantHeaderName:    tenantHeaderName,
+		externalHost:        externalHost,
 		signingKey:          signingKey,
 		staticMappingClaims: staticMappingClaims,
 	}
@@ -116,19 +120,19 @@ func (h *handler) authenticateClientCredentialsRequest(r *http.Request) error {
 	ctx := r.Context()
 	log.C(ctx).Info("Validating client credentials token request...")
 	authorization := r.Header.Get("authorization")
+	isReqWithCert := h.isRequestWithCert(r)
 	if id, secret, err := getBasicCredentials(authorization); err != nil {
 		log.C(ctx).Info("Did not find client_id or client_secret in the authorization header. Checking the request body...")
-		id = r.FormValue(ClientIDKey)
-		secret = r.FormValue(ClientSecretKey)
-		if id != h.expectedID || secret != h.expectedSecret {
-			return errors.New("client_id or client_secret from request body doesn't match the expected one")
+		if err = h.validateCredentials(isReqWithCert, r.FormValue(ClientIDKey), r.FormValue(ClientSecretKey), "from request body doesn't match the expected one"); err != nil {
+			return err
 		}
-	} else if id != h.expectedID || secret != h.expectedSecret {
-		return errors.New("client_id or client_secret from authorization header doesn't match the expected one")
+	} else {
+		if err = h.validateCredentials(isReqWithCert, id, secret, "from authorization header doesn't match the expected one"); err != nil {
+			return err
+		}
 	}
 
 	log.C(ctx).Info("Successfully validated client credentials token request")
-
 	return nil
 }
 
@@ -141,8 +145,8 @@ func (h *handler) authenticatePasswordCredentialsRequest(r *http.Request) error 
 		return errors.Wrap(err, "client_id or client_secret doesn't match the expected one")
 	}
 
-	if id != h.expectedID || secret != h.expectedSecret {
-		return errors.New("client_id or client_secret doesn't match the expected one")
+	if err = h.validateCredentials(h.isRequestWithCert(r), id, secret, "doesn't match the expected one"); err != nil {
+		return err
 	}
 
 	username := r.FormValue(UserNameKey)
@@ -221,4 +225,25 @@ func getBasicCredentials(rawData string) (id string, secret string, err error) {
 	}
 
 	return credentials[0], credentials[1], nil
+}
+
+func (h *handler) isRequestWithCert(r *http.Request) bool {
+	if r.Header.Get(XExternalHost) == h.externalHost {
+		return true
+	}
+	return false
+}
+
+func (h *handler) validateCredentials(isReqWithCert bool, clientId, clientSecret, errMsg string) error {
+	if isReqWithCert {
+		if clientId != h.expectedID {
+			return errors.New(fmt.Sprintf("client_id %s", errMsg))
+		}
+	} else {
+		if clientId != h.expectedID || clientSecret != h.expectedSecret {
+			return errors.New(fmt.Sprintf("client_id or client_secret %s", errMsg))
+		}
+	}
+
+	return nil
 }

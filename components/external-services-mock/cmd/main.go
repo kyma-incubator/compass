@@ -45,13 +45,14 @@ import (
 )
 
 type config struct {
-	Port       int `envconfig:"default=8080"`
-	CertPort   int `envconfig:"default=8081"`
-	ORDServers ORDServers
-	BaseURL    string `envconfig:"default=http://compass-external-services-mock.compass-system.svc.cluster.local"`
-	JWKSPath   string `envconfig:"default=/jwks.json"`
+	Port        int `envconfig:"default=8080"`
+	CertPort    int `envconfig:"default=8081"`
+	ExternalURL string
+	BaseURL     string `envconfig:"default=http://compass-external-services-mock.compass-system.svc.cluster.local"`
+	JWKSPath    string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
+	ORDServers    ORDServers
 	SelfRegConfig selfreg.Config
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
 
@@ -152,7 +153,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
 
 	// Oauth server handlers
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, cfg.Username, cfg.Password, key, staticMappingClaims)
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.Username, cfg.Password, cfg.TenantHeader, cfg.ExternalURL, key, staticMappingClaims)
 	router.HandleFunc("/secured/oauth/token", tokenHandler.Generate).Methods(http.MethodPost)
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
@@ -264,7 +265,7 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router := mux.NewRouter()
 
 	// Oauth server handlers
-	tokenHandlerWithKey := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, cfg.Username, cfg.Password, key, staticMappingClaims)
+	tokenHandlerWithKey := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.Username, cfg.Password, cfg.TenantHeader, cfg.ExternalURL, key, staticMappingClaims)
 	// TODO The mtls_token_provider sends client id and scopes in url.values form. When the change for fetching xsuaa token
 	// with certificate is merged GenerateWithCredentialsFromReqBody should be used for testing the flows that include fetching
 	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.

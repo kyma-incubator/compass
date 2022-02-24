@@ -28,6 +28,8 @@ spec:
               image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.external_services_mock.dir }}compass-external-services-mock:{{ .Values.global.images.external_services_mock.version }}
               imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
               env:
+              - name: APP_EXTERNAL_URL
+                value: {{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}
               - name: APP_PORT
                 value: "{{ .Values.deployment.port }}"
               - name: APP_CERT_PORT

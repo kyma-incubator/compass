@@ -22,6 +22,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var extHost = "external-host"
+
 func TestHandler_Generate(t *testing.T) {
 	//GIVEN
 	data := url.Values{}
@@ -54,7 +56,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 	t.Run("Failed to generate token if the content type is not application URL encoded", func(t *testing.T) {
 		// GIVEN
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte{}))
-		handler := oauth2.NewHandlerWithSigningKey("", "", "", "", "", nil, map[string]oauth2.ClaimsGetterFunc{})
+		handler := oauth2.NewHandlerWithSigningKey("", "", "", "", "", "", nil, map[string]oauth2.ClaimsGetterFunc{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -72,7 +74,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodPost, "http://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
 		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
-		handler := oauth2.NewHandlerWithSigningKey("", "", "", "", "", nil, map[string]oauth2.ClaimsGetterFunc{})
+		handler := oauth2.NewHandlerWithSigningKey("", "", "", "", "", "", nil, map[string]oauth2.ClaimsGetterFunc{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -98,7 +100,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
 
-		h := oauth2.NewHandlerWithSigningKey(secret, id, tenantHeader, "", "", key, map[string]oauth2.ClaimsGetterFunc{})
+		h := oauth2.NewHandlerWithSigningKey(secret, id, "", "", tenantHeader, extHost, key, map[string]oauth2.ClaimsGetterFunc{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -133,7 +135,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 
 		expectedSecret := "expectedSecret"
 		expectedID := "expectedID"
-		h := oauth2.NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeader, "", "", key, map[string]oauth2.ClaimsGetterFunc{})
+		h := oauth2.NewHandlerWithSigningKey(expectedSecret, expectedID, "", "", tenantHeader, extHost, key, map[string]oauth2.ClaimsGetterFunc{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -166,7 +168,40 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
 
-		h := oauth2.NewHandlerWithSigningKey(secret, id, tenantHeader, "", "", key, map[string]oauth2.ClaimsGetterFunc{})
+		h := oauth2.NewHandlerWithSigningKey(secret, id, "", "", tenantHeader, extHost, key, map[string]oauth2.ClaimsGetterFunc{})
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.Generate(r, req)
+		resp := r.Result()
+
+		//THEN
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		var response oauth2.TokenResponse
+		err = json.Unmarshal(body, &response)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.AccessToken)
+	})
+
+	t.Run("Successfully issue client_credentials token with certificate", func(t *testing.T) {
+		//GIVEN
+		id, tenantHeader := "id", "x-zid"
+
+		data := url.Values{}
+		data.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
+		data.Add(oauth2.ClientIDKey, id)
+
+		req := httptest.NewRequest(http.MethodPost, "https://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.XExternalHost, extHost)
+
+		key, err := rsa.GenerateKey(rand.Reader, 2048)
+		require.NoError(t, err)
+
+		h := oauth2.NewHandlerWithSigningKey("", id, "", "", tenantHeader, extHost, key, map[string]oauth2.ClaimsGetterFunc{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -201,7 +236,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 
 		expectedSecret := "expectedSecret"
 		expectedID := "expectedID"
-		h := oauth2.NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeader, "", "", key, map[string]oauth2.ClaimsGetterFunc{})
+		h := oauth2.NewHandlerWithSigningKey(expectedSecret, expectedID, "", "", tenantHeader, extHost, key, map[string]oauth2.ClaimsGetterFunc{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -237,7 +272,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
 
-		h := oauth2.NewHandlerWithSigningKey(secret, id, tenantHeader, username, password, key, map[string]oauth2.ClaimsGetterFunc{})
+		h := oauth2.NewHandlerWithSigningKey(secret, id, username, password, tenantHeader, extHost, key, map[string]oauth2.ClaimsGetterFunc{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -271,7 +306,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
 
-		h := oauth2.NewHandlerWithSigningKey(secret, id, tenantHeader, username, password, key, map[string]oauth2.ClaimsGetterFunc{})
+		h := oauth2.NewHandlerWithSigningKey(secret, id, username, password, tenantHeader, "", key, map[string]oauth2.ClaimsGetterFunc{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -309,7 +344,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 
 		expectedSecret := "expectedSecret"
 		expectedID := "expectedID"
-		h := oauth2.NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeader, username, password, key, map[string]oauth2.ClaimsGetterFunc{})
+		h := oauth2.NewHandlerWithSigningKey(expectedSecret, expectedID, username, password, tenantHeader, extHost, key, map[string]oauth2.ClaimsGetterFunc{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -347,7 +382,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 
 		expectedUsername := "expectedUsername"
 		expectedPassword := "expectedPassword"
-		h := oauth2.NewHandlerWithSigningKey(secret, id, tenantHeader, expectedUsername, expectedPassword, key, map[string]oauth2.ClaimsGetterFunc{})
+		h := oauth2.NewHandlerWithSigningKey(secret, id, expectedUsername, expectedPassword, tenantHeader, extHost, key, map[string]oauth2.ClaimsGetterFunc{})
 		r := httptest.NewRecorder()
 
 		//WHEN
@@ -393,7 +428,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
 
-		h := oauth2.NewHandlerWithSigningKey(secret, id, tenantHeader, "", "", key, staticClaimsMapping)
+		h := oauth2.NewHandlerWithSigningKey(secret, id, "", "", tenantHeader, extHost, key, staticClaimsMapping)
 		r := httptest.NewRecorder()
 
 		//WHEN
