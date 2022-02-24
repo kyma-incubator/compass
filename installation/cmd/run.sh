@@ -157,7 +157,7 @@ kubectl label --overwrite node "$NODE" benchmark=true || true
 if [[ ${DUMP_DB} ]]; then
     echo -e "${YELLOW}DUMP_DB option is selected. Building an image for the schema-migrator using local files...${NC}"
     export DOCKER_TAG=$DUMP_IMAGE_TAG
-    make -C ${ROOT_PATH}/components/schema-migrator build-to-minikube
+    make -C ${ROOT_PATH}/components/schema-migrator build-for-k3d
 fi
 
 if [[ ! ${SKIP_KYMA_START} ]]; then
