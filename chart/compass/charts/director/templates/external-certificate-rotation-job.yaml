@@ -28,7 +28,7 @@ spec:
           serviceAccountName: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
           restartPolicy: Never
           containers:
-            - name: certificate-rotation
+            - name: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
               image: bitnami/kubectl:1.22.4
               imagePullPolicy: IfNotPresent
               command:
