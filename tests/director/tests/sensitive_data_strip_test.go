@@ -132,8 +132,8 @@ func TestSensitiveDataStrip(t *testing.T) {
 				},
 			},
 			{
-				name:              "Integration system consumer",
-				consumer:          intSystemOAuthGraphQLClient,
+				name:     "Integration system consumer",
+				consumer: intSystemOAuthGraphQLClient,
 				fieldExpectations: accessRequired{
 					appAuths: true,
 				},
