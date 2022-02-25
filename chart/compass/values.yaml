@@ -108,7 +108,7 @@ global:
       version: "PR-2166"
     ord_service:
       dir:
-      version: "PR-59"
+      version: "PR-61"
     schema_migrator:
       dir:
       version: "PR-2173"
@@ -125,7 +125,7 @@ global:
       version: "PR-2153"
     console:
       dir:
-      version: "PR-54"
+      version: "PR-59"
     e2e_tests:
       dir:
       version: "PR-2173"
@@ -612,6 +612,11 @@ global:
         clientIdKey: client-id
         clientSecretKey: client-secret
         oauthUrlKey: url
+        oauthMode: "oauth-mtls"
+        clientCertKey: client-cert
+        clientKeyKey: client-key
+        skipSSLValidation: true
+
       endpoints:
         accountCreated: "127.0.0.1/events?type=account-created"
         accountDeleted: "127.0.0.1/events?type=account-deleted"
