@@ -72,7 +72,7 @@ spec:
             - name: CONSUMER_TOKEN_URL
               value: {{ .Values.global.tests.ordService.consumerTokenURL }}
             - name: TOKEN_PATH
-              value: {{ .Values.global.externalServicesMock.oauthSecret.oauthTokenPath }}
+              value: {{ .Values.global.tests.ordService.consumerTokenPath }}
             - name: PROVIDER_CLIENT_ID
               valueFrom:
                 secretKeyRef:
