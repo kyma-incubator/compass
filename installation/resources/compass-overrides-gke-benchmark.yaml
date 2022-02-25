@@ -1,0 +1,52 @@
+gateway:
+  gateway:
+    auditlog:
+      enabled: "false"
+      authMode: "oauth"
+system-broker:
+  http:
+    client:
+      skipSSLValidation: "true"
+operations-controller:
+  http:
+    client:
+      skipSSLValidation: "true"
+global:
+  externalServicesMock.enabled: "true"
+  systemFetcher:
+    enabled: "true"
+    systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
+    systemsAPIFilterCriteria: "no"
+    systemsAPIFilterTenantCriteriaPattern: "tenant=%s"
+    systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] },{"Name": "temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
+    oauth:
+      client: "client_id"
+      secret: "client_secret"
+      tokenBaseUrl: "compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      tokenPath: "/secured/oauth/token"
+      tokenEndpointProtocol: "http"
+      scopesClaim: "scopes"
+      tenantHeaderName: "x-zid"
+    http:
+      client:
+        skipSSLValidation: "true"
+  kubernetes:
+    serviceAccountTokenJWKS: "https://container.googleapis.com/v1beta1/projects/$CLOUDSDK_CORE_PROJECT/locations/$CLOUDSDK_COMPUTE_ZONE/clusters/$COMMON_NAME/jwks"
+  oathkeeper:
+    mutators:
+      authenticationMappingServices:
+        tenant-fetcher:
+          authenticator:
+            enabled: "true"
+        subscriber:
+          authenticator:
+            enabled: "true"
+  http:
+    client:
+      skipSSLValidation: "true"
+  tests:
+    http:
+      client:
+        skipSSLValidation:
+          director: "true"
+          ordService: "true"

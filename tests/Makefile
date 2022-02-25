@@ -31,4 +31,4 @@ deploy-tests-on-k3d:
 	docker build -t ${LOCAL_PREFIX}/compass-tests:${IMAGE_VERSION} .
 	docker push ${LOCAL_PREFIX}/compass-tests:${IMAGE_VERSION}
 	kubectl config use-context k3d-kyma
-	$(INSTALLATION_SCRIPTS_DIR)/patchTestDefinitions.sh ${IMAGE_VERSION}
+	$(INSTALLATION_SCRIPTS_DIR)/patch-test-definitions.sh ${IMAGE_VERSION}

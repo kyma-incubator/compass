@@ -4,7 +4,7 @@ set -o errexit
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 COMPASS_CHARTS="${CURRENT_DIR}/../../chart/compass"
-COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/helm-compass-overrides.yaml"
+COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
 CRDS="${CURRENT_DIR}/../resources/crds"
 
 kubectl apply -f "$CRDS"

@@ -11,6 +11,10 @@ system-broker:
     client:
       skipSSLValidation: true
 connector:
+  secrets:
+    ca:
+      name: "connector-service-app-ca"
+      namespace: "kyma-integration"
   http:
     client:
       skipSSLValidation: true
@@ -23,6 +27,7 @@ config:
     caFile: "/etc/dex-tls-cert/tls.crt"
 
 global:
+  agentPreconfiguration: "true"
   applicationConnectorCa: ""
   applicationConnectorCaKey: ""
   ingress:

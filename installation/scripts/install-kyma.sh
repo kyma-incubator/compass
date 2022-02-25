@@ -43,7 +43,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
-INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma-minimal.yaml
+INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/kyma/kyma-components-minimal.yaml
 OVERRIDES_KYMA_MINIMAL_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-minimal-config-local.yaml
 
 MINIMAL_OVERRIDES_FILENAME=override-local-minimal.yaml
@@ -53,7 +53,7 @@ MINIMAL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${OVERRIDES_KYMA_MI
 $MINIMAL_OVERRIDES_CONTENT
 EOF
 
-INSTALLER_CR_FULL_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma.yaml
+INSTALLER_CR_FULL_PATH="${ROOT_PATH}"/installation/resources/kyma/kyma-components-full.yaml
 OVERRIDES_KYMA_FULL_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-full-config-local.yaml
 
 FULL_OVERRIDES_FILENAME=override-local-full.yaml
@@ -84,5 +84,5 @@ if [[ $KYMA_INSTALLATION == *full* ]]; then # todo add overrides if possible
   kyma deploy --components-file $INSTALLER_CR_FULL_PATH --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  kyma deploy --components-file $INSTALLER_CR_PATH  --values-file $OVERRIDES_DIR/kyma2.0-overrides.yaml --source $KYMA_SOURCE
+  kyma deploy --components-file $INSTALLER_CR_PATH  --values-file $OVERRIDES_DIR/kyma-overrides-minimal.yaml --source $KYMA_SOURCE
 fi

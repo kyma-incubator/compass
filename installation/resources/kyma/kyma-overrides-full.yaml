@@ -1,0 +1,54 @@
+tracing:
+  jaeger:
+    spec:
+      strategy: "allInOne"
+      storage:
+        type: "memory"
+        options:
+          memory:
+            max-traces: "10000"
+      resources:
+        limits:
+          memory: "150Mi"
+monitoring:
+  alertmanager:
+    alertmanagerSpec:
+      resources:
+        limits:
+          cpu: "50m"
+          memory: "100Mi"
+        requests:
+          cpu: "20m"
+          memory: "50Mi"
+      retention: "1h"
+  prometheus:
+    prometheusSpec:
+      resources:
+        limits:
+          cpu: "150m"
+          memory: "800Mi"
+        requests:
+          cpu: "100m"
+          memory: "200Mi"
+      retention: "2h"
+      retentionSize: "500MB"
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            resources:
+              requests:
+                storage: "1Gi"
+  grafana:
+    persistence:
+      enabled: "false"
+serverless:
+  containers:
+    manager:
+      envs:
+        buildRequestsCPU.value: "100m"
+        buildRequestsMemory.value: "200Mi"
+        buildLimitsCPU.value: "200m"
+        buildLimitsMemory.value: "400Mi"
+  # TODO: Solve a problem with DNS
+  tests:
+    enabled: "false"
