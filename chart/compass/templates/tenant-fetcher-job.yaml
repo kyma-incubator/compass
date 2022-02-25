@@ -36,6 +36,7 @@ spec:
               hostnames:
                 # Used for calls to Director
                 - "{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}"
+                - "{{ $.Values.global.externalServicesMock.certSecuredHost }}.{{ $.Values.global.ingress.domainName }}"
           {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
           containers:
@@ -112,11 +113,28 @@ spec:
                   secretKeyRef:
                     name: {{ $config.secret.name }}
                     key: {{ $config.secret.clientIdKey }}
+              {{ if eq $config.secret.oauthMode "standard" }}
               - name: APP_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
                     name: {{ $config.secret.name }}
                     key: {{ $config.secret.clientSecretKey }}
+              {{ else if eq $config.secret.oauthMode "oauth-mtls" }}
+              - name: APP_OAUTH_X509_CERT
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ $config.secret.name }}
+                    key: {{ $config.secret.clientCertKey }}
+              - name: APP_OAUTH_X509_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ $config.secret.name }}
+                    key: {{ $config.secret.clientKeyKey }}
+              - name: APP_OAUTH_SKIP_SSL_VALIDATION
+                value: "{{ $config.secret.skipSSLValidation }}"
+              {{ end }}
+              - name: APP_OAUTH_AUTH_MODE
+                value: {{ $config.secret.oauthMode }}
               - name: APP_OAUTH_TOKEN_ENDPOINT
                 valueFrom:
                   secretKeyRef:
