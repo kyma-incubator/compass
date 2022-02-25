@@ -9,3 +9,4 @@ deployment:
 
 service:
   port: 8080
+  certPort: 443
