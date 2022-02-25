@@ -21,6 +21,7 @@ type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
 	ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
+	ListByApplicationIDWithSelectForUpdate(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
 	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, tenant string, item *model.Webhook) error
 	Update(ctx context.Context, tenant string, item *model.Webhook) error
@@ -79,6 +80,15 @@ func (s *service) ListForApplication(ctx context.Context, applicationID string) 
 		return nil, err
 	}
 	return s.webhookRepo.ListByApplicationID(ctx, tnt, applicationID)
+}
+
+// ListForApplicationWithSelectForUpdate missing godoc
+func (s *service) ListForApplicationWithSelectForUpdate(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.webhookRepo.ListByApplicationIDWithSelectForUpdate(ctx, tnt, applicationID)
 }
 
 // ListForApplicationTemplate missing godoc
