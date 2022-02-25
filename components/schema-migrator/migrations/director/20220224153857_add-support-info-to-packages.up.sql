@@ -1,7 +1,7 @@
 BEGIN;
 
 ALTER TABLE packages
-    ADD COLUMN support_info VARCHAR;
+    ADD COLUMN support_info TEXT;
 
 DROP VIEW IF EXISTS tenants_packages;
 
