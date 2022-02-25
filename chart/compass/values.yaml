@@ -91,7 +91,7 @@ global:
       version: "PR-2166"
     director:
       dir:
-      version: "PR-2153"
+      version: "PR-2218"
     gateway:
       dir:
       version: "PR-2166"
@@ -120,7 +120,7 @@ global:
       version: "PR-59"
     e2e_tests:
       dir:
-      version: "PR-2153"
+      version: "PR-2221"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -436,7 +436,7 @@ global:
     commonName: "compass"
     locality: "local"
     certSvcApiPath: "/cert"
-    tokenPath: "/secured/oauth/token"
+    tokenPath: "/cert/token"
     secrets:
       externalCertSvcSecret:
         manage: false
@@ -445,6 +445,9 @@ global:
         clientSecretKey: client-secret
         oauthUrlKey: url
         csrEndpointKey: csr-endpoint
+        clientCert: client-cert
+        clientKey: client-key
+        skipSSLValidationFlag: "-k"
       externalClientCertSecret:
         name: "external-client-certificate"
         namespace: compass-system
