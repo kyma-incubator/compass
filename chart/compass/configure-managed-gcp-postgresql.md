@@ -28,7 +28,7 @@ To install Compass with GCP managed Postgres database, set the **database.embedd
 The access to the database is possible using [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/concepts/workload-identity).
 It allows a Kubernetes service account to act as an IAM service account.
 Pods that use the configured Kubernetes service account automatically authenticate as the GCP service account when accessing Google Cloud APIs. 
-All kubernetes service accounts, which are used by workloads to access the database, have annotation "iam.gke.io/gcp-service-account" pointing to the `sqlProxyServiceAccount`.
+All kubernetes service accounts, which are used by workloads to access the database, have annotation "iam.gke.io/gcp-service-account" pointing to the `sqlProxyServiceAccount` - the IAM Service Account in GCP that will be used by the K8s workloads.
 
 When adding a workload (deployment, job, etc.) which needs access to the database, the following steps have to be done:
   - Ensure that the workload has kubernetes service account associated to it
