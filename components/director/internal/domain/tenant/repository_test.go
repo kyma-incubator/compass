@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/jmoiron/sqlx"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -967,16 +969,13 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 	})
 }
 
+//TODO add test
 func TestPgRepository_GetLowestOwnerForResource(t *testing.T) {
 	runtimeID := "runtimeID"
 
 	t.Run("Success", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
+		db, dbMock := mockDBSuccess(t, runtimeID)
 		defer dbMock.AssertExpectations(t)
-		rowsToReturn := sqlmock.NewRows([]string{"tenant_id"}).AddRow(testID)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
-			WithArgs(runtimeID, runtimeID).
-			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(nil)
@@ -990,19 +989,35 @@ func TestPgRepository_GetLowestOwnerForResource(t *testing.T) {
 	})
 
 	t.Run("Error when getting", func(t *testing.T) {
-		db, dbMock := testdb.MockDatabase(t)
+		db, dbMock := mockDBError(t, runtimeID)
 		defer dbMock.AssertExpectations(t)
-
-		dbMock.ExpectQuery(regexp.QuoteMeta(`(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`)).
-			WithArgs(runtimeID, runtimeID).WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(nil)
 
 		// WHEN
 		result, err := tenantMappingRepo.GetLowestOwnerForResource(ctx, resource.Runtime, runtimeID)
+
 		// THEN
 		require.Error(t, err)
 		require.Empty(t, result)
 	})
+}
+
+const selectTenantsQuery = `(SELECT tenant_id FROM tenant_runtimes ta WHERE ta.id = $1 AND ta.owner = true AND (NOT EXISTS(SELECT 1 FROM public.business_tenant_mappings WHERE parent = ta.tenant_id) OR (NOT EXISTS(SELECT 1 FROM tenant_runtimes ta2 WHERE ta2.id = $2 AND ta2.owner = true AND ta2.tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE parent = ta.tenant_id)))))`
+
+func mockDBSuccess(t *testing.T, runtimeID string) (*sqlx.DB, testdb.DBMock) {
+	db, dbMock := testdb.MockDatabase(t)
+	rowsToReturn := sqlmock.NewRows([]string{"tenant_id"}).AddRow(testID)
+	dbMock.ExpectQuery(regexp.QuoteMeta(selectTenantsQuery)).
+		WithArgs(runtimeID, runtimeID).
+		WillReturnRows(rowsToReturn)
+	return db, dbMock
+}
+
+func mockDBError(t *testing.T, runtimeID string) (*sqlx.DB, testdb.DBMock) {
+	db, dbMock := testdb.MockDatabase(t)
+	dbMock.ExpectQuery(regexp.QuoteMeta(selectTenantsQuery)).
+		WithArgs(runtimeID, runtimeID).WillReturnError(testError)
+	return db, dbMock
 }

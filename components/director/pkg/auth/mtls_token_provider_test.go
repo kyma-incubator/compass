@@ -47,7 +47,7 @@ var oauthCfg = oauth.Config{
 	ClientID:              "client-id",
 	TokenEndpointProtocol: "https",
 	TokenBaseURL:          "test.mtls.domain.com",
-	TokenPath:             "/oauth/token",
+	TokenPath:             "/cert/token",
 	ScopesClaim:           []string{"my-scope"},
 	TenantHeaderName:      "x-tenant",
 }

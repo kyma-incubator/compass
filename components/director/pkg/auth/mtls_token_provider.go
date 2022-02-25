@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	oauth "github.com/kyma-incubator/compass/components/director/pkg/oauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 
 	httpdirector "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"

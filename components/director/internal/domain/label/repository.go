@@ -213,7 +213,7 @@ func (r *repository) ListGlobalByKey(ctx context.Context, key string) ([]*model.
 // ListGlobalByKeyAndObjects lists resources of objectType across tenants (global) which match the given objectIDs and labeled with the provided key
 func (r *repository) ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error) {
 	var entities Collection
-	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.NewEqualCondition("key", key), repo.NewInConditionForStringValues(labelableObjectField(objectType), objectIDs)); err != nil {
+	if err := r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &entities, repo.NewEqualCondition("key", key), repo.NewInConditionForStringValues(labelableObjectField(objectType), objectIDs)); err != nil {
 		return nil, err
 	}
 	return r.multipleFromEntity(entities)
