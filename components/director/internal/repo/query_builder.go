@@ -13,6 +13,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	// ForUpdateLock Represents FOR UPDATE lock clause in SELECT queries.
+	ForUpdateLock string = "FOR UPDATE"
+	// NoLock Represents missing lock clause in SELECT queries.
+	NoLock string = ""
+)
+
 // QueryBuilder is an interface for building queries about tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type QueryBuilder interface {
 	BuildQuery(resourceType resource.Type, tenantID string, isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error)
@@ -58,7 +65,7 @@ func NewQueryBuilderGlobal(resourceType resource.Type, tableName string, selecte
 
 // BuildQueryGlobal builds a SQL query for global entities without tenant isolation.
 func (b *universalQueryBuilder) BuildQueryGlobal(isRebindingNeeded bool, conditions ...Condition) (string, []interface{}, error) {
-	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, isRebindingNeeded)
+	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, NoLock, isRebindingNeeded)
 }
 
 // BuildQuery builds a SQL query for tenant scoped entities with tenant isolation subquery.
@@ -71,7 +78,7 @@ func (b *universalQueryBuilder) BuildQuery(resourceType resource.Type, tenantID 
 
 	if b.tenantColumn != nil {
 		conditions = append(Conditions{NewEqualCondition(*b.tenantColumn, tenantID)}, conditions...)
-		return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, isRebindingNeeded)
+		return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, NoLock, isRebindingNeeded)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenantID, false)
@@ -81,10 +88,10 @@ func (b *universalQueryBuilder) BuildQuery(resourceType resource.Type, tenantID 
 
 	conditions = append(conditions, tenantIsolation)
 
-	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, isRebindingNeeded)
+	return buildSelectQuery(b.tableName, b.selectedColumns, conditions, OrderByParams{}, NoLock, isRebindingNeeded)
 }
 
-func buildSelectQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+func buildSelectQueryFromTree(tableName string, selectedColumns string, conditions *ConditionTree, orderByParams OrderByParams, lockClause string, isRebindingNeeded bool) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder
 
 	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
@@ -101,6 +108,8 @@ func buildSelectQueryFromTree(tableName string, selectedColumns string, conditio
 		return "", nil, errors.Wrap(err, "while writing order by part")
 	}
 
+	writeLockClause(&stmtBuilder, lockClause)
+
 	if isRebindingNeeded {
 		return getQueryFromBuilder(stmtBuilder), allArgs, nil
 	}
@@ -108,7 +117,7 @@ func buildSelectQueryFromTree(tableName string, selectedColumns string, conditio
 }
 
 // TODO: Refactor builder
-func buildSelectQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, isRebindingNeeded bool) (string, []interface{}, error) {
+func buildSelectQuery(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, lockClause string, isRebindingNeeded bool) (string, []interface{}, error) {
 	var stmtBuilder strings.Builder
 
 	stmtBuilder.WriteString(fmt.Sprintf("SELECT %s FROM %s", selectedColumns, tableName))
@@ -127,6 +136,8 @@ func buildSelectQuery(tableName string, selectedColumns string, conditions Condi
 	if err != nil {
 		return "", nil, errors.Wrap(err, "while writing order by part")
 	}
+
+	writeLockClause(&stmtBuilder, lockClause)
 
 	if isRebindingNeeded {
 		return getQueryFromBuilder(stmtBuilder), allArgs, nil
@@ -191,7 +202,7 @@ func buildCountQuery(tableName string, idColumn string, conditions Conditions, g
 }
 
 func buildSelectQueryWithLimitAndOffset(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, limit, offset int, isRebindingNeeded bool) (string, []interface{}, error) {
-	query, args, err := buildSelectQuery(tableName, selectedColumns, conditions, orderByParams, isRebindingNeeded)
+	query, args, err := buildSelectQuery(tableName, selectedColumns, conditions, orderByParams, NoLock, isRebindingNeeded)
 	if err != nil {
 		return "", nil, err
 	}
@@ -329,4 +340,11 @@ func writeOffsetPart(builder *strings.Builder) error {
 
 	builder.WriteString(" OFFSET ?")
 	return nil
+}
+
+func writeLockClause(builder *strings.Builder, lockClause string) {
+	lock := strings.TrimSpace(lockClause)
+	if lock != NoLock {
+		builder.WriteString(" " + lock)
+	}
 }
