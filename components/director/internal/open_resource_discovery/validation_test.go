@@ -1364,6 +1364,17 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		},
+		{
+			Name: "Invalid empty `supportInfo` field for Package",
+			ExpectedToBeValid: false,
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				emptyStr := ""
+				doc.Packages[0].SupportInfo = &emptyStr
+
+				return []*ord.Document{doc}
+			},
+		},
 
 		// Test invalid entity relations
 
