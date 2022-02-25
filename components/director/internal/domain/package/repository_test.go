@@ -55,7 +55,7 @@ func TestPgRepository_Update(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query: regexp.QuoteMeta(`UPDATE public.packages SET vendor = ?, title = ?, short_description = ?, description = ?, version = ?, package_links = ?, links = ?,
-		licence_type = ?, tags = ?, countries = ?, labels = ?, policy_level = ?, custom_policy_level = ?, part_of_products = ?, line_of_business = ?, industry = ?, resource_hash = ?, documentation_labels = ? WHERE id = ? AND (id IN (SELECT id FROM packages_tenants WHERE tenant_id = ? AND owner = true))`),
+		licence_type = ?, tags = ?, countries = ?, labels = ?, policy_level = ?, custom_policy_level = ?, part_of_products = ?, line_of_business = ?, industry = ?, resource_hash = ?, documentation_labels = ?, support_info = ? WHERE id = ? AND (id IN (SELECT id FROM packages_tenants WHERE tenant_id = ? AND owner = true))`),
 				Args:          append(fixPackageUpdateArgs(), entity.ID, tenantID),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
@@ -128,7 +128,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		Name: "Get Package",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, ord_id, vendor, title, short_description, description, version, package_links, links, licence_type, tags, countries, labels, policy_level, custom_policy_level, part_of_products, line_of_business, industry, resource_hash, documentation_labels FROM public.packages WHERE id = $1 AND (id IN (SELECT id FROM packages_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, ord_id, vendor, title, short_description, description, version, package_links, links, licence_type, tags, countries, labels, policy_level, custom_policy_level, part_of_products, line_of_business, industry, resource_hash, documentation_labels, support_info FROM public.packages WHERE id = $1 AND (id IN (SELECT id FROM packages_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{packageID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -156,7 +156,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		Name: "List Packages",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, ord_id, vendor, title, short_description, description, version, package_links, links, licence_type, tags, countries, labels, policy_level, custom_policy_level, part_of_products, line_of_business, industry, resource_hash, documentation_labels FROM public.packages WHERE app_id = $1 AND (id IN (SELECT id FROM packages_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, ord_id, vendor, title, short_description, description, version, package_links, links, licence_type, tags, countries, labels, policy_level, custom_policy_level, part_of_products, line_of_business, industry, resource_hash, documentation_labels, support_info FROM public.packages WHERE app_id = $1 AND (id IN (SELECT id FROM packages_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
