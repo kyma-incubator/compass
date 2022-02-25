@@ -499,14 +499,13 @@ func AssertSpecsFromORDService(t *testing.T, respBody string, expectedNumberOfAP
 	return specs
 }
 
-func AssertSingleEntityFromORDService(t *testing.T, respBody string, expectedNumber int, expectedName, expectedDescription, descriptionField, expectedSupportInfo string) {
+func AssertSingleEntityFromORDService(t *testing.T, respBody string, expectedNumber int, expectedName, expectedDescription, descriptionField string) {
 	numberOfEntities := len(gjson.Get(respBody, "value").Array())
 	require.Equal(t, expectedNumber, numberOfEntities)
 
 	for i := 0; i < numberOfEntities; i++ {
 		require.Equal(t, expectedName, gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String())
 		require.Equal(t, expectedDescription, gjson.Get(respBody, fmt.Sprintf("value.%d.%s", i, descriptionField)).String())
-		require.Equal(t, expectedSupportInfo, gjson.Get(respBody, fmt.Sprintf("value.%d.supportInfo", i)).String())
 	}
 }
 

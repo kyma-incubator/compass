@@ -58,7 +58,6 @@ const (
 	firstBundleOrdIDRegex                   = "ns:consumptionBundle:BUNDLE_ID(.+):v1"
 	expectedPackageTitle                    = "PACKAGE 1 TITLE"
 	expectedPackageDescription              = "lorem ipsum dolor set"
-	expectedPackageSupportInfo              = "support-info"
 	firstProductTitle                       = "PRODUCT TITLE"
 	firstProductShortDescription            = "lorem ipsum"
 	secondProductTitle                      = "SAP Business Technology Platform"
@@ -328,7 +327,7 @@ func TestORDAggregator(t *testing.T) {
 				return false
 			}
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfPackages)
-			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField, expectedPackageSupportInfo)
+			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
 			t.Log("Successfully verified packages")
 
 			// Verify bundles

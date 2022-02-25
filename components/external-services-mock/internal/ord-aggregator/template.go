@@ -77,7 +77,6 @@ const ordDocument = `{
             }
          ],
          "licenseType":"licence",
-         "supportInfo":"support-info",
          "tags":[
             "testTag"
          ],
