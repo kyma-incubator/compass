@@ -1366,7 +1366,6 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 		},
 		{
 			Name: "Invalid empty `supportInfo` field for Package",
-			ExpectedToBeValid: false,
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				emptyStr := ""
