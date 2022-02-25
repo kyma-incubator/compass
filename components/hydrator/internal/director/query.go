@@ -22,8 +22,32 @@ func tenantByExternalIDQuery(tenantID string) string {
 	return fmt.Sprintf(`query {
 	  	result: tenantByExternalID(id: "%s") {
 			id
+			internalID
+			name
+			type
+			parentID
+			labels
 	  	}
 	}`, tenantID)
+}
+
+func tenantByInternalIDQuery(tenantID string) string {
+	return fmt.Sprintf(`query {
+		result: tenantByInternalID(id: "%s") {
+			id
+			internalID
+			name
+			type
+			parentID
+			labels
+	  	}
+	}`, tenantID)
+}
+
+func tenantByLowestOwnerForResourceQuery(resourceID, resourceType string) string {
+	return fmt.Sprintf(`query {
+	  result: tenantByLowestOwnerForResource(id:"%s", resource:"%s")
+	}`, resourceID, resourceType)
 }
 
 func updateSystemAuthQuery(authID string, gqlAuth graphql.Auth) (string, error) {
@@ -43,4 +67,13 @@ func updateSystemAuthQuery(authID string, gqlAuth graphql.Auth) (string, error) 
 			id
 	  	}
 	}`, authID, gqlAuthInput), nil
+}
+
+func runtimeByTokenIssuerQuery(issuer string) string {
+	return fmt.Sprintf(`query {
+		result: runtimeByTokenIssuer(issuer: "%s") {
+			id
+    		name
+	  	}
+	}`, issuer)
 }

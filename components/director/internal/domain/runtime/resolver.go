@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -37,7 +39,7 @@ type EventingService interface {
 // OAuth20Service missing godoc
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
-	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
+	DeleteMultipleClientCredentials(ctx context.Context, auths []systemauth.SystemAuth) error
 }
 
 // RuntimeService missing godoc
@@ -47,6 +49,7 @@ type RuntimeService interface {
 	CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, id string, mandatoryLabels map[string]interface{}) error
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
 	Get(ctx context.Context, id string) (*model.Runtime, error)
+	GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
@@ -73,13 +76,13 @@ type RuntimeConverter interface {
 // SystemAuthConverter missing godoc
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error)
+	ToGraphQL(in *systemauth.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
-	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
+	ListForObject(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, objectID string) ([]systemauth.SystemAuth, error)
 }
 
 // BundleInstanceAuthService missing godoc
@@ -184,6 +187,32 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	runtime, err := r.runtimeService.Get(ctx, id)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.converter.ToGraphQL(runtime), nil
+}
+
+// Runtime missing godoc
+func (r *Resolver) RuntimeByTokenIssuer(ctx context.Context, issuer string) (*graphql.Runtime, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	runtime, err := r.runtimeService.GetByTokenIssuer(ctx, issuer)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -325,7 +354,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 		}
 	}
 
-	auths, err := r.sysAuthSvc.ListForObject(ctx, model.RuntimeReference, runtime.ID)
+	auths, err := r.sysAuthSvc.ListForObject(ctx, systemauth.RuntimeReference, runtime.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -514,7 +543,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, model.RuntimeReference, obj.ID)
+	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, systemauth.RuntimeReference, obj.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -25,6 +25,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/authnmappinghandler"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 	"net/http"
 	"os"
@@ -46,7 +47,6 @@ const envPrefix = "APP"
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
-
 	RootAPI string `envconfig:"APP_ROOT_API,default=/hydrators"`
 
 	ClientTimeout   time.Duration `envconfig:"default=105s"`
@@ -56,6 +56,8 @@ type config struct {
 	Handler handlerConfig.HandlerConfig
 
 	Director director.Config
+
+	JWKSSyncPeriod time.Duration `envconfig:"default=5m"`
 
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
@@ -178,8 +180,12 @@ func registerHandler(ctx context.Context, router *mux.Router, authenticators []a
 	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, directorClientProvider, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
+	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.Handler.RuntimeMappingEndpoint)
+	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, directorClientProvider, cfg.JWKSSyncPeriod)
+
 	router.HandleFunc(cfg.Handler.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 	router.HandleFunc(cfg.Handler.TenantMappingEndpoint, tenantMappingHandlerFunc.ServeHTTP)
+	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, runtimeMappingHandlerFunc.ServeHTTP)
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
@@ -209,6 +215,23 @@ func getTenantMappingHandlerFunc(authenticators []authenticator.Config, clientPr
 	reqDataParser := oathkeeper.NewReqDataParser()
 
 	return tenantmapping.NewHandler(reqDataParser, objectContextProviders), nil
+}
+
+func getRuntimeMappingHandlerFunc(ctx context.Context, clientProvider director.ClientProvider, cachePeriod time.Duration) *runtimemapping.Handler {
+	reqDataParser := oathkeeper.NewReqDataParser()
+
+	jwksFetch := runtimemapping.NewJWKsFetch()
+	jwksCache := runtimemapping.NewJWKsCache(jwksFetch, cachePeriod)
+	tokenVerifier := runtimemapping.NewTokenVerifier(jwksCache)
+
+	executor.NewPeriodic(1*time.Minute, func(ctx context.Context) {
+		jwksCache.Cleanup(ctx)
+	}).Run(ctx)
+
+	return runtimemapping.NewHandler(
+		reqDataParser,
+		clientProvider.Client(),
+		tokenVerifier)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

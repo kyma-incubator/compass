@@ -6,6 +6,7 @@ type HandlerConfig struct {
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping/{authenticator}"`
 	ValidationIstioCertEndpoint   string `envconfig:"default=/v1/certificate/data/resolve"`
+	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
 }
 
 // Validate ensures the constructed Config contains valid property values

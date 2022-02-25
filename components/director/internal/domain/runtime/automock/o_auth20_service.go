@@ -4,8 +4,8 @@ package automock
 
 import (
 	context "context"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,11 +15,11 @@ type OAuth20Service struct {
 }
 
 // DeleteMultipleClientCredentials provides a mock function with given fields: ctx, auths
-func (_m *OAuth20Service) DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error {
+func (_m *OAuth20Service) DeleteMultipleClientCredentials(ctx context.Context, auths []systemauth.SystemAuth) error {
 	ret := _m.Called(ctx, auths)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []model.SystemAuth) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []systemauth.SystemAuth) error); ok {
 		r0 = rf(ctx, auths)
 	} else {
 		r0 = ret.Error(0)

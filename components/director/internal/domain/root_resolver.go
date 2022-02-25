@@ -413,6 +413,11 @@ func (r *queryResolver) Runtime(ctx context.Context, id string) (*graphql.Runtim
 	return r.runtime.Runtime(ctx, id)
 }
 
+// RuntimeByTokenIssuer missing godoc
+func (r *queryResolver) RuntimeByTokenIssuer(ctx context.Context, issuer string) (*graphql.Runtime, error) {
+	return r.runtime.RuntimeByTokenIssuer(ctx, issuer)
+}
+
 // RuntimeContexts missing godoc
 func (r *queryResolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
 	return r.runtimeContext.RuntimeContexts(ctx, filter, first, after)
@@ -989,6 +994,16 @@ func (r *tenantResolver) Labels(ctx context.Context, obj *graphql.Tenant, key *s
 // TenantByExternalID missing godoc
 func (r *queryResolver) TenantByExternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
 	return r.tenant.Tenant(ctx, id)
+}
+
+// TenantByInternalID fetches а tenant by an internal id
+func (r *queryResolver) TenantByInternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
+	return r.tenant.TenantByID(ctx, id)
+}
+
+// TenantByLowestOwnerForResource fetches а tenant by an internal id
+func (r *queryResolver) TenantByLowestOwnerForResource(ctx context.Context, resource, objectID string) (string, error) {
+	return r.tenant.TenantByLowestOwnerForResource(ctx, resource, objectID)
 }
 
 type systemAuthResolver struct {
