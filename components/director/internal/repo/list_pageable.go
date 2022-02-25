@@ -23,6 +23,7 @@ type PageableQuerier interface {
 type PageableQuerierGlobal interface {
 	ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection) (*pagination.Page, int, error)
 	ListGlobalWithAdditionalConditions(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error)
+	ListGlobalWithSelectForUpdate(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection) (*pagination.Page, int, error)
 }
 
 type universalPageableQuerier struct {
@@ -73,7 +74,7 @@ func (g *universalPageableQuerier) List(ctx context.Context, resourceType resour
 
 	if g.tenantColumn != nil {
 		additionalConditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, additionalConditions...)
-		return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, And(ConditionTreesFromConditions(additionalConditions)...))
+		return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, NoLock, And(ConditionTreesFromConditions(additionalConditions)...))
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -83,20 +84,25 @@ func (g *universalPageableQuerier) List(ctx context.Context, resourceType resour
 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
-	return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, And(ConditionTreesFromConditions(additionalConditions)...))
+	return g.list(ctx, resourceType, pageSize, cursor, orderByColumn, dest, NoLock, And(ConditionTreesFromConditions(additionalConditions)...))
 }
 
 // ListGlobal lists a page of global entities without tenant isolation.
 func (g *universalPageableQuerier) ListGlobal(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection) (*pagination.Page, int, error) {
-	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, nil)
+	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, NoLock, nil)
+}
+
+// ListGlobalWithSelectForUpdate lists a page of global entities without tenant isolation.
+func (g *universalPageableQuerier) ListGlobalWithSelectForUpdate(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection) (*pagination.Page, int, error) {
+	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, ForUpdateLock, nil)
 }
 
 // ListGlobalWithAdditionalConditions lists a page of global entities without tenant isolation.
 func (g *universalPageableQuerier) ListGlobalWithAdditionalConditions(ctx context.Context, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
-	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, conditions)
+	return g.list(ctx, g.resourceType, pageSize, cursor, orderByColumn, dest, NoLock, conditions)
 }
 
-func (g *universalPageableQuerier) list(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, conditions *ConditionTree) (*pagination.Page, int, error) {
+func (g *universalPageableQuerier) list(ctx context.Context, resourceType resource.Type, pageSize int, cursor string, orderByColumn string, dest Collection, lockClause string, conditions *ConditionTree) (*pagination.Page, int, error) {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return nil, -1, err
@@ -112,20 +118,29 @@ func (g *universalPageableQuerier) list(ctx context.Context, resourceType resour
 		return nil, -1, errors.Wrap(err, "while converting offset and limit to cursor")
 	}
 
-	query, args, err := buildSelectQueryFromTree(g.tableName, g.selectedColumns, conditions, OrderByParams{}, true)
+	query, args, err := buildSelectQueryFromTree(g.tableName, g.selectedColumns, conditions, OrderByParams{}, lockClause, true)
 	if err != nil {
 		return nil, -1, errors.Wrap(err, "while building list query")
 	}
 
 	// TODO: Refactor query builder
-	stmtWithPagination := fmt.Sprintf("%s %s", query, paginationSQL)
+	var stmtWithPagination string
+	if IsLockClauseProvided(lockClause) {
+		stmtWithPagination = strings.ReplaceAll(query, lockClause, paginationSQL+" "+lockClause)
+	} else {
+		stmtWithPagination = fmt.Sprintf("%s %s", query, paginationSQL)
+	}
 
 	err = persist.SelectContext(ctx, dest, stmtWithPagination, args...)
 	if err != nil {
 		return nil, -1, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list page of objects from '%s' table", g.tableName)
 	}
 
-	totalCount, err := g.getTotalCount(ctx, resourceType, persist, query, args)
+	var countQuery = query
+	if IsLockClauseProvided(lockClause) {
+		countQuery = strings.ReplaceAll(query, " "+lockClause, "")
+	}
+	totalCount, err := g.getTotalCount(ctx, resourceType, persist, countQuery, args)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -156,4 +171,9 @@ func (g *universalPageableQuerier) getTotalCount(ctx context.Context, resourceTy
 		return -1, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while counting objects from '%s' table", g.tableName)
 	}
 	return totalCount, nil
+}
+
+// IsLockClauseProvided true if there is a non-empty lock clause provided, and false otherwise.
+func IsLockClauseProvided(lockClause string) bool {
+	return strings.TrimSpace(lockClause) != NoLock
 }
