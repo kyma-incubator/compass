@@ -43,8 +43,15 @@ func NewHandler(CACert, CAKey string) *handler {
 
 func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	authorization := r.Header.Get("authorization")
-	if len(authorization) == 0 || !strings.HasPrefix(authorization, "Bearer ") {
+
+	if len(authorization) == 0 {
 		httphelpers.WriteError(writer, errors.New("authorization header is required"), http.StatusBadRequest)
+		return
+	}
+
+	token := strings.TrimPrefix(authorization, "Bearer ")
+	if !strings.HasPrefix(authorization, "Bearer ") || len(token) == 0 {
+		httphelpers.WriteError(writer, errors.New("token value is required"), http.StatusBadRequest)
 		return
 	}
 

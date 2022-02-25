@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,7 +12,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/provider"
+
 	ord_global_registry "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator/globalregistry"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/subscription"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/selfreg"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/tenantfetcher"
@@ -41,14 +45,19 @@ import (
 )
 
 type config struct {
-	Port       int `envconfig:"default=8080"`
-	ORDServers ORDServers
-	BaseURL    string `envconfig:"default=http://compass-external-services-mock.compass-system.svc.cluster.local"`
-	JWKSPath   string `envconfig:"default=/jwks.json"`
+	Port        int `envconfig:"default=8080"`
+	CertPort    int `envconfig:"default=8081"`
+	ExternalURL string
+	BaseURL     string `envconfig:"default=http://compass-external-services-mock.compass-system.svc.cluster.local"`
+	JWKSPath    string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
+	ORDServers    ORDServers
 	SelfRegConfig selfreg.Config
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
+
+	TenantConfig         subscription.Config
+	TenantProviderConfig subscription.ProviderConfig
 
 	CACert string `envconfig:"APP_CA_CERT"`
 	CAKey  string `envconfig:"APP_CA_KEY"`
@@ -58,19 +67,17 @@ type config struct {
 // This is needed in order to ensure that every call in the context of an application happens in a single server isolated from others.
 // Prior to this separation there were cases when tests succeeded (false positive) due to mistakenly configured baseURL resulting in different flow - different access strategy returned.
 type ORDServers struct {
-	CertPort           int `envconfig:"default=8081"`
-	UnsecuredPort      int `envconfig:"default=8082"`
-	BasicPort          int `envconfig:"default=8083"`
-	OauthPort          int `envconfig:"default=8084"`
-	GlobalRegistryPort int `envconfig:"default=8085"`
-
+	CertPort           int `envconfig:"default=8082"`
+	UnsecuredPort      int `envconfig:"default=8083"`
+	BasicPort          int `envconfig:"default=8084"`
+	OauthPort          int `envconfig:"default=8085"`
+	GlobalRegistryPort int `envconfig:"default=8086"`
 	CertSecuredBaseURL string
 }
 
 type OAuthConfig struct {
 	ClientID     string `envconfig:"APP_CLIENT_ID"`
 	ClientSecret string `envconfig:"APP_CLIENT_SECRET"`
-
 	Scopes       string `envconfig:"APP_OAUTH_SCOPES"`
 	TenantHeader string `envconfig:"APP_OAUTH_TENANT_HEADER"`
 }
@@ -80,6 +87,19 @@ type BasicCredentialsConfig struct {
 	Password string `envconfig:"BASIC_PASSWORD"`
 }
 
+func claimsFunc(uniqueAttrKey, uniqueAttrValue, tenantID, identity, iss string, scopes []string) oauth.ClaimsGetterFunc {
+	return func() map[string]interface{} {
+		return map[string]interface{}{
+			uniqueAttrKey: uniqueAttrValue,
+			"scope":       scopes,
+			"tenant":      tenantID,
+			"identity":    identity,
+			"iss":         iss,
+			"exp":         time.Now().Unix() + int64(time.Minute.Seconds()),
+		}
+	}
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -87,15 +107,29 @@ func main() {
 	err := envconfig.InitWithOptions(&cfg, envconfig.Options{Prefix: "APP", AllOptional: true})
 	exitOnError(err, "while loading configuration")
 
+	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
+	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
+		"tenantFetcherClaims": claimsFunc("test", "tenant-fetcher", "tenantID", "tenant-fetcher-test-identity", extSvcMockURL, []string{"prefix.Callback"}),
+		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", extSvcMockURL, []string{}),
+	}
+
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	exitOnError(err, "while generating rsa key")
 
 	ordServers := initORDServers(cfg, key)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	wg.Add(2)
 
-	go startServer(ctx, initDefaultServer(cfg, key), wg)
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
+	go startServer(ctx, initDefaultServer(cfg, key, staticClaimsMapping, httpClient), wg)
+	go startServer(ctx, initDefaultCertServer(cfg, key, staticClaimsMapping), wg)
 
 	for _, server := range ordServers {
 		wg.Add(1)
@@ -112,23 +146,38 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
+func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client) *http.Server {
 	logger := logrus.New()
 	router := mux.NewRouter()
 
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
 
 	// Oauth server handlers
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
+	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.Username, cfg.Password, cfg.TenantHeader, cfg.ExternalURL, key, staticMappingClaims)
 	router.HandleFunc("/secured/oauth/token", tokenHandler.Generate).Methods(http.MethodPost)
-	// TODO The mtls_token_provider sends client id and scopes in url.values form. When the change for fetching xsuaa token
-	// with certificate is merged GenerateWithCredentialsFromReqBody should be used for testing the flows that include fetching
-	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.
-	router.HandleFunc("/oauth/token", tokenHandler.GenerateWithCredentialsFromReqBody).Methods(http.MethodPost)
 	openIDConfigHandler := oauth.NewOpenIDConfigHandler(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port), cfg.JWKSPath)
 	router.HandleFunc("/.well-known/openid-configuration", openIDConfigHandler.Handle)
 	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
 	router.HandleFunc(cfg.JWKSPath, jwksHanlder.Handle)
+
+	// Subscription handlers that mock subscription manager API's. On real environment we use the same path but with different(real) host
+	jobID := "818cbe72-8dea-4e01-850d-bc1b54b00e78" // randomly chosen UUID
+	subHandler := subscription.NewHandler(httpClient, cfg.TenantConfig, cfg.TenantProviderConfig, jobID)
+	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Subscribe).Methods(http.MethodPost)
+	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Unsubscribe).Methods(http.MethodDelete)
+	router.HandleFunc(fmt.Sprintf("/api/v1/jobs/%s", jobID), subHandler.JobStatus).Methods(http.MethodGet)
+
+	// Both handlers below are part of the provider setup. On real environment when someone is subscribed to provider tenant we want to mock OnSubscription and GetDependency callbacks
+	// and return expected results. CMP will be returned as dependency and will execute its subscription logic.
+	// On local setup, subscription request will be directly to tenant fetcher component with preconfigured data, without need of these mocks.
+
+	// OnSubscription callback handler. It handles subscription manager API callback request executed on real environment when someone is subscribed to a given tenant
+	providerHandler := provider.NewHandler()
+	router.HandleFunc("/tenants/v1/regional/{region}/callback/{tenantId}", providerHandler.OnSubscription).Methods(http.MethodPut, http.MethodDelete)
+
+	// Get dependencies handler. It handles subscription manager API dependency callback request executed on real environment when someone is subscribed to a given tenant
+	router.HandleFunc("/v1/dependencies/configure", providerHandler.DependenciesConfigure).Methods(http.MethodPost)
+	router.HandleFunc("/v1/dependencies", providerHandler.Dependencies).Methods(http.MethodGet)
 
 	// CA server handlers
 	certHandler := cert.NewHandler(cfg.CACert, cfg.CAKey)
@@ -212,9 +261,29 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey) *http.Server {
 	}
 }
 
+func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc) *http.Server {
+	router := mux.NewRouter()
+
+	// Oauth server handlers
+	tokenHandlerWithKey := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.Username, cfg.Password, cfg.TenantHeader, cfg.ExternalURL, key, staticMappingClaims)
+	// TODO The mtls_token_provider sends client id and scopes in url.values form. When the change for fetching xsuaa token
+	// with certificate is merged GenerateWithCredentialsFromReqBody should be used for testing the flows that include fetching
+	// xsuaa token with certificate. APP_SELF_REGISTER_OAUTH_TOKEN_PATH for local env should be adapted.
+	router.HandleFunc("/cert/token", tokenHandlerWithKey.Generate).Methods(http.MethodPost)
+
+	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
+	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
+	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.CertPort),
+		Handler: router,
+	}
+}
+
 func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers := make([]*http.Server, 0, 0)
-	servers = append(servers, initCertSecuredServer(cfg, key))
+	servers = append(servers, initCertSecuredORDServer(cfg))
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
@@ -222,7 +291,7 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	return servers
 }
 
-func initCertSecuredServer(cfg config, key *rsa.PrivateKey) *http.Server {
+func initCertSecuredORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
@@ -232,13 +301,6 @@ func initCertSecuredServer(cfg config, key *rsa.PrivateKey) *http.Server {
 
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
-
-	tokenHandler := oauth.NewHandlerWithSigningKey(cfg.ClientSecret, cfg.ClientID, cfg.TenantHeader, key)
-	router.HandleFunc("/cert/token", tokenHandler.GenerateWithoutCredentials).Methods(http.MethodPost)
-
-	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
-	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
-	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.CertPort),

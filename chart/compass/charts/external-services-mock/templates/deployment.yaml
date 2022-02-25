@@ -17,15 +17,25 @@ spec:
                 app: {{ .Chart.Name }}
                 release: {{ .Release.Name }}
         spec:
+            {{ if .Values.global.isLocalEnv }}
+            hostAliases:
+              - ip: {{ .Values.global.minikubeIP }}
+                hostnames:
+                  - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            {{ end }}
             containers:
             - name: {{ .Chart.Name }}
               image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.external_services_mock.dir }}compass-external-services-mock:{{ .Values.global.images.external_services_mock.version }}
               imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
               env:
+              - name: APP_EXTERNAL_URL
+                value: {{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}
               - name: APP_PORT
                 value: "{{ .Values.deployment.port }}"
-              - name: APP_ORD_SERVERS_CERT_PORT
+              - name: APP_CERT_PORT
                 value: "{{ .Values.global.externalServicesMock.certSecuredPort }}"
+              - name: APP_ORD_SERVERS_CERT_PORT
+                value: "{{ .Values.global.externalServicesMock.ordCertSecuredPort }}"
               - name: APP_ORD_SERVERS_UNSECURED_PORT
                 value: "{{ .Values.global.externalServicesMock.unsecuredPort }}"
               - name: APP_ORD_SERVERS_BASIC_PORT
@@ -33,17 +43,17 @@ spec:
               - name: APP_ORD_SERVERS_OAUTH_PORT
                 value: "{{ .Values.global.externalServicesMock.oauthSecuredPort }}"
               - name: APP_ORD_SERVERS_CERT_SECURED_BASE_URL
-                value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+                value: "https://{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
-                    name: {{ .Values.global.externalServicesMock.oauthSecretName }}
-                    key: client-id
+                    name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                    key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
               - name: APP_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
-                    name: {{ .Values.global.externalServicesMock.oauthSecretName }}
-                    key: client-secret
+                    name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                    key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
               - name: APP_OAUTH_SCOPES
                 value: "{{ .Values.global.systemFetcher.oauth.scopesClaim }}"
               - name: APP_OAUTH_TENANT_HEADER
@@ -51,12 +61,12 @@ spec:
               - name: BASIC_USERNAME
                 valueFrom:
                   secretKeyRef:
-                    name: {{ .Values.global.testCredentials.secretName }}
+                    name: {{ .Values.global.tests.basicCredentials.secretName }}
                     key: username
               - name: BASIC_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: {{ .Values.global.testCredentials.secretName }}
+                    name: {{ .Values.global.tests.basicCredentials.secretName }}
                     key: password
               - name: APP_DEFAULT_TENANT
                 value: "{{ (index .Values.global.tenants 9).id }}"
@@ -80,12 +90,43 @@ spec:
                 value: {{ .Values.global.director.selfRegister.responseKey }}
               - name: APP_SELF_REGISTER_REQUEST_BODY_PATTERN
                 value: {{ .Values.global.director.selfRegister.requestBodyPattern | quote }}
+              - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
+                value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
+              - name: APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY
+                value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
+              - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
+                value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
+              - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
+                value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
+              - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
+                value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
+              - name: APP_TENANT_CONFIG_TENANT_FETCHER_URL
+                value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+              - name: APP_TENANT_CONFIG_ROOT_API
+                value: "{{ .Values.global.tenantFetcher.prefix }}"
+              - name: APP_TENANT_CONFIG_REGIONAL_HANDLER_ENDPOINT
+                value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
+              - name: APP_TENANT_CONFIG_TENANT_PATH_PARAM
+                value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
+              - name: APP_TENANT_CONFIG_REGION_PATH_PARAM
+                value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
+              - name: APP_TENANT_CONFIG_SUBSCRIPTION_PROVIDER_ID
+                value: "{{ .Values.global.tests.subscriptionProviderIdValue }}"
+              - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID
+                value: {{ .Values.global.tests.ordService.consumerAccountID }}
+              - name: APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID
+                value: {{ .Values.global.tests.ordService.consumerSubaccountID }}
+              - name: APP_TENANT_CONFIG_TEST_CONSUMER_TENANT_ID
+                value: {{ .Values.global.tests.ordService.consumerTenantID }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}
                 protocol: TCP
               - name: http-mtls
                 containerPort: {{ .Values.global.externalServicesMock.certSecuredPort }}
+                protocol: TCP
+              - name: http-mtls-ord
+                containerPort: {{ .Values.global.externalServicesMock.ordCertSecuredPort }}
                 protocol: TCP
               - name: http-unsecured
                 containerPort: {{ .Values.global.externalServicesMock.unsecuredPort }}

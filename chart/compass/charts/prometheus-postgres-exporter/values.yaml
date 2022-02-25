@@ -311,7 +311,7 @@ config:
             description: "Number of active tenants in table"
 
     compass_director_used_tenants:
-      query: "SELECT COUNT (DISTINCT tenants.tenant_id) FROM (SELECT tenant_id FROM runtimes UNION ALL SELECT tenant_id FROM applications) tenants;"
+      query: "SELECT COUNT (DISTINCT tenants.tenant_id) FROM (SELECT tenant_id FROM tenant_runtimes UNION ALL SELECT tenant_id FROM tenant_applications) tenants;"
       master: true
       metrics:
         - quantity:
