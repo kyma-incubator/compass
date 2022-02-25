@@ -113,7 +113,7 @@ func main() {
 	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
 		"tenantFetcherClaims": claimsFunc("test", "tenant-fetcher", "client_id", "tenantID", "tenant-fetcher-test-identity", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
 		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", extSvcMockURL, []string{}, map[string]interface{}{}),
-		"nsAdapterClaims": claimsFunc("ns-adapter-test","ns-adapter-flow","test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity",extSvcMockURL,[]string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
+		"nsAdapterClaims":     claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
