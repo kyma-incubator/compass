@@ -27,6 +27,7 @@ spec:
             - "oauth2.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-gateway
       containers:
@@ -86,8 +87,8 @@ metadata:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Chart.Name }}-e2e-gateway
-  namespace: {{ .Values.global.tests.namespace }}
+  name: {{ .Chart.Name }}-e2e-gateway-client-cert
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}

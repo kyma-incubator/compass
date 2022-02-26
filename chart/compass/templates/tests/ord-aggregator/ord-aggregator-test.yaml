@@ -26,6 +26,7 @@ spec:
               - "dex.{{ .Values.global.ingress.domainName }}"
               - "oauth2.{{ .Values.global.ingress.domainName }}"
               - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
+              - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
               - "compass-external-services-mock.compass-system.svc.cluster.local"
       {{ end }}
       serviceAccountName: {{ $.Chart.Name }}-e2e-ord-aggregator
@@ -58,7 +59,7 @@ spec:
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.oauthSecuredPort }}/.well-known/open-resource-discovery"
             - name: GLOBAL_REGISTRY_URL
               value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
-            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+            - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
@@ -124,8 +125,8 @@ metadata:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ $.Chart.Name }}-e2e-ord-aggregator
-  namespace: {{ $.Release.Namespace }}
+  name: {{ $.Chart.Name }}-e2e-ord-aggregator-client-cert
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}

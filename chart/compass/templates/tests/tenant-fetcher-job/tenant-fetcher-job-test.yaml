@@ -24,6 +24,7 @@ spec:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}"
             - "dex.{{ .Values.global.ingress.domainName }}"
       {{ end }}
@@ -51,7 +52,7 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: INTERNAL_DIRECTOR_URL
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
-            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+            - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation.director }}"
@@ -138,27 +139,6 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 ---
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: {{ .Chart.Name }}-e2e-tenant-fetcher-job
-  namespace: {{ .Values.global.tests.namespace }}
-  labels:
-    app: {{ $.Chart.Name }}
-    release: {{ $.Release.Name }}
-    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
-subjects:
-  - kind: ServiceAccount
-    name: {{ .Chart.Name }}-e2e-tenant-fetcher-job
-    namespace: {{ .Values.global.tests.namespace }}
-roleRef:
-  kind: Role
-  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
-  apiGroup: rbac.authorization.k8s.io
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -204,4 +184,25 @@ subjects:
 roleRef:
   kind: Role
   name: {{ .Chart.Name }}-e2e-tenant-fetcher-job
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-tenant-fetcher-job-client-cert
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-e2e-tenant-fetcher-job
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io

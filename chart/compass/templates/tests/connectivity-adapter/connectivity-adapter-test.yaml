@@ -26,6 +26,7 @@ spec:
             - "{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - "dex.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-connectivity-adapter
@@ -86,8 +87,8 @@ metadata:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Chart.Name }}-e2e-connectivity-adapter
-  namespace: {{ .Values.global.tests.namespace }}
+  name: {{ .Chart.Name }}-e2e-connectivity-adapter-client-cert
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}

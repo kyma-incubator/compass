@@ -23,6 +23,7 @@ spec:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - "dex.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-tenant-fetcher
@@ -159,8 +160,8 @@ metadata:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Chart.Name }}-e2e-tenant-fetcher
-  namespace: {{ .Values.global.tests.namespace }}
+  name: {{ .Chart.Name }}-e2e-tenant-fetcher-client-cert
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}
