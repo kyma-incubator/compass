@@ -24,6 +24,7 @@ import (
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/authnmappinghandler"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/connectortokenresolver"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
@@ -46,8 +47,8 @@ import (
 const envPrefix = "APP"
 
 type config struct {
-	Address string `envconfig:"default=127.0.0.1:8080"`
-	RootAPI string `envconfig:"APP_ROOT_API,default=/hydrators"`
+	Address string `envconfig:"default=127.0.0.1:3000"`
+	RootAPI string `envconfig:"APP_ROOT_API,default=/hydratoras"`
 
 	ClientTimeout   time.Duration `envconfig:"default=105s"`
 	ServerTimeout   time.Duration `envconfig:"default=110s"`
@@ -110,9 +111,7 @@ func initAPIHandler(ctx context.Context, authenticators []authenticator.Config, 
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
-	//configureAuthMiddleware(ctx, router, cfg.SecurityConfig)
-
-	registerHandler(ctx, router, authenticators, cfg)
+	registerHydratorHandlers(ctx, router, authenticators, cfg)
 
 	logger.Infof("Registering readiness endpoint...")
 	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
@@ -162,7 +161,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func registerHandler(ctx context.Context, router *mux.Router, authenticators []authenticator.Config, cfg config) {
+func registerHydratorHandlers(ctx context.Context, router *mux.Router, authenticators []authenticator.Config, cfg config) {
 	logger := log.C(ctx)
 
 	httpClient := &http.Client{
@@ -183,9 +182,13 @@ func registerHandler(ctx context.Context, router *mux.Router, authenticators []a
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.Handler.RuntimeMappingEndpoint)
 	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, directorClientProvider, cfg.JWKSSyncPeriod)
 
+	logger.Infof("Registering Connector Token Resolver endpoint on %s...", cfg.Handler.TokenResolverEndpoint)
+	connectorTokenResolverHandlerFunc := getTokenResolverHandler(directorClientProvider)
+
 	router.HandleFunc(cfg.Handler.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 	router.HandleFunc(cfg.Handler.TenantMappingEndpoint, tenantMappingHandlerFunc.ServeHTTP)
 	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, runtimeMappingHandlerFunc.ServeHTTP)
+	router.HandleFunc(cfg.Handler.TokenResolverEndpoint, connectorTokenResolverHandlerFunc.ServeHTTP)
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
@@ -232,6 +235,40 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, clientProvider director.C
 		reqDataParser,
 		clientProvider.Client(),
 		tokenVerifier)
+}
+
+//func getCertificateResolverHandler(cfg Config, CSRSubjectConsts certificates.CSRSubjectConsts, externalSubjectConsts certificates.ExternalIssuerSubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
+//	subjectProcessor, err := subject.NewProcessor(cfg.SubjectConsumerMappingConfig, externalSubjectConsts.OrganizationalUnitPattern)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	validationHydrator := validationhydrator.NewValidationHydrator(revokedCertsRepository, connectorCertHeaderParser, externalCertHeaderParser)
+//
+//	router := mux.NewRouter()
+//	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//		w.WriteHeader(http.StatusOK)
+//	})
+//
+//	router.Use(middlewares...)
+//
+//	v1Router := router.PathPrefix("/v1").Subrouter()
+//	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)
+//
+//	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return &http.Server{
+//		Addr:              cfg.HydratorAddress,
+//		Handler:           handlerWithTimeout,
+//		ReadHeaderTimeout: cfg.ServerTimeout,
+//	}, nil
+//}
+
+func getTokenResolverHandler(clientProvider director.ClientProvider, middlewares ...mux.MiddlewareFunc) http.Handler {
+	return connectortokenresolver.NewValidationHydrator(clientProvider.Client())
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

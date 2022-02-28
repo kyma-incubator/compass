@@ -7,12 +7,13 @@ type HandlerConfig struct {
 	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping/{authenticator}"`
 	ValidationIstioCertEndpoint   string `envconfig:"default=/v1/certificate/data/resolve"`
 	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
+	TokenResolverEndpoint         string `envconfig:"default=/v1/tokens/resolve"`
 }
 
 // Validate ensures the constructed Config contains valid property values
 func (c *HandlerConfig) Validate() error {
-	if c.AuthenticationMappingEndpoint == "" || c.TenantMappingEndpoint == "" || c.ValidationIstioCertEndpoint == "" {
-		return errors.New("Missing configuration")
+	if c.AuthenticationMappingEndpoint == "" || c.TenantMappingEndpoint == "" || c.ValidationIstioCertEndpoint == "" || c.RuntimeMappingEndpoint == "" {
+		return errors.New("Missing handler configuration")
 	}
 
 	return nil

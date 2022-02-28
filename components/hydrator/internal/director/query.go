@@ -18,6 +18,61 @@ func systemAuthQuery(authID string) string {
 	}`, authID)
 }
 
+func systemAuthByTokenQuery(token string) string {
+	return fmt.Sprintf(`query {
+		result: systemAuthByToken(token: "%s") {
+			id
+			auth {
+				credential {
+				  ... on BasicCredentialData {
+					username
+					password
+				  }
+				  ... on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+				  }
+				}
+				oneTimeToken {
+				  __typename
+				  token
+				  used
+				  expiresAt
+				  connectorURL
+				  rawEncoded
+				  raw
+				  usedAt
+				  type
+				  createdAt
+				}
+				certCommonName
+				accessStrategy
+				additionalHeaders
+				additionalQueryParams
+				requestAuth {
+				  csrf {
+					tokenEndpointURL
+					credential {
+					  ... on BasicCredentialData {
+						username
+						password
+					  }
+					  ... on OAuthCredentialData {
+						clientId
+						clientSecret
+						url
+					  }
+					}
+					additionalHeaders
+					additionalQueryParams
+				  }
+				}
+			  }
+			}
+		}`, token)
+}
+
 func tenantByExternalIDQuery(tenantID string) string {
 	return fmt.Sprintf(`query {
 	  	result: tenantByExternalID(id: "%s") {
@@ -67,6 +122,61 @@ func updateSystemAuthQuery(authID string, gqlAuth graphql.Auth) (string, error) 
 			id
 	  	}
 	}`, authID, gqlAuthInput), nil
+}
+
+func invalidateSystemAuthOneTimeTokenQuery(authID string) string {
+	return fmt.Sprintf(`query {
+		result: invalidateSystemAuthOneTimeToken(authID: "%s") {
+			id
+			auth {
+				credential {
+				  ... on BasicCredentialData {
+					username
+					password
+				  }
+				  ... on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+				  }
+				}
+				oneTimeToken {
+				  __typename
+				  token
+				  used
+				  expiresAt
+				  connectorURL
+				  rawEncoded
+				  raw
+				  usedAt
+				  type
+				  createdAt
+				}
+				certCommonName
+				accessStrategy
+				additionalHeaders
+				additionalQueryParams
+				requestAuth {
+				  csrf {
+					tokenEndpointURL
+					credential {
+					  ... on BasicCredentialData {
+						username
+						password
+					  }
+					  ... on OAuthCredentialData {
+						clientId
+						clientSecret
+						url
+					  }
+					}
+					additionalHeaders
+					additionalQueryParams
+				  }
+				}
+			  }
+			}
+		}`, authID)
 }
 
 func runtimeByTokenIssuerQuery(issuer string) string {

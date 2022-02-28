@@ -16,7 +16,9 @@ type Client interface {
 	GetTenantByInternalID(ctx context.Context, tenantID string) (schema.Tenant, apperrors.AppError)
 	GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, apperrors.AppError)
 	GetSystemAuthByID(ctx context.Context, authID string) (schema.SystemAuth, apperrors.AppError)
+	GetSystemAuthByToken(ctx context.Context, token string) (schema.SystemAuth, apperrors.AppError)
 	UpdateSystemAuth(ctx context.Context, authID string, auth schema.Auth) (UpdateAuthResult, apperrors.AppError)
+	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (schema.SystemAuth, apperrors.AppError)
 	GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (schema.Runtime, apperrors.AppError)
 }
 
@@ -109,6 +111,19 @@ func (c *client) GetSystemAuthByID(ctx context.Context, authID string) (schema.S
 	return response.Result, nil
 }
 
+func (c *client) GetSystemAuthByToken(ctx context.Context, token string) (schema.SystemAuth, apperrors.AppError) {
+	query := systemAuthByTokenQuery(token)
+
+	var response SystemAuthResponse
+
+	err := c.execute(ctx, c.gqlClient, query, &response)
+	if err != nil {
+		return schema.AppSystemAuth{}, apperrors.Internal(err.Error())
+	}
+
+	return response.Result, nil
+}
+
 func (c *client) UpdateSystemAuth(ctx context.Context, authID string, auth schema.Auth) (UpdateAuthResult, apperrors.AppError) {
 	query, err := updateSystemAuthQuery(authID, auth)
 	if err != nil {
@@ -120,6 +135,19 @@ func (c *client) UpdateSystemAuth(ctx context.Context, authID string, auth schem
 	err = c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
 		return UpdateAuthResult{}, apperrors.Internal(err.Error())
+	}
+
+	return response.Result, nil
+}
+
+func (c *client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (schema.SystemAuth, apperrors.AppError) {
+	query := invalidateSystemAuthOneTimeTokenQuery(authID)
+
+	var response SystemAuthResponse
+
+	err := c.execute(ctx, c.gqlClient, query, &response)
+	if err != nil {
+		return schema.AppSystemAuth{}, apperrors.Internal(err.Error())
 	}
 
 	return response.Result, nil
