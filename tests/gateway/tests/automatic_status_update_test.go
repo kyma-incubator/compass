@@ -49,7 +49,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 	})
 
 	t.Run("Test status update as Integration System", func(t *testing.T) {
-		t.Log("Register Integration System with Dex id token")
+		t.Log("Register Integration System via Certificate Secured Client")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
 		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys)
 		require.NoError(t, err)
@@ -102,7 +102,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			StatusCondition: &status,
 		}
 
-		t.Log("Register Application with Dex id token")
+		t.Log("Register Application via Certificate Secured Client")
 		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			StatusCondition: &status,
 		}
 
-		t.Log("Register Runtime with Dex id token")
+		t.Log("Register Runtime via Certificate Secured Client")
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtime)
 		require.NoError(t, err)

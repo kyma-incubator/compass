@@ -17,7 +17,7 @@ import (
 func TestIntegrationSystemScenario(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Register Integration System with Dex id token")
+	t.Log("Register Integration System via Certificate Secured Client")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
 	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys)
 	require.NoError(t, err)

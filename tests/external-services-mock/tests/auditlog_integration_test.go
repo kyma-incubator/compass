@@ -40,7 +40,7 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
 
-	t.Log("Register Application through Gateway with Dex id Token")
+	t.Log("Register Application through Gateway via Certificate Secured Client")
 	app := graphql.ApplicationExt{}
 
 	timeFrom := time.Now()
