@@ -87,7 +87,7 @@ func TestAuditlogIntegration(t *testing.T) {
 	assert.Equal(t, requestBody.String(), preRequest)
 	assert.Equal(t, 2, len(auditlogs))
 	assert.Equal(t, consumerID, pre.Object.ID["consumerID"])
-	assert.Equal(t, "Static User", pre.Object.ID["apiConsumer"])
+	assert.Equal(t, "Super Admin", pre.Object.ID["apiConsumer"])
 
 	var postRequest string
 	for _, v := range post.Attributes {
@@ -98,7 +98,7 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	assert.Equal(t, requestBody.String(), postRequest)
 	assert.Equal(t, consumerID, post.Object.ID["consumerID"])
-	assert.Equal(t, "Static User", post.Object.ID["apiConsumer"])
+	assert.Equal(t, "Super Admin", post.Object.ID["apiConsumer"])
 }
 
 func prepareRegisterAppRequestBody(t *testing.T, registerRequest *graphql2.Request) bytes.Buffer {
