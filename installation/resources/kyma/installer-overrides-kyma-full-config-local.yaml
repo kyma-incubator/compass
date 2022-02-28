@@ -170,6 +170,28 @@ data:
   jaeger.spec.storage.type: "memory"
   jaeger.spec.storage.options.memory.max-traces: "10000"
   jaeger.spec.resources.limits.memory: "150Mi"
+  global.tracing.enabled: "true"
+  kcproxy.resources.limits.memory: 256Mi
+  kcproxy.resources.requests.memory: 32Mi
+  authProxy.resources.limits.memory: 256Mi
+  authProxy.resources.requests.memory: 32Mi
+  authProxy.enabled: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kiali-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: kiali
+    kyma-project.io/installation: ""
+data:
+  kcproxy.resources.limits.memory: 256Mi
+  kcproxy.resources.requests.memory: 32Mi
+  authProxy.resources.limits.memory: 256Mi
+  authProxy.resources.requests.memory: 32Mi
+  authProxy.enabled: "false"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -194,6 +216,15 @@ data:
   prometheus.prometheusSpec.retentionSize: "500MB"
   prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage: "1Gi"
   grafana.persistence.enabled: "false"
+  grafana.sidecar.resources.limits.memory: 256Mi
+  grafana.sidecar.resources.limits.cpu: 200m
+  grafana.sidecar.resources.requests.memory: 64Mi
+  grafana.sidecar.resources.requests.cpu: 50m
+  prometheusOperator.configReloaderMemory: 256Mi
+  prometheus-istio.server.resources.limits.memory: 1Gi
+  grafana.kyma.authProxy.enabled: "false"
+  grafana.env.GF_AUTH_ANONYMOUS_ENABLED: "true"
+  grafana.env.GF_AUTH_GENERIC_OAUTH_ENABLED: "false"
 ---
 apiVersion: v1
 kind: ConfigMap

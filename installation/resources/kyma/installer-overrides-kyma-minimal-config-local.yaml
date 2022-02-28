@@ -92,6 +92,9 @@ data:
   grafana.sidecar.resources.limits.cpu: 200m
   grafana.sidecar.resources.requests.memory: 64Mi
   grafana.sidecar.resources.requests.cpu: 50m
+  grafana.kyma.authProxy.enabled: "false"
+  grafana.env.GF_AUTH_ANONYMOUS_ENABLED: "true"
+  grafana.env.GF_AUTH_GENERIC_OAUTH_ENABLED: "false"
   prometheusOperator.configReloaderMemory: 256Mi
   prometheus-istio.server.resources.limits.memory: 1Gi
 ---
@@ -168,6 +171,7 @@ data:
   kcproxy.resources.requests.memory: 32Mi
   authProxy.resources.limits.memory: 256Mi
   authProxy.resources.requests.memory: 32Mi
+  authProxy.enabled: "false"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -183,6 +187,7 @@ data:
   kcproxy.resources.requests.memory: 32Mi
   authProxy.resources.limits.memory: 256Mi
   authProxy.resources.requests.memory: 32Mi
+  authProxy.enabled: "false"
 ---
 apiVersion: v1
 kind: ConfigMap
