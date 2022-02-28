@@ -107,11 +107,23 @@ function revert_migrator_file() {
     echo "$UPDATE_EXPECTED_SCHEMA_VERSION_FILE" > "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml
 }
 
+function set_oidc_config() {
+  PATH_TO_VALUES="$CURRENT_DIR/../../chart/compass/values.yaml"
+  yq -i ".global.cockpit.auth.idpHost = \"$1\"" "$PATH_TO_VALUES"
+  yq -i ".global.cockpit.auth.clientID = \"$2\"" "$PATH_TO_VALUES"
+}
+
+function cleanup_trap() {
+   rm -f mk-ca.crt
+   # Not passing arguments to the function invocation will result in resetting the values to empty strings
+   set_oidc_config
+}
+
 function mount_minikube_ca_to_oathkeeper() {
   echo "Mounting minikube CA cert into oathkeeper's container..."
 
   cat $HOME/.minikube/ca.crt > mk-ca.crt
-  trap "rm -f mk-ca.crt" RETURN EXIT INT TERM
+  trap "cleanup_trap" RETURN EXIT INT TERM
 
   kubectl create configmap -n kyma-system minikube-ca --from-file mk-ca.crt --dry-run -o yaml | kubectl apply -f -
 
@@ -125,19 +137,11 @@ function mount_minikube_ca_to_oathkeeper() {
  -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/mk-ca.crt'","name": "minikube-ca-volume","subPath": "mk-ca.crt"}]}]}}}}'
 }
 
-function set_oidc_config() {
-  PATH_TO_VALUES="$CURRENT_DIR/../../chart/compass/values.yaml"
-  yq -i ".global.cockpit.auth.idpHost = \"$1\"" "$PATH_TO_VALUES"
-  yq -i ".global.cockpit.auth.clientID = \"$2\"" "$PATH_TO_VALUES"
-}
-
 if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
   echo "OIDC host and client-id were not provided. Exiting..."
   exit 1
 else
   set_oidc_config "$OIDC_HOST" "$OIDC_CLIENT_ID"
-  # Not passing arguments to the function invocation will result in resetting the values to empty strings
-  trap "set_oidc_config" RETURN EXIT TERM INT
 fi
 
 if [[ ${DUMP_DB} ]]; then
