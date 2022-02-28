@@ -27,26 +27,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-	"github.com/kyma-incubator/compass/tests/pkg/token"
-
-	gcli "github.com/machinebox/graphql"
-
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+	gcli "github.com/machinebox/graphql"
+	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 	v1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/ptr"
-	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
 )
 
 const (
@@ -63,9 +59,6 @@ const (
 func TestSelfRegisterFlow(t *testing.T) {
 	ctx := context.Background()
 	accountTenantID := testConfig.AccountTenantID // accountTenantID is parent of the tenant/subaccountID of the configured certificate client's tenant below
-
-	// Build graphql director client configured with certificate
-	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
 
 	// Register application
 	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "testingApp", accountTenantID)
@@ -102,8 +95,8 @@ func TestSelfRegisterFlow(t *testing.T) {
 		Description: ptr.String("selfRegisterRuntime-description"),
 		Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID},
 	}
-	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
-	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
+	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
 	require.NotEmpty(t, runtime.ID)
 	strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 	require.True(t, ok)
@@ -112,7 +105,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	// Verify that the label returned cannot be modified
 	setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
 	label := graphql.Label{}
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, setLabelRequest, &label)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, setLabelRequest, &label)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
 
@@ -147,14 +140,25 @@ func TestConsumerProviderFlow(t *testing.T) {
 	}()
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
 
+	providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(testConfig.ExternalClientCertTestSecretNamespace).Get(ctx, testConfig.ExternalClientCertTestSecretName, metav1.GetOptions{})
+	require.NoError(t, err)
+	providerKeyBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretKeyKey]
+	require.NotEmpty(t, providerKeyBytes)
+	providerCertChainBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
+	require.NotEmpty(t, providerCertChainBytes)
+
+	// Build graphql director client configured with certificate
+	providerClientKey, providerRawCertChain := certs.ClientCertPair(t, providerCertChainBytes, providerKeyBytes)
+	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
+
 	runtimeInput := graphql.RuntimeInput{
 		Name:        "providerRuntime",
 		Description: ptr.String("providerRuntime-description"),
 		Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID, tenantfetcher.RegionKey: testConfig.Region},
 	}
 
-	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
-	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
+	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 	require.NotEmpty(t, runtime.ID)
 
 	// Register application
@@ -259,7 +263,7 @@ func TestConsumerProviderFlow(t *testing.T) {
 	t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 
 	// HTTP client configured with certificate with patched subject, issued from cert-rotation job
-	certHttpClient := createHttpClientWithCert(certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
+	certHttpClient := createHttpClientWithCert(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
 	consumerToken := token.GetUserToken(t, ctx, testConfig.ConsumerTokenURL+testConfig.TokenPath, testConfig.ProviderClientID, testConfig.ProviderClientSecret, testConfig.BasicUsername, testConfig.BasicPassword, "subscriptionClaims")
 	headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
