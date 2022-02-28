@@ -4,8 +4,8 @@ package automock
 
 import (
 	context "context"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 
 	repo "github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -17,15 +17,15 @@ type SystemAuthRepo struct {
 }
 
 // ListGlobalWithConditions provides a mock function with given fields: ctx, conditions
-func (_m *SystemAuthRepo) ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error) {
+func (_m *SystemAuthRepo) ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]systemauth.SystemAuth, error) {
 	ret := _m.Called(ctx, conditions)
 
-	var r0 []model.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, repo.Conditions) []model.SystemAuth); ok {
+	var r0 []systemauth.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, repo.Conditions) []systemauth.SystemAuth); ok {
 		r0 = rf(ctx, conditions)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.SystemAuth)
+			r0 = ret.Get(0).([]systemauth.SystemAuth)
 		}
 	}
 

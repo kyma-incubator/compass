@@ -216,7 +216,7 @@ func NewRootResolver(
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
 		labelDef:           labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:              onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter, oneTimeTokenCfg.SuggestTokenHeaderKey),
-		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter, authConverter),
+		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, tokenSvc, systemAuthConverter, authConverter),
 		oAuth20:            oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:             integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:             viewer.NewViewerResolver(),
@@ -488,6 +488,11 @@ func (r *queryResolver) SystemAuth(ctx context.Context, id string) (graphql.Syst
 	return r.systemAuth.SystemAuth(ctx, id)
 }
 
+// SystemAuthByToken missing godoc
+func (r *queryResolver) SystemAuthByToken(ctx context.Context, id string) (graphql.SystemAuth, error) {
+	return r.systemAuth.SystemAuthByToken(ctx, id)
+}
+
 type mutationResolver struct {
 	*RootResolver
 }
@@ -709,6 +714,11 @@ func (r *mutationResolver) DeleteSystemAuthForIntegrationSystem(ctx context.Cont
 // UpdateSystemAuth missing godoc
 func (r *mutationResolver) UpdateSystemAuth(ctx context.Context, authID string, in graphql.AuthInput) (graphql.SystemAuth, error) {
 	return r.systemAuth.UpdateSystemAuth(ctx, authID, in)
+}
+
+// UpdateSystemAuth missing godoc
+func (r *mutationResolver) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (graphql.SystemAuth, error) {
+	return r.systemAuth.InvalidateSystemAuthOneTimeToken(ctx, authID)
 }
 
 // RegisterIntegrationSystem missing godoc

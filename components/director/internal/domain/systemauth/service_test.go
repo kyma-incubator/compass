@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	systemauth2 "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/mock"
@@ -38,7 +40,7 @@ func TestService_Create(t *testing.T) {
 	testCases := []struct {
 		Name            string
 		sysAuthRepoFn   func() *automock.Repository
-		InputObjectType model.SystemAuthReferenceObjectType
+		InputObjectType systemauth2.SystemAuthReferenceObjectType
 		InputAuth       *model.AuthInput
 		ExpectedOutput  string
 		ExpectedError   error
@@ -47,10 +49,10 @@ func TestService_Create(t *testing.T) {
 			Name: "Success creating auth for Runtime",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, model.RuntimeReference, objID, modelAuth)).Return(nil)
+				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, systemauth2.RuntimeReference, objID, modelAuth)).Return(nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.RuntimeReference,
+			InputObjectType: systemauth2.RuntimeReference,
 			InputAuth:       &modelAuthInput,
 			ExpectedOutput:  sysAuthID,
 			ExpectedError:   nil,
@@ -59,10 +61,10 @@ func TestService_Create(t *testing.T) {
 			Name: "Success creating auth for Application",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, model.ApplicationReference, objID, modelAuth)).Return(nil)
+				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, systemauth2.ApplicationReference, objID, modelAuth)).Return(nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.ApplicationReference,
+			InputObjectType: systemauth2.ApplicationReference,
 			InputAuth:       &modelAuthInput,
 			ExpectedOutput:  sysAuthID,
 			ExpectedError:   nil,
@@ -71,10 +73,10 @@ func TestService_Create(t *testing.T) {
 			Name: "Success creating auth for Integration System",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, model.IntegrationSystemReference, objID, modelAuth)).Return(nil)
+				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, systemauth2.IntegrationSystemReference, objID, modelAuth)).Return(nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.IntegrationSystemReference,
+			InputObjectType: systemauth2.IntegrationSystemReference,
 			InputAuth:       &modelAuthInput,
 			ExpectedOutput:  sysAuthID,
 			ExpectedError:   nil,
@@ -83,10 +85,10 @@ func TestService_Create(t *testing.T) {
 			Name: "Success creating auth with nil value",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, model.RuntimeReference, objID, nil)).Return(nil)
+				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, systemauth2.RuntimeReference, objID, nil)).Return(nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.RuntimeReference,
+			InputObjectType: systemauth2.RuntimeReference,
 			InputAuth:       nil,
 			ExpectedOutput:  sysAuthID,
 			ExpectedError:   nil,
@@ -106,10 +108,10 @@ func TestService_Create(t *testing.T) {
 			Name: "Error creating System Auth",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, model.RuntimeReference, objID, modelAuth)).Return(testErr)
+				sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, systemauth2.RuntimeReference, objID, modelAuth)).Return(testErr)
 				return sysAuthRepo
 			},
-			InputObjectType: model.RuntimeReference,
+			InputObjectType: systemauth2.RuntimeReference,
 			InputAuth:       &modelAuthInput,
 			ExpectedOutput:  "",
 			ExpectedError:   testErr,
@@ -165,13 +167,13 @@ func TestService_CreateWithCustomID(t *testing.T) {
 	modelAuth := fixModelAuth()
 
 	sysAuthRepo := &automock.Repository{}
-	sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, model.RuntimeReference, objID, modelAuth)).Return(nil)
+	sysAuthRepo.On("Create", contextThatHasTenant(testTenant), *fixModelSystemAuth(sysAuthID, systemauth2.RuntimeReference, objID, modelAuth)).Return(nil)
 	defer sysAuthRepo.AssertExpectations(t)
 
 	svc := systemauth.NewService(sysAuthRepo, nil)
 
 	// WHEN
-	result, err := svc.CreateWithCustomID(ctx, sysAuthID, model.RuntimeReference, objID, &modelAuthInput)
+	result, err := svc.CreateWithCustomID(ctx, sysAuthID, systemauth2.RuntimeReference, objID, &modelAuthInput)
 
 	// THEN
 	assert.NoError(t, err)
@@ -186,7 +188,7 @@ func TestService_ListForObject(t *testing.T) {
 
 	modelAuth := fixModelAuth()
 
-	expectedRtmSysAuths := []model.SystemAuth{
+	expectedRtmSysAuths := []systemauth2.SystemAuth{
 		{
 			ID:        "foo",
 			TenantID:  &testTenant,
@@ -200,7 +202,7 @@ func TestService_ListForObject(t *testing.T) {
 			Value:     modelAuth,
 		},
 	}
-	expectedAppSysAuths := []model.SystemAuth{
+	expectedAppSysAuths := []systemauth2.SystemAuth{
 		{
 			ID:       "foo",
 			TenantID: &testTenant,
@@ -214,7 +216,7 @@ func TestService_ListForObject(t *testing.T) {
 			Value:    modelAuth,
 		},
 	}
-	expectedIntSysAuths := []model.SystemAuth{
+	expectedIntSysAuths := []systemauth2.SystemAuth{
 		{
 			ID:                  "foo",
 			TenantID:            nil,
@@ -232,18 +234,18 @@ func TestService_ListForObject(t *testing.T) {
 	testCases := []struct {
 		Name            string
 		sysAuthRepoFn   func() *automock.Repository
-		InputObjectType model.SystemAuthReferenceObjectType
-		ExpectedOutput  []model.SystemAuth
+		InputObjectType systemauth2.SystemAuthReferenceObjectType
+		ExpectedOutput  []systemauth2.SystemAuth
 		ExpectedError   error
 	}{
 		{
 			Name: "Success listing Auths for Runtime",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("ListForObject", contextThatHasTenant(testTenant), testTenant, model.RuntimeReference, objID).Return(expectedRtmSysAuths, nil)
+				sysAuthRepo.On("ListForObject", contextThatHasTenant(testTenant), testTenant, systemauth2.RuntimeReference, objID).Return(expectedRtmSysAuths, nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.RuntimeReference,
+			InputObjectType: systemauth2.RuntimeReference,
 			ExpectedOutput:  expectedRtmSysAuths,
 			ExpectedError:   nil,
 		},
@@ -251,10 +253,10 @@ func TestService_ListForObject(t *testing.T) {
 			Name: "Success listing Auths for Application",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("ListForObject", contextThatHasTenant(testTenant), testTenant, model.ApplicationReference, objID).Return(expectedAppSysAuths, nil)
+				sysAuthRepo.On("ListForObject", contextThatHasTenant(testTenant), testTenant, systemauth2.ApplicationReference, objID).Return(expectedAppSysAuths, nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.ApplicationReference,
+			InputObjectType: systemauth2.ApplicationReference,
 			ExpectedOutput:  expectedAppSysAuths,
 			ExpectedError:   nil,
 		},
@@ -262,10 +264,10 @@ func TestService_ListForObject(t *testing.T) {
 			Name: "Success listing Auths for Integration System",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("ListForObjectGlobal", contextThatHasTenant(testTenant), model.IntegrationSystemReference, objID).Return(expectedIntSysAuths, nil)
+				sysAuthRepo.On("ListForObjectGlobal", contextThatHasTenant(testTenant), systemauth2.IntegrationSystemReference, objID).Return(expectedIntSysAuths, nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.IntegrationSystemReference,
+			InputObjectType: systemauth2.IntegrationSystemReference,
 			ExpectedOutput:  expectedIntSysAuths,
 			ExpectedError:   nil,
 		},
@@ -273,10 +275,10 @@ func TestService_ListForObject(t *testing.T) {
 			Name: "Error listing System Auths",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("ListForObject", contextThatHasTenant(testTenant), testTenant, model.RuntimeReference, objID).Return(nil, testErr)
+				sysAuthRepo.On("ListForObject", contextThatHasTenant(testTenant), testTenant, systemauth2.RuntimeReference, objID).Return(nil, testErr)
 				return sysAuthRepo
 			},
-			InputObjectType: model.RuntimeReference,
+			InputObjectType: systemauth2.RuntimeReference,
 			ExpectedOutput:  nil,
 			ExpectedError:   testErr,
 		},
@@ -320,13 +322,13 @@ func TestService_GetByIDForObject(t *testing.T) {
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	sysAuthID := "foo"
-	modelSysAuth := fixModelSystemAuth(sysAuthID, model.RuntimeReference, "bar", nil)
+	modelSysAuth := fixModelSystemAuth(sysAuthID, systemauth2.RuntimeReference, "bar", nil)
 
 	testCases := []struct {
 		Name            string
 		sysAuthRepoFn   func() *automock.Repository
-		InputObjectType model.SystemAuthReferenceObjectType
-		ExpectedSysAuth *model.SystemAuth
+		InputObjectType systemauth2.SystemAuthReferenceObjectType
+		ExpectedSysAuth *systemauth2.SystemAuth
 		ExpectedError   error
 	}{
 		{
@@ -336,7 +338,7 @@ func TestService_GetByIDForObject(t *testing.T) {
 				sysAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(modelSysAuth, nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.RuntimeReference,
+			InputObjectType: systemauth2.RuntimeReference,
 			ExpectedError:   nil,
 			ExpectedSysAuth: modelSysAuth,
 		},
@@ -347,7 +349,7 @@ func TestService_GetByIDForObject(t *testing.T) {
 				sysAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(modelSysAuth, nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.ApplicationReference,
+			InputObjectType: systemauth2.ApplicationReference,
 			ExpectedError:   nil,
 			ExpectedSysAuth: modelSysAuth,
 		},
@@ -358,7 +360,7 @@ func TestService_GetByIDForObject(t *testing.T) {
 				sysAuthRepo.On("GetByIDGlobal", contextThatHasTenant(testTenant), sysAuthID).Return(modelSysAuth, nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.IntegrationSystemReference,
+			InputObjectType: systemauth2.IntegrationSystemReference,
 			ExpectedError:   nil,
 			ExpectedSysAuth: modelSysAuth,
 		},
@@ -369,7 +371,7 @@ func TestService_GetByIDForObject(t *testing.T) {
 				sysAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, sysAuthID).Return(nil, testErr)
 				return sysAuthRepo
 			},
-			InputObjectType: model.RuntimeReference,
+			InputObjectType: systemauth2.RuntimeReference,
 			ExpectedError:   testErr,
 		},
 	}
@@ -415,47 +417,47 @@ func TestService_DeleteByIDForObject(t *testing.T) {
 	testCases := []struct {
 		Name            string
 		sysAuthRepoFn   func() *automock.Repository
-		InputObjectType model.SystemAuthReferenceObjectType
+		InputObjectType systemauth2.SystemAuthReferenceObjectType
 		ExpectedError   error
 	}{
 		{
 			Name: "Success deleting auth for Runtime",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("DeleteByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.RuntimeReference).Return(nil)
+				sysAuthRepo.On("DeleteByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, systemauth2.RuntimeReference).Return(nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.RuntimeReference,
+			InputObjectType: systemauth2.RuntimeReference,
 			ExpectedError:   nil,
 		},
 		{
 			Name: "Success deleting auth for Application",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("DeleteByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.ApplicationReference).Return(nil)
+				sysAuthRepo.On("DeleteByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, systemauth2.ApplicationReference).Return(nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.ApplicationReference,
+			InputObjectType: systemauth2.ApplicationReference,
 			ExpectedError:   nil,
 		},
 		{
 			Name: "Success deleting auth for Integration System",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("DeleteByIDForObjectGlobal", contextThatHasTenant(testTenant), sysAuthID, model.IntegrationSystemReference).Return(nil)
+				sysAuthRepo.On("DeleteByIDForObjectGlobal", contextThatHasTenant(testTenant), sysAuthID, systemauth2.IntegrationSystemReference).Return(nil)
 				return sysAuthRepo
 			},
-			InputObjectType: model.IntegrationSystemReference,
+			InputObjectType: systemauth2.IntegrationSystemReference,
 			ExpectedError:   nil,
 		},
 		{
 			Name: "Error deleting System Auths",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("DeleteByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.RuntimeReference).Return(testErr)
+				sysAuthRepo.On("DeleteByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, systemauth2.RuntimeReference).Return(testErr)
 				return sysAuthRepo
 			},
-			InputObjectType: model.RuntimeReference,
+			InputObjectType: systemauth2.RuntimeReference,
 			ExpectedError:   testErr,
 		},
 	}
@@ -499,13 +501,13 @@ func TestService_GetGlobal(t *testing.T) {
 		// GIVEN
 		repo := &automock.Repository{}
 		defer repo.AssertExpectations(t)
-		repo.On("GetByIDGlobal", context.Background(), authID).Return(&model.SystemAuth{}, nil)
+		repo.On("GetByIDGlobal", context.Background(), authID).Return(&systemauth2.SystemAuth{}, nil)
 		svc := systemauth.NewService(repo, nil)
 		// WHEN
 		item, err := svc.GetGlobal(context.Background(), authID)
 		// THEN
 		assert.Nil(t, err)
-		assert.Equal(t, &model.SystemAuth{}, item)
+		assert.Equal(t, &systemauth2.SystemAuth{}, item)
 	})
 
 	t.Run("error when systemAuth cannot be fetched from repo", func(t *testing.T) {
@@ -534,13 +536,13 @@ func TestService_GetByToken(t *testing.T) {
 		// GIVEN
 		repo := &automock.Repository{}
 		defer repo.AssertExpectations(t)
-		repo.On("GetByJSONValue", context.Background(), input).Return(&model.SystemAuth{}, nil)
+		repo.On("GetByJSONValue", context.Background(), input).Return(&systemauth2.SystemAuth{}, nil)
 		svc := systemauth.NewService(repo, nil)
 		// WHEN
 		item, err := svc.GetByToken(context.Background(), token)
 		// THEN
 		assert.Nil(t, err)
-		assert.Equal(t, &model.SystemAuth{}, item)
+		assert.Equal(t, &systemauth2.SystemAuth{}, item)
 	})
 
 	t.Run("error when systemAuth cannot be fetched from repo", func(t *testing.T) {

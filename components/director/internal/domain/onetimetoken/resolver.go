@@ -3,6 +3,8 @@ package onetimetoken
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -13,7 +15,7 @@ import (
 // TokenService missing godoc
 //go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore
 type TokenService interface {
-	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error)
+	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType systemauth.SystemAuthReferenceObjectType) (*model.OneTimeToken, error)
 	RegenerateOneTimeToken(ctx context.Context, sysAuthID string) (*model.OneTimeToken, error)
 }
 
@@ -50,7 +52,7 @@ func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string,
 	if systemAuthID != nil {
 		token, err = r.svc.RegenerateOneTimeToken(ctx, *systemAuthID)
 	} else {
-		token, err = r.svc.GenerateOneTimeToken(ctx, id, model.RuntimeReference)
+		token, err = r.svc.GenerateOneTimeToken(ctx, id, systemauth.RuntimeReference)
 	}
 	if err != nil {
 		return nil, err
@@ -76,7 +78,7 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 	if systemAuthID != nil {
 		token, err = r.svc.RegenerateOneTimeToken(ctx, *systemAuthID)
 	} else {
-		token, err = r.svc.GenerateOneTimeToken(ctx, id, model.ApplicationReference)
+		token, err = r.svc.GenerateOneTimeToken(ctx, id, systemauth.ApplicationReference)
 	}
 	if err != nil {
 		return nil, err

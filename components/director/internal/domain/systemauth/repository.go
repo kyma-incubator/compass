@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -22,8 +23,8 @@ var (
 // Converter missing godoc
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in model.SystemAuth) (Entity, error)
-	FromEntity(in Entity) (model.SystemAuth, error)
+	ToEntity(in systemauth.SystemAuth) (Entity, error)
+	FromEntity(in Entity) (systemauth.SystemAuth, error)
 }
 
 type repository struct {
@@ -55,7 +56,7 @@ func NewRepository(conv Converter) *repository {
 }
 
 // Create missing godoc
-func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
+func (r *repository) Create(ctx context.Context, item systemauth.SystemAuth) error {
 	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
@@ -66,7 +67,7 @@ func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 }
 
 // GetByID missing godoc
-func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error) {
+func (r *repository) GetByID(ctx context.Context, tenant, id string) (*systemauth.SystemAuth, error) {
 	var entity Entity
 	if err := r.singleGetter.Get(ctx, resource.SystemAuth, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
@@ -81,7 +82,7 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Sys
 }
 
 // GetByIDGlobal missing godoc
-func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
+func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*systemauth.SystemAuth, error) {
 	var entity Entity
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
@@ -96,7 +97,7 @@ func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.Syste
 }
 
 // GetByJSONValue missing godoc
-func (r *repository) GetByJSONValue(ctx context.Context, value map[string]interface{}) (*model.SystemAuth, error) {
+func (r *repository) GetByJSONValue(ctx context.Context, value map[string]interface{}) (*systemauth.SystemAuth, error) {
 	valueBytes, err := json.Marshal(value)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not marshal")
@@ -115,7 +116,7 @@ func (r *repository) GetByJSONValue(ctx context.Context, value map[string]interf
 }
 
 // ListForObject missing godoc
-func (r *repository) ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
+func (r *repository) ListForObject(ctx context.Context, tenant string, objectType systemauth.SystemAuthReferenceObjectType, objectID string) ([]systemauth.SystemAuth, error) {
 	objTypeFieldName, err := referenceObjectField(objectType)
 	if err != nil {
 		return nil, err
@@ -137,7 +138,7 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 }
 
 // ListForObjectGlobal missing godoc
-func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
+func (r *repository) ListForObjectGlobal(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, objectID string) ([]systemauth.SystemAuth, error) {
 	objTypeFieldName, err := referenceObjectField(objectType)
 	if err != nil {
 		return nil, err
@@ -158,7 +159,7 @@ func (r *repository) ListForObjectGlobal(ctx context.Context, objectType model.S
 }
 
 // ListGlobalWithConditions missing godoc
-func (r *repository) ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error) {
+func (r *repository) ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]systemauth.SystemAuth, error) {
 	var entities Collection
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
@@ -168,8 +169,8 @@ func (r *repository) ListGlobalWithConditions(ctx context.Context, conditions re
 	return r.multipleFromEntities(entities)
 }
 
-func (r *repository) multipleFromEntities(entities Collection) ([]model.SystemAuth, error) {
-	items := make([]model.SystemAuth, 0, len(entities))
+func (r *repository) multipleFromEntities(entities Collection) ([]systemauth.SystemAuth, error) {
+	items := make([]systemauth.SystemAuth, 0, len(entities))
 
 	for _, ent := range entities {
 		m, err := r.conv.FromEntity(ent)
@@ -184,19 +185,19 @@ func (r *repository) multipleFromEntities(entities Collection) ([]model.SystemAu
 }
 
 // DeleteAllForObject missing godoc
-func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) error {
+func (r *repository) DeleteAllForObject(ctx context.Context, tenant string, objectType systemauth.SystemAuthReferenceObjectType, objectID string) error {
 	objTypeFieldName, err := referenceObjectField(objectType)
 	if err != nil {
 		return err
 	}
-	if objectType == model.IntegrationSystemReference {
+	if objectType == systemauth.IntegrationSystemReference {
 		return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
 	}
 	return r.deleter.DeleteMany(ctx, resource.SystemAuth, tenant, repo.Conditions{repo.NewEqualCondition(objTypeFieldName, objectID)})
 }
 
 // DeleteByIDForObject missing godoc
-func (r *repository) DeleteByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) error {
+func (r *repository) DeleteByIDForObject(ctx context.Context, tenant, id string, objType systemauth.SystemAuthReferenceObjectType) error {
 	var objTypeCond repo.Condition
 
 	column, err := referenceObjectField(objType)
@@ -209,7 +210,7 @@ func (r *repository) DeleteByIDForObject(ctx context.Context, tenant, id string,
 }
 
 // DeleteByIDForObjectGlobal missing godoc
-func (r *repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) error {
+func (r *repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, objType systemauth.SystemAuthReferenceObjectType) error {
 	var objTypeCond repo.Condition
 
 	column, err := referenceObjectField(objType)
@@ -222,7 +223,7 @@ func (r *repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, o
 }
 
 // Update missing godoc
-func (r *repository) Update(ctx context.Context, item *model.SystemAuth) error {
+func (r *repository) Update(ctx context.Context, item *systemauth.SystemAuth) error {
 	if item == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -235,13 +236,13 @@ func (r *repository) Update(ctx context.Context, item *model.SystemAuth) error {
 	return r.updater.UpdateSingleGlobal(ctx, entity)
 }
 
-func referenceObjectField(objectType model.SystemAuthReferenceObjectType) (string, error) {
+func referenceObjectField(objectType systemauth.SystemAuthReferenceObjectType) (string, error) {
 	switch objectType {
-	case model.ApplicationReference:
+	case systemauth.ApplicationReference:
 		return "app_id", nil
-	case model.RuntimeReference:
+	case systemauth.RuntimeReference:
 		return "runtime_id", nil
-	case model.IntegrationSystemReference:
+	case systemauth.IntegrationSystemReference:
 		return "integration_system_id", nil
 	}
 

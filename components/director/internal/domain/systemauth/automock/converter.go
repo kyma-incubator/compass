@@ -4,7 +4,7 @@ package automock
 
 import (
 	systemauth "github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
+	systemauth2 "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -14,14 +14,14 @@ type Converter struct {
 }
 
 // FromEntity provides a mock function with given fields: in
-func (_m *Converter) FromEntity(in systemauth.Entity) (model.SystemAuth, error) {
+func (_m *Converter) FromEntity(in systemauth.Entity) (systemauth2.SystemAuth, error) {
 	ret := _m.Called(in)
 
-	var r0 model.SystemAuth
-	if rf, ok := ret.Get(0).(func(systemauth.Entity) model.SystemAuth); ok {
+	var r0 systemauth2.SystemAuth
+	if rf, ok := ret.Get(0).(func(systemauth.Entity) systemauth2.SystemAuth); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.SystemAuth)
+		r0 = ret.Get(0).(systemauth2.SystemAuth)
 	}
 
 	var r1 error
@@ -35,18 +35,18 @@ func (_m *Converter) FromEntity(in systemauth.Entity) (model.SystemAuth, error) 
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *Converter) ToEntity(in model.SystemAuth) (systemauth.Entity, error) {
+func (_m *Converter) ToEntity(in systemauth2.SystemAuth) (systemauth.Entity, error) {
 	ret := _m.Called(in)
 
 	var r0 systemauth.Entity
-	if rf, ok := ret.Get(0).(func(model.SystemAuth) systemauth.Entity); ok {
+	if rf, ok := ret.Get(0).(func(systemauth2.SystemAuth) systemauth.Entity); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(systemauth.Entity)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.SystemAuth) error); ok {
+	if rf, ok := ret.Get(1).(func(systemauth2.SystemAuth) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

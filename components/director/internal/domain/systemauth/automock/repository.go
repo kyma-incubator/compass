@@ -4,8 +4,8 @@ package automock
 
 import (
 	context "context"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,11 +15,11 @@ type Repository struct {
 }
 
 // Create provides a mock function with given fields: ctx, item
-func (_m *Repository) Create(ctx context.Context, item model.SystemAuth) error {
+func (_m *Repository) Create(ctx context.Context, item systemauth.SystemAuth) error {
 	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuth) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, systemauth.SystemAuth) error); ok {
 		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
@@ -29,11 +29,11 @@ func (_m *Repository) Create(ctx context.Context, item model.SystemAuth) error {
 }
 
 // DeleteByIDForObject provides a mock function with given fields: ctx, tenant, id, objType
-func (_m *Repository) DeleteByIDForObject(ctx context.Context, tenant string, id string, objType model.SystemAuthReferenceObjectType) error {
+func (_m *Repository) DeleteByIDForObject(ctx context.Context, tenant string, id string, objType systemauth.SystemAuthReferenceObjectType) error {
 	ret := _m.Called(ctx, tenant, id, objType)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.SystemAuthReferenceObjectType) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, systemauth.SystemAuthReferenceObjectType) error); ok {
 		r0 = rf(ctx, tenant, id, objType)
 	} else {
 		r0 = ret.Error(0)
@@ -43,11 +43,11 @@ func (_m *Repository) DeleteByIDForObject(ctx context.Context, tenant string, id
 }
 
 // DeleteByIDForObjectGlobal provides a mock function with given fields: ctx, id, objType
-func (_m *Repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) error {
+func (_m *Repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, objType systemauth.SystemAuthReferenceObjectType) error {
 	ret := _m.Called(ctx, id, objType)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, systemauth.SystemAuthReferenceObjectType) error); ok {
 		r0 = rf(ctx, id, objType)
 	} else {
 		r0 = ret.Error(0)
@@ -57,15 +57,15 @@ func (_m *Repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, 
 }
 
 // GetByID provides a mock function with given fields: ctx, tenant, id
-func (_m *Repository) GetByID(ctx context.Context, tenant string, id string) (*model.SystemAuth, error) {
+func (_m *Repository) GetByID(ctx context.Context, tenant string, id string) (*systemauth.SystemAuth, error) {
 	ret := _m.Called(ctx, tenant, id)
 
-	var r0 *model.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.SystemAuth); ok {
+	var r0 *systemauth.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *systemauth.SystemAuth); ok {
 		r0 = rf(ctx, tenant, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.SystemAuth)
+			r0 = ret.Get(0).(*systemauth.SystemAuth)
 		}
 	}
 
@@ -80,15 +80,15 @@ func (_m *Repository) GetByID(ctx context.Context, tenant string, id string) (*m
 }
 
 // GetByIDGlobal provides a mock function with given fields: ctx, id
-func (_m *Repository) GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
+func (_m *Repository) GetByIDGlobal(ctx context.Context, id string) (*systemauth.SystemAuth, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *model.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.SystemAuth); ok {
+	var r0 *systemauth.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string) *systemauth.SystemAuth); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.SystemAuth)
+			r0 = ret.Get(0).(*systemauth.SystemAuth)
 		}
 	}
 
@@ -103,15 +103,15 @@ func (_m *Repository) GetByIDGlobal(ctx context.Context, id string) (*model.Syst
 }
 
 // GetByJSONValue provides a mock function with given fields: ctx, value
-func (_m *Repository) GetByJSONValue(ctx context.Context, value map[string]interface{}) (*model.SystemAuth, error) {
+func (_m *Repository) GetByJSONValue(ctx context.Context, value map[string]interface{}) (*systemauth.SystemAuth, error) {
 	ret := _m.Called(ctx, value)
 
-	var r0 *model.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}) *model.SystemAuth); ok {
+	var r0 *systemauth.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}) *systemauth.SystemAuth); ok {
 		r0 = rf(ctx, value)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.SystemAuth)
+			r0 = ret.Get(0).(*systemauth.SystemAuth)
 		}
 	}
 
@@ -126,20 +126,20 @@ func (_m *Repository) GetByJSONValue(ctx context.Context, value map[string]inter
 }
 
 // ListForObject provides a mock function with given fields: ctx, tenant, objectType, objectID
-func (_m *Repository) ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
+func (_m *Repository) ListForObject(ctx context.Context, tenant string, objectType systemauth.SystemAuthReferenceObjectType, objectID string) ([]systemauth.SystemAuth, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID)
 
-	var r0 []model.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType, string) []model.SystemAuth); ok {
+	var r0 []systemauth.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, systemauth.SystemAuthReferenceObjectType, string) []systemauth.SystemAuth); ok {
 		r0 = rf(ctx, tenant, objectType, objectID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.SystemAuth)
+			r0 = ret.Get(0).([]systemauth.SystemAuth)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.SystemAuthReferenceObjectType, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, systemauth.SystemAuthReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, tenant, objectType, objectID)
 	} else {
 		r1 = ret.Error(1)
@@ -149,20 +149,20 @@ func (_m *Repository) ListForObject(ctx context.Context, tenant string, objectTy
 }
 
 // ListForObjectGlobal provides a mock function with given fields: ctx, objectType, objectID
-func (_m *Repository) ListForObjectGlobal(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
+func (_m *Repository) ListForObjectGlobal(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, objectID string) ([]systemauth.SystemAuth, error) {
 	ret := _m.Called(ctx, objectType, objectID)
 
-	var r0 []model.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) []model.SystemAuth); ok {
+	var r0 []systemauth.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, systemauth.SystemAuthReferenceObjectType, string) []systemauth.SystemAuth); ok {
 		r0 = rf(ctx, objectType, objectID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.SystemAuth)
+			r0 = ret.Get(0).([]systemauth.SystemAuth)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, systemauth.SystemAuthReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, objectType, objectID)
 	} else {
 		r1 = ret.Error(1)
@@ -172,11 +172,11 @@ func (_m *Repository) ListForObjectGlobal(ctx context.Context, objectType model.
 }
 
 // Update provides a mock function with given fields: ctx, item
-func (_m *Repository) Update(ctx context.Context, item *model.SystemAuth) error {
+func (_m *Repository) Update(ctx context.Context, item *systemauth.SystemAuth) error {
 	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.SystemAuth) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *systemauth.SystemAuth) error); ok {
 		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)

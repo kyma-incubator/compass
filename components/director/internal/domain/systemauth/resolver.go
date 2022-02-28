@@ -17,15 +17,23 @@ import (
 type SystemAuthService interface {
 	GetByIDForObject(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, authID string) (*systemauth.SystemAuth, error)
 	GetGlobal(ctx context.Context, id string) (*systemauth.SystemAuth, error)
+	GetByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error)
 	DeleteByIDForObject(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, authID string) error
 	Update(ctx context.Context, item *systemauth.SystemAuth) error
 	UpdateValue(ctx context.Context, id string, item *model.Auth) (*systemauth.SystemAuth, error)
+	InvalidateToken(ctx context.Context, id string) (*systemauth.SystemAuth, error)
 }
 
 // OAuth20Service missing godoc
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
 	DeleteClientCredentials(ctx context.Context, clientID string) error
+}
+
+// OneTimeTokenService missing godoc
+//go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore
+type OneTimeTokenService interface {
+	IsTokenValid(systemAuth *systemauth.SystemAuth) (bool, error)
 }
 
 // SystemAuthConverter missing godoc
@@ -36,16 +44,17 @@ type SystemAuthConverter interface {
 
 // Resolver missing godoc
 type Resolver struct {
-	transact   persistence.Transactioner
-	svc        SystemAuthService
-	oAuth20Svc OAuth20Service
-	conv       SystemAuthConverter
-	authConv   AuthConverter
+	transact        persistence.Transactioner
+	svc             SystemAuthService
+	oAuth20Svc      OAuth20Service
+	conv            SystemAuthConverter
+	authConv        AuthConverter
+	onetimetokenSvc OneTimeTokenService
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, svc SystemAuthService, oAuth20Svc OAuth20Service, conv SystemAuthConverter, authConverter AuthConverter) *Resolver {
-	return &Resolver{transact: transact, svc: svc, oAuth20Svc: oAuth20Svc, conv: conv, authConv: authConverter}
+func NewResolver(transact persistence.Transactioner, svc SystemAuthService, oAuth20Svc OAuth20Service, onetimetokenSvc OneTimeTokenService, conv SystemAuthConverter, authConverter AuthConverter) *Resolver {
+	return &Resolver{transact: transact, svc: svc, oAuth20Svc: oAuth20Svc, onetimetokenSvc: onetimetokenSvc, conv: conv, authConv: authConverter}
 }
 
 // GenericDeleteSystemAuth missing godoc
@@ -113,6 +122,33 @@ func (r *Resolver) SystemAuth(ctx context.Context, id string) (graphql.SystemAut
 	return r.conv.ToGraphQL(systemAuth)
 }
 
+// SystemAuth missing godoc
+func (r *Resolver) SystemAuthByToken(ctx context.Context, token string) (graphql.SystemAuth, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	systemAuth, err := r.svc.GetByToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := r.onetimetokenSvc.IsTokenValid(systemAuth); err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(systemAuth)
+}
+
 // UpdateSystemAuth missing godoc
 func (r *Resolver) UpdateSystemAuth(ctx context.Context, id string, in graphql.AuthInput) (graphql.SystemAuth, error) {
 	tx, err := r.transact.Begin()
@@ -141,6 +177,32 @@ func (r *Resolver) UpdateSystemAuth(ctx context.Context, id string, in graphql.A
 	}
 
 	log.C(ctx).Infof("System Auth with id %s successfully updated", id)
+
+	return r.conv.ToGraphQL(systemAuth)
+}
+
+func (r *Resolver) InvalidateSystemAuthOneTimeToken(ctx context.Context, id string) (graphql.SystemAuth, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	systemAuth, err := r.svc.InvalidateToken(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := r.onetimetokenSvc.IsTokenValid(systemAuth); err != nil {
+		return nil, err
+	}
 
 	return r.conv.ToGraphQL(systemAuth)
 }

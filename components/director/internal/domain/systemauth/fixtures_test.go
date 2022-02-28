@@ -3,6 +3,8 @@ package systemauth_test
 import (
 	"database/sql/driver"
 
+	systemauth2 "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
@@ -43,20 +45,20 @@ func fixGQLRuntimeSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
 	}
 }
 
-func fixModelSystemAuth(id string, objectType model.SystemAuthReferenceObjectType, objectID string, auth *model.Auth) *model.SystemAuth {
-	systemAuth := model.SystemAuth{
+func fixModelSystemAuth(id string, objectType systemauth2.SystemAuthReferenceObjectType, objectID string, auth *model.Auth) *systemauth2.SystemAuth {
+	systemAuth := systemauth2.SystemAuth{
 		ID:    id,
 		Value: auth,
 	}
 
 	switch objectType {
-	case model.ApplicationReference:
+	case systemauth2.ApplicationReference:
 		systemAuth.AppID = &objectID
 		systemAuth.TenantID = &testTenant
-	case model.RuntimeReference:
+	case systemauth2.RuntimeReference:
 		systemAuth.RuntimeID = &objectID
 		systemAuth.TenantID = &testTenant
-	case model.IntegrationSystemReference:
+	case systemauth2.IntegrationSystemReference:
 		systemAuth.IntegrationSystemID = &objectID
 		systemAuth.TenantID = nil
 	}
@@ -139,19 +141,19 @@ func fixModelAuth() *model.Auth {
 	}
 }
 
-func fixEntity(id string, objectType model.SystemAuthReferenceObjectType, objectID string, withAuth bool) systemauth.Entity {
+func fixEntity(id string, objectType systemauth2.SystemAuthReferenceObjectType, objectID string, withAuth bool) systemauth.Entity {
 	out := systemauth.Entity{
 		ID: id,
 	}
 
 	switch objectType {
-	case model.ApplicationReference:
+	case systemauth2.ApplicationReference:
 		out.AppID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(&testTenant)
-	case model.RuntimeReference:
+	case systemauth2.RuntimeReference:
 		out.RuntimeID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(&testTenant)
-	case model.IntegrationSystemReference:
+	case systemauth2.IntegrationSystemReference:
 		out.IntegrationSystemID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(nil)
 	}

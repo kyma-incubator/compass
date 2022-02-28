@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
@@ -32,7 +34,7 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 
 	testCases := []struct {
 		Name                       string
-		ObjType                    model.SystemAuthReferenceObjectType
+		ObjType                    systemauth.SystemAuthReferenceObjectType
 		Method                     func(resolver *oauth20.Resolver, ctx context.Context, id string) (graphql.SystemAuth, error)
 		RtmID                      *string
 		AppID                      *string
@@ -44,7 +46,7 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 		{
 			Name:    "Runtime",
 			RtmID:   &id,
-			ObjType: model.RuntimeReference,
+			ObjType: systemauth.RuntimeReference,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
 				rtmSvc.On("Exist", txtest.CtxWithDBMatcher(), id).Return(true, nil).Once()
@@ -65,7 +67,7 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 		{
 			Name:    "Application",
 			AppID:   &id,
-			ObjType: model.ApplicationReference,
+			ObjType: systemauth.ApplicationReference,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
 				return rtmSvc
@@ -86,7 +88,7 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 		{
 			Name:     "Integration System",
 			IntSysID: &id,
-			ObjType:  model.IntegrationSystemReference,
+			ObjType:  systemauth.IntegrationSystemReference,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				rtmSvc := &automock.RuntimeService{}
 				return rtmSvc
@@ -151,7 +153,7 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 func TestResolver_CommonRequestClientCredentialsError(t *testing.T) {
 	// GIVEN
 	id := "foo"
-	objType := model.RuntimeReference
+	objType := systemauth.RuntimeReference
 	clientID := "clientid"
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -377,8 +379,8 @@ func TestResolver_CommonRequestClientCredentialsError(t *testing.T) {
 	}
 }
 
-func fixModelSystemAuth(clientID string, rtmID, appID, isID *string) *model.SystemAuth {
-	return &model.SystemAuth{
+func fixModelSystemAuth(clientID string, rtmID, appID, isID *string) *systemauth.SystemAuth {
+	return &systemauth.SystemAuth{
 		ID:                  clientID,
 		TenantID:            str.Ptr(""),
 		RuntimeID:           rtmID,

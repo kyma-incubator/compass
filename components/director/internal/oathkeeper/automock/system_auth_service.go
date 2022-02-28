@@ -4,8 +4,8 @@ package automock
 
 import (
 	context "context"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,15 +15,15 @@ type SystemAuthService struct {
 }
 
 // GetByToken provides a mock function with given fields: ctx, token
-func (_m *SystemAuthService) GetByToken(ctx context.Context, token string) (*model.SystemAuth, error) {
+func (_m *SystemAuthService) GetByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error) {
 	ret := _m.Called(ctx, token)
 
-	var r0 *model.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.SystemAuth); ok {
+	var r0 *systemauth.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string) *systemauth.SystemAuth); ok {
 		r0 = rf(ctx, token)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.SystemAuth)
+			r0 = ret.Get(0).(*systemauth.SystemAuth)
 		}
 	}
 
@@ -38,11 +38,11 @@ func (_m *SystemAuthService) GetByToken(ctx context.Context, token string) (*mod
 }
 
 // InvalidateToken provides a mock function with given fields: ctx, item
-func (_m *SystemAuthService) InvalidateToken(ctx context.Context, item *model.SystemAuth) error {
+func (_m *SystemAuthService) InvalidateToken(ctx context.Context, item *systemauth.SystemAuth) error {
 	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.SystemAuth) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *systemauth.SystemAuth) error); ok {
 		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)

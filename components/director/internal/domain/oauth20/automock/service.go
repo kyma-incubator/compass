@@ -4,6 +4,7 @@ package automock
 
 import (
 	context "context"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
@@ -15,11 +16,11 @@ type Service struct {
 }
 
 // CreateClientCredentials provides a mock function with given fields: ctx, objectType
-func (_m *Service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
+func (_m *Service) CreateClientCredentials(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
 	ret := _m.Called(ctx, objectType)
 
 	var r0 *model.OAuthCredentialDataInput
-	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType) *model.OAuthCredentialDataInput); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, systemauth.SystemAuthReferenceObjectType) *model.OAuthCredentialDataInput); ok {
 		r0 = rf(ctx, objectType)
 	} else {
 		if ret.Get(0) != nil {
@@ -28,7 +29,7 @@ func (_m *Service) CreateClientCredentials(ctx context.Context, objectType model
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, systemauth.SystemAuthReferenceObjectType) error); ok {
 		r1 = rf(ctx, objectType)
 	} else {
 		r1 = ret.Error(1)

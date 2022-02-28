@@ -4,6 +4,7 @@ package automock
 
 import (
 	context "context"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
@@ -15,18 +16,18 @@ type SystemAuthService struct {
 }
 
 // CreateWithCustomID provides a mock function with given fields: ctx, id, objectType, objectID, authInput
-func (_m *SystemAuthService) CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
+func (_m *SystemAuthService) CreateWithCustomID(ctx context.Context, id string, objectType systemauth.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
 	ret := _m.Called(ctx, id, objectType, objectID, authInput)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType, string, *model.AuthInput) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, systemauth.SystemAuthReferenceObjectType, string, *model.AuthInput) string); ok {
 		r0 = rf(ctx, id, objectType, objectID, authInput)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.SystemAuthReferenceObjectType, string, *model.AuthInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, systemauth.SystemAuthReferenceObjectType, string, *model.AuthInput) error); ok {
 		r1 = rf(ctx, id, objectType, objectID, authInput)
 	} else {
 		r1 = ret.Error(1)
@@ -36,20 +37,20 @@ func (_m *SystemAuthService) CreateWithCustomID(ctx context.Context, id string, 
 }
 
 // GetByIDForObject provides a mock function with given fields: ctx, objectType, authID
-func (_m *SystemAuthService) GetByIDForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, authID string) (*model.SystemAuth, error) {
+func (_m *SystemAuthService) GetByIDForObject(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, authID string) (*systemauth.SystemAuth, error) {
 	ret := _m.Called(ctx, objectType, authID)
 
-	var r0 *model.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) *model.SystemAuth); ok {
+	var r0 *systemauth.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, systemauth.SystemAuthReferenceObjectType, string) *systemauth.SystemAuth); ok {
 		r0 = rf(ctx, objectType, authID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.SystemAuth)
+			r0 = ret.Get(0).(*systemauth.SystemAuth)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.SystemAuthReferenceObjectType, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, systemauth.SystemAuthReferenceObjectType, string) error); ok {
 		r1 = rf(ctx, objectType, authID)
 	} else {
 		r1 = ret.Error(1)

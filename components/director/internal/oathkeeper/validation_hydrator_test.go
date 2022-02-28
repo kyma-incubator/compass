@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
 	connector "github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
@@ -131,7 +133,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
-		systemAuth := &model.SystemAuth{
+		systemAuth := &systemauth.SystemAuth{
 			Value: &model.Auth{
 				OneTimeToken: &model.OneTimeToken{
 					CreatedAt: time.Now(),
@@ -164,7 +166,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
-		systemAuth := &model.SystemAuth{
+		systemAuth := &systemauth.SystemAuth{
 			ID: clientID,
 			Value: &model.Auth{
 				OneTimeToken: &model.OneTimeToken{
@@ -194,7 +196,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatFailsOnCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
-		systemAuth := &model.SystemAuth{
+		systemAuth := &systemauth.SystemAuth{
 			ID: clientID,
 			Value: &model.Auth{
 				OneTimeToken: &model.OneTimeToken{
@@ -224,7 +226,7 @@ func TestValidationHydrator_ResolveConnectorTokenHeader(t *testing.T) {
 		mockedTx, transact := txtest.NewTransactionContextGenerator(errors.New("err")).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
 		defer transact.AssertExpectations(t)
-		systemAuth := &model.SystemAuth{
+		systemAuth := &systemauth.SystemAuth{
 			ID: clientID,
 			Value: &model.Auth{
 				OneTimeToken: &model.OneTimeToken{

@@ -3,10 +3,11 @@ package systemauth_test
 import (
 	"testing"
 
+	systemauth2 "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth/automock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/stretchr/testify/assert"
@@ -20,14 +21,14 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 	modelAuth := fixModelAuth()
 	gqlAuth := fixGQLAuth()
-	modelRtmSysAuth := fixModelSystemAuth(sysAuthID, model.RuntimeReference, objectID, modelAuth)
-	modelAppSysAuth := fixModelSystemAuth(sysAuthID, model.ApplicationReference, objectID, modelAuth)
-	modelIntSysAuth := fixModelSystemAuth(sysAuthID, model.IntegrationSystemReference, objectID, modelAuth)
+	modelRtmSysAuth := fixModelSystemAuth(sysAuthID, systemauth2.RuntimeReference, objectID, modelAuth)
+	modelAppSysAuth := fixModelSystemAuth(sysAuthID, systemauth2.ApplicationReference, objectID, modelAuth)
+	modelIntSysAuth := fixModelSystemAuth(sysAuthID, systemauth2.IntegrationSystemReference, objectID, modelAuth)
 
 	testCases := []struct {
 		Name           string
 		AuthConvFn     func() *automock.AuthConverter
-		Input          *model.SystemAuth
+		Input          *systemauth2.SystemAuth
 		ExpectedOutput graphql.SystemAuth
 	}{
 		{
@@ -93,17 +94,17 @@ func TestConverter_ToEntity(t *testing.T) {
 	objectID := "bar"
 
 	modelAuth := fixModelAuth()
-	modelRtmSysAuth := *fixModelSystemAuth(sysAuthID, model.RuntimeReference, objectID, modelAuth)
-	modelAppSysAuth := *fixModelSystemAuth(sysAuthID, model.ApplicationReference, objectID, modelAuth)
-	modelIntSysAuth := *fixModelSystemAuth(sysAuthID, model.IntegrationSystemReference, objectID, modelAuth)
+	modelRtmSysAuth := *fixModelSystemAuth(sysAuthID, systemauth2.RuntimeReference, objectID, modelAuth)
+	modelAppSysAuth := *fixModelSystemAuth(sysAuthID, systemauth2.ApplicationReference, objectID, modelAuth)
+	modelIntSysAuth := *fixModelSystemAuth(sysAuthID, systemauth2.IntegrationSystemReference, objectID, modelAuth)
 
-	entRtm := fixEntity(sysAuthID, model.RuntimeReference, objectID, true)
-	entApp := fixEntity(sysAuthID, model.ApplicationReference, objectID, true)
-	entInt := fixEntity(sysAuthID, model.IntegrationSystemReference, objectID, true)
+	entRtm := fixEntity(sysAuthID, systemauth2.RuntimeReference, objectID, true)
+	entApp := fixEntity(sysAuthID, systemauth2.ApplicationReference, objectID, true)
+	entInt := fixEntity(sysAuthID, systemauth2.IntegrationSystemReference, objectID, true)
 
 	testCases := []struct {
 		Name           string
-		Input          model.SystemAuth
+		Input          systemauth2.SystemAuth
 		ExpectedOutput systemauth.Entity
 		ExpectedError  error
 	}{
@@ -152,18 +153,18 @@ func TestConverter_FromEntity(t *testing.T) {
 	objectID := "bar"
 
 	modelAuth := fixModelAuth()
-	modelRtmSysAuth := *fixModelSystemAuth(sysAuthID, model.RuntimeReference, objectID, modelAuth)
-	modelAppSysAuth := *fixModelSystemAuth(sysAuthID, model.ApplicationReference, objectID, modelAuth)
-	modelIntSysAuth := *fixModelSystemAuth(sysAuthID, model.IntegrationSystemReference, objectID, modelAuth)
+	modelRtmSysAuth := *fixModelSystemAuth(sysAuthID, systemauth2.RuntimeReference, objectID, modelAuth)
+	modelAppSysAuth := *fixModelSystemAuth(sysAuthID, systemauth2.ApplicationReference, objectID, modelAuth)
+	modelIntSysAuth := *fixModelSystemAuth(sysAuthID, systemauth2.IntegrationSystemReference, objectID, modelAuth)
 
-	entRtm := fixEntity(sysAuthID, model.RuntimeReference, objectID, true)
-	entApp := fixEntity(sysAuthID, model.ApplicationReference, objectID, true)
-	entInt := fixEntity(sysAuthID, model.IntegrationSystemReference, objectID, true)
+	entRtm := fixEntity(sysAuthID, systemauth2.RuntimeReference, objectID, true)
+	entApp := fixEntity(sysAuthID, systemauth2.ApplicationReference, objectID, true)
+	entInt := fixEntity(sysAuthID, systemauth2.IntegrationSystemReference, objectID, true)
 
 	testCases := []struct {
 		Name           string
 		Input          systemauth.Entity
-		ExpectedOutput model.SystemAuth
+		ExpectedOutput systemauth2.SystemAuth
 		ExpectedError  error
 	}{
 		{

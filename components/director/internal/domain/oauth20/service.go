@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/ory/hydra-client-go/models"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -64,7 +66,7 @@ func NewService(scopeCfgProvider ClientDetailsConfigProvider, uidService UIDServ
 }
 
 // CreateClientCredentials missing godoc
-func (s *service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
+func (s *service) CreateClientCredentials(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
 	details, err := s.GetClientDetails(objectType)
 	if err != nil {
 		return nil, err
@@ -87,7 +89,7 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType model.
 }
 
 // UpdateClient missing godoc
-func (s *service) UpdateClient(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error {
+func (s *service) UpdateClient(ctx context.Context, clientID string, objectType systemauth.SystemAuthReferenceObjectType) error {
 	details, err := s.GetClientDetails(objectType)
 	if err != nil {
 		return err
@@ -115,7 +117,7 @@ func (s *service) DeleteClientCredentials(ctx context.Context, clientID string) 
 }
 
 // DeleteMultipleClientCredentials missing godoc
-func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error {
+func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []systemauth.SystemAuth) error {
 	for _, auth := range auths {
 		if auth.Value == nil {
 			continue
@@ -141,7 +143,7 @@ func (s *service) ListClients() ([]*models.OAuth2Client, error) {
 }
 
 // GetClientDetails missing godoc
-func (s *service) GetClientDetails(objType model.SystemAuthReferenceObjectType) (*ClientDetails, error) {
+func (s *service) GetClientDetails(objType systemauth.SystemAuthReferenceObjectType) (*ClientDetails, error) {
 	scopes, err := s.scopeCfgProvider.GetRequiredScopes(s.buildPath(objType))
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting scopes for registering Client Credentials for %s", objType)
@@ -187,7 +189,7 @@ func (s *service) updateClient(ctx context.Context, clientID string, details *Cl
 	return nil
 }
 
-func (s *service) buildPath(objType model.SystemAuthReferenceObjectType) string {
+func (s *service) buildPath(objType systemauth.SystemAuthReferenceObjectType) string {
 	lowerCaseType := strings.ToLower(string(objType))
 	transformedObjType := strings.ReplaceAll(lowerCaseType, " ", "_")
 	return fmt.Sprintf("%s.%s", scopesPerConsumerTypePrefix, transformedObjType)

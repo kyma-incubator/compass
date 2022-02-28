@@ -4,6 +4,8 @@ import (
 	"database/sql/driver"
 	"errors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -155,8 +157,8 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
-func fixModelSystemAuth(id, intSysID string, auth *model.Auth) model.SystemAuth {
-	return model.SystemAuth{
+func fixModelSystemAuth(id, intSysID string, auth *model.Auth) systemauth.SystemAuth {
+	return systemauth.SystemAuth{
 		ID:                  id,
 		TenantID:            nil,
 		IntegrationSystemID: &intSysID,

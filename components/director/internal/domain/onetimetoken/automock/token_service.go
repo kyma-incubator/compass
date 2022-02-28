@@ -4,6 +4,7 @@ package automock
 
 import (
 	context "context"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
@@ -15,11 +16,11 @@ type TokenService struct {
 }
 
 // GenerateOneTimeToken provides a mock function with given fields: ctx, runtimeID, tokenType
-func (_m *TokenService) GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
+func (_m *TokenService) GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType systemauth.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
 	ret := _m.Called(ctx, runtimeID, tokenType)
 
 	var r0 *model.OneTimeToken
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.SystemAuthReferenceObjectType) *model.OneTimeToken); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, systemauth.SystemAuthReferenceObjectType) *model.OneTimeToken); ok {
 		r0 = rf(ctx, runtimeID, tokenType)
 	} else {
 		if ret.Get(0) != nil {
@@ -28,7 +29,7 @@ func (_m *TokenService) GenerateOneTimeToken(ctx context.Context, runtimeID stri
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.SystemAuthReferenceObjectType) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, systemauth.SystemAuthReferenceObjectType) error); ok {
 		r1 = rf(ctx, runtimeID, tokenType)
 	} else {
 		r1 = ret.Error(1)

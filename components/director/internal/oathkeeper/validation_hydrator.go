@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -21,14 +22,14 @@ type ValidationHydrator interface {
 // SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
-	GetByToken(ctx context.Context, token string) (*model.SystemAuth, error)
-	InvalidateToken(ctx context.Context, item *model.SystemAuth) error
+	GetByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error)
+	InvalidateToken(ctx context.Context, id string) (*systemauth.SystemAuth, error)
 }
 
 // OneTimeTokenService missing godoc
 //go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore
 type OneTimeTokenService interface {
-	IsTokenValid(systemAuth *model.SystemAuth) (bool, error)
+	IsTokenValid(systemAuth *systemauth.SystemAuth) (bool, error)
 }
 
 type validationHydrator struct {
@@ -99,7 +100,7 @@ func (vh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter,
 
 	authSession.Header.Add(oathkeeper.ClientIdFromTokenHeader, systemAuth.ID)
 
-	if err := vh.systemAuthService.InvalidateToken(ctx, systemAuth); err != nil {
+	if _, err := vh.systemAuthService.InvalidateToken(ctx, systemAuth.ID); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to invalidate token: %v", err)
 		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("could not invalidate token"))
 		return
