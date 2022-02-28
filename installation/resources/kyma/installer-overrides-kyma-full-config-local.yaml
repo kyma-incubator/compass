@@ -225,6 +225,7 @@ data:
   grafana.kyma.authProxy.enabled: "false"
   grafana.env.GF_AUTH_ANONYMOUS_ENABLED: "true"
   grafana.env.GF_AUTH_GENERIC_OAUTH_ENABLED: "false"
+  global.monitoring_integration_tests.enabled: "false" # Tests rely on dex security which we already removed.
 ---
 apiVersion: v1
 kind: ConfigMap
