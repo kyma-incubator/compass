@@ -169,6 +169,7 @@ mount_k3d_ca_to_oathkeeper
 # Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
 # with the needed keys, by first getting them using kubectl
 function patchJWKS() {
+  trap "exit" INT TERM
   JWKS="'$(kubectl get --raw '/openid/v1/jwks')'"
   until [[ $(kubectl get requestauthentication kyma-internal-authn -n kyma-system 2>/dev/null) &&
           $(kubectl get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
@@ -181,7 +182,8 @@ function patchJWKS() {
 patchJWKS&
 
 echo 'Installing Compass'
-bash "${ROOT_PATH}"/installation/scripts/install-compass.sh
+COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
+bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s
 STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
 echo "Compass installation status ${STATUS}"
 
