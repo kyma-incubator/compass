@@ -74,7 +74,7 @@ func TestMain(m *testing.M) {
 }
 
 func getTokenFromExternalSVCMock(t *testing.T) string {
-	return token.GetClientCredentialsToken(t, context.Background(), testConfig.ExternalServicesMockURL, testConfig.ClientID, testConfig.ClientSecret, "nsAdapter")
+	return token.GetClientCredentialsToken(t, context.Background(), testConfig.ExternalServicesMockURL+"/secured/oauth/token", testConfig.ClientID, testConfig.ClientSecret, "nsAdapterClaims")
 }
 
 type bindingData struct {
