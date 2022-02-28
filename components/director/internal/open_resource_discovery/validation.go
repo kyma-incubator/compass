@@ -204,6 +204,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 		validation.Field(&pkg.Title, validation.Required),
 		validation.Field(&pkg.ShortDescription, shortDescriptionRules...),
 		validation.Field(&pkg.Description, validation.Required),
+		validation.Field(&pkg.SupportInfo, validation.NilOrNotEmpty),
 		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
 			return validatePackageVersionInput(value, *pkg, packagesFromDB, resourceHashes)
 		})),
