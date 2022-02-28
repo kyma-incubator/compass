@@ -90,7 +90,7 @@ spec:
       corsPolicy:
         allowOrigins:
           - regex: "(http|https)://(compass-dev|compass|compass-mf).{{ .Values.global.ingress.domainName }}(:[0-9]{4})?"
-          - regex: "(http|https)://localhost(:[0-9]{5})?"
+          - regex: "(http|https)://localhost(:[0-9]{4,5})?"
         allowHeaders:
           - "authorization"
           - "content-type"
