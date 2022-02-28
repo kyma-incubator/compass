@@ -1280,6 +1280,7 @@ type Query {
 	"""
 	automaticScenarioAssignments(first: Int = 200, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
 	systemAuth(id: ID!): SystemAuth @hasScopes(path: "graphql.query.systemAuth")
+	systemAuthByToken(token: String!): SystemAuth @hasScopes(path: "graphql.query.systemAuth")
 }
 
 type Mutation {
@@ -1404,6 +1405,7 @@ type Mutation {
 	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForApplication")
 	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
 	updateSystemAuth(authID: ID!, in: AuthInput!): SystemAuth! @hasScopes(path: "graphql.mutation.updateSystemAuth")
+	invalidateSystemAuthOneTimeToken(authID: ID!): SystemAuth!
 	"""
 	**Examples**
 	- [add event definition to bundle](examples/add-event-definition-to-bundle/add-event-definition-to-bundle.graphql)
