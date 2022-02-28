@@ -111,7 +111,11 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.B
 		return nil, err
 	}
 
-	bndlModel, err := r.conv.FromEntity(&bndlEnt)
+	return convertToBundle(r, &bndlEnt)
+}
+
+func convertToBundle(r *pgRepository, bndlEnt *Entity) (*model.Bundle, error) {
+	bndlModel, err := r.conv.FromEntity(bndlEnt)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Bundle from Entity")
 	}
@@ -186,7 +190,7 @@ func (r *pgRepository) ListByApplicationIDs(ctx context.Context, tenantID string
 // ListByApplicationIDNoPaging missing godoc
 func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error) {
 	bundleCollection := BundleCollection{}
-	if err := r.lister.List(ctx, resource.Bundle, tenantID, &bundleCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Bundle, tenantID, &bundleCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	bundles := make([]*model.Bundle, 0, bundleCollection.Len())

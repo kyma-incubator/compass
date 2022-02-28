@@ -222,4 +222,4 @@ MINIKUBE_IP=$(minikube ip)
 if [[ ${DOCKER_DRIVER} ]]; then
     MINIKUBE_IP=127.0.0.1
 fi
-sudo sh -c "echo \"\n${MINIKUBE_IP} adapter-gateway.kyma.local adapter-gateway-mtls.kyma.local compass-gateway-mtls.kyma.local compass-gateway-sap-mtls.kyma.local compass-gateway-auth-oauth.kyma.local compass-gateway.kyma.local compass-gateway-int.kyma.local compass.kyma.local compass-mf.kyma.local kyma-env-broker.kyma.local director.kyma.local compass-external-services-mock-sap-mtls.kyma.local\" >> /etc/hosts"
+sudo sh -c "echo \"\n${MINIKUBE_IP} adapter-gateway.kyma.local adapter-gateway-mtls.kyma.local compass-gateway-mtls.kyma.local compass-gateway-sap-mtls.kyma.local compass-gateway-auth-oauth.kyma.local compass-gateway.kyma.local compass-gateway-int.kyma.local compass.kyma.local compass-mf.kyma.local kyma-env-broker.kyma.local director.kyma.local compass-external-services-mock.kyma.local compass-external-services-mock-sap-mtls.kyma.local compass-external-services-mock-sap-mtls-ord.kyma.local\" >> /etc/hosts"

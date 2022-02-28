@@ -27,7 +27,7 @@ type Entity struct {
 	SunsetDate          sql.NullString `db:"sunset_date"`
 	Successors          sql.NullString `db:"successors"`
 	Labels              sql.NullString `db:"labels"`
-	Visibility          sql.NullString `db:"visibility"`
+	Visibility          string         `db:"visibility"`
 	Disabled            sql.NullBool   `db:"disabled"`
 	PartOfProducts      sql.NullString `db:"part_of_products"`
 	LineOfBusiness      sql.NullString `db:"line_of_business"`
