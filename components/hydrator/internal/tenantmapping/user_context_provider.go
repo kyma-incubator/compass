@@ -3,18 +3,18 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	directorErrors "github.com/kyma-incubator/compass/components/system-broker/pkg/director"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 	"github.com/pkg/errors"
 )

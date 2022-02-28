@@ -3,9 +3,10 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"

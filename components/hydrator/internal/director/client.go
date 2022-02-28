@@ -23,8 +23,8 @@ type Client interface {
 }
 
 type Config struct {
-	DirectorEndpoint string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
-	ClientTimeout    time.Duration `envconfig:"default=115s"`
+	DirectorURL   string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
+	ClientTimeout time.Duration `envconfig:"default=115s"`
 }
 
 func NewClient(gqlClient *graphql.Client) Client {

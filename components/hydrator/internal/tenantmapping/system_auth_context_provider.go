@@ -3,10 +3,11 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"

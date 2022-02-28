@@ -2,10 +2,11 @@ package director
 
 import (
 	"crypto/tls"
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-	gcli "github.com/machinebox/graphql"
 	"net/http"
 	"time"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	gcli "github.com/machinebox/graphql"
 )
 
 //go:generate mockery --name=ClientProvider --output=automock --outpkg=automock --case=underscore

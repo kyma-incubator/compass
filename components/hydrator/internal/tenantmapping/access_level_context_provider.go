@@ -3,6 +3,7 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 

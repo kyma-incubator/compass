@@ -21,12 +21,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 
 	"github.com/gorilla/mux"
 

@@ -18,6 +18,10 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
@@ -28,9 +32,6 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
-	"net/http"
-	"os"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
@@ -48,7 +49,7 @@ const envPrefix = "APP"
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
-	RootAPI string `envconfig:"APP_ROOT_API,default=/hydratoras"`
+	RootAPI string `envconfig:"APP_ROOT_API,default=/hydrators"`
 
 	ClientTimeout   time.Duration `envconfig:"default=105s"`
 	ServerTimeout   time.Duration `envconfig:"default=110s"`
@@ -169,7 +170,7 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 
-	directorClientProvider := director.NewClientProvider(cfg.Director.DirectorEndpoint, cfg.Director.ClientTimeout)
+	directorClientProvider := director.NewClientProvider(cfg.Director.DirectorURL, cfg.Director.ClientTimeout)
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
 	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.Handler.AuthenticationMappingEndpoint)
