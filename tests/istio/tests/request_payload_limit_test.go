@@ -14,14 +14,10 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/authentication"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -94,7 +90,14 @@ func TestCallingCompassGateways(t *testing.T) {
 			t.Log("Executing request with big payload...")
 			resp, err := test.client.Do(bigBodyPOSTRequest)
 			require.NoError(t, err)
-			defer idtokenprovider.CloseRespBody(resp)
+
+			defer func() {
+				err := resp.Body.Close()
+				if err != nil {
+					logrus.Printf("WARNING: Unable to close response body. Cause: %v", err)
+				}
+			}()
+
 			t.Log("Successfully executed request with big payload")
 
 			require.Equal(t, http.StatusRequestEntityTooLarge, resp.StatusCode)
@@ -112,7 +115,12 @@ func TestCallingCompassGateways(t *testing.T) {
 			t.Log("Executing request for applications...")
 			appsResp, err := test.client.Do(applicationsPOSTRequest)
 			require.NoError(t, err)
-			defer idtokenprovider.CloseRespBody(appsResp)
+			defer func() {
+				err := appsResp.Body.Close()
+				if err != nil {
+					logrus.Printf("WARNING: Unable to close response body. Cause: %v", err)
+				}
+			}()
 			t.Log("Successfully executed request for applications")
 
 			require.Equal(t, http.StatusOK, appsResp.StatusCode)
