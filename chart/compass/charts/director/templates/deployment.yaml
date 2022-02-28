@@ -198,8 +198,8 @@ spec:
                   key: {{ .Values.global.director.selfRegister.secret.urlKey }}
             - name: APP_SELF_REGISTER_OAUTH_TOKEN_PATH
               value: {{ .Values.global.director.selfRegister.oauthTokenPath }}
-            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.director.selfRegister.distinguishLabel }}
+            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY # This variable get its value from tenant fetcher configuration(in tests charts too) because we need "self register" flow to be executed as part of the consumer-provider test, locally and on real environment as well
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
             - name: APP_SELF_REGISTER_LABEL_KEY_PATTERN
