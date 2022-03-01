@@ -620,7 +620,7 @@ global:
       clientIdKey: client-id
       clientSecretKey: client-secret
       oauthUrlKey: url
-      oauthTokenPath: "/cert/token"
+      oauthTokenPath: "/secured/oauth/token"
     auditlog:
       applyMockConfiguration: false
       managementApiPath: /audit-log/v2/configuration-changes/search
@@ -648,7 +648,6 @@ global:
       externalClientCertTestSecretNamespace: "compass-system"
       certSvcInstanceTestSecretName: "cert-svc-secret"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
-      tokenPath: "/secured/oauth/token"
       region: "eu-1"
       subscriptionOauthSecret:
         manage: false
