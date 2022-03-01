@@ -142,6 +142,8 @@ clientCredentialsRegistrationScopes:
     - "application.webhooks:read"
     - "application_template.webhooks:read"
     - "formation:write"
+    - "internal_visibility:read"
+    - "application.auths:read"
   super_admin:
     - "application:read"
     - "application:write"
